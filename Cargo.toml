@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.1.0"
+version = "0.5.0"
 authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 
 [features]
