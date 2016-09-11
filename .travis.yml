@@ -9,7 +9,7 @@ matrix:
         - rust: nightly
 
 script:
-    cargo build --verbose
-    cargo build --features iron-handlers --verbose
+    - cargo build --verbose
+    - cargo build --features iron-handlers --verbose
 
-    cargo test --verbose --features iron-handlers
+    - cargo test --verbose --features iron-handlers

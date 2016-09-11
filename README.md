@@ -2,6 +2,8 @@
 
 > GraphQL server library for Rust
 
+![build status](https://travis-ci.org/mhallin/juniper.svg?branch=master)
+
 ---
 
 [GraphQL][graphql] is a data query language developed by Facebook intended to
