@@ -20,7 +20,7 @@ Add Juniper to your Cargo.toml:
 
 ```toml
 [dependencies]
-juniper = "0.5.0"
+juniper = "0.5.1"
 ```
 
 If you want the Iron integration enabled, you need to enable the `iron-handlers`
@@ -28,7 +28,7 @@ feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.5.0", features = ["iron-handlers"] }
+juniper = { version = "0.5.1", features = ["iron-handlers"] }
 ```
 
 ## Building schemas
