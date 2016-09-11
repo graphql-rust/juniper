@@ -1,0 +1,3500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `openssl_sys` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, openssl_sys">
+
+    <title>openssl_sys - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'openssl_sys', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>openssl_sys</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/openssl_sys/lib.rs.html#1-1104' title='goto source code'>[src]</a></span></h1>
+<h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='probe/index.html'
+                                  title='openssl_sys::probe'>probe</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BIGNUM.html'
+                                  title='openssl_sys::BIGNUM'>BIGNUM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BIO.html'
+                                  title='openssl_sys::BIO'>BIO</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BIO_METHOD.html'
+                                  title='openssl_sys::BIO_METHOD'>BIO_METHOD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CRYPTO_EX_DATA.html'
+                                  title='openssl_sys::CRYPTO_EX_DATA'>CRYPTO_EX_DATA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DSA.html'
+                                  title='openssl_sys::DSA'>DSA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.EVP_CIPHER.html'
+                                  title='openssl_sys::EVP_CIPHER'>EVP_CIPHER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.EVP_MD_CTX.html'
+                                  title='openssl_sys::EVP_MD_CTX'>EVP_MD_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.EVP_PKEY.html'
+                                  title='openssl_sys::EVP_PKEY'>EVP_PKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.GENERAL_NAME.html'
+                                  title='openssl_sys::GENERAL_NAME'>GENERAL_NAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HMAC_CTX.html'
+                                  title='openssl_sys::HMAC_CTX'>HMAC_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PKCS12.html'
+                                  title='openssl_sys::PKCS12'>PKCS12</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.RSA.html'
+                                  title='openssl_sys::RSA'>RSA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.X509V3_CTX.html'
+                                  title='openssl_sys::X509V3_CTX'>X509V3_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct._STACK.html'
+                                  title='openssl_sys::_STACK'>_STACK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.stack_st_GENERAL_NAME.html'
+                                  title='openssl_sys::stack_st_GENERAL_NAME'>stack_st_GENERAL_NAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.stack_st_X509.html'
+                                  title='openssl_sys::stack_st_X509'>stack_st_X509</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.stack_st_X509_EXTENSION.html'
+                                  title='openssl_sys::stack_st_X509_EXTENSION'>stack_st_X509_EXTENSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.stack_st_void.html'
+                                  title='openssl_sys::stack_st_void'>stack_st_void</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_CTRL_EOF.html'
+                                  title='openssl_sys::BIO_CTRL_EOF'>BIO_CTRL_EOF</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_CTRL_FLUSH.html'
+                                  title='openssl_sys::BIO_CTRL_FLUSH'>BIO_CTRL_FLUSH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_CTRL_INFO.html'
+                                  title='openssl_sys::BIO_CTRL_INFO'>BIO_CTRL_INFO</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_C_SET_BUF_MEM_EOF_RETURN.html'
+                                  title='openssl_sys::BIO_C_SET_BUF_MEM_EOF_RETURN'>BIO_C_SET_BUF_MEM_EOF_RETURN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_FLAGS_IO_SPECIAL.html'
+                                  title='openssl_sys::BIO_FLAGS_IO_SPECIAL'>BIO_FLAGS_IO_SPECIAL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_FLAGS_READ.html'
+                                  title='openssl_sys::BIO_FLAGS_READ'>BIO_FLAGS_READ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_FLAGS_RWS.html'
+                                  title='openssl_sys::BIO_FLAGS_RWS'>BIO_FLAGS_RWS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_FLAGS_SHOULD_RETRY.html'
+                                  title='openssl_sys::BIO_FLAGS_SHOULD_RETRY'>BIO_FLAGS_SHOULD_RETRY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_FLAGS_WRITE.html'
+                                  title='openssl_sys::BIO_FLAGS_WRITE'>BIO_FLAGS_WRITE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.BIO_TYPE_NONE.html'
+                                  title='openssl_sys::BIO_TYPE_NONE'>BIO_TYPE_NONE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.CRYPTO_LOCK.html'
+                                  title='openssl_sys::CRYPTO_LOCK'>CRYPTO_LOCK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.EVP_MAX_MD_SIZE.html'
+                                  title='openssl_sys::EVP_MAX_MD_SIZE'>EVP_MAX_MD_SIZE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.EVP_PKEY_RSA.html'
+                                  title='openssl_sys::EVP_PKEY_RSA'>EVP_PKEY_RSA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_DIRNAME.html'
+                                  title='openssl_sys::GEN_DIRNAME'>GEN_DIRNAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_DNS.html'
+                                  title='openssl_sys::GEN_DNS'>GEN_DNS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_EDIPARTY.html'
+                                  title='openssl_sys::GEN_EDIPARTY'>GEN_EDIPARTY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_EMAIL.html'
+                                  title='openssl_sys::GEN_EMAIL'>GEN_EMAIL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_IPADD.html'
+                                  title='openssl_sys::GEN_IPADD'>GEN_IPADD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_OTHERNAME.html'
+                                  title='openssl_sys::GEN_OTHERNAME'>GEN_OTHERNAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_RID.html'
+                                  title='openssl_sys::GEN_RID'>GEN_RID</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_URI.html'
+                                  title='openssl_sys::GEN_URI'>GEN_URI</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.GEN_X400.html'
+                                  title='openssl_sys::GEN_X400'>GEN_X400</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.MBSTRING_ASC.html'
+                                  title='openssl_sys::MBSTRING_ASC'>MBSTRING_ASC</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.MBSTRING_BMP.html'
+                                  title='openssl_sys::MBSTRING_BMP'>MBSTRING_BMP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.MBSTRING_FLAG.html'
+                                  title='openssl_sys::MBSTRING_FLAG'>MBSTRING_FLAG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.MBSTRING_UNIV.html'
+                                  title='openssl_sys::MBSTRING_UNIV'>MBSTRING_UNIV</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.MBSTRING_UTF8.html'
+                                  title='openssl_sys::MBSTRING_UTF8'>MBSTRING_UTF8</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NID_ext_key_usage.html'
+                                  title='openssl_sys::NID_ext_key_usage'>NID_ext_key_usage</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NID_key_usage.html'
+                                  title='openssl_sys::NID_key_usage'>NID_key_usage</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NID_rsaEncryption.html'
+                                  title='openssl_sys::NID_rsaEncryption'>NID_rsaEncryption</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.PKCS5_SALT_LEN.html'
+                                  title='openssl_sys::PKCS5_SALT_LEN'>PKCS5_SALT_LEN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.RSA_F4.html'
+                                  title='openssl_sys::RSA_F4'>RSA_F4</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSLEAY_BUILT_ON.html'
+                                  title='openssl_sys::SSLEAY_BUILT_ON'>SSLEAY_BUILT_ON</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSLEAY_CFLAGS.html'
+                                  title='openssl_sys::SSLEAY_CFLAGS'>SSLEAY_CFLAGS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSLEAY_DIR.html'
+                                  title='openssl_sys::SSLEAY_DIR'>SSLEAY_DIR</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSLEAY_PLATFORM.html'
+                                  title='openssl_sys::SSLEAY_PLATFORM'>SSLEAY_PLATFORM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSLEAY_VERSION.html'
+                                  title='openssl_sys::SSLEAY_VERSION'>SSLEAY_VERSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_CLEAR_OPTIONS.html'
+                                  title='openssl_sys::SSL_CTRL_CLEAR_OPTIONS'>SSL_CTRL_CLEAR_OPTIONS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_EXTRA_CHAIN_CERT.html'
+                                  title='openssl_sys::SSL_CTRL_EXTRA_CHAIN_CERT'>SSL_CTRL_EXTRA_CHAIN_CERT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_MODE.html'
+                                  title='openssl_sys::SSL_CTRL_MODE'>SSL_CTRL_MODE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_OPTIONS.html'
+                                  title='openssl_sys::SSL_CTRL_OPTIONS'>SSL_CTRL_OPTIONS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_SET_READ_AHEAD.html'
+                                  title='openssl_sys::SSL_CTRL_SET_READ_AHEAD'>SSL_CTRL_SET_READ_AHEAD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_SET_TLSEXT_HOSTNAME.html'
+                                  title='openssl_sys::SSL_CTRL_SET_TLSEXT_HOSTNAME'>SSL_CTRL_SET_TLSEXT_HOSTNAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG.html'
+                                  title='openssl_sys::SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG'>SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_SET_TLSEXT_SERVERNAME_CB.html'
+                                  title='openssl_sys::SSL_CTRL_SET_TLSEXT_SERVERNAME_CB'>SSL_CTRL_SET_TLSEXT_SERVERNAME_CB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_CTRL_SET_TMP_DH.html'
+                                  title='openssl_sys::SSL_CTRL_SET_TMP_DH'>SSL_CTRL_SET_TMP_DH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_NONE.html'
+                                  title='openssl_sys::SSL_ERROR_NONE'>SSL_ERROR_NONE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_SSL.html'
+                                  title='openssl_sys::SSL_ERROR_SSL'>SSL_ERROR_SSL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_SYSCALL.html'
+                                  title='openssl_sys::SSL_ERROR_SYSCALL'>SSL_ERROR_SYSCALL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_WANT_ACCEPT.html'
+                                  title='openssl_sys::SSL_ERROR_WANT_ACCEPT'>SSL_ERROR_WANT_ACCEPT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_WANT_CONNECT.html'
+                                  title='openssl_sys::SSL_ERROR_WANT_CONNECT'>SSL_ERROR_WANT_CONNECT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_WANT_READ.html'
+                                  title='openssl_sys::SSL_ERROR_WANT_READ'>SSL_ERROR_WANT_READ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_WANT_WRITE.html'
+                                  title='openssl_sys::SSL_ERROR_WANT_WRITE'>SSL_ERROR_WANT_WRITE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_WANT_X509_LOOKUP.html'
+                                  title='openssl_sys::SSL_ERROR_WANT_X509_LOOKUP'>SSL_ERROR_WANT_X509_LOOKUP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_ERROR_ZERO_RETURN.html'
+                                  title='openssl_sys::SSL_ERROR_ZERO_RETURN'>SSL_ERROR_ZERO_RETURN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER.html'
+                                  title='openssl_sys::SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER'>SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_MODE_AUTO_RETRY.html'
+                                  title='openssl_sys::SSL_MODE_AUTO_RETRY'>SSL_MODE_AUTO_RETRY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_ALL.html'
+                                  title='openssl_sys::SSL_OP_ALL'>SSL_OP_ALL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION.html'
+                                  title='openssl_sys::SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION'>SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_CIPHER_SERVER_PREFERENCE.html'
+                                  title='openssl_sys::SSL_OP_CIPHER_SERVER_PREFERENCE'>SSL_OP_CIPHER_SERVER_PREFERENCE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_CISCO_ANYCONNECT.html'
+                                  title='openssl_sys::SSL_OP_CISCO_ANYCONNECT'>SSL_OP_CISCO_ANYCONNECT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_COOKIE_EXCHANGE.html'
+                                  title='openssl_sys::SSL_OP_COOKIE_EXCHANGE'>SSL_OP_COOKIE_EXCHANGE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS.html'
+                                  title='openssl_sys::SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS'>SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER.html'
+                                  title='openssl_sys::SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER'>SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_MICROSOFT_SESS_ID_BUG.html'
+                                  title='openssl_sys::SSL_OP_MICROSOFT_SESS_ID_BUG'>SSL_OP_MICROSOFT_SESS_ID_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NETSCAPE_CHALLENGE_BUG.html'
+                                  title='openssl_sys::SSL_OP_NETSCAPE_CHALLENGE_BUG'>SSL_OP_NETSCAPE_CHALLENGE_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG.html'
+                                  title='openssl_sys::SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG'>SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_COMPRESSION.html'
+                                  title='openssl_sys::SSL_OP_NO_COMPRESSION'>SSL_OP_NO_COMPRESSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_QUERY_MTU.html'
+                                  title='openssl_sys::SSL_OP_NO_QUERY_MTU'>SSL_OP_NO_QUERY_MTU</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION.html'
+                                  title='openssl_sys::SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION'>SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_SSLv2.html'
+                                  title='openssl_sys::SSL_OP_NO_SSLv2'>SSL_OP_NO_SSLv2</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_SSLv3.html'
+                                  title='openssl_sys::SSL_OP_NO_SSLv3'>SSL_OP_NO_SSLv3</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_TICKET.html'
+                                  title='openssl_sys::SSL_OP_NO_TICKET'>SSL_OP_NO_TICKET</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_NO_TLSv1.html'
+                                  title='openssl_sys::SSL_OP_NO_TLSv1'>SSL_OP_NO_TLSv1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_SINGLE_DH_USE.html'
+                                  title='openssl_sys::SSL_OP_SINGLE_DH_USE'>SSL_OP_SINGLE_DH_USE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_SINGLE_ECDH_USE.html'
+                                  title='openssl_sys::SSL_OP_SINGLE_ECDH_USE'>SSL_OP_SINGLE_ECDH_USE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_SSLEAY_080_CLIENT_DH_BUG.html'
+                                  title='openssl_sys::SSL_OP_SSLEAY_080_CLIENT_DH_BUG'>SSL_OP_SSLEAY_080_CLIENT_DH_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_TLSEXT_PADDING.html'
+                                  title='openssl_sys::SSL_OP_TLSEXT_PADDING'>SSL_OP_TLSEXT_PADDING</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_TLS_BLOCK_PADDING_BUG.html'
+                                  title='openssl_sys::SSL_OP_TLS_BLOCK_PADDING_BUG'>SSL_OP_TLS_BLOCK_PADDING_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_TLS_D5_BUG.html'
+                                  title='openssl_sys::SSL_OP_TLS_D5_BUG'>SSL_OP_TLS_D5_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_OP_TLS_ROLLBACK_BUG.html'
+                                  title='openssl_sys::SSL_OP_TLS_ROLLBACK_BUG'>SSL_OP_TLS_ROLLBACK_BUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_TLSEXT_ERR_ALERT_FATAL.html'
+                                  title='openssl_sys::SSL_TLSEXT_ERR_ALERT_FATAL'>SSL_TLSEXT_ERR_ALERT_FATAL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_TLSEXT_ERR_ALERT_WARNING.html'
+                                  title='openssl_sys::SSL_TLSEXT_ERR_ALERT_WARNING'>SSL_TLSEXT_ERR_ALERT_WARNING</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_TLSEXT_ERR_NOACK.html'
+                                  title='openssl_sys::SSL_TLSEXT_ERR_NOACK'>SSL_TLSEXT_ERR_NOACK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_TLSEXT_ERR_OK.html'
+                                  title='openssl_sys::SSL_TLSEXT_ERR_OK'>SSL_TLSEXT_ERR_OK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_VERIFY_FAIL_IF_NO_PEER_CERT.html'
+                                  title='openssl_sys::SSL_VERIFY_FAIL_IF_NO_PEER_CERT'>SSL_VERIFY_FAIL_IF_NO_PEER_CERT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_VERIFY_NONE.html'
+                                  title='openssl_sys::SSL_VERIFY_NONE'>SSL_VERIFY_NONE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SSL_VERIFY_PEER.html'
+                                  title='openssl_sys::SSL_VERIFY_PEER'>SSL_VERIFY_PEER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.TLSEXT_NAMETYPE_host_name.html'
+                                  title='openssl_sys::TLSEXT_NAMETYPE_host_name'>TLSEXT_NAMETYPE_host_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.V_ASN1_GENERALIZEDTIME.html'
+                                  title='openssl_sys::V_ASN1_GENERALIZEDTIME'>V_ASN1_GENERALIZEDTIME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.V_ASN1_UTCTIME.html'
+                                  title='openssl_sys::V_ASN1_UTCTIME'>V_ASN1_UTCTIME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_FILETYPE_ASN1.html'
+                                  title='openssl_sys::X509_FILETYPE_ASN1'>X509_FILETYPE_ASN1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_FILETYPE_DEFAULT.html'
+                                  title='openssl_sys::X509_FILETYPE_DEFAULT'>X509_FILETYPE_DEFAULT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_FILETYPE_PEM.html'
+                                  title='openssl_sys::X509_FILETYPE_PEM'>X509_FILETYPE_PEM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_AKID_ISSUER_SERIAL_MISMATCH.html'
+                                  title='openssl_sys::X509_V_ERR_AKID_ISSUER_SERIAL_MISMATCH'>X509_V_ERR_AKID_ISSUER_SERIAL_MISMATCH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_AKID_SKID_MISMATCH.html'
+                                  title='openssl_sys::X509_V_ERR_AKID_SKID_MISMATCH'>X509_V_ERR_AKID_SKID_MISMATCH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_APPLICATION_VERIFICATION.html'
+                                  title='openssl_sys::X509_V_ERR_APPLICATION_VERIFICATION'>X509_V_ERR_APPLICATION_VERIFICATION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_CHAIN_TOO_LONG.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_CHAIN_TOO_LONG'>X509_V_ERR_CERT_CHAIN_TOO_LONG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_HAS_EXPIRED.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_HAS_EXPIRED'>X509_V_ERR_CERT_HAS_EXPIRED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_NOT_YET_VALID.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_NOT_YET_VALID'>X509_V_ERR_CERT_NOT_YET_VALID</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_REJECTED.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_REJECTED'>X509_V_ERR_CERT_REJECTED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_REVOKED.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_REVOKED'>X509_V_ERR_CERT_REVOKED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_SIGNATURE_FAILURE.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_SIGNATURE_FAILURE'>X509_V_ERR_CERT_SIGNATURE_FAILURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CERT_UNTRUSTED.html'
+                                  title='openssl_sys::X509_V_ERR_CERT_UNTRUSTED'>X509_V_ERR_CERT_UNTRUSTED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CRL_HAS_EXPIRED.html'
+                                  title='openssl_sys::X509_V_ERR_CRL_HAS_EXPIRED'>X509_V_ERR_CRL_HAS_EXPIRED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CRL_NOT_YET_VALID.html'
+                                  title='openssl_sys::X509_V_ERR_CRL_NOT_YET_VALID'>X509_V_ERR_CRL_NOT_YET_VALID</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CRL_PATH_VALIDATION_ERROR.html'
+                                  title='openssl_sys::X509_V_ERR_CRL_PATH_VALIDATION_ERROR'>X509_V_ERR_CRL_PATH_VALIDATION_ERROR</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_CRL_SIGNATURE_FAILURE.html'
+                                  title='openssl_sys::X509_V_ERR_CRL_SIGNATURE_FAILURE'>X509_V_ERR_CRL_SIGNATURE_FAILURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT.html'
+                                  title='openssl_sys::X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT'>X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_DIFFERENT_CRL_SCOPE.html'
+                                  title='openssl_sys::X509_V_ERR_DIFFERENT_CRL_SCOPE'>X509_V_ERR_DIFFERENT_CRL_SCOPE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD.html'
+                                  title='openssl_sys::X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD'>X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD.html'
+                                  title='openssl_sys::X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD'>X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD.html'
+                                  title='openssl_sys::X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD'>X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD.html'
+                                  title='openssl_sys::X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD'>X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_EXCLUDED_VIOLATION.html'
+                                  title='openssl_sys::X509_V_ERR_EXCLUDED_VIOLATION'>X509_V_ERR_EXCLUDED_VIOLATION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_INVALID_CA.html'
+                                  title='openssl_sys::X509_V_ERR_INVALID_CA'>X509_V_ERR_INVALID_CA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_INVALID_EXTENSION.html'
+                                  title='openssl_sys::X509_V_ERR_INVALID_EXTENSION'>X509_V_ERR_INVALID_EXTENSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_INVALID_NON_CA.html'
+                                  title='openssl_sys::X509_V_ERR_INVALID_NON_CA'>X509_V_ERR_INVALID_NON_CA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_INVALID_POLICY_EXTENSION.html'
+                                  title='openssl_sys::X509_V_ERR_INVALID_POLICY_EXTENSION'>X509_V_ERR_INVALID_POLICY_EXTENSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_INVALID_PURPOSE.html'
+                                  title='openssl_sys::X509_V_ERR_INVALID_PURPOSE'>X509_V_ERR_INVALID_PURPOSE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_KEYUSAGE_NO_CERTSIGN.html'
+                                  title='openssl_sys::X509_V_ERR_KEYUSAGE_NO_CERTSIGN'>X509_V_ERR_KEYUSAGE_NO_CERTSIGN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_KEYUSAGE_NO_CRL_SIGN.html'
+                                  title='openssl_sys::X509_V_ERR_KEYUSAGE_NO_CRL_SIGN'>X509_V_ERR_KEYUSAGE_NO_CRL_SIGN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_KEYUSAGE_NO_DIGITAL_SIGNATURE.html'
+                                  title='openssl_sys::X509_V_ERR_KEYUSAGE_NO_DIGITAL_SIGNATURE'>X509_V_ERR_KEYUSAGE_NO_DIGITAL_SIGNATURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_NO_EXPLICIT_POLICY.html'
+                                  title='openssl_sys::X509_V_ERR_NO_EXPLICIT_POLICY'>X509_V_ERR_NO_EXPLICIT_POLICY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_OUT_OF_MEM.html'
+                                  title='openssl_sys::X509_V_ERR_OUT_OF_MEM'>X509_V_ERR_OUT_OF_MEM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_PATH_LENGTH_EXCEEDED.html'
+                                  title='openssl_sys::X509_V_ERR_PATH_LENGTH_EXCEEDED'>X509_V_ERR_PATH_LENGTH_EXCEEDED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_PERMITTED_VIOLATION.html'
+                                  title='openssl_sys::X509_V_ERR_PERMITTED_VIOLATION'>X509_V_ERR_PERMITTED_VIOLATION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_PROXY_CERTIFICATES_NOT_ALLOWED.html'
+                                  title='openssl_sys::X509_V_ERR_PROXY_CERTIFICATES_NOT_ALLOWED'>X509_V_ERR_PROXY_CERTIFICATES_NOT_ALLOWED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_PROXY_PATH_LENGTH_EXCEEDED.html'
+                                  title='openssl_sys::X509_V_ERR_PROXY_PATH_LENGTH_EXCEEDED'>X509_V_ERR_PROXY_PATH_LENGTH_EXCEEDED</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN.html'
+                                  title='openssl_sys::X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN'>X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_SUBJECT_ISSUER_MISMATCH.html'
+                                  title='openssl_sys::X509_V_ERR_SUBJECT_ISSUER_MISMATCH'>X509_V_ERR_SUBJECT_ISSUER_MISMATCH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_SUBTREE_MINMAX.html'
+                                  title='openssl_sys::X509_V_ERR_SUBTREE_MINMAX'>X509_V_ERR_SUBTREE_MINMAX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY'>X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE'>X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE'>X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_GET_CRL.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_GET_CRL'>X509_V_ERR_UNABLE_TO_GET_CRL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER'>X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT'>X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY'>X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE.html'
+                                  title='openssl_sys::X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE'>X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION.html'
+                                  title='openssl_sys::X509_V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION'>X509_V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION.html'
+                                  title='openssl_sys::X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION'>X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNNESTED_RESOURCE.html'
+                                  title='openssl_sys::X509_V_ERR_UNNESTED_RESOURCE'>X509_V_ERR_UNNESTED_RESOURCE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNSUPPORTED_CONSTRAINT_SYNTAX.html'
+                                  title='openssl_sys::X509_V_ERR_UNSUPPORTED_CONSTRAINT_SYNTAX'>X509_V_ERR_UNSUPPORTED_CONSTRAINT_SYNTAX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNSUPPORTED_CONSTRAINT_TYPE.html'
+                                  title='openssl_sys::X509_V_ERR_UNSUPPORTED_CONSTRAINT_TYPE'>X509_V_ERR_UNSUPPORTED_CONSTRAINT_TYPE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNSUPPORTED_EXTENSION_FEATURE.html'
+                                  title='openssl_sys::X509_V_ERR_UNSUPPORTED_EXTENSION_FEATURE'>X509_V_ERR_UNSUPPORTED_EXTENSION_FEATURE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_ERR_UNSUPPORTED_NAME_SYNTAX.html'
+                                  title='openssl_sys::X509_V_ERR_UNSUPPORTED_NAME_SYNTAX'>X509_V_ERR_UNSUPPORTED_NAME_SYNTAX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.X509_V_OK.html'
+                                  title='openssl_sys::X509_V_OK'>X509_V_OK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_INTEGER_set.html'
+                                  title='openssl_sys::ASN1_INTEGER_set'>ASN1_INTEGER_set</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_STRING_data.html'
+                                  title='openssl_sys::ASN1_STRING_data'>ASN1_STRING_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_STRING_length.html'
+                                  title='openssl_sys::ASN1_STRING_length'>ASN1_STRING_length</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_STRING_to_UTF8.html'
+                                  title='openssl_sys::ASN1_STRING_to_UTF8'>ASN1_STRING_to_UTF8</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_STRING_type_new.html'
+                                  title='openssl_sys::ASN1_STRING_type_new'>ASN1_STRING_type_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_TIME_free.html'
+                                  title='openssl_sys::ASN1_TIME_free'>ASN1_TIME_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ASN1_TIME_print.html'
+                                  title='openssl_sys::ASN1_TIME_print'>ASN1_TIME_print</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_clear_flags.html'
+                                  title='openssl_sys::BIO_clear_flags'>BIO_clear_flags</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_clear_retry_flags.html'
+                                  title='openssl_sys::BIO_clear_retry_flags'>BIO_clear_retry_flags</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_ctrl.html'
+                                  title='openssl_sys::BIO_ctrl'>BIO_ctrl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_free_all.html'
+                                  title='openssl_sys::BIO_free_all'>BIO_free_all</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_get_mem_data.html'
+                                  title='openssl_sys::BIO_get_mem_data'>BIO_get_mem_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_new.html'
+                                  title='openssl_sys::BIO_new'>BIO_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_new_fp.html'
+                                  title='openssl_sys::BIO_new_fp'>BIO_new_fp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_new_mem_buf.html'
+                                  title='openssl_sys::BIO_new_mem_buf'>BIO_new_mem_buf</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_new_socket.html'
+                                  title='openssl_sys::BIO_new_socket'>BIO_new_socket</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_read.html'
+                                  title='openssl_sys::BIO_read'>BIO_read</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_s_file.html'
+                                  title='openssl_sys::BIO_s_file'>BIO_s_file</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_s_mem.html'
+                                  title='openssl_sys::BIO_s_mem'>BIO_s_mem</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_set_flags.html'
+                                  title='openssl_sys::BIO_set_flags'>BIO_set_flags</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_set_retry_read.html'
+                                  title='openssl_sys::BIO_set_retry_read'>BIO_set_retry_read</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_set_retry_write.html'
+                                  title='openssl_sys::BIO_set_retry_write'>BIO_set_retry_write</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BIO_write.html'
+                                  title='openssl_sys::BIO_write'>BIO_write</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_CTX_free.html'
+                                  title='openssl_sys::BN_CTX_free'>BN_CTX_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_CTX_new.html'
+                                  title='openssl_sys::BN_CTX_new'>BN_CTX_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_add.html'
+                                  title='openssl_sys::BN_add'>BN_add</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_add_word.html'
+                                  title='openssl_sys::BN_add_word'>BN_add_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_bin2bn.html'
+                                  title='openssl_sys::BN_bin2bn'>BN_bin2bn</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_bn2bin.html'
+                                  title='openssl_sys::BN_bn2bin'>BN_bn2bin</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_bn2dec.html'
+                                  title='openssl_sys::BN_bn2dec'>BN_bn2dec</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_bn2hex.html'
+                                  title='openssl_sys::BN_bn2hex'>BN_bn2hex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_clear_bit.html'
+                                  title='openssl_sys::BN_clear_bit'>BN_clear_bit</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_clear_free.html'
+                                  title='openssl_sys::BN_clear_free'>BN_clear_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_cmp.html'
+                                  title='openssl_sys::BN_cmp'>BN_cmp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_dec2bn.html'
+                                  title='openssl_sys::BN_dec2bn'>BN_dec2bn</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_div.html'
+                                  title='openssl_sys::BN_div'>BN_div</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_div_word.html'
+                                  title='openssl_sys::BN_div_word'>BN_div_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_dup.html'
+                                  title='openssl_sys::BN_dup'>BN_dup</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_exp.html'
+                                  title='openssl_sys::BN_exp'>BN_exp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_gcd.html'
+                                  title='openssl_sys::BN_gcd'>BN_gcd</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_generate_prime_ex.html'
+                                  title='openssl_sys::BN_generate_prime_ex'>BN_generate_prime_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_hex2bn.html'
+                                  title='openssl_sys::BN_hex2bn'>BN_hex2bn</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_is_bit_set.html'
+                                  title='openssl_sys::BN_is_bit_set'>BN_is_bit_set</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_is_prime_ex.html'
+                                  title='openssl_sys::BN_is_prime_ex'>BN_is_prime_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_is_prime_fasttest_ex.html'
+                                  title='openssl_sys::BN_is_prime_fasttest_ex'>BN_is_prime_fasttest_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_lshift.html'
+                                  title='openssl_sys::BN_lshift'>BN_lshift</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_lshift1.html'
+                                  title='openssl_sys::BN_lshift1'>BN_lshift1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mask_bits.html'
+                                  title='openssl_sys::BN_mask_bits'>BN_mask_bits</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_add.html'
+                                  title='openssl_sys::BN_mod_add'>BN_mod_add</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_exp.html'
+                                  title='openssl_sys::BN_mod_exp'>BN_mod_exp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_inverse.html'
+                                  title='openssl_sys::BN_mod_inverse'>BN_mod_inverse</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_mul.html'
+                                  title='openssl_sys::BN_mod_mul'>BN_mod_mul</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_sqr.html'
+                                  title='openssl_sys::BN_mod_sqr'>BN_mod_sqr</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_sub.html'
+                                  title='openssl_sys::BN_mod_sub'>BN_mod_sub</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mod_word.html'
+                                  title='openssl_sys::BN_mod_word'>BN_mod_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mul.html'
+                                  title='openssl_sys::BN_mul'>BN_mul</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_mul_word.html'
+                                  title='openssl_sys::BN_mul_word'>BN_mul_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_new.html'
+                                  title='openssl_sys::BN_new'>BN_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_nnmod.html'
+                                  title='openssl_sys::BN_nnmod'>BN_nnmod</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_num_bits.html'
+                                  title='openssl_sys::BN_num_bits'>BN_num_bits</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_pseudo_rand.html'
+                                  title='openssl_sys::BN_pseudo_rand'>BN_pseudo_rand</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_pseudo_rand_range.html'
+                                  title='openssl_sys::BN_pseudo_rand_range'>BN_pseudo_rand_range</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_rand.html'
+                                  title='openssl_sys::BN_rand'>BN_rand</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_rand_range.html'
+                                  title='openssl_sys::BN_rand_range'>BN_rand_range</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_rshift.html'
+                                  title='openssl_sys::BN_rshift'>BN_rshift</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_rshift1.html'
+                                  title='openssl_sys::BN_rshift1'>BN_rshift1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_set_bit.html'
+                                  title='openssl_sys::BN_set_bit'>BN_set_bit</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_set_negative.html'
+                                  title='openssl_sys::BN_set_negative'>BN_set_negative</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_set_word.html'
+                                  title='openssl_sys::BN_set_word'>BN_set_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_sqr.html'
+                                  title='openssl_sys::BN_sqr'>BN_sqr</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_sub.html'
+                                  title='openssl_sys::BN_sub'>BN_sub</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_sub_word.html'
+                                  title='openssl_sys::BN_sub_word'>BN_sub_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.BN_ucmp.html'
+                                  title='openssl_sys::BN_ucmp'>BN_ucmp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.CRYPTO_free.html'
+                                  title='openssl_sys::CRYPTO_free'>CRYPTO_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.CRYPTO_memcmp.html'
+                                  title='openssl_sys::CRYPTO_memcmp'>CRYPTO_memcmp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.CRYPTO_num_locks.html'
+                                  title='openssl_sys::CRYPTO_num_locks'>CRYPTO_num_locks</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.CRYPTO_set_id_callback.html'
+                                  title='openssl_sys::CRYPTO_set_id_callback'>CRYPTO_set_id_callback</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.CRYPTO_set_locking_callback.html'
+                                  title='openssl_sys::CRYPTO_set_locking_callback'>CRYPTO_set_locking_callback</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DH_free.html'
+                                  title='openssl_sys::DH_free'>DH_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DH_new_from_params.html'
+                                  title='openssl_sys::DH_new_from_params'>DH_new_from_params</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_free.html'
+                                  title='openssl_sys::DSA_free'>DSA_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_generate_key.html'
+                                  title='openssl_sys::DSA_generate_key'>DSA_generate_key</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_generate_parameters_ex.html'
+                                  title='openssl_sys::DSA_generate_parameters_ex'>DSA_generate_parameters_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_new.html'
+                                  title='openssl_sys::DSA_new'>DSA_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_sign.html'
+                                  title='openssl_sys::DSA_sign'>DSA_sign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_size.html'
+                                  title='openssl_sys::DSA_size'>DSA_size</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.DSA_verify.html'
+                                  title='openssl_sys::DSA_verify'>DSA_verify</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ERR_func_error_string.html'
+                                  title='openssl_sys::ERR_func_error_string'>ERR_func_error_string</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ERR_get_error.html'
+                                  title='openssl_sys::ERR_get_error'>ERR_get_error</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ERR_lib_error_string.html'
+                                  title='openssl_sys::ERR_lib_error_string'>ERR_lib_error_string</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ERR_load_crypto_strings.html'
+                                  title='openssl_sys::ERR_load_crypto_strings'>ERR_load_crypto_strings</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ERR_reason_error_string.html'
+                                  title='openssl_sys::ERR_reason_error_string'>ERR_reason_error_string</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_BytesToKey.html'
+                                  title='openssl_sys::EVP_BytesToKey'>EVP_BytesToKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_CTX_free.html'
+                                  title='openssl_sys::EVP_CIPHER_CTX_free'>EVP_CIPHER_CTX_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_CTX_new.html'
+                                  title='openssl_sys::EVP_CIPHER_CTX_new'>EVP_CIPHER_CTX_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_CTX_set_key_length.html'
+                                  title='openssl_sys::EVP_CIPHER_CTX_set_key_length'>EVP_CIPHER_CTX_set_key_length</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_CTX_set_padding.html'
+                                  title='openssl_sys::EVP_CIPHER_CTX_set_padding'>EVP_CIPHER_CTX_set_padding</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_block_size.html'
+                                  title='openssl_sys::EVP_CIPHER_block_size'>EVP_CIPHER_block_size</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_iv_length.html'
+                                  title='openssl_sys::EVP_CIPHER_iv_length'>EVP_CIPHER_iv_length</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CIPHER_key_length.html'
+                                  title='openssl_sys::EVP_CIPHER_key_length'>EVP_CIPHER_key_length</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CipherFinal.html'
+                                  title='openssl_sys::EVP_CipherFinal'>EVP_CipherFinal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CipherInit.html'
+                                  title='openssl_sys::EVP_CipherInit'>EVP_CipherInit</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CipherInit_ex.html'
+                                  title='openssl_sys::EVP_CipherInit_ex'>EVP_CipherInit_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_CipherUpdate.html'
+                                  title='openssl_sys::EVP_CipherUpdate'>EVP_CipherUpdate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_DigestFinal.html'
+                                  title='openssl_sys::EVP_DigestFinal'>EVP_DigestFinal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_DigestFinal_ex.html'
+                                  title='openssl_sys::EVP_DigestFinal_ex'>EVP_DigestFinal_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_DigestInit.html'
+                                  title='openssl_sys::EVP_DigestInit'>EVP_DigestInit</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_DigestInit_ex.html'
+                                  title='openssl_sys::EVP_DigestInit_ex'>EVP_DigestInit_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_DigestUpdate.html'
+                                  title='openssl_sys::EVP_DigestUpdate'>EVP_DigestUpdate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_MD_CTX_copy_ex.html'
+                                  title='openssl_sys::EVP_MD_CTX_copy_ex'>EVP_MD_CTX_copy_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_MD_CTX_create.html'
+                                  title='openssl_sys::EVP_MD_CTX_create'>EVP_MD_CTX_create</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_MD_CTX_destroy.html'
+                                  title='openssl_sys::EVP_MD_CTX_destroy'>EVP_MD_CTX_destroy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_assign.html'
+                                  title='openssl_sys::EVP_PKEY_assign'>EVP_PKEY_assign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_cmp.html'
+                                  title='openssl_sys::EVP_PKEY_cmp'>EVP_PKEY_cmp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_copy_parameters.html'
+                                  title='openssl_sys::EVP_PKEY_copy_parameters'>EVP_PKEY_copy_parameters</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_free.html'
+                                  title='openssl_sys::EVP_PKEY_free'>EVP_PKEY_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_get1_RSA.html'
+                                  title='openssl_sys::EVP_PKEY_get1_RSA'>EVP_PKEY_get1_RSA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_new.html'
+                                  title='openssl_sys::EVP_PKEY_new'>EVP_PKEY_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_PKEY_set1_RSA.html'
+                                  title='openssl_sys::EVP_PKEY_set1_RSA'>EVP_PKEY_set1_RSA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_128_cbc.html'
+                                  title='openssl_sys::EVP_aes_128_cbc'>EVP_aes_128_cbc</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_128_cfb1.html'
+                                  title='openssl_sys::EVP_aes_128_cfb1'>EVP_aes_128_cfb1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_128_cfb128.html'
+                                  title='openssl_sys::EVP_aes_128_cfb128'>EVP_aes_128_cfb128</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_128_cfb8.html'
+                                  title='openssl_sys::EVP_aes_128_cfb8'>EVP_aes_128_cfb8</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_128_ecb.html'
+                                  title='openssl_sys::EVP_aes_128_ecb'>EVP_aes_128_ecb</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_256_cbc.html'
+                                  title='openssl_sys::EVP_aes_256_cbc'>EVP_aes_256_cbc</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_256_cfb1.html'
+                                  title='openssl_sys::EVP_aes_256_cfb1'>EVP_aes_256_cfb1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_256_cfb128.html'
+                                  title='openssl_sys::EVP_aes_256_cfb128'>EVP_aes_256_cfb128</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_256_cfb8.html'
+                                  title='openssl_sys::EVP_aes_256_cfb8'>EVP_aes_256_cfb8</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_aes_256_ecb.html'
+                                  title='openssl_sys::EVP_aes_256_ecb'>EVP_aes_256_ecb</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_des_cbc.html'
+                                  title='openssl_sys::EVP_des_cbc'>EVP_des_cbc</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_des_ecb.html'
+                                  title='openssl_sys::EVP_des_ecb'>EVP_des_ecb</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_md5.html'
+                                  title='openssl_sys::EVP_md5'>EVP_md5</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_rc4.html'
+                                  title='openssl_sys::EVP_rc4'>EVP_rc4</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_ripemd160.html'
+                                  title='openssl_sys::EVP_ripemd160'>EVP_ripemd160</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_sha1.html'
+                                  title='openssl_sys::EVP_sha1'>EVP_sha1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_sha224.html'
+                                  title='openssl_sys::EVP_sha224'>EVP_sha224</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_sha256.html'
+                                  title='openssl_sys::EVP_sha256'>EVP_sha256</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_sha384.html'
+                                  title='openssl_sys::EVP_sha384'>EVP_sha384</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.EVP_sha512.html'
+                                  title='openssl_sys::EVP_sha512'>EVP_sha512</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.GENERAL_NAME_free.html'
+                                  title='openssl_sys::GENERAL_NAME_free'>GENERAL_NAME_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.HMAC_CTX_cleanup.html'
+                                  title='openssl_sys::HMAC_CTX_cleanup'>HMAC_CTX_cleanup</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.HMAC_CTX_init.html'
+                                  title='openssl_sys::HMAC_CTX_init'>HMAC_CTX_init</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.OPENSSL_add_all_algorithms_noconf.html'
+                                  title='openssl_sys::OPENSSL_add_all_algorithms_noconf'>OPENSSL_add_all_algorithms_noconf</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_DHparams.html'
+                                  title='openssl_sys::PEM_read_bio_DHparams'>PEM_read_bio_DHparams</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_DSAPrivateKey.html'
+                                  title='openssl_sys::PEM_read_bio_DSAPrivateKey'>PEM_read_bio_DSAPrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_DSA_PUBKEY.html'
+                                  title='openssl_sys::PEM_read_bio_DSA_PUBKEY'>PEM_read_bio_DSA_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_PUBKEY.html'
+                                  title='openssl_sys::PEM_read_bio_PUBKEY'>PEM_read_bio_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_PrivateKey.html'
+                                  title='openssl_sys::PEM_read_bio_PrivateKey'>PEM_read_bio_PrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_RSAPrivateKey.html'
+                                  title='openssl_sys::PEM_read_bio_RSAPrivateKey'>PEM_read_bio_RSAPrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_RSA_PUBKEY.html'
+                                  title='openssl_sys::PEM_read_bio_RSA_PUBKEY'>PEM_read_bio_RSA_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_X509.html'
+                                  title='openssl_sys::PEM_read_bio_X509'>PEM_read_bio_X509</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_read_bio_X509_REQ.html'
+                                  title='openssl_sys::PEM_read_bio_X509_REQ'>PEM_read_bio_X509_REQ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_DSAPrivateKey.html'
+                                  title='openssl_sys::PEM_write_bio_DSAPrivateKey'>PEM_write_bio_DSAPrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_DSA_PUBKEY.html'
+                                  title='openssl_sys::PEM_write_bio_DSA_PUBKEY'>PEM_write_bio_DSA_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_PUBKEY.html'
+                                  title='openssl_sys::PEM_write_bio_PUBKEY'>PEM_write_bio_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_PrivateKey.html'
+                                  title='openssl_sys::PEM_write_bio_PrivateKey'>PEM_write_bio_PrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_RSAPrivateKey.html'
+                                  title='openssl_sys::PEM_write_bio_RSAPrivateKey'>PEM_write_bio_RSAPrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_RSAPublicKey.html'
+                                  title='openssl_sys::PEM_write_bio_RSAPublicKey'>PEM_write_bio_RSAPublicKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_RSA_PUBKEY.html'
+                                  title='openssl_sys::PEM_write_bio_RSA_PUBKEY'>PEM_write_bio_RSA_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_X509.html'
+                                  title='openssl_sys::PEM_write_bio_X509'>PEM_write_bio_X509</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PEM_write_bio_X509_REQ.html'
+                                  title='openssl_sys::PEM_write_bio_X509_REQ'>PEM_write_bio_X509_REQ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PKCS12_free.html'
+                                  title='openssl_sys::PKCS12_free'>PKCS12_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PKCS12_parse.html'
+                                  title='openssl_sys::PKCS12_parse'>PKCS12_parse</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.PKCS5_PBKDF2_HMAC_SHA1.html'
+                                  title='openssl_sys::PKCS5_PBKDF2_HMAC_SHA1'>PKCS5_PBKDF2_HMAC_SHA1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RAND_bytes.html'
+                                  title='openssl_sys::RAND_bytes'>RAND_bytes</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_free.html'
+                                  title='openssl_sys::RSA_free'>RSA_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_generate_key.html'
+                                  title='openssl_sys::RSA_generate_key'>RSA_generate_key</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_generate_key_ex.html'
+                                  title='openssl_sys::RSA_generate_key_ex'>RSA_generate_key_ex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_new.html'
+                                  title='openssl_sys::RSA_new'>RSA_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_private_decrypt.html'
+                                  title='openssl_sys::RSA_private_decrypt'>RSA_private_decrypt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_private_encrypt.html'
+                                  title='openssl_sys::RSA_private_encrypt'>RSA_private_encrypt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_public_decrypt.html'
+                                  title='openssl_sys::RSA_public_decrypt'>RSA_public_decrypt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_public_encrypt.html'
+                                  title='openssl_sys::RSA_public_encrypt'>RSA_public_encrypt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_sign.html'
+                                  title='openssl_sys::RSA_sign'>RSA_sign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_size.html'
+                                  title='openssl_sys::RSA_size'>RSA_size</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.RSA_verify.html'
+                                  title='openssl_sys::RSA_verify'>RSA_verify</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CIPHER_description.html'
+                                  title='openssl_sys::SSL_CIPHER_description'>SSL_CIPHER_description</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CIPHER_get_bits.html'
+                                  title='openssl_sys::SSL_CIPHER_get_bits'>SSL_CIPHER_get_bits</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CIPHER_get_name.html'
+                                  title='openssl_sys::SSL_CIPHER_get_name'>SSL_CIPHER_get_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CIPHER_get_version.html'
+                                  title='openssl_sys::SSL_CIPHER_get_version'>SSL_CIPHER_get_version</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_COMP_get_name.html'
+                                  title='openssl_sys::SSL_COMP_get_name'>SSL_COMP_get_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_add_extra_chain_cert.html'
+                                  title='openssl_sys::SSL_CTX_add_extra_chain_cert'>SSL_CTX_add_extra_chain_cert</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_callback_ctrl.html'
+                                  title='openssl_sys::SSL_CTX_callback_ctrl'>SSL_CTX_callback_ctrl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_check_private_key.html'
+                                  title='openssl_sys::SSL_CTX_check_private_key'>SSL_CTX_check_private_key</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_clear_options.html'
+                                  title='openssl_sys::SSL_CTX_clear_options'>SSL_CTX_clear_options</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_ctrl.html'
+                                  title='openssl_sys::SSL_CTX_ctrl'>SSL_CTX_ctrl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_free.html'
+                                  title='openssl_sys::SSL_CTX_free'>SSL_CTX_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_get_ex_data.html'
+                                  title='openssl_sys::SSL_CTX_get_ex_data'>SSL_CTX_get_ex_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_get_ex_new_index.html'
+                                  title='openssl_sys::SSL_CTX_get_ex_new_index'>SSL_CTX_get_ex_new_index</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_get_options.html'
+                                  title='openssl_sys::SSL_CTX_get_options'>SSL_CTX_get_options</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_load_verify_locations.html'
+                                  title='openssl_sys::SSL_CTX_load_verify_locations'>SSL_CTX_load_verify_locations</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_new.html'
+                                  title='openssl_sys::SSL_CTX_new'>SSL_CTX_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_cipher_list.html'
+                                  title='openssl_sys::SSL_CTX_set_cipher_list'>SSL_CTX_set_cipher_list</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_default_verify_paths.html'
+                                  title='openssl_sys::SSL_CTX_set_default_verify_paths'>SSL_CTX_set_default_verify_paths</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_ex_data.html'
+                                  title='openssl_sys::SSL_CTX_set_ex_data'>SSL_CTX_set_ex_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_mode.html'
+                                  title='openssl_sys::SSL_CTX_set_mode'>SSL_CTX_set_mode</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_options.html'
+                                  title='openssl_sys::SSL_CTX_set_options'>SSL_CTX_set_options</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_read_ahead.html'
+                                  title='openssl_sys::SSL_CTX_set_read_ahead'>SSL_CTX_set_read_ahead</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_session_id_context.html'
+                                  title='openssl_sys::SSL_CTX_set_session_id_context'>SSL_CTX_set_session_id_context</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_tlsext_servername_callback.html'
+                                  title='openssl_sys::SSL_CTX_set_tlsext_servername_callback'>SSL_CTX_set_tlsext_servername_callback</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_tmp_dh.html'
+                                  title='openssl_sys::SSL_CTX_set_tmp_dh'>SSL_CTX_set_tmp_dh</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_verify.html'
+                                  title='openssl_sys::SSL_CTX_set_verify'>SSL_CTX_set_verify</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_set_verify_depth.html'
+                                  title='openssl_sys::SSL_CTX_set_verify_depth'>SSL_CTX_set_verify_depth</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_use_PrivateKey.html'
+                                  title='openssl_sys::SSL_CTX_use_PrivateKey'>SSL_CTX_use_PrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_use_PrivateKey_file.html'
+                                  title='openssl_sys::SSL_CTX_use_PrivateKey_file'>SSL_CTX_use_PrivateKey_file</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_use_certificate.html'
+                                  title='openssl_sys::SSL_CTX_use_certificate'>SSL_CTX_use_certificate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_use_certificate_chain_file.html'
+                                  title='openssl_sys::SSL_CTX_use_certificate_chain_file'>SSL_CTX_use_certificate_chain_file</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_CTX_use_certificate_file.html'
+                                  title='openssl_sys::SSL_CTX_use_certificate_file'>SSL_CTX_use_certificate_file</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_accept.html'
+                                  title='openssl_sys::SSL_accept'>SSL_accept</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_connect.html'
+                                  title='openssl_sys::SSL_connect'>SSL_connect</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_ctrl.html'
+                                  title='openssl_sys::SSL_ctrl'>SSL_ctrl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_do_handshake.html'
+                                  title='openssl_sys::SSL_do_handshake'>SSL_do_handshake</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_free.html'
+                                  title='openssl_sys::SSL_free'>SSL_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_SSL_CTX.html'
+                                  title='openssl_sys::SSL_get_SSL_CTX'>SSL_get_SSL_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_current_cipher.html'
+                                  title='openssl_sys::SSL_get_current_cipher'>SSL_get_current_cipher</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_current_compression.html'
+                                  title='openssl_sys::SSL_get_current_compression'>SSL_get_current_compression</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_error.html'
+                                  title='openssl_sys::SSL_get_error'>SSL_get_error</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_ex_data.html'
+                                  title='openssl_sys::SSL_get_ex_data'>SSL_get_ex_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_ex_data_X509_STORE_CTX_idx.html'
+                                  title='openssl_sys::SSL_get_ex_data_X509_STORE_CTX_idx'>SSL_get_ex_data_X509_STORE_CTX_idx</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_ex_new_index.html'
+                                  title='openssl_sys::SSL_get_ex_new_index'>SSL_get_ex_new_index</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_peer_certificate.html'
+                                  title='openssl_sys::SSL_get_peer_certificate'>SSL_get_peer_certificate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_rbio.html'
+                                  title='openssl_sys::SSL_get_rbio'>SSL_get_rbio</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_servername.html'
+                                  title='openssl_sys::SSL_get_servername'>SSL_get_servername</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_ssl_method.html'
+                                  title='openssl_sys::SSL_get_ssl_method'>SSL_get_ssl_method</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_version.html'
+                                  title='openssl_sys::SSL_get_version'>SSL_get_version</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_get_wbio.html'
+                                  title='openssl_sys::SSL_get_wbio'>SSL_get_wbio</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_library_init.html'
+                                  title='openssl_sys::SSL_library_init'>SSL_library_init</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_load_error_strings.html'
+                                  title='openssl_sys::SSL_load_error_strings'>SSL_load_error_strings</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_new.html'
+                                  title='openssl_sys::SSL_new'>SSL_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_pending.html'
+                                  title='openssl_sys::SSL_pending'>SSL_pending</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_read.html'
+                                  title='openssl_sys::SSL_read'>SSL_read</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_set_SSL_CTX.html'
+                                  title='openssl_sys::SSL_set_SSL_CTX'>SSL_set_SSL_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_set_bio.html'
+                                  title='openssl_sys::SSL_set_bio'>SSL_set_bio</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_set_ex_data.html'
+                                  title='openssl_sys::SSL_set_ex_data'>SSL_set_ex_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_set_tlsext_host_name.html'
+                                  title='openssl_sys::SSL_set_tlsext_host_name'>SSL_set_tlsext_host_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_set_verify.html'
+                                  title='openssl_sys::SSL_set_verify'>SSL_set_verify</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_state_string.html'
+                                  title='openssl_sys::SSL_state_string'>SSL_state_string</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_state_string_long.html'
+                                  title='openssl_sys::SSL_state_string_long'>SSL_state_string_long</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSL_write.html'
+                                  title='openssl_sys::SSL_write'>SSL_write</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSLeay.html'
+                                  title='openssl_sys::SSLeay'>SSLeay</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSLeay_version.html'
+                                  title='openssl_sys::SSLeay_version'>SSLeay_version</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSLv23_method.html'
+                                  title='openssl_sys::SSLv23_method'>SSLv23_method</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.SSLv3_method.html'
+                                  title='openssl_sys::SSLv3_method'>SSLv3_method</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.TLSv1_method.html'
+                                  title='openssl_sys::TLSv1_method'>TLSv1_method</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509V3_EXT_conf.html'
+                                  title='openssl_sys::X509V3_EXT_conf'>X509V3_EXT_conf</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509V3_EXT_conf_nid.html'
+                                  title='openssl_sys::X509V3_EXT_conf_nid'>X509V3_EXT_conf_nid</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509V3_set_ctx.html'
+                                  title='openssl_sys::X509V3_set_ctx'>X509V3_set_ctx</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_EXTENSION_free.html'
+                                  title='openssl_sys::X509_EXTENSION_free'>X509_EXTENSION_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_NAME_ENTRY_get_data.html'
+                                  title='openssl_sys::X509_NAME_ENTRY_get_data'>X509_NAME_ENTRY_get_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_NAME_add_entry_by_txt.html'
+                                  title='openssl_sys::X509_NAME_add_entry_by_txt'>X509_NAME_add_entry_by_txt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_NAME_get_entry.html'
+                                  title='openssl_sys::X509_NAME_get_entry'>X509_NAME_get_entry</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_NAME_get_index_by_NID.html'
+                                  title='openssl_sys::X509_NAME_get_index_by_NID'>X509_NAME_get_index_by_NID</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_REQ_add_extensions.html'
+                                  title='openssl_sys::X509_REQ_add_extensions'>X509_REQ_add_extensions</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_REQ_free.html'
+                                  title='openssl_sys::X509_REQ_free'>X509_REQ_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_REQ_sign.html'
+                                  title='openssl_sys::X509_REQ_sign'>X509_REQ_sign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_STORE_CTX_get_current_cert.html'
+                                  title='openssl_sys::X509_STORE_CTX_get_current_cert'>X509_STORE_CTX_get_current_cert</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_STORE_CTX_get_error.html'
+                                  title='openssl_sys::X509_STORE_CTX_get_error'>X509_STORE_CTX_get_error</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_STORE_CTX_get_error_depth.html'
+                                  title='openssl_sys::X509_STORE_CTX_get_error_depth'>X509_STORE_CTX_get_error_depth</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_STORE_CTX_get_ex_data.html'
+                                  title='openssl_sys::X509_STORE_CTX_get_ex_data'>X509_STORE_CTX_get_ex_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_add_ext.html'
+                                  title='openssl_sys::X509_add_ext'>X509_add_ext</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_digest.html'
+                                  title='openssl_sys::X509_digest'>X509_digest</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_free.html'
+                                  title='openssl_sys::X509_free'>X509_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_get_ext_d2i.html'
+                                  title='openssl_sys::X509_get_ext_d2i'>X509_get_ext_d2i</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_get_pubkey.html'
+                                  title='openssl_sys::X509_get_pubkey'>X509_get_pubkey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_get_serialNumber.html'
+                                  title='openssl_sys::X509_get_serialNumber'>X509_get_serialNumber</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_get_subject_name.html'
+                                  title='openssl_sys::X509_get_subject_name'>X509_get_subject_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_gmtime_adj.html'
+                                  title='openssl_sys::X509_gmtime_adj'>X509_gmtime_adj</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_new.html'
+                                  title='openssl_sys::X509_new'>X509_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_set_issuer_name.html'
+                                  title='openssl_sys::X509_set_issuer_name'>X509_set_issuer_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_set_notAfter.html'
+                                  title='openssl_sys::X509_set_notAfter'>X509_set_notAfter</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_set_notBefore.html'
+                                  title='openssl_sys::X509_set_notBefore'>X509_set_notBefore</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_set_pubkey.html'
+                                  title='openssl_sys::X509_set_pubkey'>X509_set_pubkey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_set_version.html'
+                                  title='openssl_sys::X509_set_version'>X509_set_version</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_sign.html'
+                                  title='openssl_sys::X509_sign'>X509_sign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.X509_to_X509_REQ.html'
+                                  title='openssl_sys::X509_to_X509_REQ'>X509_to_X509_REQ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.d2i_PKCS12.html'
+                                  title='openssl_sys::d2i_PKCS12'>d2i_PKCS12</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.d2i_RSAPrivateKey.html'
+                                  title='openssl_sys::d2i_RSAPrivateKey'>d2i_RSAPrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.d2i_RSA_PUBKEY.html'
+                                  title='openssl_sys::d2i_RSA_PUBKEY'>d2i_RSA_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.d2i_X509.html'
+                                  title='openssl_sys::d2i_X509'>d2i_X509</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.i2d_RSAPrivateKey.html'
+                                  title='openssl_sys::i2d_RSAPrivateKey'>i2d_RSAPrivateKey</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.i2d_RSA_PUBKEY.html'
+                                  title='openssl_sys::i2d_RSA_PUBKEY'>i2d_RSA_PUBKEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.i2d_X509_REQ_bio.html'
+                                  title='openssl_sys::i2d_X509_REQ_bio'>i2d_X509_REQ_bio</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.i2d_X509_bio.html'
+                                  title='openssl_sys::i2d_X509_bio'>i2d_X509_bio</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.init.html'
+                                  title='openssl_sys::init'>init</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.sk_free.html'
+                                  title='openssl_sys::sk_free'>sk_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.sk_pop.html'
+                                  title='openssl_sys::sk_pop'>sk_pop</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.sk_pop_free.html'
+                                  title='openssl_sys::sk_pop_free'>sk_pop_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ASN1_INTEGER.html'
+                                  title='openssl_sys::ASN1_INTEGER'>ASN1_INTEGER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ASN1_STRING.html'
+                                  title='openssl_sys::ASN1_STRING'>ASN1_STRING</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ASN1_TIME.html'
+                                  title='openssl_sys::ASN1_TIME'>ASN1_TIME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ASN1_TYPE.html'
+                                  title='openssl_sys::ASN1_TYPE'>ASN1_TYPE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.BN_CTX.html'
+                                  title='openssl_sys::BN_CTX'>BN_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.BN_GENCB.html'
+                                  title='openssl_sys::BN_GENCB'>BN_GENCB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.COMP_METHOD.html'
+                                  title='openssl_sys::COMP_METHOD'>COMP_METHOD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.CRYPTO_EX_dup.html'
+                                  title='openssl_sys::CRYPTO_EX_dup'>CRYPTO_EX_dup</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.CRYPTO_EX_free.html'
+                                  title='openssl_sys::CRYPTO_EX_free'>CRYPTO_EX_free</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.CRYPTO_EX_new.html'
+                                  title='openssl_sys::CRYPTO_EX_new'>CRYPTO_EX_new</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.DH.html'
+                                  title='openssl_sys::DH'>DH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ENGINE.html'
+                                  title='openssl_sys::ENGINE'>ENGINE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.EVP_CIPHER_CTX.html'
+                                  title='openssl_sys::EVP_CIPHER_CTX'>EVP_CIPHER_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.EVP_MD.html'
+                                  title='openssl_sys::EVP_MD'>EVP_MD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.EVP_PKEY_CTX.html'
+                                  title='openssl_sys::EVP_PKEY_CTX'>EVP_PKEY_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.PasswordCallback.html'
+                                  title='openssl_sys::PasswordCallback'>PasswordCallback</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.SSL.html'
+                                  title='openssl_sys::SSL'>SSL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.SSL_CIPHER.html'
+                                  title='openssl_sys::SSL_CIPHER'>SSL_CIPHER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.SSL_CTX.html'
+                                  title='openssl_sys::SSL_CTX'>SSL_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.SSL_METHOD.html'
+                                  title='openssl_sys::SSL_METHOD'>SSL_METHOD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509.html'
+                                  title='openssl_sys::X509'>X509</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509_CRL.html'
+                                  title='openssl_sys::X509_CRL'>X509_CRL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509_EXTENSION.html'
+                                  title='openssl_sys::X509_EXTENSION'>X509_EXTENSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509_NAME.html'
+                                  title='openssl_sys::X509_NAME'>X509_NAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509_NAME_ENTRY.html'
+                                  title='openssl_sys::X509_NAME_ENTRY'>X509_NAME_ENTRY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509_REQ.html'
+                                  title='openssl_sys::X509_REQ'>X509_REQ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.X509_STORE_CTX.html'
+                                  title='openssl_sys::X509_STORE_CTX'>X509_STORE_CTX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.bio_info_cb.html'
+                                  title='openssl_sys::bio_info_cb'>bio_info_cb</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.bio_st.html'
+                                  title='openssl_sys::bio_st'>bio_st</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "openssl_sys";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

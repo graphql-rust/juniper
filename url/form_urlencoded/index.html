@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `form_urlencoded` mod in crate `url`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, form_urlencoded">
+
+    <title>url::form_urlencoded - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>url</a></p><script>window.sidebarCurrent = {name: 'form_urlencoded', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>url</a>::<wbr><a class='mod' href=''>form_urlencoded</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1252' class='srclink' href='../../src/url/form_urlencoded.rs.html#9-364' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Parser and serializer for the <a href="http://url.spec.whatwg.org/#application/x-www-form-urlencoded"><code>application/x-www-form-urlencoded</code> syntax</a>,
+as used by HTML forms.</p>
+
+<p>Converts between a string (such as an URL’s query string)
+and a sequence of (name, value) pairs.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ByteSerialize.html'
+                                  title='url::form_urlencoded::ByteSerialize'>ByteSerialize</a></td>
+                           <td class='docblock short'>
+                                <p>Return value of <code>byte_serialize()</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Parse.html'
+                                  title='url::form_urlencoded::Parse'>Parse</a></td>
+                           <td class='docblock short'>
+                                <p>The return type of <code>parse()</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ParseIntoOwned.html'
+                                  title='url::form_urlencoded::ParseIntoOwned'>ParseIntoOwned</a></td>
+                           <td class='docblock short'>
+                                <p>Like <code>Parse</code>, but yields pairs of <code>String</code> instead of pairs of <code>Cow&lt;str&gt;</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Serializer.html'
+                                  title='url::form_urlencoded::Serializer'>Serializer</a></td>
+                           <td class='docblock short'>
+                                <p>The <a href="https://url.spec.whatwg.org/#concept-urlencoded-serializer"><code>application/x-www-form-urlencoded</code> serializer</a>.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Target.html'
+                                  title='url::form_urlencoded::Target'>Target</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.byte_serialize.html'
+                                  title='url::form_urlencoded::byte_serialize'>byte_serialize</a></td>
+                           <td class='docblock short'>
+                                <p>The <a href="https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer"><code>application/x-www-form-urlencoded</code> byte serializer</a>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.parse.html'
+                                  title='url::form_urlencoded::parse'>parse</a></td>
+                           <td class='docblock short'>
+                                <p>Convert a byte string in the <code>application/x-www-form-urlencoded</code> syntax
+into a iterator of (name, value) pairs.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "url";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

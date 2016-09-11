@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `net` mod in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, net">
+
+    <title>hyper::net - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a></p><script>window.sidebarCurrent = {name: 'net', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>hyper</a>::<wbr><a class='mod' href=''>net</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6717' class='srclink' href='../../src/hyper/net.rs.html#1-894' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>A collection of traits abstracting over Listeners and Streams.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HttpConnector.html'
+                                  title='hyper::net::HttpConnector'>HttpConnector</a></td>
+                           <td class='docblock short'>
+                                <p>A connector that will produce HttpStreams.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HttpListener.html'
+                                  title='hyper::net::HttpListener'>HttpListener</a></td>
+                           <td class='docblock short'>
+                                <p>A <code>NetworkListener</code> for <code>HttpStream</code>s.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HttpStream.html'
+                                  title='hyper::net::HttpStream'>HttpStream</a></td>
+                           <td class='docblock short'>
+                                <p>A wrapper around a <code>TcpStream</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HttpsConnector.html'
+                                  title='hyper::net::HttpsConnector'>HttpsConnector</a></td>
+                           <td class='docblock short'>
+                                <p>A connector that can protect HTTP streams using SSL.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HttpsListener.html'
+                                  title='hyper::net::HttpsListener'>HttpsListener</a></td>
+                           <td class='docblock short'>
+                                <p>A Http Listener over SSL.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.NetworkConnections.html'
+                                  title='hyper::net::NetworkConnections'>NetworkConnections</a></td>
+                           <td class='docblock short'>
+                                <p>An iterator wrapper over a <code>NetworkAcceptor</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Openssl.html'
+                                  title='hyper::net::Openssl'>Openssl</a></td>
+                           <td class='docblock short'>
+                                <p>An implementation of <code>Ssl</code> for OpenSSL.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.OpensslClient.html'
+                                  title='hyper::net::OpensslClient'>OpensslClient</a></td>
+                           <td class='docblock short'>
+                                <p>A client-specific implementation of OpenSSL.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Fresh.html'
+                                  title='hyper::net::Fresh'>Fresh</a></td>
+                           <td class='docblock short'>
+                                <p>The write-status indicating headers have not been written.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.HttpsStream.html'
+                                  title='hyper::net::HttpsStream'>HttpsStream</a></td>
+                           <td class='docblock short'>
+                                <p>A stream over the HTTP protocol, possibly protected by SSL.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Streaming.html'
+                                  title='hyper::net::Streaming'>Streaming</a></td>
+                           <td class='docblock short'>
+                                <p>The write-status indicating headers have been written.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.NetworkConnector.html'
+                                  title='hyper::net::NetworkConnector'>NetworkConnector</a></td>
+                           <td class='docblock short'>
+                                <p>A connector creates a NetworkStream.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.NetworkListener.html'
+                                  title='hyper::net::NetworkListener'>NetworkListener</a></td>
+                           <td class='docblock short'>
+                                <p>An abstraction to listen for connections on a certain port.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.NetworkStream.html'
+                                  title='hyper::net::NetworkStream'>NetworkStream</a></td>
+                           <td class='docblock short'>
+                                <p>An abstraction over streams that a <code>Server</code> can utilize.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Ssl.html'
+                                  title='hyper::net::Ssl'>Ssl</a></td>
+                           <td class='docblock short'>
+                                <p>Deprecated</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.SslClient.html'
+                                  title='hyper::net::SslClient'>SslClient</a></td>
+                           <td class='docblock short'>
+                                <p>An abstraction to allow any SSL implementation to be used with client-side HttpsStreams.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.SslServer.html'
+                                  title='hyper::net::SslServer'>SslServer</a></td>
+                           <td class='docblock short'>
+                                <p>An abstraction to allow any SSL implementation to be used with server-side HttpsStreams.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["EncryptionPadding","Type of encryption padding to use."],["Parts",""],["Role","Represents a role an asymmetric key might be appropriate for."]],"struct":[["PKey",""]]});

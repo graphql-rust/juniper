@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `RootNode` struct in crate `juniper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, RootNode">
+
+    <title>juniper::RootNode - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>juniper</a></p><script>window.sidebarCurrent = {name: 'RootNode', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>juniper</a>::<wbr><a class='struct' href=''>RootNode</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2674' class='srclink' href='../src/juniper/src/schema/model.rs.html#14-22' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct RootNode&lt;InnerT,&nbsp;QueryT,&nbsp;MutationT&nbsp;=&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Root query node of a schema</p>
+
+<p>This brings the mutatino and query types together, and provides the
+predefined metadata fields.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;InnerT,&nbsp;QueryT,&nbsp;MutationT&gt; <a class='struct' href='../juniper/struct.RootNode.html' title='juniper::RootNode'>RootNode</a>&lt;InnerT,&nbsp;QueryT,&nbsp;MutationT&gt; <span class='where'>where QueryT: <a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;InnerT&gt;, MutationT: <a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;InnerT&gt;</span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-2729' class='srclink' href='../src/juniper/src/schema/model.rs.html#55-71' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(query_obj: QueryT, mutation_obj: MutationT) -&gt; <a class='struct' href='../juniper/struct.RootNode.html' title='juniper::RootNode'>RootNode</a>&lt;InnerT,&nbsp;QueryT,&nbsp;MutationT&gt;</code></h4>
+<div class='docblock'><p>Construct a new root node from query and mutation nodes</p>
+
+<p>If the schema should not support mutations, you can pass in <code>()</code> to
+remove the mutation type from the schema.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;CtxT,&nbsp;QueryT,&nbsp;MutationT&gt; <a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt; for <a class='struct' href='../juniper/struct.RootNode.html' title='juniper::RootNode'>RootNode</a>&lt;CtxT,&nbsp;QueryT,&nbsp;MutationT&gt; <span class='where'>where QueryT: <a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt;, MutationT: <a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt;</span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-2874' class='srclink' href='../src/juniper/src/schema/schema.rs.html#10-32' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.name' class='method'><code>fn <a href='../juniper/trait.GraphQLType.html#tymethod.name' class='fnname'>name</a>() -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'static <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code></h4>
+<div class='docblock'><p>The name of the GraphQL type to expose. <a href="../juniper/trait.GraphQLType.html#tymethod.name">Read more</a></p>
+</div><h4 id='method.meta' class='method'><code>fn <a href='../juniper/trait.GraphQLType.html#tymethod.meta' class='fnname'>meta</a>(registry: &amp;mut <a class='struct' href='../juniper/struct.Registry.html' title='juniper::Registry'>Registry</a>&lt;CtxT&gt;) -&gt; <a class='enum' href='../juniper/meta/enum.MetaType.html' title='juniper::meta::MetaType'>MetaType</a></code></h4>
+<div class='docblock'><p>The meta type representing this GraphQL type.</p>
+</div><h4 id='method.resolve_field' class='method'><code>fn <a href='../juniper/trait.GraphQLType.html#method.resolve_field' class='fnname'>resolve_field</a>(&amp;self, field: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, args: &amp;<a class='struct' href='../juniper/struct.Arguments.html' title='juniper::Arguments'>Arguments</a>, executor: &amp;mut <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;CtxT&gt;) -&gt; <a class='type' href='../juniper/type.ExecutionResult.html' title='juniper::ExecutionResult'>ExecutionResult</a></code></h4>
+<div class='docblock'><p>Resolve the value of a single field on this type. <a href="../juniper/trait.GraphQLType.html#method.resolve_field">Read more</a></p>
+</div><h4 id='method.resolve_into_type' class='method'><code>fn <a href='../juniper/trait.GraphQLType.html#method.resolve_into_type' class='fnname'>resolve_into_type</a>(&amp;self, type_name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, selection_set: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../juniper/enum.Selection.html' title='juniper::Selection'>Selection</a>&gt;&gt;, executor: &amp;mut <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;CtxT&gt;) -&gt; <a class='type' href='../juniper/type.ExecutionResult.html' title='juniper::ExecutionResult'>ExecutionResult</a></code></h4>
+<div class='docblock'><p>Resolve this interface or union into a concrete type <a href="../juniper/trait.GraphQLType.html#method.resolve_into_type">Read more</a></p>
+</div><h4 id='method.concrete_type_name' class='method'><code>fn <a href='../juniper/trait.GraphQLType.html#method.concrete_type_name' class='fnname'>concrete_type_name</a>(&amp;self, context: &amp;CtxT) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='docblock'><p>Return the concrete type name for this instance/union. <a href="../juniper/trait.GraphQLType.html#method.concrete_type_name">Read more</a></p>
+</div><h4 id='method.resolve' class='method'><code>fn <a href='../juniper/trait.GraphQLType.html#method.resolve' class='fnname'>resolve</a>(&amp;self, selection_set: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../juniper/enum.Selection.html' title='juniper::Selection'>Selection</a>&gt;&gt;, executor: &amp;mut <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;CtxT&gt;) -&gt; <a class='enum' href='../juniper/enum.Value.html' title='juniper::Value'>Value</a></code></h4>
+<div class='docblock'><p>Resolve the provided selection set against the current object. <a href="../juniper/trait.GraphQLType.html#method.resolve">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "juniper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

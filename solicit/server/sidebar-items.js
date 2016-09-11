@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ServerRequest","The struct represents a fully received request."],["SimpleServer","The struct implements a simple HTTP/2 server that allows users to register a request handler (a callback taking a `ServerRequest` and returning a `Response`) which is run on all received requests."]]});

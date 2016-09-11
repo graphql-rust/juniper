@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `CleartextConnector` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, CleartextConnector">
+
+    <title>solicit::http::client::CleartextConnector - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'CleartextConnector', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>client</a>::<wbr><a class='struct' href=''>CleartextConnector</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1277' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#95-100' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct CleartextConnector&lt;'a&gt; {
+    pub host: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>,
+    pub port: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>,
+}</pre><div class='docblock'><p>A struct that establishes a cleartext TCP connection that can be used by an HTTP/2
+connection. Defaults to using port 80.</p>
+
+<p>It assumes that the connection is based on prior knowledge of the server&#39;s
+support for HTTP/2.</p>
+
+<p>More information in the <a href="http://http2.github.io/http2-spec/#known-http">spec</a></p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.host' class='structfield'><code>host: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The host to which the connection should be established</p>
+</div><span id='structfield.port' class='structfield'><code>port: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The port on which the connection should be established</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../../../solicit/http/client/struct.CleartextConnector.html' title='solicit::http::client::CleartextConnector'>CleartextConnector</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1281' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#102-114' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(host: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../../../solicit/http/client/struct.CleartextConnector.html' title='solicit::http::client::CleartextConnector'>CleartextConnector</a></code></h4>
+<div class='docblock'><p>Creates a new <code>CleartextConnector</code> that will attempt to establish a connection to the given
+host on port 80.</p>
+</div><h4 id='method.with_port' class='method'><code>fn <a href='#method.with_port' class='fnname'>with_port</a>(host: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, port: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>) -&gt; <a class='struct' href='../../../solicit/http/client/struct.CleartextConnector.html' title='solicit::http::client::CleartextConnector'>CleartextConnector</a></code></h4>
+<div class='docblock'><p>Creates a new <code>CleartextConnector</code> that will attempt to establish a connection to the given
+host on the given port.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='../../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>HttpConnect</a> for <a class='struct' href='../../../solicit/http/client/struct.CleartextConnector.html' title='solicit::http::client::CleartextConnector'>CleartextConnector</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1312' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#146-161' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Stream' class='type'><code>type <a href='../../../solicit/http/client/trait.HttpConnect.html#associatedtype.Stream' class='type'>Stream</a> = <a class='struct' href='https://doc.rust-lang.org/nightly/std/net/tcp/struct.TcpStream.html' title='std::net::tcp::TcpStream'>TcpStream</a></code></h4>
+<div class='docblock'><p>The type of the underlying transport stream that the <code>HttpConnection</code>s produced by this <code>HttpConnect</code> implementation will be based on. <a href="../../../solicit/http/client/trait.HttpConnect.html#associatedtype.Stream">Read more</a></p>
+</div><h4 id='associatedtype.Err' class='type'><code>type <a href='../../../solicit/http/client/trait.HttpConnect.html#associatedtype.Err' class='type'>Err</a> = <a class='struct' href='../../../solicit/http/client/struct.CleartextConnectError.html' title='solicit::http::client::CleartextConnectError'>CleartextConnectError</a></code></h4>
+<div class='docblock'><p>The type of the error that can be produced by trying to establish the connection (i.e. calling the <code>connect</code> method). <a href="../../../solicit/http/client/trait.HttpConnect.html#associatedtype.Err">Read more</a></p>
+</div><h4 id='method.connect' class='method'><code>fn <a href='../../../solicit/http/client/trait.HttpConnect.html#tymethod.connect' class='fnname'>connect</a>(self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../solicit/http/client/struct.ClientStream.html' title='solicit::http::client::ClientStream'>ClientStream</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/net/tcp/struct.TcpStream.html' title='std::net::tcp::TcpStream'>TcpStream</a>&gt;,&nbsp;<a class='struct' href='../../../solicit/http/client/struct.CleartextConnectError.html' title='solicit::http::client::CleartextConnectError'>CleartextConnectError</a>&gt;</code></h4>
+<div class='docblock'><p>Establishes a cleartext TCP connection based on the host and port.
+If it is not possible, returns an <code>HttpError</code>.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

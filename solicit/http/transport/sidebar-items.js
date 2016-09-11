@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["TransportStream","A trait that any struct that wants to provide the transport layer for HTTP/2 needs to implement."]]});

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ContentRangeSpec` enum in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ContentRangeSpec">
+
+    <title>hyper::header::ContentRangeSpec - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'ContentRangeSpec', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='enum' href=''>ContentRangeSpec</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2799' class='srclink' href='../../src/hyper/header/common/content_range.rs.html#90-109' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum ContentRangeSpec {
+    Bytes {
+        range: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;,
+        instance_length: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>&gt;,
+    },
+    Unregistered {
+        unit: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
+        resp: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
+    },
+}</pre><div class='docblock'><p>Content-Range, described in <a href="https://tools.ietf.org/html/rfc7233#section-4.2">RFC7233</a></p>
+
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
+<pre><code class="language-plain">Content-Range       = byte-content-range
+                    / other-content-range
+
+byte-content-range  = bytes-unit SP
+                      ( byte-range-resp / unsatisfied-range )
+
+byte-range-resp     = byte-range &quot;/&quot; ( complete-length / &quot;*&quot; )
+byte-range          = first-byte-pos &quot;-&quot; last-byte-pos
+unsatisfied-range   = &quot;*/&quot; complete-length
+
+complete-length     = 1*DIGIT
+
+other-content-range = other-range-unit SP other-range-resp
+other-range-resp    = *CHAR
+</code></pre>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Bytes' class='variant'><code>Bytes</code></span><div class='docblock'><p>Byte range</p>
+</div><h3 class='fields'>Fields</h3>
+
+                           <table><tr><td id='variant.Bytes.field.range'><code>range:&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;</code></td><td><div class='docblock'><p>First and last bytes of the range, omitted if request could not be
+satisfied</p>
+</div></td></tr><tr><td id='variant.Bytes.field.instance_length'><code>instance_length:&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>&gt;</code></td><td><div class='docblock'><p>Total length of the instance, can be omitted if unknown</p>
+</div></td></tr></table><span id='variant.Unregistered' class='variant'><code>Unregistered</code></span><div class='docblock'><p>Custom range, with unit not registered at IANA</p>
+</div><h3 class='fields'>Fields</h3>
+
+                           <table><tr><td id='variant.Unregistered.field.unit'><code>unit:&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></td><td><div class='docblock'><p>other-range-unit</p>
+</div></td></tr><tr><td id='variant.Unregistered.field.resp'><code>resp:&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></td><td><div class='docblock'><p>other-range-resp</p>
+</div></td></tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

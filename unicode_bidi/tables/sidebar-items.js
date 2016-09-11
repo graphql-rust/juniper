@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["UNICODE_VERSION","The version of Unicode that the `bidi_class` function is based on."]],"enum":[["BidiClass","Represents the Unicode character property **Bidi_Class**, also known as the *bidirectional character type*."]],"fn":[["bidi_class","Find the BidiClass of a single char."]]});

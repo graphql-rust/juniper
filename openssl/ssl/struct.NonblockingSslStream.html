@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `NonblockingSslStream` struct in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, NonblockingSslStream">
+
+    <title>openssl::ssl::NonblockingSslStream - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>openssl</a>::<wbr><a href='index.html'>ssl</a></p><script>window.sidebarCurrent = {name: 'NonblockingSslStream', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>openssl</a>::<wbr><a href='index.html'>ssl</a>::<wbr><a class='struct' href=''>NonblockingSslStream</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-3029' class='srclink' href='../../src/openssl/ssl/mod.rs.html#1601' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct NonblockingSslStream&lt;S&gt;(_);</pre><div class='docblock'>
+<h1 id='deprecated' class='section-header'><a href='#deprecated'>Deprecated</a></h1>
+<p>Use <code>SslStream</code> with <code>ssl_read</code> and <code>ssl_write</code>.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/net/tcp/struct.TcpStream.html' title='std::net::tcp::TcpStream'>TcpStream</a>&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3041' class='srclink' href='../../src/openssl/ssl/mod.rs.html#1623-1627' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.try_clone' class='method'><code>fn <a href='#method.try_clone' class='fnname'>try_clone</a>(&amp;self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/net/tcp/struct.TcpStream.html' title='std::net::tcp::TcpStream'>TcpStream</a>&gt;&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl&lt;S&gt; <a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3044' class='srclink' href='../../src/openssl/ssl/mod.rs.html#1629-1649' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.get_ref' class='method'><code>fn <a href='#method.get_ref' class='fnname'>get_ref</a>(&amp;self) -&gt; &amp;S</code></h4>
+<div class='docblock'><p>Returns a reference to the underlying stream.</p>
+</div><h4 id='method.get_mut' class='method'><code>fn <a href='#method.get_mut' class='fnname'>get_mut</a>(&amp;mut self) -&gt; &amp;mut S</code></h4>
+<div class='docblock'><p>Returns a mutable reference to the underlying stream.</p>
+
+<h2 id='warning' class='section-header'><a href='#warning'>Warning</a></h2>
+<p>It is inadvisable to read from or write to the underlying stream as it
+will most likely corrupt the SSL session.</p>
+</div><h4 id='method.ssl' class='method'><code>fn <a href='#method.ssl' class='fnname'>ssl</a>(&amp;self) -&gt; &amp;<a class='struct' href='../../openssl/ssl/struct.Ssl.html' title='openssl::ssl::Ssl'>Ssl</a></code></h4>
+<div class='docblock'><p>Returns a reference to the Ssl.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a>&gt; <a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3052' class='srclink' href='../../src/openssl/ssl/mod.rs.html#1651-1727' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.connect' class='method'><code>fn <a href='#method.connect' class='fnname'>connect</a>&lt;T:&nbsp;<a class='trait' href='../../openssl/ssl/trait.IntoSsl.html' title='openssl::ssl::IntoSsl'>IntoSsl</a>&gt;(ssl: T, stream: S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;S&gt;,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Create a new nonblocking client ssl connection on wrapped <code>stream</code>.</p>
+
+<p>Note that this method will most likely not actually complete the SSL
+handshake because doing so requires several round trips; the handshake will
+be completed in subsequent read/write calls managed by your event loop.</p>
+</div><h4 id='method.accept' class='method'><code>fn <a href='#method.accept' class='fnname'>accept</a>&lt;T:&nbsp;<a class='trait' href='../../openssl/ssl/trait.IntoSsl.html' title='openssl::ssl::IntoSsl'>IntoSsl</a>&gt;(ssl: T, stream: S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;S&gt;,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Create a new nonblocking server ssl connection on wrapped <code>stream</code>.</p>
+
+<p>Note that this method will most likely not actually complete the SSL
+handshake because doing so requires several round trips; the handshake will
+be completed in subsequent read/write calls managed by your event loop.</p>
+</div><h4 id='method.read' class='method'><code>fn <a href='#method.read' class='fnname'>read</a>(&amp;mut self, buf: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.NonblockingSslError.html' title='openssl::ssl::error::NonblockingSslError'>NonblockingSslError</a>&gt;</code></h4>
+<div class='docblock'><p>Read bytes from the SSL stream into <code>buf</code>.</p>
+
+<p>Given the SSL state machine, this method may return either <code>WantWrite</code>
+or <code>WantRead</code> to indicate that your event loop should respectively wait
+for write or read readiness on the underlying stream.  Upon readiness,
+repeat your <code>read()</code> call with the same arguments each time until you
+receive an <code>Ok(count)</code>.</p>
+
+<p>An <code>SslError</code> return value, is terminal; do not re-attempt your read.</p>
+
+<p>As expected of a nonblocking API, this method will never block your
+thread on I/O.</p>
+
+<p>On a return value of <code>Ok(count)</code>, count is the number of decrypted
+plaintext bytes copied into the <code>buf</code> slice.</p>
+</div><h4 id='method.write' class='method'><code>fn <a href='#method.write' class='fnname'>write</a>(&amp;mut self, buf: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.NonblockingSslError.html' title='openssl::ssl::error::NonblockingSslError'>NonblockingSslError</a>&gt;</code></h4>
+<div class='docblock'><p>Write bytes from <code>buf</code> to the SSL stream.</p>
+
+<p>Given the SSL state machine, this method may return either <code>WantWrite</code>
+or <code>WantRead</code> to indicate that your event loop should respectively wait
+for write or read readiness on the underlying stream.  Upon readiness,
+repeat your <code>write()</code> call with the same arguments each time until you
+receive an <code>Ok(count)</code>.</p>
+
+<p>An <code>SslError</code> return value, is terminal; do not re-attempt your write.</p>
+
+<p>As expected of a nonblocking API, this method will never block your
+thread on I/O.</p>
+
+<p>Given a return value of <code>Ok(count)</code>, count is the number of plaintext bytes
+from the <code>buf</code> slice that were encrypted and written onto the stream.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3033' class='srclink' href='../../src/openssl/ssl/mod.rs.html#1603-1607' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; Self</code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/sys/ext/io/trait.AsRawFd.html' title='std::sys::ext::io::AsRawFd'>AsRawFd</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/std/sys/ext/io/trait.AsRawFd.html' title='std::sys::ext::io::AsRawFd'>AsRawFd</a> for <a class='struct' href='../../openssl/ssl/struct.NonblockingSslStream.html' title='openssl::ssl::NonblockingSslStream'>NonblockingSslStream</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3037' class='srclink' href='../../src/openssl/ssl/mod.rs.html#1610-1614' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.as_raw_fd' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/std/sys/ext/io/trait.AsRawFd.html#tymethod.as_raw_fd' class='fnname'>as_raw_fd</a>(&amp;self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/sys/ext/io/type.RawFd.html' title='std::sys::ext::io::RawFd'>RawFd</a></code></h4>
+<div class='docblock'><p>Extracts the raw file descriptor. <a href="https://doc.rust-lang.org/nightly/std/sys/ext/io/trait.AsRawFd.html#tymethod.as_raw_fd">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

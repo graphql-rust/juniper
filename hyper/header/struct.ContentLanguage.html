@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ContentLanguage` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ContentLanguage">
+
+    <title>hyper::header::ContentLanguage - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'ContentLanguage', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='struct' href=''>ContentLanguage</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2631' class='srclink' href='../../src/hyper/header/common/mod.rs.html#246' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct ContentLanguage(pub <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../hyper/header/struct.QualityItem.html' title='hyper::header::QualityItem'>QualityItem</a>&lt;<a class='struct' href='../../hyper/struct.LanguageTag.html' title='hyper::LanguageTag'>LanguageTag</a>&gt;&gt;);</pre><div class='docblock'><p><code>Content-Language</code> header, defined in
+<a href="https://tools.ietf.org/html/rfc7231#section-3.1.3.2">RFC7231</a></p>
+
+<p>The <code>Content-Language</code> header field describes the natural language(s)
+of the intended audience for the representation.  Note that this
+might not be equivalent to all the languages used within the
+representation.</p>
+
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
+<pre><code class="language-plain">Content-Language = 1#language-tag
+</code></pre>
+
+<h1 id='example-values' class='section-header'><a href='#example-values'>Example values</a></h1>
+<ul>
+<li><code>da</code></li>
+<li><code>mi, en</code></li>
+</ul>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>ContentLanguage</span>(<span class='macro'>vec</span><span class='macro'>!</span>[
+        <span class='ident'>qitem</span>(<span class='macro'>langtag</span><span class='macro'>!</span>(<span class='ident'>en</span>)),
+    ])
+);</pre>
+
+<pre class='rust rust-example-rendered'>
+ 
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>ContentLanguage</span>(<span class='macro'>vec</span><span class='macro'>!</span>[
+        <span class='ident'>qitem</span>(<span class='macro'>langtag</span><span class='macro'>!</span>(<span class='ident'>da</span>)),
+        <span class='ident'>qitem</span>(<span class='macro'>langtag</span><span class='macro'>!</span>(<span class='ident'>en</span>;;;<span class='ident'>GB</span>)),
+    ])
+);</pre>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `SetCookie` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, SetCookie">
+
+    <title>hyper::header::SetCookie - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'SetCookie', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='struct' href=''>SetCookie</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-4180' class='srclink' href='../../src/hyper/header/common/set_cookie.rs.html#81' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct SetCookie(pub <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../hyper/header/struct.CookiePair.html' title='hyper::header::CookiePair'>CookiePair</a>&gt;);</pre><div class='docblock'><p><code>Set-Cookie</code> header, defined <a href="http://tools.ietf.org/html/rfc6265#section-4.1">RFC6265</a></p>
+
+<p>The Set-Cookie HTTP response header is used to send cookies from the
+server to the user agent.</p>
+
+<p>Informally, the Set-Cookie response header contains the header name
+&quot;Set-Cookie&quot; followed by a &quot;:&quot; and a cookie.  Each cookie begins with
+a name-value-pair, followed by zero or more attribute-value pairs.</p>
+
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
+<pre><code class="language-plain"> set-cookie-header = &quot;Set-Cookie:&quot; SP set-cookie-string
+set-cookie-string = cookie-pair *( &quot;;&quot; SP cookie-av )
+cookie-pair       = cookie-name &quot;=&quot; cookie-value
+cookie-name       = token
+cookie-value      = *cookie-octet / ( DQUOTE *cookie-octet DQUOTE )
+cookie-octet      = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
+                      ; US-ASCII characters excluding CTLs,
+                      ; whitespace DQUOTE, comma, semicolon,
+                      ; and backslash
+token             = &lt;token, defined in [RFC2616], Section 2.2&gt;
+
+cookie-av         = expires-av / max-age-av / domain-av /
+                   path-av / secure-av / httponly-av /
+                    extension-av
+expires-av        = &quot;Expires=&quot; sane-cookie-date
+sane-cookie-date  = &lt;rfc1123-date, defined in [RFC2616], Section 3.3.1&gt;
+max-age-av        = &quot;Max-Age=&quot; non-zero-digit *DIGIT
+                      ; In practice, both expires-av and max-age-av
+                      ; are limited to dates representable by the
+                      ; user agent.
+non-zero-digit    = %x31-39
+                      ; digits 1 through 9
+domain-av         = &quot;Domain=&quot; domain-value
+domain-value      = &lt;subdomain&gt;
+                      ; defined in [RFC1034], Section 3.5, as
+                      ; enhanced by [RFC1123], Section 2.1
+path-av           = &quot;Path=&quot; path-value
+path-value        = &lt;any CHAR except CTLs or &quot;;&quot;&gt;
+secure-av         = &quot;Secure&quot;
+httponly-av       = &quot;HttpOnly&quot;
+extension-av      = &lt;any CHAR except CTLs or &quot;;&quot;&gt;
+</code></pre>
+
+<h1 id='example-values' class='section-header'><a href='#example-values'>Example values</a></h1>
+<ul>
+<li><code>SID=31d4d96e407aad42</code></li>
+<li><code>lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT</code></li>
+<li><code>lang=; Expires=Sun, 06 Nov 1994 08:49:37 GMT</code></li>
+<li><code>lang=en-US; Path=/; Domain=example.com</code></li>
+</ul>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='comment'>// extern crate cookie;</span>
+
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>SetCookie</span>};
+<span class='kw'>use</span> <span class='ident'>cookie</span>::<span class='ident'>Cookie</span> <span class='kw'>as</span> <span class='ident'>CookiePair</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>cookie</span> <span class='op'>=</span> <span class='ident'>CookiePair</span>::<span class='ident'>new</span>(<span class='string'>&quot;foo&quot;</span>.<span class='ident'>to_owned</span>(), <span class='string'>&quot;bar&quot;</span>.<span class='ident'>to_owned</span>());
+
+<span class='ident'>cookie</span>.<span class='ident'>path</span> <span class='op'>=</span> <span class='prelude-val'>Some</span>(<span class='string'>&quot;/path&quot;</span>.<span class='ident'>to_owned</span>());
+<span class='ident'>cookie</span>.<span class='ident'>domain</span> <span class='op'>=</span> <span class='prelude-val'>Some</span>(<span class='string'>&quot;example.com&quot;</span>.<span class='ident'>to_owned</span>());
+
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>SetCookie</span>(<span class='macro'>vec</span><span class='macro'>!</span>[
+        <span class='ident'>cookie</span>,
+        <span class='ident'>CookiePair</span>::<span class='ident'>new</span>(<span class='string'>&quot;baz&quot;</span>.<span class='ident'>to_owned</span>(), <span class='string'>&quot;quux&quot;</span>.<span class='ident'>to_owned</span>()),
+    ])
+);</pre>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

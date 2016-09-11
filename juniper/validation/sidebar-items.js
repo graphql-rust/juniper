@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["RuleError","Query validation error"]]});

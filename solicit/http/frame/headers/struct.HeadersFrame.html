@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `HeadersFrame` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, HeadersFrame">
+
+    <title>solicit::http::frame::headers::HeadersFrame - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../../index.html'>solicit</a>::<wbr><a href='../../index.html'>http</a>::<wbr><a href='../index.html'>frame</a>::<wbr><a href='index.html'>headers</a></p><script>window.sidebarCurrent = {name: 'HeadersFrame', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../../index.html'>solicit</a>::<wbr><a href='../../index.html'>http</a>::<wbr><a href='../index.html'>frame</a>::<wbr><a href='index.html'>headers</a>::<wbr><a class='struct' href=''>HeadersFrame</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-263' class='srclink' href='../../../../src/solicit/http/frame/headers.rs.html#126-137' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct HeadersFrame {
+    pub header_fragment: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;,
+    pub stream_id: <a class='type' href='../../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>,
+    pub stream_dep: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../../../solicit/http/frame/headers/struct.StreamDependency.html' title='solicit::http::frame::headers::StreamDependency'>StreamDependency</a>&gt;,
+    pub padding_len: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;,
+    // some fields omitted
+}</pre><div class='docblock'><p>A struct representing the HEADERS frames of HTTP/2, as defined in the
+HTTP/2 spec, section 6.2.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.header_fragment' class='structfield'><code>header_fragment: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The header fragment bytes stored within the frame.</p>
+</div><span id='structfield.stream_id' class='structfield'><code>stream_id: <a class='type' href='../../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The ID of the stream with which this frame is associated</p>
+</div><span id='structfield.stream_dep' class='structfield'><code>stream_dep: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../../../solicit/http/frame/headers/struct.StreamDependency.html' title='solicit::http::frame::headers::StreamDependency'>StreamDependency</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The stream dependency information, if any.</p>
+</div><span id='structfield.padding_len' class='structfield'><code>padding_len: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The length of the padding, if any.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-269' class='srclink' href='../../../../src/solicit/http/frame/headers.rs.html#139-202' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(fragment: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;, stream_id: <a class='type' href='../../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>) -&gt; <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></h4>
+<div class='docblock'><p>Creates a new <code>HeadersFrame</code> with the given header fragment and stream
+ID. No padding, no stream dependency, and no flags are set.</p>
+</div><h4 id='method.with_dependency' class='method'><code>fn <a href='#method.with_dependency' class='fnname'>with_dependency</a>(fragment: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;, stream_id: <a class='type' href='../../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>, stream_dep: <a class='struct' href='../../../../solicit/http/frame/headers/struct.StreamDependency.html' title='solicit::http::frame::headers::StreamDependency'>StreamDependency</a>) -&gt; <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></h4>
+<div class='docblock'><p>Creates a new <code>HeadersFrame</code> with the given header fragment, stream ID
+and stream dependency information. No padding and no flags are set.</p>
+</div><h4 id='method.is_headers_end' class='method'><code>fn <a href='#method.is_headers_end' class='fnname'>is_headers_end</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns whether this frame ends the headers. If not, there MUST be a
+number of follow up CONTINUATION frames that send the rest of the
+header data.</p>
+</div><h4 id='method.is_end_of_stream' class='method'><code>fn <a href='#method.is_end_of_stream' class='fnname'>is_end_of_stream</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns whther this frame ends the stream it is associated with.</p>
+</div><h4 id='method.set_padding' class='method'><code>fn <a href='#method.set_padding' class='fnname'>set_padding</a>(&amp;mut self, padding_len: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>)</code></h4>
+<div class='docblock'><p>Sets the padding length for the frame, as well as the corresponding
+Padded flag.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-218' class='srclink' href='../../../../src/solicit/http/frame/headers.rs.html#123' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-245' class='srclink' href='../../../../src/solicit/http/frame/headers.rs.html#124' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-255' class='srclink' href='../../../../src/solicit/http/frame/headers.rs.html#125' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../../../solicit/http/frame/trait.Frame.html' title='solicit::http::frame::Frame'>Frame</a> for <a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-288' class='srclink' href='../../../../src/solicit/http/frame/headers.rs.html#204-320' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.FlagType' class='type'><code>type <a href='../../../../solicit/http/frame/trait.Frame.html#associatedtype.FlagType' class='type'>FlagType</a> = <a class='enum' href='../../../../solicit/http/frame/headers/enum.HeadersFlag.html' title='solicit::http::frame::headers::HeadersFlag'>HeadersFlag</a></code></h4>
+<div class='docblock'><p>The type that represents the flags that the particular <code>Frame</code> can take.
+This makes sure that only valid <code>Flag</code>s are used with each <code>Frame</code>.</p>
+</div><h4 id='method.from_raw' class='method'><code>fn <a href='../../../../solicit/http/frame/trait.Frame.html#tymethod.from_raw' class='fnname'>from_raw</a>(raw_frame: <a class='struct' href='../../../../solicit/http/frame/struct.RawFrame.html' title='solicit::http::frame::RawFrame'>RawFrame</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a new <code>HeadersFrame</code> with the given <code>RawFrame</code> (i.e. header and
+payload), if possible.</p>
+
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
+<p><code>None</code> if a valid <code>HeadersFrame</code> cannot be constructed from the given
+<code>RawFrame</code>. The stream ID <em>must not</em> be 0.</p>
+
+<p>Otherwise, returns a newly constructed <code>HeadersFrame</code>.</p>
+</div><h4 id='method.is_set' class='method'><code>fn <a href='../../../../solicit/http/frame/trait.Frame.html#tymethod.is_set' class='fnname'>is_set</a>(&amp;self, flag: <a class='enum' href='../../../../solicit/http/frame/headers/enum.HeadersFlag.html' title='solicit::http::frame::headers::HeadersFlag'>HeadersFlag</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Tests if the given flag is set for the frame.</p>
+</div><h4 id='method.get_stream_id' class='method'><code>fn <a href='../../../../solicit/http/frame/trait.Frame.html#tymethod.get_stream_id' class='fnname'>get_stream_id</a>(&amp;self) -&gt; <a class='type' href='../../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code></h4>
+<div class='docblock'><p>Returns the <code>StreamId</code> of the stream to which the frame is associated.</p>
+
+<p>A <code>SettingsFrame</code> always has to be associated to stream <code>0</code>.</p>
+</div><h4 id='method.get_header' class='method'><code>fn <a href='../../../../solicit/http/frame/trait.Frame.html#tymethod.get_header' class='fnname'>get_header</a>(&amp;self) -&gt; <a class='type' href='../../../../solicit/http/frame/type.FrameHeader.html' title='solicit::http::frame::FrameHeader'>FrameHeader</a></code></h4>
+<div class='docblock'><p>Returns a <code>FrameHeader</code> based on the current state of the <code>Frame</code>.</p>
+</div><h4 id='method.set_flag' class='method'><code>fn <a href='../../../../solicit/http/frame/trait.Frame.html#tymethod.set_flag' class='fnname'>set_flag</a>(&amp;mut self, flag: <a class='enum' href='../../../../solicit/http/frame/headers/enum.HeadersFlag.html' title='solicit::http::frame::headers::HeadersFlag'>HeadersFlag</a>)</code></h4>
+<div class='docblock'><p>Sets the given flag for the frame.</p>
+</div><h4 id='method.serialize' class='method'><code>fn <a href='../../../../solicit/http/frame/trait.Frame.html#tymethod.serialize' class='fnname'>serialize</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a <code>Vec</code> with the serialized representation of the frame.</p>
+
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
+<p>If the <code>HeadersFlag::Priority</code> flag was set, but no stream dependency
+information is given (i.e. <code>stream_dep</code> is <code>None</code>).</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../../jquery.js"></script>
+    <script src="../../../../main.js"></script>
+    
+    <script defer src="../../../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["LexerError","Error when tokenizing the input source"],["ParseError","Error while parsing a GraphQL query"],["Token","A single token in the input source"]],"struct":[["SourcePosition","A reference to a line and column in an input source file"],["Spanning","Data structure used to wrap items with start and end markers in the input source"]]});

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `idna` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, idna">
+
+    <title>idna - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'idna', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>idna</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/idna/lib.rs.html#9-73' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>This Rust crate implements IDNA
+<a href="https://url.spec.whatwg.org/#idna">per the WHATWG URL Standard</a>.</p>
+
+<p>It also exposes the underlying algorithms from <a href="http://www.unicode.org/reports/tr46/"><em>Unicode IDNA Compatibility Processing</em>
+(Unicode Technical Standard #46)</a>
+and <a href="https://tools.ietf.org/html/rfc3492">Punycode (RFC 3492)</a>.</p>
+
+<p>Quoting from <a href="http://www.unicode.org/reports/tr46/#Introduction">UTS #46’s introduction</a>:</p>
+
+<blockquote>
+<p>Initially, domain names were restricted to ASCII characters.
+A system was introduced in 2003 for internationalized domain names (IDN).
+This system is called Internationalizing Domain Names for Applications,
+or IDNA2003 for short.
+This mechanism supports IDNs by means of a client software transformation
+into a format known as Punycode.
+A revision of IDNA was approved in 2010 (IDNA2008).
+This revision has a number of incompatibilities with IDNA2003.</p>
+
+<p>The incompatibilities force implementers of client software,
+such as browsers and emailers,
+to face difficult choices during the transition period
+as registries shift from IDNA2003 to IDNA2008.
+This document specifies a mechanism
+that minimizes the impact of this transition for client software,
+allowing client software to access domains that are valid under either system.</p>
+</blockquote>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='punycode/index.html'
+                                  title='idna::punycode'>punycode</a></td>
+                           <td class='docblock short'>
+                                <p>Punycode (<a href="http://tools.ietf.org/html/rfc3492">RFC 3492</a>) implementation.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='uts46/index.html'
+                                  title='idna::uts46'>uts46</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://www.unicode.org/reports/tr46/"><em>Unicode IDNA Compatibility Processing</em>
+(Unicode Technical Standard #46)</a></p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.domain_to_ascii.html'
+                                  title='idna::domain_to_ascii'>domain_to_ascii</a></td>
+                           <td class='docblock short'>
+                                <p>The <a href="https://url.spec.whatwg.org/#concept-domain-to-ascii">domain to ASCII</a> algorithm.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.domain_to_unicode.html'
+                                  title='idna::domain_to_unicode'>domain_to_unicode</a></td>
+                           <td class='docblock short'>
+                                <p>The <a href="https://url.spec.whatwg.org/#concept-domain-to-unicode">domain to Unicode</a> algorithm.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "idna";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `AccessControlAllowOrigin` enum in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, AccessControlAllowOrigin">
+
+    <title>hyper::header::AccessControlAllowOrigin - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'AccessControlAllowOrigin', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='enum' href=''>AccessControlAllowOrigin</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1373' class='srclink' href='../../src/hyper/header/common/access_control_allow_origin.rs.html#48-55' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum AccessControlAllowOrigin {
+    Any,
+    Null,
+    Value(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
+}</pre><div class='docblock'><p>The <code>Access-Control-Allow-Origin</code> response header,
+part of <a href="http://www.w3.org/TR/cors/#access-control-allow-origin-response-header">CORS</a></p>
+
+<p>The <code>Access-Control-Allow-Origin</code> header indicates whether a resource
+can be shared based by returning the value of the Origin request header,
+&quot;*&quot;, or &quot;null&quot; in the response.</p>
+
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
+<pre><code class="language-plain">Access-Control-Allow-Origin = &quot;Access-Control-Allow-Origin&quot; &quot;:&quot; origin-list-or-null | &quot;*&quot;
+</code></pre>
+
+<h1 id='example-values' class='section-header'><a href='#example-values'>Example values</a></h1>
+<ul>
+<li><code>null</code></li>
+<li><code>*</code></li>
+<li><code>http://google.com/</code></li>
+</ul>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>AccessControlAllowOrigin</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>AccessControlAllowOrigin</span>::<span class='ident'>Any</span>
+);</pre>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>AccessControlAllowOrigin</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>AccessControlAllowOrigin</span>::<span class='ident'>Null</span>,
+);</pre>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>AccessControlAllowOrigin</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>AccessControlAllowOrigin</span>::<span class='ident'>Value</span>(<span class='string'>&quot;http://hyper.rs&quot;</span>.<span class='ident'>to_owned</span>())
+);</pre>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Any' class='variant'><code>Any</code></span><div class='docblock'><p>Allow all origins</p>
+</div><span id='variant.Null' class='variant'><code>Null</code></span><div class='docblock'><p>A hidden origin</p>
+</div><span id='variant.Value' class='variant'><code>Value(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></span><div class='docblock'><p>Allow one particular origin</p>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

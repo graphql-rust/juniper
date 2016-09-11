@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `CacheControl` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, CacheControl">
+
+    <title>hyper::header::CacheControl - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'CacheControl', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='struct' href=''>CacheControl</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2047' class='srclink' href='../../src/hyper/header/common/cache_control.rs.html#48' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct CacheControl(pub <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../hyper/header/enum.CacheDirective.html' title='hyper::header::CacheDirective'>CacheDirective</a>&gt;);</pre><div class='docblock'><p><code>Cache-Control</code> header, defined in <a href="https://tools.ietf.org/html/rfc7234#section-5.2">RFC7234</a></p>
+
+<p>The <code>Cache-Control</code> header field is used to specify directives for
+caches along the request/response chain.  Such cache directives are
+unidirectional in that the presence of a directive in a request does
+not imply that the same directive is to be given in the response.</p>
+
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
+<pre><code class="language-plain">Cache-Control   = 1#cache-directive
+cache-directive = token [ &quot;=&quot; ( token / quoted-string ) ]
+</code></pre>
+
+<h1 id='example-values' class='section-header'><a href='#example-values'>Example values</a></h1>
+<ul>
+<li><code>no-cache</code></li>
+<li><code>private, community=&quot;UCI&quot;</code></li>
+<li><code>max-age=30</code></li>
+</ul>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>CacheControl</span>, <span class='ident'>CacheDirective</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>CacheControl</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>CacheDirective</span>::<span class='ident'>MaxAge</span>(<span class='number'>86400u32</span>)])
+);</pre>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>CacheControl</span>, <span class='ident'>CacheDirective</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(
+    <span class='ident'>CacheControl</span>(<span class='macro'>vec</span><span class='macro'>!</span>[
+        <span class='ident'>CacheDirective</span>::<span class='ident'>NoCache</span>,
+        <span class='ident'>CacheDirective</span>::<span class='ident'>Private</span>,
+        <span class='ident'>CacheDirective</span>::<span class='ident'>MaxAge</span>(<span class='number'>360u32</span>),
+        <span class='ident'>CacheDirective</span>::<span class='ident'>Extension</span>(<span class='string'>&quot;foo&quot;</span>.<span class='ident'>to_owned</span>(),
+                                  <span class='prelude-val'>Some</span>(<span class='string'>&quot;bar&quot;</span>.<span class='ident'>to_owned</span>())),
+    ])
+);</pre>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

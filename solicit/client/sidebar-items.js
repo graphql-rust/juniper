@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Client","A struct representing an HTTP/2 client that receives responses to its requests asynchronously. Additionally, this client can be cloned and all clones can issue (concurrently) requests to the server, using the same underlying HTTP/2 connection."],["SimpleClient","A struct implementing a simple HTTP/2 client."]]});

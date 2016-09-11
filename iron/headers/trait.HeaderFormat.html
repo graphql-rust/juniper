@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `HeaderFormat` trait in crate `iron`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, HeaderFormat">
+
+    <title>iron::headers::HeaderFormat - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/7853871?s=256">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../iron/index.html'><img src='https://avatars0.githubusercontent.com/u/7853871?s=128' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>iron</a>::<wbr><a href='index.html'>headers</a></p><script>window.sidebarCurrent = {name: 'HeaderFormat', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>iron</a>::<wbr><a href='index.html'>headers</a>::<wbr><a class='trait' href=''>HeaderFormat</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-5385' class='srclink' href='../../hyper/header/trait.HeaderFormat.html?gotosrc=5385' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait HeaderFormat: <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> + HeaderClone + <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='../../typeable/trait.Typeable.html' title='typeable::Typeable'>Typeable</a> {
+    fn <a href='#tymethod.fmt_header' class='fnname'>fmt_header</a>(&amp;self, f: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html' title='core::fmt::Error'>Error</a>&gt;;
+}</pre><div class='docblock'><p>A trait for any object that will represent a header field and value.</p>
+
+<p>This trait represents the formatting of a <code>Header</code> for output to a TcpStream.</p>
+</div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.fmt_header' class='method stab '><code>fn <a href='#tymethod.fmt_header' class='fnname'>fmt_header</a>(&amp;self, f: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html' title='core::fmt::Error'>Error</a>&gt;</code></h3><div class='docblock'><p>Format a header to be output into a TcpStream.</p>
+
+<p>This method is not allowed to introduce an Err not produced
+by the passed-in Formatter.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html' title='core::fmt::Display'>Display</a> for &amp;'a <a class='trait' href='../../iron/headers/trait.HeaderFormat.html' title='iron::headers::HeaderFormat'>HeaderFormat</a> + 'static + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a></code></span><span class='out-of-band'></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, f: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html' title='core::fmt::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Accept.html' title='iron::headers::Accept'>Accept</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlAllowCredentials.html' title='iron::headers::AccessControlAllowCredentials'>AccessControlAllowCredentials</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlAllowHeaders.html' title='iron::headers::AccessControlAllowHeaders'>AccessControlAllowHeaders</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlAllowMethods.html' title='iron::headers::AccessControlAllowMethods'>AccessControlAllowMethods</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.AccessControlAllowOrigin.html' title='iron::headers::AccessControlAllowOrigin'>AccessControlAllowOrigin</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlExposeHeaders.html' title='iron::headers::AccessControlExposeHeaders'>AccessControlExposeHeaders</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlMaxAge.html' title='iron::headers::AccessControlMaxAge'>AccessControlMaxAge</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlRequestHeaders.html' title='iron::headers::AccessControlRequestHeaders'>AccessControlRequestHeaders</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AccessControlRequestMethod.html' title='iron::headers::AccessControlRequestMethod'>AccessControlRequestMethod</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AcceptCharset.html' title='iron::headers::AcceptCharset'>AcceptCharset</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AcceptEncoding.html' title='iron::headers::AcceptEncoding'>AcceptEncoding</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AcceptLanguage.html' title='iron::headers::AcceptLanguage'>AcceptLanguage</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.AcceptRanges.html' title='iron::headers::AcceptRanges'>AcceptRanges</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Allow.html' title='iron::headers::Allow'>Allow</a></code></li>
+<li><code>impl&lt;S&gt; HeaderFormat for <a class='struct' href='../../iron/headers/struct.Authorization.html' title='iron::headers::Authorization'>Authorization</a>&lt;S&gt; <span class='where'>where S: <a class='trait' href='../../iron/headers/trait.Scheme.html' title='iron::headers::Scheme'>Scheme</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a>, S::<a class='trait' href='https://doc.rust-lang.org/nightly/core/str/trait.FromStr.html' title='core::str::FromStr'>Err</a>: 'static</span></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.CacheControl.html' title='iron::headers::CacheControl'>CacheControl</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Cookie.html' title='iron::headers::Cookie'>Cookie</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Connection.html' title='iron::headers::Connection'>Connection</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ContentDisposition.html' title='iron::headers::ContentDisposition'>ContentDisposition</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ContentEncoding.html' title='iron::headers::ContentEncoding'>ContentEncoding</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ContentLanguage.html' title='iron::headers::ContentLanguage'>ContentLanguage</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ContentLength.html' title='iron::headers::ContentLength'>ContentLength</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ContentRange.html' title='iron::headers::ContentRange'>ContentRange</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ContentType.html' title='iron::headers::ContentType'>ContentType</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Date.html' title='iron::headers::Date'>Date</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.ETag.html' title='iron::headers::ETag'>ETag</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.Expect.html' title='iron::headers::Expect'>Expect</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Expires.html' title='iron::headers::Expires'>Expires</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.From.html' title='iron::headers::From'>From</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Host.html' title='iron::headers::Host'>Host</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.IfMatch.html' title='iron::headers::IfMatch'>IfMatch</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.IfModifiedSince.html' title='iron::headers::IfModifiedSince'>IfModifiedSince</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.IfNoneMatch.html' title='iron::headers::IfNoneMatch'>IfNoneMatch</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.IfRange.html' title='iron::headers::IfRange'>IfRange</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.IfUnmodifiedSince.html' title='iron::headers::IfUnmodifiedSince'>IfUnmodifiedSince</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.LastModified.html' title='iron::headers::LastModified'>LastModified</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Location.html' title='iron::headers::Location'>Location</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Origin.html' title='iron::headers::Origin'>Origin</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.Pragma.html' title='iron::headers::Pragma'>Pragma</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Prefer.html' title='iron::headers::Prefer'>Prefer</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.PreferenceApplied.html' title='iron::headers::PreferenceApplied'>PreferenceApplied</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.Range.html' title='iron::headers::Range'>Range</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Referer.html' title='iron::headers::Referer'>Referer</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.ReferrerPolicy.html' title='iron::headers::ReferrerPolicy'>ReferrerPolicy</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Server.html' title='iron::headers::Server'>Server</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.SetCookie.html' title='iron::headers::SetCookie'>SetCookie</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.StrictTransportSecurity.html' title='iron::headers::StrictTransportSecurity'>StrictTransportSecurity</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.TransferEncoding.html' title='iron::headers::TransferEncoding'>TransferEncoding</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.Upgrade.html' title='iron::headers::Upgrade'>Upgrade</a></code></li>
+<li><code>impl HeaderFormat for <a class='struct' href='../../iron/headers/struct.UserAgent.html' title='iron::headers::UserAgent'>UserAgent</a></code></li>
+<li><code>impl HeaderFormat for <a class='enum' href='../../iron/headers/enum.Vary.html' title='iron::headers::Vary'>Vary</a></code></li>
+</ul><script type="text/javascript" async
+                         src="../../implementors/hyper/header/trait.HeaderFormat.js">
+                 </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "iron";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Chain` struct in crate `iron`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Chain">
+
+    <title>iron::middleware::Chain - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/7853871?s=256">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../iron/index.html'><img src='https://avatars0.githubusercontent.com/u/7853871?s=128' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>iron</a>::<wbr><a href='index.html'>middleware</a></p><script>window.sidebarCurrent = {name: 'Chain', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>iron</a>::<wbr><a href='index.html'>middleware</a>::<wbr><a class='struct' href=''>Chain</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-98' class='srclink' href='../../src/iron/middleware/mod.rs.html#131-137' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Chain {
+    // some fields omitted
+}</pre><div class='docblock'><p>The middleware chain used in Iron.</p>
+
+<p>This is a canonical implementation of Iron&#39;s middleware system,
+but Iron&#39;s infrastructure is flexible enough to allow alternate
+systems.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-102' class='srclink' href='../../src/iron/middleware/mod.rs.html#139-194' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>&lt;H:&nbsp;<a class='trait' href='../../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a>&gt;(handler: H) -&gt; <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a></code></h4>
+<div class='docblock'><p>Construct a new ChainBuilder from a <code>Handler</code>.</p>
+</div><h4 id='method.link' class='method'><code>fn <a href='#method.link' class='fnname'>link</a>&lt;B,&nbsp;A&gt;(&amp;mut self, link: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>B, A<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>) -&gt; &amp;mut <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a> <span class='where'>where A: <a class='trait' href='../../iron/middleware/trait.AfterMiddleware.html' title='iron::middleware::AfterMiddleware'>AfterMiddleware</a>, B: <a class='trait' href='../../iron/middleware/trait.BeforeMiddleware.html' title='iron::middleware::BeforeMiddleware'>BeforeMiddleware</a></span></code></h4>
+<div class='docblock'><p>Link both a before and after middleware to the chain at once.</p>
+
+<p>Middleware that have a Before and After piece should have a constructor
+which returns both as a tuple, so it can be passed directly to link.</p>
+</div><h4 id='method.link_before' class='method'><code>fn <a href='#method.link_before' class='fnname'>link_before</a>&lt;B&gt;(&amp;mut self, before: B) -&gt; &amp;mut <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a> <span class='where'>where B: <a class='trait' href='../../iron/middleware/trait.BeforeMiddleware.html' title='iron::middleware::BeforeMiddleware'>BeforeMiddleware</a></span></code></h4>
+<div class='docblock'><p>Link a <code>BeforeMiddleware</code> to the <code>Chain</code>, after all previously linked
+<code>BeforeMiddleware</code>.</p>
+</div><h4 id='method.link_after' class='method'><code>fn <a href='#method.link_after' class='fnname'>link_after</a>&lt;A&gt;(&amp;mut self, after: A) -&gt; &amp;mut <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a> <span class='where'>where A: <a class='trait' href='../../iron/middleware/trait.AfterMiddleware.html' title='iron::middleware::AfterMiddleware'>AfterMiddleware</a></span></code></h4>
+<div class='docblock'><p>Link a <code>AfterMiddleware</code> to the <code>Chain</code>, after all previously linked
+<code>AfterMiddleware</code>.</p>
+</div><h4 id='method.around' class='method'><code>fn <a href='#method.around' class='fnname'>around</a>&lt;A&gt;(&amp;mut self, around: A) -&gt; &amp;mut <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a> <span class='where'>where A: <a class='trait' href='../../iron/middleware/trait.AroundMiddleware.html' title='iron::middleware::AroundMiddleware'>AroundMiddleware</a></span></code></h4>
+<div class='docblock'><p>Apply an <code>AroundMiddleware</code> to the <code>Handler</code> in this <code>Chain</code>.</p>
+
+<p>Note: This function is being renamed <code>link_around()</code>, and will
+eventually be removed.</p>
+</div><h4 id='method.link_around' class='method'><code>fn <a href='#method.link_around' class='fnname'>link_around</a>&lt;A&gt;(&amp;mut self, around: A) -&gt; &amp;mut <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a> <span class='where'>where A: <a class='trait' href='../../iron/middleware/trait.AroundMiddleware.html' title='iron::middleware::AroundMiddleware'>AroundMiddleware</a></span></code></h4>
+<div class='docblock'><p>Apply an <code>AroundMiddleware</code> to the <code>Handler</code> in this <code>Chain</code>.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a> for <a class='struct' href='../../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-130' class='srclink' href='../../src/iron/middleware/mod.rs.html#196-202' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.handle' class='method'><code>fn <a href='../../iron/middleware/trait.Handler.html#tymethod.handle' class='fnname'>handle</a>(&amp;self, req: &amp;mut <a class='struct' href='../../iron/request/struct.Request.html' title='iron::request::Request'>Request</a>) -&gt; <a class='type' href='../../iron/type.IronResult.html' title='iron::IronResult'>IronResult</a>&lt;<a class='struct' href='../../iron/response/struct.Response.html' title='iron::response::Response'>Response</a>&gt;</code></h4>
+<div class='docblock'><p>Produce a <code>Response</code> from a Request, with the possibility of error.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "iron";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

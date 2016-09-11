@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Client` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Client">
+
+    <title>solicit::client::Client - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>solicit</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'Client', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>solicit</a>::<wbr><a href='index.html'>client</a>::<wbr><a class='struct' href=''>Client</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1880' class='srclink' href='../../src/solicit/client/async.rs.html#569-573' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Client {
+    // some fields omitted
+}</pre><div class='docblock'><p>A struct representing an HTTP/2 client that receives responses to its
+requests asynchronously. Additionally, this client can be cloned and all
+clones can issue (concurrently) requests to the server, using the same
+underlying HTTP/2 connection.</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>client</span>::<span class='ident'>Client</span>;
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>client</span>::<span class='ident'>CleartextConnector</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>thread</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>;
+
+<span class='comment'>// Connect to a server that supports HTTP/2</span>
+<span class='kw'>let</span> <span class='ident'>connector</span> <span class='op'>=</span> <span class='ident'>CleartextConnector</span>::<span class='ident'>new</span>(<span class='string'>&quot;http2bin.org&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Client</span>::<span class='ident'>with_connector</span>(<span class='ident'>connector</span>).<span class='ident'>unwrap</span>();
+
+<span class='comment'>// Issue 5 requests from 5 different threads concurrently and wait for all</span>
+<span class='comment'>// threads to receive their response.</span>
+<span class='kw'>let</span> <span class='ident'>threads</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span>_<span class='op'>&gt;</span> <span class='op'>=</span> (<span class='number'>0</span>..<span class='number'>5</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>i</span><span class='op'>|</span> {
+    <span class='kw'>let</span> <span class='ident'>this</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>clone</span>();
+    <span class='ident'>thread</span>::<span class='ident'>spawn</span>(<span class='kw'>move</span> <span class='op'>||</span> {
+        <span class='kw'>let</span> <span class='ident'>resp</span> <span class='op'>=</span> <span class='ident'>this</span>.<span class='ident'>get</span>(<span class='string'>b&quot;/&quot;</span>, <span class='kw-2'>&amp;</span>[]).<span class='ident'>unwrap</span>();
+        <span class='kw'>let</span> <span class='ident'>response</span> <span class='op'>=</span> <span class='ident'>resp</span>.<span class='ident'>recv</span>().<span class='ident'>unwrap</span>();
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Thread {} got response ... {}&quot;</span>, <span class='ident'>i</span>, <span class='ident'>response</span>.<span class='ident'>status_code</span>().<span class='ident'>ok</span>().<span class='ident'>unwrap</span>());
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;The response contains the following headers:&quot;</span>);
+        <span class='kw'>for</span> <span class='ident'>header</span> <span class='kw'>in</span> <span class='ident'>response</span>.<span class='ident'>headers</span>.<span class='ident'>iter</span>() {
+            <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;  {}: {}&quot;</span>,
+                  <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>header</span>.<span class='number'>0</span>).<span class='ident'>unwrap</span>(),
+                  <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>header</span>.<span class='number'>1</span>).<span class='ident'>unwrap</span>());
+        }
+    })
+}).<span class='ident'>collect</span>();
+
+<span class='kw'>let</span> _: <span class='ident'>Vec</span><span class='op'>&lt;</span>_<span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>threads</span>.<span class='ident'>into_iter</span>().<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>thread</span><span class='op'>|</span> <span class='ident'>thread</span>.<span class='ident'>join</span>()).<span class='ident'>collect</span>();</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../solicit/client/struct.Client.html' title='solicit::client::Client'>Client</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1888' class='srclink' href='../../src/solicit/client/async.rs.html#590-717' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.with_connector' class='method'><code>fn <a href='#method.with_connector' class='fnname'>with_connector</a>&lt;C,&nbsp;S&gt;(connector: C) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../solicit/client/struct.Client.html' title='solicit::client::Client'>Client</a>&gt; <span class='where'>where C: <a class='trait' href='../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>HttpConnect</a>&lt;Stream=S&gt;, S: <a class='trait' href='../../solicit/http/transport/trait.TransportStream.html' title='solicit::http::transport::TransportStream'>TransportStream</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + 'static</span></code></h4>
+<div class='docblock'><p>Creates a brand new HTTP/2 client. This means that a new HTTP/2
+connection will be established behind the scenes. A thread is spawned
+to handle the connection in the background, so that the thread that
+creates the client can use it asynchronously.</p>
+
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
+<p>A <code>Client</code> instance that allows access to the underlying HTTP/2
+connection on the application level. Only full requests and responses
+are exposed to users.</p>
+
+<p>The returned <code>Client</code> can be cloned and all clones will use the same
+underlying HTTP/2 connection. Once all cloned instances (as well as the
+original one) are dropped, the thread that was spawned will also exit
+gracefully. Any error on the underlying HTTP/2 connection also causes
+the thread to exit.</p>
+
+<p>If the HTTP/2 connection cannot be initialized returns <code>None</code>.</p>
+</div><h4 id='method.request' class='method'><code>fn <a href='#method.request' class='fnname'>request</a>(&amp;self, method: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, path: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, body: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/sync/mpsc/struct.Receiver.html' title='std::sync::mpsc::Receiver'>Receiver</a>&lt;<a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Issues a new request to the server.</p>
+
+<p>The request&#39;s method, path, and extra headers are provided as parameters.
+The headers should <em>never</em> include any meta-headers (such as <code>:method</code>).</p>
+
+<h1 id='returns-1' class='section-header'><a href='#returns-1'>Returns</a></h1>
+<p>The method itself returns immediately upon queuing the request. It does
+not wait for the request to be transmitted nor for the response to
+arrive. Once the caller is interested in the final response, they can
+block on the returned <code>Receiver</code> end of a channel which will receive
+the response once generated.</p>
+
+<p>The <code>Response</code> instance that the channel receives will contain the full
+response body and is available only once the full response body has
+been received.</p>
+
+<p>If the method is unable to queue the request, it must mean that the
+underlying HTTP/2 connection to which this client is associated has
+failed and it returns <code>None</code>.</p>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self, path: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/sync/mpsc/struct.Receiver.html' title='std::sync::mpsc::Receiver'>Receiver</a>&lt;<a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Issues a GET request to the server.</p>
+
+<p>A convenience wrapper around the <code>request</code> method that sets the correct
+method.</p>
+</div><h4 id='method.post' class='method'><code>fn <a href='#method.post' class='fnname'>post</a>(&amp;self, path: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/sync/mpsc/struct.Receiver.html' title='std::sync::mpsc::Receiver'>Receiver</a>&lt;<a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Issues a POST request to the server.</p>
+
+<p>Returns the receiving end of a channel where the <code>Response</code> will eventually be pushed.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../solicit/client/struct.Client.html' title='solicit::client::Client'>Client</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1882' class='srclink' href='../../src/solicit/client/async.rs.html#575-582' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../solicit/client/struct.Client.html' title='solicit::client::Client'>Client</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../../solicit/client/struct.Client.html' title='solicit::client::Client'>Client</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1885' class='srclink' href='../../src/solicit/client/async.rs.html#584-588' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

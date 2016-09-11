@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DataFlag","An enum representing the flags that a `DataFrame` can have. The integer representation associated to each variant is that flag's bitmask."]],"struct":[["DataFrame","A struct representing the DATA frames of HTTP/2, as defined in the HTTP/2 spec, section 6.1."]]});

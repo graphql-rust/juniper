@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `X509Generator` struct in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, X509Generator">
+
+    <title>openssl::x509::X509Generator - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>openssl</a>::<wbr><a href='index.html'>x509</a></p><script>window.sidebarCurrent = {name: 'X509Generator', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>openssl</a>::<wbr><a href='index.html'>x509</a>::<wbr><a class='struct' href=''>X509Generator</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-3322' class='srclink' href='../../src/openssl/x509/mod.rs.html#150-156' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct X509Generator {
+    // some fields omitted
+}</pre><div class='docblock'><p>Generator of private key/certificate pairs</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fs</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fs</span>::<span class='ident'>File</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>prelude</span>::<span class='op'>*</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>path</span>::<span class='ident'>Path</span>;
+
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>crypto</span>::<span class='ident'>hash</span>::<span class='ident'>Type</span>;
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>X509Generator</span>;
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::{<span class='ident'>Extension</span>, <span class='ident'>KeyUsageOption</span>};
+
+<span class='kw'>let</span> <span class='ident'>gen</span> <span class='op'>=</span> <span class='ident'>X509Generator</span>::<span class='ident'>new</span>()
+       .<span class='ident'>set_bitlength</span>(<span class='number'>2048</span>)
+       .<span class='ident'>set_valid_period</span>(<span class='number'>365</span><span class='op'>*</span><span class='number'>2</span>)
+       .<span class='ident'>add_name</span>(<span class='string'>&quot;CN&quot;</span>.<span class='ident'>to_owned</span>(), <span class='string'>&quot;SuperMegaCorp Inc.&quot;</span>.<span class='ident'>to_owned</span>())
+       .<span class='ident'>set_sign_hash</span>(<span class='ident'>Type</span>::<span class='ident'>SHA256</span>)
+       .<span class='ident'>add_extension</span>(<span class='ident'>Extension</span>::<span class='ident'>KeyUsage</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>KeyUsageOption</span>::<span class='ident'>DigitalSignature</span>]));
+
+<span class='kw'>let</span> (<span class='ident'>cert</span>, <span class='ident'>pkey</span>) <span class='op'>=</span> <span class='ident'>gen</span>.<span class='ident'>generate</span>().<span class='ident'>unwrap</span>();
+
+<span class='kw'>let</span> <span class='ident'>cert_path</span> <span class='op'>=</span> <span class='string'>&quot;doc_cert.pem&quot;</span>;
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>file</span> <span class='op'>=</span> <span class='ident'>File</span>::<span class='ident'>create</span>(<span class='ident'>cert_path</span>).<span class='ident'>unwrap</span>();
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>cert</span>.<span class='ident'>write_pem</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>file</span>).<span class='ident'>is_ok</span>());
+
+<span class='kw'>let</span> <span class='ident'>pkey_path</span> <span class='op'>=</span> <span class='string'>&quot;doc_key.pem&quot;</span>;
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>file</span> <span class='op'>=</span> <span class='ident'>File</span>::<span class='ident'>create</span>(<span class='ident'>pkey_path</span>).<span class='ident'>unwrap</span>();
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>pkey</span>.<span class='ident'>write_pem</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>file</span>).<span class='ident'>is_ok</span>());</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3328' class='srclink' href='../../src/openssl/x509/mod.rs.html#158-415' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></h4>
+<div class='docblock'><p>Creates a new generator with the following defaults:</p>
+
+<p>bit length: 1024</p>
+
+<p>validity period: 365 days</p>
+
+<p>CN: &quot;rust-openssl&quot;</p>
+
+<p>hash: SHA1</p>
+</div><h4 id='method.set_bitlength' class='method'><code>fn <a href='#method.set_bitlength' class='fnname'>set_bitlength</a>(self, bits: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></h4>
+<div class='docblock'><p>Sets desired bit length</p>
+</div><h4 id='method.set_valid_period' class='method'><code>fn <a href='#method.set_valid_period' class='fnname'>set_valid_period</a>(self, days: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></h4>
+<div class='docblock'><p>Sets certificate validity period in days since today</p>
+</div><h4 id='method.add_name' class='method'><code>fn <a href='#method.add_name' class='fnname'>add_name</a>(self, attr_type: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, attr_value: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></h4>
+<div class='docblock'><p>Add attribute to the name of the certificate</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='ident'>generator</span>.<span class='ident'>add_name</span>(<span class='string'>&quot;CN&quot;</span>.<span class='ident'>to_string</span>(),<span class='string'>&quot;example.com&quot;</span>.<span class='ident'>to_string</span>());</pre>
+</div><h4 id='method.add_names' class='method'><code>fn <a href='#method.add_names' class='fnname'>add_names</a>&lt;I&gt;(self, attrs: I) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a> <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a>&lt;Item=<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;</span></code></h4>
+<div class='docblock'><p>Add multiple attributes to the name of the certificate</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='ident'>generator</span>.<span class='ident'>add_names</span>(<span class='macro'>vec</span><span class='macro'>!</span>[(<span class='string'>&quot;CN&quot;</span>.<span class='ident'>to_string</span>(),<span class='string'>&quot;example.com&quot;</span>.<span class='ident'>to_string</span>())]);</pre>
+</div><h4 id='method.add_extension' class='method'><code>fn <a href='#method.add_extension' class='fnname'>add_extension</a>(self, ext: <a class='enum' href='../../openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></h4>
+<div class='docblock'><p>Add an extension to a certificate</p>
+
+<p>If the extension already exists, it will be replaced.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::<span class='ident'>Extension</span>::<span class='op'>*</span>;
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::<span class='ident'>KeyUsageOption</span>::<span class='op'>*</span>;
+
+<span class='ident'>generator</span>.<span class='ident'>add_extension</span>(<span class='ident'>KeyUsage</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>DigitalSignature</span>, <span class='ident'>KeyEncipherment</span>]));</pre>
+</div><h4 id='method.add_extensions' class='method'><code>fn <a href='#method.add_extensions' class='fnname'>add_extensions</a>&lt;I&gt;(self, exts: I) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a> <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a>&lt;Item=<a class='enum' href='../../openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a>&gt;</span></code></h4>
+<div class='docblock'><p>Add multiple extensions to a certificate</p>
+
+<p>If any of the extensions already exist, they will be replaced.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::<span class='ident'>Extension</span>::<span class='op'>*</span>;
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::<span class='ident'>KeyUsageOption</span>::<span class='op'>*</span>;
+
+<span class='ident'>generator</span>.<span class='ident'>add_extensions</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>KeyUsage</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>DigitalSignature</span>, <span class='ident'>KeyEncipherment</span>])]);</pre>
+</div><h4 id='method.set_sign_hash' class='method'><code>fn <a href='#method.set_sign_hash' class='fnname'>set_sign_hash</a>(self, hash_type: <a class='enum' href='../../openssl/crypto/hash/enum.Type.html' title='openssl::crypto::hash::Type'>Type</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Generator.html' title='openssl::x509::X509Generator'>X509Generator</a></code></h4>
+<h4 id='method.generate' class='method'><code>fn <a href='#method.generate' class='fnname'>generate</a>&lt;'a&gt;(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'a&gt;, <a class='struct' href='../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Generates a private key and a self-signed certificate and returns them</p>
+</div><h4 id='method.sign' class='method'><code>fn <a href='#method.sign' class='fnname'>sign</a>&lt;'a&gt;(&amp;self, p_key: &amp;<a class='struct' href='../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'a&gt;,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Sets the certificate public-key, then self-sign and return it
+Note: That the bit-length of the private key is used (set_bitlength is ignored)</p>
+</div><h4 id='method.request' class='method'><code>fn <a href='#method.request' class='fnname'>request</a>(&amp;self, p_key: &amp;<a class='struct' href='../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/x509/struct.X509Req.html' title='openssl::x509::X509Req'>X509Req</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Obtain a certificate signing request (CSR)</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

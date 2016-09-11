@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Entry` enum in crate `typemap`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Entry">
+
+    <title>typemap::Entry - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>typemap</a></p><script>window.sidebarCurrent = {name: 'Entry', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='index.html'>typemap</a>::<wbr><a class='enum' href=''>Entry</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-93' class='srclink' href='../src/typemap/lib.rs.html#178-183' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Entry&lt;'a,&nbsp;K,&nbsp;A:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> + <a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a> + 'a&nbsp;=&nbsp;<a class='trait' href='../unsafe_any/trait.UnsafeAny.html' title='unsafe_any::UnsafeAny'>UnsafeAny</a>&gt; {
+    Occupied(<a class='struct' href='../typemap/struct.OccupiedEntry.html' title='typemap::OccupiedEntry'>OccupiedEntry</a>&lt;'a,&nbsp;K,&nbsp;A&gt;),
+    Vacant(<a class='struct' href='../typemap/struct.VacantEntry.html' title='typemap::VacantEntry'>VacantEntry</a>&lt;'a,&nbsp;K,&nbsp;A&gt;),
+}</pre><div class='docblock'><p>A view onto an entry in a TypeMap.</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Occupied' class='variant'><code>Occupied(<a class='struct' href='../typemap/struct.OccupiedEntry.html' title='typemap::OccupiedEntry'>OccupiedEntry</a>&lt;'a,&nbsp;K,&nbsp;A&gt;)</code></span><div class='docblock'><p>A view onto an occupied entry in a TypeMap.</p>
+</div><span id='variant.Vacant' class='variant'><code>Vacant(<a class='struct' href='../typemap/struct.VacantEntry.html' title='typemap::VacantEntry'>VacantEntry</a>&lt;'a,&nbsp;K,&nbsp;A&gt;)</code></span><div class='docblock'><p>A view onto an unoccupied entry in a TypeMap.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>,&nbsp;A:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> + <a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a> + 'a&nbsp;=&nbsp;<a class='trait' href='../unsafe_any/trait.UnsafeAny.html' title='unsafe_any::UnsafeAny'>UnsafeAny</a>&gt; <a class='enum' href='../typemap/enum.Entry.html' title='typemap::Entry'>Entry</a>&lt;'a,&nbsp;K,&nbsp;A&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-101' class='srclink' href='../src/typemap/lib.rs.html#185-205' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.or_insert' class='method'><code>fn <a href='#method.or_insert' class='fnname'>or_insert</a>(self, default: K::Value) -&gt; &amp;'a mut K::Value <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Ensures a value is in the entry by inserting the default if empty, and returns
+a mutable reference to the value in the entry.</p>
+</div><h4 id='method.or_insert_with' class='method'><code>fn <a href='#method.or_insert_with' class='fnname'>or_insert_with</a>&lt;F:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>() -&gt; K::Value&gt;(self, default: F) -&gt; &amp;'a mut K::Value <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Ensures a value is in the entry by inserting the result of the default function if empty,
+and returns a mutable reference to the value in the entry.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "typemap";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

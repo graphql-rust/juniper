@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `httparse` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, httparse">
+
+    <title>httparse - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'httparse', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>httparse</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/httparse/lib.rs.html#1-838' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'>
+<h1 id='httparse' class='section-header'><a href='#httparse'>httparse</a></h1>
+<p>A push library for parsing HTTP/1.x requests and responses.</p>
+
+<p>The focus is on speed and safety. Unsafe code is used to keep parsing fast,
+but unsafety is contained in a submodule, with invariants enforced. The
+parsing internals use an <code>Iterator</code> instead of direct indexing, while
+skipping bounds checks.</p>
+
+<p>The speed is comparable to the fast picohttpparser, currently being around
+1.6 times slower than pico. Improvements can be made as a <code>likely</code>
+intrinsic, and simd, are stabilized in rustc.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Header.html'
+                                  title='httparse::Header'>Header</a></td>
+                           <td class='docblock short'>
+                                <p>Represents a parsed header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.InvalidChunkSize.html'
+                                  title='httparse::InvalidChunkSize'>InvalidChunkSize</a></td>
+                           <td class='docblock short'>
+                                <p>An error in parsing a chunk size.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Request.html'
+                                  title='httparse::Request'>Request</a></td>
+                           <td class='docblock short'>
+                                <p>A parsed Request.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Response.html'
+                                  title='httparse::Response'>Response</a></td>
+                           <td class='docblock short'>
+                                <p>A parsed Response.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Error.html'
+                                  title='httparse::Error'>Error</a></td>
+                           <td class='docblock short'>
+                                <p>An error in parsing.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Status.html'
+                                  title='httparse::Status'>Status</a></td>
+                           <td class='docblock short'>
+                                <p>The result of a successful parse pass.</p>
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.EMPTY_HEADER.html'
+                                  title='httparse::EMPTY_HEADER'>EMPTY_HEADER</a></td>
+                           <td class='docblock short'>
+                                <p>An empty header, useful for constructing a <code>Header</code> array to pass in for
+parsing.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.parse_chunk_size.html'
+                                  title='httparse::parse_chunk_size'>parse_chunk_size</a></td>
+                           <td class='docblock short'>
+                                <p>Parse a buffer of bytes as a chunk size.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.parse_headers.html'
+                                  title='httparse::parse_headers'>parse_headers</a></td>
+                           <td class='docblock short'>
+                                <p>Parse a buffer of bytes as headers.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Result.html'
+                                  title='httparse::Result'>Result</a></td>
+                           <td class='docblock short'>
+                                <p>A Result of any parsing action.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "httparse";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

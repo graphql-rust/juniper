@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `X509` struct in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, X509">
+
+    <title>openssl::x509::X509 - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>openssl</a>::<wbr><a href='index.html'>x509</a></p><script>window.sidebarCurrent = {name: 'X509', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>openssl</a>::<wbr><a href='index.html'>x509</a>::<wbr><a class='struct' href=''>X509</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-3429' class='srclink' href='../../src/openssl/x509/mod.rs.html#420-424' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct X509&lt;'ctx&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>A public key certificate</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'ctx&gt; <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3434' class='srclink' href='../../src/openssl/x509/mod.rs.html#426-535' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(handle: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='type' href='../../openssl_sys/type.X509.html' title='openssl_sys::X509'>X509</a>, owned: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;</code></h4>
+<div class='docblock'><p>Creates new from handle with desired ownership.</p>
+</div><h4 id='method.new_in_ctx' class='method'><code>fn <a href='#method.new_in_ctx' class='fnname'>new_in_ctx</a>(handle: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='type' href='../../openssl_sys/type.X509.html' title='openssl_sys::X509'>X509</a>, ctx: &amp;'ctx <a class='struct' href='../../openssl/x509/struct.X509StoreContext.html' title='openssl::x509::X509StoreContext'>X509StoreContext</a>) -&gt; <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;</code></h4>
+<div class='docblock'><p>Creates a new certificate from context. Doesn&#39;t take ownership
+of handle.</p>
+</div><h4 id='method.from_pem' class='method'><code>fn <a href='#method.from_pem' class='fnname'>from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads certificate from PEM, takes ownership of handle</p>
+</div><h4 id='method.get_handle' class='method'><code>fn <a href='#method.get_handle' class='fnname'>get_handle</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='type' href='../../openssl_sys/type.X509.html' title='openssl_sys::X509'>X509</a></code></h4>
+<h4 id='method.subject_name' class='method'><code>fn <a href='#method.subject_name' class='fnname'>subject_name</a>&lt;'a&gt;(&amp;'a self) -&gt; <a class='struct' href='../../openssl/x509/struct.X509Name.html' title='openssl::x509::X509Name'>X509Name</a>&lt;'a&gt;</code></h4>
+<h4 id='method.subject_alt_names' class='method'><code>fn <a href='#method.subject_alt_names' class='fnname'>subject_alt_names</a>&lt;'a&gt;(&amp;'a self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../openssl/x509/struct.GeneralNames.html' title='openssl::x509::GeneralNames'>GeneralNames</a>&lt;'a&gt;&gt;</code></h4>
+<div class='docblock'><p>Returns this certificate&#39;s SAN entries, if they exist.</p>
+</div><h4 id='method.public_key' class='method'><code>fn <a href='#method.public_key' class='fnname'>public_key</a>(&amp;self) -&gt; <a class='struct' href='../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></h4>
+<h4 id='method.fingerprint' class='method'><code>fn <a href='#method.fingerprint' class='fnname'>fingerprint</a>(&amp;self, hash_type: <a class='enum' href='../../openssl/crypto/hash/enum.Type.html' title='openssl::crypto::hash::Type'>Type</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Returns certificate fingerprint calculated using provided hash</p>
+</div><h4 id='method.write_pem' class='method'><code>fn <a href='#method.write_pem' class='fnname'>write_pem</a>&lt;W&gt;(&amp;self, writer: &amp;mut W) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where W: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a></span></code></h4>
+<div class='docblock'><p>Writes certificate as PEM</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'ctx&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3487' class='srclink' href='../../src/openssl/x509/mod.rs.html#541-549' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;</code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'ctx&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a>&lt;'ctx&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3491' class='srclink' href='../../src/openssl/x509/mod.rs.html#551-557' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

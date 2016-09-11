@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `base64` mod in crate `rustc_serialize`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, base64">
+
+    <title>rustc_serialize::base64 - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://www.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../rustc_serialize/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>rustc_serialize</a></p><script>window.sidebarCurrent = {name: 'base64', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>rustc_serialize</a>::<wbr><a class='mod' href=''>base64</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-4932' class='srclink' href='../../src/rustc_serialize/base64.rs.html#13-476' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Base64 binary-to-text encoding</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use self::<a class='enum' href='../../rustc_serialize/base64/enum.FromBase64Error.html' title='rustc_serialize::base64::FromBase64Error'>FromBase64Error</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../rustc_serialize/base64/enum.CharacterSet.html' title='rustc_serialize::base64::CharacterSet'>CharacterSet</a>::*;</code></td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Config.html'
+                                  title='rustc_serialize::base64::Config'>Config</a></td>
+                           <td class='docblock short'>
+                                <p>Contains configuration parameters for <code>to_base64</code>.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.CharacterSet.html'
+                                  title='rustc_serialize::base64::CharacterSet'>CharacterSet</a></td>
+                           <td class='docblock short'>
+                                <p>Available encoding character sets</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.FromBase64Error.html'
+                                  title='rustc_serialize::base64::FromBase64Error'>FromBase64Error</a></td>
+                           <td class='docblock short'>
+                                <p>Errors that can occur when decoding a base64 encoded string</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Newline.html'
+                                  title='rustc_serialize::base64::Newline'>Newline</a></td>
+                           <td class='docblock short'>
+                                <p>Available newline types</p>
+                           </td>
+                       </tr></table><h2 id='statics' class='section-header'><a href="#statics">Statics</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='static' href='static.MIME.html'
+                                  title='rustc_serialize::base64::MIME'>MIME</a></td>
+                           <td class='docblock short'>
+                                <p>Configuration for RFC 2045 MIME base64 encoding</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='static' href='static.STANDARD.html'
+                                  title='rustc_serialize::base64::STANDARD'>STANDARD</a></td>
+                           <td class='docblock short'>
+                                <p>Configuration for RFC 4648 standard base64 encoding</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='static' href='static.URL_SAFE.html'
+                                  title='rustc_serialize::base64::URL_SAFE'>URL_SAFE</a></td>
+                           <td class='docblock short'>
+                                <p>Configuration for RFC 4648 base64url encoding</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.FromBase64.html'
+                                  title='rustc_serialize::base64::FromBase64'>FromBase64</a></td>
+                           <td class='docblock short'>
+                                <p>A trait for converting from base64 encoded values.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.ToBase64.html'
+                                  title='rustc_serialize::base64::ToBase64'>ToBase64</a></td>
+                           <td class='docblock short'>
+                                <p>A trait for converting a value to base64 encoding.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "rustc_serialize";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

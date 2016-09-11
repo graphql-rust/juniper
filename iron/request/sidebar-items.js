@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Body","The body of an Iron request,"],["HttpRequest","A request bundles several parts of an incoming `NetworkStream`, given to a `Handler`."],["Request","The `Request` given to all `Middleware`."],["Url","HTTP/HTTPS URL type for Iron."]]});

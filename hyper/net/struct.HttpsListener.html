@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `HttpsListener` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, HttpsListener">
+
+    <title>hyper::net::HttpsListener - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>net</a></p><script>window.sidebarCurrent = {name: 'HttpsListener', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>net</a>::<wbr><a class='struct' href=''>HttpsListener</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-7035' class='srclink' href='../../src/hyper/net.rs.html#533-536' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct HttpsListener&lt;S:&nbsp;<a class='trait' href='../../hyper/net/trait.SslServer.html' title='hyper::net::SslServer'>SslServer</a>&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>A Http Listener over SSL.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;S:&nbsp;<a class='trait' href='../../hyper/net/trait.SslServer.html' title='hyper::net::SslServer'>SslServer</a>&gt; <a class='struct' href='../../hyper/net/struct.HttpsListener.html' title='hyper::net::HttpsListener'>HttpsListener</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7039' class='srclink' href='../../src/hyper/net.rs.html#538-554' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>&lt;To:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/net/addr/trait.ToSocketAddrs.html' title='std::net::addr::ToSocketAddrs'>ToSocketAddrs</a>&gt;(addr: To, ssl: S) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;<a class='struct' href='../../hyper/net/struct.HttpsListener.html' title='hyper::net::HttpsListener'>HttpsListener</a>&lt;S&gt;&gt;</code></h4>
+<div class='docblock'><p>Start listening to an address over HTTPS.</p>
+</div><h4 id='method.with_listener' class='method'><code>fn <a href='#method.with_listener' class='fnname'>with_listener</a>(listener: <a class='struct' href='../../hyper/net/struct.HttpListener.html' title='hyper::net::HttpListener'>HttpListener</a>, ssl: S) -&gt; <a class='struct' href='../../hyper/net/struct.HttpsListener.html' title='hyper::net::HttpsListener'>HttpsListener</a>&lt;S&gt;</code></h4>
+<div class='docblock'><p>Construct an HttpsListener from a bound <code>TcpListener</code>.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> + <a class='trait' href='../../hyper/net/trait.SslServer.html' title='hyper::net::SslServer'>SslServer</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../hyper/net/struct.HttpsListener.html' title='hyper::net::HttpsListener'>HttpsListener</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7029' class='srclink' href='../../src/hyper/net.rs.html#532' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../hyper/net/struct.HttpsListener.html' title='hyper::net::HttpsListener'>HttpsListener</a>&lt;S&gt;</code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;S:&nbsp;<a class='trait' href='../../hyper/net/trait.SslServer.html' title='hyper::net::SslServer'>SslServer</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>&gt; <a class='trait' href='../../hyper/net/trait.NetworkListener.html' title='hyper::net::NetworkListener'>NetworkListener</a> for <a class='struct' href='../../hyper/net/struct.HttpsListener.html' title='hyper::net::HttpsListener'>HttpsListener</a>&lt;S&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7050' class='srclink' href='../../src/hyper/net.rs.html#556-568' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Stream' class='type'><code>type <a href='../../hyper/net/trait.NetworkListener.html#associatedtype.Stream' class='type'>Stream</a> = S::Stream</code></h4>
+<div class='docblock'><p>The stream produced for each connection.</p>
+</div><h4 id='method.accept' class='method'><code>fn <a href='../../hyper/net/trait.NetworkListener.html#tymethod.accept' class='fnname'>accept</a>(&amp;mut self) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;S::Stream&gt;</code></h4>
+<div class='docblock'><p>Returns an iterator of streams.</p>
+</div><h4 id='method.local_addr' class='method'><code>fn <a href='../../hyper/net/trait.NetworkListener.html#tymethod.local_addr' class='fnname'>local_addr</a>(&amp;mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/std/net/addr/enum.SocketAddr.html' title='std::net::addr::SocketAddr'>SocketAddr</a>&gt;</code></h4>
+<div class='docblock'><p>Get the address this Listener ended up listening on.</p>
+</div><h4 id='method.incoming' class='method'><code>fn <a href='../../hyper/net/trait.NetworkListener.html#method.incoming' class='fnname'>incoming</a>(&amp;mut self) -&gt; <a class='struct' href='../../hyper/net/struct.NetworkConnections.html' title='hyper::net::NetworkConnections'>NetworkConnections</a>&lt;Self&gt;</code></h4>
+<div class='docblock'><p>Returns an iterator over incoming connections.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

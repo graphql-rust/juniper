@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Client` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Client">
+
+    <title>hyper::client::Client - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'Client', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>client</a>::<wbr><a class='struct' href=''>Client</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-641' class='srclink' href='../../src/hyper/client/mod.rs.html#95-101' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Client {
+    // some fields omitted
+}</pre><div class='docblock'><p>A Client to use additional features with Requests.</p>
+
+<p>Clients can handle things such as: redirect policy, connection pooling.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-651' class='srclink' href='../../src/hyper/client/mod.rs.html#114-223' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></h4>
+<div class='docblock'><p>Create a new Client.</p>
+</div><h4 id='method.with_pool_config' class='method'><code>fn <a href='#method.with_pool_config' class='fnname'>with_pool_config</a>(config: <a class='struct' href='../../hyper/client/pool/struct.Config.html' title='hyper::client::pool::Config'>Config</a>) -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></h4>
+<div class='docblock'><p>Create a new Client with a configured Pool Config.</p>
+</div><h4 id='method.with_http_proxy' class='method'><code>fn <a href='#method.with_http_proxy' class='fnname'>with_http_proxy</a>&lt;H&gt;(host: H, port: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>) -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a> <span class='where'>where H: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/collections/borrow/enum.Cow.html' title='collections::borrow::Cow'>Cow</a>&lt;'static,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;&gt;</span></code></h4>
+<h4 id='method.with_proxy_config' class='method'><code>fn <a href='#method.with_proxy_config' class='fnname'>with_proxy_config</a>&lt;H,&nbsp;S&gt;(proxy_config: <a class='struct' href='../../hyper/client/struct.ProxyConfig.html' title='hyper::client::ProxyConfig'>ProxyConfig</a>&lt;H,&nbsp;S&gt;) -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a> <span class='where'>where H: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/collections/borrow/enum.Cow.html' title='collections::borrow::Cow'>Cow</a>&lt;'static,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;&gt;, S: <a class='trait' href='../../hyper/net/trait.SslClient.html' title='hyper::net::SslClient'>SslClient</a>&lt;<a class='struct' href='../../hyper/net/struct.HttpConnector.html' title='hyper::net::HttpConnector'>HttpConnector</a>::Stream&gt; + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> + 'static</span></code></h4>
+<h4 id='method.with_connector' class='method'><code>fn <a href='#method.with_connector' class='fnname'>with_connector</a>&lt;C,&nbsp;S&gt;(connector: C) -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a> <span class='where'>where C: <a class='trait' href='../../hyper/net/trait.NetworkConnector.html' title='hyper::net::NetworkConnector'>NetworkConnector</a>&lt;Stream=S&gt; + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> + 'static, S: <a class='trait' href='../../hyper/net/trait.NetworkStream.html' title='hyper::net::NetworkStream'>NetworkStream</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a></span></code></h4>
+<div class='docblock'><p>Create a new client with a specific connector.</p>
+</div><h4 id='method.with_protocol' class='method'><code>fn <a href='#method.with_protocol' class='fnname'>with_protocol</a>&lt;P:&nbsp;<a class='trait' href='../../hyper/http/message/trait.Protocol.html' title='hyper::http::message::Protocol'>Protocol</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> + 'static&gt;(protocol: P) -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></h4>
+<div class='docblock'><p>Create a new client with a specific <code>Protocol</code>.</p>
+</div><h4 id='method.set_redirect_policy' class='method'><code>fn <a href='#method.set_redirect_policy' class='fnname'>set_redirect_policy</a>(&amp;mut self, policy: <a class='enum' href='../../hyper/client/enum.RedirectPolicy.html' title='hyper::client::RedirectPolicy'>RedirectPolicy</a>)</code></h4>
+<div class='docblock'><p>Set the RedirectPolicy.</p>
+</div><h4 id='method.set_read_timeout' class='method'><code>fn <a href='#method.set_read_timeout' class='fnname'>set_read_timeout</a>(&amp;mut self, dur: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>&gt;)</code></h4>
+<div class='docblock'><p>Set the read timeout value for all requests.</p>
+</div><h4 id='method.set_write_timeout' class='method'><code>fn <a href='#method.set_write_timeout' class='fnname'>set_write_timeout</a>(&amp;mut self, dur: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>&gt;)</code></h4>
+<div class='docblock'><p>Set the write timeout value for all requests.</p>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a Get request.</p>
+</div><h4 id='method.head' class='method'><code>fn <a href='#method.head' class='fnname'>head</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a Head request.</p>
+</div><h4 id='method.patch' class='method'><code>fn <a href='#method.patch' class='fnname'>patch</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a Patch request.</p>
+</div><h4 id='method.post' class='method'><code>fn <a href='#method.post' class='fnname'>post</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a Post request.</p>
+</div><h4 id='method.put' class='method'><code>fn <a href='#method.put' class='fnname'>put</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a Put request.</p>
+</div><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a Delete request.</p>
+</div><h4 id='method.request' class='method'><code>fn <a href='#method.request' class='fnname'>request</a>&lt;U:&nbsp;<a class='trait' href='../../hyper/client/trait.IntoUrl.html' title='hyper::client::IntoUrl'>IntoUrl</a>&gt;(&amp;self, method: <a class='enum' href='../../hyper/method/enum.Method.html' title='hyper::method::Method'>Method</a>, url: U) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
+<div class='docblock'><p>Build a new request using this Client.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-647' class='srclink' href='../../src/hyper/client/mod.rs.html#103-112' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, fmt: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-715' class='srclink' href='../../src/hyper/client/mod.rs.html#225-227' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.default' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a></code></h4>
+<div class='docblock'><p>Returns the &quot;default value&quot; for a type. <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

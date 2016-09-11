@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `define_encode_set!` macro in crate `url`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, define_encode_set!">
+
+    <title>url::define_encode_set! - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>url</a></p><script>window.sidebarCurrent = {name: 'define_encode_set!', ty: 'macro', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content macro">
+<h1 class='fqn'><span class='in-band'><a href='index.html'>url</a>::<wbr><a class='macro' href=''>define_encode_set!</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2423' class='srclink' href='../src/url/percent_encoding.rs.html#58-77' title='goto source code'>[src]</a></span></h1>
+<pre class='rust macro'>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>define_encode_set</span> {
+    ($(<span class='attribute'>#[<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>attr</span>: <span class='ident'>meta</span>]</span>)<span class='op'>*</span> <span class='kw'>pub</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>: <span class='ident'>ident</span> <span class='op'>=</span> [<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>base_set</span>: <span class='ident'>expr</span>] <span class='op'>|</span> {$(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ch</span>: <span class='ident'>pat</span>),<span class='op'>*</span>}) <span class='op'>=&gt;</span> { ... };
+}</pre>
+<div class='docblock'><p>Define a new struct
+that implements the <a href="percent_encoding/trait.EncodeSet.html"><code>EncodeSet</code></a> trait,
+for use in <a href="percent_encoding/fn.percent_encode.html"><code>percent_decode()</code></a>
+and related functions.</p>
+
+<p>Parameters are characters to include in the set in addition to those of the base set.
+See <a href="http://url.spec.whatwg.org/#simple-encode-set">encode sets specification</a>.</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#[<span class='ident'>macro_use</span>]</span> <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>url</span>;
+<span class='kw'>use</span> <span class='ident'>url</span>::<span class='ident'>percent_encoding</span>::{<span class='ident'>utf8_percent_encode</span>, <span class='ident'>SIMPLE_ENCODE_SET</span>};
+<span class='macro'>define_encode_set</span><span class='macro'>!</span> {
+    <span class='doccomment'>/// This encode set is used in the URL parser for query strings.</span>
+    <span class='kw'>pub</span> <span class='ident'>QUERY_ENCODE_SET</span> <span class='op'>=</span> [<span class='ident'>SIMPLE_ENCODE_SET</span>] <span class='op'>|</span> {<span class='string'>&#39; &#39;</span>, <span class='string'>&#39;&quot;&#39;</span>, <span class='string'>&#39;#&#39;</span>, <span class='string'>&#39;&lt;&#39;</span>, <span class='string'>&#39;&gt;&#39;</span>}
+}
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>utf8_percent_encode</span>(<span class='string'>&quot;foo bar&quot;</span>, <span class='ident'>QUERY_ENCODE_SET</span>).<span class='ident'>collect</span>::<span class='op'>&lt;</span><span class='ident'>String</span><span class='op'>&gt;</span>(), <span class='string'>&quot;foo%20bar&quot;</span>);</pre>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "url";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

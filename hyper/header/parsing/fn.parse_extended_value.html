@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `parse_extended_value` fn in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, parse_extended_value">
+
+    <title>hyper::header::parsing::parse_extended_value - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>hyper</a>::<wbr><a href='../index.html'>header</a>::<wbr><a href='index.html'>parsing</a></p><script>window.sidebarCurrent = {name: 'parse_extended_value', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content fn">
+<h1 class='fqn'><span class='in-band'>Function <a href='../../index.html'>hyper</a>::<wbr><a href='../index.html'>header</a>::<wbr><a href='index.html'>parsing</a>::<wbr><a class='fn' href=''>parse_extended_value</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-5342' class='srclink' href='../../../src/hyper/header/parsing.rs.html#97-129' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub fn parse_extended_value(val: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;<a class='struct' href='../../../hyper/header/parsing/struct.ExtendedValue.html' title='hyper::header::parsing::ExtendedValue'>ExtendedValue</a>&gt;</pre><div class='docblock'><p>Parses extended header parameter values (<code>ext-value</code>), as defined in
+<a href="https://tools.ietf.org/html/rfc5987#section-3.2">RFC 5987</a>.</p>
+
+<p>Extended values are denoted by parameter names that end with <code>*</code>.</p>
+
+<h2 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h2>
+<pre><code class="language-plain">ext-value     = charset  &quot;&#39;&quot; [ language ] &quot;&#39;&quot; value-chars
+              ; like RFC 2231&#39;s &lt;extended-initial-value&gt;
+              ; (see [RFC2231], Section 7)
+
+charset       = &quot;UTF-8&quot; / &quot;ISO-8859-1&quot; / mime-charset
+
+mime-charset  = 1*mime-charsetc
+mime-charsetc = ALPHA / DIGIT
+              / &quot;!&quot; / &quot;#&quot; / &quot;$&quot; / &quot;%&quot; / &quot;&amp;&quot;
+              / &quot;+&quot; / &quot;-&quot; / &quot;^&quot; / &quot;_&quot; / &quot;`&quot;
+              / &quot;{&quot; / &quot;}&quot; / &quot;~&quot;
+              ; as &lt;mime-charset&gt; in Section 2.3 of [RFC2978]
+              ; except that the single quote is not included
+              ; SHOULD be registered in the IANA charset registry
+
+language      = &lt;Language-Tag, defined in [RFC5646], Section 2.1&gt;
+
+value-chars   = *( pct-encoded / attr-char )
+
+pct-encoded   = &quot;%&quot; HEXDIG HEXDIG
+              ; see [RFC3986], Section 2.1
+
+attr-char     = ALPHA / DIGIT
+              / &quot;!&quot; / &quot;#&quot; / &quot;$&quot; / &quot;&amp;&quot; / &quot;+&quot; / &quot;-&quot; / &quot;.&quot;
+              / &quot;^&quot; / &quot;_&quot; / &quot;`&quot; / &quot;|&quot; / &quot;~&quot;
+              ; token except ( &quot;*&quot; / &quot;&#39;&quot; / &quot;%&quot; )
+</code></pre>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Request","A client request to a remote server. The W type tracks the state of the request, Fresh vs Streaming."]]});

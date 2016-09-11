@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `SimpleClient` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, SimpleClient">
+
+    <title>solicit::client::SimpleClient - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>solicit</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'SimpleClient', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>solicit</a>::<wbr><a href='index.html'>client</a>::<wbr><a class='struct' href=''>SimpleClient</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1625' class='srclink' href='../../src/solicit/client/simple.rs.html#94-102' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct SimpleClient&lt;S&gt; <span class='where'>where S: <a class='trait' href='../../solicit/http/transport/trait.TransportStream.html' title='solicit::http::transport::TransportStream'>TransportStream</a></span> {
+    // some fields omitted
+}</pre><div class='docblock'><p>A struct implementing a simple HTTP/2 client.</p>
+
+<p>This client works as an HTTP/1.1 client with a Keep-Alive connection and
+pipelining might work.</p>
+
+<p>Multiple requests can be queued up (and sent to the server) by calling
+<code>request</code> multiple times, before any <code>get_response</code>.</p>
+
+<p>Once a <code>get_response</code> is issued, the client blocks until it receives the
+response for the particular request that was referenced in the <code>get_response</code>
+call.</p>
+
+<p>Therefore, by doing <code>request</code> -&gt; <code>get_response</code> we can use the HTTP/2
+connection as a <code>Keep-Alive</code> HTTP/1.1 connection and a pipelined flow by
+queuing up a sequence of requests and then &quot;joining&quot; over them by calling
+<code>get_response</code> for each of them.</p>
+
+<p>The responses that are returned by the client are very raw representations
+of the response.</p>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<p>Issue a simple GET request using the helper <code>get</code> method. Premade connection
+passed to the client.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>net</span>::<span class='ident'>TcpStream</span>;
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>HttpScheme</span>;
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>connection</span>::<span class='ident'>HttpConnection</span>;
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>client</span>::<span class='ident'>write_preface</span>;
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>client</span>::<span class='ident'>SimpleClient</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>;
+
+<span class='comment'>// Prepare a stream manually... We must write the preface ourselves in this case.</span>
+<span class='comment'>// This is a more advanced way to use the client and the `HttpConnect` implementations</span>
+<span class='comment'>// should usually be preferred for their convenience.</span>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>stream</span> <span class='op'>=</span> <span class='ident'>TcpStream</span>::<span class='ident'>connect</span>(<span class='kw-2'>&amp;</span>(<span class='string'>&quot;http2bin.org&quot;</span>, <span class='number'>80</span>)).<span class='ident'>unwrap</span>();
+<span class='ident'>write_preface</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>stream</span>);
+<span class='comment'>// Connect to an HTTP/2 aware server</span>
+<span class='kw'>let</span> <span class='ident'>conn</span> <span class='op'>=</span> <span class='ident'>HttpConnection</span>::<span class='op'>&lt;</span><span class='ident'>TcpStream</span>, <span class='ident'>TcpStream</span><span class='op'>&gt;</span>::<span class='ident'>with_stream</span>(
+                               <span class='ident'>stream</span>,
+                               <span class='ident'>HttpScheme</span>::<span class='ident'>Http</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>SimpleClient</span>::<span class='ident'>with_connection</span>(<span class='ident'>conn</span>, <span class='string'>&quot;http2bin.org&quot;</span>.<span class='ident'>into</span>()).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>response</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>get</span>(<span class='string'>b&quot;/&quot;</span>, <span class='kw-2'>&amp;</span>[]).<span class='ident'>unwrap</span>();
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>response</span>.<span class='ident'>stream_id</span>, <span class='number'>1</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>response</span>.<span class='ident'>status_code</span>().<span class='ident'>unwrap</span>(), <span class='number'>200</span>);
+<span class='comment'>// Dump the headers and the response body to stdout.</span>
+<span class='comment'>// They are returned as raw bytes for the user to do as they please.</span>
+<span class='comment'>// (Note: in general directly decoding assuming a utf8 encoding might not</span>
+<span class='comment'>// always work -- this is meant as a simple example that shows that the</span>
+<span class='comment'>// response is well formed.)</span>
+<span class='kw'>for</span> <span class='ident'>header</span> <span class='kw'>in</span> <span class='ident'>response</span>.<span class='ident'>headers</span>.<span class='ident'>iter</span>() {
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{}: {}&quot;</span>,
+        <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>header</span>.<span class='number'>0</span>).<span class='ident'>unwrap</span>(),
+        <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>header</span>.<span class='number'>1</span>).<span class='ident'>unwrap</span>());
+}
+<span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>response</span>.<span class='ident'>body</span>).<span class='ident'>unwrap</span>());</pre>
+
+<p>Issue a simple GET request using the helper <code>get</code> method. Pass a connector
+to establish a new connection.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>http</span>::<span class='ident'>client</span>::<span class='ident'>CleartextConnector</span>;
+<span class='kw'>use</span> <span class='ident'>solicit</span>::<span class='ident'>client</span>::<span class='ident'>SimpleClient</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>;
+
+<span class='comment'>// Connect to an HTTP/2 aware server</span>
+<span class='kw'>let</span> <span class='ident'>connector</span> <span class='op'>=</span> <span class='ident'>CleartextConnector</span>::<span class='ident'>new</span>(<span class='string'>&quot;http2bin.org&quot;</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>SimpleClient</span>::<span class='ident'>with_connector</span>(<span class='ident'>connector</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>response</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>get</span>(<span class='string'>b&quot;/&quot;</span>, <span class='kw-2'>&amp;</span>[]).<span class='ident'>unwrap</span>();
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>response</span>.<span class='ident'>stream_id</span>, <span class='number'>1</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>response</span>.<span class='ident'>status_code</span>().<span class='ident'>unwrap</span>(), <span class='number'>200</span>);
+<span class='comment'>// Dump the headers and the response body to stdout.</span>
+<span class='comment'>// They are returned as raw bytes for the user to do as they please.</span>
+<span class='comment'>// (Note: in general directly decoding assuming a utf8 encoding might not</span>
+<span class='comment'>// always work -- this is meant as a simple example that shows that the</span>
+<span class='comment'>// response is well formed.)</span>
+<span class='kw'>for</span> <span class='ident'>header</span> <span class='kw'>in</span> <span class='ident'>response</span>.<span class='ident'>headers</span>.<span class='ident'>iter</span>() {
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{}: {}&quot;</span>,
+        <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>header</span>.<span class='number'>0</span>).<span class='ident'>unwrap</span>(),
+        <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>header</span>.<span class='number'>1</span>).<span class='ident'>unwrap</span>());
+}
+<span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>str</span>::<span class='ident'>from_utf8</span>(<span class='kw-2'>&amp;</span><span class='ident'>response</span>.<span class='ident'>body</span>).<span class='ident'>unwrap</span>());</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;S&gt; <a class='struct' href='../../solicit/client/struct.SimpleClient.html' title='solicit::client::SimpleClient'>SimpleClient</a>&lt;S&gt; <span class='where'>where S: <a class='trait' href='../../solicit/http/transport/trait.TransportStream.html' title='solicit::http::transport::TransportStream'>TransportStream</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1630' class='srclink' href='../../src/solicit/client/simple.rs.html#104-266' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.with_connection' class='method'><code>fn <a href='#method.with_connection' class='fnname'>with_connection</a>(conn: <a class='struct' href='../../solicit/http/connection/struct.HttpConnection.html' title='solicit::http::connection::HttpConnection'>HttpConnection</a>&lt;S,&nbsp;S&gt;, host: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../../solicit/client/struct.SimpleClient.html' title='solicit::client::SimpleClient'>SimpleClient</a>&lt;S&gt;&gt;</code></h4>
+<div class='docblock'><p>Create a new <code>SimpleClient</code> instance that will use the given <code>HttpConnection</code>
+to communicate to the server.</p>
+
+<p>It assumes that the connection stream is initialized and will <em>not</em> automatically write the
+client preface.</p>
+</div><h4 id='method.with_connector' class='method'><code>fn <a href='#method.with_connector' class='fnname'>with_connector</a>&lt;C&gt;(connector: C) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../../solicit/client/struct.SimpleClient.html' title='solicit::client::SimpleClient'>SimpleClient</a>&lt;S&gt;&gt; <span class='where'>where C: <a class='trait' href='../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>HttpConnect</a>&lt;Stream=S&gt;</span></code></h4>
+<div class='docblock'><p>A convenience constructor that first tries to establish an HTTP/2
+connection by using the given connector instance (an implementation of
+the <code>HttpConnect</code> trait).</p>
+
+<h1 id='panics' class='section-header'><a href='#panics'>Panics</a></h1>
+<p>Currently, it panics if the connector returns an error.</p>
+</div><h4 id='method.request' class='method'><code>fn <a href='#method.request' class='fnname'>request</a>(&amp;mut self, method: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, path: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, extras: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, body: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='type' href='../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>&gt;</code></h4>
+<div class='docblock'><p>Send a request to the server. Blocks until the entire request has been
+sent.</p>
+
+<p>The request is described by the method, the path on which it should be
+invoked and the &quot;real&quot; headers that should be included. Clients should
+never put pseudo-headers in the <code>headers</code> parameter, as those are
+automatically included based on metadata.</p>
+
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
+<p>If the full request is successfully sent, returns the ID of the stream
+on which the request was sent. Clients can use this ID to refer to the
+response.</p>
+
+<p>Any IO errors are propagated.</p>
+</div><h4 id='method.get_response' class='method'><code>fn <a href='#method.get_response' class='fnname'>get_response</a>(&amp;mut self, stream_id: <a class='type' href='../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a>&gt;</code></h4>
+<div class='docblock'><p>Gets the response for the stream with the given ID. If a valid stream ID
+is given, it blocks until a response is received.</p>
+
+<h1 id='returns-1' class='section-header'><a href='#returns-1'>Returns</a></h1>
+<p>A <code>Response</code> if the response can be successfully read.</p>
+
+<p>Any underlying IO errors are propagated. Errors in the HTTP/2 protocol
+also stop processing and are returned to the client.</p>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;mut self, path: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, extra_headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a>&gt;</code></h4>
+<div class='docblock'><p>Performs a GET request on the given path. This is a shortcut method for
+calling <code>request</code> followed by <code>get_response</code> for the returned stream ID.</p>
+</div><h4 id='method.post' class='method'><code>fn <a href='#method.post' class='fnname'>post</a>(&amp;mut self, path: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, extra_headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a>&gt;</code></h4>
+<div class='docblock'><p>Performs a POST request on the given path.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

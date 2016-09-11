@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `BigNum` struct in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, BigNum">
+
+    <title>openssl::bn::BigNum - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>openssl</a>::<wbr><a href='index.html'>bn</a></p><script>window.sidebarCurrent = {name: 'BigNum', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>openssl</a>::<wbr><a href='index.html'>bn</a>::<wbr><a class='struct' href=''>BigNum</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-39' class='srclink' href='../../src/openssl/bn/mod.rs.html#14' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct BigNum(_);</pre><div class='docblock'><p>A signed arbitrary-precision integer.</p>
+
+<p><code>BigNum</code> provides wrappers around OpenSSL&#39;s checked arithmetic functions. Additionally, it
+implements the standard operators (<code>std::ops</code>), which perform unchecked arithmetic, unwrapping
+the returned <code>Result</code> of the checked operations.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-53' class='srclink' href='../../src/openssl/bn/mod.rs.html#82-680' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a new <code>BigNum</code> with the value 0.</p>
+</div><h4 id='method.new_from' class='method'><code>fn <a href='#method.new_from' class='fnname'>new_from</a>(n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a new <code>BigNum</code> with the given value.</p>
+</div><h4 id='method.from_dec_str' class='method'><code>fn <a href='#method.from_dec_str' class='fnname'>from_dec_str</a>(s: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a <code>BigNum</code> from a decimal string.</p>
+</div><h4 id='method.from_hex_str' class='method'><code>fn <a href='#method.from_hex_str' class='fnname'>from_hex_str</a>(s: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a <code>BigNum</code> from a hexadecimal string.</p>
+</div><h4 id='method.new_from_ffi' class='method'><code>unsafe fn <a href='#method.new_from_ffi' class='fnname'>new_from_ffi</a>(orig: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../openssl_sys/struct.BIGNUM.html' title='openssl_sys::BIGNUM'>BIGNUM</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.new_from_slice' class='method'><code>fn <a href='#method.new_from_slice' class='fnname'>new_from_slice</a>(n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a new <code>BigNum</code> from an unsigned, big-endian encoded number of arbitrary length.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>bignum</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from_slice</span>(<span class='kw-2'>&amp;</span>[<span class='number'>0x12</span>, <span class='number'>0x00</span>, <span class='number'>0x34</span>]).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>bignum</span>, <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>0x120034</span>).<span class='ident'>unwrap</span>());</pre>
+</div><h4 id='method.checked_sqr' class='method'><code>fn <a href='#method.checked_sqr' class='fnname'>checked_sqr</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Returns the square of <code>self</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>n</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>10</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>squared</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>100</span>).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>n</span>.<span class='ident'>checked_sqr</span>().<span class='ident'>unwrap</span>(), <span class='ident'>squared</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>n</span> <span class='op'>*</span> <span class='ident'>n</span>, <span class='ident'>squared</span>);</pre>
+</div><h4 id='method.checked_nnmod' class='method'><code>fn <a href='#method.checked_nnmod' class='fnname'>checked_nnmod</a>(&amp;self, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Returns the unsigned remainder of the division <code>self / n</code>.</p>
+</div><h4 id='method.checked_mod_add' class='method'><code>fn <a href='#method.checked_mod_add' class='fnname'>checked_mod_add</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Equivalent to <code>(self + a) mod n</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>10</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>a</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>20</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>n</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>29</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>1</span>).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>checked_mod_add</span>(<span class='ident'>a</span>, <span class='ident'>n</span>).<span class='ident'>unwrap</span>(), <span class='ident'>result</span>);</pre>
+</div><h4 id='method.checked_mod_sub' class='method'><code>fn <a href='#method.checked_mod_sub' class='fnname'>checked_mod_sub</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Equivalent to <code>(self - a) mod n</code>.</p>
+</div><h4 id='method.checked_mod_mul' class='method'><code>fn <a href='#method.checked_mod_mul' class='fnname'>checked_mod_mul</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Equivalent to <code>(self * a) mod n</code>.</p>
+</div><h4 id='method.checked_mod_sqr' class='method'><code>fn <a href='#method.checked_mod_sqr' class='fnname'>checked_mod_sqr</a>(&amp;self, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Equivalent to <code>self² mod n</code>.</p>
+</div><h4 id='method.checked_exp' class='method'><code>fn <a href='#method.checked_exp' class='fnname'>checked_exp</a>(&amp;self, p: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Raises <code>self</code> to the <code>p</code>th power.</p>
+</div><h4 id='method.checked_mod_exp' class='method'><code>fn <a href='#method.checked_mod_exp' class='fnname'>checked_mod_exp</a>(&amp;self, p: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Equivalent to <code>self.checked_exp(p) mod n</code>.</p>
+</div><h4 id='method.checked_mod_inv' class='method'><code>fn <a href='#method.checked_mod_inv' class='fnname'>checked_mod_inv</a>(&amp;self, n: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Calculates the modular multiplicative inverse of <code>self</code> modulo <code>n</code>, that is, an integer <code>r</code>
+such that <code>(self * r) % n == 1</code>.</p>
+</div><h4 id='method.add_word' class='method'><code>fn <a href='#method.add_word' class='fnname'>add_word</a>(&amp;mut self, w: <a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Add an <code>unsigned long</code> to <code>self</code>. This is more efficient than adding a <code>BigNum</code>.</p>
+</div><h4 id='method.sub_word' class='method'><code>fn <a href='#method.sub_word' class='fnname'>sub_word</a>(&amp;mut self, w: <a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.mul_word' class='method'><code>fn <a href='#method.mul_word' class='fnname'>mul_word</a>(&amp;mut self, w: <a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.div_word' class='method'><code>fn <a href='#method.div_word' class='fnname'>div_word</a>(&amp;mut self, w: <a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.mod_word' class='method'><code>fn <a href='#method.mod_word' class='fnname'>mod_word</a>(&amp;self, w: <a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='type' href='../../libc/unix/notbsd/linux/other/b64/type.c_ulong.html' title='libc::unix::notbsd::linux::other::b64::c_ulong'>c_ulong</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_gcd' class='method'><code>fn <a href='#method.checked_gcd' class='fnname'>checked_gcd</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Computes the greatest common denominator of <code>self</code> and <code>a</code>.</p>
+</div><h4 id='method.checked_generate_prime' class='method'><code>fn <a href='#method.checked_generate_prime' class='fnname'>checked_generate_prime</a>(bits: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>, safe: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, add: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt;, rem: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Generates a prime number.</p>
+
+<h1 id='parameters' class='section-header'><a href='#parameters'>Parameters</a></h1>
+<ul>
+<li><code>bits</code>: The length of the prime in bits (lower bound).</li>
+<li><code>safe</code>: If true, returns a &quot;safe&quot; prime <code>p</code> so that <code>(p-1)/2</code> is also prime.</li>
+<li><code>add</code>/<code>rem</code>: If <code>add</code> is set to <code>Some(add)</code>, <code>p % add == rem</code> will hold, where <code>p</code> is the
+generated prime and <code>rem</code> is <code>1</code> if not specified (<code>None</code>).</li>
+</ul>
+</div><h4 id='method.is_prime' class='method'><code>fn <a href='#method.is_prime' class='fnname'>is_prime</a>(&amp;self, checks: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Checks whether <code>self</code> is prime.</p>
+
+<p>Performs a Miller-Rabin probabilistic primality test with <code>checks</code> iterations.</p>
+
+<h1 id='return-value' class='section-header'><a href='#return-value'>Return Value</a></h1>
+<p>Returns <code>true</code> if <code>self</code> is prime with an error probability of less than <code>0.25 ^ checks</code>.</p>
+</div><h4 id='method.is_prime_fast' class='method'><code>fn <a href='#method.is_prime_fast' class='fnname'>is_prime_fast</a>(&amp;self, checks: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>, do_trial_division: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Checks whether <code>self</code> is prime with optional trial division.</p>
+
+<p>If <code>do_trial_division</code> is <code>true</code>, first performs trial division by a number of small primes.
+Then, like <code>is_prime</code>, performs a Miller-Rabin probabilistic primality test with <code>checks</code>
+iterations.</p>
+
+<h1 id='return-value-1' class='section-header'><a href='#return-value-1'>Return Value</a></h1>
+<p>Returns <code>true</code> if <code>self</code> is prime with an error probability of less than <code>0.25 ^ checks</code>.</p>
+</div><h4 id='method.checked_new_random' class='method'><code>fn <a href='#method.checked_new_random' class='fnname'>checked_new_random</a>(bits: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>, prop: <a class='enum' href='../../openssl/bn/enum.RNGProperty.html' title='openssl::bn::RNGProperty'>RNGProperty</a>, odd: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Generates a cryptographically strong pseudo-random <code>BigNum</code>.</p>
+
+<h1 id='parameters-1' class='section-header'><a href='#parameters-1'>Parameters</a></h1>
+<ul>
+<li><code>bits</code>: Length of the number in bits.</li>
+<li><code>prop</code>: The desired properties of the number.</li>
+<li><code>odd</code>: If <code>true</code>, the generated number will be odd.</li>
+</ul>
+</div><h4 id='method.checked_new_pseudo_random' class='method'><code>fn <a href='#method.checked_new_pseudo_random' class='fnname'>checked_new_pseudo_random</a>(bits: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>, prop: <a class='enum' href='../../openssl/bn/enum.RNGProperty.html' title='openssl::bn::RNGProperty'>RNGProperty</a>, odd: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>The cryptographically weak counterpart to <code>checked_new_random</code>.</p>
+</div><h4 id='method.checked_rand_in_range' class='method'><code>fn <a href='#method.checked_rand_in_range' class='fnname'>checked_rand_in_range</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Generates a cryptographically strong pseudo-random <code>BigNum</code> <code>r</code> in the range
+<code>0 &lt;= r &lt; self</code>.</p>
+</div><h4 id='method.checked_pseudo_rand_in_range' class='method'><code>fn <a href='#method.checked_pseudo_rand_in_range' class='fnname'>checked_pseudo_rand_in_range</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>The cryptographically weak counterpart to <code>checked_rand_in_range</code>.</p>
+</div><h4 id='method.set_bit' class='method'><code>fn <a href='#method.set_bit' class='fnname'>set_bit</a>(&amp;mut self, n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Sets bit <code>n</code>. Equivalent to <code>self |= (1 &lt;&lt; n)</code>.</p>
+
+<p>When setting a bit outside of <code>self</code>, it is expanded.</p>
+</div><h4 id='method.clear_bit' class='method'><code>fn <a href='#method.clear_bit' class='fnname'>clear_bit</a>(&amp;mut self, n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Clears bit <code>n</code>, setting it to 0. Equivalent to <code>self &amp;= ~(1 &lt;&lt; n)</code>.</p>
+
+<p>When clearing a bit outside of <code>self</code>, an error is returned.</p>
+</div><h4 id='method.is_bit_set' class='method'><code>fn <a href='#method.is_bit_set' class='fnname'>is_bit_set</a>(&amp;self, n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns <code>true</code> if the <code>n</code>th bit of <code>self</code> is set to 1, <code>false</code> otherwise.</p>
+</div><h4 id='method.mask_bits' class='method'><code>fn <a href='#method.mask_bits' class='fnname'>mask_bits</a>(&amp;mut self, n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Truncates <code>self</code> to the lowest <code>n</code> bits.</p>
+
+<p>An error occurs if <code>self</code> is already shorter than <code>n</code> bits.</p>
+</div><h4 id='method.checked_shl1' class='method'><code>fn <a href='#method.checked_shl1' class='fnname'>checked_shl1</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Returns <code>self</code>, shifted left by 1 bit. <code>self</code> may be negative.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>0b0100</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>0b1000</span>).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>checked_shl1</span>().<span class='ident'>unwrap</span>(), <span class='ident'>result</span>);</pre>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>8</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>16</span>).<span class='ident'>unwrap</span>();
+
+<span class='comment'>// (-8) &lt;&lt; 1 == -16</span>
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>checked_shl1</span>().<span class='ident'>unwrap</span>(), <span class='ident'>result</span>);</pre>
+</div><h4 id='method.checked_shr1' class='method'><code>fn <a href='#method.checked_shr1' class='fnname'>checked_shr1</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Returns <code>self</code>, shifted right by 1 bit. <code>self</code> may be negative.</p>
+</div><h4 id='method.checked_add' class='method'><code>fn <a href='#method.checked_add' class='fnname'>checked_add</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_sub' class='method'><code>fn <a href='#method.checked_sub' class='fnname'>checked_sub</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_mul' class='method'><code>fn <a href='#method.checked_mul' class='fnname'>checked_mul</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_div' class='method'><code>fn <a href='#method.checked_div' class='fnname'>checked_div</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_mod' class='method'><code>fn <a href='#method.checked_mod' class='fnname'>checked_mod</a>(&amp;self, a: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_shl' class='method'><code>fn <a href='#method.checked_shl' class='fnname'>checked_shl</a>(&amp;self, a: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.checked_shr' class='method'><code>fn <a href='#method.checked_shr' class='fnname'>checked_shr</a>(&amp;self, a: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.negate' class='method'><code>fn <a href='#method.negate' class='fnname'>negate</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Inverts the sign of <code>self</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>8</span>).<span class='ident'>unwrap</span>();
+
+<span class='ident'>s</span>.<span class='ident'>negate</span>();
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>, <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>8</span>).<span class='ident'>unwrap</span>());
+<span class='ident'>s</span>.<span class='ident'>negate</span>();
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>, <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>8</span>).<span class='ident'>unwrap</span>());</pre>
+</div><h4 id='method.abs_cmp' class='method'><code>fn <a href='#method.abs_cmp' class='fnname'>abs_cmp</a>(&amp;self, oth: <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a></code></h4>
+<div class='docblock'><p>Compare the absolute values of <code>self</code> and <code>oth</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>8</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>o</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>8</span>).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>abs_cmp</span>(<span class='ident'>o</span>), <span class='ident'>Ordering</span>::<span class='ident'>Equal</span>);</pre>
+</div><h4 id='method.is_negative' class='method'><code>fn <a href='#method.is_negative' class='fnname'>is_negative</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.num_bits' class='method'><code>fn <a href='#method.num_bits' class='fnname'>num_bits</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a></code></h4>
+<div class='docblock'><p>Returns the number of significant bits in <code>self</code>.</p>
+</div><h4 id='method.num_bytes' class='method'><code>fn <a href='#method.num_bytes' class='fnname'>num_bytes</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a></code></h4>
+<div class='docblock'><p>Returns the size of <code>self</code> in bytes.</p>
+</div><h4 id='method.raw' class='method'><code>unsafe fn <a href='#method.raw' class='fnname'>raw</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../openssl_sys/struct.BIGNUM.html' title='openssl_sys::BIGNUM'>BIGNUM</a></code></h4>
+<h4 id='method.raw_ptr' class='method'><code>unsafe fn <a href='#method.raw_ptr' class='fnname'>raw_ptr</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../openssl_sys/struct.BIGNUM.html' title='openssl_sys::BIGNUM'>BIGNUM</a></code></h4>
+<h4 id='method.into_raw' class='method'><code>fn <a href='#method.into_raw' class='fnname'>into_raw</a>(self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../openssl_sys/struct.BIGNUM.html' title='openssl_sys::BIGNUM'>BIGNUM</a></code></h4>
+<h4 id='method.to_vec' class='method'><code>fn <a href='#method.to_vec' class='fnname'>to_vec</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a big-endian byte vector representation of the absolute value of <code>self</code>.</p>
+
+<p><code>self</code> can be recreated by using <code>new_from_slice</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>4543</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>r</span> <span class='op'>=</span> <span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>4543</span>).<span class='ident'>unwrap</span>();
+
+<span class='kw'>let</span> <span class='ident'>s_vec</span> <span class='op'>=</span> <span class='ident'>s</span>.<span class='ident'>to_vec</span>();
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>BigNum</span>::<span class='ident'>new_from_slice</span>(<span class='kw-2'>&amp;</span><span class='ident'>s_vec</span>).<span class='ident'>unwrap</span>(), <span class='ident'>r</span>);</pre>
+</div><h4 id='method.to_dec_str' class='method'><code>fn <a href='#method.to_dec_str' class='fnname'>to_dec_str</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='docblock'><p>Returns a decimal string representation of <code>self</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>12345</span>).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>to_dec_str</span>(), <span class='string'>&quot;-12345&quot;</span>);</pre>
+</div><h4 id='method.to_hex_str' class='method'><code>fn <a href='#method.to_hex_str' class='fnname'>to_hex_str</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='docblock'><p>Returns a hexadecimal string representation of <code>self</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='op'>-</span><span class='ident'>BigNum</span>::<span class='ident'>new_from</span>(<span class='number'>0x99ff</span>).<span class='ident'>unwrap</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>to_hex_str</span>(), <span class='string'>&quot;-99FF&quot;</span>);</pre>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Add.html' title='core::ops::Add'>Add</a>&lt;&amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-372' class='srclink' href='../../src/openssl/bn/mod.rs.html#733-739' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Add.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>+</code> operator</p>
+</div><h4 id='method.add' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Add.html#tymethod.add' class='fnname'>add</a>(self, oth: &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>+</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Sub.html' title='core::ops::Sub'>Sub</a>&lt;&amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-378' class='srclink' href='../../src/openssl/bn/mod.rs.html#741-747' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-1' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Sub.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>-</code> operator</p>
+</div><h4 id='method.sub' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Sub.html#tymethod.sub' class='fnname'>sub</a>(self, oth: &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>-</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Mul.html' title='core::ops::Mul'>Mul</a>&lt;&amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-384' class='srclink' href='../../src/openssl/bn/mod.rs.html#749-755' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-2' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Mul.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>*</code> operator</p>
+</div><h4 id='method.mul' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Mul.html#tymethod.mul' class='fnname'>mul</a>(self, oth: &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>*</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Div.html' title='core::ops::Div'>Div</a>&lt;&amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-390' class='srclink' href='../../src/openssl/bn/mod.rs.html#757-763' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-3' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Div.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>/</code> operator</p>
+</div><h4 id='method.div' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Div.html#tymethod.div' class='fnname'>div</a>(self, oth: &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>/</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Rem.html' title='core::ops::Rem'>Rem</a>&lt;&amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-396' class='srclink' href='../../src/openssl/bn/mod.rs.html#765-771' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-4' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Rem.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>%</code> operator</p>
+</div><h4 id='method.rem' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Rem.html#tymethod.rem' class='fnname'>rem</a>(self, oth: &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>%</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Shl.html' title='core::ops::Shl'>Shl</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-402' class='srclink' href='../../src/openssl/bn/mod.rs.html#773-779' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-5' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Shl.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>&lt;&lt;</code> operator</p>
+</div><h4 id='method.shl' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Shl.html#tymethod.shl' class='fnname'>shl</a>(self, n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>&lt;&lt;</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Shr.html' title='core::ops::Shr'>Shr</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt; for &amp;'a <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-408' class='srclink' href='../../src/openssl/bn/mod.rs.html#781-787' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-6' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Shr.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>&gt;&gt;</code> operator</p>
+</div><h4 id='method.shr' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Shr.html#tymethod.shr' class='fnname'>shr</a>(self, n: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the <code>&gt;&gt;</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-414' class='srclink' href='../../src/openssl/bn/mod.rs.html#789-800' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Neg.html' title='core::ops::Neg'>Neg</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-419' class='srclink' href='../../src/openssl/bn/mod.rs.html#802-810' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-7' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Neg.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>-</code> operator</p>
+</div><h4 id='method.neg' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Neg.html#tymethod.neg' class='fnname'>neg</a>(self) -&gt; <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></h4>
+<div class='docblock'><p>The method for the unary <code>-</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-344' class='srclink' href='../../src/openssl/bn/mod.rs.html#682-686' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, f: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-350' class='srclink' href='../../src/openssl/bn/mod.rs.html#688' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-351' class='srclink' href='../../src/openssl/bn/mod.rs.html#689-693' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, oth: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, other: &amp;Rhs) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-355' class='srclink' href='../../src/openssl/bn/mod.rs.html#695-699' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.cmp' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp' class='fnname'>cmp</a>(&amp;self, oth: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a></code></h4>
+<div class='docblock'><p>This method returns an <code>Ordering</code> between <code>self</code> and <code>other</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-359' class='srclink' href='../../src/openssl/bn/mod.rs.html#701-715' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.partial_cmp' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp' class='fnname'>partial_cmp</a>(&amp;self, oth: &amp;<a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a>&gt;</code></h4>
+<div class='docblock'><p>This method returns an ordering between <code>self</code> and <code>other</code> values if one exists. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp">Read more</a></p>
+</div><h4 id='method.lt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt' class='fnname'>lt</a>(&amp;self, other: &amp;Rhs) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>This method tests less than (for <code>self</code> and <code>other</code>) and is used by the <code>&lt;</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt">Read more</a></p>
+</div><h4 id='method.le' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le' class='fnname'>le</a>(&amp;self, other: &amp;Rhs) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>This method tests less than or equal to (for <code>self</code> and <code>other</code>) and is used by the <code>&lt;=</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le">Read more</a></p>
+</div><h4 id='method.gt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt' class='fnname'>gt</a>(&amp;self, other: &amp;Rhs) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>This method tests greater than (for <code>self</code> and <code>other</code>) and is used by the <code>&gt;</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt">Read more</a></p>
+</div><h4 id='method.ge' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge' class='fnname'>ge</a>(&amp;self, other: &amp;Rhs) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>This method tests greater than or equal to (for <code>self</code> and <code>other</code>) and is used by the <code>&gt;=</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-365' class='srclink' href='../../src/openssl/bn/mod.rs.html#717-725' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

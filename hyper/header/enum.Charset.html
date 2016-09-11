@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Charset` enum in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Charset">
+
+    <title>hyper::header::Charset - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'Charset', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='enum' href=''>Charset</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-4823' class='srclink' href='../../src/hyper/header/shared/charset.rs.html#14-65' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Charset {
+    Us_Ascii,
+    Iso_8859_1,
+    Iso_8859_2,
+    Iso_8859_3,
+    Iso_8859_4,
+    Iso_8859_5,
+    Iso_8859_6,
+    Iso_8859_7,
+    Iso_8859_8,
+    Iso_8859_9,
+    Iso_8859_10,
+    Shift_Jis,
+    Euc_Jp,
+    Iso_2022_Kr,
+    Euc_Kr,
+    Iso_2022_Jp,
+    Iso_2022_Jp_2,
+    Iso_8859_6_E,
+    Iso_8859_6_I,
+    Iso_8859_8_E,
+    Iso_8859_8_I,
+    Gb2312,
+    Big5,
+    Koi8_R,
+    Ext(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
+}</pre><div class='docblock'><p>A Mime charset.</p>
+
+<p>The string representation is normalised to upper case.</p>
+
+<p>See <a href="http://www.iana.org/assignments/character-sets/character-sets.xhtml">http://www.iana.org/assignments/character-sets/character-sets.xhtml</a></p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Us_Ascii' class='variant'><code>Us_Ascii</code></span><div class='docblock'><p>US ASCII</p>
+</div><span id='variant.Iso_8859_1' class='variant'><code>Iso_8859_1</code></span><div class='docblock'><p>ISO-8859-1</p>
+</div><span id='variant.Iso_8859_2' class='variant'><code>Iso_8859_2</code></span><div class='docblock'><p>ISO-8859-2</p>
+</div><span id='variant.Iso_8859_3' class='variant'><code>Iso_8859_3</code></span><div class='docblock'><p>ISO-8859-3</p>
+</div><span id='variant.Iso_8859_4' class='variant'><code>Iso_8859_4</code></span><div class='docblock'><p>ISO-8859-4</p>
+</div><span id='variant.Iso_8859_5' class='variant'><code>Iso_8859_5</code></span><div class='docblock'><p>ISO-8859-5</p>
+</div><span id='variant.Iso_8859_6' class='variant'><code>Iso_8859_6</code></span><div class='docblock'><p>ISO-8859-6</p>
+</div><span id='variant.Iso_8859_7' class='variant'><code>Iso_8859_7</code></span><div class='docblock'><p>ISO-8859-7</p>
+</div><span id='variant.Iso_8859_8' class='variant'><code>Iso_8859_8</code></span><div class='docblock'><p>ISO-8859-8</p>
+</div><span id='variant.Iso_8859_9' class='variant'><code>Iso_8859_9</code></span><div class='docblock'><p>ISO-8859-9</p>
+</div><span id='variant.Iso_8859_10' class='variant'><code>Iso_8859_10</code></span><div class='docblock'><p>ISO-8859-10</p>
+</div><span id='variant.Shift_Jis' class='variant'><code>Shift_Jis</code></span><div class='docblock'><p>Shift_JIS</p>
+</div><span id='variant.Euc_Jp' class='variant'><code>Euc_Jp</code></span><div class='docblock'><p>EUC-JP</p>
+</div><span id='variant.Iso_2022_Kr' class='variant'><code>Iso_2022_Kr</code></span><div class='docblock'><p>ISO-2022-KR</p>
+</div><span id='variant.Euc_Kr' class='variant'><code>Euc_Kr</code></span><div class='docblock'><p>EUC-KR</p>
+</div><span id='variant.Iso_2022_Jp' class='variant'><code>Iso_2022_Jp</code></span><div class='docblock'><p>ISO-2022-JP</p>
+</div><span id='variant.Iso_2022_Jp_2' class='variant'><code>Iso_2022_Jp_2</code></span><div class='docblock'><p>ISO-2022-JP-2</p>
+</div><span id='variant.Iso_8859_6_E' class='variant'><code>Iso_8859_6_E</code></span><div class='docblock'><p>ISO-8859-6-E</p>
+</div><span id='variant.Iso_8859_6_I' class='variant'><code>Iso_8859_6_I</code></span><div class='docblock'><p>ISO-8859-6-I</p>
+</div><span id='variant.Iso_8859_8_E' class='variant'><code>Iso_8859_8_E</code></span><div class='docblock'><p>ISO-8859-8-E</p>
+</div><span id='variant.Iso_8859_8_I' class='variant'><code>Iso_8859_8_I</code></span><div class='docblock'><p>ISO-8859-8-I</p>
+</div><span id='variant.Gb2312' class='variant'><code>Gb2312</code></span><div class='docblock'><p>GB2312</p>
+</div><span id='variant.Big5' class='variant'><code>Big5</code></span><div class='docblock'><p>Big5</p>
+</div><span id='variant.Koi8_R' class='variant'><code>Koi8_R</code></span><div class='docblock'><p>KOI8-R</p>
+</div><span id='variant.Ext' class='variant'><code>Ext(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></span><div class='docblock'><p>An arbitrary charset specified as a string</p>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

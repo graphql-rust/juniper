@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `RSA` struct in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, RSA">
+
+    <title>openssl::crypto::rsa::RSA - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>openssl</a>::<wbr><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>rsa</a></p><script>window.sidebarCurrent = {name: 'RSA', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>openssl</a>::<wbr><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>rsa</a>::<wbr><a class='struct' href=''>RSA</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1174' class='srclink' href='../../../src/openssl/crypto/rsa.rs.html#13' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct RSA(_);</pre><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1180' class='srclink' href='../../../src/openssl/crypto/rsa.rs.html#23-212' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.from_public_components' class='method'><code>fn <a href='#method.from_public_components' class='fnname'>from_public_components</a>(n: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, e: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>only useful for associating the key material directly with the key, it&#39;s safer to use
+the supplied load and save methods for DER formatted keys.</p>
+</div><h4 id='method.from_private_components' class='method'><code>fn <a href='#method.from_private_components' class='fnname'>from_private_components</a>(n: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, e: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, d: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, p: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, q: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, dp: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, dq: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>, qi: <a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.from_raw' class='method'><code>unsafe fn <a href='#method.from_raw' class='fnname'>from_raw</a>(rsa: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../../openssl_sys/struct.RSA.html' title='openssl_sys::RSA'>RSA</a>) -&gt; <a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a></code></h4>
+<div class='docblock'><p>the caller should assert that the rsa pointer is valid.</p>
+</div><h4 id='method.private_key_from_pem' class='method'><code>fn <a href='#method.private_key_from_pem' class='fnname'>private_key_from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads an RSA private key from PEM formatted data.</p>
+</div><h4 id='method.private_key_to_pem' class='method'><code>fn <a href='#method.private_key_to_pem' class='fnname'>private_key_to_pem</a>&lt;W&gt;(&amp;self, writer: &amp;mut W) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where W: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a></span></code></h4>
+<div class='docblock'><p>Writes an RSA private key as unencrypted PEM formatted data</p>
+</div><h4 id='method.public_key_from_pem' class='method'><code>fn <a href='#method.public_key_from_pem' class='fnname'>public_key_from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads an RSA public key from PEM formatted data.</p>
+</div><h4 id='method.public_key_to_pem' class='method'><code>fn <a href='#method.public_key_to_pem' class='fnname'>public_key_to_pem</a>&lt;W&gt;(&amp;self, writer: &amp;mut W) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where W: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a></span></code></h4>
+<div class='docblock'><p>Writes an RSA public key as PEM formatted data</p>
+</div><h4 id='method.size' class='method'><code>fn <a href='#method.size' class='fnname'>size</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.sign' class='method'><code>fn <a href='#method.sign' class='fnname'>sign</a>(&amp;self, hash: <a class='enum' href='../../../openssl/crypto/hash/enum.Type.html' title='openssl::crypto::hash::Type'>Type</a>, message: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.verify' class='method'><code>fn <a href='#method.verify' class='fnname'>verify</a>(&amp;self, hash: <a class='enum' href='../../../openssl/crypto/hash/enum.Type.html' title='openssl::crypto::hash::Type'>Type</a>, message: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, sig: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.as_ptr' class='method'><code>fn <a href='#method.as_ptr' class='fnname'>as_ptr</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../../openssl_sys/struct.RSA.html' title='openssl_sys::RSA'>RSA</a></code></h4>
+<h4 id='method.n' class='method'><code>fn <a href='#method.n' class='fnname'>n</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.has_n' class='method'><code>fn <a href='#method.has_n' class='fnname'>has_n</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.d' class='method'><code>fn <a href='#method.d' class='fnname'>d</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.e' class='method'><code>fn <a href='#method.e' class='fnname'>e</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.has_e' class='method'><code>fn <a href='#method.has_e' class='fnname'>has_e</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.p' class='method'><code>fn <a href='#method.p' class='fnname'>p</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<h4 id='method.q' class='method'><code>fn <a href='#method.q' class='fnname'>q</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/bn/struct.BigNum.html' title='openssl::bn::BigNum'>BigNum</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1177' class='srclink' href='../../../src/openssl/crypto/rsa.rs.html#15-21' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1274' class='srclink' href='../../../src/openssl/crypto/rsa.rs.html#214-218' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, f: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Iron` struct in crate `iron`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Iron">
+
+    <title>iron::Iron - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    <link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/7853871?s=256">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../iron/index.html'><img src='https://avatars0.githubusercontent.com/u/7853871?s=128' alt='logo' width='100'></a>
+        <p class='location'><a href='index.html'>iron</a></p><script>window.sidebarCurrent = {name: 'Iron', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>iron</a>::<wbr><a class='struct' href=''>Iron</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-671' class='srclink' href='../src/iron/iron.rs.html#25-35' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Iron&lt;H&gt; {
+    pub handler: H,
+    // some fields omitted
+}</pre><div class='docblock'><p>The primary entrance point to <code>Iron</code>, a <code>struct</code> to instantiate a new server.</p>
+
+<p><code>Iron</code> contains the <code>Handler</code> which takes a <code>Request</code> and produces a
+<code>Response</code>.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.handler' class='structfield'><code>handler: H</code>
+                           </span><span class='stab '></span><div class='docblock'><p>Iron contains a <code>Handler</code>, which it uses to create responses for client
+requests.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;H:&nbsp;<a class='trait' href='../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a>&gt; <a class='struct' href='../iron/struct.Iron.html' title='iron::Iron'>Iron</a>&lt;H&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-724' class='srclink' href='../src/iron/iron.rs.html#95-184' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.http' class='method'><code>fn <a href='#method.http' class='fnname'>http</a>&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/net/addr/trait.ToSocketAddrs.html' title='std::net::addr::ToSocketAddrs'>ToSocketAddrs</a>&gt;(self, addr: A) -&gt; <a class='type' href='../iron/error/type.HttpResult.html' title='iron::error::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../iron/struct.Listening.html' title='iron::Listening'>Listening</a>&gt;</code></h4>
+<div class='docblock'><p>Kick off the server process using the HTTP protocol.</p>
+
+<p>Call this once to begin listening for requests on the server.
+This consumes the Iron instance, but does the listening on
+another task, so is not blocking.</p>
+
+<p>The thread returns a guard that will automatically join with the parent
+once it is dropped, blocking until this happens.</p>
+
+<p>Defaults to a threadpool of size <code>8 * num_cpus</code>.</p>
+
+<h2 id='panics' class='section-header'><a href='#panics'>Panics</a></h2>
+<p>Panics if the provided address does not parse. To avoid this
+call <code>to_socket_addrs</code> yourself and pass a parsed <code>SocketAddr</code>.</p>
+</div><h4 id='method.listen_with' class='method'><code>fn <a href='#method.listen_with' class='fnname'>listen_with</a>&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/net/addr/trait.ToSocketAddrs.html' title='std::net::addr::ToSocketAddrs'>ToSocketAddrs</a>&gt;(self, addr: A, threads: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, protocol: <a class='enum' href='../iron/enum.Protocol.html' title='iron::Protocol'>Protocol</a>, timeouts: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../iron/struct.Timeouts.html' title='iron::Timeouts'>Timeouts</a>&gt;) -&gt; <a class='type' href='../iron/error/type.HttpResult.html' title='iron::error::HttpResult'>HttpResult</a>&lt;<a class='struct' href='../iron/struct.Listening.html' title='iron::Listening'>Listening</a>&gt;</code></h4>
+<div class='docblock'><p>Kick off the server process with X threads.</p>
+
+<h2 id='panics-1' class='section-header'><a href='#panics-1'>Panics</a></h2>
+<p>Panics if the provided address does not parse. To avoid this
+call <code>to_socket_addrs</code> yourself and pass a parsed <code>SocketAddr</code>.</p>
+</div><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(handler: H) -&gt; <a class='struct' href='../iron/struct.Iron.html' title='iron::Iron'>Iron</a>&lt;H&gt;</code></h4>
+<div class='docblock'><p>Instantiate a new instance of <code>Iron</code>.</p>
+
+<p>This will create a new <code>Iron</code>, the base unit of the server, using the
+passed in <code>Handler</code>.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;H:&nbsp;<a class='trait' href='../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a>&gt; <a class='trait' href='../hyper/server/trait.Handler.html' title='hyper::server::Handler'>Handler</a> for <a class='struct' href='../iron/struct.Iron.html' title='iron::Iron'>Iron</a>&lt;H&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-746' class='srclink' href='../src/iron/iron.rs.html#186-208' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.handle' class='method'><code>fn <a href='../hyper/server/trait.Handler.html#tymethod.handle' class='fnname'>handle</a>(&amp;self, http_req: <a class='struct' href='../iron/request/struct.HttpRequest.html' title='iron::request::HttpRequest'>HttpRequest</a>, http_res: <a class='struct' href='../iron/response/struct.HttpResponse.html' title='iron::response::HttpResponse'>HttpResponse</a>&lt;<a class='enum' href='../hyper/net/enum.Fresh.html' title='hyper::net::Fresh'>Fresh</a>&gt;)</code></h4>
+<div class='docblock'><p>Receives a <code>Request</code>/<code>Response</code> pair, and should perform some action on them. <a href="../hyper/server/trait.Handler.html#tymethod.handle">Read more</a></p>
+</div><h4 id='method.check_continue' class='method'><code>fn <a href='../hyper/server/trait.Handler.html#method.check_continue' class='fnname'>check_continue</a>(&amp;self, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>&amp;<a class='enum' href='../iron/method/enum.Method.html' title='iron::method::Method'>Method</a>, &amp;<a class='enum' href='../hyper/uri/enum.RequestUri.html' title='hyper::uri::RequestUri'>RequestUri</a>, &amp;<a class='struct' href='../iron/struct.Headers.html' title='iron::Headers'>Headers</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>) -&gt; <a class='enum' href='../iron/status/enum.Status.html' title='iron::status::Status'>StatusCode</a></code></h4>
+<div class='docblock'><p>Called when a Request includes a <code>Expect: 100-continue</code> header. <a href="../hyper/server/trait.Handler.html#method.check_continue">Read more</a></p>
+</div><h4 id='method.on_connection_start' class='method'><code>fn <a href='../hyper/server/trait.Handler.html#method.on_connection_start' class='fnname'>on_connection_start</a>(&amp;self)</code></h4>
+<div class='docblock'><p>This is run after a connection is received, on a per-connection basis (not a per-request basis, as a connection with keep-alive may handle multiple requests) <a href="../hyper/server/trait.Handler.html#method.on_connection_start">Read more</a></p>
+</div><h4 id='method.on_connection_end' class='method'><code>fn <a href='../hyper/server/trait.Handler.html#method.on_connection_end' class='fnname'>on_connection_end</a>(&amp;self)</code></h4>
+<div class='docblock'><p>This is run before a connection is closed, on a per-connection basis (not a per-request basis, as a connection with keep-alive may handle multiple requests) <a href="../hyper/server/trait.Handler.html#method.on_connection_end">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "iron";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

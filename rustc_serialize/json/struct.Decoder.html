@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Decoder` struct in crate `rustc_serialize`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Decoder">
+
+    <title>rustc_serialize::json::Decoder - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://www.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../rustc_serialize/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>rustc_serialize</a>::<wbr><a href='index.html'>json</a></p><script>window.sidebarCurrent = {name: 'Decoder', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>rustc_serialize</a>::<wbr><a href='index.html'>json</a>::<wbr><a class='struct' href=''>Decoder</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6609' class='srclink' href='../../src/rustc_serialize/json.rs.html#2010-2012' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Decoder {
+    // some fields omitted
+}</pre><div class='docblock'><p>A structure to decode JSON to values in rust.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-6611' class='srclink' href='../../src/rustc_serialize/json.rs.html#2014-2019' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(json: <a class='enum' href='../../rustc_serialize/json/enum.Json.html' title='rustc_serialize::json::Json'>Json</a>) -&gt; <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a></code></h4>
+<div class='docblock'><p>Creates a new decoder instance for decoding the specified JSON value.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/trait.Decoder.html' title='rustc_serialize::Decoder'>Decoder</a> for <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-6619' class='srclink' href='../../src/rustc_serialize/json.rs.html#2087-2345' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Error' class='type'><code>type <a href='../../rustc_serialize/trait.Decoder.html#associatedtype.Error' class='type'>Error</a> = <a class='enum' href='../../rustc_serialize/json/enum.DecoderError.html' title='rustc_serialize::json::DecoderError'>DecoderError</a></code></h4>
+<h4 id='method.read_nil' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_nil' class='fnname'>read_nil</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.read_usize' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_usize' class='fnname'>read_usize</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;</code></h4>
+<h4 id='method.read_u8' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_u8' class='fnname'>read_u8</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<h4 id='method.read_u16' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_u16' class='fnname'>read_u16</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>&gt;</code></h4>
+<h4 id='method.read_u32' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_u32' class='fnname'>read_u32</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>&gt;</code></h4>
+<h4 id='method.read_u64' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_u64' class='fnname'>read_u64</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>&gt;</code></h4>
+<h4 id='method.read_isize' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_isize' class='fnname'>read_isize</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.isize.html'>isize</a>&gt;</code></h4>
+<h4 id='method.read_i8' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_i8' class='fnname'>read_i8</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i8.html'>i8</a>&gt;</code></h4>
+<h4 id='method.read_i16' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_i16' class='fnname'>read_i16</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i16.html'>i16</a>&gt;</code></h4>
+<h4 id='method.read_i32' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_i32' class='fnname'>read_i32</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt;</code></h4>
+<h4 id='method.read_i64' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_i64' class='fnname'>read_i64</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>&gt;</code></h4>
+<h4 id='method.read_f32' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_f32' class='fnname'>read_f32</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>&gt;</code></h4>
+<h4 id='method.read_f64' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_f64' class='fnname'>read_f64</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>&gt;</code></h4>
+<h4 id='method.read_bool' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_bool' class='fnname'>read_bool</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>&gt;</code></h4>
+<h4 id='method.read_char' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_char' class='fnname'>read_char</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.char.html'>char</a>&gt;</code></h4>
+<h4 id='method.read_str' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_str' class='fnname'>read_str</a>(&amp;mut self) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</code></h4>
+<h4 id='method.read_enum' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_enum' class='fnname'>read_enum</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_enum_variant' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_enum_variant' class='fnname'>read_enum_variant</a>&lt;T,&nbsp;F&gt;(&amp;mut self, names: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a>&amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_enum_variant_arg' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_enum_variant_arg' class='fnname'>read_enum_variant_arg</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_enum_struct_variant' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_enum_struct_variant' class='fnname'>read_enum_struct_variant</a>&lt;T,&nbsp;F&gt;(&amp;mut self, names: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a>&amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_enum_struct_variant_field' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_enum_struct_variant_field' class='fnname'>read_enum_struct_variant_field</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_struct' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_struct' class='fnname'>read_struct</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, _len: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_struct_field' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_struct_field' class='fnname'>read_struct_field</a>&lt;T,&nbsp;F&gt;(&amp;mut self, name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, _idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_tuple' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_tuple' class='fnname'>read_tuple</a>&lt;T,&nbsp;F&gt;(&amp;mut self, tuple_len: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_tuple_arg' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_tuple_arg' class='fnname'>read_tuple_arg</a>&lt;T,&nbsp;F&gt;(&amp;mut self, idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_tuple_struct' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_tuple_struct' class='fnname'>read_tuple_struct</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, len: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_tuple_struct_arg' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_tuple_struct_arg' class='fnname'>read_tuple_struct_arg</a>&lt;T,&nbsp;F&gt;(&amp;mut self, idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_option' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_option' class='fnname'>read_option</a>&lt;T,&nbsp;F&gt;(&amp;mut self, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_seq' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_seq' class='fnname'>read_seq</a>&lt;T,&nbsp;F&gt;(&amp;mut self, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_seq_elt' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_seq_elt' class='fnname'>read_seq_elt</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_map' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_map' class='fnname'>read_map</a>&lt;T,&nbsp;F&gt;(&amp;mut self, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_map_elt_key' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_map_elt_key' class='fnname'>read_map_elt_key</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.read_map_elt_val' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.read_map_elt_val' class='fnname'>read_map_elt_val</a>&lt;T,&nbsp;F&gt;(&amp;mut self, _idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, f: F) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt; <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(&amp;mut <a class='struct' href='../../rustc_serialize/json/struct.Decoder.html' title='rustc_serialize::json::Decoder'>Decoder</a>) -&gt; <a class='type' href='../../rustc_serialize/json/type.DecodeResult.html' title='rustc_serialize::json::DecodeResult'>DecodeResult</a>&lt;T&gt;</span></code></h4>
+<h4 id='method.error' class='method'><code>fn <a href='../../rustc_serialize/trait.Decoder.html#tymethod.error' class='fnname'>error</a>(&amp;mut self, err: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='../../rustc_serialize/json/enum.DecoderError.html' title='rustc_serialize::json::DecoderError'>DecoderError</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "rustc_serialize";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

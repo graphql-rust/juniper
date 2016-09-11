@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Handler` trait in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Handler">
+
+    <title>hyper::server::Handler - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>server</a></p><script>window.sidebarCurrent = {name: 'Handler', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>server</a>::<wbr><a class='trait' href=''>Handler</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-7740' class='srclink' href='../../src/hyper/server/mod.rs.html#422-445' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait Handler: <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> {
+    fn <a href='#tymethod.handle' class='fnname'>handle</a>&lt;'a,&nbsp;'k&gt;(&amp;'a self, <a class='struct' href='../../hyper/server/request/struct.Request.html' title='hyper::server::request::Request'>Request</a>&lt;'a,&nbsp;'k&gt;, <a class='struct' href='../../hyper/server/response/struct.Response.html' title='hyper::server::response::Response'>Response</a>&lt;'a,&nbsp;<a class='enum' href='../../hyper/net/enum.Fresh.html' title='hyper::net::Fresh'>Fresh</a>&gt;);
+
+    fn <a href='#method.check_continue' class='fnname'>check_continue</a>(&amp;self, _: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>&amp;<a class='enum' href='../../hyper/method/enum.Method.html' title='hyper::method::Method'>Method</a>, &amp;<a class='enum' href='../../hyper/uri/enum.RequestUri.html' title='hyper::uri::RequestUri'>RequestUri</a>, &amp;<a class='struct' href='../../hyper/header/struct.Headers.html' title='hyper::header::Headers'>Headers</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>) -&gt; <a class='enum' href='../../hyper/status/enum.StatusCode.html' title='hyper::status::StatusCode'>StatusCode</a> { ... }
+    fn <a href='#method.on_connection_start' class='fnname'>on_connection_start</a>(&amp;self) { ... }
+    fn <a href='#method.on_connection_end' class='fnname'>on_connection_end</a>(&amp;self) { ... }
+}</pre><div class='docblock'><p>A handler that can handle incoming requests for a server.</p>
+</div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.handle' class='method stab '><code>fn <a href='#tymethod.handle' class='fnname'>handle</a>&lt;'a,&nbsp;'k&gt;(&amp;'a self, <a class='struct' href='../../hyper/server/request/struct.Request.html' title='hyper::server::request::Request'>Request</a>&lt;'a,&nbsp;'k&gt;, <a class='struct' href='../../hyper/server/response/struct.Response.html' title='hyper::server::response::Response'>Response</a>&lt;'a,&nbsp;<a class='enum' href='../../hyper/net/enum.Fresh.html' title='hyper::net::Fresh'>Fresh</a>&gt;)</code></h3><div class='docblock'><p>Receives a <code>Request</code>/<code>Response</code> pair, and should perform some action on them.</p>
+
+<p>This could reading from the request, and writing to the response.</p>
+</div></div>
+            <h2 id='provided-methods'>Provided Methods</h2>
+            <div class='methods'>
+        <h3 id='method.check_continue' class='method stab '><code>fn <a href='#method.check_continue' class='fnname'>check_continue</a>(&amp;self, _: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>&amp;<a class='enum' href='../../hyper/method/enum.Method.html' title='hyper::method::Method'>Method</a>, &amp;<a class='enum' href='../../hyper/uri/enum.RequestUri.html' title='hyper::uri::RequestUri'>RequestUri</a>, &amp;<a class='struct' href='../../hyper/header/struct.Headers.html' title='hyper::header::Headers'>Headers</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>) -&gt; <a class='enum' href='../../hyper/status/enum.StatusCode.html' title='hyper::status::StatusCode'>StatusCode</a></code></h3><div class='docblock'><p>Called when a Request includes a <code>Expect: 100-continue</code> header.</p>
+
+<p>By default, this will always immediately response with a <code>StatusCode::Continue</code>,
+but can be overridden with custom behavior.</p>
+</div><h3 id='method.on_connection_start' class='method stab '><code>fn <a href='#method.on_connection_start' class='fnname'>on_connection_start</a>(&amp;self)</code></h3><div class='docblock'><p>This is run after a connection is received, on a per-connection basis (not a
+per-request basis, as a connection with keep-alive may handle multiple
+requests)</p>
+</div><h3 id='method.on_connection_end' class='method stab '><code>fn <a href='#method.on_connection_end' class='fnname'>on_connection_end</a>(&amp;self)</code></h3><div class='docblock'><p>This is run before a connection is closed, on a per-connection basis (not a
+per-request basis, as a connection with keep-alive may handle multiple
+requests)</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl&lt;F&gt; Handler for F <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Fn.html' title='core::ops::Fn'>Fn</a>(<a class='struct' href='../../hyper/server/request/struct.Request.html' title='hyper::server::request::Request'>Request</a>, <a class='struct' href='../../hyper/server/response/struct.Response.html' title='hyper::server::response::Response'>Response</a>&lt;<a class='enum' href='../../hyper/net/enum.Fresh.html' title='hyper::net::Fresh'>Fresh</a>&gt;), F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a></span></code></li>
+</ul><script type="text/javascript" async
+                         src="../../implementors/hyper/server/trait.Handler.js">
+                 </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

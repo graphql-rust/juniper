@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `statfs` struct in crate `libc`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, statfs">
+
+    <title>libc::statfs - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../libc/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='index.html'>libc</a></p><script>window.sidebarCurrent = {name: 'statfs', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>libc</a>::<wbr><a class='struct' href=''>statfs</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2855' class='srclink' href='../src/libc/macros.rs.html#42' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct statfs {
+    pub f_type: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a>,
+    pub f_bsize: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a>,
+    pub f_blocks: <a class='type' href='../libc/type.fsblkcnt_t.html' title='libc::fsblkcnt_t'>fsblkcnt_t</a>,
+    pub f_bfree: <a class='type' href='../libc/type.fsblkcnt_t.html' title='libc::fsblkcnt_t'>fsblkcnt_t</a>,
+    pub f_bavail: <a class='type' href='../libc/type.fsblkcnt_t.html' title='libc::fsblkcnt_t'>fsblkcnt_t</a>,
+    pub f_files: <a class='type' href='../libc/type.fsfilcnt_t.html' title='libc::fsfilcnt_t'>fsfilcnt_t</a>,
+    pub f_ffree: <a class='type' href='../libc/type.fsfilcnt_t.html' title='libc::fsfilcnt_t'>fsfilcnt_t</a>,
+    pub f_fsid: <a class='struct' href='../libc/struct.fsid_t.html' title='libc::fsid_t'>fsid_t</a>,
+    pub f_namelen: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a>,
+    pub f_frsize: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a>,
+    // some fields omitted
+}</pre><h2 class='fields'>Fields</h2><span id='structfield.f_type' class='structfield'><code>f_type: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_bsize' class='structfield'><code>f_bsize: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_blocks' class='structfield'><code>f_blocks: <a class='type' href='../libc/type.fsblkcnt_t.html' title='libc::fsblkcnt_t'>fsblkcnt_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_bfree' class='structfield'><code>f_bfree: <a class='type' href='../libc/type.fsblkcnt_t.html' title='libc::fsblkcnt_t'>fsblkcnt_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_bavail' class='structfield'><code>f_bavail: <a class='type' href='../libc/type.fsblkcnt_t.html' title='libc::fsblkcnt_t'>fsblkcnt_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_files' class='structfield'><code>f_files: <a class='type' href='../libc/type.fsfilcnt_t.html' title='libc::fsfilcnt_t'>fsfilcnt_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_ffree' class='structfield'><code>f_ffree: <a class='type' href='../libc/type.fsfilcnt_t.html' title='libc::fsfilcnt_t'>fsfilcnt_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_fsid' class='structfield'><code>f_fsid: <a class='struct' href='../libc/struct.fsid_t.html' title='libc::fsid_t'>fsid_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_namelen' class='structfield'><code>f_namelen: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a></code>
+                           </span><span class='stab '></span><span id='structfield.f_frsize' class='structfield'><code>f_frsize: <a class='type' href='../libc/type.__fsword_t.html' title='libc::__fsword_t'>__fsword_t</a></code>
+                           </span><span class='stab '></span><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='../libc/struct.statfs.html' title='libc::statfs'>statfs</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-2868' class='srclink' href='../src/libc/macros.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../libc/struct.statfs.html' title='libc::statfs'>statfs</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-2869' class='srclink' href='../src/libc/macros.rs.html#45-47' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='../core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../libc/struct.statfs.html' title='libc::statfs'>statfs</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="../core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='../core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="../core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "libc";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

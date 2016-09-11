@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `header` mod in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, header">
+
+    <title>hyper::header - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a></p><script>window.sidebarCurrent = {name: 'header', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>hyper</a>::<wbr><a class='mod' href=''>header</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1105' class='srclink' href='../../src/hyper/header/mod.rs.html#1-809' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Headers container, and common header fields.</p>
+
+<p>hyper has the opinion that Headers should be strongly-typed, because that&#39;s
+why we&#39;re using Rust in the first place. To set or get any header, an object
+must implement the <code>Header</code> trait from this module. Several common headers
+are already provided, such as <code>Host</code>, <code>ContentType</code>, <code>UserAgent</code>, and others.</p>
+
+<h1 id='why-typed' class='section-header'><a href='#why-typed'>Why Typed?</a></h1>
+<p>Or, why not stringly-typed? Types give the following advantages:</p>
+
+<ul>
+<li>More difficult to typo, since typos in types should be caught by the compiler</li>
+<li>Parsing to a proper type by default</li>
+</ul>
+
+<h1 id='defining-custom-headers' class='section-header'><a href='#defining-custom-headers'>Defining Custom Headers</a></h1>
+<p>Hyper provides many of the most commonly used headers in HTTP. If
+you need to define a custom header, it&#39;s easy to do while still taking
+advantage of the type system. Hyper includes a <code>header!</code> macro for defining
+many wrapper-style headers.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#[<span class='ident'>macro_use</span>]</span> <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>hyper</span>;
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::<span class='ident'>Headers</span>;
+<span class='macro'>header</span><span class='macro'>!</span> { (<span class='ident'>XRequestGuid</span>, <span class='string'>&quot;X-Request-Guid&quot;</span>) <span class='op'>=&gt;</span> [<span class='ident'>String</span>] }
+
+<span class='kw'>fn</span> <span class='ident'>main</span> () {
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+
+    <span class='ident'>headers</span>.<span class='ident'>set</span>(<span class='ident'>XRequestGuid</span>(<span class='string'>&quot;a proper guid&quot;</span>.<span class='ident'>to_owned</span>()))
+}</pre>
+
+<p>This works well for simple &quot;string&quot; headers. But the header system
+actually involves 2 parts: parsing, and formatting. If you need to
+customize either part, you can do so.</p>
+
+<h2 id='header-and-headerformat' class='section-header'><a href='#header-and-headerformat'><code>Header</code> and <code>HeaderFormat</code></a></h2>
+<p>Consider a Do Not Track header. It can be true or false, but it represents
+that via the numerals <code>1</code> and <code>0</code>.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Header</span>, <span class='ident'>HeaderFormat</span>};
+
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>, <span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
+<span class='kw'>struct</span> <span class='ident'>Dnt</span>(<span class='ident'>bool</span>);
+
+<span class='kw'>impl</span> <span class='ident'>Header</span> <span class='kw'>for</span> <span class='ident'>Dnt</span> {
+    <span class='kw'>fn</span> <span class='ident'>header_name</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span> {
+        <span class='string'>&quot;DNT&quot;</span>
+    }
+
+    <span class='kw'>fn</span> <span class='ident'>parse_header</span>(<span class='ident'>raw</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>]) <span class='op'>-&gt;</span> <span class='ident'>hyper</span>::<span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Dnt</span><span class='op'>&gt;</span> {
+        <span class='kw'>if</span> <span class='ident'>raw</span>.<span class='ident'>len</span>() <span class='op'>==</span> <span class='number'>1</span> {
+            <span class='kw'>let</span> <span class='ident'>line</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='ident'>raw</span>[<span class='number'>0</span>];
+            <span class='kw'>if</span> <span class='ident'>line</span>.<span class='ident'>len</span>() <span class='op'>==</span> <span class='number'>1</span> {
+                <span class='kw'>let</span> <span class='ident'>byte</span> <span class='op'>=</span> <span class='ident'>line</span>[<span class='number'>0</span>];
+                <span class='kw'>match</span> <span class='ident'>byte</span> {
+                    <span class='string'>b&#39;0&#39;</span> <span class='op'>=&gt;</span> <span class='kw'>return</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Dnt</span>(<span class='bool-val'>true</span>)),
+                    <span class='string'>b&#39;1&#39;</span> <span class='op'>=&gt;</span> <span class='kw'>return</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Dnt</span>(<span class='bool-val'>false</span>)),
+                    _ <span class='op'>=&gt;</span> ()
+                }
+            }
+        }
+        <span class='prelude-val'>Err</span>(<span class='ident'>hyper</span>::<span class='ident'>Error</span>::<span class='ident'>Header</span>)
+    }
+}
+
+<span class='kw'>impl</span> <span class='ident'>HeaderFormat</span> <span class='kw'>for</span> <span class='ident'>Dnt</span> {
+    <span class='kw'>fn</span> <span class='ident'>fmt_header</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>f</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>fmt</span>::<span class='ident'>Formatter</span>) <span class='op'>-&gt;</span> <span class='ident'>fmt</span>::<span class='prelude-ty'>Result</span> {
+        <span class='kw'>if</span> <span class='self'>self</span>.<span class='number'>0</span> {
+            <span class='ident'>f</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;1&quot;</span>)
+        } <span class='kw'>else</span> {
+            <span class='ident'>f</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;0&quot;</span>)
+        }
+    }
+}</pre>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='parsing/index.html'
+                                  title='hyper::header::parsing'>parsing</a></td>
+                           <td class='docblock short'>
+                                <p>Utility functions for Header implementations.</p>
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Accept.html'
+                                  title='hyper::header::Accept'>Accept</a></td>
+                           <td class='docblock short'>
+                                <p><code>Accept</code> header, defined in <a href="http://tools.ietf.org/html/rfc7231#section-5.3.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AcceptCharset.html'
+                                  title='hyper::header::AcceptCharset'>AcceptCharset</a></td>
+                           <td class='docblock short'>
+                                <p><code>Accept-Charset</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-5.3.3">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AcceptEncoding.html'
+                                  title='hyper::header::AcceptEncoding'>AcceptEncoding</a></td>
+                           <td class='docblock short'>
+                                <p><code>Accept-Encoding</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-5.3.4">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AcceptLanguage.html'
+                                  title='hyper::header::AcceptLanguage'>AcceptLanguage</a></td>
+                           <td class='docblock short'>
+                                <p><code>Accept-Language</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-5.3.5">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AcceptRanges.html'
+                                  title='hyper::header::AcceptRanges'>AcceptRanges</a></td>
+                           <td class='docblock short'>
+                                <p><code>Accept-Ranges</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7233#section-2.3">RFC7233</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlAllowCredentials.html'
+                                  title='hyper::header::AccessControlAllowCredentials'>AccessControlAllowCredentials</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Allow-Credentials</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-allow-headers-response-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlAllowHeaders.html'
+                                  title='hyper::header::AccessControlAllowHeaders'>AccessControlAllowHeaders</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Allow-Headers</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-allow-headers-response-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlAllowMethods.html'
+                                  title='hyper::header::AccessControlAllowMethods'>AccessControlAllowMethods</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Allow-Methods</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-allow-methods-response-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlExposeHeaders.html'
+                                  title='hyper::header::AccessControlExposeHeaders'>AccessControlExposeHeaders</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Expose-Headers</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-expose-headers-response-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlMaxAge.html'
+                                  title='hyper::header::AccessControlMaxAge'>AccessControlMaxAge</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Max-Age</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-max-age-response-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlRequestHeaders.html'
+                                  title='hyper::header::AccessControlRequestHeaders'>AccessControlRequestHeaders</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Request-Headers</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-request-headers-request-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AccessControlRequestMethod.html'
+                                  title='hyper::header::AccessControlRequestMethod'>AccessControlRequestMethod</a></td>
+                           <td class='docblock short'>
+                                <p><code>Access-Control-Request-Method</code> header, part of
+<a href="http://www.w3.org/TR/cors/#access-control-request-method-request-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Allow.html'
+                                  title='hyper::header::Allow'>Allow</a></td>
+                           <td class='docblock short'>
+                                <p><code>Allow</code> header, defined in <a href="http://tools.ietf.org/html/rfc7231#section-7.4.1">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Authorization.html'
+                                  title='hyper::header::Authorization'>Authorization</a></td>
+                           <td class='docblock short'>
+                                <p><code>Authorization</code> header, defined in <a href="https://tools.ietf.org/html/rfc7235#section-4.2">RFC7235</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Basic.html'
+                                  title='hyper::header::Basic'>Basic</a></td>
+                           <td class='docblock short'>
+                                <p>Credential holder for Basic Authentication</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Bearer.html'
+                                  title='hyper::header::Bearer'>Bearer</a></td>
+                           <td class='docblock short'>
+                                <p>Token holder for Bearer Authentication, most often seen with oauth</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CacheControl.html'
+                                  title='hyper::header::CacheControl'>CacheControl</a></td>
+                           <td class='docblock short'>
+                                <p><code>Cache-Control</code> header, defined in <a href="https://tools.ietf.org/html/rfc7234#section-5.2">RFC7234</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Connection.html'
+                                  title='hyper::header::Connection'>Connection</a></td>
+                           <td class='docblock short'>
+                                <p><code>Connection</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7230#section-6.1">RFC7230</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ContentDisposition.html'
+                                  title='hyper::header::ContentDisposition'>ContentDisposition</a></td>
+                           <td class='docblock short'>
+                                <p>A <code>Content-Disposition</code> header, (re)defined in <a href="https://tools.ietf.org/html/rfc6266">RFC6266</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ContentEncoding.html'
+                                  title='hyper::header::ContentEncoding'>ContentEncoding</a></td>
+                           <td class='docblock short'>
+                                <p><code>Content-Encoding</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-3.1.2.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ContentLanguage.html'
+                                  title='hyper::header::ContentLanguage'>ContentLanguage</a></td>
+                           <td class='docblock short'>
+                                <p><code>Content-Language</code> header, defined in
+<a href="https://tools.ietf.org/html/rfc7231#section-3.1.3.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ContentLength.html'
+                                  title='hyper::header::ContentLength'>ContentLength</a></td>
+                           <td class='docblock short'>
+                                <p><code>Content-Length</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7230#section-3.3.2">RFC7230</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ContentRange.html'
+                                  title='hyper::header::ContentRange'>ContentRange</a></td>
+                           <td class='docblock short'>
+                                <p><code>Content-Range</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7233#section-4.2">RFC7233</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ContentType.html'
+                                  title='hyper::header::ContentType'>ContentType</a></td>
+                           <td class='docblock short'>
+                                <p><code>Content-Type</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Cookie.html'
+                                  title='hyper::header::Cookie'>Cookie</a></td>
+                           <td class='docblock short'>
+                                <p><code>Cookie</code> header, defined in <a href="http://tools.ietf.org/html/rfc6265#section-5.4">RFC6265</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CookieJar.html'
+                                  title='hyper::header::CookieJar'>CookieJar</a></td>
+                           <td class='docblock short'>
+                                <p>A jar of cookies for managing a session</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CookiePair.html'
+                                  title='hyper::header::CookiePair'>CookiePair</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Date.html'
+                                  title='hyper::header::Date'>Date</a></td>
+                           <td class='docblock short'>
+                                <p><code>Date</code> header, defined in <a href="http://tools.ietf.org/html/rfc7231#section-7.1.1.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ETag.html'
+                                  title='hyper::header::ETag'>ETag</a></td>
+                           <td class='docblock short'>
+                                <p><code>ETag</code> header, defined in <a href="http://tools.ietf.org/html/rfc7232#section-2.3">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.EntityTag.html'
+                                  title='hyper::header::EntityTag'>EntityTag</a></td>
+                           <td class='docblock short'>
+                                <p>An entity tag, defined in <a href="https://tools.ietf.org/html/rfc7232#section-2.3">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Expires.html'
+                                  title='hyper::header::Expires'>Expires</a></td>
+                           <td class='docblock short'>
+                                <p><code>Expires</code> header, defined in <a href="http://tools.ietf.org/html/rfc7234#section-5.3">RFC7234</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.From.html'
+                                  title='hyper::header::From'>From</a></td>
+                           <td class='docblock short'>
+                                <p><code>From</code> header, defined in <a href="http://tools.ietf.org/html/rfc7231#section-5.5.1">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HeaderFormatter.html'
+                                  title='hyper::header::HeaderFormatter'>HeaderFormatter</a></td>
+                           <td class='docblock short'>
+                                <p>A wrapper around any Header with a Display impl that calls fmt_header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HeaderView.html'
+                                  title='hyper::header::HeaderView'>HeaderView</a></td>
+                           <td class='docblock short'>
+                                <p>Returned with the <code>HeadersItems</code> iterator.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Headers.html'
+                                  title='hyper::header::Headers'>Headers</a></td>
+                           <td class='docblock short'>
+                                <p>A map of header fields on requests and responses.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HeadersItems.html'
+                                  title='hyper::header::HeadersItems'>HeadersItems</a></td>
+                           <td class='docblock short'>
+                                <p>An <code>Iterator</code> over the fields in a <code>Headers</code> map.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Host.html'
+                                  title='hyper::header::Host'>Host</a></td>
+                           <td class='docblock short'>
+                                <p>The <code>Host</code> header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.HttpDate.html'
+                                  title='hyper::header::HttpDate'>HttpDate</a></td>
+                           <td class='docblock short'>
+                                <p>A <code>time::Time</code> with HTTP formatting and parsing</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.IfModifiedSince.html'
+                                  title='hyper::header::IfModifiedSince'>IfModifiedSince</a></td>
+                           <td class='docblock short'>
+                                <p><code>If-Modified-Since</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7232#section-3.3">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.IfUnmodifiedSince.html'
+                                  title='hyper::header::IfUnmodifiedSince'>IfUnmodifiedSince</a></td>
+                           <td class='docblock short'>
+                                <p><code>If-Unmodified-Since</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7232#section-3.4">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.LastModified.html'
+                                  title='hyper::header::LastModified'>LastModified</a></td>
+                           <td class='docblock short'>
+                                <p><code>Last-Modified</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7232#section-2.2">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Location.html'
+                                  title='hyper::header::Location'>Location</a></td>
+                           <td class='docblock short'>
+                                <p><code>Location</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-7.1.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Origin.html'
+                                  title='hyper::header::Origin'>Origin</a></td>
+                           <td class='docblock short'>
+                                <p>The <code>Origin</code> header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Prefer.html'
+                                  title='hyper::header::Prefer'>Prefer</a></td>
+                           <td class='docblock short'>
+                                <p><code>Prefer</code> header, defined in <a href="http://tools.ietf.org/html/rfc7240">RFC7240</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PreferenceApplied.html'
+                                  title='hyper::header::PreferenceApplied'>PreferenceApplied</a></td>
+                           <td class='docblock short'>
+                                <p><code>Preference-Applied</code> header, defined in <a href="http://tools.ietf.org/html/rfc7240">RFC7240</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Protocol.html'
+                                  title='hyper::header::Protocol'>Protocol</a></td>
+                           <td class='docblock short'>
+                                <p>Protocols that appear in the <code>Upgrade</code> header field</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Quality.html'
+                                  title='hyper::header::Quality'>Quality</a></td>
+                           <td class='docblock short'>
+                                <p>Represents a quality used in quality values.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.QualityItem.html'
+                                  title='hyper::header::QualityItem'>QualityItem</a></td>
+                           <td class='docblock short'>
+                                <p>Represents an item with a quality value as defined in
+<a href="https://tools.ietf.org/html/rfc7231#section-5.3.1">RFC7231</a>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Referer.html'
+                                  title='hyper::header::Referer'>Referer</a></td>
+                           <td class='docblock short'>
+                                <p><code>Referer</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-5.5.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Server.html'
+                                  title='hyper::header::Server'>Server</a></td>
+                           <td class='docblock short'>
+                                <p><code>Server</code> header, defined in <a href="http://tools.ietf.org/html/rfc7231#section-7.4.2">RFC7231</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.SetCookie.html'
+                                  title='hyper::header::SetCookie'>SetCookie</a></td>
+                           <td class='docblock short'>
+                                <p><code>Set-Cookie</code> header, defined <a href="http://tools.ietf.org/html/rfc6265#section-4.1">RFC6265</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.StrictTransportSecurity.html'
+                                  title='hyper::header::StrictTransportSecurity'>StrictTransportSecurity</a></td>
+                           <td class='docblock short'>
+                                <p><code>StrictTransportSecurity</code> header, defined in <a href="https://tools.ietf.org/html/rfc6797">RFC6797</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TransferEncoding.html'
+                                  title='hyper::header::TransferEncoding'>TransferEncoding</a></td>
+                           <td class='docblock short'>
+                                <p><code>Transfer-Encoding</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7230#section-3.3.1">RFC7230</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Upgrade.html'
+                                  title='hyper::header::Upgrade'>Upgrade</a></td>
+                           <td class='docblock short'>
+                                <p><code>Upgrade</code> header, defined in <a href="http://tools.ietf.org/html/rfc7230#section-6.7">RFC7230</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.UserAgent.html'
+                                  title='hyper::header::UserAgent'>UserAgent</a></td>
+                           <td class='docblock short'>
+                                <p><code>User-Agent</code> header, defined in
+<a href="http://tools.ietf.org/html/rfc7231#section-5.5.3">RFC7231</a></p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.AccessControlAllowOrigin.html'
+                                  title='hyper::header::AccessControlAllowOrigin'>AccessControlAllowOrigin</a></td>
+                           <td class='docblock short'>
+                                <p>The <code>Access-Control-Allow-Origin</code> response header,
+part of <a href="http://www.w3.org/TR/cors/#access-control-allow-origin-response-header">CORS</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ByteRangeSpec.html'
+                                  title='hyper::header::ByteRangeSpec'>ByteRangeSpec</a></td>
+                           <td class='docblock short'>
+                                <p>Each <code>Range::Bytes</code> header can contain one or more <code>ByteRangeSpecs</code>.
+Each <code>ByteRangeSpec</code> defines a range of bytes to fetch</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.CacheDirective.html'
+                                  title='hyper::header::CacheDirective'>CacheDirective</a></td>
+                           <td class='docblock short'>
+                                <p><code>CacheControl</code> contains a list of these directives.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Charset.html'
+                                  title='hyper::header::Charset'>Charset</a></td>
+                           <td class='docblock short'>
+                                <p>A Mime charset.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ConnectionOption.html'
+                                  title='hyper::header::ConnectionOption'>ConnectionOption</a></td>
+                           <td class='docblock short'>
+                                <p>Values that can be in the <code>Connection</code> header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ContentRangeSpec.html'
+                                  title='hyper::header::ContentRangeSpec'>ContentRangeSpec</a></td>
+                           <td class='docblock short'>
+                                <p>Content-Range, described in <a href="https://tools.ietf.org/html/rfc7233#section-4.2">RFC7233</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.DispositionParam.html'
+                                  title='hyper::header::DispositionParam'>DispositionParam</a></td>
+                           <td class='docblock short'>
+                                <p>A parameter to the disposition type</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.DispositionType.html'
+                                  title='hyper::header::DispositionType'>DispositionType</a></td>
+                           <td class='docblock short'>
+                                <p>The implied disposition of the content of the HTTP body</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Encoding.html'
+                                  title='hyper::header::Encoding'>Encoding</a></td>
+                           <td class='docblock short'>
+                                <p>A value to represent an encoding used in <code>Transfer-Encoding</code>
+or <code>Accept-Encoding</code> header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Expect.html'
+                                  title='hyper::header::Expect'>Expect</a></td>
+                           <td class='docblock short'>
+                                <p>The <code>Expect</code> header.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.IfMatch.html'
+                                  title='hyper::header::IfMatch'>IfMatch</a></td>
+                           <td class='docblock short'>
+                                <p><code>If-Match</code> header, defined in
+<a href="https://tools.ietf.org/html/rfc7232#section-3.1">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.IfNoneMatch.html'
+                                  title='hyper::header::IfNoneMatch'>IfNoneMatch</a></td>
+                           <td class='docblock short'>
+                                <p><code>If-None-Match</code> header, defined in
+<a href="https://tools.ietf.org/html/rfc7232#section-3.2">RFC7232</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.IfRange.html'
+                                  title='hyper::header::IfRange'>IfRange</a></td>
+                           <td class='docblock short'>
+                                <p><code>If-Range</code> header, defined in <a href="http://tools.ietf.org/html/rfc7233#section-3.2">RFC7233</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Pragma.html'
+                                  title='hyper::header::Pragma'>Pragma</a></td>
+                           <td class='docblock short'>
+                                <p>The <code>Pragma</code> header defined by HTTP/1.0.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Preference.html'
+                                  title='hyper::header::Preference'>Preference</a></td>
+                           <td class='docblock short'>
+                                <p>Prefer contains a list of these preferences.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ProtocolName.html'
+                                  title='hyper::header::ProtocolName'>ProtocolName</a></td>
+                           <td class='docblock short'>
+                                <p>A protocol name used to identify a spefic protocol. Names are case-sensitive
+except for the <code>WebSocket</code> value.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Range.html'
+                                  title='hyper::header::Range'>Range</a></td>
+                           <td class='docblock short'>
+                                <p><code>Range</code> header, defined in <a href="https://tools.ietf.org/html/rfc7233#section-3.1">RFC7233</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.RangeUnit.html'
+                                  title='hyper::header::RangeUnit'>RangeUnit</a></td>
+                           <td class='docblock short'>
+                                <p>Range Units, described in <a href="http://tools.ietf.org/html/rfc7233#section-2">RFC7233</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ReferrerPolicy.html'
+                                  title='hyper::header::ReferrerPolicy'>ReferrerPolicy</a></td>
+                           <td class='docblock short'>
+                                <p><code>Referrer-Policy</code> header, part of
+<a href="https://www.w3.org/TR/referrer-policy/#referrer-policy-header">Referrer Policy</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Vary.html'
+                                  title='hyper::header::Vary'>Vary</a></td>
+                           <td class='docblock short'>
+                                <p><code>Vary</code> header, defined in <a href="https://tools.ietf.org/html/rfc7231#section-7.1.4">RFC7231</a></p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Header.html'
+                                  title='hyper::header::Header'>Header</a></td>
+                           <td class='docblock short'>
+                                <p>A trait for any object that will represent a header field and value.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.HeaderFormat.html'
+                                  title='hyper::header::HeaderFormat'>HeaderFormat</a></td>
+                           <td class='docblock short'>
+                                <p>A trait for any object that will represent a header field and value.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Scheme.html'
+                                  title='hyper::header::Scheme'>Scheme</a></td>
+                           <td class='docblock short'>
+                                <p>An Authorization scheme to be used in the header.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.q.html'
+                                  title='hyper::header::q'>q</a></td>
+                           <td class='docblock short'>
+                                <p>Convenience function to create a <code>Quality</code> from a float.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.qitem.html'
+                                  title='hyper::header::qitem'>qitem</a></td>
+                           <td class='docblock short'>
+                                <p>Convinience function to wrap a value in a <code>QualityItem</code>
+Sets <code>q</code> to the default 1.0</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

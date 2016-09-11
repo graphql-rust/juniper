@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `PathSegmentsMut` struct in crate `url`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, PathSegmentsMut">
+
+    <title>url::PathSegmentsMut - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>url</a></p><script>window.sidebarCurrent = {name: 'PathSegmentsMut', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>url</a>::<wbr><a class='struct' href=''>PathSegmentsMut</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-517' class='srclink' href='../src/url/path_segments.rs.html#29-34' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct PathSegmentsMut&lt;'a&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Exposes methods to manipulate the path of an URL that is not cannot-be-base.</p>
+
+<p>The path always starts with a <code>/</code> slash, and is made of slash-separated segments.
+There is always at least one segment (which may be the empty string).</p>
+
+<p>Examples:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;mailto:me@example.com&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>is_err</span>());
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;http://example.net/foo/index.html&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>unwrap</span>().<span class='ident'>pop</span>().<span class='ident'>push</span>(<span class='string'>&quot;img&quot;</span>).<span class='ident'>push</span>(<span class='string'>&quot;2/100%.png&quot;</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>as_str</span>(), <span class='string'>&quot;http://example.net/foo/img/2%2F100%25.png&quot;</span>);</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../url/struct.PathSegmentsMut.html' title='url::PathSegmentsMut'>PathSegmentsMut</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-532' class='srclink' href='../src/url/path_segments.rs.html#54-186' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clear' class='method'><code>fn <a href='#method.clear' class='fnname'>clear</a>(&amp;mut self) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Remove all segments in the path, leaving the minimal <code>url.path() == &quot;/&quot;</code>.</p>
+
+<p>Returns <code>&amp;mut Self</code> so that method calls can be chained.</p>
+
+<p>Example:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;https://github.com/servo/rust-url/&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>unwrap</span>().<span class='ident'>clear</span>().<span class='ident'>push</span>(<span class='string'>&quot;logout&quot;</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>as_str</span>(), <span class='string'>&quot;https://github.com/logout&quot;</span>);</pre>
+</div><h4 id='method.pop_if_empty' class='method'><code>fn <a href='#method.pop_if_empty' class='fnname'>pop_if_empty</a>(&amp;mut self) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Remove the last segment of this URL’s path if it is empty,
+except if these was only one segment to begin with.</p>
+
+<p>In other words, remove one path trailing slash, if any,
+unless it is also the initial slash (so this does nothing if <code>url.path() == &quot;/&quot;)</code>.</p>
+
+<p>Returns <code>&amp;mut Self</code> so that method calls can be chained.</p>
+
+<p>Example:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;https://github.com/servo/rust-url/&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>unwrap</span>().<span class='ident'>push</span>(<span class='string'>&quot;pulls&quot;</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>as_str</span>(), <span class='string'>&quot;https://github.com/servo/rust-url//pulls&quot;</span>);
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;https://github.com/servo/rust-url/&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>unwrap</span>().<span class='ident'>pop_if_empty</span>().<span class='ident'>push</span>(<span class='string'>&quot;pulls&quot;</span>);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>as_str</span>(), <span class='string'>&quot;https://github.com/servo/rust-url/pulls&quot;</span>);</pre>
+</div><h4 id='method.pop' class='method'><code>fn <a href='#method.pop' class='fnname'>pop</a>(&amp;mut self) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Remove the last segment of this URL’s path.</p>
+
+<p>If the path only has one segment, make it empty such that <code>url.path() == &quot;/&quot;</code>.</p>
+
+<p>Returns <code>&amp;mut Self</code> so that method calls can be chained.</p>
+</div><h4 id='method.push' class='method'><code>fn <a href='#method.push' class='fnname'>push</a>(&amp;mut self, segment: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; &amp;mut Self</code></h4>
+<div class='docblock'><p>Append the given segment at the end of this URL’s path.</p>
+
+<p>See the documentation for <code>.extend()</code>.</p>
+
+<p>Returns <code>&amp;mut Self</code> so that method calls can be chained.</p>
+</div><h4 id='method.extend' class='method'><code>fn <a href='#method.extend' class='fnname'>extend</a>&lt;I&gt;(&amp;mut self, segments: I) -&gt; &amp;mut Self <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/iter/traits/trait.IntoIterator.html' title='core::iter::traits::IntoIterator'>IntoIterator</a>, I::Item: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</span></code></h4>
+<div class='docblock'><p>Append each segment from the given iterator at the end of this URL’s path.</p>
+
+<p>Each segment is percent-encoded like in <code>Url::parse</code> or <code>Url::join</code>,
+except that <code>%</code> and <code>/</code> characters are also encoded (to <code>%25</code> and <code>%2F</code>).
+This is unlike <code>Url::parse</code> where <code>%</code> is left as-is in case some of the input
+is already percent-encoded, and <code>/</code> denotes a path segment separator.)</p>
+
+<p>Note that, in addition to slashes between new segments,
+this always adds a slash between the existing path and the new segments
+<em>except</em> if the existing path is <code>&quot;/&quot;</code>.
+If the previous last segment was empty (if the path had a trailing slash)
+the path after <code>.extend()</code> will contain two consecutive slashes.
+If that is undesired, call <code>.pop_if_empty()</code> first.</p>
+
+<p>To obtain a behavior similar to <code>Url::join</code>, call <code>.pop()</code> unconditionally first.</p>
+
+<p>Returns <code>&amp;mut Self</code> so that method calls can be chained.</p>
+
+<p>Example:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;https://github.com/&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>org</span> <span class='op'>=</span> <span class='string'>&quot;servo&quot;</span>;
+<span class='kw'>let</span> <span class='ident'>repo</span> <span class='op'>=</span> <span class='string'>&quot;rust-url&quot;</span>;
+<span class='kw'>let</span> <span class='ident'>issue_number</span> <span class='op'>=</span> <span class='string'>&quot;188&quot;</span>;
+<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>unwrap</span>().<span class='ident'>extend</span>(<span class='kw-2'>&amp;</span>[<span class='ident'>org</span>, <span class='ident'>repo</span>, <span class='string'>&quot;issues&quot;</span>, <span class='ident'>issue_number</span>]);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>as_str</span>(), <span class='string'>&quot;https://github.com/servo/rust-url/issues/188&quot;</span>);</pre>
+
+<p>In order to make sure that parsing the serialization of an URL gives the same URL,
+a segment is ignored if it is <code>&quot;.&quot;</code> or <code>&quot;..&quot;</code>:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='string'>&quot;https://github.com/servo&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='ident'>url</span>.<span class='ident'>path_segments_mut</span>().<span class='ident'>unwrap</span>().<span class='ident'>extend</span>(<span class='kw-2'>&amp;</span>[<span class='string'>&quot;..&quot;</span>, <span class='string'>&quot;rust-url&quot;</span>, <span class='string'>&quot;.&quot;</span>, <span class='string'>&quot;pulls&quot;</span>]);
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>as_str</span>(), <span class='string'>&quot;https://github.com/servo/rust-url/pulls&quot;</span>);</pre>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../url/struct.PathSegmentsMut.html' title='url::PathSegmentsMut'>PathSegmentsMut</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-528' class='srclink' href='../src/url/path_segments.rs.html#48-52' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "url";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TypeMap","A map keyed by types."]],"trait":[["Key","This trait defines the relationship between keys and values in a TypeMap."]]});

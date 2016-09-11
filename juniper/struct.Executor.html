@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Executor` struct in crate `juniper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Executor">
+
+    <title>juniper::Executor - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>juniper</a></p><script>window.sidebarCurrent = {name: 'Executor', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>juniper</a>::<wbr><a class='struct' href=''>Executor</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2117' class='srclink' href='../src/juniper/src/types/schema.rs.html#37-45' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Executor&lt;'a,&nbsp;CtxT&gt; <span class='where'>where CtxT: 'a</span> {
+    // some fields omitted
+}</pre><div class='docblock'><p>Query execution engine</p>
+
+<p>The executor helps drive the query execution in a schema. It keeps track
+of the current field stack, context, variables, and errors.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;CtxT&gt; <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;'a,&nbsp;CtxT&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-2229' class='srclink' href='../src/juniper/src/types/schema.rs.html#64-162' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.resolve' class='method'><code>fn <a href='#method.resolve' class='fnname'>resolve</a>&lt;T:&nbsp;<a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt;&gt;(&amp;mut self, value: &amp;T) -&gt; <a class='type' href='../juniper/type.ExecutionResult.html' title='juniper::ExecutionResult'>ExecutionResult</a></code></h4>
+<div class='docblock'><p>Resolve a single arbitrary value into an <code>ExecutionResult</code></p>
+</div><h4 id='method.resolve_into_value' class='method'><code>fn <a href='#method.resolve_into_value' class='fnname'>resolve_into_value</a>&lt;T:&nbsp;<a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt;&gt;(&amp;mut self, value: &amp;T) -&gt; <a class='enum' href='../juniper/enum.Value.html' title='juniper::Value'>Value</a></code></h4>
+<div class='docblock'><p>Resolve a single arbitrary value into a return value</p>
+
+<p>If the field fails to resolve, <code>null</code> will be returned.</p>
+</div><h4 id='method.replaced_context' class='method'><code>fn <a href='#method.replaced_context' class='fnname'>replaced_context</a>&lt;'b,&nbsp;NewCtxT&gt;(&amp;'b mut self, ctx: &amp;'b NewCtxT) -&gt; <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;'b,&nbsp;NewCtxT&gt;</code></h4>
+<div class='docblock'><p>Derive a new executor by replacing the context</p>
+
+<p>This can be used to connect different types, e.g. from different Rust
+libraries, that require different context types.</p>
+</div><h4 id='method.context' class='method'><code>fn <a href='#method.context' class='fnname'>context</a>(&amp;self) -&gt; &amp;'a CtxT</code></h4>
+<div class='docblock'><p>Access the current context</p>
+
+<p>You usually provide the context when calling the top-level <code>execute</code>
+function, or using the context factory in the Iron integration.</p>
+</div><h4 id='method.schema' class='method'><code>fn <a href='#method.schema' class='fnname'>schema</a>(&amp;self) -&gt; &amp;'a SchemaType</code></h4>
+<div class='docblock'><p>The currently executing schema</p>
+</div><h4 id='method.push_error' class='method'><code>fn <a href='#method.push_error' class='fnname'>push_error</a>(&amp;mut self, error: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, location: <a class='struct' href='../juniper/parser/struct.SourcePosition.html' title='juniper::parser::SourcePosition'>SourcePosition</a>)</code></h4>
+<div class='docblock'><p>Add an error to the execution engine</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "juniper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

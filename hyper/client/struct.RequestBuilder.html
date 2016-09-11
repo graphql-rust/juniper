@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `RequestBuilder` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, RequestBuilder">
+
+    <title>hyper::client::RequestBuilder - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'RequestBuilder', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>client</a>::<wbr><a class='struct' href=''>RequestBuilder</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-717' class='srclink' href='../../src/hyper/client/mod.rs.html#233-248' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct RequestBuilder&lt;'a&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Options for an individual Request.</p>
+
+<p>One of these will be built for you if you use one of the convenience
+methods, such as <code>get()</code>, <code>post()</code>, etc.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-724' class='srclink' href='../../src/hyper/client/mod.rs.html#250-367' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.body' class='method'><code>fn <a href='#method.body' class='fnname'>body</a>&lt;B:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../hyper/client/enum.Body.html' title='hyper::client::Body'>Body</a>&lt;'a&gt;&gt;&gt;(self, body: B) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;'a&gt;</code></h4>
+<div class='docblock'><p>Set a request body to be sent.</p>
+</div><h4 id='method.headers' class='method'><code>fn <a href='#method.headers' class='fnname'>headers</a>(self, headers: <a class='struct' href='../../hyper/header/struct.Headers.html' title='hyper::header::Headers'>Headers</a>) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;'a&gt;</code></h4>
+<div class='docblock'><p>Add additional headers to the request.</p>
+</div><h4 id='method.header' class='method'><code>fn <a href='#method.header' class='fnname'>header</a>&lt;H:&nbsp;<a class='trait' href='../../hyper/header/trait.Header.html' title='hyper::header::Header'>Header</a> + <a class='trait' href='../../hyper/header/trait.HeaderFormat.html' title='hyper::header::HeaderFormat'>HeaderFormat</a>&gt;(self, header: H) -&gt; <a class='struct' href='../../hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;'a&gt;</code></h4>
+<div class='docblock'><p>Add an individual new header to the request.</p>
+</div><h4 id='method.send' class='method'><code>fn <a href='#method.send' class='fnname'>send</a>(self) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;<a class='struct' href='../../hyper/client/response/struct.Response.html' title='hyper::client::response::Response'>Response</a>&gt;</code></h4>
+<div class='docblock'><p>Execute this request and receive a Response back.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

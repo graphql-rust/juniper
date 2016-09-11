@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error","An SSL error."],["NonblockingSslError","An error on a nonblocking stream."],["OpensslError","An error from the OpenSSL library"],["SslError","An SSL error"]],"struct":[["OpenSslError","An error reported from OpenSSL."]]});

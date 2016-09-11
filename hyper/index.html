@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `hyper` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, hyper">
+
+    <title>hyper - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'hyper', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>hyper</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/hyper/lib.rs.html#1-218' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'>
+<h1 id='hyper' class='section-header'><a href='#hyper'>Hyper</a></h1>
+<p>Hyper is a fast, modern HTTP implementation written in and for Rust. It
+is a low-level typesafe abstraction over raw HTTP, providing an elegant
+layer over &quot;stringly-typed&quot; HTTP.</p>
+
+<p>Hyper offers both a <a href="client/index.html">Client</a> and a
+<a href="server/index.html">Server</a> which can be used to drive complex web
+applications written entirely in Rust.</p>
+
+<h2 id='internal-design' class='section-header'><a href='#internal-design'>Internal Design</a></h2>
+<p>Hyper is designed as a relatively low-level wrapper over raw HTTP. It should
+allow the implementation of higher-level abstractions with as little pain as
+possible, and should not irrevocably hide any information from its users.</p>
+
+<h3 id='common-functionality' class='section-header'><a href='#common-functionality'>Common Functionality</a></h3>
+<p>Functionality and code shared between the Server and Client implementations
+can be found in <code>src</code> directly - this includes <code>NetworkStream</code>s, <code>Method</code>s,
+<code>StatusCode</code>, and so on.</p>
+
+<h4 id='methods-1' class='section-header'><a href='#methods-1'>Methods</a></h4>
+<p>Methods are represented as a single <code>enum</code> to remain as simple as possible.
+Extension Methods are represented as raw <code>String</code>s. A method&#39;s safety and
+idempotence can be accessed using the <code>safe</code> and <code>idempotent</code> methods.</p>
+
+<h4 id='statuscode' class='section-header'><a href='#statuscode'>StatusCode</a></h4>
+<p>Status codes are also represented as a single, exhaustive, <code>enum</code>. This
+representation is efficient, typesafe, and ergonomic as it allows the use of
+<code>match</code> to disambiguate known status codes.</p>
+
+<h4 id='headers' class='section-header'><a href='#headers'>Headers</a></h4>
+<p>Hyper&#39;s <a href="header/index.html">header</a> representation is likely the most
+complex API exposed by Hyper.</p>
+
+<p>Hyper&#39;s headers are an abstraction over an internal <code>HashMap</code> and provides a
+typesafe API for interacting with headers that does not rely on the use of
+&quot;string-typing.&quot;</p>
+
+<p>Each HTTP header in Hyper has an associated type and implementation of the
+<code>Header</code> trait, which defines an HTTP headers name as a string, how to parse
+that header, and how to format that header.</p>
+
+<p>Headers are then parsed from the string representation lazily when the typed
+representation of a header is requested and formatted back into their string
+representation when headers are written back to the client.</p>
+
+<h4 id='networkstream-and-networkacceptor' class='section-header'><a href='#networkstream-and-networkacceptor'>NetworkStream and NetworkAcceptor</a></h4>
+<p>These are found in <code>src/net.rs</code> and define the interface that acceptors and
+streams must fulfill for them to be used within Hyper. They are by and large
+internal tools and you should only need to mess around with them if you want to
+mock or replace <code>TcpStream</code> and <code>TcpAcceptor</code>.</p>
+
+<h3 id='server' class='section-header'><a href='#server'>Server</a></h3>
+<p>Server-specific functionality, such as <code>Request</code> and <code>Response</code>
+representations, are found in in <code>src/server</code>.</p>
+
+<h4 id='handler--server' class='section-header'><a href='#handler--server'>Handler + Server</a></h4>
+<p>A <code>Handler</code> in Hyper accepts a <code>Request</code> and <code>Response</code>. This is where
+user-code can handle each connection. The server accepts connections in a
+task pool with a customizable number of threads, and passes the Request /
+Response to the handler.</p>
+
+<h4 id='request' class='section-header'><a href='#request'>Request</a></h4>
+<p>An incoming HTTP Request is represented as a struct containing
+a <code>Reader</code> over a <code>NetworkStream</code>, which represents the body, headers, a remote
+address, an HTTP version, and a <code>Method</code> - relatively standard stuff.</p>
+
+<p><code>Request</code> implements <code>Reader</code> itself, meaning that you can ergonomically get
+the body out of a <code>Request</code> using standard <code>Reader</code> methods and helpers.</p>
+
+<h4 id='response' class='section-header'><a href='#response'>Response</a></h4>
+<p>An outgoing HTTP Response is also represented as a struct containing a <code>Writer</code>
+over a <code>NetworkStream</code> which represents the Response body in addition to
+standard items such as the <code>StatusCode</code> and HTTP version. <code>Response</code>&#39;s <code>Writer</code>
+implementation provides a streaming interface for sending data over to the
+client.</p>
+
+<p>One of the traditional problems with representing outgoing HTTP Responses is
+tracking the write-status of the Response - have we written the status-line,
+the headers, the body, etc.? Hyper tracks this information statically using the
+type system and prevents you, using the type system, from writing headers after
+you have started writing to the body or vice versa.</p>
+
+<p>Hyper does this through a phantom type parameter in the definition of Response,
+which tracks whether you are allowed to write to the headers or the body. This
+phantom type can have two values <code>Fresh</code> or <code>Streaming</code>, with <code>Fresh</code>
+indicating that you can write the headers and <code>Streaming</code> indicating that you
+may write to the body, but not the headers.</p>
+
+<h3 id='client' class='section-header'><a href='#client'>Client</a></h3>
+<p>Client-specific functionality, such as <code>Request</code> and <code>Response</code>
+representations, are found in <code>src/client</code>.</p>
+
+<h4 id='request-1' class='section-header'><a href='#request-1'>Request</a></h4>
+<p>An outgoing HTTP Request is represented as a struct containing a <code>Writer</code> over
+a <code>NetworkStream</code> which represents the Request body in addition to the standard
+information such as headers and the request method.</p>
+
+<p>Outgoing Requests track their write-status in almost exactly the same way as
+outgoing HTTP Responses do on the Server, so we will defer to the explanation
+in the documentation for server Response.</p>
+
+<p>Requests expose an efficient streaming interface instead of a builder pattern,
+but they also provide the needed interface for creating a builder pattern over
+the API exposed by core Hyper.</p>
+
+<h4 id='response-1' class='section-header'><a href='#response-1'>Response</a></h4>
+<p>Incoming HTTP Responses are represented as a struct containing a <code>Reader</code> over
+a <code>NetworkStream</code> and contain headers, a status, and an http version. They
+implement <code>Reader</code> and can be read to get the data out of a <code>Response</code>.</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use client::<a class='struct' href='../hyper/client/struct.Client.html' title='hyper::client::Client'>Client</a>;</code></td></tr><tr><td><code>pub use error::{<a class='type' href='../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>, <a class='enum' href='../hyper/error/enum.Error.html' title='hyper::error::Error'>Error</a>};</code></td></tr><tr><td><code>pub use method::Method::{<a class='enum' href='../hyper/method/enum.Method.html' title='hyper::method::Method'>Get</a>, <a class='enum' href='../hyper/method/enum.Method.html' title='hyper::method::Method'>Head</a>, <a class='enum' href='../hyper/method/enum.Method.html' title='hyper::method::Method'>Post</a>, <a class='enum' href='../hyper/method/enum.Method.html' title='hyper::method::Method'>Delete</a>};</code></td></tr><tr><td><code>pub use status::StatusCode::{<a class='enum' href='../hyper/status/enum.StatusCode.html' title='hyper::status::StatusCode'>Ok</a>, <a class='enum' href='../hyper/status/enum.StatusCode.html' title='hyper::status::StatusCode'>BadRequest</a>, <a class='enum' href='../hyper/status/enum.StatusCode.html' title='hyper::status::StatusCode'>NotFound</a>};</code></td></tr><tr><td><code>pub use server::<a class='struct' href='../hyper/server/struct.Server.html' title='hyper::server::Server'>Server</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='client/index.html'
+                                  title='hyper::client'>client</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP Client</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='error/index.html'
+                                  title='hyper::error'>error</a></td>
+                           <td class='docblock short'>
+                                <p>Error and Result module.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='header/index.html'
+                                  title='hyper::header'>header</a></td>
+                           <td class='docblock short'>
+                                <p>Headers container, and common header fields.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='http/index.html'
+                                  title='hyper::http'>http</a></td>
+                           <td class='docblock short'>
+                                <p>Pieces pertaining to the HTTP message protocol.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='method/index.html'
+                                  title='hyper::method'>method</a></td>
+                           <td class='docblock short'>
+                                <p>The HTTP request method</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='mime/index.html'
+                                  title='hyper::mime'>mime</a></td>
+                           <td class='docblock short'>
+                                <p>Re-exporting the mime crate, for convenience.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='net/index.html'
+                                  title='hyper::net'>net</a></td>
+                           <td class='docblock short'>
+                                <p>A collection of traits abstracting over Listeners and Streams.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='server/index.html'
+                                  title='hyper::server'>server</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP Server</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='status/index.html'
+                                  title='hyper::status'>status</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP status codes</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='uri/index.html'
+                                  title='hyper::uri'>uri</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP RequestUris</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='version/index.html'
+                                  title='hyper::version'>version</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP Versions enum</p>
+                           </td>
+                       </tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.header!.html'
+                                  title='hyper::header!'>header!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.LanguageTag.html'
+                                  title='hyper::LanguageTag'>LanguageTag</a></td>
+                           <td class='docblock short'>
+                                <p>A language tag as described in <a href="http://tools.ietf.org/html/bcp47">BCP47</a>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Url.html'
+                                  title='hyper::Url'>Url</a></td>
+                           <td class='docblock short'>
+                                <p>A parsed URL record.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

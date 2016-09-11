@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `TypeMap` struct in crate `typemap`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, TypeMap">
+
+    <title>typemap::TypeMap - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>typemap</a></p><script>window.sidebarCurrent = {name: 'TypeMap', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>typemap</a>::<wbr><a class='struct' href=''>TypeMap</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-22' class='srclink' href='../src/typemap/lib.rs.html#27-30' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct TypeMap&lt;A:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&nbsp;=&nbsp;<a class='trait' href='../unsafe_any/trait.UnsafeAny.html' title='unsafe_any::UnsafeAny'>UnsafeAny</a>&gt; <span class='where'>where A: <a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a></span> {
+    // some fields omitted
+}</pre><div class='docblock'><p>A map keyed by types.</p>
+
+<p>Can contain one value of any type for each key type, as defined
+by the Assoc trait.</p>
+
+<p>You usually do not need to worry about the A type parameter, but it
+can be used to add bounds to the possible value types that can
+be stored in this map. Usually, you are looking for <code>ShareMap</code>, which
+is <code>Send + Sync</code>.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-48' class='srclink' href='../src/typemap/lib.rs.html#85-90' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a></code></h4>
+<div class='docblock'><p>Create a new, empty TypeMap.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;A:&nbsp;<a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a> + ?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-50' class='srclink' href='../src/typemap/lib.rs.html#92-175' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.custom' class='method'><code>fn <a href='#method.custom' class='fnname'>custom</a>() -&gt; <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt;</code></h4>
+<div class='docblock'><p>Create a new, empty TypeMap.</p>
+
+<p>Can be used with any <code>A</code> parameter; <code>new</code> is specialized to get around
+the required type annotations when using this function.</p>
+</div><h4 id='method.insert' class='method'><code>fn <a href='#method.insert' class='fnname'>insert</a>&lt;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>&gt;(&amp;mut self, val: K::Value) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;K::Value&gt; <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Insert a value into the map with a specified key type.</p>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>&lt;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>&gt;(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;K::Value&gt; <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Find a value in the map and get a reference to it.</p>
+</div><h4 id='method.get_mut' class='method'><code>fn <a href='#method.get_mut' class='fnname'>get_mut</a>&lt;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>&gt;(&amp;mut self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;mut K::Value&gt; <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Find a value in the map and get a mutable reference to it.</p>
+</div><h4 id='method.contains' class='method'><code>fn <a href='#method.contains' class='fnname'>contains</a>&lt;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>&gt;(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Check if a key has an associated value stored in the map.</p>
+</div><h4 id='method.remove' class='method'><code>fn <a href='#method.remove' class='fnname'>remove</a>&lt;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>&gt;(&amp;mut self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;K::Value&gt; <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Remove a value from the map.</p>
+
+<p>Returns <code>true</code> if a value was removed.</p>
+</div><h4 id='method.entry' class='method'><code>fn <a href='#method.entry' class='fnname'>entry</a>&lt;'a,&nbsp;K:&nbsp;<a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a>&gt;(&amp;'a mut self) -&gt; <a class='enum' href='../typemap/enum.Entry.html' title='typemap::Entry'>Entry</a>&lt;'a,&nbsp;K,&nbsp;A&gt; <span class='where'>where K::Value: <a class='trait' href='https://doc.rust-lang.org/nightly/core/any/trait.Any.html' title='core::any::Any'>Any</a> + Implements&lt;A&gt;</span></code></h4>
+<div class='docblock'><p>Get the given key&#39;s corresponding entry in the map for in-place manipulation.</p>
+</div><h4 id='method.data' class='method'><code>unsafe fn <a href='#method.data' class='fnname'>data</a>(&amp;self) -&gt; &amp;<a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html' title='core::any::TypeId'>TypeId</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;A&gt;&gt;</code></h4>
+<div class='docblock'><p>Read the underlying HashMap</p>
+</div><h4 id='method.data_mut' class='method'><code>unsafe fn <a href='#method.data_mut' class='fnname'>data_mut</a>(&amp;mut self) -&gt; &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html' title='core::any::TypeId'>TypeId</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;A&gt;&gt;</code></h4>
+<div class='docblock'><p>Get a mutable reference to the underlying HashMap</p>
+</div><h4 id='method.len' class='method'><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Get the number of values stored in the map.</p>
+</div><h4 id='method.is_empty' class='method'><code>fn <a href='#method.is_empty' class='fnname'>is_empty</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Return true if the map contains no values.</p>
+</div><h4 id='method.clear' class='method'><code>fn <a href='#method.clear' class='fnname'>clear</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Remove all entries from the map.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + ?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt; <span class='where'>where A: <a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-12' class='srclink' href='../src/typemap/lib.rs.html#26' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> + ?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt; <span class='where'>where A: <a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-19' class='srclink' href='../src/typemap/lib.rs.html#26' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.default' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt;</code></h4>
+<div class='docblock'><p>Returns the &quot;default value&quot; for a type. <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;A:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt; <span class='where'>where A: <a class='trait' href='../unsafe_any/trait.UnsafeAnyExt.html' title='unsafe_any::UnsafeAnyExt'>UnsafeAnyExt</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;A&gt;: <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-25' class='srclink' href='../src/typemap/lib.rs.html#32-37' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../typemap/struct.TypeMap.html' title='typemap::TypeMap'>TypeMap</a>&lt;A&gt;</code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "typemap";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

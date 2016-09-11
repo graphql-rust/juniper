@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["evp_bytes_to_key_pbkdf1_compatible","Derives a key and an IV from various parameters."],["pbkdf2_hmac_sha1","Derives a key from a password and salt using the PBKDF2-HMAC-SHA1 algorithm."]],"struct":[["KeyIvPair",""]]});

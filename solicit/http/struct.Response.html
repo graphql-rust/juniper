@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Response` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Response">
+
+    <title>solicit::http::Response - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>solicit</a>::<wbr><a href='index.html'>http</a></p><script>window.sidebarCurrent = {name: 'Response', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>solicit</a>::<wbr><a href='index.html'>http</a>::<wbr><a class='struct' href=''>Response</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1591' class='srclink' href='../../src/solicit/http/mod.rs.html#139-149' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Response {
+    pub stream_id: <a class='type' href='../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>,
+    pub headers: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;,
+    pub body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;,
+}</pre><div class='docblock'><p>A struct representing the full raw response received on an HTTP/2 connection.</p>
+
+<p>The full body of the response is included, regardless how large it may be.
+The headers contain both the meta-headers, as well as the actual headers.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.stream_id' class='structfield'><code>stream_id: <a class='type' href='../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The ID of the stream to which the response is associated. HTTP/1.1 does
+not really have an equivalent to this.</p>
+</div><span id='structfield.headers' class='structfield'><code>headers: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>Exposes <em>all</em> the raw response headers, including the meta-headers.
+(For now the only meta header allowed in HTTP/2 responses is the
+<code>:status</code>.)</p>
+</div><span id='structfield.body' class='structfield'><code>body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The full body of the response as an uninterpreted sequence of bytes.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1595' class='srclink' href='../../src/solicit/http/mod.rs.html#151-203' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(stream_id: <a class='type' href='../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>, headers: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;, body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;) -&gt; <a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a></code></h4>
+<div class='docblock'><p>Creates a new <code>Response</code> with all the components already provided.</p>
+</div><h4 id='method.status_code' class='method'><code>fn <a href='#method.status_code' class='fnname'>status_code</a>(&amp;self) -&gt; <a class='type' href='../../solicit/http/type.HttpResult.html' title='solicit::http::HttpResult'>HttpResult</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>&gt;</code></h4>
+<div class='docblock'><p>Gets the response status code from the pseudo-header. If the response
+does not contain the response as the first pseuo-header, an error is
+returned as such a response is malformed.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1585' class='srclink' href='../../src/solicit/http/mod.rs.html#138' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../solicit/http/struct.Response.html' title='solicit::http::Response'>Response</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

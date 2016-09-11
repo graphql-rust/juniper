@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Range` enum in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Range">
+
+    <title>hyper::header::Range - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'Range', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='enum' href=''>Range</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-3885' class='srclink' href='../../src/hyper/header/common/range.rs.html#59-65' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Range {
+    Bytes(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../hyper/header/enum.ByteRangeSpec.html' title='hyper::header::ByteRangeSpec'>ByteRangeSpec</a>&gt;),
+    Unregistered(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
+}</pre><div class='docblock'><p><code>Range</code> header, defined in <a href="https://tools.ietf.org/html/rfc7233#section-3.1">RFC7233</a></p>
+
+<p>The &quot;Range&quot; header field on a GET request modifies the method
+semantics to request transfer of only one or more subranges of the
+selected representation data, rather than the entire selected
+representation data.</p>
+
+<h1 id='abnf' class='section-header'><a href='#abnf'>ABNF</a></h1>
+<pre><code class="language-plain">Range = byte-ranges-specifier / other-ranges-specifier
+other-ranges-specifier = other-range-unit &quot;=&quot; other-range-set
+other-range-set = 1*VCHAR
+
+bytes-unit = &quot;bytes&quot;
+
+byte-ranges-specifier = bytes-unit &quot;=&quot; byte-range-set
+byte-range-set = 1#(byte-range-spec / suffix-byte-range-spec)
+byte-range-spec = first-byte-pos &quot;-&quot; [last-byte-pos]
+first-byte-pos = 1*DIGIT
+last-byte-pos = 1*DIGIT
+</code></pre>
+
+<h1 id='example-values' class='section-header'><a href='#example-values'>Example values</a></h1>
+<ul>
+<li><code>bytes=1000-</code></li>
+<li><code>bytes=-2000</code></li>
+<li><code>bytes=0-1,30-40</code></li>
+<li><code>bytes=0-10,20-90,-100</code></li>
+<li><code>custom_unit=0-123</code></li>
+<li><code>custom_unit=xxx-yyy</code></li>
+</ul>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>Range</span>, <span class='ident'>ByteRangeSpec</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(<span class='ident'>Range</span>::<span class='ident'>Bytes</span>(
+    <span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>ByteRangeSpec</span>::<span class='ident'>FromTo</span>(<span class='number'>1</span>, <span class='number'>100</span>), <span class='ident'>ByteRangeSpec</span>::<span class='ident'>AllFrom</span>(<span class='number'>200</span>)]
+));
+
+<span class='ident'>headers</span>.<span class='ident'>clear</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(<span class='ident'>Range</span>::<span class='ident'>Unregistered</span>(<span class='string'>&quot;letters&quot;</span>.<span class='ident'>to_owned</span>(), <span class='string'>&quot;a-f&quot;</span>.<span class='ident'>to_owned</span>()));</pre>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Headers</span>, <span class='ident'>Range</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> <span class='ident'>Headers</span>::<span class='ident'>new</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(<span class='ident'>Range</span>::<span class='ident'>bytes</span>(<span class='number'>1</span>, <span class='number'>100</span>));
+
+<span class='ident'>headers</span>.<span class='ident'>clear</span>();
+<span class='ident'>headers</span>.<span class='ident'>set</span>(<span class='ident'>Range</span>::<span class='ident'>bytes_multi</span>(<span class='macro'>vec</span><span class='macro'>!</span>[(<span class='number'>1</span>, <span class='number'>100</span>), (<span class='number'>200</span>, <span class='number'>300</span>)]));</pre>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Bytes' class='variant'><code>Bytes(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../hyper/header/enum.ByteRangeSpec.html' title='hyper::header::ByteRangeSpec'>ByteRangeSpec</a>&gt;)</code></span><div class='docblock'><p>Byte range</p>
+</div><span id='variant.Unregistered' class='variant'><code>Unregistered(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></span><div class='docblock'><p>Custom range, with unit not registered at IANA
+(<code>other-range-unit</code>: String , <code>other-range-set</code>: String)</p>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

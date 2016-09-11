@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `DataChunk` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, DataChunk">
+
+    <title>solicit::http::connection::DataChunk - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>connection</a></p><script>window.sidebarCurrent = {name: 'DataChunk', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>connection</a>::<wbr><a class='struct' href=''>DataChunk</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-793' class='srclink' href='../../../src/solicit/http/connection.rs.html#200-207' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct DataChunk&lt;'a&gt; {
+    pub data: <a class='enum' href='https://doc.rust-lang.org/nightly/collections/borrow/enum.Cow.html' title='collections::borrow::Cow'>Cow</a>&lt;'a,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;,
+    pub stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>,
+    pub end_stream: <a class='enum' href='../../../solicit/http/connection/enum.EndStream.html' title='solicit::http::connection::EndStream'>EndStream</a>,
+}</pre><div class='docblock'><p>The struct represents a chunk of data that should be sent to the peer on a particular stream.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.data' class='structfield'><code>data: <a class='enum' href='https://doc.rust-lang.org/nightly/collections/borrow/enum.Cow.html' title='collections::borrow::Cow'>Cow</a>&lt;'a,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The data that should be sent.</p>
+</div><span id='structfield.stream_id' class='structfield'><code>stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The ID of the stream on which the data should be sent.</p>
+</div><span id='structfield.end_stream' class='structfield'><code>end_stream: <a class='enum' href='../../../solicit/http/connection/enum.EndStream.html' title='solicit::http::connection::EndStream'>EndStream</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>Whether the data chunk will also end the stream.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../../../solicit/http/connection/struct.DataChunk.html' title='solicit::http::connection::DataChunk'>DataChunk</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-798' class='srclink' href='../../../src/solicit/http/connection.rs.html#209-233' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(data: <a class='enum' href='https://doc.rust-lang.org/nightly/collections/borrow/enum.Cow.html' title='collections::borrow::Cow'>Cow</a>&lt;'a,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;, stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>, end_stream: <a class='enum' href='../../../solicit/http/connection/enum.EndStream.html' title='solicit::http::connection::EndStream'>EndStream</a>) -&gt; <a class='struct' href='../../../solicit/http/connection/struct.DataChunk.html' title='solicit::http::connection::DataChunk'>DataChunk</a>&lt;'a&gt;</code></h4>
+<div class='docblock'><p>Creates a new <code>DataChunk</code>.</p>
+
+<p><strong>Note:</strong> <code>IntoCow</code> is unstable and there&#39;s no implementation of <code>Into&lt;Cow&lt;&#39;a, [u8]&gt;&gt;</code> for
+the fundamental types, making this a bit of a clunky API. Once such an <code>Into</code> impl is
+added, this can be made generic over the trait for some ergonomic improvements.</p>
+</div><h4 id='method.new_borrowed' class='method'><code>fn <a href='#method.new_borrowed' class='fnname'>new_borrowed</a>&lt;D:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html' title='core::borrow::Borrow'>Borrow</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt;&gt;(data: D, stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>, end_stream: <a class='enum' href='../../../solicit/http/connection/enum.EndStream.html' title='solicit::http::connection::EndStream'>EndStream</a>) -&gt; <a class='struct' href='../../../solicit/http/connection/struct.DataChunk.html' title='solicit::http::connection::DataChunk'>DataChunk</a>&lt;'a&gt;</code></h4>
+<div class='docblock'><p>Creates a new <code>DataChunk</code> from a borrowed slice. This method should become obsolete if we
+can take an <code>Into&lt;Cow&lt;_, _&gt;&gt;</code> without using unstable features.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

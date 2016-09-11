@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `X509ValidationError` enum in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, X509ValidationError">
+
+    <title>openssl::x509::X509ValidationError - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>openssl</a>::<wbr><a href='index.html'>x509</a></p><script>window.sidebarCurrent = {name: 'X509ValidationError', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>openssl</a>::<wbr><a href='index.html'>x509</a>::<wbr><a class='enum' href=''>X509ValidationError</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-3567' class='srclink' href='../../src/openssl/x509/mod.rs.html#720-723' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum X509ValidationError {
+    X509UnableToGetIssuerCert,
+    X509UnableToGetCrl,
+    X509UnableToDecryptCertSignature,
+    X509UnableToDecryptCrlSignature,
+    X509UnableToDecodeIssuerPublicKey,
+    X509CertSignatureFailure,
+    X509CrlSignatureFailure,
+    X509CertNotYetValid,
+    X509CertHasExpired,
+    X509CrlNotYetValid,
+    X509CrlHasExpired,
+    X509ErrorInCertNotBeforeField,
+    X509ErrorInCertNotAfterField,
+    X509ErrorInCrlLastUpdateField,
+    X509ErrorInCrlNextUpdateField,
+    X509OutOfMem,
+    X509DepthZeroSelfSignedCert,
+    X509SelfSignedCertInChain,
+    X509UnableToGetIssuerCertLocally,
+    X509UnableToVerifyLeafSignature,
+    X509CertChainTooLong,
+    X509CertRevoked,
+    X509InvalidCA,
+    X509PathLengthExceeded,
+    X509InvalidPurpose,
+    X509CertUntrusted,
+    X509CertRejected,
+    X509SubjectIssuerMismatch,
+    X509AkidSkidMismatch,
+    X509AkidIssuerSerialMismatch,
+    X509KeyusageNoCertsign,
+    X509UnableToGetCrlIssuer,
+    X509UnhandledCriticalExtension,
+    X509KeyusageNoCrlSign,
+    X509UnhandledCriticalCrlExtension,
+    X509InvalidNonCA,
+    X509ProxyPathLengthExceeded,
+    X509KeyusageNoDigitalSignature,
+    X509ProxyCertificatesNotAllowed,
+    X509InvalidExtension,
+    X509InavlidPolicyExtension,
+    X509NoExplicitPolicy,
+    X509DifferentCrlScope,
+    X509UnsupportedExtensionFeature,
+    X509UnnestedResource,
+    X509PermittedVolation,
+    X509ExcludedViolation,
+    X509SubtreeMinmax,
+    X509UnsupportedConstraintType,
+    X509UnsupportedConstraintSyntax,
+    X509UnsupportedNameSyntax,
+    X509CrlPathValidationError,
+    X509ApplicationVerification,
+    X509UnknownError(<a class='type' href='../../libc/type.c_int.html' title='libc::c_int'>c_int</a>),
+}</pre><h2 class='variants'>Variants</h2>
+<span id='variant.X509UnableToGetIssuerCert' class='variant'><code>X509UnableToGetIssuerCert</code></span><span id='variant.X509UnableToGetCrl' class='variant'><code>X509UnableToGetCrl</code></span><span id='variant.X509UnableToDecryptCertSignature' class='variant'><code>X509UnableToDecryptCertSignature</code></span><span id='variant.X509UnableToDecryptCrlSignature' class='variant'><code>X509UnableToDecryptCrlSignature</code></span><span id='variant.X509UnableToDecodeIssuerPublicKey' class='variant'><code>X509UnableToDecodeIssuerPublicKey</code></span><span id='variant.X509CertSignatureFailure' class='variant'><code>X509CertSignatureFailure</code></span><span id='variant.X509CrlSignatureFailure' class='variant'><code>X509CrlSignatureFailure</code></span><span id='variant.X509CertNotYetValid' class='variant'><code>X509CertNotYetValid</code></span><span id='variant.X509CertHasExpired' class='variant'><code>X509CertHasExpired</code></span><span id='variant.X509CrlNotYetValid' class='variant'><code>X509CrlNotYetValid</code></span><span id='variant.X509CrlHasExpired' class='variant'><code>X509CrlHasExpired</code></span><span id='variant.X509ErrorInCertNotBeforeField' class='variant'><code>X509ErrorInCertNotBeforeField</code></span><span id='variant.X509ErrorInCertNotAfterField' class='variant'><code>X509ErrorInCertNotAfterField</code></span><span id='variant.X509ErrorInCrlLastUpdateField' class='variant'><code>X509ErrorInCrlLastUpdateField</code></span><span id='variant.X509ErrorInCrlNextUpdateField' class='variant'><code>X509ErrorInCrlNextUpdateField</code></span><span id='variant.X509OutOfMem' class='variant'><code>X509OutOfMem</code></span><span id='variant.X509DepthZeroSelfSignedCert' class='variant'><code>X509DepthZeroSelfSignedCert</code></span><span id='variant.X509SelfSignedCertInChain' class='variant'><code>X509SelfSignedCertInChain</code></span><span id='variant.X509UnableToGetIssuerCertLocally' class='variant'><code>X509UnableToGetIssuerCertLocally</code></span><span id='variant.X509UnableToVerifyLeafSignature' class='variant'><code>X509UnableToVerifyLeafSignature</code></span><span id='variant.X509CertChainTooLong' class='variant'><code>X509CertChainTooLong</code></span><span id='variant.X509CertRevoked' class='variant'><code>X509CertRevoked</code></span><span id='variant.X509InvalidCA' class='variant'><code>X509InvalidCA</code></span><span id='variant.X509PathLengthExceeded' class='variant'><code>X509PathLengthExceeded</code></span><span id='variant.X509InvalidPurpose' class='variant'><code>X509InvalidPurpose</code></span><span id='variant.X509CertUntrusted' class='variant'><code>X509CertUntrusted</code></span><span id='variant.X509CertRejected' class='variant'><code>X509CertRejected</code></span><span id='variant.X509SubjectIssuerMismatch' class='variant'><code>X509SubjectIssuerMismatch</code></span><span id='variant.X509AkidSkidMismatch' class='variant'><code>X509AkidSkidMismatch</code></span><span id='variant.X509AkidIssuerSerialMismatch' class='variant'><code>X509AkidIssuerSerialMismatch</code></span><span id='variant.X509KeyusageNoCertsign' class='variant'><code>X509KeyusageNoCertsign</code></span><span id='variant.X509UnableToGetCrlIssuer' class='variant'><code>X509UnableToGetCrlIssuer</code></span><span id='variant.X509UnhandledCriticalExtension' class='variant'><code>X509UnhandledCriticalExtension</code></span><span id='variant.X509KeyusageNoCrlSign' class='variant'><code>X509KeyusageNoCrlSign</code></span><span id='variant.X509UnhandledCriticalCrlExtension' class='variant'><code>X509UnhandledCriticalCrlExtension</code></span><span id='variant.X509InvalidNonCA' class='variant'><code>X509InvalidNonCA</code></span><span id='variant.X509ProxyPathLengthExceeded' class='variant'><code>X509ProxyPathLengthExceeded</code></span><span id='variant.X509KeyusageNoDigitalSignature' class='variant'><code>X509KeyusageNoDigitalSignature</code></span><span id='variant.X509ProxyCertificatesNotAllowed' class='variant'><code>X509ProxyCertificatesNotAllowed</code></span><span id='variant.X509InvalidExtension' class='variant'><code>X509InvalidExtension</code></span><span id='variant.X509InavlidPolicyExtension' class='variant'><code>X509InavlidPolicyExtension</code></span><span id='variant.X509NoExplicitPolicy' class='variant'><code>X509NoExplicitPolicy</code></span><span id='variant.X509DifferentCrlScope' class='variant'><code>X509DifferentCrlScope</code></span><span id='variant.X509UnsupportedExtensionFeature' class='variant'><code>X509UnsupportedExtensionFeature</code></span><span id='variant.X509UnnestedResource' class='variant'><code>X509UnnestedResource</code></span><span id='variant.X509PermittedVolation' class='variant'><code>X509PermittedVolation</code></span><span id='variant.X509ExcludedViolation' class='variant'><code>X509ExcludedViolation</code></span><span id='variant.X509SubtreeMinmax' class='variant'><code>X509SubtreeMinmax</code></span><span id='variant.X509UnsupportedConstraintType' class='variant'><code>X509UnsupportedConstraintType</code></span><span id='variant.X509UnsupportedConstraintSyntax' class='variant'><code>X509UnsupportedConstraintSyntax</code></span><span id='variant.X509UnsupportedNameSyntax' class='variant'><code>X509UnsupportedNameSyntax</code></span><span id='variant.X509CrlPathValidationError' class='variant'><code>X509CrlPathValidationError</code></span><span id='variant.X509ApplicationVerification' class='variant'><code>X509ApplicationVerification</code></span><span id='variant.X509UnknownError' class='variant'><code>X509UnknownError(<a class='type' href='../../libc/type.c_int.html' title='libc::c_int'>c_int</a>)</code></span><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../openssl/x509/enum.X509ValidationError.html' title='openssl::x509::X509ValidationError'>X509ValidationError</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3562' class='srclink' href='../../src/openssl/x509/mod.rs.html#719' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../openssl/x509/enum.X509ValidationError.html' title='openssl::x509::X509ValidationError'>X509ValidationError</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='../../openssl/x509/enum.X509ValidationError.html' title='openssl::x509::X509ValidationError'>X509ValidationError</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3566' class='srclink' href='../../src/openssl/x509/mod.rs.html#719' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

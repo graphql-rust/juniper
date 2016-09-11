@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Duration` struct in crate `time`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Duration">
+
+    <title>time::Duration - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    <link rel="shortcut icon" href="https://www.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../time/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='index.html'>time</a></p><script>window.sidebarCurrent = {name: 'Duration', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>time</a>::<wbr><a class='struct' href=''>Duration</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-335' class='srclink' href='../src/time/duration.rs.html#45-48' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Duration {
+    // some fields omitted
+}</pre><div class='docblock'><p>ISO 8601 time duration with nanosecond precision.
+This also allows for the negative duration; see individual methods for details.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-340' class='srclink' href='../src/time/duration.rs.html#62-288' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.weeks' class='method'><code>fn <a href='#method.weeks' class='fnname'>weeks</a>(weeks: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of weeks.
+Equivalent to <code>Duration::seconds(weeks * 7 * 24 * 60 * 60)</code> with overflow checks.
+Panics when the duration is out of bounds.</p>
+</div><h4 id='method.days' class='method'><code>fn <a href='#method.days' class='fnname'>days</a>(days: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of days.
+Equivalent to <code>Duration::seconds(days * 24 * 60 * 60)</code> with overflow checks.
+Panics when the duration is out of bounds.</p>
+</div><h4 id='method.hours' class='method'><code>fn <a href='#method.hours' class='fnname'>hours</a>(hours: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of hours.
+Equivalent to <code>Duration::seconds(hours * 60 * 60)</code> with overflow checks.
+Panics when the duration is out of bounds.</p>
+</div><h4 id='method.minutes' class='method'><code>fn <a href='#method.minutes' class='fnname'>minutes</a>(minutes: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of minutes.
+Equivalent to <code>Duration::seconds(minutes * 60)</code> with overflow checks.
+Panics when the duration is out of bounds.</p>
+</div><h4 id='method.seconds' class='method'><code>fn <a href='#method.seconds' class='fnname'>seconds</a>(seconds: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of seconds.
+Panics when the duration is more than <code>i64::MAX</code> milliseconds
+or less than <code>i64::MIN</code> milliseconds.</p>
+</div><h4 id='method.milliseconds' class='method'><code>fn <a href='#method.milliseconds' class='fnname'>milliseconds</a>(milliseconds: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of milliseconds.</p>
+</div><h4 id='method.microseconds' class='method'><code>fn <a href='#method.microseconds' class='fnname'>microseconds</a>(microseconds: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of microseconds.</p>
+</div><h4 id='method.nanoseconds' class='method'><code>fn <a href='#method.nanoseconds' class='fnname'>nanoseconds</a>(nanos: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Makes a new <code>Duration</code> with given number of nanoseconds.</p>
+</div><h4 id='method.span' class='method'><code>fn <a href='#method.span' class='fnname'>span</a>&lt;F&gt;(f: F) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a> <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>()</span></code></h4>
+<div class='docblock'><p>Runs a closure, returning the duration of time it took to run the
+closure.</p>
+</div><h4 id='method.num_weeks' class='method'><code>fn <a href='#method.num_weeks' class='fnname'>num_weeks</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></h4>
+<div class='docblock'><p>Returns the total number of whole weeks in the duration.</p>
+</div><h4 id='method.num_days' class='method'><code>fn <a href='#method.num_days' class='fnname'>num_days</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></h4>
+<div class='docblock'><p>Returns the total number of whole days in the duration.</p>
+</div><h4 id='method.num_hours' class='method'><code>fn <a href='#method.num_hours' class='fnname'>num_hours</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></h4>
+<div class='docblock'><p>Returns the total number of whole hours in the duration.</p>
+</div><h4 id='method.num_minutes' class='method'><code>fn <a href='#method.num_minutes' class='fnname'>num_minutes</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></h4>
+<div class='docblock'><p>Returns the total number of whole minutes in the duration.</p>
+</div><h4 id='method.num_seconds' class='method'><code>fn <a href='#method.num_seconds' class='fnname'>num_seconds</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></h4>
+<div class='docblock'><p>Returns the total number of whole seconds in the duration.</p>
+</div><h4 id='method.num_milliseconds' class='method'><code>fn <a href='#method.num_milliseconds' class='fnname'>num_milliseconds</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></h4>
+<div class='docblock'><p>Returns the total number of whole milliseconds in the duration,</p>
+</div><h4 id='method.num_microseconds' class='method'><code>fn <a href='#method.num_microseconds' class='fnname'>num_microseconds</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>&gt;</code></h4>
+<div class='docblock'><p>Returns the total number of whole microseconds in the duration,
+or <code>None</code> on overflow (exceeding 2<sup>63</sup> microseconds in either direction).</p>
+</div><h4 id='method.num_nanoseconds' class='method'><code>fn <a href='#method.num_nanoseconds' class='fnname'>num_nanoseconds</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>&gt;</code></h4>
+<div class='docblock'><p>Returns the total number of whole nanoseconds in the duration,
+or <code>None</code> on overflow (exceeding 2<sup>63</sup> nanoseconds in either direction).</p>
+</div><h4 id='method.checked_add' class='method'><code>fn <a href='#method.checked_add' class='fnname'>checked_add</a>(&amp;self, rhs: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>&gt;</code></h4>
+<div class='docblock'><p>Add two durations, returning <code>None</code> if overflow occurred.</p>
+</div><h4 id='method.checked_sub' class='method'><code>fn <a href='#method.checked_sub' class='fnname'>checked_sub</a>(&amp;self, rhs: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>&gt;</code></h4>
+<div class='docblock'><p>Subtract two durations, returning <code>None</code> if overflow occurred.</p>
+</div><h4 id='method.min_value' class='method'><code>fn <a href='#method.min_value' class='fnname'>min_value</a>() -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The minimum possible <code>Duration</code>: <code>i64::MIN</code> milliseconds.</p>
+</div><h4 id='method.max_value' class='method'><code>fn <a href='#method.max_value' class='fnname'>max_value</a>() -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The maximum possible <code>Duration</code>: <code>i64::MAX</code> milliseconds.</p>
+</div><h4 id='method.zero' class='method'><code>fn <a href='#method.zero' class='fnname'>zero</a>() -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>A duration where the stored seconds and nanoseconds are equal to zero.</p>
+</div><h4 id='method.is_zero' class='method'><code>fn <a href='#method.is_zero' class='fnname'>is_zero</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns <code>true</code> if the duration equals <code>Duration::zero()</code>.</p>
+</div><h4 id='method.from_std' class='method'><code>fn <a href='#method.from_std' class='fnname'>from_std</a>(duration: <a class='struct' href='https://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>StdDuration</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>,&nbsp;<a class='struct' href='../time/struct.OutOfRangeError.html' title='time::OutOfRangeError'>OutOfRangeError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a <code>time::Duration</code> object from <code>std::time::Duration</code></p>
+
+<p>This function errors when original duration is larger than the maximum
+value supported for this type.</p>
+</div><h4 id='method.to_std' class='method'><code>fn <a href='#method.to_std' class='fnname'>to_std</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>StdDuration</a>,&nbsp;<a class='struct' href='../time/struct.OutOfRangeError.html' title='time::OutOfRangeError'>OutOfRangeError</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a <code>std::time::Duration</code> object from <code>time::Duration</code></p>
+
+<p>This function errors when duration is less than zero. As standard
+library implementation is limited to non-negative values.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-254' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-261' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.cmp' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp' class='fnname'>cmp</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a></code></h4>
+<div class='docblock'><p>This method returns an <code>Ordering</code> between <code>self</code> and <code>other</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html' title='core::cmp::PartialOrd'>PartialOrd</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-271' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.partial_cmp' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp' class='fnname'>partial_cmp</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html' title='core::cmp::Ordering'>Ordering</a>&gt;</code></h4>
+<div class='docblock'><p>This method returns an ordering between <code>self</code> and <code>other</code> values if one exists. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp">Read more</a></p>
+</div><h4 id='method.lt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt' class='fnname'>lt</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests less than (for <code>self</code> and <code>other</code>) and is used by the <code>&lt;</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt">Read more</a></p>
+</div><h4 id='method.le' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le' class='fnname'>le</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests less than or equal to (for <code>self</code> and <code>other</code>) and is used by the <code>&lt;=</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le">Read more</a></p>
+</div><h4 id='method.gt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt' class='fnname'>gt</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests greater than (for <code>self</code> and <code>other</code>) and is used by the <code>&gt;</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt">Read more</a></p>
+</div><h4 id='method.ge' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge' class='fnname'>ge</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests greater than or equal to (for <code>self</code> and <code>other</code>) and is used by the <code>&gt;=</code> operator. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-309' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-314' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-329' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-330' class='srclink' href='../src/time/duration.rs.html#44' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Neg.html' title='core::ops::Neg'>Neg</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-433' class='srclink' href='../src/time/duration.rs.html#290-301' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Neg.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>-</code> operator</p>
+</div><h4 id='method.neg' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Neg.html#tymethod.neg' class='fnname'>neg</a>(self) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The method for the unary <code>-</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Add.html' title='core::ops::Add'>Add</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-437' class='srclink' href='../src/time/duration.rs.html#303-315' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-1' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Add.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>+</code> operator</p>
+</div><h4 id='method.add' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Add.html#tymethod.add' class='fnname'>add</a>(self, rhs: <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The method for the <code>+</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Sub.html' title='core::ops::Sub'>Sub</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-444' class='srclink' href='../src/time/duration.rs.html#317-329' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-2' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Sub.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>-</code> operator</p>
+</div><h4 id='method.sub' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Sub.html#tymethod.sub' class='fnname'>sub</a>(self, rhs: <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The method for the <code>-</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Mul.html' title='core::ops::Mul'>Mul</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt; for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-451' class='srclink' href='../src/time/duration.rs.html#331-341' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-3' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Mul.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>*</code> operator</p>
+</div><h4 id='method.mul' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Mul.html#tymethod.mul' class='fnname'>mul</a>(self, rhs: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The method for the <code>*</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Div.html' title='core::ops::Div'>Div</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>&gt; for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-460' class='srclink' href='../src/time/duration.rs.html#343-361' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Output-4' class='type'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Div.html#associatedtype.Output' class='type'>Output</a> = <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The resulting type after applying the <code>/</code> operator</p>
+</div><h4 id='method.div' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Div.html#tymethod.div' class='fnname'>div</a>(self, rhs: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></h4>
+<div class='docblock'><p>The method for the <code>/</code> operator</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html' title='core::fmt::Display'>Display</a> for <a class='struct' href='../time/struct.Duration.html' title='time::Duration'>Duration</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-469' class='srclink' href='../src/time/duration.rs.html#363-392' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt-1' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, f: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "time";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

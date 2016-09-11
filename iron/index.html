@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `iron` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, iron">
+
+    <title>iron - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    <link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/7853871?s=256">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../iron/index.html'><img src='https://avatars0.githubusercontent.com/u/7853871?s=128' alt='logo' width='100'></a>
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'iron', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>iron</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/iron/lib.rs.html#1-168' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The main crate for Iron.</p>
+
+<h2 id='overview' class='section-header'><a href='#overview'>Overview</a></h2>
+<p>Iron is a high level web framework built in and for Rust, built on
+<a href="https://github.com/hyperium/hyper">hyper</a>. Iron is designed to take advantage
+of Rust&#39;s greatest features - its excellent type system and principled
+approach to ownership in both single threaded and multi threaded contexts.</p>
+
+<p>Iron is highly concurrent and can scale horizontally on more machines behind a
+load balancer or by running more threads on a more powerful machine. Iron
+avoids the bottlenecks encountered in highly concurrent code by avoiding shared
+writes and locking in the core framework.</p>
+
+<h2 id='hello-world' class='section-header'><a href='#hello-world'>Hello World</a></h2>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>iron</span>;
+
+<span class='kw'>use</span> <span class='ident'>iron</span>::<span class='ident'>prelude</span>::<span class='op'>*</span>;
+<span class='kw'>use</span> <span class='ident'>iron</span>::<span class='ident'>status</span>;
+
+<span class='kw'>fn</span> <span class='ident'>main</span>() {
+    <span class='ident'>Iron</span>::<span class='ident'>new</span>(<span class='op'>|</span>_: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Request</span><span class='op'>|</span> {
+        <span class='prelude-val'>Ok</span>(<span class='ident'>Response</span>::<span class='ident'>with</span>((<span class='ident'>status</span>::<span class='prelude-val'>Ok</span>, <span class='string'>&quot;Hello World!&quot;</span>)))
+    }).<span class='ident'>http</span>(<span class='string'>&quot;localhost:3000&quot;</span>).<span class='ident'>unwrap</span>();
+}</pre>
+
+<h2 id='design-philosophy' class='section-header'><a href='#design-philosophy'>Design Philosophy</a></h2>
+<p>Iron is meant to be as extensible and pluggable as possible; Iron&#39;s core is
+concentrated and avoids unnecessary features by leaving them to middleware,
+plugins, and modifiers.</p>
+
+<p>Middleware, Plugins, and Modifiers are the main ways to extend Iron with new
+functionality. Most extensions that would be provided by middleware in other
+web frameworks are instead addressed by the much simpler Modifier and Plugin
+systems.</p>
+
+<p>Modifiers allow external code to manipulate Requests and Response in an ergonomic
+fashion, allowing third-party extensions to get the same treatment as modifiers
+defined in Iron itself. Plugins allow for lazily-evaluated, automatically cached
+extensions to Requests and Responses, perfect for parsing, accessing, and
+otherwise lazily manipulating an http connection.</p>
+
+<p>Middleware are only used when it is necessary to modify the control flow of a
+Request flow, hijack the entire handling of a Request, check an incoming
+Request, or to do final post-processing. This covers areas such as routing,
+mounting, static asset serving, final template rendering, authentication, and
+logging.</p>
+
+<p>Iron comes with only basic modifiers for setting the status, body, and various
+headers, and the infrastructure for creating modifiers, plugins, and
+middleware. No plugins or middleware are bundled with Iron.</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use request::{<a class='struct' href='../iron/request/struct.Request.html' title='iron::request::Request'>Request</a>};</code></td></tr><tr><td><code>pub use response::<a class='struct' href='../iron/response/struct.Response.html' title='iron::response::Response'>Response</a>;</code></td></tr><tr><td><code>pub use middleware::{<a class='trait' href='../iron/middleware/trait.BeforeMiddleware.html' title='iron::middleware::BeforeMiddleware'>BeforeMiddleware</a>, <a class='trait' href='../iron/middleware/trait.AfterMiddleware.html' title='iron::middleware::AfterMiddleware'>AfterMiddleware</a>, <a class='trait' href='../iron/middleware/trait.AroundMiddleware.html' title='iron::middleware::AroundMiddleware'>AroundMiddleware</a>, <a class='trait' href='../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a>, <a class='struct' href='../iron/middleware/struct.Chain.html' title='iron::middleware::Chain'>Chain</a>};</code></td></tr><tr><td><code>pub use error::<a class='struct' href='../iron/error/struct.IronError.html' title='iron::error::IronError'>IronError</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='error/index.html'
+                                  title='iron::error'>error</a></td>
+                           <td class='docblock short'>
+                                <p>Iron&#39;s error type and associated utilities.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='headers/index.html'
+                                  title='iron::headers'>headers</a></td>
+                           <td class='docblock short'>
+                                <p>Headers container, and common header fields.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='method/index.html'
+                                  title='iron::method'>method</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP Methods</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='middleware/index.html'
+                                  title='iron::middleware'>middleware</a></td>
+                           <td class='docblock short'>
+                                <p>Iron&#39;s Middleware and Handler System</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='mime/index.html'
+                                  title='iron::mime'>mime</a></td>
+                           <td class='docblock short'>
+                                <p>Re-exporting the mime crate, for convenience.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='modifier/index.html'
+                                  title='iron::modifier'>modifier</a></td>
+                           <td class='docblock short'>
+                                <p>Re-exports from the Modifier crate.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='modifiers/index.html'
+                                  title='iron::modifiers'>modifiers</a></td>
+                           <td class='docblock short'>
+                                <p>This module defines a series of convenience modifiers for changing
+Responses.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='prelude/index.html'
+                                  title='iron::prelude'>prelude</a></td>
+                           <td class='docblock short'>
+                                <p>A module meant to be glob imported when using Iron.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='request/index.html'
+                                  title='iron::request'>request</a></td>
+                           <td class='docblock short'>
+                                <p>Iron&#39;s HTTP Request representation and associated methods.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='response/index.html'
+                                  title='iron::response'>response</a></td>
+                           <td class='docblock short'>
+                                <p>Iron&#39;s HTTP Response representation and associated methods.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='status/index.html'
+                                  title='iron::status'>status</a></td>
+                           <td class='docblock short'>
+                                <p>Status Codes</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='typemap/index.html'
+                                  title='iron::typemap'>typemap</a></td>
+                           <td class='docblock short'>
+                                <p>Re-exports from the TypeMap crate.</p>
+                           </td>
+                       </tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.iexpect!.html'
+                                  title='iron::iexpect!'>iexpect!</a></td>
+                           <td class='docblock short'>
+                                <p>Unwrap the given <code>Option</code> or return a <code>Ok(Response::new())</code> with the given
+modifier. The default modifier is <code>status::BadRequest</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.itry!.html'
+                                  title='iron::itry!'>itry!</a></td>
+                           <td class='docblock short'>
+                                <p>Like <code>try!()</code>, but wraps the error value in <code>IronError</code>. To be used in
+request handlers.</p>
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Headers.html'
+                                  title='iron::Headers'>Headers</a></td>
+                           <td class='docblock short'>
+                                <p>A map of header fields on requests and responses.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Iron.html'
+                                  title='iron::Iron'>Iron</a></td>
+                           <td class='docblock short'>
+                                <p>The primary entrance point to <code>Iron</code>, a <code>struct</code> to instantiate a new server.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Listening.html'
+                                  title='iron::Listening'>Listening</a></td>
+                           <td class='docblock short'>
+                                <p>A listening server, which can later be closed.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Timeouts.html'
+                                  title='iron::Timeouts'>Timeouts</a></td>
+                           <td class='docblock short'>
+                                <p>A settings struct containing a set of timeouts which can be applied to a server.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TypeMap.html'
+                                  title='iron::TypeMap'>TypeMap</a></td>
+                           <td class='docblock short'>
+                                <p>A map keyed by types.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Url.html'
+                                  title='iron::Url'>Url</a></td>
+                           <td class='docblock short'>
+                                <p>HTTP/HTTPS URL type for Iron.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Protocol.html'
+                                  title='iron::Protocol'>Protocol</a></td>
+                           <td class='docblock short'>
+                                <p>Protocol used to serve content. Future versions of Iron may add new protocols
+to this enum. Thus you should not exhaustively match on its variants.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Error.html'
+                                  title='iron::Error'>Error</a></td>
+                           <td class='docblock short'>
+                                <p>An extension to std::error::Error which provides dynamic downcasting of
+errors for use in highly generic contexts.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Plugin.html'
+                                  title='iron::Plugin'>Plugin</a></td>
+                           <td class='docblock short'>
+                                <p>An interface for plugins that cache values between calls.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Set.html'
+                                  title='iron::Set'>Set</a></td>
+                           <td class='docblock short'>
+                                <p>A trait providing the set and set_mut methods for all types.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.IronResult.html'
+                                  title='iron::IronResult'>IronResult</a></td>
+                           <td class='docblock short'>
+                                <p>The Result alias used throughout Iron and in clients of Iron.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "iron";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["Extensible","Defines an interface that extensible types must implement."],["Pluggable","An interface for plugins that cache values between calls."],["Plugin","Implementers of this trait can act as plugins for other types, via `OtherType::get<P>()`."]]});

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `DefaultStream` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, DefaultStream">
+
+    <title>solicit::http::session::DefaultStream - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>session</a></p><script>window.sidebarCurrent = {name: 'DefaultStream', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>session</a>::<wbr><a class='struct' href=''>DefaultStream</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1169' class='srclink' href='../../../src/solicit/http/session.rs.html#262-274' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct DefaultStream {
+    pub stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>,
+    pub headers: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;&gt;,
+    pub body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;,
+    pub state: <a class='enum' href='../../../solicit/http/session/enum.StreamState.html' title='solicit::http::session::StreamState'>StreamState</a>,
+    // some fields omitted
+}</pre><div class='docblock'><p>An implementation of the <code>Stream</code> trait that saves all headers and data
+in memory.</p>
+
+<p>Stores its outgoing data as a <code>Vec&lt;u8&gt;</code>.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.stream_id' class='structfield'><code>stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The ID of the stream</p>
+</div><span id='structfield.headers' class='structfield'><code>headers: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The headers associated with the stream (i.e. the response headers)</p>
+</div><span id='structfield.body' class='structfield'><code>body: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The body of the stream (i.e. the response body)</p>
+</div><span id='structfield.state' class='structfield'><code>state: <a class='enum' href='../../../solicit/http/session/enum.StreamState.html' title='solicit::http::session::StreamState'>StreamState</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The current stream state.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../../solicit/http/session/struct.DefaultStream.html' title='solicit::http::session::DefaultStream'>DefaultStream</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1175' class='srclink' href='../../../src/solicit/http/session.rs.html#276-295' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>) -&gt; <a class='struct' href='../../../solicit/http/session/struct.DefaultStream.html' title='solicit::http::session::DefaultStream'>DefaultStream</a></code></h4>
+<div class='docblock'><p>Create a new <code>DefaultStream</code> with the given ID.</p>
+</div><h4 id='method.set_full_data' class='method'><code>fn <a href='#method.set_full_data' class='fnname'>set_full_data</a>(&amp;mut self, data: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;)</code></h4>
+<div class='docblock'><p>Sets the outgoing data of the stream to the given <code>Vec</code>.</p>
+
+<p>Any previously associated (and perhaps unwritten) data is discarded.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../../solicit/http/session/struct.DefaultStream.html' title='solicit::http::session::DefaultStream'>DefaultStream</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1161' class='srclink' href='../../../src/solicit/http/session.rs.html#261' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../../solicit/http/session/struct.DefaultStream.html' title='solicit::http::session::DefaultStream'>DefaultStream</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../../solicit/http/session/trait.Stream.html' title='solicit::http::session::Stream'>Stream</a> for <a class='struct' href='../../../solicit/http/session/struct.DefaultStream.html' title='solicit::http::session::DefaultStream'>DefaultStream</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1181' class='srclink' href='../../../src/solicit/http/session.rs.html#297-342' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new-1' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.new' class='fnname'>new</a>(stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>) -&gt; <a class='struct' href='../../../solicit/http/session/struct.DefaultStream.html' title='solicit::http::session::DefaultStream'>DefaultStream</a></code></h4>
+<div class='docblock'><p>Create a new stream with the given ID</p>
+</div><h4 id='method.new_data_chunk' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.new_data_chunk' class='fnname'>new_data_chunk</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+<div class='docblock'><p>Handle a new data chunk that has arrived for the stream.</p>
+</div><h4 id='method.set_headers' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.set_headers' class='fnname'>set_headers</a>(&amp;mut self, headers: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;)</code></h4>
+<div class='docblock'><p>Set headers for a stream. A stream is only allowed to have one set of headers. <a href="../../../solicit/http/session/trait.Stream.html#tymethod.set_headers">Read more</a></p>
+</div><h4 id='method.set_state' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.set_state' class='fnname'>set_state</a>(&amp;mut self, state: <a class='enum' href='../../../solicit/http/session/enum.StreamState.html' title='solicit::http::session::StreamState'>StreamState</a>)</code></h4>
+<div class='docblock'><p>Sets the stream state to the newly provided state.</p>
+</div><h4 id='method.id' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.id' class='fnname'>id</a>(&amp;self) -&gt; <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code></h4>
+<div class='docblock'><p>Returns the ID of the stream.</p>
+</div><h4 id='method.state' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.state' class='fnname'>state</a>(&amp;self) -&gt; <a class='enum' href='../../../solicit/http/session/enum.StreamState.html' title='solicit::http::session::StreamState'>StreamState</a></code></h4>
+<div class='docblock'><p>Returns the current state of the stream.</p>
+</div><h4 id='method.get_data_chunk' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#tymethod.get_data_chunk' class='fnname'>get_data_chunk</a>(&amp;mut self, buf: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../../solicit/http/session/enum.StreamDataChunk.html' title='solicit::http::session::StreamDataChunk'>StreamDataChunk</a>,&nbsp;<a class='enum' href='../../../solicit/http/session/enum.StreamDataError.html' title='solicit::http::session::StreamDataError'>StreamDataError</a>&gt;</code></h4>
+<div class='docblock'><p>Places the next data chunk that should be written onto the stream into the given buffer. <a href="../../../solicit/http/session/trait.Stream.html#tymethod.get_data_chunk">Read more</a></p>
+</div><h4 id='method.close' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#method.close' class='fnname'>close</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Transitions the stream state to closed. After this, the stream is considered to be closed for any further reads or writes. <a href="../../../solicit/http/session/trait.Stream.html#method.close">Read more</a></p>
+</div><h4 id='method.close_local' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#method.close_local' class='fnname'>close_local</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Updates the <code>Stream</code> status to indicate that it is closed locally. <a href="../../../solicit/http/session/trait.Stream.html#method.close_local">Read more</a></p>
+</div><h4 id='method.close_remote' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#method.close_remote' class='fnname'>close_remote</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Updates the <code>Stream</code> status to indicate that it is closed on the remote peer&#39;s side. <a href="../../../solicit/http/session/trait.Stream.html#method.close_remote">Read more</a></p>
+</div><h4 id='method.is_closed' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#method.is_closed' class='fnname'>is_closed</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns whether the stream is closed. <a href="../../../solicit/http/session/trait.Stream.html#method.is_closed">Read more</a></p>
+</div><h4 id='method.is_closed_local' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#method.is_closed_local' class='fnname'>is_closed_local</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns whether the stream is closed locally.</p>
+</div><h4 id='method.is_closed_remote' class='method'><code>fn <a href='../../../solicit/http/session/trait.Stream.html#method.is_closed_remote' class='fnname'>is_closed_remote</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns whether the remote peer has closed the stream. This includes a fully closed stream.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

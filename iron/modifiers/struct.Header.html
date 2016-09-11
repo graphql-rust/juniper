@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Header` struct in crate `iron`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Header">
+
+    <title>iron::modifiers::Header - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/7853871?s=256">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../iron/index.html'><img src='https://avatars0.githubusercontent.com/u/7853871?s=128' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>iron</a>::<wbr><a href='index.html'>modifiers</a></p><script>window.sidebarCurrent = {name: 'Header', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>iron</a>::<wbr><a href='index.html'>modifiers</a>::<wbr><a class='struct' href=''>Header</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-627' class='srclink' href='../../src/iron/modifiers.rs.html#163' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Header&lt;H:&nbsp;<a class='trait' href='../../iron/headers/trait.Header.html' title='iron::headers::Header'>Header</a> + <a class='trait' href='../../iron/headers/trait.HeaderFormat.html' title='iron::headers::HeaderFormat'>HeaderFormat</a>&gt;(pub H);</pre><div class='docblock'><p>A modifier for changing headers on requests and responses.</p>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;H&gt; <a class='trait' href='../../modifier/trait.Modifier.html' title='modifier::Modifier'>Modifier</a>&lt;<a class='struct' href='../../iron/response/struct.Response.html' title='iron::response::Response'>Response</a>&gt; for <a class='struct' href='../../iron/modifiers/struct.Header.html' title='iron::modifiers::Header'>Header</a>&lt;H&gt; <span class='where'>where H: <a class='trait' href='../../iron/headers/trait.Header.html' title='iron::headers::Header'>Header</a> + <a class='trait' href='../../iron/headers/trait.HeaderFormat.html' title='iron::headers::HeaderFormat'>HeaderFormat</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-631' class='srclink' href='../../src/iron/modifiers.rs.html#165-170' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.modify' class='method'><code>fn <a href='../../modifier/trait.Modifier.html#tymethod.modify' class='fnname'>modify</a>(self, res: &amp;mut <a class='struct' href='../../iron/response/struct.Response.html' title='iron::response::Response'>Response</a>)</code></h4>
+<div class='docblock'><p>Modify <code>F</code> with self.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;'b,&nbsp;H&gt; <a class='trait' href='../../modifier/trait.Modifier.html' title='modifier::Modifier'>Modifier</a>&lt;<a class='struct' href='../../iron/request/struct.Request.html' title='iron::request::Request'>Request</a>&lt;'a,&nbsp;'b&gt;&gt; for <a class='struct' href='../../iron/modifiers/struct.Header.html' title='iron::modifiers::Header'>Header</a>&lt;H&gt; <span class='where'>where H: <a class='trait' href='../../iron/headers/trait.Header.html' title='iron::headers::Header'>Header</a> + <a class='trait' href='../../iron/headers/trait.HeaderFormat.html' title='iron::headers::HeaderFormat'>HeaderFormat</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-636' class='srclink' href='../../src/iron/modifiers.rs.html#172-177' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.modify-1' class='method'><code>fn <a href='../../modifier/trait.Modifier.html#tymethod.modify' class='fnname'>modify</a>(self, res: &amp;mut <a class='struct' href='../../iron/request/struct.Request.html' title='iron::request::Request'>Request</a>)</code></h4>
+<div class='docblock'><p>Modify <code>F</code> with self.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "iron";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

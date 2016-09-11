@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Encodable` trait in crate `rustc_serialize`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Encodable">
+
+    <title>rustc_serialize::Encodable - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    <link rel="shortcut icon" href="https://www.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../rustc_serialize/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='index.html'>rustc_serialize</a></p><script>window.sidebarCurrent = {name: 'Encodable', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='index.html'>rustc_serialize</a>::<wbr><a class='trait' href=''>Encodable</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-308' class='srclink' href='../src/rustc_serialize/serialize.rs.html#198-200' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait Encodable {
+    fn <a href='#tymethod.encode' class='fnname'>encode</a>&lt;S:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encoder.html' title='rustc_serialize::Encoder'>Encoder</a>&gt;(&amp;self, s: &amp;mut S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;S::Error&gt;;
+}</pre>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.encode' class='method stab '><code>fn <a href='#tymethod.encode' class='fnname'>encode</a>&lt;S:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encoder.html' title='rustc_serialize::Encoder'>Encoder</a>&gt;(&amp;self, s: &amp;mut S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;S::Error&gt;</code></h3></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.isize.html'>isize</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i8.html'>i8</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i16.html'>i16</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a></code></li>
+<li><code>impl Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.char.html'>char</a></code></li>
+<li><code>impl Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a></code></li>
+<li><code>impl&lt;'a,&nbsp;T:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> + <a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for &amp;'a T</code></li>
+<li><code>impl&lt;T:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> + <a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;'a,&nbsp;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/collections/borrow/trait.ToOwned.html' title='collections::borrow::ToOwned'>ToOwned</a> + ?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt; Encodable for <a class='enum' href='https://doc.rust-lang.org/nightly/collections/borrow/enum.Cow.html' title='collections::borrow::Cow'>Cow</a>&lt;'a,&nbsp;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html' title='core::marker::PhantomData'>PhantomData</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T0:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T1:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T2:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T3:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T4:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T5:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T1:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T2:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T3:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T4:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T5:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T2:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T3:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T4:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T5:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T2, T3, T4, T5, T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T3:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T4:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T5:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T3, T4, T5, T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T4:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T5:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T4, T5, T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T5:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T5, T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T6:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T6, T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T7:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T7, T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T8:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T8, T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T9:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T9, T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T10:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>,&nbsp;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T10, T11<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T11:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>T11,<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 32]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 31]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 30]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 29]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 28]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 27]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 26]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 25]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 24]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 23]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 22]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 21]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 20]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 19]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 18]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 17]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 16]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 15]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 14]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 13]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 12]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 11]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 10]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 9]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 8]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 7]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 6]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 5]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 4]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 3]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 2]</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[</a>T<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>; 1]</a></code></li>
+<li><code>impl Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/std/path/struct.Path.html' title='std::path::Path'>Path</a></code></li>
+<li><code>impl Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html' title='std::path::PathBuf'>PathBuf</a></code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.Cell.html' title='core::cell::Cell'>Cell</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html' title='core::cell::RefCell'>RefCell</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/arc/struct.Arc.html' title='alloc::arc::Arc'>Arc</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/collections/linked_list/struct.LinkedList.html' title='collections::linked_list::LinkedList'>LinkedList</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec_deque/struct.VecDeque.html' title='collections::vec_deque::VecDeque'>VecDeque</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;K:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a>,&nbsp;V:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/collections/btree/map/struct.BTreeMap.html' title='collections::btree::map::BTreeMap'>BTreeMap</a>&lt;K,&nbsp;V&gt;</code></li>
+<li><code>impl&lt;T:&nbsp;<a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html' title='core::cmp::Ord'>Ord</a>&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/collections/btree/set/struct.BTreeSet.html' title='collections::btree::set::BTreeSet'>BTreeSet</a>&lt;T&gt;</code></li>
+<li><code>impl&lt;K,&nbsp;V&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;K,&nbsp;V&gt; <span class='where'>where K: <a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a>, V: <a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a></span></code></li>
+<li><code>impl&lt;T&gt; Encodable for <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;T&gt; <span class='where'>where T: <a class='trait' href='../rustc_serialize/trait.Encodable.html' title='rustc_serialize::Encodable'>Encodable</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a></span></code></li>
+<li><code>impl Encodable for <a class='enum' href='../rustc_serialize/json/enum.Json.html' title='rustc_serialize::json::Json'>Json</a></code></li>
+</ul><script type="text/javascript" async
+                         src="../implementors/rustc_serialize/trait.Encodable.js">
+                 </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "rustc_serialize";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

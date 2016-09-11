@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ClientSession` struct in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ClientSession">
+
+    <title>solicit::http::client::ClientSession - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'ClientSession', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>client</a>::<wbr><a class='struct' href=''>ClientSession</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1367' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#280-282' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct ClientSession&lt;'a,&nbsp;State&gt; <span class='where'>where State: <a class='trait' href='../../../solicit/http/session/trait.SessionState.html' title='solicit::http::session::SessionState'>SessionState</a> + 'a</span> {
+    // some fields omitted
+}</pre><div class='docblock'><p>An implementation of the <code>Session</code> trait specific to handling client HTTP/2 connections.</p>
+
+<p>While handling the events signaled by the <code>HttpConnection</code>, the struct will modify the given
+session state appropriately.</p>
+
+<p>The purpose of the type is to make it easier for client implementations to
+only handle stream-level events by providing a <code>Stream</code> implementation,
+instead of having to implement all session management callbacks.</p>
+
+<p>For example, by varying the <code>Stream</code> implementation it is easy to implement
+a client that streams responses directly into a file on the local file system,
+instead of keeping it in memory (like the <code>DefaultStream</code> does), without
+having to change any HTTP/2-specific logic.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;State&gt; <a class='struct' href='../../../solicit/http/client/struct.ClientSession.html' title='solicit::http::client::ClientSession'>ClientSession</a>&lt;'a,&nbsp;State&gt; <span class='where'>where State: <a class='trait' href='../../../solicit/http/session/trait.SessionState.html' title='solicit::http::session::SessionState'>SessionState</a> + 'a</span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1371' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#284-292' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(state: &amp;'a mut State) -&gt; <a class='struct' href='../../../solicit/http/client/struct.ClientSession.html' title='solicit::http::client::ClientSession'>ClientSession</a>&lt;State&gt;</code></h4>
+<div class='docblock'><p>Returns a new <code>ClientSession</code> associated to the given state.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;State&gt; <a class='trait' href='../../../solicit/http/session/trait.Session.html' title='solicit::http::session::Session'>Session</a> for <a class='struct' href='../../../solicit/http/client/struct.ClientSession.html' title='solicit::http::client::ClientSession'>ClientSession</a>&lt;'a,&nbsp;State&gt; <span class='where'>where State: <a class='trait' href='../../../solicit/http/session/trait.SessionState.html' title='solicit::http::session::SessionState'>SessionState</a> + 'a</span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1376' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#294-335' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new_data_chunk' class='method'><code>fn <a href='../../../solicit/http/session/trait.Session.html#tymethod.new_data_chunk' class='fnname'>new_data_chunk</a>(&amp;mut self, stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+<div class='docblock'><p>Notifies the <code>Session</code> that a new data chunk has arrived on the connection for a particular stream. Only the raw data is passed to the callback (all padding is already discarded by the connection). <a href="../../../solicit/http/session/trait.Session.html#tymethod.new_data_chunk">Read more</a></p>
+</div><h4 id='method.new_headers' class='method'><code>fn <a href='../../../solicit/http/session/trait.Session.html#tymethod.new_headers' class='fnname'>new_headers</a>(&amp;mut self, stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>, headers: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='type' href='../../../solicit/http/type.Header.html' title='solicit::http::Header'>Header</a>&gt;)</code></h4>
+<div class='docblock'><p>Notifies the <code>Session</code> that headers have arrived for a particular stream. The given list of headers is already decoded by the connection. <a href="../../../solicit/http/session/trait.Session.html#tymethod.new_headers">Read more</a></p>
+</div><h4 id='method.end_of_stream' class='method'><code>fn <a href='../../../solicit/http/session/trait.Session.html#tymethod.end_of_stream' class='fnname'>end_of_stream</a>(&amp;mut self, stream_id: <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>)</code></h4>
+<div class='docblock'><p>Notifies the <code>Session</code> that a particular stream got closed by the peer.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

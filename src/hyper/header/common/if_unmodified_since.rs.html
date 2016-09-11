@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/hyper-0.9.10/src/header/common/if_unmodified_since.rs`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang">
+
+    <title>if_unmodified_since.rs.html -- source</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content source"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+</pre><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>header</span>::<span class='ident'>HttpDate</span>;
+
+<span class='macro'>header</span><span class='macro'>!</span> {
+    <span class='doccomment'>/// `If-Unmodified-Since` header, defined in</span>
+    <span class='doccomment'>/// [RFC7232](http://tools.ietf.org/html/rfc7232#section-3.4)</span>
+    <span class='doccomment'>/// </span>
+    <span class='doccomment'>/// The `If-Unmodified-Since` header field makes the request method</span>
+    <span class='doccomment'>/// conditional on the selected representation&#39;s last modification date</span>
+    <span class='doccomment'>/// being earlier than or equal to the date provided in the field-value.</span>
+    <span class='doccomment'>/// This field accomplishes the same purpose as If-Match for cases where</span>
+    <span class='doccomment'>/// the user agent does not have an entity-tag for the representation.</span>
+    <span class='doccomment'>/// </span>
+    <span class='doccomment'>/// # ABNF</span>
+    <span class='doccomment'>/// ```plain</span>
+    <span class='doccomment'>/// If-Unmodified-Since = HTTP-date</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>/// </span>
+    <span class='doccomment'>/// # Example values</span>
+    <span class='doccomment'>/// * `Sat, 29 Oct 1994 19:43:31 GMT`</span>
+    <span class='doccomment'>/// </span>
+    <span class='doccomment'>/// # Example</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>/// # extern crate hyper;</span>
+    <span class='doccomment'>/// # extern crate time;</span>
+    <span class='doccomment'>/// # fn main() {</span>
+    <span class='doccomment'>/// // extern crate time;</span>
+    <span class='doccomment'>/// </span>
+    <span class='doccomment'>/// use hyper::header::{Headers, IfUnmodifiedSince, HttpDate};</span>
+    <span class='doccomment'>/// use time::{self, Duration};</span>
+    <span class='doccomment'>/// </span>
+    <span class='doccomment'>/// let mut headers = Headers::new();</span>
+    <span class='doccomment'>/// headers.set(IfUnmodifiedSince(HttpDate(time::now() - Duration::days(1))));</span>
+    <span class='doccomment'>/// # }</span>
+    <span class='doccomment'>/// ```</span>
+    (<span class='ident'>IfUnmodifiedSince</span>, <span class='string'>&quot;If-Unmodified-Since&quot;</span>) <span class='op'>=&gt;</span> [<span class='ident'>HttpDate</span>]
+
+    <span class='ident'>test_if_unmodified_since</span> {
+        <span class='comment'>// Testcase from RFC</span>
+        <span class='macro'>test_header</span><span class='macro'>!</span>(<span class='ident'>test1</span>, <span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>b&quot;Sat, 29 Oct 1994 19:43:31 GMT&quot;</span>]);
+    }
+}
+
+<span class='macro'>bench_header</span><span class='macro'>!</span>(<span class='ident'>imf_fixdate</span>, <span class='ident'>IfUnmodifiedSince</span>, { <span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>b&quot;Sun, 07 Nov 1994 08:48:37 GMT&quot;</span>.<span class='ident'>to_vec</span>()] });
+<span class='macro'>bench_header</span><span class='macro'>!</span>(<span class='ident'>rfc_850</span>, <span class='ident'>IfUnmodifiedSince</span>, { <span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>b&quot;Sunday, 06-Nov-94 08:49:37 GMT&quot;</span>.<span class='ident'>to_vec</span>()] });
+<span class='macro'>bench_header</span><span class='macro'>!</span>(<span class='ident'>asctime</span>, <span class='ident'>IfUnmodifiedSince</span>, { <span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>b&quot;Sun Nov  6 08:49:37 1994&quot;</span>.<span class='ident'>to_vec</span>()] });
+</pre>
+</section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../../jquery.js"></script>
+    <script src="../../../../main.js"></script>
+    
+    <script defer src="../../../../search-index.js"></script>
+</body>
+</html>

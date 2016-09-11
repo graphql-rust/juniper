@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `middleware` mod in crate `iron`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, middleware">
+
+    <title>iron::middleware - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/7853871?s=256">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../iron/index.html'><img src='https://avatars0.githubusercontent.com/u/7853871?s=128' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>iron</a></p><script>window.sidebarCurrent = {name: 'middleware', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>iron</a>::<wbr><a class='mod' href=''>middleware</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-74' class='srclink' href='../../src/iron/middleware/mod.rs.html#1-384' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Iron&#39;s Middleware and Handler System</p>
+
+<p>Iron&#39;s Middleware system is best modeled with a diagram.</p>
+
+<pre><code class="language-plain">[b] = BeforeMiddleware
+[a] = AfterMiddleware
+[[h]] = AroundMiddleware
+[h] = Handler
+</code></pre>
+
+<p>With no errors, the flow looks like:</p>
+
+<pre><code class="language-plain">[b] -&gt; [b] -&gt; [b] -&gt; [[[[h]]]] -&gt; [a] -&gt; [a] -&gt; [a] -&gt; [a]
+</code></pre>
+
+<p>A request first travels through all BeforeMiddleware, then a Response is generated
+by the Handler, which can be an arbitrary nesting of AroundMiddleware, then all
+AfterMiddleware are called with both the Request and Response. After all AfterMiddleware
+have been fired, the response is written back to the client.</p>
+
+<p>Iron&#39;s error handling system is pragmatic and focuses on tracking two pieces
+of information for error receivers (other middleware):</p>
+
+<ul>
+<li>The cause of the error</li>
+<li>The result (what to do about) the error.</li>
+</ul>
+
+<p>The cause of the error is represented simply by the error itself, and the result
+of the error, representing the action to take in response to the error, is a complete
+Response, which will be sent at the end of the error flow.</p>
+
+<p>When an error is thrown in Iron by any middleware or handler returning an <code>Err</code>
+variant with an <code>IronError</code>, the flow of the Request switches to the error flow,
+which proceeds to just call the <code>catch</code> method of middleware and sidesteps the
+<code>Handler</code> entirely, since there is already a Response in the error.</p>
+
+<p>A Request can exit the error flow by returning an Ok from any of the catch methods.
+This resumes the flow at the middleware immediately following the middleware which
+handled the error. It is impossible to &quot;go back&quot; to an earlier middleware that was
+skipped.</p>
+
+<p>Generally speaking, returning a 5XX error code means that the error flow should be
+entered by raising an explicit error. Dealing with 4XX errors is trickier, since
+the server may not want to recognize an error that is entirely the clients fault;
+handling of 4XX error codes is up to to each application and middleware author.</p>
+
+<p>Middleware authors should be cognizant that their middleware may be skipped during
+the error flow. Anything that <em>must</em> be done to each Request or Response should
+be run during both the normal and error flow by implementing the <code>catch</code> method to
+also do the necessary action.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Chain.html'
+                                  title='iron::middleware::Chain'>Chain</a></td>
+                           <td class='docblock short'>
+                                <p>The middleware chain used in Iron.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.AfterMiddleware.html'
+                                  title='iron::middleware::AfterMiddleware'>AfterMiddleware</a></td>
+                           <td class='docblock short'>
+                                <p><code>AfterMiddleware</code> are fired after a <code>Handler</code> is called inside of a Chain.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.AroundMiddleware.html'
+                                  title='iron::middleware::AroundMiddleware'>AroundMiddleware</a></td>
+                           <td class='docblock short'>
+                                <p>AroundMiddleware are used to wrap and replace the <code>Handler</code> in a <code>Chain</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.BeforeMiddleware.html'
+                                  title='iron::middleware::BeforeMiddleware'>BeforeMiddleware</a></td>
+                           <td class='docblock short'>
+                                <p><code>BeforeMiddleware</code> are fired before a <code>Handler</code> is called inside of a Chain.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Handler.html'
+                                  title='iron::middleware::Handler'>Handler</a></td>
+                           <td class='docblock short'>
+                                <p><code>Handler</code>s are responsible for handling requests by creating Responses from Requests.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "iron";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

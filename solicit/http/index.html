@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `http` mod in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, http">
+
+    <title>solicit::http - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>solicit</a></p><script>window.sidebarCurrent = {name: 'http', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>solicit</a>::<wbr><a class='mod' href=''>http</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6' class='srclink' href='../../src/solicit/http/mod.rs.html#1-216' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The module implements the framing layer of HTTP/2 and exposes an API for using it.</p>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='client/index.html'
+                                  title='solicit::http::client'>client</a></td>
+                           <td class='docblock short'>
+                                <p>The module contains a number of reusable components for implementing the client side of an
+HTTP/2 connection.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='connection/index.html'
+                                  title='solicit::http::connection'>connection</a></td>
+                           <td class='docblock short'>
+                                <p>The module contains the implementation of an HTTP/2 connection.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='frame/index.html'
+                                  title='solicit::http::frame'>frame</a></td>
+                           <td class='docblock short'>
+                                <p>The module contains the implementation of HTTP/2 frames.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='priority/index.html'
+                                  title='solicit::http::priority'>priority</a></td>
+                           <td class='docblock short'>
+                                <p>The module exposes an API for defining data prioritization strategies.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='server/index.html'
+                                  title='solicit::http::server'>server</a></td>
+                           <td class='docblock short'>
+                                <p>The module contains a number of reusable components for implementing the server side of an
+HTTP/2 connection.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='session/index.html'
+                                  title='solicit::http::session'>session</a></td>
+                           <td class='docblock short'>
+                                <p>Defines the interface for the session-level management of HTTP/2
+communication. This is effectively an API that allows hooking into an
+HTTP/2 connection in order to handle events arising on the connection.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='transport/index.html'
+                                  title='solicit::http::transport'>transport</a></td>
+                           <td class='docblock short'>
+                                <p>The module contains implementations of the transport layer functionality
+that HTTP/2 requires. It exposes APIs that allow the HTTP/2 connection to
+use the transport layer without requiring it to know which exact
+implementation they are using (e.g. a clear-text TCP connection, a TLS
+protected connection, or even a mock implementation).</p>
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Request.html'
+                                  title='solicit::http::Request'>Request</a></td>
+                           <td class='docblock short'>
+                                <p>A struct representing a full HTTP/2 request, along with the full body, as a
+sequence of bytes.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Response.html'
+                                  title='solicit::http::Response'>Response</a></td>
+                           <td class='docblock short'>
+                                <p>A struct representing the full raw response received on an HTTP/2 connection.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.HttpError.html'
+                                  title='solicit::http::HttpError'>HttpError</a></td>
+                           <td class='docblock short'>
+                                <p>An enum representing errors that can arise when performing operations
+involving an HTTP/2 connection.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.HttpScheme.html'
+                                  title='solicit::http::HttpScheme'>HttpScheme</a></td>
+                           <td class='docblock short'>
+                                <p>An enum representing the two possible HTTP schemes.</p>
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.ALPN_PROTOCOLS.html'
+                                  title='solicit::http::ALPN_PROTOCOLS'>ALPN_PROTOCOLS</a></td>
+                           <td class='docblock short'>
+                                <p>A set of protocol names that the library should use to indicate that HTTP/2
+is supported during protocol negotiation (NPN or ALPN).
+We include some of the drafts&#39; protocol names, since there is basically no
+difference for all intents and purposes (and some servers out there still
+only officially advertise draft support).
+TODO: Eventually only use &quot;h2&quot;.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Header.html'
+                                  title='solicit::http::Header'>Header</a></td>
+                           <td class='docblock short'>
+                                <p>An alias for the type that represents HTTP/2 headers. For now we only alias
+the tuple of byte vectors instead of going with a full struct representation.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.HttpResult.html'
+                                  title='solicit::http::HttpResult'>HttpResult</a></td>
+                           <td class='docblock short'>
+                                <p>A convenience <code>Result</code> type that has the <code>HttpError</code> type as the error
+type and a generic Ok result type.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.StreamId.html'
+                                  title='solicit::http::StreamId'>StreamId</a></td>
+                           <td class='docblock short'>
+                                <p>An alias for the type that represents the ID of an HTTP/2 stream</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

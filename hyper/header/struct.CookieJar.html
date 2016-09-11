@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `CookieJar` struct in crate `hyper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, CookieJar">
+
+    <title>hyper::header::CookieJar - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a></p><script>window.sidebarCurrent = {name: 'CookieJar', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hyper</a>::<wbr><a href='index.html'>header</a>::<wbr><a class='struct' href=''>CookieJar</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-16' class='srclink' href='../../cookie/jar/struct.CookieJar.html?gotosrc=16' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct CookieJar&lt;'a&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>A jar of cookies for managing a session</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>cookie</span>::{<span class='ident'>Cookie</span>, <span class='ident'>CookieJar</span>};
+
+<span class='kw'>let</span> <span class='ident'>c</span> <span class='op'>=</span> <span class='ident'>CookieJar</span>::<span class='ident'>new</span>(<span class='string'>b&quot;f8f9eaf1ecdedff5e5b749c58115441e&quot;</span>);
+
+<span class='comment'>// Add a cookie to this jar</span>
+<span class='ident'>c</span>.<span class='ident'>add</span>(<span class='ident'>Cookie</span>::<span class='ident'>new</span>(<span class='string'>&quot;key&quot;</span>.<span class='ident'>to_string</span>(), <span class='string'>&quot;value&quot;</span>.<span class='ident'>to_string</span>()));
+
+<span class='comment'>// Remove the added cookie</span>
+<span class='ident'>c</span>.<span class='ident'>remove</span>(<span class='string'>&quot;key&quot;</span>);
+</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../../hyper/header/struct.CookieJar.html' title='hyper::header::CookieJar'>CookieJar</a>&lt;'a&gt;</code></span><span class='out-of-band'></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(key: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='../../hyper/header/struct.CookieJar.html' title='hyper::header::CookieJar'>CookieJar</a>&lt;'static&gt;</code></h4>
+<div class='docblock'><p>Creates a new empty cookie jar with the given signing key.</p>
+
+<p>The given key is used to sign cookies in the signed cookie jar.</p>
+</div><h4 id='method.add_original' class='method'><code>fn <a href='#method.add_original' class='fnname'>add_original</a>(&amp;mut self, cookie: <a class='struct' href='../../hyper/header/struct.CookiePair.html' title='hyper::header::CookiePair'>Cookie</a>)</code></h4>
+<div class='docblock'><p>Adds an original cookie from a request.</p>
+
+<p>This method only works on the root cookie jar and is not intended for
+use during the lifetime of a request, it is intended to initialize a
+cookie jar from an incoming request.</p>
+</div><h4 id='method.add' class='method'><code>fn <a href='#method.add' class='fnname'>add</a>(&amp;self, cookie: <a class='struct' href='../../hyper/header/struct.CookiePair.html' title='hyper::header::CookiePair'>Cookie</a>)</code></h4>
+<div class='docblock'><p>Adds a new cookie to this cookie jar.</p>
+
+<p>If this jar is a child cookie jar, this will walk up the chain of
+borrowed jars, modifying the cookie as it goes along.</p>
+</div><h4 id='method.remove' class='method'><code>fn <a href='#method.remove' class='fnname'>remove</a>(&amp;self, cookie: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>)</code></h4>
+<div class='docblock'><p>Removes a cookie from this cookie jar.</p>
+</div><h4 id='method.find' class='method'><code>fn <a href='#method.find' class='fnname'>find</a>(&amp;self, name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../hyper/header/struct.CookiePair.html' title='hyper::header::CookiePair'>Cookie</a>&gt;</code></h4>
+<div class='docblock'><p>Finds a cookie inside of this cookie jar.</p>
+
+<p>The cookie is subject to modification by any of the child cookie jars
+that are currently borrowed. A copy of the cookie is returned.</p>
+</div><h4 id='method.signed' class='method'><code>fn <a href='#method.signed' class='fnname'>signed</a>(&amp;'b self) -&gt; <a class='struct' href='../../hyper/header/struct.CookieJar.html' title='hyper::header::CookieJar'>CookieJar</a>&lt;'b&gt;</code></h4>
+<div class='docblock'><p>Creates a child signed cookie jar.</p>
+
+<p>All cookies read from the child jar will require a valid signature and
+all cookies written will be signed automatically.</p>
+
+<h1 id='example-1' class='section-header'><a href='#example-1'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>c</span> <span class='op'>=</span> <span class='ident'>CookieJar</span>::<span class='ident'>new</span>(<span class='string'>b&quot;f8f9eaf1ecdedff5e5b749c58115441e&quot;</span>);
+
+<span class='comment'>// Add a signed cookie to the jar</span>
+<span class='ident'>c</span>.<span class='ident'>signed</span>().<span class='ident'>add</span>(<span class='ident'>Cookie</span>::<span class='ident'>new</span>(<span class='string'>&quot;key&quot;</span>.<span class='ident'>to_string</span>(), <span class='string'>&quot;value&quot;</span>.<span class='ident'>to_string</span>()));
+
+<span class='comment'>// Add a permanently signed cookie to the jar</span>
+<span class='ident'>c</span>.<span class='ident'>permanent</span>().<span class='ident'>signed</span>()
+ .<span class='ident'>add</span>(<span class='ident'>Cookie</span>::<span class='ident'>new</span>(<span class='string'>&quot;key&quot;</span>.<span class='ident'>to_string</span>(), <span class='string'>&quot;value&quot;</span>.<span class='ident'>to_string</span>()));</pre>
+</div><h4 id='method.encrypted' class='method'><code>fn <a href='#method.encrypted' class='fnname'>encrypted</a>(&amp;'b self) -&gt; <a class='struct' href='../../hyper/header/struct.CookieJar.html' title='hyper::header::CookieJar'>CookieJar</a>&lt;'b&gt;</code></h4>
+<div class='docblock'><p>Creates a child encrypted cookie jar.</p>
+
+<p>All cookies read from the child jar must be encrypted and signed by a
+valid key and all cookies written will be encrypted and signed
+automatically.</p>
+
+<h1 id='example-2' class='section-header'><a href='#example-2'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>c</span> <span class='op'>=</span> <span class='ident'>CookieJar</span>::<span class='ident'>new</span>(<span class='string'>b&quot;f8f9eaf1ecdedff5e5b749c58115441e&quot;</span>);
+
+<span class='comment'>// Add a signed and encrypted cookie to the jar</span>
+<span class='ident'>c</span>.<span class='ident'>encrypted</span>().<span class='ident'>add</span>(<span class='ident'>Cookie</span>::<span class='ident'>new</span>(<span class='string'>&quot;key&quot;</span>.<span class='ident'>to_string</span>(), <span class='string'>&quot;value&quot;</span>.<span class='ident'>to_string</span>()));
+
+<span class='comment'>// Add a permanently signed and encrypted cookie to the jar</span>
+<span class='ident'>c</span>.<span class='ident'>permanent</span>().<span class='ident'>encrypted</span>()
+ .<span class='ident'>add</span>(<span class='ident'>Cookie</span>::<span class='ident'>new</span>(<span class='string'>&quot;key&quot;</span>.<span class='ident'>to_string</span>(), <span class='string'>&quot;value&quot;</span>.<span class='ident'>to_string</span>()));</pre>
+</div><h4 id='method.permanent' class='method'><code>fn <a href='#method.permanent' class='fnname'>permanent</a>(&amp;'b self) -&gt; <a class='struct' href='../../hyper/header/struct.CookieJar.html' title='hyper::header::CookieJar'>CookieJar</a>&lt;'b&gt;</code></h4>
+<div class='docblock'><p>Creates a child jar for permanent cookie storage.</p>
+
+<p>All cookies written to the child jar will have an expiration date 20
+years into the future to ensure they stick around for a long time.</p>
+</div><h4 id='method.delta' class='method'><code>fn <a href='#method.delta' class='fnname'>delta</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../hyper/header/struct.CookiePair.html' title='hyper::header::CookiePair'>Cookie</a>&gt;</code></h4>
+<div class='docblock'><p>Calculates the changes that have occurred to this cookie jar over time,
+returning a vector of <code>Set-Cookie</code> headers.</p>
+</div><h4 id='method.iter' class='method'><code>fn <a href='#method.iter' class='fnname'>iter</a>(&amp;self) -&gt; Iter</code></h4>
+<div class='docblock'><p>Return an iterator over the cookies in this jar.</p>
+
+<p>This iterator will only yield valid cookies for this jar. For example if
+this is an encrypted child jar then only valid encrypted cookies will be
+yielded. If the root cookie jar is iterated over then all cookies will
+be yielded.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hyper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

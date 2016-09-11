@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Position` enum in crate `url`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Position">
+
+    <title>url::Position - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>url</a></p><script>window.sidebarCurrent = {name: 'Position', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='index.html'>url</a>::<wbr><a class='enum' href=''>Position</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1209' class='srclink' href='../src/url/slicing.rs.html#81-98' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Position {
+    BeforeScheme,
+    AfterScheme,
+    BeforeUsername,
+    AfterUsername,
+    BeforePassword,
+    AfterPassword,
+    BeforeHost,
+    AfterHost,
+    BeforePort,
+    AfterPort,
+    BeforePath,
+    AfterPath,
+    BeforeQuery,
+    AfterQuery,
+    BeforeFragment,
+    AfterFragment,
+}</pre><div class='docblock'><p>Indicates a position within a URL based on its components.</p>
+
+<p>A range of positions can be used for slicing <code>Url</code>:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>serialization</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='ident'>some_url</span>[..];
+<span class='kw'>let</span> <span class='ident'>serialization_without_fragment</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='ident'>some_url</span>[..<span class='ident'>Position</span>::<span class='ident'>AfterQuery</span>];
+<span class='kw'>let</span> <span class='ident'>authority</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='ident'>some_url</span>[<span class='ident'>Position</span>::<span class='ident'>BeforeUsername</span>..<span class='ident'>Position</span>::<span class='ident'>AfterPort</span>];
+<span class='kw'>let</span> <span class='ident'>data_url_payload</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='ident'>some_url</span>[<span class='ident'>Position</span>::<span class='ident'>BeforePath</span>..<span class='ident'>Position</span>::<span class='ident'>AfterQuery</span>];
+<span class='kw'>let</span> <span class='ident'>scheme_relative</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='ident'>some_url</span>[<span class='ident'>Position</span>::<span class='ident'>BeforeUsername</span>..];</pre>
+
+<p>In a pseudo-grammar (where <code>[</code>…<code>]?</code> makes a sub-sequence optional),
+URL components and delimiters that separate them are:</p>
+
+<pre><code class="language-notrust">url =
+    scheme &quot;:&quot;
+    [ &quot;//&quot; [ username [ &quot;:&quot; password ]? &quot;@&quot; ]? host [ &quot;:&quot; port ]? ]?
+    path [ &quot;?&quot; query ]? [ &quot;#&quot; fragment ]?
+</code></pre>
+
+<p>When a given component is not present,
+its &quot;before&quot; and &quot;after&quot; position are the same
+(so that <code>&amp;some_url[BeforeFoo..AfterFoo]</code> is the empty string)
+and component ordering is preserved
+(so that a missing query &quot;is between&quot; a path and a fragment).</p>
+
+<p>The end of a component and the start of the next are either the same or separate
+by a delimiter.
+(Not that the initial <code>/</code> of a path is considered part of the path here, not a delimiter.)
+For example, <code>&amp;url[..BeforeFragment]</code> would include a <code>#</code> delimiter (if present in <code>url</code>),
+so <code>&amp;url[..AfterQuery]</code> might be desired instead.</p>
+
+<p><code>BeforeScheme</code> and <code>AfterFragment</code> are always the start and end of the entire URL,
+so <code>&amp;url[BeforeScheme..X]</code> is the same as <code>&amp;url[..X]</code>
+and <code>&amp;url[X..AfterFragment]</code> is the same as <code>&amp;url[X..]</code>.</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.BeforeScheme' class='variant'><code>BeforeScheme</code></span><span id='variant.AfterScheme' class='variant'><code>AfterScheme</code></span><span id='variant.BeforeUsername' class='variant'><code>BeforeUsername</code></span><span id='variant.AfterUsername' class='variant'><code>AfterUsername</code></span><span id='variant.BeforePassword' class='variant'><code>BeforePassword</code></span><span id='variant.AfterPassword' class='variant'><code>AfterPassword</code></span><span id='variant.BeforeHost' class='variant'><code>BeforeHost</code></span><span id='variant.AfterHost' class='variant'><code>AfterHost</code></span><span id='variant.BeforePort' class='variant'><code>BeforePort</code></span><span id='variant.AfterPort' class='variant'><code>AfterPort</code></span><span id='variant.BeforePath' class='variant'><code>BeforePath</code></span><span id='variant.AfterPath' class='variant'><code>AfterPath</code></span><span id='variant.BeforeQuery' class='variant'><code>BeforeQuery</code></span><span id='variant.AfterQuery' class='variant'><code>AfterQuery</code></span><span id='variant.BeforeFragment' class='variant'><code>BeforeFragment</code></span><span id='variant.AfterFragment' class='variant'><code>AfterFragment</code></span><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../url/enum.Position.html' title='url::Position'>Position</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1185' class='srclink' href='../src/url/slicing.rs.html#80' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../url/enum.Position.html' title='url::Position'>Position</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1205' class='srclink' href='../src/url/slicing.rs.html#80' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../url/enum.Position.html' title='url::Position'>Position</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='../url/enum.Position.html' title='url::Position'>Position</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1208' class='srclink' href='../src/url/slicing.rs.html#80' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "url";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

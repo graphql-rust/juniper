@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Frame` trait in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Frame">
+
+    <title>solicit::http::frame::Frame - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>frame</a></p><script>window.sidebarCurrent = {name: 'Frame', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a href='index.html'>frame</a>::<wbr><a class='trait' href=''>Frame</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-537' class='srclink' href='../../../src/solicit/http/frame/mod.rs.html#118-148' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait Frame: <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
+    type <a href='#associatedtype.FlagType' class='type'>FlagType</a>: <a class='trait' href='../../../solicit/http/frame/trait.Flag.html' title='solicit::http::frame::Flag'>Flag</a>;
+    fn <a href='#tymethod.from_raw' class='fnname'>from_raw</a>(raw_frame: <a class='struct' href='../../../solicit/http/frame/struct.RawFrame.html' title='solicit::http::frame::RawFrame'>RawFrame</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;;
+    fn <a href='#tymethod.is_set' class='fnname'>is_set</a>(&amp;self, flag: Self::<a class='trait' href='../../../solicit/http/frame/trait.Frame.html' title='solicit::http::frame::Frame'>FlagType</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>;
+    fn <a href='#tymethod.get_stream_id' class='fnname'>get_stream_id</a>(&amp;self) -&gt; <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a>;
+    fn <a href='#tymethod.get_header' class='fnname'>get_header</a>(&amp;self) -&gt; <a class='type' href='../../../solicit/http/frame/type.FrameHeader.html' title='solicit::http::frame::FrameHeader'>FrameHeader</a>;
+    fn <a href='#tymethod.set_flag' class='fnname'>set_flag</a>(&amp;mut self, flag: Self::<a class='trait' href='../../../solicit/http/frame/trait.Frame.html' title='solicit::http::frame::Frame'>FlagType</a>);
+    fn <a href='#tymethod.serialize' class='fnname'>serialize</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;;
+}</pre><div class='docblock'><p>A trait that all HTTP/2 frame structs need to implement.</p>
+</div>
+            <h2 id='associated-types'>Associated Types</h2>
+            <div class='methods'>
+        <h3 id='associatedtype.FlagType' class='method stab '><code>type <a href='#associatedtype.FlagType' class='type'>FlagType</a>: <a class='trait' href='../../../solicit/http/frame/trait.Flag.html' title='solicit::http::frame::Flag'>Flag</a></code></h3><div class='docblock'><p>The type that represents the flags that the particular <code>Frame</code> can take.
+This makes sure that only valid <code>Flag</code>s are used with each <code>Frame</code>.</p>
+</div></div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.from_raw' class='method stab '><code>fn <a href='#tymethod.from_raw' class='fnname'>from_raw</a>(raw_frame: <a class='struct' href='../../../solicit/http/frame/struct.RawFrame.html' title='solicit::http::frame::RawFrame'>RawFrame</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h3><div class='docblock'><p>Creates a new <code>Frame</code> from the given <code>RawFrame</code> (i.e. header and
+payload), if possible.</p>
+
+<h1 id='returns' class='section-header'><a href='#returns'>Returns</a></h1>
+<p><code>None</code> if a valid <code>Frame</code> cannot be constructed from the given
+<code>RawFrame</code>. Some reasons why this may happen is a wrong frame type in
+the header, a body that cannot be decoded according to the particular
+frame&#39;s rules, etc.</p>
+
+<p>Otherwise, returns a newly constructed <code>Frame</code>.</p>
+</div><h3 id='tymethod.is_set' class='method stab '><code>fn <a href='#tymethod.is_set' class='fnname'>is_set</a>(&amp;self, flag: Self::<a class='trait' href='../../../solicit/http/frame/trait.Frame.html' title='solicit::http::frame::Frame'>FlagType</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h3><div class='docblock'><p>Tests if the given flag is set for the frame.</p>
+</div><h3 id='tymethod.get_stream_id' class='method stab '><code>fn <a href='#tymethod.get_stream_id' class='fnname'>get_stream_id</a>(&amp;self) -&gt; <a class='type' href='../../../solicit/http/type.StreamId.html' title='solicit::http::StreamId'>StreamId</a></code></h3><div class='docblock'><p>Returns the <code>StreamId</code> of the stream to which the frame is associated</p>
+</div><h3 id='tymethod.get_header' class='method stab '><code>fn <a href='#tymethod.get_header' class='fnname'>get_header</a>(&amp;self) -&gt; <a class='type' href='../../../solicit/http/frame/type.FrameHeader.html' title='solicit::http::frame::FrameHeader'>FrameHeader</a></code></h3><div class='docblock'><p>Returns a <code>FrameHeader</code> based on the current state of the <code>Frame</code>.</p>
+</div><h3 id='tymethod.set_flag' class='method stab '><code>fn <a href='#tymethod.set_flag' class='fnname'>set_flag</a>(&amp;mut self, flag: Self::<a class='trait' href='../../../solicit/http/frame/trait.Frame.html' title='solicit::http::frame::Frame'>FlagType</a>)</code></h3><div class='docblock'><p>Sets the given flag for the frame.</p>
+</div><h3 id='tymethod.serialize' class='method stab '><code>fn <a href='#tymethod.serialize' class='fnname'>serialize</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h3><div class='docblock'><p>Returns a <code>Vec</code> with the serialized representation of the frame.</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl Frame for <a class='struct' href='../../../solicit/http/frame/data/struct.DataFrame.html' title='solicit::http::frame::data::DataFrame'>DataFrame</a></code></li>
+<li><code>impl Frame for <a class='struct' href='../../../solicit/http/frame/headers/struct.HeadersFrame.html' title='solicit::http::frame::headers::HeadersFrame'>HeadersFrame</a></code></li>
+<li><code>impl Frame for <a class='struct' href='../../../solicit/http/frame/settings/struct.SettingsFrame.html' title='solicit::http::frame::settings::SettingsFrame'>SettingsFrame</a></code></li>
+</ul><script type="text/javascript" async
+                         src="../../../implementors/solicit/http/frame/trait.Frame.js">
+                 </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

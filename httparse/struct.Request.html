@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Request` struct in crate `httparse`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Request">
+
+    <title>httparse::Request - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>httparse</a></p><script>window.sidebarCurrent = {name: 'Request', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>httparse</a>::<wbr><a class='struct' href=''>Request</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-189' class='srclink' href='../src/httparse/lib.rs.html#191-200' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Request&lt;'headers,&nbsp;'buf: 'headers&gt; {
+    pub method: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'buf <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;,
+    pub path: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'buf <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;,
+    pub version: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;,
+    pub headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'headers mut [</a><a class='struct' href='../httparse/struct.Header.html' title='httparse::Header'>Header</a>&lt;'buf&gt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>,
+}</pre><div class='docblock'><p>A parsed Request.</p>
+
+<p>The optional values will be <code>None</code> if a parse was not complete, and did not
+parse the associated property. This allows you to inspect the parts that
+could be parsed, before reading more, in case you wish to exit early.</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>buf</span> <span class='op'>=</span> <span class='string'>b&quot;GET /404 HTTP/1.1\r\nHost:&quot;</span>;
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>headers</span> <span class='op'>=</span> [<span class='ident'>httparse</span>::<span class='ident'>EMPTY_HEADER</span>; <span class='number'>16</span>];
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>req</span> <span class='op'>=</span> <span class='ident'>httparse</span>::<span class='ident'>Request</span>::<span class='ident'>new</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>headers</span>);
+<span class='kw'>let</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='ident'>req</span>.<span class='ident'>parse</span>(<span class='ident'>buf</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>if</span> <span class='ident'>res</span>.<span class='ident'>is_partial</span>() {
+    <span class='kw'>match</span> <span class='ident'>req</span>.<span class='ident'>path</span> {
+        <span class='prelude-val'>Some</span>(<span class='kw-2'>ref</span> <span class='ident'>path</span>) <span class='op'>=&gt;</span> {
+            <span class='comment'>// check router for path.</span>
+            <span class='comment'>// /404 doesn&#39;t exist? we could stop parsing</span>
+        },
+        <span class='prelude-val'>None</span> <span class='op'>=&gt;</span> {
+            <span class='comment'>// must read more and parse again</span>
+        }
+    }
+}</pre>
+</div><h2 class='fields'>Fields</h2><span id='structfield.method' class='structfield'><code>method: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'buf <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The request method, such as <code>GET</code>.</p>
+</div><span id='structfield.path' class='structfield'><code>path: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'buf <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The request path, such as <code>/about-us</code>.</p>
+</div><span id='structfield.version' class='structfield'><code>version: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>The request version, such as <code>HTTP/1.1</code>.</p>
+</div><span id='structfield.headers' class='structfield'><code>headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'headers mut [</a><a class='struct' href='../httparse/struct.Header.html' title='httparse::Header'>Header</a>&lt;'buf&gt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a></code>
+                           </span><span class='stab '></span><div class='docblock'><p>The request headers.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'h,&nbsp;'b&gt; <a class='struct' href='../httparse/struct.Request.html' title='httparse::Request'>Request</a>&lt;'h,&nbsp;'b&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-196' class='srclink' href='../src/httparse/lib.rs.html#202-229' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(headers: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'h mut [</a><a class='struct' href='../httparse/struct.Header.html' title='httparse::Header'>Header</a>&lt;'b&gt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='../httparse/struct.Request.html' title='httparse::Request'>Request</a>&lt;'h,&nbsp;'b&gt;</code></h4>
+<div class='docblock'><p>Creates a new Request, using a slice of headers you allocate.</p>
+</div><h4 id='method.parse' class='method'><code>fn <a href='#method.parse' class='fnname'>parse</a>(&amp;mut self, buf: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'b [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../httparse/type.Result.html' title='httparse::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;</code></h4>
+<div class='docblock'><p>Try to parse a buffer of bytes into the Request.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "httparse";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

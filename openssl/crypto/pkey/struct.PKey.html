@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `PKey` struct in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, PKey">
+
+    <title>openssl::crypto::pkey::PKey - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>openssl</a>::<wbr><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>pkey</a></p><script>window.sidebarCurrent = {name: 'PKey', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>openssl</a>::<wbr><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>pkey</a>::<wbr><a class='struct' href=''>PKey</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-832' class='srclink' href='../../../src/openssl/crypto/pkey.rs.html#46-49' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct PKey {
+    // some fields omitted
+}</pre><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-837' class='srclink' href='../../../src/openssl/crypto/pkey.rs.html#55-590' title='goto source code'>[src]</a></span></h3>
+<div class='docblock'><p>Represents a public key, optionally with a private key attached.</p>
+</div><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></h4>
+<h4 id='method.from_handle' class='method'><code>fn <a href='#method.from_handle' class='fnname'>from_handle</a>(handle: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../../openssl_sys/struct.EVP_PKEY.html' title='openssl_sys::EVP_PKEY'>EVP_PKEY</a>, parts: <a class='enum' href='../../../openssl/crypto/pkey/enum.Parts.html' title='openssl::crypto::pkey::Parts'>Parts</a>) -&gt; <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></h4>
+<h4 id='method.private_key_from_pem' class='method'><code>fn <a href='#method.private_key_from_pem' class='fnname'>private_key_from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads private key from PEM, takes ownership of handle</p>
+</div><h4 id='method.public_key_from_pem' class='method'><code>fn <a href='#method.public_key_from_pem' class='fnname'>public_key_from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads public key from PEM, takes ownership of handle</p>
+</div><h4 id='method.private_rsa_key_from_pem' class='method'><code>fn <a href='#method.private_rsa_key_from_pem' class='fnname'>private_rsa_key_from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads an RSA private key from PEM, takes ownership of handle</p>
+</div><h4 id='method.public_rsa_key_from_pem' class='method'><code>fn <a href='#method.public_rsa_key_from_pem' class='fnname'>public_rsa_key_from_pem</a>&lt;R&gt;(reader: &amp;mut R) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt; <span class='where'>where R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a></span></code></h4>
+<div class='docblock'><p>Reads an RSA public key from PEM, takes ownership of handle</p>
+</div><h4 id='method.gen' class='method'><code>fn <a href='#method.gen' class='fnname'>gen</a>(&amp;mut self, keysz: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>)</code></h4>
+<h4 id='method.set_rsa' class='method'><code>fn <a href='#method.set_rsa' class='fnname'>set_rsa</a>(&amp;mut self, rsa: &amp;<a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a>)</code></h4>
+<div class='docblock'><p>assign RSA key to this pkey</p>
+</div><h4 id='method.get_rsa' class='method'><code>fn <a href='#method.get_rsa' class='fnname'>get_rsa</a>(&amp;self) -&gt; <a class='struct' href='../../../openssl/crypto/rsa/struct.RSA.html' title='openssl::crypto::rsa::RSA'>RSA</a></code></h4>
+<div class='docblock'><p>get a reference to the interal RSA key for direct access to the key components</p>
+</div><h4 id='method.save_pub' class='method'><code>fn <a href='#method.save_pub' class='fnname'>save_pub</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a DER serialized form of the public key, suitable for load_pub().</p>
+</div><h4 id='method.load_pub' class='method'><code>fn <a href='#method.load_pub' class='fnname'>load_pub</a>(&amp;mut self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+<div class='docblock'><p>Loads a DER serialized form of the public key, as produced by save_pub().</p>
+</div><h4 id='method.save_priv' class='method'><code>fn <a href='#method.save_priv' class='fnname'>save_priv</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a serialized form of the public and private keys, suitable for
+load_priv().</p>
+</div><h4 id='method.load_priv' class='method'><code>fn <a href='#method.load_priv' class='fnname'>load_priv</a>(&amp;mut self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+<div class='docblock'><p>Loads a serialized form of the public and private keys, as produced by
+save_priv().</p>
+</div><h4 id='method.write_pem' class='method'><code>fn <a href='#method.write_pem' class='fnname'>write_pem</a>&lt;W:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a>&gt;(&amp;self, writer: &amp;mut W) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Stores private key as a PEM</p>
+</div><h4 id='method.write_pub_pem' class='method'><code>fn <a href='#method.write_pub_pem' class='fnname'>write_pub_pem</a>&lt;W:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a>&gt;(&amp;self, writer: &amp;mut W) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../../../openssl/ssl/error/enum.SslError.html' title='openssl::ssl::error::SslError'>SslError</a>&gt;</code></h4>
+<div class='docblock'><p>Stores public key as a PEM</p>
+</div><h4 id='method.size' class='method'><code>fn <a href='#method.size' class='fnname'>size</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Returns the size of the public key modulus.</p>
+</div><h4 id='method.can' class='method'><code>fn <a href='#method.can' class='fnname'>can</a>(&amp;self, r: <a class='enum' href='../../../openssl/crypto/pkey/enum.Role.html' title='openssl::crypto::pkey::Role'>Role</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Returns whether this pkey object can perform the specified role.</p>
+</div><h4 id='method.max_data' class='method'><code>fn <a href='#method.max_data' class='fnname'>max_data</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Returns the maximum amount of data that can be encrypted by an encrypt()
+call.</p>
+</div><h4 id='method.private_encrypt_with_padding' class='method'><code>fn <a href='#method.private_encrypt_with_padding' class='fnname'>private_encrypt_with_padding</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, padding: <a class='enum' href='../../../openssl/crypto/pkey/enum.EncryptionPadding.html' title='openssl::crypto::pkey::EncryptionPadding'>EncryptionPadding</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<h4 id='method.public_encrypt_with_padding' class='method'><code>fn <a href='#method.public_encrypt_with_padding' class='fnname'>public_encrypt_with_padding</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, padding: <a class='enum' href='../../../openssl/crypto/pkey/enum.EncryptionPadding.html' title='openssl::crypto::pkey::EncryptionPadding'>EncryptionPadding</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<h4 id='method.private_decrypt_with_padding' class='method'><code>fn <a href='#method.private_decrypt_with_padding' class='fnname'>private_decrypt_with_padding</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, padding: <a class='enum' href='../../../openssl/crypto/pkey/enum.EncryptionPadding.html' title='openssl::crypto::pkey::EncryptionPadding'>EncryptionPadding</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<h4 id='method.public_decrypt_with_padding' class='method'><code>fn <a href='#method.public_decrypt_with_padding' class='fnname'>public_decrypt_with_padding</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, padding: <a class='enum' href='../../../openssl/crypto/pkey/enum.EncryptionPadding.html' title='openssl::crypto::pkey::EncryptionPadding'>EncryptionPadding</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<h4 id='method.encrypt' class='method'><code>fn <a href='#method.encrypt' class='fnname'>encrypt</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Encrypts data with the public key, using OAEP padding, returning the encrypted data. The
+supplied data must not be larger than max_data().</p>
+</div><h4 id='method.encrypt_with_padding' class='method'><code>fn <a href='#method.encrypt_with_padding' class='fnname'>encrypt_with_padding</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, padding: <a class='enum' href='../../../openssl/crypto/pkey/enum.EncryptionPadding.html' title='openssl::crypto::pkey::EncryptionPadding'>EncryptionPadding</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Encrypts data with the public key, using provided padding, returning the encrypted data. The
+supplied data must not be larger than max_data().</p>
+</div><h4 id='method.public_encrypt' class='method'><code>fn <a href='#method.public_encrypt' class='fnname'>public_encrypt</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Encrypts data with the public key, using OAEP padding, returning the encrypted data. The
+supplied data must not be larger than max_data().</p>
+</div><h4 id='method.public_decrypt' class='method'><code>fn <a href='#method.public_decrypt' class='fnname'>public_decrypt</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Decrypts data with the public key, using PKCS1v15 padding, returning the decrypted data.</p>
+</div><h4 id='method.decrypt' class='method'><code>fn <a href='#method.decrypt' class='fnname'>decrypt</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Decrypts data with the private key, expecting OAEP padding, returning the decrypted data.</p>
+</div><h4 id='method.decrypt_with_padding' class='method'><code>fn <a href='#method.decrypt_with_padding' class='fnname'>decrypt_with_padding</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, padding: <a class='enum' href='../../../openssl/crypto/pkey/enum.EncryptionPadding.html' title='openssl::crypto::pkey::EncryptionPadding'>EncryptionPadding</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Decrypts data with the private key, using provided padding, returning the encrypted data. The
+supplied data must not be larger than max_data().</p>
+</div><h4 id='method.private_decrypt' class='method'><code>fn <a href='#method.private_decrypt' class='fnname'>private_decrypt</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Decrypts data with the private key, expecting OAEP padding, returning the decrypted data.</p>
+</div><h4 id='method.private_encrypt' class='method'><code>fn <a href='#method.private_encrypt' class='fnname'>private_encrypt</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Encrypts data with the private key, using PKCS1v15 padding, returning the encrypted data. The
+supplied data must not be larger than max_data().</p>
+</div><h4 id='method.sign' class='method'><code>fn <a href='#method.sign' class='fnname'>sign</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Signs data, using OpenSSL&#39;s default scheme and adding sha256 ASN.1 information to the
+signature.
+The bytes to sign must be the result of a sha256 hashing;
+returns the signature.</p>
+</div><h4 id='method.verify' class='method'><code>fn <a href='#method.verify' class='fnname'>verify</a>(&amp;self, h: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Verifies a signature s (using OpenSSL&#39;s default scheme and sha256) on the SHA256 hash of a
+message.
+Returns true if the signature is valid, and false otherwise.</p>
+</div><h4 id='method.sign_with_hash' class='method'><code>fn <a href='#method.sign_with_hash' class='fnname'>sign_with_hash</a>(&amp;self, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, hash: <a class='enum' href='../../../openssl/crypto/hash/enum.Type.html' title='openssl::crypto::hash::Type'>Type</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code></h4>
+<div class='docblock'><p>Signs data, using OpenSSL&#39;s default scheme and add ASN.1 information for the given hash type to the
+signature.
+The bytes to sign must be the result of this type of hashing;
+returns the signature.</p>
+</div><h4 id='method.verify_with_hash' class='method'><code>fn <a href='#method.verify_with_hash' class='fnname'>verify_with_hash</a>(&amp;self, h: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, s: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, hash: <a class='enum' href='../../../openssl/crypto/hash/enum.Type.html' title='openssl::crypto::hash::Type'>Type</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.get_handle' class='method'><code>unsafe fn <a href='#method.get_handle' class='fnname'>get_handle</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../../../openssl_sys/struct.EVP_PKEY.html' title='openssl_sys::EVP_PKEY'>EVP_PKEY</a></code></h4>
+<h4 id='method.public_eq' class='method'><code>fn <a href='#method.public_eq' class='fnname'>public_eq</a>(&amp;self, other: &amp;<a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> for <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-835' class='srclink' href='../../../src/openssl/crypto/pkey.rs.html#51' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html' title='core::marker::Sync'>Sync</a> for <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-836' class='srclink' href='../../../src/openssl/crypto/pkey.rs.html#52' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1053' class='srclink' href='../../../src/openssl/crypto/pkey.rs.html#592-598' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../../openssl/crypto/pkey/struct.PKey.html' title='openssl::crypto::pkey::PKey'>PKey</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-1056' class='srclink' href='../../../src/openssl/crypto/pkey.rs.html#600-615' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; Self</code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

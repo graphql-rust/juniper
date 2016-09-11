@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `client` mod in crate `solicit`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, client">
+
+    <title>solicit::http::client - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a></p><script>window.sidebarCurrent = {name: 'client', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../../index.html'>solicit</a>::<wbr><a href='../index.html'>http</a>::<wbr><a class='mod' href=''>client</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1237' class='srclink' href='../../../src/solicit/http/client/mod.rs.html#1-602' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The module contains a number of reusable components for implementing the client side of an
+HTTP/2 connection.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CleartextConnectError.html'
+                                  title='solicit::http::client::CleartextConnectError'>CleartextConnectError</a></td>
+                           <td class='docblock short'>
+                                <p>A newtype wrapping the <code>io::Error</code>, as it occurs when attempting to
+establish an HTTP/2 connection over cleartext TCP (with prior knowledge).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CleartextConnector.html'
+                                  title='solicit::http::client::CleartextConnector'>CleartextConnector</a></td>
+                           <td class='docblock short'>
+                                <p>A struct that establishes a cleartext TCP connection that can be used by an HTTP/2
+connection. Defaults to using port 80.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ClientConnection.html'
+                                  title='solicit::http::client::ClientConnection'>ClientConnection</a></td>
+                           <td class='docblock short'>
+                                <p>The struct extends the <code>HttpConnection</code> API with client-specific methods (such as
+<code>start_request</code>) and wires the <code>HttpConnection</code> to the client <code>Session</code> callbacks.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ClientSession.html'
+                                  title='solicit::http::client::ClientSession'>ClientSession</a></td>
+                           <td class='docblock short'>
+                                <p>An implementation of the <code>Session</code> trait specific to handling client HTTP/2 connections.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ClientStream.html'
+                                  title='solicit::http::client::ClientStream'>ClientStream</a></td>
+                           <td class='docblock short'>
+                                <p>A convenience wrapper type that represents an established client network transport stream.
+It wraps the stream itself, the scheme of the protocol to be used, and the remote
+host name.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.RequestStream.html'
+                                  title='solicit::http::client::RequestStream'>RequestStream</a></td>
+                           <td class='docblock short'>
+                                <p>A struct representing a request stream. It provides the headers that are to be sent when
+initiating the request, as well as a <code>Stream</code> instance that handles the received response and
+provides the request body.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.HttpConnect.html'
+                                  title='solicit::http::client::HttpConnect'>HttpConnect</a></td>
+                           <td class='docblock short'>
+                                <p>A trait that can be implemented by structs that want to provide the
+functionality of establishing network connections for use by HTTP/2 connections.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.HttpConnectError.html'
+                                  title='solicit::http::client::HttpConnectError'>HttpConnectError</a></td>
+                           <td class='docblock short'>
+                                <p>A marker trait for errors raised by attempting to establish an HTTP/2
+connection.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.write_preface.html'
+                                  title='solicit::http::client::write_preface'>write_preface</a></td>
+                           <td class='docblock short'>
+                                <p>Writes the client preface to the underlying HTTP/2 connection.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "solicit";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Extension` enum in crate `openssl`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Extension">
+
+    <title>openssl::x509::extension::Extension - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../../index.html'>openssl</a>::<wbr><a href='../index.html'>x509</a>::<wbr><a href='index.html'>extension</a></p><script>window.sidebarCurrent = {name: 'Extension', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../../index.html'>openssl</a>::<wbr><a href='../index.html'>x509</a>::<wbr><a href='index.html'>extension</a>::<wbr><a class='enum' href=''>Extension</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-3164' class='srclink' href='../../../src/openssl/x509/extension.rs.html#24-56' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Extension {
+    KeyUsage(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../../openssl/x509/extension/enum.KeyUsageOption.html' title='openssl::x509::extension::KeyUsageOption'>KeyUsageOption</a>&gt;),
+    ExtKeyUsage(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../../openssl/x509/extension/enum.ExtKeyUsageOption.html' title='openssl::x509::extension::ExtKeyUsageOption'>ExtKeyUsageOption</a>&gt;),
+    SubjectAltName(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='enum' href='../../../openssl/x509/extension/enum.AltNameOption.html' title='openssl::x509::extension::AltNameOption'>AltNameOption</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;),
+    IssuerAltName(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='enum' href='../../../openssl/x509/extension/enum.AltNameOption.html' title='openssl::x509::extension::AltNameOption'>AltNameOption</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;),
+    OtherNid(<a class='enum' href='../../../openssl/nid/enum.Nid.html' title='openssl::nid::Nid'>Nid</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
+    OtherStr(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
+}</pre><div class='docblock'><p>A X.509 v3 certificate extension.</p>
+
+<p>Only one extension of each type is allow in a certificate.
+See RFC 3280 for more information about extensions.</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.KeyUsage' class='variant'><code>KeyUsage(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../../openssl/x509/extension/enum.KeyUsageOption.html' title='openssl::x509::extension::KeyUsageOption'>KeyUsageOption</a>&gt;)</code></span><div class='docblock'><p>The purposes of the key contained in the certificate</p>
+</div><span id='variant.ExtKeyUsage' class='variant'><code>ExtKeyUsage(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../../openssl/x509/extension/enum.ExtKeyUsageOption.html' title='openssl::x509::extension::ExtKeyUsageOption'>ExtKeyUsageOption</a>&gt;)</code></span><div class='docblock'><p>The extended purposes of the key contained in the certificate</p>
+</div><span id='variant.SubjectAltName' class='variant'><code>SubjectAltName(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='enum' href='../../../openssl/x509/extension/enum.AltNameOption.html' title='openssl::x509::extension::AltNameOption'>AltNameOption</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;)</code></span><div class='docblock'><p>Subject Alternative Names</p>
+</div><span id='variant.IssuerAltName' class='variant'><code>IssuerAltName(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='enum' href='../../../openssl/x509/extension/enum.AltNameOption.html' title='openssl::x509::extension::AltNameOption'>AltNameOption</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>&gt;)</code></span><div class='docblock'><p>Issuer Alternative Names</p>
+</div><span id='variant.OtherNid' class='variant'><code>OtherNid(<a class='enum' href='../../../openssl/nid/enum.Nid.html' title='openssl::nid::Nid'>Nid</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></span><div class='docblock'><p>Arbitrary extensions by NID. See <code>man x509v3_config</code> for value syntax.</p>
+
+<p>You must not use this to add extensions which this enum can express directly.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::<span class='ident'>Extension</span>::<span class='op'>*</span>;
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>nid</span>::<span class='ident'>Nid</span>;
+
+<span class='ident'>generator</span>.<span class='ident'>add_extension</span>(<span class='ident'>OtherNid</span>(<span class='ident'>Nid</span>::<span class='ident'>BasicConstraints</span>,<span class='string'>&quot;critical,CA:TRUE&quot;</span>.<span class='ident'>to_owned</span>()));</pre>
+</div><span id='variant.OtherStr' class='variant'><code>OtherStr(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>)</code></span><div class='docblock'><p>Arbitrary extensions by OID string. See <code>man ASN1_generate_nconf</code> for value syntax.</p>
+
+<p>You must not use this to add extensions which this enum can express directly.</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>openssl</span>::<span class='ident'>x509</span>::<span class='ident'>extension</span>::<span class='ident'>Extension</span>::<span class='op'>*</span>;
+
+<span class='ident'>generator</span>.<span class='ident'>add_extension</span>(<span class='ident'>OtherStr</span>(<span class='string'>&quot;2.999.2&quot;</span>.<span class='ident'>to_owned</span>(),<span class='string'>&quot;ASN1:UTF8:example value&quot;</span>.<span class='ident'>to_owned</span>()));</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../../openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3179' class='srclink' href='../../../src/openssl/x509/extension.rs.html#58-69' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.get_type' class='method'><code>fn <a href='#method.get_type' class='fnname'>get_type</a>(&amp;self) -&gt; <a class='enum' href='../../../openssl/x509/extension/enum.ExtensionType.html' title='openssl::x509::extension::ExtensionType'>ExtensionType</a></code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../../openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3153' class='srclink' href='../../../src/openssl/x509/extension.rs.html#23' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../../openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/collections/string/trait.ToString.html' title='collections::string::ToString'>ToString</a> for <a class='enum' href='../../../openssl/x509/extension/enum.Extension.html' title='openssl::x509::extension::Extension'>Extension</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-3200' class='srclink' href='../../../src/openssl/x509/extension.rs.html#103-120' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.to_string' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/collections/string/trait.ToString.html#tymethod.to_string' class='fnname'>to_string</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='docblock'><p>Converts the given value to a <code>String</code>. <a href="https://doc.rust-lang.org/nightly/collections/string/trait.ToString.html#tymethod.to_string">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "openssl";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>
