@@ -18,6 +18,7 @@ after_success: |
   set -e
   [ $TRAVIS_BRANCH = master ]
   [ $TRAVIS_PULL_REQUEST = false ]
+  [ $TRAVIS_RUST_VERSION = stable ]
 
   cargo doc --features iron-handlers
 
@@ -33,6 +34,9 @@ after_success: |
 
   rm -rf *
   mv ../target/doc/* .
+
+  echo '<meta http-equiv="refresh" content="0; url=graphql/index.html">' > index.html
+
   git add -A *
   git commit -qm 'Update documentation for Juniper'
   git push -q origin gh-pages
