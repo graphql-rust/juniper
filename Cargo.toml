@@ -2,6 +2,8 @@
 name = "juniper"
 version = "0.5.0"
 authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+description = "GraphQL server library"
+license = "BSD-2-Clause"
 
 [features]
 default = []
