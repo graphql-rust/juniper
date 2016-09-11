@@ -1,9 +1,13 @@
 [package]
 name = "juniper"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 description = "GraphQL server library"
 license = "BSD-2-Clause"
+documentation = "http://mhallin.github.io/juniper"
+repository = "https://github.com/mhallin/juniper"
+readme = "README.md"
+keywords = ["graphql", "server", "iron", "http", "web"]
 
 [features]
 default = []
