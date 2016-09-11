@@ -1,0 +1,174 @@
+use std::collections::HashSet;
+
+use ast::{Document, Definition, Type};
+
+use schema::meta::MetaType;
+use schema::model::SchemaType;
+
+use parser::SourcePosition;
+
+/// Query validation error
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RuleError {
+    locations: Vec<SourcePosition>,
+    message: String,
+}
+
+#[doc(hidden)]
+pub struct ValidatorContext<'a> {
+    pub schema: &'a SchemaType,
+    errors: Vec<RuleError>,
+    type_stack: Vec<Option<&'a MetaType>>,
+    type_literal_stack: Vec<Option<Type>>,
+    input_type_stack: Vec<Option<&'a MetaType>>,
+    input_type_literal_stack: Vec<Option<Type>>,
+    parent_type_stack: Vec<Option<&'a MetaType>>,
+    fragment_names: HashSet<String>,
+}
+
+impl RuleError {
+    #[doc(hidden)]
+    pub fn new(message: &str, locations: &[SourcePosition]) -> RuleError {
+        RuleError {
+            message: message.to_owned(),
+            locations: locations.to_vec(),
+        }
+    }
+
+    /// Access the message for a validation error
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Access the positions of the validation error
+    ///
+    /// All validation errors contain at least one source position, but some
+    /// validators supply extra context through multiple positions.
+    pub fn locations(&self) -> &[SourcePosition] {
+        &self.locations
+    }
+}
+
+impl<'a> ValidatorContext<'a> {
+    #[doc(hidden)]
+    pub fn new(schema: &'a SchemaType, document: &Document) -> ValidatorContext<'a> {
+        ValidatorContext {
+            errors: Vec::new(),
+            schema: schema,
+            type_stack: Vec::new(),
+            type_literal_stack: Vec::new(),
+            parent_type_stack: Vec::new(),
+            input_type_stack: Vec::new(),
+            input_type_literal_stack: Vec::new(),
+            fragment_names: document.iter()
+                .filter_map(|def| match *def {
+                    Definition::Fragment(ref frag) => Some(frag.item.name.item.clone()),
+                    _ => None,
+                })
+                .collect()
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn append_errors(&mut self, mut errors: Vec<RuleError>) {
+        self.errors.append(&mut errors);
+    }
+
+    #[doc(hidden)]
+    pub fn report_error(&mut self, message: &str, locations: &[SourcePosition]) {
+        self.errors.push(RuleError::new(message, locations))
+    }
+
+    #[doc(hidden)]
+    pub fn into_errors(mut self) -> Vec<RuleError> {
+        self.errors.sort();
+        self.errors
+    }
+
+    #[doc(hidden)]
+    pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type>, f: F)
+        -> R
+        where F: FnOnce(&mut ValidatorContext<'a>) -> R
+    {
+        if let Some(t) = t {
+            self.type_stack.push(self.schema.concrete_type_by_name(t.innermost_name()));
+        }
+        else {
+            self.type_stack.push(None);
+        }
+
+        self.type_literal_stack.push(t.map(|t| t.clone()));
+
+        let res = f(self);
+
+        self.type_literal_stack.pop();
+        self.type_stack.pop();
+
+        res
+    }
+
+    #[doc(hidden)]
+    pub fn with_pushed_parent_type<F, R>(&mut self, f: F)
+        -> R
+        where F: FnOnce(&mut ValidatorContext<'a>) -> R
+    {
+        self.parent_type_stack.push(*self.type_stack.last().unwrap_or(&None));
+        let res = f(self);
+        self.parent_type_stack.pop();
+
+        res
+    }
+
+    #[doc(hidden)]
+    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type>, f: F)
+        -> R
+        where F: FnOnce(&mut ValidatorContext<'a>) -> R
+    {
+        if let Some(t) = t {
+            self.input_type_stack.push(self.schema.concrete_type_by_name(t.innermost_name()));
+        }
+        else {
+            self.input_type_stack.push(None);
+        }
+
+        self.input_type_literal_stack.push(t.map(|t| t.clone()));
+
+        let res = f(self);
+
+        self.input_type_literal_stack.pop();
+        self.input_type_stack.pop();
+
+        res
+    }
+
+    #[doc(hidden)]
+    pub fn current_type(&self) -> Option<&'a MetaType> {
+        *self.type_stack.last().unwrap_or(&None)
+    }
+
+    #[doc(hidden)]
+    pub fn current_type_literal(&self) -> Option<&Type> {
+        match self.type_literal_stack.last() {
+            Some(&Some(ref t)) => Some(t),
+            _ => None
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn parent_type(&self) -> Option<&'a MetaType> {
+        *self.parent_type_stack.last().unwrap_or(&None)
+    }
+
+    #[doc(hidden)]
+    pub fn current_input_type_literal(&self) -> Option<&Type> {
+        match self.input_type_literal_stack.last() {
+            Some(&Some(ref t)) => Some(t),
+            _ => None,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn is_known_fragment(&self, name: &str) -> bool {
+        self.fragment_names.contains(name)
+    }
+}

@@ -1,0 +1,379 @@
+/**
+Expose GraphQL objects
+
+This is a short-hand macro that implements the `GraphQLType` trait for a given
+type. By using this macro instead of implementing it manually, you gain type
+safety and reduce repetitive declarations.
+
+# Examples
+
+The simplest case exposes fields on a struct:
+
+```rust
+# #[macro_use] extern crate juniper;
+# use juniper::FieldResult;
+struct User { id: String, name: String, group_ids: Vec<String> }
+
+graphql_object!(User: () as "User" |&self| {
+    field id() -> FieldResult<&String> {
+        Ok(&self.id)
+    }
+
+    field name() -> FieldResult<&String> {
+        Ok(&self.name)
+    }
+
+    // Field and argument names will be converted from snake case to camel case,
+    // as is the common naming convention in GraphQL. The following field would
+    // be named "memberOfGroup", and the argument "groupId".
+    field member_of_group(group_id: String) -> FieldResult<bool> {
+        Ok(self.group_ids.iter().any(|gid| gid == &group_id))
+    }
+});
+
+# fn main() { }
+```
+
+## Documentation and descriptions
+
+You can optionally add descriptions to the type itself, the fields, and field
+arguments:
+
+```rust
+# #[macro_use] extern crate juniper;
+# use juniper::FieldResult;
+struct User { id: String, name: String, group_ids: Vec<String> }
+
+graphql_object!(User: () as "User" |&self| {
+    description: "A user in the database"
+
+    field id() -> FieldResult<&String> as "The user's unique identifier" {
+        Ok(&self.id)
+    }
+
+    field name() -> FieldResult<&String> as "The user's name" {
+        Ok(&self.name)
+    }
+
+    field member_of_group(
+        group_id: String as "The group id you want to test membership against"
+    ) -> FieldResult<bool> as "Test if a user is member of a group" {
+        Ok(self.group_ids.iter().any(|gid| gid == &group_id))
+    }
+});
+
+# fn main() { }
+```
+
+## Generics and lifetimes
+
+You can expose generic or pointer types by prefixing the type with the necessary
+generic parameters:
+
+```rust
+# #[macro_use] extern crate juniper;
+# use juniper::FieldResult;
+trait SomeTrait { fn id(&self) -> &str; }
+
+graphql_object!(<'a> &'a SomeTrait: () as "SomeTrait" |&self| {
+    field id() -> FieldResult<&str> { Ok(self.id()) }
+});
+
+struct GenericType<T> { items: Vec<T> }
+
+graphql_object!(<T> GenericType<T>: () as "GenericType" |&self| {
+    field count() -> FieldResult<i64> { Ok(self.items.len() as i64) }
+});
+
+struct SelfContained { name: String }
+
+// If the type does not require access to a specific context, you can make it
+// generic on the context type. This statically ensures that the fields only
+// can access what's available from the type itself.
+graphql_object!(<Context> SelfContained: Context as "SelfContained" |&self| {
+    field name() -> FieldResult<&String> { Ok(&self.name) }
+});
+
+# fn main() { }
+```
+
+## Implementing interfaces
+
+You can use the `interfaces` item to implement interfaces:
+
+```rust
+# #[macro_use] extern crate juniper;
+# use juniper::FieldResult;
+trait Interface {
+    fn id(&self) -> &str;
+    fn as_implementor(&self) -> Option<Implementor>;
+}
+struct Implementor { id: String }
+
+graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
+    field id() -> FieldResult<&str> { Ok(self.id()) }
+
+    instance_resolvers: |&context| [
+        self.as_implementor(),
+    ]
+});
+
+graphql_object!(Implementor: () as "Implementor" |&self| {
+    field id() -> FieldResult<&str> { Ok(&self.id) }
+
+    interfaces: [&Interface]
+});
+
+# fn main() { }
+```
+
+Note that the implementing type does not need to implement the trait on the Rust
+side - only what's in the GraphQL schema matters. The GraphQL interface doesn't
+even have to be backed by a trait!
+
+## Emitting errors
+
+`FieldResult<T>` is a simple type alias for `Result<T, String>`. In the end,
+errors that fields emit are serialized into strings in the response. However,
+the execution system will keep track of the source of all errors, and will
+continue executing despite some fields failing.
+
+```
+# #[macro_use] extern crate juniper;
+# use juniper::FieldResult;
+struct User { id: String }
+
+graphql_object!(User: () as "User" |&self| {
+    field id() -> FieldResult<&String> {
+        Ok(&self.id)
+    }
+
+    field name() -> FieldResult<&String> {
+        Err("Does not have a name".to_owned())
+    }
+});
+
+# fn main() { }
+```
+
+# Syntax
+
+The top-most syntax of this macro defines which type to expose, the context
+type, which lifetime parameters or generics to define, and which name to use in
+the GraphQL schema. It takes one of the following two forms:
+
+```text
+ExposedType: ContextType as "ExposedName" |&self| { items... }
+<Generics> ExposedType: ContextType as "ExposedName" |&self| { items... }
+```
+
+## Items
+
+Each item within the brackets of the top level declaration has its own syntax.
+The order of individual items does not matter. `graphql_object!` supports a
+number of different items.
+
+### Top-level description
+
+```text
+description: "Top level description"
+```
+
+Adds documentation to the type in the schema, usable by tools such as GraphiQL.
+
+### Interfaces
+
+```text
+interfaces: [&Interface, ...]
+```
+
+Informs the schema that the type implements the specified interfaces. This needs
+to be _GraphQL_ interfaces, not necessarily Rust traits. The Rust types do not
+need to have any connection, only what's exposed in the schema matters.
+
+### Fields
+
+```text
+field name(args...) -> FieldResult<Type> { }
+field name(args...) -> FieldResult<Type> as "Field description" { }
+```
+
+Defines a field on the object. The name is converted to camel case, e.g.
+`user_name` is exposed as `userName`. The `as "Field description"` adds the
+string as documentation on the field.
+
+### Field arguments
+
+```text
+&mut executor
+arg_name: ArgType
+arg_name = default_value: ArgType
+arg_name: ArgType as "Argument description"
+arg_name = default_value: ArgType as "Argument description"
+```
+
+Field arguments can take many forms. If the field needs access to the executor
+or context, it can take an [Executor][1] instance by specifying `&mut executor`
+as the first argument.
+
+The other cases are similar to regular Rust arguments, with two additions:
+argument documentation can be added by appending `as "Description"` after the
+type, and a default value can be specified by appending `= value` after the
+argument name.
+
+Arguments are required (i.e. non-nullable) by default. If you specify _either_ a
+default value, _or_ make the type into an `Option<>`, the argument becomes
+optional. For example:
+
+```text
+arg_name: String               -- required
+arg_name: Option<String>       -- optional, None if unspecified
+arg_name = "default": String   -- optional "default" if unspecified
+```
+
+[1]: struct.Executor.html
+
+*/
+#[macro_export]
+macro_rules! graphql_object {
+    ( @as_item, $i:item) => { $i };
+    ( @as_expr, $e:expr) => { $e };
+
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
+        field $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+    ) => {
+        $acc.push(__graphql__args!(
+            @apply_args,
+            $reg,
+            $reg.field_inside_result(
+                &$crate::to_snake_case(stringify!($name)),
+                Err("dummy".to_owned()) as $t)
+                .description($desc),
+            $args));
+
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
+    };
+
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
+        field $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
+    ) => {
+        $acc.push(__graphql__args!(
+            @apply_args,
+            $reg,
+            $reg.field_inside_result(
+                &$crate::to_snake_case(stringify!($name)),
+                Err("dummy".to_owned()) as $t),
+            $args));
+
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
+    };
+
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
+        description : $value:tt $( $rest:tt )*
+    ) => {
+        $descr = Some(graphql_object!(@as_expr, $value));
+
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*)
+    };
+
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
+        interfaces : $value:tt $( $rest:tt )*
+    ) => {
+        graphql_object!(@assign_interfaces, $reg, $ifaces, $value);
+
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*)
+    };
+
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr, $(,)*
+    ) => {};
+
+    ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty,)* ] ) => {
+        $tgt = Some(vec![
+            $($reg.get_type::<$t>()),*
+        ]);
+    };
+
+    ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty),* ] ) => {
+        $tgt = Some(vec![
+            $($reg.get_type::<$t>()),*
+        ]);
+    };
+
+    (
+        ( $($lifetime:tt)* );
+        $name:ty; $ctxt:ty; $outname:expr; $mainself:ident; $($items:tt)*
+    ) => {
+        graphql_object!(@as_item, impl<$($lifetime)*> $crate::GraphQLType<$ctxt> for $name {
+            fn name() -> Option<&'static str> {
+                Some($outname)
+            }
+
+            #[allow(unused_assignments)]
+            #[allow(unused_mut)]
+            fn meta(registry: &mut $crate::Registry<$ctxt>) -> $crate::meta::MetaType {
+                let mut fields = Vec::new();
+                let mut description = None;
+                let mut interfaces: Option<Vec<$crate::Type>> = None;
+                graphql_object!(
+                    @gather_object_meta,
+                    registry, fields, description, interfaces, $($items)*
+                );
+                let mut mt = registry.build_object_type::<$name>()(&fields);
+
+                if let Some(description) = description {
+                    mt = mt.description(description);
+                }
+
+                if let Some(interfaces) = interfaces {
+                    mt = mt.interfaces(&interfaces);
+                }
+
+                mt.into_meta()
+            }
+
+            #[allow(unused_variables)]
+            #[allow(unused_mut)]
+            fn resolve_field(
+                &$mainself,
+                field: &str,
+                args: &$crate::Arguments,
+                mut executor: &mut $crate::Executor<$ctxt>
+            )
+                -> $crate::ExecutionResult
+            {
+                __graphql__build_field_matches!(
+                    ($outname, $mainself, field, args, executor),
+                    (),
+                    $($items)*);
+            }
+        });
+    };
+
+    (
+        <$( $lifetime:tt ),*> $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
+            $( $items:tt )*
+        }
+    ) => {
+        graphql_object!(
+            ( $($lifetime),* ); $name; $ctxt; $outname; $mainself; $( $items )*);
+    };
+
+    (
+        $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
+            $( $items:tt )*
+        }
+    ) => {
+        graphql_object!(
+            ( ); $name; $ctxt; $outname; $mainself; $( $items )*);
+    };
+}

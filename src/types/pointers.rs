@@ -1,0 +1,73 @@
+use ast::{Selection, InputValue, ToInputValue, FromInputValue};
+use value::Value;
+
+use schema::meta::MetaType;
+use types::schema::{Executor, Registry, ExecutionResult};
+use types::base::{Arguments, GraphQLType};
+
+impl<T, CtxT> GraphQLType<CtxT> for Box<T> where T: GraphQLType<CtxT> {
+    fn name() -> Option<&'static str> {
+        T::name()
+    }
+
+    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        T::meta(registry)
+    }
+
+    fn resolve_into_type(&self, name: &str, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> ExecutionResult {
+        (**self).resolve_into_type(name, selection_set, executor)
+    }
+
+    fn resolve_field(&self, field: &str, args: &Arguments, executor: &mut Executor<CtxT>) -> ExecutionResult
+    {
+        (**self).resolve_field(field, args, executor)
+    }
+
+    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> Value {
+        (**self).resolve(selection_set, executor)
+    }
+}
+
+impl<T> FromInputValue for Box<T> where T: FromInputValue {
+    fn from(v: &InputValue) -> Option<Box<T>> {
+        match <T as FromInputValue>::from(v) {
+            Some(v) => Some(Box::new(v)),
+            None => None,
+        }
+    }
+}
+
+impl<T> ToInputValue for Box<T> where T: ToInputValue {
+    fn to(&self) -> InputValue {
+        (**self).to()
+    }
+}
+
+impl<'a, T, CtxT> GraphQLType<CtxT> for &'a T where T: GraphQLType<CtxT> {
+    fn name() -> Option<&'static str> {
+        T::name()
+    }
+
+    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        T::meta(registry)
+    }
+
+    fn resolve_into_type(&self, name: &str, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> ExecutionResult {
+        (**self).resolve_into_type(name, selection_set, executor)
+    }
+
+    fn resolve_field(&self, field: &str, args: &Arguments, executor: &mut Executor<CtxT>) -> ExecutionResult
+    {
+        (**self).resolve_field(field, args, executor)
+    }
+
+    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> Value {
+        (**self).resolve(selection_set, executor)
+    }
+}
+
+impl<'a, T> ToInputValue for &'a T where T: ToInputValue {
+    fn to(&self) -> InputValue {
+        (**self).to()
+    }
+}

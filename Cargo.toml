@@ -1,0 +1,20 @@
+[package]
+name = "juniper"
+version = "0.1.0"
+authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+
+[features]
+default = []
+nightly = []
+iron-handlers = ["iron"]
+
+[dependencies]
+rustc-serialize = "0.3.19"
+iron = { version = "^0.4.0", optional = true }
+
+[dev-dependencies]
+iron = "^0.4.0"
+router = "^0.2.0"
+mount = "^0.2.1"
+logger = "^0.1.0"
+iron-test = "^0.4.0"
