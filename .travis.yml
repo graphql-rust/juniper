@@ -45,7 +45,6 @@ before_deploy:
 
 after_success:
   - |
-    set -e
     travis-cargo coverage --no-sudo -- --features iron-handlers
     ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/juniper-*
   
