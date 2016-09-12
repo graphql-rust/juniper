@@ -43,32 +43,37 @@ before_deploy:
   - rm -rf target/package/
   - cargo package --verbose
 
-after_success: |
-  travis-cargo coveralls --no-sudo --verify -- --features iron-handlers
-  if [ "$TRAVIS_BRANCH" = master -a "$TRAVIS_PULL_REQUEST" = false -a "$TRAVIS_RUST_VERSION" = stable ]; then
+after_success:
+  - |
     set -e
+    travis-cargo coverage --no-sudo
+    ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/juniper-* --features iron-handlers
+  
+  - |
+    if [ "$TRAVIS_BRANCH" = master -a "$TRAVIS_PULL_REQUEST" = false -a "$TRAVIS_RUST_VERSION" = stable ]; then
+      set -e
 
-    cargo doc --features iron-handlers
+      cargo doc --features iron-handlers
 
-    mkdir -p ~/.ssh
-    openssl aes-256-cbc -K $encrypted_7258158212d8_key -iv $encrypted_7258158212d8_iv -in _build/travis-juniper.enc -out ~/.ssh/id_rsa -d
-    chmod 600 ~/.ssh/id_rsa
+      mkdir -p ~/.ssh
+      openssl aes-256-cbc -K $encrypted_7258158212d8_key -iv $encrypted_7258158212d8_iv -in _build/travis-juniper.enc -out ~/.ssh/id_rsa -d
+      chmod 600 ~/.ssh/id_rsa
 
-    git clone --branch gh-pages git@github.com:mhallin/juniper deploy_docs
-    cd deploy_docs
+      git clone --branch gh-pages git@github.com:mhallin/juniper deploy_docs
+      cd deploy_docs
 
-    git config user.name 'Juniper Documentation Builder'
-    git config user.email 'nobody@example.com'
+      git config user.name 'Juniper Documentation Builder'
+      git config user.email 'nobody@example.com'
 
-    rm -rf *
-    mv ../target/doc/* .
+      rm -rf *
+      mv ../target/doc/* .
 
-    echo '<meta http-equiv="refresh" content="0; url=juniper/index.html">' > index.html
+      echo '<meta http-equiv="refresh" content="0; url=juniper/index.html">' > index.html
 
-    git add -A *
-    git commit -qm 'Update documentation for Juniper'
-    git push -q origin gh-pages
-  fi
+      git add -A *
+      git commit -qm 'Update documentation for Juniper'
+      git push -q origin gh-pages
+    fi
 
 deploy:
   provider: releases
