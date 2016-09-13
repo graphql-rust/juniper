@@ -472,7 +472,7 @@ impl<'a> fmt::Display for Token<'a> {
             Token::Name(ref name) => write!(f, "{}", name),
             Token::Int(i) => write!(f, "{}", i),
             Token::Float(v) => write!(f, "{}", v),
-            Token::String(ref s) => write!(f, "{}", s),
+            Token::String(ref s) => write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"")),
             Token::ExclamationMark => write!(f, "!"),
             Token::Dollar => write!(f, "$"),
             Token::ParenOpen => write!(f, "("),

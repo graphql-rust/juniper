@@ -258,6 +258,18 @@ fn string_errors() {
         Spanning::zero_width(
             &SourcePosition::new(6, 0, 6),
             LexerError::UnknownEscapeSequence("\\uXXXF".to_owned())));
+
+    assert_eq!(
+        tokenize_error(r#""unterminated in string \""#),
+        Spanning::zero_width(
+            &SourcePosition::new(26, 0, 26),
+            LexerError::UnterminatedString));
+
+    assert_eq!(
+        tokenize_error(r#""unterminated \"#),
+        Spanning::zero_width(
+            &SourcePosition::new(15, 0, 15),
+            LexerError::UnterminatedString));
 }
 
 #[test]
@@ -275,6 +287,13 @@ fn numbers() {
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(5, 0, 5),
             Token::Float(4.123)));
+
+    assert_eq!(
+        tokenize_single("4.0"),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(3, 0, 3),
+            Token::Float(4.0)));
 
     assert_eq!(
         tokenize_single("-4"),
@@ -533,4 +552,46 @@ fn punctuation_error() {
         Spanning::zero_width(
             &SourcePosition::new(0, 0, 0),
             LexerError::UnknownCharacter('\u{200b}')));
+}
+
+#[test]
+fn display() {
+    assert_eq!(
+        format!("{}", Token::Name("identifier")),
+        "identifier"
+    );
+
+    assert_eq!(
+        format!("{}", Token::Int(123)),
+        "123"
+    );
+
+    assert_eq!(
+        format!("{}", Token::Float(4.123)),
+        "4.123"
+    );
+
+    assert_eq!(
+        format!("{}", Token::String("some string".to_owned())),
+        "\"some string\""
+    );
+
+    assert_eq!(
+        format!("{}", Token::String("string with \\ escape and \" quote".to_owned())),
+        "\"string with \\\\ escape and \\\" quote\""
+    );
+
+    assert_eq!(format!("{}", Token::ExclamationMark), "!");
+    assert_eq!(format!("{}", Token::Dollar), "$");
+    assert_eq!(format!("{}", Token::ParenOpen), "(");
+    assert_eq!(format!("{}", Token::ParenClose), ")");
+    assert_eq!(format!("{}", Token::BracketOpen), "[");
+    assert_eq!(format!("{}", Token::BracketClose), "]");
+    assert_eq!(format!("{}", Token::CurlyOpen), "{");
+    assert_eq!(format!("{}", Token::CurlyClose), "}");
+    assert_eq!(format!("{}", Token::Ellipsis), "...");
+    assert_eq!(format!("{}", Token::Colon), ":");
+    assert_eq!(format!("{}", Token::Equals), "=");
+    assert_eq!(format!("{}", Token::At), "@");
+    assert_eq!(format!("{}", Token::Pipe), "|");
 }
