@@ -244,7 +244,7 @@ macro_rules! graphql_interface {
             }
         )*
 
-        panic!("Concrete type not handled by instance resolvers on {}", $outname);
+        return Ok($crate::Value::null());
     };
 
     ( @resolve_into_type, $buildargs:tt, ) => {
