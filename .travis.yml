@@ -37,7 +37,7 @@ script:
 script:
   - cargo build --verbose
   - cargo build --verbose --features iron-handlers
-  - cargo test --verbose --features iron-handlers
+  - cargo test --verbose --features "iron-handlers expose-test-schema"
 
 before_deploy:
   - rm -rf target/package/
@@ -45,7 +45,7 @@ before_deploy:
 
 after_success:
   - |
-    travis-cargo coverage --no-sudo -- --features iron-handlers
+    travis-cargo coverage --no-sudo -- --features "iron-handlers expose-test-schema"
     ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/juniper-*
   
   - |

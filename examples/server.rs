@@ -11,15 +11,16 @@ use logger::Logger;
 use iron::prelude::*;
 use juniper::FieldResult;
 use juniper::iron_handlers::{GraphQLHandler, GraphiQLHandler};
+use juniper::tests::model::Database;
 
-fn context_factory(_: &mut Request) -> () {
-    ()
+fn context_factory(_: &mut Request) -> Database {
+    Database::new()
 }
 
 fn main() {
     let mut mount = Mount::new();
 
-    let graphql_endpoint = GraphQLHandler::new(context_factory, Query { }, Mutation { });
+    let graphql_endpoint = GraphQLHandler::new(context_factory, Database::new(), ());
     let graphiql_endpoint = GraphiQLHandler::new("/graphql");
 
     mount.mount("/", graphiql_endpoint);
@@ -35,24 +36,3 @@ fn main() {
     println!("GraphQL server started on {}", host);
     Iron::new(chain).http(host.as_str()).unwrap();
 }
-
-struct Query {}
-struct Mutation {}
-
-graphql_object!(Query: () as "Query" |&self| {
-    field dummy() -> FieldResult<&str> {
-        Ok("Dummy field")
-    }
-
-    field error() -> FieldResult<&str> {
-        Err("Can't do it".to_owned())
-    }
-});
-
-graphql_object!(<CtxT> Mutation: CtxT as "Mutation" |&self| {
-    field print(value: String) -> FieldResult<String> {
-        println!("Printing text according to mutation");
-        println!("{}", value);
-        Ok(value)
-    }
-});

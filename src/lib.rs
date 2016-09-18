@@ -185,8 +185,8 @@ mod schema;
 pub mod validation;
 mod integrations;
 
-#[cfg(test)]
-mod tests;
+#[cfg(all(test, not(feature="expose-test-schema")))] mod tests;
+#[cfg(feature="expose-test-schema")] pub mod tests;
 
 use std::collections::HashMap;
 

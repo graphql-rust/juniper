@@ -13,6 +13,7 @@ keywords = ["graphql", "server", "iron", "http", "web"]
 default = []
 nightly = []
 iron-handlers = ["iron"]
+expose-test-schema = []
 
 [dependencies]
 rustc-serialize = "0.3.19"
