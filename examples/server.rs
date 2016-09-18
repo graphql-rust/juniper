@@ -4,6 +4,8 @@ extern crate logger;
 extern crate rustc_serialize;
 #[macro_use] extern crate juniper;
 
+use std::env;
+
 use mount::Mount;
 use logger::Logger;
 use iron::prelude::*;
@@ -29,9 +31,9 @@ fn main() {
     chain.link_before(logger_before);
     chain.link_after(logger_after);
 
-    let host = "localhost:8080";
+    let host = env::var("LISTEN").unwrap_or("0.0.0.0:8080".to_owned());
     println!("GraphQL server started on {}", host);
-    Iron::new(chain).http(host).unwrap();
+    Iron::new(chain).http(host.as_str()).unwrap();
 }
 
 struct Query {}
