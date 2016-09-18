@@ -22,7 +22,7 @@ fn main() {
     let graphql_endpoint = GraphQLHandler::new(context_factory, Query { }, Mutation { });
     let graphiql_endpoint = GraphiQLHandler::new("/graphql");
 
-    mount.mount("/graphiql", graphiql_endpoint);
+    mount.mount("/", graphiql_endpoint);
     mount.mount("/graphql", graphql_endpoint);
 
     let (logger_before, logger_after) = Logger::new(None);
