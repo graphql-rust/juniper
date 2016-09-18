@@ -51,6 +51,10 @@ graphql_object!(<'a> &'a Human: Database as "Human" |&self| {
         Ok(executor.context().get_friends(self.as_character()))
     }
 
+    field appears_in() -> FieldResult<&[Episode]> as "Which movies they appear in" {
+        Ok(self.appears_in())
+    }
+
     field home_planet() -> FieldResult<&Option<String>> as "The home planet of the human" {
         Ok(self.home_planet())
     }
@@ -72,6 +76,10 @@ graphql_object!(<'a> &'a Droid: Database as "Droid" |&self| {
     field friends(&mut executor) -> FieldResult<Vec<&Character>>
     as "The friends of the droid" {
         Ok(executor.context().get_friends(self.as_character()))
+    }
+
+    field appears_in() -> FieldResult<&[Episode]> as "Which movies they appear in" {
+        Ok(self.appears_in())
     }
 
     field primary_function() -> FieldResult<&Option<String>> as "The primary function of the droid" {
