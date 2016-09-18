@@ -1,4 +1,4 @@
-use types::schema::FieldResult;
+use executor::FieldResult;
 use tests::model::{Character, Human, Droid, Database, Episode};
 
 graphql_enum!(Episode {

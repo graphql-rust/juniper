@@ -642,7 +642,7 @@ mod tests {
     use super::ConflictReasonMessage::*;
 
     use types::base::GraphQLType;
-    use types::schema::Registry;
+    use executor::Registry;
     use types::scalars::ID;
     use schema::meta::MetaType;
 

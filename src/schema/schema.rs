@@ -1,7 +1,7 @@
 use rustc_serialize::json::ToJson;
 
 use types::base::{GraphQLType, Arguments, TypeKind};
-use types::schema::{Executor, Registry, FieldResult, ExecutionResult};
+use executor::{Executor, Registry, FieldResult, ExecutionResult};
 
 use schema::meta::{MetaType, ObjectMeta, EnumMeta, InputObjectMeta, UnionMeta, InterfaceMeta,
                    Field, Argument, EnumValue};

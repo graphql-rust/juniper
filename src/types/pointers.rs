@@ -2,7 +2,7 @@ use ast::{Selection, InputValue, ToInputValue, FromInputValue};
 use value::Value;
 
 use schema::meta::MetaType;
-use types::schema::{Executor, Registry, ExecutionResult};
+use executor::{Executor, Registry, ExecutionResult};
 use types::base::{Arguments, GraphQLType};
 
 impl<T, CtxT> GraphQLType<CtxT> for Box<T> where T: GraphQLType<CtxT> {

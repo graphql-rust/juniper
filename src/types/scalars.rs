@@ -3,7 +3,7 @@ use value::Value;
 
 use schema::meta::MetaType;
 
-use types::schema::{Executor, Registry};
+use executor::{Executor, Registry};
 use types::base::GraphQLType;
 
 /// An ID as defined by the GraphQL specification

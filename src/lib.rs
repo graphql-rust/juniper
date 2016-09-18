@@ -183,6 +183,7 @@ mod value;
 mod types;
 mod schema;
 pub mod validation;
+mod executor;
 mod integrations;
 
 #[cfg(all(test, not(feature="expose-test-schema")))] mod tests;
@@ -193,13 +194,15 @@ use std::collections::HashMap;
 use rustc_serialize::json::{ToJson, Json};
 
 use parser::{parse_document_source, ParseError, Spanning, SourcePosition};
-use types::execute_validated_query;
 use validation::{RuleError, ValidatorContext, visit_all_rules};
 
 pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
 pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
-pub use types::schema::{Executor, Registry, ExecutionResult, ExecutionError, FieldResult};
+pub use executor::{
+    Executor, Registry, ExecutionResult, ExecutionError, FieldResult,
+    execute_validated_query,
+};
 pub use types::scalars::ID;
 pub use schema::model::RootNode;
 

@@ -2,7 +2,7 @@ use ast::{InputValue, ToInputValue, FromInputValue, Selection};
 use value::Value;
 use schema::meta::MetaType;
 
-use types::schema::{Executor, Registry};
+use executor::{Executor, Registry};
 use types::base::{GraphQLType};
 
 impl<T, CtxT> GraphQLType<CtxT> for Option<T> where T: GraphQLType<CtxT> {

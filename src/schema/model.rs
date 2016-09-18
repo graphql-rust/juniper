@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use std::fmt;
 
 use types::base::{GraphQLType};
-use types::schema::Registry;
+use executor::Registry;
 use ast::Type;
 use schema::meta::{MetaType, ObjectMeta, PlaceholderMeta, UnionMeta, InterfaceMeta, Argument};
 

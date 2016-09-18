@@ -4,7 +4,7 @@ use ast::{InputValue, Selection, Directive, FromInputValue};
 use value::Value;
 
 use schema::meta::{Argument, MetaType};
-use types::schema::{Executor, Registry, ExecutionResult};
+use executor::{Executor, Registry, ExecutionResult};
 use parser::Spanning;
 
 /// GraphQL type kind

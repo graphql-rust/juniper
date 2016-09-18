@@ -1,7 +1,7 @@
 use parser::parse_document_source;
 use ast::{FromInputValue, InputValue};
 use types::base::GraphQLType;
-use types::schema::Registry;
+use executor::Registry;
 use types::scalars::ID;
 use schema::model::{DirectiveType, DirectiveLocation, RootNode};
 use schema::meta::{EnumValue, MetaType};
