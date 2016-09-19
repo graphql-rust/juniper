@@ -47,14 +47,14 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-2117' class='srclink' href='../src/juniper/src/types/schema.rs.html#37-45' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-5615' class='srclink' href='../src/juniper/src/executor.rs.html#37-45' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Executor&lt;'a,&nbsp;CtxT&gt; <span class='where'>where CtxT: 'a</span> {
     // some fields omitted
 }</pre><div class='docblock'><p>Query execution engine</p>
 
 <p>The executor helps drive the query execution in a schema. It keeps track
 of the current field stack, context, variables, and errors.</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;CtxT&gt; <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;'a,&nbsp;CtxT&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-2229' class='srclink' href='../src/juniper/src/types/schema.rs.html#64-162' title='goto source code'>[src]</a></span></h3>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;CtxT&gt; <a class='struct' href='../juniper/struct.Executor.html' title='juniper::Executor'>Executor</a>&lt;'a,&nbsp;CtxT&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-5727' class='srclink' href='../src/juniper/src/executor.rs.html#64-162' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.resolve' class='method'><code>fn <a href='#method.resolve' class='fnname'>resolve</a>&lt;T:&nbsp;<a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt;&gt;(&amp;mut self, value: &amp;T) -&gt; <a class='type' href='../juniper/type.ExecutionResult.html' title='juniper::ExecutionResult'>ExecutionResult</a></code></h4>
 <div class='docblock'><p>Resolve a single arbitrary value into an <code>ExecutionResult</code></p>
 </div><h4 id='method.resolve_into_value' class='method'><code>fn <a href='#method.resolve_into_value' class='fnname'>resolve_into_value</a>&lt;T:&nbsp;<a class='trait' href='../juniper/trait.GraphQLType.html' title='juniper::GraphQLType'>GraphQLType</a>&lt;CtxT&gt;&gt;(&amp;mut self, value: &amp;T) -&gt; <a class='enum' href='../juniper/enum.Value.html' title='juniper::Value'>Value</a></code></h4>

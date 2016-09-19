@@ -606,7 +606,7 @@ graphql_interface!(&lt;&#39;a&gt; &amp;&#39;a Character: Database as &quot;Chara
             }
         )<span class='op'>*</span>
 
-        <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Concrete type not handled by instance resolvers on {}&quot;</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>);
+        <span class='kw'>return</span> <span class='prelude-val'>Ok</span>(<span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>Value</span>::<span class='ident'>null</span>());
     };
 
     ( @<span class='ident'>resolve_into_type</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, ) <span class='op'>=&gt;</span> {
