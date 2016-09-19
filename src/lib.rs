@@ -189,6 +189,8 @@ mod integrations;
 #[cfg(all(test, not(feature="expose-test-schema")))] mod tests;
 #[cfg(feature="expose-test-schema")] pub mod tests;
 
+#[cfg(test)] mod executor_tests;
+
 use std::collections::HashMap;
 
 use rustc_serialize::json::{ToJson, Json};
