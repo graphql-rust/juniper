@@ -329,6 +329,14 @@ impl InputValue {
         }
     }
 
+    /// View the underlying int value, if present.
+    pub fn as_int_value(&self) -> Option<i64> {
+        match *self {
+            InputValue::Int(i) => Some(i),
+            _ => None,
+        }
+    }
+
     /// View the underlying string value, if present.
     pub fn as_string_value(&self) -> Option<&str> {
         match *self {

@@ -9,9 +9,21 @@ enum Sample {
     Two,
 }
 
+struct Scalar(i64);
+
 struct Interface {}
 
 struct Root {}
+
+graphql_scalar!(Scalar as "SampleScalar" {
+    resolve(&self) -> Value {
+        Value::int(self.0)
+    }
+
+    from_input_value(v: &InputValue) -> Option<Scalar> {
+        v.as_int_value().map(|i| Scalar(i))
+    }
+});
 
 graphql_enum!(Sample as "SampleEnum" {
     Sample::One => "ONE",
@@ -36,7 +48,34 @@ graphql_object!(Root: () as "Root" |&self| {
     field sample_enum() -> FieldResult<Sample> {
         Ok(Sample::One)
     }
+
+    field sample_scalar() -> FieldResult<Scalar> {
+        Ok(Scalar(123))
+    }
 });
+
+#[test]
+fn test_execution() {
+    let doc = r#"
+    {
+        sampleEnum
+        sampleScalar
+    }
+    "#;
+    let schema = RootNode::new(Root {}, ());
+
+    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+        .expect("Execution failed");
+
+    assert_eq!(errs, []);
+
+    println!("Result: {:?}", result);
+
+    assert_eq!(result, Value::object(vec![
+        ("sampleEnum", Value::string("ONE")),
+        ("sampleScalar", Value::int(123)),
+    ].into_iter().collect()));
+}
 
 #[test]
 fn enum_introspection() {
@@ -174,4 +213,35 @@ fn interface_introspection() {
         ("isDeprecated", Value::boolean(false)),
         ("deprecationReason", Value::null()),
     ].into_iter().collect())));
+}
+
+#[test]
+fn scalar_introspection() {
+    let doc = r#"
+    {
+        __type(name: "SampleScalar") {
+            name
+            kind
+            description
+        }
+    }
+    "#;
+    let schema = RootNode::new(Root {}, ());
+
+    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+        .expect("Execution failed");
+
+    assert_eq!(errs, []);
+
+    println!("Result: {:?}", result);
+
+    let type_info = result
+        .as_object_value().expect("Result is not an object")
+        .get("__type").expect("__type field missing");
+
+    assert_eq!(type_info, &Value::object(vec![
+        ("name", Value::string("SampleScalar")),
+        ("kind", Value::string("SCALAR")),
+        ("description", Value::null()),
+    ].into_iter().collect()));
 }
