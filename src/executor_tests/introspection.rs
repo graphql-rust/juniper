@@ -91,6 +91,10 @@ fn enum_introspection() {
                 isDeprecated
                 deprecationReason
             }
+            interfaces { name }
+            possibleTypes { name }
+            inputFields { name }
+            ofType { name }
         }
     }
     "#;
@@ -111,6 +115,10 @@ fn enum_introspection() {
     assert_eq!(type_info.get("name"), Some(&Value::string("SampleEnum")));
     assert_eq!(type_info.get("kind"), Some(&Value::string("ENUM")));
     assert_eq!(type_info.get("description"), Some(&Value::null())); 
+    assert_eq!(type_info.get("interfaces"), Some(&Value::null()));
+    assert_eq!(type_info.get("possibleTypes"), Some(&Value::null()));
+    assert_eq!(type_info.get("inputFields"), Some(&Value::null()));
+    assert_eq!(type_info.get("ofType"), Some(&Value::null()));
 
     let values = type_info
         .get("enumValues").expect("enumValues field missing")
@@ -161,6 +169,10 @@ fn interface_introspection() {
                 isDeprecated
                 deprecationReason
             }
+            interfaces { name }
+            enumValues { name }
+            inputFields { name }
+            ofType { name }
         }
     }
     "#;
@@ -180,7 +192,11 @@ fn interface_introspection() {
 
     assert_eq!(type_info.get("name"), Some(&Value::string("SampleInterface")));
     assert_eq!(type_info.get("kind"), Some(&Value::string("INTERFACE")));
-    assert_eq!(type_info.get("description"), Some(&Value::string("A sample interface"))); 
+    assert_eq!(type_info.get("description"), Some(&Value::string("A sample interface")));
+    assert_eq!(type_info.get("interfaces"), Some(&Value::null()));
+    assert_eq!(type_info.get("enumValues"), Some(&Value::null()));
+    assert_eq!(type_info.get("inputFields"), Some(&Value::null()));
+    assert_eq!(type_info.get("ofType"), Some(&Value::null()));
 
     let possible_types = type_info
         .get("possibleTypes").expect("possibleTypes field missing")
@@ -223,6 +239,12 @@ fn scalar_introspection() {
             name
             kind
             description
+            fields { name }
+            interfaces { name }
+            possibleTypes { name }
+            enumValues { name }
+            inputFields { name }
+            ofType { name }
         }
     }
     "#;
@@ -243,5 +265,11 @@ fn scalar_introspection() {
         ("name", Value::string("SampleScalar")),
         ("kind", Value::string("SCALAR")),
         ("description", Value::null()),
+        ("fields", Value::null()),
+        ("interfaces", Value::null()),
+        ("possibleTypes", Value::null()),
+        ("enumValues", Value::null()),
+        ("inputFields", Value::null()),
+        ("ofType", Value::null()),
     ].into_iter().collect()));
 }
