@@ -54,7 +54,7 @@ graphql_object!(Root: () as "Root" |&self| {
     field sample_scalar(
         first: i64 as "The first number", 
         second = 123: i64 as "The second number"
-    ) -> FieldResult<Scalar> {
+    ) -> FieldResult<Scalar> as "A sample scalar field on the object" {
         Ok(Scalar(first + second))
     }
 });
@@ -251,6 +251,19 @@ fn object_introspection() {
                 description
                 args {
                     name
+                    description
+                    type {
+                        name
+                        kind
+                        ofType {
+                            name
+                            kind
+                            ofType {
+                                name
+                            }
+                        }
+                    }
+                    defaultValue
                 }
                 type {
                     name
@@ -306,6 +319,8 @@ fn object_introspection() {
 
     assert_eq!(fields.len(), 5); // The two fields, __typename, __type, __schema
 
+    println!("Fields: {:#?}", fields);
+
     assert!(fields.contains(&Value::object(vec![
         ("name", Value::string("sampleEnum")),
         ("description", Value::null()),
@@ -316,6 +331,47 @@ fn object_introspection() {
             ("ofType", Value::object(vec![
                 ("name", Value::string("SampleEnum")),
                 ("kind", Value::string("ENUM")),
+            ].into_iter().collect())),
+        ].into_iter().collect())),
+        ("isDeprecated", Value::boolean(false)),
+        ("deprecationReason", Value::null()),
+    ].into_iter().collect())));
+
+    assert!(fields.contains(&Value::object(vec![
+        ("name", Value::string("sampleScalar")),
+        ("description", Value::string("A sample scalar field on the object")),
+        ("args", Value::list(vec![
+            Value::object(vec![
+                ("name", Value::string("first")),
+                ("description", Value::string("The first number")),
+                ("type", Value::object(vec![
+                    ("name", Value::null()),
+                    ("kind", Value::string("NON_NULL")),
+                    ("ofType", Value::object(vec![
+                        ("name", Value::string("Int")),
+                        ("kind", Value::string("SCALAR")),
+                        ("ofType", Value::null()),
+                    ].into_iter().collect())),
+                ].into_iter().collect())),
+                ("defaultValue", Value::null()),
+            ].into_iter().collect()),
+            Value::object(vec![
+                ("name", Value::string("second")),
+                ("description", Value::string("The second number")),
+                ("type", Value::object(vec![
+                    ("name", Value::string("Int")),
+                    ("kind", Value::string("SCALAR")),
+                    ("ofType", Value::null()),
+                ].into_iter().collect())),
+                ("defaultValue", Value::string("123")),
+            ].into_iter().collect()),
+        ])),
+        ("type", Value::object(vec![
+            ("name", Value::null()),
+            ("kind", Value::string("NON_NULL")),
+            ("ofType", Value::object(vec![
+                ("name", Value::string("SampleScalar")),
+                ("kind", Value::string("SCALAR")),
             ].into_iter().collect())),
         ].into_iter().collect())),
         ("isDeprecated", Value::boolean(false)),
