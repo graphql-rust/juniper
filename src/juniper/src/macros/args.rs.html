@@ -222,6 +222,7 @@
 <span id="178">178</span>
 <span id="179">179</span>
 <span id="180">180</span>
+<span id="181">181</span>
 </pre><pre class='rust '>
 <span class='attribute'>#[<span class='ident'>doc</span>(<span class='ident'>hidden</span>)]</span>
 <span class='attribute'>#[<span class='ident'>macro_export</span>]</span>
@@ -338,8 +339,8 @@
     ) <span class='op'>=&gt;</span> {
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>base</span>.<span class='ident'>argument</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>arg_with_default</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span><span class='op'>&gt;</span>(
             <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
-            <span class='kw-2'>&amp;</span><span class='macro'>__graphql__args</span><span class='macro'>!</span>(@<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>default</span>)))
-            .<span class='ident'>description</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>)
+            <span class='kw-2'>&amp;</span><span class='macro'>__graphql__args</span><span class='macro'>!</span>(@<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>default</span>))
+            .<span class='ident'>description</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>))
     };
 
     (
@@ -351,7 +352,8 @@
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>base</span>.<span class='ident'>argument</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>arg_with_default</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span><span class='op'>&gt;</span>(
                 <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
-                <span class='kw-2'>&amp;</span><span class='macro'>__graphql__args</span><span class='macro'>!</span>(@<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>default</span>))),
+                <span class='kw-2'>&amp;</span><span class='macro'>__graphql__args</span><span class='macro'>!</span>(@<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>default</span>))
+                .<span class='ident'>description</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>)),
             ( $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>)<span class='op'>*</span> ))
     };
 
