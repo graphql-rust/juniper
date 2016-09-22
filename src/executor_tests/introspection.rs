@@ -43,14 +43,19 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
 });
 
 graphql_object!(Root: () as "Root" |&self| {
+    description: "The root query object in the schema"
+
     interfaces: [Interface]
 
     field sample_enum() -> FieldResult<Sample> {
         Ok(Sample::One)
     }
 
-    field sample_scalar() -> FieldResult<Scalar> {
-        Ok(Scalar(123))
+    field sample_scalar(
+        first: i64 as "The first number", 
+        second = 123: i64 as "The second number"
+    ) -> FieldResult<Scalar> {
+        Ok(Scalar(first + second))
     }
 });
 
@@ -59,7 +64,8 @@ fn test_execution() {
     let doc = r#"
     {
         sampleEnum
-        sampleScalar
+        first: sampleScalar(first: 0)
+        second: sampleScalar(first: 10 second: 20)
     }
     "#;
     let schema = RootNode::new(Root {}, ());
@@ -73,7 +79,8 @@ fn test_execution() {
 
     assert_eq!(result, Value::object(vec![
         ("sampleEnum", Value::string("ONE")),
-        ("sampleScalar", Value::int(123)),
+        ("first", Value::int(123)),
+        ("second", Value::int(30)),
     ].into_iter().collect()));
 }
 
@@ -217,6 +224,91 @@ fn interface_introspection() {
     assert!(fields.contains(&Value::object(vec![
         ("name", Value::string("sampleEnum")),
         ("description", Value::string("A sample field in the interface")),
+        ("args", Value::list(vec![])),
+        ("type", Value::object(vec![
+            ("name", Value::null()),
+            ("kind", Value::string("NON_NULL")),
+            ("ofType", Value::object(vec![
+                ("name", Value::string("SampleEnum")),
+                ("kind", Value::string("ENUM")),
+            ].into_iter().collect())),
+        ].into_iter().collect())),
+        ("isDeprecated", Value::boolean(false)),
+        ("deprecationReason", Value::null()),
+    ].into_iter().collect())));
+}
+
+#[test]
+fn object_introspection() {
+    let doc = r#"
+    {
+        __type(name: "Root") {
+            name
+            kind
+            description
+            fields {
+                name
+                description
+                args {
+                    name
+                }
+                type {
+                    name
+                    kind
+                    ofType {
+                        name
+                        kind
+                    }
+                }
+                isDeprecated
+                deprecationReason
+            }
+            possibleTypes { name }
+            interfaces { name }
+            enumValues { name }
+            inputFields { name }
+            ofType { name }
+        }
+    }
+    "#;
+    let schema = RootNode::new(Root {}, ());
+
+    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+        .expect("Execution failed");
+
+    assert_eq!(errs, []);
+
+    println!("Result: {:?}", result);
+
+    let type_info = result
+        .as_object_value().expect("Result is not an object")
+        .get("__type").expect("__type field missing")
+        .as_object_value().expect("__type field not an object value");
+
+    assert_eq!(type_info.get("name"), Some(&Value::string("Root")));
+    assert_eq!(type_info.get("kind"), Some(&Value::string("OBJECT")));
+    assert_eq!(type_info.get("description"), Some(&Value::string("The root query object in the schema")));
+    assert_eq!(
+        type_info.get("interfaces"),
+        Some(&Value::list(vec![
+            Value::object(vec![
+                ("name", Value::string("SampleInterface")),
+            ].into_iter().collect()),
+        ])));
+    assert_eq!(type_info.get("enumValues"), Some(&Value::null()));
+    assert_eq!(type_info.get("inputFields"), Some(&Value::null()));
+    assert_eq!(type_info.get("ofType"), Some(&Value::null()));
+    assert_eq!(type_info.get("possibleTypes"), Some(&Value::null()));
+
+    let fields = type_info
+        .get("fields").expect("fields field missing")
+        .as_list_value().expect("fields field not an object value");
+
+    assert_eq!(fields.len(), 5); // The two fields, __typename, __type, __schema
+
+    assert!(fields.contains(&Value::object(vec![
+        ("name", Value::string("sampleEnum")),
+        ("description", Value::null()),
         ("args", Value::list(vec![])),
         ("type", Value::object(vec![
             ("name", Value::null()),

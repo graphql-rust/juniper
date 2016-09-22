@@ -102,6 +102,30 @@ macro_rules! __graphql__args {
             $reg,
             $base.argument($reg.arg_with_default::<$t>(
                 &$crate::to_snake_case(stringify!($name)),
+                &__graphql__args!(@as_expr, $default)))
+                .description($desc),
+            ( $($rest)* ))
+    };
+
+    (
+        @apply_args,
+        $reg:expr, $base:expr, ( $name:ident = $default:tt : $t:ty as $desc:expr )
+    ) => {
+        $base.argument($reg.arg_with_default::<$t>(
+            &$crate::to_snake_case(stringify!($name)),
+            &__graphql__args!(@as_expr, $default)))
+            .description($desc)
+    };
+
+    (
+        @apply_args,
+        $reg:expr, $base:expr, ( $name:ident = $default:tt : $t:ty as $desc:expr , $( $rest:tt )* )
+    ) => {
+        __graphql__args!(
+            @apply_args,
+            $reg,
+            $base.argument($reg.arg_with_default::<$t>(
+                &$crate::to_snake_case(stringify!($name)),
                 &__graphql__args!(@as_expr, $default))),
             ( $($rest)* ))
     };
