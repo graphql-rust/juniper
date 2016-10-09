@@ -2,9 +2,9 @@
 
 > GraphQL server library for Rust
 
-[![build status](https://img.shields.io/travis/mhallin/juniper.svg?maxAge=2592000&style=flat-square)](https://travis-ci.org/mhallin/juniper)
-[![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000&style=flat-square)](https://crates.io/crates/juniper)
-[![Coveralls](https://img.shields.io/coveralls/jekyll/jekyll.svg?maxAge=2592000&style=flat-square)](https://coveralls.io/github/mhallin/juniper)
+[![Build Status](https://travis-ci.org/mhallin/juniper.svg?branch=master)](https://travis-ci.org/mhallin/juniper)
+[![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000)](https://crates.io/crates/juniper)
+[![Coverage Status](https://coveralls.io/repos/github/mhallin/juniper/badge.svg?branch=master)](https://coveralls.io/github/mhallin/juniper?branch=master)
 
 ---
 
