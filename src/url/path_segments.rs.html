@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/url-1.2.0/src/path_segments.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/url-1.2.1/src/path_segments.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>path_segments.rs.html -- source</title>
@@ -228,6 +228,7 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
+<span id="187">187</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 The rust-url developers.</span>
 <span class='comment'>//</span>
@@ -237,7 +238,7 @@
 <span class='comment'>// option. This file may not be copied, modified, or distributed</span>
 <span class='comment'>// except according to those terms.</span>
 
-<span class='kw'>use</span> <span class='ident'>parser</span>::{<span class='self'>self</span>, <span class='ident'>SchemeType</span>};
+<span class='kw'>use</span> <span class='ident'>parser</span>::{<span class='self'>self</span>, <span class='ident'>SchemeType</span>, <span class='ident'>to_u32</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>;
 <span class='kw'>use</span> <span class='ident'>Url</span>;
 
@@ -266,7 +267,8 @@
 
 <span class='comment'>// Not re-exported outside the crate</span>
 <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>(<span class='ident'>url</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>PathSegmentsMut</span> {
-    <span class='kw'>let</span> (<span class='ident'>old_after_path_position</span>, <span class='ident'>after_path</span>) <span class='op'>=</span> <span class='ident'>url</span>.<span class='ident'>take_after_path</span>();
+    <span class='kw'>let</span> <span class='ident'>after_path</span> <span class='op'>=</span> <span class='ident'>url</span>.<span class='ident'>take_after_path</span>();
+    <span class='kw'>let</span> <span class='ident'>old_after_path_position</span> <span class='op'>=</span> <span class='ident'>to_u32</span>(<span class='ident'>url</span>.<span class='ident'>serialization</span>.<span class='ident'>len</span>()).<span class='ident'>unwrap</span>();
     <span class='macro'>debug_assert</span><span class='macro'>!</span>(<span class='ident'>url</span>.<span class='ident'>byte_at</span>(<span class='ident'>url</span>.<span class='ident'>path_start</span>) <span class='op'>==</span> <span class='string'>b&#39;/&#39;</span>);
     <span class='ident'>PathSegmentsMut</span> {
         <span class='ident'>after_first_slash</span>: <span class='ident'>url</span>.<span class='ident'>path_start</span> <span class='kw'>as</span> <span class='ident'>usize</span> <span class='op'>+</span> <span class='string'>&quot;/&quot;</span>.<span class='ident'>len</span>(),

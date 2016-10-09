@@ -50,7 +50,7 @@
                </span><a id='src-6729' class='srclink' href='../../src/hyper/net.rs.html#26-40' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait NetworkListener: <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> {
     type <a href='#associatedtype.Stream' class='type'>Stream</a>: <a class='trait' href='../../hyper/net/trait.NetworkStream.html' title='hyper::net::NetworkStream'>NetworkStream</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Send.html' title='core::marker::Send'>Send</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>;
-    fn <a href='#tymethod.accept' class='fnname'>accept</a>(&amp;mut self) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;Self::<a class='trait' href='../../hyper/net/trait.NetworkListener.html' title='hyper::net::NetworkListener'>Stream</a>&gt;;
+    fn <a href='#tymethod.accept' class='fnname'>accept</a>(&amp;mut self) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;Self::Stream&gt;;
     fn <a href='#tymethod.local_addr' class='fnname'>local_addr</a>(&amp;mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/std/net/addr/enum.SocketAddr.html' title='std::net::addr::SocketAddr'>SocketAddr</a>&gt;;
 
     fn <a href='#method.incoming' class='fnname'>incoming</a>(&amp;mut self) -&gt; <a class='struct' href='../../hyper/net/struct.NetworkConnections.html' title='hyper::net::NetworkConnections'>NetworkConnections</a>&lt;Self&gt; { ... }
@@ -62,7 +62,7 @@
 </div></div>
             <h2 id='required-methods'>Required Methods</h2>
             <div class='methods'>
-        <h3 id='tymethod.accept' class='method stab '><code>fn <a href='#tymethod.accept' class='fnname'>accept</a>(&amp;mut self) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;Self::<a class='trait' href='../../hyper/net/trait.NetworkListener.html' title='hyper::net::NetworkListener'>Stream</a>&gt;</code></h3><div class='docblock'><p>Returns an iterator of streams.</p>
+        <h3 id='tymethod.accept' class='method stab '><code>fn <a href='#tymethod.accept' class='fnname'>accept</a>(&amp;mut self) -&gt; <a class='type' href='../../hyper/error/type.Result.html' title='hyper::error::Result'>Result</a>&lt;Self::Stream&gt;</code></h3><div class='docblock'><p>Returns an iterator of streams.</p>
 </div><h3 id='tymethod.local_addr' class='method stab '><code>fn <a href='#tymethod.local_addr' class='fnname'>local_addr</a>(&amp;mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/std/net/addr/enum.SocketAddr.html' title='std::net::addr::SocketAddr'>SocketAddr</a>&gt;</code></h3><div class='docblock'><p>Get the address this Listener ended up listening on.</p>
 </div></div>
             <h2 id='provided-methods'>Provided Methods</h2>

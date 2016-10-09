@@ -304,6 +304,28 @@ lie on a <a href="../../std/primitive.char.html"><code>char</code></a> boundary.
 <span class='ident'>s</span>.<span class='ident'>insert</span>(<span class='number'>2</span>, <span class='string'>&#39;o&#39;</span>);
 
 <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='string'>&quot;foo&quot;</span>, <span class='ident'>s</span>);</pre>
+</div><h4 id='method.insert_str' class='method'><code>fn <a href='#method.insert_str' class='fnname'>insert_str</a>(&amp;mut self, idx: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, string: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>)</code></h4>
+<div class='stability'><em class='stab unstable'>Unstable (<code>insert_str</code>)<p>: recent addition</p>
+</em></div><div class='docblock'><p>Inserts a string slice into this <code>String</code> at a byte position.</p>
+
+<p>This is an <code>O(n)</code> operation as it requires copying every element in the
+buffer.</p>
+
+<h1 id='panics-5' class='section-header'><a href='#panics-5'>Panics</a></h1>
+<p>Panics if <code>idx</code> is larger than the <code>String</code>&#39;s length, or if it does not
+lie on a <a href="../../std/primitive.char.html"><code>char</code></a> boundary.</p>
+
+<h1 id='examples-13' class='section-header'><a href='#examples-13'>Examples</a></h1>
+<p>Basic usage:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>feature</span>(<span class='ident'>insert_str</span>)]</span>
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>from</span>(<span class='string'>&quot;bar&quot;</span>);
+
+<span class='ident'>s</span>.<span class='ident'>insert_str</span>(<span class='number'>0</span>, <span class='string'>&quot;foo&quot;</span>);
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='string'>&quot;foobar&quot;</span>, <span class='ident'>s</span>);</pre>
 </div><h4 id='method.as_mut_vec' class='method'><code>unsafe fn <a href='#method.as_mut_vec' class='fnname'>as_mut_vec</a>(&amp;mut self) -&gt; &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
 <div class='docblock'><p>Returns a mutable reference to the contents of this <code>String</code>.</p>
 
@@ -313,7 +335,7 @@ to it are valid UTF-8. If this constraint is violated, it may cause
 memory unsafety issues with future users of the <code>String</code>, as the rest of
 the standard library assumes that <code>String</code>s are valid UTF-8.</p>
 
-<h1 id='examples-13' class='section-header'><a href='#examples-13'>Examples</a></h1>
+<h1 id='examples-14' class='section-header'><a href='#examples-14'>Examples</a></h1>
 <p>Basic usage:</p>
 
 <pre class='rust rust-example-rendered'>
@@ -329,7 +351,7 @@ the standard library assumes that <code>String</code>s are valid UTF-8.</p>
 </div><h4 id='method.len' class='method'><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
 <div class='docblock'><p>Returns the length of this <code>String</code>, in bytes.</p>
 
-<h1 id='examples-14' class='section-header'><a href='#examples-14'>Examples</a></h1>
+<h1 id='examples-15' class='section-header'><a href='#examples-15'>Examples</a></h1>
 <p>Basic usage:</p>
 
 <pre class='rust rust-example-rendered'>
@@ -341,7 +363,7 @@ the standard library assumes that <code>String</code>s are valid UTF-8.</p>
 
 <p>Returns <code>false</code> otherwise.</p>
 
-<h1 id='examples-15' class='section-header'><a href='#examples-15'>Examples</a></h1>
+<h1 id='examples-16' class='section-header'><a href='#examples-16'>Examples</a></h1>
 <p>Basic usage:</p>
 
 <pre class='rust rust-example-rendered'>
@@ -356,7 +378,7 @@ the standard library assumes that <code>String</code>s are valid UTF-8.</p>
 <p>While this means the <code>String</code> will have a length of zero, it does not
 touch its capacity.</p>
 
-<h1 id='examples-16' class='section-header'><a href='#examples-16'>Examples</a></h1>
+<h1 id='examples-17' class='section-header'><a href='#examples-17'>Examples</a></h1>
 <p>Basic usage:</p>
 
 <pre class='rust rust-example-rendered'>
@@ -374,11 +396,11 @@ and yields the removed chars.</p>
 <p>Note: The element range is removed even if the iterator is not
 consumed until the end.</p>
 
-<h1 id='panics-5' class='section-header'><a href='#panics-5'>Panics</a></h1>
+<h1 id='panics-6' class='section-header'><a href='#panics-6'>Panics</a></h1>
 <p>Panics if the starting point or end point do not lie on a <a href="../../std/primitive.char.html"><code>char</code></a>
 boundary, or if they&#39;re out of bounds.</p>
 
-<h1 id='examples-17' class='section-header'><a href='#examples-17'>Examples</a></h1>
+<h1 id='examples-18' class='section-header'><a href='#examples-18'>Examples</a></h1>
 <p>Basic usage:</p>
 
 <pre class='rust rust-example-rendered'>
@@ -398,7 +420,7 @@ boundary, or if they&#39;re out of bounds.</p>
 
 <p>This will drop any excess capacity.</p>
 
-<h1 id='examples-18' class='section-header'><a href='#examples-18'>Examples</a></h1>
+<h1 id='examples-19' class='section-header'><a href='#examples-19'>Examples</a></h1>
 <p>Basic usage:</p>
 
 <pre class='rust rust-example-rendered'>

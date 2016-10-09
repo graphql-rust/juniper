@@ -1125,6 +1125,9 @@ replaces them with the replacement string slice.</p>
 <span class='kw'>let</span> <span class='ident'>new_year</span> <span class='op'>=</span> <span class='string'>&quot;农历新年&quot;</span>;
 
 <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>new_year</span>, <span class='ident'>new_year</span>.<span class='ident'>to_uppercase</span>());</pre>
+</div><h4 id='method.escape_debug' class='method'><code>fn <a href='#method.escape_debug' class='fnname'>escape_debug</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='stability'><em class='stab unstable'>Unstable (<code>str_escape</code>)<p>: return type may change to be an iterator</p>
+</em></div><div class='docblock'><p>Escapes each char in <code>s</code> with <code>char::escape_debug</code>.</p>
 </div><h4 id='method.escape_default' class='method'><code>fn <a href='#method.escape_default' class='fnname'>escape_default</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
 <div class='stability'><em class='stab unstable'>Unstable (<code>str_escape</code>)<p>: return type may change to be an iterator</p>
 </em></div><div class='docblock'><p>Escapes each char in <code>s</code> with <code>char::escape_default</code>.</p>

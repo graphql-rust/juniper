@@ -50,7 +50,7 @@
                </span><a id='src-7' class='srclink' href='../src/plugin/lib.rs.html#14-25' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait Plugin&lt;E:&nbsp;?<a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a>&gt;: <a class='trait' href='../typemap/trait.Key.html' title='typemap::Key'>Key</a> {
     type <a href='#associatedtype.Error' class='type'>Error</a>;
-    fn <a href='#tymethod.eval' class='fnname'>eval</a>(&amp;mut E) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;Self::<a class='trait' href='../plugin/trait.Plugin.html' title='plugin::Plugin'>Value</a>,&nbsp;Self::<a class='trait' href='../plugin/trait.Plugin.html' title='plugin::Plugin'>Error</a>&gt;;
+    fn <a href='#tymethod.eval' class='fnname'>eval</a>(&amp;mut E) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;Self::Value,&nbsp;Self::Error&gt;;
 }</pre><div class='docblock'><p>Implementers of this trait can act as plugins for other types, via <code>OtherType::get&lt;P&gt;()</code>.</p>
 
 <p>To create a plugin, implement this trait and provide an empty implementation
@@ -62,7 +62,7 @@ of <code>Key</code> to associate the plugin with its return type, <code>Key::Val
 </div></div>
             <h2 id='required-methods'>Required Methods</h2>
             <div class='methods'>
-        <h3 id='tymethod.eval' class='method stab '><code>fn <a href='#tymethod.eval' class='fnname'>eval</a>(&amp;mut E) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;Self::<a class='trait' href='../plugin/trait.Plugin.html' title='plugin::Plugin'>Value</a>,&nbsp;Self::<a class='trait' href='../plugin/trait.Plugin.html' title='plugin::Plugin'>Error</a>&gt;</code></h3><div class='docblock'><p>Create the plugin from an instance of the extended type.</p>
+        <h3 id='tymethod.eval' class='method stab '><code>fn <a href='#tymethod.eval' class='fnname'>eval</a>(&amp;mut E) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;Self::Value,&nbsp;Self::Error&gt;</code></h3><div class='docblock'><p>Create the plugin from an instance of the extended type.</p>
 
 <p>While <code>eval</code> is given a mutable reference to the extended
 type, it is important for implementers to remember that

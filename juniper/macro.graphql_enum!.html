@@ -47,15 +47,57 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-6080' class='srclink' href='../src/juniper/src/macros/enums.rs.html#35-99' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-6080' class='srclink' href='../src/juniper/src/macros/enums.rs.html#35-186' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_enum</span> {
     ( @<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>e</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> { ... };
     ( @<span class='ident'>as_pattern</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>pat</span>) <span class='op'>=&gt;</span> { ... };
-    ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span>),<span class='op'>*</span> }) <span class='op'>=&gt;</span> { ... };
-    ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span>, )<span class='op'>*</span> }) <span class='op'>=&gt;</span> { ... };
-    ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span>),<span class='op'>*</span> }) <span class='op'>=&gt;</span> { ... };
-    ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span>, )<span class='op'>*</span> }) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>as_path</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>path</span>) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>maybe_apply</span>, <span class='prelude-val'>None</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>func</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>val</span>:<span class='ident'>expr</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>maybe_apply</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>func</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>val</span>:<span class='ident'>expr</span> ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>generate</span>,
+        ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> ),
+        [ $( ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>edescr</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>edepr</span>:<span class='ident'>tt</span> ) , )<span class='op'>*</span> ]
+    ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>parse</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span>, ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>parse</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span>, , $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore</span>:<span class='ident'>tt</span> ),
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span>,
+        <span class='ident'>description</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>,
+        [ $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span> ,)<span class='op'>*</span> ],
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>depr</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>,
+        [ $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span> ,)<span class='op'>*</span> ],
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>depr</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>,
+        [ $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span> ,)<span class='op'>*</span> ],
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>,
+        [ $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span> ,)<span class='op'>*</span> ],
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span>)<span class='op'>*</span> }
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>path</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span>)<span class='op'>*</span> }
+    ) <span class='op'>=&gt;</span> { ... };
 }</pre>
 <div class='docblock'><p>Expose simple enums</p>
 

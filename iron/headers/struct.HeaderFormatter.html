@@ -48,7 +48,7 @@
                        [<span class='inner'>&#x2212;</span>]
                    </a>
                </span><a id='src-5571' class='srclink' href='../../hyper/header/struct.HeaderFormatter.html?gotosrc=5571' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct HeaderFormatter&lt;'a,&nbsp;H&gt; <span class='where'>where H: <a class='trait' href='../../iron/headers/trait.HeaderFormat.html' title='iron::headers::HeaderFormat'>HeaderFormat</a></span>(pub &amp;'a H);</pre><div class='docblock'><p>A wrapper around any Header with a Display impl that calls fmt_header.</p>
+<pre class='rust struct'>pub struct HeaderFormatter&lt;'a,&nbsp;H&gt;(pub &amp;'a H) <span class='where'>where H: <a class='trait' href='../../iron/headers/trait.HeaderFormat.html' title='iron::headers::HeaderFormat'>HeaderFormat</a></span>;</pre><div class='docblock'><p>A wrapper around any Header with a Display impl that calls fmt_header.</p>
 
 <p>This can be used like so: <code>format!(&quot;{}&quot;, HeaderFormatter(&amp;header))</code> to
 get the representation of a Header which will be written to an

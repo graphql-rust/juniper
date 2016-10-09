@@ -51,7 +51,7 @@
 <pre class='rust trait'>pub trait HttpConnect {
     type <a href='#associatedtype.Stream' class='type'>Stream</a>: <a class='trait' href='../../../solicit/http/transport/trait.TransportStream.html' title='solicit::http::transport::TransportStream'>TransportStream</a>;
     type <a href='#associatedtype.Err' class='type'>Err</a>: <a class='trait' href='../../../solicit/http/client/trait.HttpConnectError.html' title='solicit::http::client::HttpConnectError'>HttpConnectError</a> + 'static;
-    fn <a href='#tymethod.connect' class='fnname'>connect</a>(self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../solicit/http/client/struct.ClientStream.html' title='solicit::http::client::ClientStream'>ClientStream</a>&lt;Self::<a class='trait' href='../../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>Stream</a>&gt;,&nbsp;Self::<a class='trait' href='../../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>Err</a>&gt;;
+    fn <a href='#tymethod.connect' class='fnname'>connect</a>(self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../solicit/http/client/struct.ClientStream.html' title='solicit::http::client::ClientStream'>ClientStream</a>&lt;Self::Stream&gt;,&nbsp;Self::Err&gt;;
 }</pre><div class='docblock'><p>A trait that can be implemented by structs that want to provide the
 functionality of establishing network connections for use by HTTP/2 connections.</p>
 
@@ -72,7 +72,7 @@ connection (i.e. calling the <code>connect</code> method).</p>
 </div></div>
             <h2 id='required-methods'>Required Methods</h2>
             <div class='methods'>
-        <h3 id='tymethod.connect' class='method stab '><code>fn <a href='#tymethod.connect' class='fnname'>connect</a>(self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../solicit/http/client/struct.ClientStream.html' title='solicit::http::client::ClientStream'>ClientStream</a>&lt;Self::<a class='trait' href='../../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>Stream</a>&gt;,&nbsp;Self::<a class='trait' href='../../../solicit/http/client/trait.HttpConnect.html' title='solicit::http::client::HttpConnect'>Err</a>&gt;</code></h3><div class='docblock'><p>Establishes a network connection that can be used by HTTP/2 connections.</p>
+        <h3 id='tymethod.connect' class='method stab '><code>fn <a href='#tymethod.connect' class='fnname'>connect</a>(self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../solicit/http/client/struct.ClientStream.html' title='solicit::http::client::ClientStream'>ClientStream</a>&lt;Self::Stream&gt;,&nbsp;Self::Err&gt;</code></h3><div class='docblock'><p>Establishes a network connection that can be used by HTTP/2 connections.</p>
 </div></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
