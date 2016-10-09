@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `graphql_input_object!` macro in crate `juniper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, graphql_input_object!">
+
+    <title>juniper::graphql_input_object! - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>juniper</a></p><script>window.sidebarCurrent = {name: 'graphql_input_object!', ty: 'macro', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content macro">
+<h1 class='fqn'><span class='in-band'><a href='index.html'>juniper</a>::<wbr><a class='macro' href=''>graphql_input_object!</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6087' class='srclink' href='../src/juniper/src/macros/input_object.rs.html#34-178' title='goto source code'>[src]</a></span></h1>
+<pre class='rust macro'>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_input_object</span> {
+    ( @<span class='ident'>maybe_apply</span>, <span class='prelude-val'>None</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>func</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>val</span>:<span class='ident'>expr</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>maybe_apply</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>func</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>val</span>:<span class='ident'>expr</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>apply_description</span>, , <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>val</span>:<span class='ident'>expr</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>apply_description</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> , <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>val</span>:<span class='ident'>expr</span> ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>generate_from_input_value</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>var</span>:<span class='ident'>tt</span>,
+        ( $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>field_name</span>:<span class='ident'>ident</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>field_type</span>:<span class='ident'>ty</span> $(<span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span>)<span class='op'>*</span> $(,)<span class='op'>*</span> ),<span class='op'>*</span> )
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>generate_struct_fields</span>,
+        ( $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>)<span class='op'>*</span> ), <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>tt</span>,
+        ( $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>field_name</span>:<span class='ident'>ident</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>field_type</span>:<span class='ident'>ty</span> $(<span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span>)<span class='op'>*</span> $(,)<span class='op'>*</span> ),<span class='op'>*</span> )
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>generate_meta_fields</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>tt</span>,
+        ( $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>field_name</span>:<span class='ident'>ident</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>field_type</span>:<span class='ident'>ty</span> $(<span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span>)<span class='op'>*</span> $(,)<span class='op'>*</span> ),<span class='op'>*</span> )
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore1</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore2</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore3</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore4</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> ),
+        $(<span class='attribute'>#[<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>meta</span>]</span>)<span class='op'>*</span> <span class='kw'>struct</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>fields</span>:<span class='ident'>tt</span>)<span class='op'>*</span> } $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore1</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore2</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore3</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore4</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> ),
+        $(<span class='attribute'>#[<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>meta</span>]</span>)<span class='op'>*</span> <span class='kw'>struct</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> { $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>fields</span>:<span class='ident'>tt</span>)<span class='op'>*</span> } $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>fields</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>_ignore</span>:<span class='ident'>tt</span> ),
+        <span class='ident'>description</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>parse</span>,
+        ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>fields</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> ),
+    ) <span class='op'>=&gt;</span> { ... };
+    ( $(<span class='attribute'>#[<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>meta</span>:<span class='ident'>meta</span>]</span>)<span class='op'>*</span> <span class='kw'>struct</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span>)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+    ( <span class='ident'>description</span>: $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span>)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+}</pre>
+<div class='docblock'><p>Create an input object</p>
+
+<p>Input objects are used as data carriers for complex input values to
+fields and mutations. Unlike the other helper macros,
+<code>graphql_input_object!</code> actually <em>creates</em> the struct you define. It
+does not add anything to the struct definition itself - what you type
+is what will be generated:</p>
+
+<pre class='rust rust-example-rendered'>
+
+<span class='macro'>graphql_input_object</span><span class='macro'>!</span>(
+    <span class='ident'>description</span>: <span class='string'>&quot;Coordinates for the user&quot;</span>
+
+    <span class='kw'>struct</span> <span class='ident'>Coordinates</span> {
+        <span class='ident'>longitude</span>: <span class='ident'>f64</span> <span class='kw'>as</span> <span class='string'>&quot;The X coordinate, from -180 to +180&quot;</span>,
+        <span class='ident'>latitude</span>: <span class='ident'>f64</span> <span class='kw'>as</span> <span class='string'>&quot;The Y coordinate, from -90 to +90&quot;</span>,
+    }
+);
+</pre>
+
+<p>This macro creates the struct as specified and implements
+<code>FromInputValue</code> to automatically parse values provided from variables
+and arguments.</p>
+
+<p>If you want to expose the struct under a different name than the Rust
+type, you can write <code>struct Coordinates as &quot;MyCoordinates&quot; { ...</code>.</p>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "juniper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

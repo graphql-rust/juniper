@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `ExecutionResult` type in crate `juniper`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, ExecutionResult">
+    <meta name="description" content="API documentation for the Rust `assert_matches!` macro in crate `matches`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, assert_matches!">
 
-    <title>juniper::ExecutionResult - Rust</title>
+    <title>matches::assert_matches! - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
@@ -28,7 +28,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'><a href='index.html'>juniper</a></p><script>window.sidebarCurrent = {name: 'ExecutionResult', ty: 'type', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='index.html'>matches</a></p><script>window.sidebarCurrent = {name: 'assert_matches!', ty: 'macro', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -42,14 +42,17 @@
         </form>
     </nav>
 
-    <section id='main' class="content type">
-<h1 class='fqn'><span class='in-band'><a href='index.html'>juniper</a>::<wbr><a class='type' href=''>ExecutionResult</a></span><span class='out-of-band'><span id='render-detail'>
+    <section id='main' class="content macro">
+<h1 class='fqn'><span class='in-band'><a href='index.html'>matches</a>::<wbr><a class='macro' href=''>assert_matches!</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-5730' class='srclink' href='../src/juniper/src/executor.rs.html#62' title='goto source code'>[src]</a></span></h1>
-<pre class='rust typedef'>type ExecutionResult = <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../juniper/enum.Value.html' title='juniper::Value'>Value</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;;</pre><div class='docblock'><p>The result of resolving an unspecified field</p>
-</div></section>
+               </span><a id='src-6' class='srclink' href='../src/matches/lib.rs.html#20-29' title='goto source code'>[src]</a></span></h1>
+<pre class='rust macro'>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>assert_matches</span> {
+    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>expression</span>:<span class='ident'>expr</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>pattern</span>:<span class='ident'>tt</span>)<span class='op'>+</span>) <span class='op'>=&gt;</span> { ... };
+}</pre>
+</section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -104,7 +107,7 @@
 
     <script>
         window.rootPath = "../";
-        window.currentCrate = "juniper";
+        window.currentCrate = "matches";
         window.playgroundUrl = "";
     </script>
     <script src="../jquery.js"></script>

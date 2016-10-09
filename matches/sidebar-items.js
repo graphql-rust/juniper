@@ -1,1 +1,1 @@
-initSidebarItems({"macro":[["_tt_as_expr_hack!","Work around \"error: unexpected token: `an interpolated tt`\", whatever that means."],["matches!",""]]});
+initSidebarItems({"macro":[["_matches_tt_as_expr_hack!","Work around \"error: unexpected token: `an interpolated tt`\", whatever that means."],["assert_matches!",""],["debug_assert_matches!",""],["matches!",""]]});
