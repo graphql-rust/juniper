@@ -4,3 +4,5 @@
 #[macro_use] mod scalar;
 #[macro_use] mod args;
 #[macro_use] mod field;
+
+#[cfg(test)] mod tests;

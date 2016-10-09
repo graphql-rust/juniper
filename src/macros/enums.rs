@@ -35,19 +35,45 @@ you can write `graphql_enum!(Color as "MyColor" { ...`.
 macro_rules! graphql_enum {
     ( @as_expr, $e:expr) => { $e };
     ( @as_pattern, $p:pat) => { $p };
+    ( @as_path, $p:path) => { $p };
 
-    // EnumName as "__ExportedNmae" { Enum::Value => "STRING_VALUE", }
-    // with no trailing comma
-    ( $name:path as $outname:tt { $($eval:path => $ename:tt),* }) => {
+    // Calls $val.$func($arg) if $arg is not None
+    ( @maybe_apply, None, $func:ident, $val:expr ) => { $val };
+    ( @maybe_apply, $arg:tt, $func:ident, $val:expr ) => { $val.$func($arg) };
+
+    // Each of the @parse match arms accumulates data up to a call to @generate.
+    //
+    // ( $name, $outname, $descr ): the name of the Rust enum, the name of the
+    // GraphQL enum (as a string), and the description of the enum (as a string or None)
+    //
+    // [ ( $eval, $ename, $edescr, $edepr ) , ] the value of the Rust enum,
+    // the value of the GraphQL enum (as a string), the description of the enum
+    // value (as a string or None), and the deprecation reason of the enum value
+    // (as a string or None).
+    (
+        @generate,
+        ( $name:path, $outname:tt, $descr:tt ),
+        [ $( ( $eval:tt, $ename:tt, $edescr:tt, $edepr:tt ) , )* ]
+    ) => {
         impl<CtxT> $crate::GraphQLType<CtxT> for $name {
             fn name() -> Option<&'static str> {
                 Some(graphql_enum!(@as_expr, $outname))
             }
 
             fn meta(registry: &mut $crate::Registry<CtxT>) -> $crate::meta::MetaType {
-                registry.build_enum_type::<$name>()(&[
-                        $( $crate::meta::EnumValue::new(graphql_enum!(@as_expr, $ename)) ),*
-                    ])
+                graphql_enum!(
+                    @maybe_apply, $descr, description,
+                    registry.build_enum_type::<$name>()(&[
+                        $(
+                            graphql_enum!(
+                                @maybe_apply,
+                                $edepr, deprecated,
+                                graphql_enum!(
+                                    @maybe_apply,
+                                    $edescr, description,
+                                    $crate::meta::EnumValue::new(graphql_enum!(@as_expr, $ename))))
+                        ),*
+                    ]))
                     .into_meta()
             }
 
@@ -82,18 +108,79 @@ macro_rules! graphql_enum {
         }
     };
 
-    // Same as above, *with* trailing comma
-    ( $name:path as $outname:tt { $($eval:path => $ename:tt, )* }) => {
-        graphql_enum!($name as $outname { $( $eval => $ename ),* });
+    // No more items to parse
+    ( @parse, $meta:tt, $acc:tt, ) => {
+        graphql_enum!( @generate, $meta, $acc );
     };
 
-    // Default named enum, without trailing comma
-    ( $name:path { $($eval:path => $ename:tt),* }) => {
-        graphql_enum!($name as (stringify!($name)) { $( $eval => $ename ),* });
+    // Remove extraneous commas
+    ( @parse, $meta:tt, $acc:tt, , $($rest:tt)* ) => {
+        graphql_enum!( @parse, $meta, $acc, $($rest)* );
     };
 
-    // Default named enum, with trailing comma
-    ( $name:path { $($eval:path => $ename:tt, )* }) => {
-        graphql_enum!($name as (stringify!($name)) { $( $eval => $ename ),* });
+    // description: <description>
+    (
+        @parse,
+        ( $name:tt, $outname:tt, $_ignore:tt ),
+        $acc:tt,
+        description: $descr:tt $($items:tt)*
+    ) => {
+        graphql_enum!( @parse, ( $name, $outname, $descr ), $acc, $($items)* );
+    };
+
+    // RustEnumValue => "GraphQL enum value" deprecated <reason>
+    (
+        @parse,
+        $meta:tt,
+        [ $($acc:tt ,)* ],
+        $eval:path => $ename:tt deprecated $depr:tt $($rest:tt)*
+    ) => {
+        graphql_enum!( @parse, $meta, [ $($acc ,)* ( $eval, $ename, None, $depr ), ], $($rest)* );
+    };
+
+    // RustEnumValue => "GraphQL enum value" as <description> deprecated <reason>
+    (
+        @parse,
+        $meta:tt,
+        [ $($acc:tt ,)* ],
+        $eval:path => $ename:tt as $descr:tt deprecated $depr:tt $($rest:tt)*
+    ) => {
+        graphql_enum!( @parse, $meta, [ $($acc ,)* ( $eval, $ename, $descr, $depr ), ], $($rest)* );
+    };
+
+    // RustEnumValue => "GraphQL enum value" as <description>
+    (
+        @parse,
+        $meta:tt,
+        [ $($acc:tt ,)* ],
+        $eval:path => $ename:tt as $descr:tt $($rest:tt)*
+    ) => {
+        graphql_enum!( @parse, $meta, [ $($acc ,)* ( $eval, $ename, $descr, None ), ], $($rest)* );
+    };
+
+    // RustEnumValue => "GraphQL enum value"
+    (
+        @parse,
+        $meta:tt,
+        [ $($acc:tt ,)* ],
+        $eval:path => $ename:tt $($rest:tt)*
+    ) => {
+        graphql_enum!( @parse, $meta, [ $($acc ,)* ( $eval , $ename , None , None ), ], $($rest)* );
+    };
+
+    // Entry point:
+    // RustEnumName as "GraphQLEnumName" { ... }
+    (
+        $name:path as $outname:tt { $($items:tt)* }
+    ) => {
+        graphql_enum!( @parse, ( $name, $outname, None ), [ ], $($items)* );
+    };
+
+    // Entry point
+    // RustEnumName { ... }
+    (
+        $name:path { $($items:tt)* }
+    ) => {
+        graphql_enum!( @parse, ( $name, (stringify!($name)), None ), [ ], $($items)* );
     };
 }
