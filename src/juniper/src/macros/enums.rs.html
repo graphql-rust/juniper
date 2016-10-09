@@ -228,6 +228,10 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
 </pre><pre class='rust '>
 <span class='doccomment'>/**
 Expose simple enums
@@ -240,14 +244,18 @@ non-data carrying Rust enums to GraphQL:
 # #[macro_use] extern crate juniper;
 enum Color {
     Red,
+    Orange,
     Green,
-    Blue
+    Blue,
+    Black,
 }
 
 graphql_enum!(Color {
-    Color::Red =&gt; &quot;RED&quot;,
+    Color::Red =&gt; &quot;RED&quot; as &quot;The color red&quot;,
+    Color::Orange =&gt; &quot;ORANGE&quot;,
     Color::Green =&gt; &quot;GREEN&quot;,
     Color::Blue =&gt; &quot;BLUE&quot;,
+    Color::Black =&gt; &quot;BLACK&quot; deprecated &quot;Superseded by ORANGE&quot;,
 });
 
 # fn main() { }

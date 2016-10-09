@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-6080' class='srclink' href='../src/juniper/src/macros/enums.rs.html#35-186' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-6080' class='srclink' href='../src/juniper/src/macros/enums.rs.html#39-190' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_enum</span> {
     ( @<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>e</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> { ... };
@@ -108,14 +108,18 @@ non-data carrying Rust enums to GraphQL:</p>
 <pre class='rust rust-example-rendered'>
 <span class='kw'>enum</span> <span class='ident'>Color</span> {
     <span class='ident'>Red</span>,
+    <span class='ident'>Orange</span>,
     <span class='ident'>Green</span>,
-    <span class='ident'>Blue</span>
+    <span class='ident'>Blue</span>,
+    <span class='ident'>Black</span>,
 }
 
 <span class='macro'>graphql_enum</span><span class='macro'>!</span>(<span class='ident'>Color</span> {
-    <span class='ident'>Color</span>::<span class='ident'>Red</span> <span class='op'>=&gt;</span> <span class='string'>&quot;RED&quot;</span>,
+    <span class='ident'>Color</span>::<span class='ident'>Red</span> <span class='op'>=&gt;</span> <span class='string'>&quot;RED&quot;</span> <span class='kw'>as</span> <span class='string'>&quot;The color red&quot;</span>,
+    <span class='ident'>Color</span>::<span class='ident'>Orange</span> <span class='op'>=&gt;</span> <span class='string'>&quot;ORANGE&quot;</span>,
     <span class='ident'>Color</span>::<span class='ident'>Green</span> <span class='op'>=&gt;</span> <span class='string'>&quot;GREEN&quot;</span>,
     <span class='ident'>Color</span>::<span class='ident'>Blue</span> <span class='op'>=&gt;</span> <span class='string'>&quot;BLUE&quot;</span>,
+    <span class='ident'>Color</span>::<span class='ident'>Black</span> <span class='op'>=&gt;</span> <span class='string'>&quot;BLACK&quot;</span> <span class='ident'>deprecated</span> <span class='string'>&quot;Superseded by ORANGE&quot;</span>,
 });
 </pre>
 
