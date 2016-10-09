@@ -16,7 +16,9 @@ datatype appropriate for that platform.
 # use juniper::{Value, FieldResult};
 struct UserID(String);
 
-graphql_scalar!(UserID as "UserID" {
+graphql_scalar!(UserID {
+    description: "An opaque identifier, represented as a string"
+
     resolve(&self) -> Value {
         Value::string(&self.0)
     }
@@ -33,77 +35,113 @@ In addition to implementing `GraphQLType` for the type in question,
 `FromInputValue` and `ToInputValue` is also implemented. This makes the type
 usable as arguments and default values.
 
-`graphql_scalar!` supports generic and lifetime parameters similar to
-`graphql_object!`.
-
 */
 #[macro_export]
 macro_rules! graphql_scalar {
+    // Calls $val.$func($arg) if $arg is not None
+    ( @maybe_apply, None, $func:ident, $val:expr ) => { $val };
+    ( @maybe_apply, $arg:tt, $func:ident, $val:expr ) => { $val.$func($arg) };
+
+    // Each of the @parse match arms accumulates data up to a call to @generate
+    //
+    // ( $name, $outname, $descr ): the name of the Rust type and the name of the
+    // GraphQL scalar (as a string), and the description of the scalar (as a
+    // string or none).
+    //
+    // ( $resolve_selfvar, $resolve_body ): the "self" argument and body for the
+    // resolve() method on GraphQLType and the to() method on ToInputValue.
+    //
+    // ( $fiv_arg, $fiv_result, $fiv_body ): the method argument, result type,
+    // and body for the from() method on FromInputValue.
     (
-        @build_scalar_resolver,
-        resolve(&$selfvar:ident) -> Value $body:block $($rest:tt)*
+        @generate,
+        ( $name:ty, $outname:tt, $descr:tt ),
+        (
+            ( $resolve_selfvar:ident, $resolve_body:block ),
+            ( $fiv_arg:ident, $fiv_result:ty, $fiv_body:block )
+        )
     ) => {
-        fn resolve(&$selfvar, _: Option<Vec<$crate::Selection>>, _: &mut $crate::Executor<CtxT>) -> $crate::Value {
-            $body
-        }
-    };
-
-    (
-        @build_scalar_conv_impl,
-        $name:ty; [$($lifetime:tt),*];
-        resolve(&$selfvar:ident) -> Value $body:block $($rest:tt)*
-    ) => {
-        impl<$($lifetime),*> $crate::ToInputValue for $name {
-            fn to(&$selfvar) -> $crate::InputValue {
-                $crate::ToInputValue::to(&$body)
-            }
-        }
-
-        graphql_scalar!(@build_scalar_conv_impl, $name; [$($lifetime),*]; $($rest)*);
-    };
-
-    (
-        @build_scalar_conv_impl,
-        $name:ty; [$($lifetime:tt),*];
-        from_input_value($arg:ident: &InputValue) -> $result:ty $body:block
-        $($rest:tt)*
-    ) => {
-        impl<$($lifetime),*> $crate::FromInputValue for $name {
-            fn from($arg: &$crate::InputValue) -> $result {
-                $body
-            }
-        }
-
-        graphql_scalar!(@build_scalar_conv_impl, $name; [$($lifetime),*]; $($rest)*);
-    };
-
-    (
-        @build_scalar_conv_impl,
-        $name:ty; $($lifetime:tt),*;
-    ) => {
-    };
-
-    (($($lifetime:tt),*) $name:ty as $outname:expr => { $( $items:tt )* }) => {
-        impl<$($lifetime,)* CtxT> $crate::GraphQLType<CtxT> for $name {
+        impl<CtxT> $crate::GraphQLType<CtxT> for $name {
             fn name() -> Option<&'static str> {
                 Some($outname)
             }
 
             fn meta(registry: &mut $crate::Registry<CtxT>) -> $crate::meta::MetaType {
-                registry.build_scalar_type::<Self>().into_meta()
+                graphql_scalar!(
+                    @maybe_apply, $descr, description,
+                    registry.build_scalar_type::<Self>())
+                    .into_meta()
             }
 
-            graphql_scalar!(@build_scalar_resolver, $($items)*);
+            fn resolve(
+                &$resolve_selfvar,
+                _: Option<Vec<$crate::Selection>>,
+                _: &mut $crate::Executor<CtxT>) -> $crate::Value {
+                $resolve_body
+            }
         }
 
-        graphql_scalar!(@build_scalar_conv_impl, $name; [$($lifetime),*]; $($items)*);
+        impl $crate::ToInputValue for $name {
+            fn to(&$resolve_selfvar) -> $crate::InputValue {
+                $crate::ToInputValue::to(&$resolve_body)
+            }
+        }
+
+        impl $crate::FromInputValue for $name {
+            fn from($fiv_arg: &$crate::InputValue) -> $fiv_result {
+                $fiv_body
+            }
+        }
     };
 
-    (<$($lifetime:tt),*> $name:ty as $outname:tt { $( $items:tt )* }) => {
-        graphql_scalar!(($($lifetime),*) $name as $outname => { $( $items )* });
+    // No more items to parse
+    (
+        @parse,
+        $meta:tt,
+        $acc:tt,
+    ) => {
+        graphql_scalar!( @generate, $meta, $acc );
     };
 
+    // resolve(&self) -> Value { ... }
+    (
+        @parse,
+        $meta:tt,
+        ( $_ignored:tt, $fiv:tt ),
+        resolve(&$selfvar:ident) -> Value $body:block $($rest:tt)*
+    ) => {
+        graphql_scalar!( @parse, $meta, ( ($selfvar, $body), $fiv ), $($rest)* );
+    };
+
+    // from_input_value(arg: &InputValue) -> ... { ... }
+    (
+        @parse,
+        $meta:tt,
+        ( $resolve:tt, $_ignored:tt ),
+        from_input_value($arg:ident: &InputValue) -> $result:ty $body:block $($rest:tt)*
+    ) => {
+        graphql_scalar!( @parse, $meta, ( $resolve, ( $arg, $result, $body ) ), $($rest)* );
+    };
+
+    // description: <description>
+    (
+        @parse,
+        ( $name:ty, $outname:tt, $_ignored:tt ),
+        $acc:tt,
+        description: $descr:tt $($rest:tt)*
+    ) => {
+        graphql_scalar!( @parse, ( $name, $outname, $descr ), $acc, $($rest)* );
+    };
+
+    // Entry point:
+    // RustName as "GraphQLName" { ... }
     ( $name:ty as $outname:tt { $( $items:tt )* }) => {
-        graphql_scalar!(() $name as $outname => { $( $items )* });
-    }
+        graphql_scalar!( @parse, ( $name, $outname, None ), ( None, None ), $($items)* );
+    };
+
+    // Entry point
+    // RustName { ... }
+    ( $name:ty { $( $items:tt )* }) => {
+        graphql_scalar!( @parse, ( $name, (stringify!($name)), None ), ( None, None ), $($items)* );
+    };
 }
