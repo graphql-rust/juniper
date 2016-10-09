@@ -9,14 +9,18 @@ non-data carrying Rust enums to GraphQL:
 # #[macro_use] extern crate juniper;
 enum Color {
     Red,
+    Orange,
     Green,
-    Blue
+    Blue,
+    Black,
 }
 
 graphql_enum!(Color {
-    Color::Red => "RED",
+    Color::Red => "RED" as "The color red",
+    Color::Orange => "ORANGE",
     Color::Green => "GREEN",
     Color::Blue => "BLUE",
+    Color::Black => "BLACK" deprecated "Superseded by ORANGE",
 });
 
 # fn main() { }
