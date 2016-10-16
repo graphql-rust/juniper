@@ -14,6 +14,10 @@ schema, as well as an optional integration into the [Iron framework][2]. It
 tries to keep the number of dynamic operations to a minimum, and give you as the
 schema developer the control of the query execution path.
 
+Juniper only depends on `rustc-serialize` by default, making it lightweight and
+easy to drop into any project. Through the `iron-handlers` feature, it also
+depends on Iron.
+
 ## Exposing data types
 
 The `GraphQLType` trait is the primary interface towards application developers.
