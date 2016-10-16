@@ -471,15 +471,6 @@
 <span id="427">427</span>
 <span id="428">428</span>
 <span id="429">429</span>
-<span id="430">430</span>
-<span id="431">431</span>
-<span id="432">432</span>
-<span id="433">433</span>
-<span id="434">434</span>
-<span id="435">435</span>
-<span id="436">436</span>
-<span id="437">437</span>
-<span id="438">438</span>
 </pre><pre class='rust '>
 <span class='doccomment'>/**
 Expose GraphQL objects
@@ -494,23 +485,22 @@ The simplest case exposes fields on a struct:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 struct User { id: String, name: String, group_ids: Vec&lt;String&gt; }
 
 graphql_object!(User: () as &quot;User&quot; |&amp;self| {
-    field id() -&gt; FieldResult&lt;&amp;String&gt; {
-        Ok(&amp;self.id)
+    field id() -&gt; &amp;String {
+        &amp;self.id
     }
 
-    field name() -&gt; FieldResult&lt;&amp;String&gt; {
-        Ok(&amp;self.name)
+    field name() -&gt; &amp;String {
+        &amp;self.name
     }
 
     // Field and argument names will be converted from snake case to camel case,
     // as is the common naming convention in GraphQL. The following field would
     // be named &quot;memberOfGroup&quot;, and the argument &quot;groupId&quot;.
-    field member_of_group(group_id: String) -&gt; FieldResult&lt;bool&gt; {
-        Ok(self.group_ids.iter().any(|gid| gid == &amp;group_id))
+    field member_of_group(group_id: String) -&gt; bool {
+        self.group_ids.iter().any(|gid| gid == &amp;group_id)
     }
 });
 
@@ -524,24 +514,23 @@ arguments:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 struct User { id: String, name: String, group_ids: Vec&lt;String&gt; }
 
 graphql_object!(User: () as &quot;User&quot; |&amp;self| {
     description: &quot;A user in the database&quot;
 
-    field id() -&gt; FieldResult&lt;&amp;String&gt; as &quot;The user&#39;s unique identifier&quot; {
-        Ok(&amp;self.id)
+    field id() -&gt; &amp;String as &quot;The user&#39;s unique identifier&quot; {
+        &amp;self.id
     }
 
-    field name() -&gt; FieldResult&lt;&amp;String&gt; as &quot;The user&#39;s name&quot; {
-        Ok(&amp;self.name)
+    field name() -&gt; &amp;String as &quot;The user&#39;s name&quot; {
+        &amp;self.name
     }
 
     field member_of_group(
         group_id: String as &quot;The group id you want to test membership against&quot;
-    ) -&gt; FieldResult&lt;bool&gt; as &quot;Test if a user is member of a group&quot; {
-        Ok(self.group_ids.iter().any(|gid| gid == &amp;group_id))
+    ) -&gt; bool as &quot;Test if a user is member of a group&quot; {
+        self.group_ids.iter().any(|gid| gid == &amp;group_id)
     }
 });
 
@@ -555,26 +544,16 @@ generic parameters:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 trait SomeTrait { fn id(&amp;self) -&gt; &amp;str; }
 
 graphql_object!(&lt;&#39;a&gt; &amp;&#39;a SomeTrait: () as &quot;SomeTrait&quot; |&amp;self| {
-    field id() -&gt; FieldResult&lt;&amp;str&gt; { Ok(self.id()) }
+    field id() -&gt; &amp;str { self.id() }
 });
 
 struct GenericType&lt;T&gt; { items: Vec&lt;T&gt; }
 
 graphql_object!(&lt;T&gt; GenericType&lt;T&gt;: () as &quot;GenericType&quot; |&amp;self| {
-    field count() -&gt; FieldResult&lt;i64&gt; { Ok(self.items.len() as i64) }
-});
-
-struct SelfContained { name: String }
-
-// If the type does not require access to a specific context, you can make it
-// generic on the context type. This statically ensures that the fields only
-// can access what&#39;s available from the type itself.
-graphql_object!(&lt;Context&gt; SelfContained: Context as &quot;SelfContained&quot; |&amp;self| {
-    field name() -&gt; FieldResult&lt;&amp;String&gt; { Ok(&amp;self.name) }
+    field count() -&gt; i64 { self.items.len() as i64 }
 });
 
 # fn main() { }
@@ -586,7 +565,6 @@ You can use the `interfaces` item to implement interfaces:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 trait Interface {
     fn id(&amp;self) -&gt; &amp;str;
     fn as_implementor(&amp;self) -&gt; Option&lt;Implementor&gt;;
@@ -594,7 +572,7 @@ trait Interface {
 struct Implementor { id: String }
 
 graphql_interface!(&lt;&#39;a&gt; &amp;&#39;a Interface: () as &quot;Interface&quot; |&amp;self| {
-    field id() -&gt; FieldResult&lt;&amp;str&gt; { Ok(self.id()) }
+    field id() -&gt; &amp;str { self.id() }
 
     instance_resolvers: |&amp;context| [
         self.as_implementor(),
@@ -602,7 +580,7 @@ graphql_interface!(&lt;&#39;a&gt; &amp;&#39;a Interface: () as &quot;Interface&q
 });
 
 graphql_object!(Implementor: () as &quot;Implementor&quot; |&amp;self| {
-    field id() -&gt; FieldResult&lt;&amp;str&gt; { Ok(&amp;self.id) }
+    field id() -&gt; &amp;str { &amp;self.id }
 
     interfaces: [&amp;Interface]
 });
@@ -677,8 +655,10 @@ need to have any connection, only what&#39;s exposed in the schema matters.
 ### Fields
 
 ```text
-field name(args...) -&gt; FieldResult&lt;Type&gt; { }
-field name(args...) -&gt; FieldResult&lt;Type&gt; as &quot;Field description&quot; { }
+field name(args...) -&gt; Type { }
+field name(args...) -&gt; Type as &quot;Field description&quot; { }
+field deprecated &quot;Reason&quot; name(args...) -&gt; Type { }
+field deprecated &quot;Reason&quot; name(args...) -&gt; Type as &quot;Field description&quot; { }
 ```
 
 Defines a field on the object. The name is converted to camel case, e.g.
@@ -731,9 +711,8 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>.<span class='ident'>push</span>(<span class='macro'>__graphql__args</span><span class='macro'>!</span>(
             @<span class='ident'>apply_args</span>,
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
-            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_inside_result</span>(
-                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
-                <span class='prelude-val'>Err</span>(<span class='string'>&quot;dummy&quot;</span>.<span class='ident'>to_owned</span>()) <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>)
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_convert</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>, _<span class='op'>&gt;</span>(
+                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)))
                 .<span class='ident'>description</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>)
                 .<span class='ident'>deprecated</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>),
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>));
@@ -750,9 +729,8 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>.<span class='ident'>push</span>(<span class='macro'>__graphql__args</span><span class='macro'>!</span>(
             @<span class='ident'>apply_args</span>,
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
-            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_inside_result</span>(
-                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
-                <span class='prelude-val'>Err</span>(<span class='string'>&quot;dummy&quot;</span>.<span class='ident'>to_owned</span>()) <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>)
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_convert</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>, _<span class='op'>&gt;</span>(
+                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)))
                 .<span class='ident'>deprecated</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>),
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>));
 
@@ -768,9 +746,8 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>.<span class='ident'>push</span>(<span class='macro'>__graphql__args</span><span class='macro'>!</span>(
             @<span class='ident'>apply_args</span>,
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
-            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_inside_result</span>(
-                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
-                <span class='prelude-val'>Err</span>(<span class='string'>&quot;dummy&quot;</span>.<span class='ident'>to_owned</span>()) <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>)
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_convert</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>, _<span class='op'>&gt;</span>(
+                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)))
                 .<span class='ident'>description</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>),
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>));
 
@@ -786,9 +763,8 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>.<span class='ident'>push</span>(<span class='macro'>__graphql__args</span><span class='macro'>!</span>(
             @<span class='ident'>apply_args</span>,
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
-            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_inside_result</span>(
-                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
-                <span class='prelude-val'>Err</span>(<span class='string'>&quot;dummy&quot;</span>.<span class='ident'>to_owned</span>()) <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>),
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_convert</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>, _<span class='op'>&gt;</span>(
+                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>))),
             <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>));
 
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
@@ -890,6 +866,12 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
                     $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>)<span class='op'>*</span>);
             }
         });
+
+        <span class='kw'>impl</span><span class='op'>&lt;</span>$(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>lifetime</span>)<span class='op'>*</span><span class='op'>&gt;</span> <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>IntoFieldResult</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span> {
+            <span class='kw'>fn</span> <span class='ident'>into</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>FieldResult</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span><span class='op'>&gt;</span> {
+                <span class='prelude-val'>Ok</span>(<span class='self'>self</span>)
+            }
+        }
     };
 
     (

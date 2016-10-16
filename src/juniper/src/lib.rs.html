@@ -387,6 +387,10 @@
 <span id="343">343</span>
 <span id="344">344</span>
 <span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
 </pre><pre class='rust '>
 <span class='doccomment'>/*!
 
@@ -418,8 +422,8 @@ existing object types as GraphQL objects:
 
 ```rust
 #[macro_use] extern crate juniper;
-use juniper::FieldResult;
 # use std::collections::HashMap;
+use juniper::FieldResult;
 
 struct User { id: String, name: String, friend_ids: Vec&lt;String&gt;  }
 struct QueryRoot;
@@ -432,15 +436,19 @@ struct Database { users: HashMap&lt;String, User&gt; }
 graphql_object!(User: Database as &quot;User&quot; |&amp;self| {
 
     // Expose a simple field as a GraphQL string.
+    field id() -&gt; &amp;String {
+        &amp;self.id
+    }
+
+    field name() -&gt; &amp;String {
+        &amp;self.name
+    }
+
     // FieldResult&lt;T&gt; is an alias for Result&lt;T, String&gt; - simply return
     // a string from this method and it will be correctly inserted into
     // the execution response.
-    field id() -&gt; FieldResult&lt;&amp;String&gt; {
-        Ok(&amp;self.id)
-    }
-
-    field name() -&gt; FieldResult&lt;&amp;String&gt; {
-        Ok(&amp;self.name)
+    field secret() -&gt; FieldResult&lt;&amp;String&gt; {
+        Err(&quot;Can&#39;t touch this&quot;.to_owned())
     }
 
     // Field accessors can optionally take an &quot;executor&quot; as their first
@@ -449,10 +457,10 @@ graphql_object!(User: Database as &quot;User&quot; |&amp;self| {
     //
     // In this example, the context is used to convert the friend_ids array
     // into actual User objects.
-    field friends(&amp;mut executor) -&gt; FieldResult&lt;Vec&lt;&amp;User&gt;&gt; {
-        Ok(self.friend_ids.iter()
+    field friends(&amp;mut executor) -&gt; Vec&lt;&amp;User&gt; {
+        self.friend_ids.iter()
             .filter_map(|id| executor.context().users.get(id))
-            .collect())
+            .collect()
     }
 });
 
@@ -461,8 +469,8 @@ graphql_object!(User: Database as &quot;User&quot; |&amp;self| {
 graphql_object!(QueryRoot: Database as &quot;Query&quot; |&amp;self| {
 
     // Arguments work just like they do on functions.
-    field user(&amp;mut executor, id: String) -&gt; FieldResult&lt;Option&lt;&amp;User&gt;&gt; {
-        Ok(executor.context().users.get(&amp;id))
+    field user(&amp;mut executor, id: String) -&gt; Option&lt;&amp;User&gt; {
+        executor.context().users.get(&amp;id)
     }
 });
 
@@ -587,13 +595,13 @@ built-in [GraphiQL][6] handler included.
 
 <span class='kw'>use</span> <span class='ident'>parser</span>::{<span class='ident'>parse_document_source</span>, <span class='ident'>ParseError</span>, <span class='ident'>Spanning</span>, <span class='ident'>SourcePosition</span>};
 <span class='kw'>use</span> <span class='ident'>validation</span>::{<span class='ident'>RuleError</span>, <span class='ident'>ValidatorContext</span>, <span class='ident'>visit_all_rules</span>};
+<span class='kw'>use</span> <span class='ident'>executor</span>::<span class='ident'>execute_validated_query</span>;
 
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>ast</span>::{<span class='ident'>ToInputValue</span>, <span class='ident'>FromInputValue</span>, <span class='ident'>InputValue</span>, <span class='ident'>Type</span>, <span class='ident'>Selection</span>};
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>value</span>::<span class='ident'>Value</span>;
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>types</span>::<span class='ident'>base</span>::{<span class='ident'>Arguments</span>, <span class='ident'>GraphQLType</span>, <span class='ident'>TypeKind</span>};
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>executor</span>::{
-    <span class='ident'>Executor</span>, <span class='ident'>Registry</span>, <span class='ident'>ExecutionResult</span>, <span class='ident'>ExecutionError</span>, <span class='ident'>FieldResult</span>,
-    <span class='ident'>execute_validated_query</span>,
+    <span class='ident'>Executor</span>, <span class='ident'>Registry</span>, <span class='ident'>ExecutionResult</span>, <span class='ident'>ExecutionError</span>, <span class='ident'>FieldResult</span>, <span class='ident'>IntoFieldResult</span>,
 };
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>types</span>::<span class='ident'>scalars</span>::<span class='ident'>ID</span>;
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>schema</span>::<span class='ident'>model</span>::<span class='ident'>RootNode</span>;

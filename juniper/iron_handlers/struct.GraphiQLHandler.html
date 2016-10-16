@@ -47,17 +47,17 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-5908' class='srclink' href='../../src/juniper/src/integrations/iron_handlers.rs.html#36-38' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-5990' class='srclink' href='../../src/juniper/src/integrations/iron_handlers.rs.html#36-38' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct GraphiQLHandler {
     // some fields omitted
 }</pre><div class='docblock'><p>Handler that renders GraphiQL - a graphical query editor interface</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../juniper/iron_handlers/struct.GraphiQLHandler.html' title='juniper::iron_handlers::GraphiQLHandler'>GraphiQLHandler</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-5965' class='srclink' href='../../src/juniper/src/integrations/iron_handlers.rs.html#136-146' title='goto source code'>[src]</a></span></h3>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../juniper/iron_handlers/struct.GraphiQLHandler.html' title='juniper::iron_handlers::GraphiQLHandler'>GraphiQLHandler</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-6047' class='srclink' href='../../src/juniper/src/integrations/iron_handlers.rs.html#136-146' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(graphql_url: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../../juniper/iron_handlers/struct.GraphiQLHandler.html' title='juniper::iron_handlers::GraphiQLHandler'>GraphiQLHandler</a></code></h4>
 <div class='docblock'><p>Build a new GraphiQL handler targeting the specified URL.</p>
 
 <p>The provided URL should point to the URL of the attached <code>GraphQLHandler</code>. It can be
 relative, so a common value could be <code>&quot;/graphql&quot;</code>.</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a> for <a class='struct' href='../../juniper/iron_handlers/struct.GraphiQLHandler.html' title='juniper::iron_handlers::GraphiQLHandler'>GraphiQLHandler</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-5976' class='srclink' href='../../src/juniper/src/integrations/iron_handlers.rs.html#165-237' title='goto source code'>[src]</a></span></h3>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a> for <a class='struct' href='../../juniper/iron_handlers/struct.GraphiQLHandler.html' title='juniper::iron_handlers::GraphiQLHandler'>GraphiQLHandler</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-6058' class='srclink' href='../../src/juniper/src/integrations/iron_handlers.rs.html#165-237' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.handle' class='method'><code>fn <a href='../../iron/middleware/trait.Handler.html#tymethod.handle' class='fnname'>handle</a>(&amp;self, _: &amp;mut <a class='struct' href='../../iron/request/struct.Request.html' title='iron::request::Request'>Request</a>) -&gt; <a class='type' href='../../iron/type.IronResult.html' title='iron::IronResult'>IronResult</a>&lt;<a class='struct' href='../../iron/response/struct.Response.html' title='iron::response::Response'>Response</a>&gt;</code></h4>
 <div class='docblock'><p>Produce a <code>Response</code> from a Request, with the possibility of error.</p>
 </div></div></section>

@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-6082' class='srclink' href='../src/juniper/src/macros/object.rs.html#238-438' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-6165' class='srclink' href='../src/juniper/src/macros/object.rs.html#227-429' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_object</span> {
     ( @<span class='ident'>as_item</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>item</span>) <span class='op'>=&gt;</span> { ... };
@@ -125,19 +125,19 @@ safety and reduce repetitive declarations.</p>
 <span class='kw'>struct</span> <span class='ident'>User</span> { <span class='ident'>id</span>: <span class='ident'>String</span>, <span class='ident'>name</span>: <span class='ident'>String</span>, <span class='ident'>group_ids</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>String</span><span class='op'>&gt;</span> }
 
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='ident'>User</span>: () <span class='kw'>as</span> <span class='string'>&quot;User&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>String</span><span class='op'>&gt;</span> {
-        <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>)
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>String</span> {
+        <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>
     }
 
-    <span class='ident'>field</span> <span class='ident'>name</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>String</span><span class='op'>&gt;</span> {
-        <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>name</span>)
+    <span class='ident'>field</span> <span class='ident'>name</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>String</span> {
+        <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>name</span>
     }
 
     <span class='comment'>// Field and argument names will be converted from snake case to camel case,</span>
     <span class='comment'>// as is the common naming convention in GraphQL. The following field would</span>
     <span class='comment'>// be named &quot;memberOfGroup&quot;, and the argument &quot;groupId&quot;.</span>
-    <span class='ident'>field</span> <span class='ident'>member_of_group</span>(<span class='ident'>group_id</span>: <span class='ident'>String</span>) <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='ident'>bool</span><span class='op'>&gt;</span> {
-        <span class='prelude-val'>Ok</span>(<span class='self'>self</span>.<span class='ident'>group_ids</span>.<span class='ident'>iter</span>().<span class='ident'>any</span>(<span class='op'>|</span><span class='ident'>gid</span><span class='op'>|</span> <span class='ident'>gid</span> <span class='op'>==</span> <span class='kw-2'>&amp;</span><span class='ident'>group_id</span>))
+    <span class='ident'>field</span> <span class='ident'>member_of_group</span>(<span class='ident'>group_id</span>: <span class='ident'>String</span>) <span class='op'>-&gt;</span> <span class='ident'>bool</span> {
+        <span class='self'>self</span>.<span class='ident'>group_ids</span>.<span class='ident'>iter</span>().<span class='ident'>any</span>(<span class='op'>|</span><span class='ident'>gid</span><span class='op'>|</span> <span class='ident'>gid</span> <span class='op'>==</span> <span class='kw-2'>&amp;</span><span class='ident'>group_id</span>)
     }
 });
 </pre>
@@ -152,18 +152,18 @@ arguments:</p>
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='ident'>User</span>: () <span class='kw'>as</span> <span class='string'>&quot;User&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
     <span class='ident'>description</span>: <span class='string'>&quot;A user in the database&quot;</span>
 
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>String</span><span class='op'>&gt;</span> <span class='kw'>as</span> <span class='string'>&quot;The user&#39;s unique identifier&quot;</span> {
-        <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>)
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>String</span> <span class='kw'>as</span> <span class='string'>&quot;The user&#39;s unique identifier&quot;</span> {
+        <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>
     }
 
-    <span class='ident'>field</span> <span class='ident'>name</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>String</span><span class='op'>&gt;</span> <span class='kw'>as</span> <span class='string'>&quot;The user&#39;s name&quot;</span> {
-        <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>name</span>)
+    <span class='ident'>field</span> <span class='ident'>name</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>String</span> <span class='kw'>as</span> <span class='string'>&quot;The user&#39;s name&quot;</span> {
+        <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>name</span>
     }
 
     <span class='ident'>field</span> <span class='ident'>member_of_group</span>(
         <span class='ident'>group_id</span>: <span class='ident'>String</span> <span class='kw'>as</span> <span class='string'>&quot;The group id you want to test membership against&quot;</span>
-    ) <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='ident'>bool</span><span class='op'>&gt;</span> <span class='kw'>as</span> <span class='string'>&quot;Test if a user is member of a group&quot;</span> {
-        <span class='prelude-val'>Ok</span>(<span class='self'>self</span>.<span class='ident'>group_ids</span>.<span class='ident'>iter</span>().<span class='ident'>any</span>(<span class='op'>|</span><span class='ident'>gid</span><span class='op'>|</span> <span class='ident'>gid</span> <span class='op'>==</span> <span class='kw-2'>&amp;</span><span class='ident'>group_id</span>))
+    ) <span class='op'>-&gt;</span> <span class='ident'>bool</span> <span class='kw'>as</span> <span class='string'>&quot;Test if a user is member of a group&quot;</span> {
+        <span class='self'>self</span>.<span class='ident'>group_ids</span>.<span class='ident'>iter</span>().<span class='ident'>any</span>(<span class='op'>|</span><span class='ident'>gid</span><span class='op'>|</span> <span class='ident'>gid</span> <span class='op'>==</span> <span class='kw-2'>&amp;</span><span class='ident'>group_id</span>)
     }
 });
 </pre>
@@ -176,22 +176,13 @@ generic parameters:</p>
 <span class='kw'>trait</span> <span class='ident'>SomeTrait</span> { <span class='kw'>fn</span> <span class='ident'>id</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span>; }
 
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>SomeTrait</span>: () <span class='kw'>as</span> <span class='string'>&quot;SomeTrait&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>str</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='self'>self</span>.<span class='ident'>id</span>()) }
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='self'>self</span>.<span class='ident'>id</span>() }
 });
 
 <span class='kw'>struct</span> <span class='ident'>GenericType</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> { <span class='ident'>items</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> }
 
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='ident'>GenericType</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>: () <span class='kw'>as</span> <span class='string'>&quot;GenericType&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>count</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='ident'>i64</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='self'>self</span>.<span class='ident'>items</span>.<span class='ident'>len</span>() <span class='kw'>as</span> <span class='ident'>i64</span>) }
-});
-
-<span class='kw'>struct</span> <span class='ident'>SelfContained</span> { <span class='ident'>name</span>: <span class='ident'>String</span> }
-
-<span class='comment'>// If the type does not require access to a specific context, you can make it</span>
-<span class='comment'>// generic on the context type. This statically ensures that the fields only</span>
-<span class='comment'>// can access what&#39;s available from the type itself.</span>
-<span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='op'>&lt;</span><span class='ident'>Context</span><span class='op'>&gt;</span> <span class='ident'>SelfContained</span>: <span class='ident'>Context</span> <span class='kw'>as</span> <span class='string'>&quot;SelfContained&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>name</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>String</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>name</span>) }
+    <span class='ident'>field</span> <span class='ident'>count</span>() <span class='op'>-&gt;</span> <span class='ident'>i64</span> { <span class='self'>self</span>.<span class='ident'>items</span>.<span class='ident'>len</span>() <span class='kw'>as</span> <span class='ident'>i64</span> }
 });
 </pre>
 
@@ -206,7 +197,7 @@ generic parameters:</p>
 <span class='kw'>struct</span> <span class='ident'>Implementor</span> { <span class='ident'>id</span>: <span class='ident'>String</span> }
 
 <span class='macro'>graphql_interface</span><span class='macro'>!</span>(<span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>Interface</span>: () <span class='kw'>as</span> <span class='string'>&quot;Interface&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>str</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='self'>self</span>.<span class='ident'>id</span>()) }
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='self'>self</span>.<span class='ident'>id</span>() }
 
     <span class='ident'>instance_resolvers</span>: <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='ident'>context</span><span class='op'>|</span> [
         <span class='self'>self</span>.<span class='ident'>as_implementor</span>(),
@@ -214,7 +205,7 @@ generic parameters:</p>
 });
 
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='ident'>Implementor</span>: () <span class='kw'>as</span> <span class='string'>&quot;Implementor&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>str</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>) }
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span> }
 
     <span class='ident'>interfaces</span>: [<span class='kw-2'>&amp;</span><span class='ident'>Interface</span>]
 });
@@ -273,8 +264,10 @@ to be <em>GraphQL</em> interfaces, not necessarily Rust traits. The Rust types d
 need to have any connection, only what&#39;s exposed in the schema matters.</p>
 
 <h3 id='fields' class='section-header'><a href='#fields'>Fields</a></h3>
-<pre><code class="language-text">field name(args...) -&gt; FieldResult&lt;Type&gt; { }
-field name(args...) -&gt; FieldResult&lt;Type&gt; as &quot;Field description&quot; { }
+<pre><code class="language-text">field name(args...) -&gt; Type { }
+field name(args...) -&gt; Type as &quot;Field description&quot; { }
+field deprecated &quot;Reason&quot; name(args...) -&gt; Type { }
+field deprecated &quot;Reason&quot; name(args...) -&gt; Type as &quot;Field description&quot; { }
 </code></pre>
 
 <p>Defines a field on the object. The name is converted to camel case, e.g.

@@ -232,6 +232,12 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
 </pre><pre class='rust '>
 <span class='doccomment'>/**
 Expose simple enums
@@ -343,6 +349,12 @@ you can write `graphql_enum!(Color as &quot;MyColor&quot; { ...`.
                         <span class='kw-2'>&amp;</span><span class='macro'>graphql_enum</span><span class='macro'>!</span>(@<span class='ident'>as_pattern</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>eval</span>) <span class='op'>=&gt;</span>
                             <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>InputValue</span>::<span class='ident'>string</span>(<span class='macro'>graphql_enum</span><span class='macro'>!</span>(@<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ename</span>)) ),<span class='op'>*</span>
                 }
+            }
+        }
+
+        <span class='kw'>impl</span> <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>IntoFieldResult</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span> {
+            <span class='kw'>fn</span> <span class='ident'>into</span>(<span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>FieldResult</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span><span class='op'>&gt;</span> {
+                <span class='prelude-val'>Ok</span>(<span class='self'>self</span>)
             }
         }
     };

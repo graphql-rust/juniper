@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-6083' class='srclink' href='../src/juniper/src/macros/interface.rs.html#87-388' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-6166' class='srclink' href='../src/juniper/src/macros/interface.rs.html#86-383' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_interface</span> {
     ( @<span class='ident'>as_item</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>item</span>) <span class='op'>=&gt;</span> { ... };
@@ -214,16 +214,16 @@ shared context to implement downcasts.</p>
 }
 
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='ident'>Human</span>: <span class='ident'>Database</span> <span class='kw'>as</span> <span class='string'>&quot;Human&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>str</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>) }
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span> }
 });
 
 <span class='macro'>graphql_object</span><span class='macro'>!</span>(<span class='ident'>Droid</span>: <span class='ident'>Database</span> <span class='kw'>as</span> <span class='string'>&quot;Droid&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>str</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span>) }
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>id</span> }
 });
 
 <span class='comment'>// You can introduce lifetimes or generic parameters by &lt; &gt; before the name.</span>
 <span class='macro'>graphql_interface</span><span class='macro'>!</span>(<span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>Character</span>: <span class='ident'>Database</span> <span class='kw'>as</span> <span class='string'>&quot;Character&quot;</span> <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='self'>self</span><span class='op'>|</span> {
-    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='ident'>FieldResult</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>str</span><span class='op'>&gt;</span> { <span class='prelude-val'>Ok</span>(<span class='self'>self</span>.<span class='ident'>id</span>()) }
+    <span class='ident'>field</span> <span class='ident'>id</span>() <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='self'>self</span>.<span class='ident'>id</span>() }
 
     <span class='ident'>instance_resolvers</span>: <span class='op'>|</span><span class='kw-2'>&amp;</span><span class='ident'>context</span><span class='op'>|</span> [
         <span class='ident'>context</span>.<span class='ident'>humans</span>.<span class='ident'>get</span>(<span class='self'>self</span>.<span class='ident'>id</span>()),
