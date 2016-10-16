@@ -463,6 +463,23 @@
 <span id="419">419</span>
 <span id="420">420</span>
 <span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
 </pre><pre class='rust '>
 <span class='doccomment'>/**
 Expose GraphQL objects
@@ -799,10 +816,18 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>)
     };
 
+    <span class='comment'>// eat commas</span>
+    (
+        @<span class='ident'>gather_object_meta</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>, , $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> {
+        <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>)
+    };
+
     <span class='comment'>// base case</span>
     (
         @<span class='ident'>gather_object_meta</span>,
-        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>, $(,)<span class='op'>*</span>
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
     ) <span class='op'>=&gt;</span> {};
 
     ( @<span class='ident'>assign_interfaces</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>tgt</span>:<span class='ident'>expr</span>, [ $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span>,)<span class='op'>*</span> ] ) <span class='op'>=&gt;</span> {
@@ -883,6 +908,15 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
     ) <span class='op'>=&gt;</span> {
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(
             ( ); <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>; <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>; <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>; <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>; $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span> )<span class='op'>*</span>);
+    };
+
+    (
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
+            $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        }
+    ) <span class='op'>=&gt;</span> {
+        <span class='macro'>graphql_object</span><span class='macro'>!</span>(
+            ( ); <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>; <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>; (<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)); <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>; $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span> )<span class='op'>*</span>);
     };
 }
 </pre>

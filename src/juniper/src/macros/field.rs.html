@@ -123,6 +123,10 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
 </pre><pre class='rust '>
 <span class='attribute'>#[<span class='ident'>doc</span>(<span class='ident'>hidden</span>)]</span>
 <span class='attribute'>#[<span class='ident'>macro_export</span>]</span>
@@ -182,6 +186,10 @@
     };
 
     ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolveargs</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span>, <span class='ident'>instance_resolvers</span> : <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>execvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolvers</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>) <span class='op'>=&gt;</span> {
+        <span class='macro'>__graphql__build_field_matches</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolveargs</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
+    };
+
+    ( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolveargs</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>tt</span>, , $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>) <span class='op'>=&gt;</span> {
         <span class='macro'>__graphql__build_field_matches</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolveargs</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
     };
 
