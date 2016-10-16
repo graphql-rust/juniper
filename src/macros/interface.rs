@@ -38,7 +38,6 @@ shared context to implement downcasts.
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 # use std::collections::HashMap;
 struct Human { id: String }
 struct Droid { id: String }
@@ -60,16 +59,16 @@ impl Character for Droid {
 }
 
 graphql_object!(Human: Database as "Human" |&self| {
-    field id() -> FieldResult<&str> { Ok(&self.id) }
+    field id() -> &str { &self.id }
 });
 
 graphql_object!(Droid: Database as "Droid" |&self| {
-    field id() -> FieldResult<&str> { Ok(&self.id) }
+    field id() -> &str { &self.id }
 });
 
 // You can introduce lifetimes or generic parameters by < > before the name.
 graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
-    field id() -> FieldResult<&str> { Ok(self.id()) }
+    field id() -> &str { self.id() }
 
     instance_resolvers: |&context| [
         context.humans.get(self.id()),
@@ -97,9 +96,8 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t)
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name)))
                 .description($desc)
                 .deprecated($reason),
             $args));
@@ -116,9 +114,8 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t)
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name)))
                 .deprecated($reason),
             $args));
 
@@ -134,9 +131,8 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t)
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name)))
                 .description($desc),
             $args));
 
@@ -152,9 +148,8 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t),
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name))),
             $args));
 
         graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*);

@@ -3,7 +3,7 @@ use value::Value;
 
 use schema::meta::MetaType;
 
-use executor::{Executor, Registry};
+use executor::{Executor, Registry, FieldResult, IntoFieldResult};
 use types::base::GraphQLType;
 
 /// An ID as defined by the GraphQL specification
@@ -59,6 +59,13 @@ impl<'a> ToInputValue for &'a str {
         InputValue::string(self)
     }
 }
+
+impl<'a> IntoFieldResult<&'a str> for &'a str {
+    fn into(self) -> FieldResult<&'a str> {
+        Ok(self)
+    }
+}
+
 
 
 graphql_scalar!(bool as "Boolean" {
@@ -117,5 +124,11 @@ impl<CtxT> GraphQLType<CtxT> for () {
 impl FromInputValue for () {
     fn from(_: &InputValue) -> Option<()> {
         None
+    }
+}
+
+impl IntoFieldResult<()> for () {
+    fn into(self) -> FieldResult<()> {
+        Ok(self)
     }
 }

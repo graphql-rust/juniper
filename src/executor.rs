@@ -61,6 +61,23 @@ pub type FieldResult<T> = Result<T, String>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult = Result<Value, String>;
 
+/// Convert a value into a successful field result
+///
+/// Used by the helper macros to support both returning a naked value
+/// *and* a `FieldResult` from a field.
+pub trait IntoFieldResult<T>: Sized {
+    /// Wrap `self` in a `Result`
+    ///
+    /// The implementation of this should always be `Ok(self)`.
+    fn into(self) -> FieldResult<T>;
+}
+
+impl<T> IntoFieldResult<T> for FieldResult<T> {
+    fn into(self) -> FieldResult<T> {
+        self
+    }
+}
+
 impl<'a, CtxT> Executor<'a, CtxT> {
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub fn resolve<T: GraphQLType<CtxT>>(&mut self, value: &T) -> ExecutionResult {
@@ -289,6 +306,17 @@ impl<CtxT> Registry<CtxT> {
             description: None,
             arguments: None,
             field_type: self.get_type::<T>(),
+            deprecation_reason: None,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn field_convert<T: IntoFieldResult<I>, I>(&mut self, name: &str) -> Field where I: GraphQLType<CtxT> {
+        Field {
+            name: name.to_owned(),
+            description: None,
+            arguments: None,
+            field_type: self.get_type::<I>(),
             deprecation_reason: None,
         }
     }

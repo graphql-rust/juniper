@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use executor::FieldResult;
 use value::Value;
 use schema::model::RootNode;
 
@@ -20,49 +19,49 @@ Syntax to validate:
 */
 
 graphql_object!(Root: () as "Root" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
-    field exec_arg(&mut executor) -> FieldResult<i64> { Ok(0) }
-    field exec_arg_and_more(&mut executor, arg: i64) -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
+    field exec_arg(&mut executor) -> i64 { 0 }
+    field exec_arg_and_more(&mut executor, arg: i64) -> i64 { 0 }
 
-    field single_arg(arg: i64) -> FieldResult<i64> { Ok(0) }
+    field single_arg(arg: i64) -> i64 { 0 }
     field multi_args(
         arg1: i64,
         arg2: i64
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
     field multi_args_trailing_comma(
         arg1: i64,
         arg2: i64,
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
 
-    field single_arg_descr(arg: i64 as "The arg") -> FieldResult<i64> { Ok(0) }
+    field single_arg_descr(arg: i64 as "The arg") -> i64 { 0 }
     field multi_args_descr(
         arg1: i64 as "The first arg",
         arg2: i64 as "The second arg"
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
     field multi_args_descr_trailing_comma(
         arg1: i64 as "The first arg",
         arg2: i64 as "The second arg",
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
 
-    field arg_with_default(arg = 123: i64) -> FieldResult<i64> { Ok(0) }
+    field arg_with_default(arg = 123: i64) -> i64 { 0 }
     field multi_args_with_default(
         arg1 = 123: i64,
         arg2 = 456: i64
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
     field multi_args_with_default_trailing_comma(
         arg1 = 123: i64,
         arg2 = 456: i64,
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
 
-    field arg_with_default_descr(arg = 123: i64 as "The arg") -> FieldResult<i64> { Ok(0) }
+    field arg_with_default_descr(arg = 123: i64 as "The arg") -> i64 { 0 }
     field multi_args_with_default_descr(
         arg1 = 123: i64 as "The first arg",
         arg2 = 456: i64 as "The second arg"
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
     field multi_args_with_default_trailing_comma_descr(
         arg1 = 123: i64 as "The first arg",
         arg2 = 456: i64 as "The second arg",
-    ) -> FieldResult<i64> { Ok(0) }
+    ) -> i64 { 0 }
 });
 
 fn run_args_info_query<F>(field_name: &str, f: F)

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use executor::FieldResult;
 use value::Value;
 use schema::model::RootNode;
 
@@ -59,12 +58,12 @@ graphql_enum!(EnumDeprecation {
 });
 
 graphql_object!(Root: () as "Root" |&self| {
-    field default_name() -> FieldResult<DefaultName> { Ok(DefaultName::Foo) }
-    field named() -> FieldResult<Named> { Ok(Named::Foo) }
-    field no_trailing_comma() -> FieldResult<NoTrailingComma> { Ok(NoTrailingComma::Foo) }
-    field enum_description() -> FieldResult<EnumDescription> { Ok(EnumDescription::Foo) }
-    field enum_value_description() -> FieldResult<EnumValueDescription> { Ok(EnumValueDescription::Foo) }
-    field enum_deprecation() -> FieldResult<EnumDeprecation> { Ok(EnumDeprecation::Foo) }
+    field default_name() -> DefaultName { DefaultName::Foo }
+    field named() -> Named { Named::Foo }
+    field no_trailing_comma() -> NoTrailingComma { NoTrailingComma::Foo }
+    field enum_description() -> EnumDescription { EnumDescription::Foo }
+    field enum_value_description() -> EnumValueDescription { EnumValueDescription::Foo }
+    field enum_deprecation() -> EnumDeprecation { EnumDeprecation::Foo }
 });
 
 fn run_type_info_query<F>(doc: &str, f: F) where F: Fn((&HashMap<String, Value>, &Vec<Value>)) -> () {

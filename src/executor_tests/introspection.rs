@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use executor::FieldResult;
 use value::Value;
 use schema::model::RootNode;
 
@@ -32,9 +31,9 @@ graphql_enum!(Sample as "SampleEnum" {
 
 graphql_interface!(Interface: () as "SampleInterface" |&self| {
     description: "A sample interface"
-    
-    field sample_enum() -> FieldResult<Sample> as "A sample field in the interface" {
-        Ok(Sample::One)
+
+    field sample_enum() -> Sample as "A sample field in the interface" {
+        Sample::One
     }
 
     instance_resolvers: |&_| [
@@ -47,15 +46,15 @@ graphql_object!(Root: () as "Root" |&self| {
 
     interfaces: [Interface]
 
-    field sample_enum() -> FieldResult<Sample> {
-        Ok(Sample::One)
+    field sample_enum() -> Sample {
+        Sample::One
     }
 
     field sample_scalar(
-        first: i64 as "The first number", 
+        first: i64 as "The first number",
         second = 123: i64 as "The second number"
-    ) -> FieldResult<Scalar> as "A sample scalar field on the object" {
-        Ok(Scalar(first + second))
+    ) -> Scalar as "A sample scalar field on the object" {
+        Scalar(first + second)
     }
 });
 
@@ -121,7 +120,7 @@ fn enum_introspection() {
 
     assert_eq!(type_info.get("name"), Some(&Value::string("SampleEnum")));
     assert_eq!(type_info.get("kind"), Some(&Value::string("ENUM")));
-    assert_eq!(type_info.get("description"), Some(&Value::null())); 
+    assert_eq!(type_info.get("description"), Some(&Value::null()));
     assert_eq!(type_info.get("interfaces"), Some(&Value::null()));
     assert_eq!(type_info.get("possibleTypes"), Some(&Value::null()));
     assert_eq!(type_info.get("inputFields"), Some(&Value::null()));

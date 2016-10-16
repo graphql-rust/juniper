@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use executor::FieldResult;
 use value::Value;
 use schema::model::RootNode;
 
@@ -63,10 +62,10 @@ graphql_scalar!(ScalarDescription {
 });
 
 graphql_object!(Root: () as "Root" |&self| {
-    field default_name() -> FieldResult<DefaultName> { Ok(DefaultName(0)) }
-    field other_order() -> FieldResult<OtherOrder> { Ok(OtherOrder(0)) }
-    field named() -> FieldResult<Named> { Ok(Named(0)) }
-    field scalar_description() -> FieldResult<ScalarDescription> { Ok(ScalarDescription(0)) }
+    field default_name() -> DefaultName { DefaultName(0) }
+    field other_order() -> OtherOrder { OtherOrder(0) }
+    field named() -> Named { Named(0) }
+    field scalar_description() -> ScalarDescription { ScalarDescription(0) }
 });
 
 fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>) -> () {

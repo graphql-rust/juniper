@@ -28,8 +28,8 @@ existing object types as GraphQL objects:
 
 ```rust
 #[macro_use] extern crate juniper;
-use juniper::FieldResult;
 # use std::collections::HashMap;
+use juniper::FieldResult;
 
 struct User { id: String, name: String, friend_ids: Vec<String>  }
 struct QueryRoot;
@@ -42,15 +42,19 @@ struct Database { users: HashMap<String, User> }
 graphql_object!(User: Database as "User" |&self| {
 
     // Expose a simple field as a GraphQL string.
+    field id() -> &String {
+        &self.id
+    }
+
+    field name() -> &String {
+        &self.name
+    }
+
     // FieldResult<T> is an alias for Result<T, String> - simply return
     // a string from this method and it will be correctly inserted into
     // the execution response.
-    field id() -> FieldResult<&String> {
-        Ok(&self.id)
-    }
-
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
+    field secret() -> FieldResult<&String> {
+        Err("Can't touch this".to_owned())
     }
 
     // Field accessors can optionally take an "executor" as their first
@@ -59,10 +63,10 @@ graphql_object!(User: Database as "User" |&self| {
     //
     // In this example, the context is used to convert the friend_ids array
     // into actual User objects.
-    field friends(&mut executor) -> FieldResult<Vec<&User>> {
-        Ok(self.friend_ids.iter()
+    field friends(&mut executor) -> Vec<&User> {
+        self.friend_ids.iter()
             .filter_map(|id| executor.context().users.get(id))
-            .collect())
+            .collect()
     }
 });
 
@@ -71,8 +75,8 @@ graphql_object!(User: Database as "User" |&self| {
 graphql_object!(QueryRoot: Database as "Query" |&self| {
 
     // Arguments work just like they do on functions.
-    field user(&mut executor, id: String) -> FieldResult<Option<&User>> {
-        Ok(executor.context().users.get(&id))
+    field user(&mut executor, id: String) -> Option<&User> {
+        executor.context().users.get(&id)
     }
 });
 
@@ -197,13 +201,13 @@ use rustc_serialize::json::{ToJson, Json};
 
 use parser::{parse_document_source, ParseError, Spanning, SourcePosition};
 use validation::{RuleError, ValidatorContext, visit_all_rules};
+use executor::execute_validated_query;
 
 pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
 pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use executor::{
-    Executor, Registry, ExecutionResult, ExecutionError, FieldResult,
-    execute_validated_query,
+    Executor, Registry, ExecutionResult, ExecutionError, FieldResult, IntoFieldResult,
 };
 pub use types::scalars::ID;
 pub use schema::model::RootNode;

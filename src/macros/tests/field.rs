@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use executor::FieldResult;
 use value::Value;
 use ast::InputValue;
 use schema::model::RootNode;
@@ -19,29 +18,29 @@ Syntax to validate:
 */
 
 graphql_object!(Root: () as "Root" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 
-    field description() -> FieldResult<i64> as "Field description" { Ok(0) }
-
-    field deprecated "Deprecation reason"
-        deprecated() -> FieldResult<i64> { Ok(0) }
+    field description() -> i64 as "Field description" { 0 }
 
     field deprecated "Deprecation reason"
-        deprecated_descr() -> FieldResult<i64> as "Field description" { Ok(0) }
+        deprecated() -> i64 { 0 }
+
+    field deprecated "Deprecation reason"
+        deprecated_descr() -> i64 as "Field description" { 0 }
 
     interfaces: [Interface]
 });
 
 graphql_interface!(Interface: () as "Interface" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 
-    field description() -> FieldResult<i64> as "Field description" { Ok(0) }
-
-    field deprecated "Deprecation reason"
-        deprecated() -> FieldResult<i64> { Ok(0) }
+    field description() -> i64 as "Field description" { 0 }
 
     field deprecated "Deprecation reason"
-        deprecated_descr() -> FieldResult<i64> as "Field description" { Ok(0) }
+        deprecated() -> i64 { 0 }
+
+    field deprecated "Deprecation reason"
+        deprecated_descr() -> i64 as "Field description" { 0 }
 
     instance_resolvers: |&_| [
         Some(Root {}),

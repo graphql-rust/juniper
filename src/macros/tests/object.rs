@@ -1,7 +1,7 @@
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use ast::InputValue;
-use executor::FieldResult;
 use value::Value;
 use schema::model::RootNode;
 
@@ -20,8 +20,11 @@ struct Interface;
 
 struct DefaultName;
 
-struct WithLifetime;
-struct WithGenerics;
+#[allow(dead_code)]
+struct WithLifetime<'a> { data: PhantomData<&'a i64> }
+
+#[allow(dead_code)]
+struct WithGenerics<T> { data: T }
 
 struct DescriptionFirst;
 struct FieldsFirst;
@@ -33,20 +36,21 @@ struct CommasOnMeta;
 struct Root;
 
 graphql_object!(DefaultName: () |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 });
 
 
-graphql_object!(<'a> &'a WithLifetime: () as "WithLifetime" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+graphql_object!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
+    field simple() -> i64 { 0 }
 });
 
-graphql_object!(<CtxT> WithGenerics: CtxT as "WithGenerics" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+graphql_object!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
+    field simple() -> i64 { 0 }
 });
+
 
 graphql_interface!(Interface: () as "Interface" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 
     instance_resolvers: |_| [
         Some(DescriptionFirst {}),
@@ -56,13 +60,13 @@ graphql_interface!(Interface: () as "Interface" |&self| {
 graphql_object!(DescriptionFirst: () as "DescriptionFirst" |&self| {
     description: "A description"
 
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 
     interfaces: [Interface]
 });
 
 graphql_object!(FieldsFirst: () as "FieldsFirst" |&self| {
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 
     description: "A description"
 
@@ -72,7 +76,7 @@ graphql_object!(FieldsFirst: () as "FieldsFirst" |&self| {
 graphql_object!(InterfacesFirst: () as "InterfacesFirst" |&self| {
     interfaces: [Interface]
 
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 
     description: "A description"
 });
@@ -80,7 +84,7 @@ graphql_object!(InterfacesFirst: () as "InterfacesFirst" |&self| {
 graphql_object!(CommasWithTrailing: () as "CommasWithTrailing" |&self| {
     interfaces: [Interface],
 
-    field simple() -> FieldResult<i64> { Ok(0) },
+    field simple() -> i64 { 0 },
 
     description: "A description",
 });
@@ -90,21 +94,21 @@ graphql_object!(CommasOnMeta: () as "CommasOnMeta" |&self| {
     interfaces: [Interface],
     description: "A description",
 
-    field simple() -> FieldResult<i64> { Ok(0) }
+    field simple() -> i64 { 0 }
 });
 
-graphql_object!(Root: () as "Root" |&self| {
-    field default_name() -> FieldResult<DefaultName> { Ok(DefaultName {}) }
+graphql_object!(<'a> Root: () as "Root" |&self| {
+    field default_name() -> DefaultName { DefaultName {} }
 
-    field with_lifetime() -> FieldResult<&WithLifetime> { Err("Nope".to_owned()) }
-    field with_generics() -> FieldResult<WithGenerics> { Ok(WithGenerics {}) }
+    field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
+    field with_generics() -> WithGenerics<i64> { WithGenerics { data: 123 } }
 
-    field description_first() -> FieldResult<DescriptionFirst> { Ok(DescriptionFirst {}) }
-    field fields_first() -> FieldResult<FieldsFirst> { Ok(FieldsFirst {}) }
-    field interfaces_first() -> FieldResult<InterfacesFirst> { Ok(InterfacesFirst {}) }
+    field description_first() -> DescriptionFirst { DescriptionFirst {} }
+    field fields_first() -> FieldsFirst { FieldsFirst {} }
+    field interfaces_first() -> InterfacesFirst { InterfacesFirst {} }
 
-    field commas_with_trailing() -> FieldResult<CommasWithTrailing> { Ok(CommasWithTrailing {}) }
-    field commas_on_meta() -> FieldResult<CommasOnMeta> { Ok(CommasOnMeta {}) }
+    field commas_with_trailing() -> CommasWithTrailing { CommasWithTrailing {} }
+    field commas_on_meta() -> CommasOnMeta { CommasOnMeta {} }
 });
 
 

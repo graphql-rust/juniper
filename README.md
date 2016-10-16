@@ -132,7 +132,7 @@ as well.
     * [X] `graphql_input_object!` helper completely missing
     * [X] Add support for deprecating things
     * [X] Custom enum values and descriptions
-    * [ ] Improved syntax for fields that can't fail resolution - make
+    * [X] Improved syntax for fields that can't fail resolution - make
       `FieldResult<T>` optional maybe?
 * [ ] Investigate asynchronous execution - implementing it is not necessary, but
   at least look at what API changes will be needed for us to hook into

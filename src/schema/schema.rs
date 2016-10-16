@@ -1,7 +1,7 @@
 use rustc_serialize::json::ToJson;
 
 use types::base::{GraphQLType, Arguments, TypeKind};
-use executor::{Executor, Registry, FieldResult, ExecutionResult};
+use executor::{Executor, Registry, ExecutionResult};
 
 use schema::meta::{MetaType, ObjectMeta, EnumMeta, InputObjectMeta, UnionMeta, InterfaceMeta,
                    Field, Argument, EnumValue};
@@ -32,48 +32,48 @@ impl<CtxT, QueryT, MutationT> GraphQLType<CtxT> for RootNode<CtxT, QueryT, Mutat
 }
 
 graphql_object!(SchemaType: SchemaType as "__Schema" |&self| {
-    field types() -> FieldResult<Vec<TypeType>> {
-        Ok(self.type_list())
+    field types() -> Vec<TypeType> {
+        self.type_list()
     }
 
-    field query_type() -> FieldResult<TypeType> {
-        Ok(self.query_type())
+    field query_type() -> TypeType {
+        self.query_type()
     }
 
-    field mutation_type() -> FieldResult<Option<TypeType>> {
-        Ok(self.mutation_type())
+    field mutation_type() -> Option<TypeType> {
+        self.mutation_type()
     }
 
-    field directives() -> FieldResult<Vec<&DirectiveType>> {
-        Ok(self.directive_list())
+    field directives() -> Vec<&DirectiveType> {
+        self.directive_list()
     }
 });
 
 graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
-    field name() -> FieldResult<Option<&str>> {
-        Ok(match *self {
+    field name() -> Option<&str> {
+        match *self {
             TypeType::Concrete(t) => t.name(),
             _ => None,
-        })
+        }
     }
 
-    field description() -> FieldResult<Option<&String>> {
-        Ok(match *self {
+    field description() -> Option<&String> {
+        match *self {
             TypeType::Concrete(t) => t.description(),
             _ => None,
-        })
+        }
     }
 
-    field kind() -> FieldResult<TypeKind> {
-        Ok(match *self {
+    field kind() -> TypeKind {
+        match *self {
             TypeType::Concrete(t) => t.type_kind(),
             TypeType::List(_) => TypeKind::List,
             TypeType::NonNull(_) => TypeKind::NonNull,
-        })
+        }
     }
 
-    field fields(include_deprecated = false: bool) -> FieldResult<Option<Vec<&Field>>> {
-        Ok(match *self {
+    field fields(include_deprecated = false: bool) -> Option<Vec<&Field>> {
+        match *self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. })) |
             TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) =>
                 Some(fields
@@ -81,26 +81,26 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
                     .filter(|f| include_deprecated || f.deprecation_reason.is_none())
                     .collect()),
             _ => None,
-        })
+        }
     }
 
-    field of_type() -> FieldResult<Option<&TypeType>> {
-        Ok(match *self {
+    field of_type() -> Option<&TypeType> {
+        match *self {
             TypeType::Concrete(_) => None,
             TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),
-        })
+        }
     }
 
-    field input_fields() -> FieldResult<Option<&Vec<Argument>>> {
-        Ok(match *self {
+    field input_fields() -> Option<&Vec<Argument>> {
+        match *self {
             TypeType::Concrete(&MetaType::InputObject(InputObjectMeta { ref input_fields, .. })) =>
                 Some(input_fields),
             _ => None,
-        })
+        }
     }
 
-    field interfaces(&mut executor) -> FieldResult<Option<Vec<TypeType>>> {
-        Ok(match *self {
+    field interfaces(&mut executor) -> Option<Vec<TypeType>> {
+        match *self {
             TypeType::Concrete(&MetaType::Object(ObjectMeta { ref interface_names, .. })) => {
                 let schema = executor.context();
                 Some(interface_names
@@ -109,12 +109,12 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
                     .collect())
             }
             _ => None,
-        })
+        }
     }
 
-    field possible_types(&mut executor) -> FieldResult<Option<Vec<TypeType>>> {
+    field possible_types(&mut executor) -> Option<Vec<TypeType>> {
         let schema = executor.context();
-        Ok(match *self {
+        match *self {
             TypeType::Concrete(&MetaType::Union(UnionMeta { ref of_type_names, .. })) => {
                 Some(of_type_names
                     .iter()
@@ -134,80 +134,80 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
                     .collect())
             }
             _ => None,
-        })
+        }
     }
 
-    field enum_values(include_deprecated = false: bool) -> FieldResult<Option<Vec<&EnumValue>>> {
-        Ok(match *self {
+    field enum_values(include_deprecated = false: bool) -> Option<Vec<&EnumValue>> {
+        match *self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) =>
                 Some(values
                     .iter()
                     .filter(|f| include_deprecated || f.deprecation_reason.is_none())
                     .collect()),
             _ => None,
-        })
+        }
     }
 });
 
 graphql_object!(Field: SchemaType as "__Field" |&self| {
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
+    field name() -> &String {
+        &self.name
     }
 
-    field description() -> FieldResult<&Option<String>> {
-        Ok(&self.description)
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    field args() -> FieldResult<Vec<&Argument>> {
-        Ok(self.arguments.as_ref().map_or_else(|| Vec::new(), |v| v.iter().collect()))
+    field args() -> Vec<&Argument> {
+        self.arguments.as_ref().map_or_else(|| Vec::new(), |v| v.iter().collect())
     }
 
-    field type(&mut executor) -> FieldResult<TypeType> {
-        Ok(executor.context().make_type(&self.field_type))
+    field type(&mut executor) -> TypeType {
+        executor.context().make_type(&self.field_type)
     }
 
-    field is_deprecated() -> FieldResult<bool> {
-        Ok(self.deprecation_reason.is_some())
+    field is_deprecated() -> bool {
+        self.deprecation_reason.is_some()
     }
 
-    field deprecation_reason() -> FieldResult<&Option<String>> {
-        Ok(&self.deprecation_reason)
+    field deprecation_reason() -> &Option<String> {
+        &self.deprecation_reason
     }
 });
 
 graphql_object!(Argument: SchemaType as "__InputValue" |&self| {
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
+    field name() -> &String {
+        &self.name
     }
 
-    field description() -> FieldResult<&Option<String>> {
-        Ok(&self.description)
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    field type(&mut executor) -> FieldResult<TypeType> {
-        Ok(executor.context().make_type(&self.arg_type))
+    field type(&mut executor) -> TypeType {
+        executor.context().make_type(&self.arg_type)
     }
 
-    field default_value() -> FieldResult<Option<String>> {
-        Ok(self.default_value.as_ref().map(|v| v.to_json().to_string()))
+    field default_value() -> Option<String> {
+        self.default_value.as_ref().map(|v| v.to_json().to_string())
     }
 });
 
 graphql_object!(EnumValue: SchemaType as "__EnumValue" |&self| {
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
+    field name() -> &String {
+        &self.name
     }
 
-    field description() -> FieldResult<&Option<String>> {
-        Ok(&self.description)
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    field is_deprecated() -> FieldResult<bool> {
-        Ok(self.deprecation_reason.is_some())
+    field is_deprecated() -> bool {
+        self.deprecation_reason.is_some()
     }
 
-    field deprecation_reason() -> FieldResult<&Option<String>> {
-        Ok(&self.deprecation_reason)
+    field deprecation_reason() -> &Option<String> {
+        &self.deprecation_reason
     }
 });
 
@@ -224,20 +224,20 @@ graphql_enum!(TypeKind as "__TypeKind" {
 
 
 graphql_object!(DirectiveType: SchemaType as "__Directive" |&self| {
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
+    field name() -> &String {
+        &self.name
     }
 
-    field description() -> FieldResult<&Option<String>> {
-        Ok(&self.description)
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    field locations() -> FieldResult<&Vec<DirectiveLocation>> {
-        Ok(&self.locations)
+    field locations() -> &Vec<DirectiveLocation> {
+        &self.locations
     }
 
-    field args() -> FieldResult<&Vec<Argument>> {
-        Ok(&self.arguments)
+    field args() -> &Vec<Argument> {
+        &self.arguments
     }
 });
 

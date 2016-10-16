@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use ast::{InputValue, FromInputValue};
-use executor::FieldResult;
 use value::Value;
 use schema::model::RootNode;
 
@@ -57,8 +56,8 @@ graphql_object!(Root: () as "Root" |&self| {
         a4: Named,
         a5: Description,
         a6: FieldDescription
-    ) -> FieldResult<i64> {
-        Ok(0)
+    ) -> i64 {
+        0
     }
 });
 

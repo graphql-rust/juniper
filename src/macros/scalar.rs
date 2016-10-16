@@ -92,6 +92,12 @@ macro_rules! graphql_scalar {
                 $fiv_body
             }
         }
+
+        impl $crate::IntoFieldResult<$name> for $name {
+            fn into(self) -> $crate::FieldResult<$name> {
+                Ok(self)
+            }
+        }
     };
 
     // No more items to parse

@@ -11,23 +11,22 @@ The simplest case exposes fields on a struct:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 struct User { id: String, name: String, group_ids: Vec<String> }
 
 graphql_object!(User: () as "User" |&self| {
-    field id() -> FieldResult<&String> {
-        Ok(&self.id)
+    field id() -> &String {
+        &self.id
     }
 
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
+    field name() -> &String {
+        &self.name
     }
 
     // Field and argument names will be converted from snake case to camel case,
     // as is the common naming convention in GraphQL. The following field would
     // be named "memberOfGroup", and the argument "groupId".
-    field member_of_group(group_id: String) -> FieldResult<bool> {
-        Ok(self.group_ids.iter().any(|gid| gid == &group_id))
+    field member_of_group(group_id: String) -> bool {
+        self.group_ids.iter().any(|gid| gid == &group_id)
     }
 });
 
@@ -41,24 +40,23 @@ arguments:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 struct User { id: String, name: String, group_ids: Vec<String> }
 
 graphql_object!(User: () as "User" |&self| {
     description: "A user in the database"
 
-    field id() -> FieldResult<&String> as "The user's unique identifier" {
-        Ok(&self.id)
+    field id() -> &String as "The user's unique identifier" {
+        &self.id
     }
 
-    field name() -> FieldResult<&String> as "The user's name" {
-        Ok(&self.name)
+    field name() -> &String as "The user's name" {
+        &self.name
     }
 
     field member_of_group(
         group_id: String as "The group id you want to test membership against"
-    ) -> FieldResult<bool> as "Test if a user is member of a group" {
-        Ok(self.group_ids.iter().any(|gid| gid == &group_id))
+    ) -> bool as "Test if a user is member of a group" {
+        self.group_ids.iter().any(|gid| gid == &group_id)
     }
 });
 
@@ -72,26 +70,16 @@ generic parameters:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 trait SomeTrait { fn id(&self) -> &str; }
 
 graphql_object!(<'a> &'a SomeTrait: () as "SomeTrait" |&self| {
-    field id() -> FieldResult<&str> { Ok(self.id()) }
+    field id() -> &str { self.id() }
 });
 
 struct GenericType<T> { items: Vec<T> }
 
 graphql_object!(<T> GenericType<T>: () as "GenericType" |&self| {
-    field count() -> FieldResult<i64> { Ok(self.items.len() as i64) }
-});
-
-struct SelfContained { name: String }
-
-// If the type does not require access to a specific context, you can make it
-// generic on the context type. This statically ensures that the fields only
-// can access what's available from the type itself.
-graphql_object!(<Context> SelfContained: Context as "SelfContained" |&self| {
-    field name() -> FieldResult<&String> { Ok(&self.name) }
+    field count() -> i64 { self.items.len() as i64 }
 });
 
 # fn main() { }
@@ -103,7 +91,6 @@ You can use the `interfaces` item to implement interfaces:
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::FieldResult;
 trait Interface {
     fn id(&self) -> &str;
     fn as_implementor(&self) -> Option<Implementor>;
@@ -111,7 +98,7 @@ trait Interface {
 struct Implementor { id: String }
 
 graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
-    field id() -> FieldResult<&str> { Ok(self.id()) }
+    field id() -> &str { self.id() }
 
     instance_resolvers: |&context| [
         self.as_implementor(),
@@ -119,7 +106,7 @@ graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
 });
 
 graphql_object!(Implementor: () as "Implementor" |&self| {
-    field id() -> FieldResult<&str> { Ok(&self.id) }
+    field id() -> &str { &self.id }
 
     interfaces: [&Interface]
 });
@@ -194,8 +181,10 @@ need to have any connection, only what's exposed in the schema matters.
 ### Fields
 
 ```text
-field name(args...) -> FieldResult<Type> { }
-field name(args...) -> FieldResult<Type> as "Field description" { }
+field name(args...) -> Type { }
+field name(args...) -> Type as "Field description" { }
+field deprecated "Reason" name(args...) -> Type { }
+field deprecated "Reason" name(args...) -> Type as "Field description" { }
 ```
 
 Defines a field on the object. The name is converted to camel case, e.g.
@@ -248,9 +237,8 @@ macro_rules! graphql_object {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t)
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name)))
                 .description($desc)
                 .deprecated($reason),
             $args));
@@ -267,9 +255,8 @@ macro_rules! graphql_object {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t)
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name)))
                 .deprecated($reason),
             $args));
 
@@ -285,9 +272,8 @@ macro_rules! graphql_object {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t)
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name)))
                 .description($desc),
             $args));
 
@@ -303,9 +289,8 @@ macro_rules! graphql_object {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_inside_result(
-                &$crate::to_snake_case(stringify!($name)),
-                Err("dummy".to_owned()) as $t),
+            $reg.field_convert::<$t, _>(
+                &$crate::to_snake_case(stringify!($name))),
             $args));
 
         graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
@@ -407,6 +392,12 @@ macro_rules! graphql_object {
                     $($items)*);
             }
         });
+
+        impl<$($lifetime)*> $crate::IntoFieldResult<$name> for $name {
+            fn into(self) -> $crate::FieldResult<$name> {
+                Ok(self)
+            }
+        }
     };
 
     (
