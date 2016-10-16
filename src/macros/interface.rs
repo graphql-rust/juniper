@@ -175,7 +175,12 @@ macro_rules! graphql_interface {
         graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*)
     };
 
-    ( @gather_meta, $reg:expr, $acc:expr, $descr:expr, $(,)* ) => {};
+    ( @gather_meta, $reg:expr, $acc:expr, $descr:expr, , $( $rest:tt )* ) => {
+        graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*)
+    };
+
+    ( @gather_meta, $reg:expr, $acc:expr, $descr:expr, ) => {
+    };
 
     // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
     (
@@ -269,7 +274,7 @@ macro_rules! graphql_interface {
     (
         @concrete_type_name,
         ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
-        instance_resolvers : | $ctxtvar:pat | [ $( $resolver:expr , )* ] $( $rest:tt )*
+        instance_resolvers : | $ctxtvar:pat | [ $( $resolver:expr ),* $(,)* ] $( $rest:tt )*
     ) => {
         let $ctxtvar = &$ctxtarg;
 
@@ -294,7 +299,7 @@ macro_rules! graphql_interface {
     (
         @resolve_into_type,
         ($outname:tt, $typenamearg:ident, $execarg:ident, $ctxttype:ty),
-        instance_resolvers : | $ctxtvar:pat | [ $( $resolver:expr , )* ] $( $rest:tt )*
+        instance_resolvers : | $ctxtvar:pat | [ $( $resolver:expr ),* $(,)* ] $( $rest:tt )*
     ) => {
         let $ctxtvar = &$execarg.context();
 
@@ -362,6 +367,12 @@ macro_rules! graphql_interface {
                     $($items)*);
             }
         });
+
+        impl<$($lifetime)*> $crate::IntoFieldResult<$name> for $name {
+            fn into(self) -> $crate::FieldResult<$name> {
+                Ok(self)
+            }
+        }
     };
 
     (
@@ -379,5 +390,13 @@ macro_rules! graphql_interface {
         }
     ) => {
         graphql_interface!(() $name : $ctxt as $outname | &$mainself | { $( $items )* });
+    };
+
+    (
+        $name:ty : $ctxt:ty | &$mainself:ident | {
+            $( $items:tt )*
+        }
+    ) => {
+        graphql_interface!(() $name : $ctxt as (stringify!($name)) | &$mainself | { $( $items )* });
     };
 }
