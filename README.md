@@ -129,8 +129,9 @@ as well.
     * [ ] General input value type checking and validation
 * [ ] Improve helper macros
     * [ ] `graphql_union!` helper completely missing
-    * [ ] Add support for deprecating things
-    * [ ] Custom enum values and descriptions
+    * [X] `graphql_input_object!` helper completely missing
+    * [X] Add support for deprecating things
+    * [X] Custom enum values and descriptions
     * [ ] Improved syntax for fields that can't fail resolution - make
       `FieldResult<T>` optional maybe?
 * [ ] Investigate asynchronous execution - implementing it is not necessary, but
