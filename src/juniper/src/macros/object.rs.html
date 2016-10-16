@@ -421,6 +421,48 @@
 <span id="377">377</span>
 <span id="378">378</span>
 <span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
 </pre><pre class='rust '>
 <span class='doccomment'>/**
 Expose GraphQL objects
@@ -663,6 +705,44 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
     ( @<span class='ident'>as_item</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>item</span>) <span class='op'>=&gt;</span> { <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span> };
     ( @<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>e</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> { <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>e</span> };
 
+    <span class='comment'>// field deprecated &lt;reason&gt; &lt;name&gt;(...) -&gt; &lt;type&gt; as &lt;description&gt; { ... }</span>
+    (
+        @<span class='ident'>gather_object_meta</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> {
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>.<span class='ident'>push</span>(<span class='macro'>__graphql__args</span><span class='macro'>!</span>(
+            @<span class='ident'>apply_args</span>,
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_inside_result</span>(
+                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
+                <span class='prelude-val'>Err</span>(<span class='string'>&quot;dummy&quot;</span>.<span class='ident'>to_owned</span>()) <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>)
+                .<span class='ident'>description</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>)
+                .<span class='ident'>deprecated</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>),
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>));
+
+        <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
+    };
+
+    <span class='comment'>// field deprecated &lt;reason&gt; &lt;name&gt;(...) -&gt; &lt;type&gt; { ... }</span>
+    (
+        @<span class='ident'>gather_object_meta</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> {
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>.<span class='ident'>push</span>(<span class='macro'>__graphql__args</span><span class='macro'>!</span>(
+            @<span class='ident'>apply_args</span>,
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>,
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>.<span class='ident'>field_inside_result</span>(
+                <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_snake_case</span>(<span class='macro'>stringify</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>)),
+                <span class='prelude-val'>Err</span>(<span class='string'>&quot;dummy&quot;</span>.<span class='ident'>to_owned</span>()) <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>)
+                .<span class='ident'>deprecated</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>),
+            <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>));
+
+        <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
+    };
+
+    <span class='comment'>// field &lt;name&gt;(...) -&gt; &lt;type&gt; as &lt;description&gt; { ... }</span>
     (
         @<span class='ident'>gather_object_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
@@ -680,6 +760,7 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
     };
 
+    <span class='comment'>// field &lt;name&gt;(...) -&gt; &lt;type&gt; { ... }</span>
     (
         @<span class='ident'>gather_object_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
@@ -696,6 +777,7 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>);
     };
 
+    <span class='comment'>// description: &lt;description&gt;</span>
     (
         @<span class='ident'>gather_object_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
@@ -706,6 +788,7 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>)
     };
 
+    <span class='comment'>// interfaces: [...]</span>
     (
         @<span class='ident'>gather_object_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>,
@@ -716,6 +799,7 @@ arg_name = &quot;default&quot;: String   -- optional &quot;default&quot; if unsp
         <span class='macro'>graphql_object</span><span class='macro'>!</span>(@<span class='ident'>gather_object_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>, $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span> )<span class='op'>*</span>)
     };
 
+    <span class='comment'>// base case</span>
     (
         @<span class='ident'>gather_object_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ifaces</span>:<span class='ident'>expr</span>, $(,)<span class='op'>*</span>

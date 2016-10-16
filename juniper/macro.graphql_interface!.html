@@ -47,11 +47,21 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-6083' class='srclink' href='../src/juniper/src/macros/interface.rs.html#87-317' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-6083' class='srclink' href='../src/juniper/src/macros/interface.rs.html#87-388' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_interface</span> {
     ( @<span class='ident'>as_item</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>item</span>) <span class='op'>=&gt;</span> { ... };
     ( @<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>e</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>gather_meta</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>desc</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>gather_meta</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
     (
         @<span class='ident'>gather_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>,
@@ -70,12 +80,22 @@
     (
         @<span class='ident'>gather_meta</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>,
-        <span class='ident'>instance_resolvers</span>: <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>execvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolvers</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        <span class='ident'>instance_resolvers</span>: <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolvers</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     ( @<span class='ident'>gather_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, $(,)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
     (
         @<span class='ident'>resolve_into_type</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>resolve_into_type</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>resolve_into_type</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>,
         <span class='ident'>field</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     (
@@ -88,8 +108,14 @@
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, <span class='ident'>description</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     (
-        @<span class='ident'>resolve_into_type</span>,
-        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, <span class='ident'>interfaces</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        @<span class='ident'>concrete_type_name</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @<span class='ident'>concrete_type_name</span>,
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>,
+        <span class='ident'>field</span> <span class='ident'>deprecated</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reason</span>:<span class='ident'>tt</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ident</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span> <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>body</span>:<span class='ident'>block</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     (
         @<span class='ident'>concrete_type_name</span>,
@@ -104,10 +130,6 @@
     (
         @<span class='ident'>concrete_type_name</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, <span class='ident'>description</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
-    ) <span class='op'>=&gt;</span> { ... };
-    (
-        @<span class='ident'>concrete_type_name</span>,
-        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, <span class='ident'>interfaces</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     (
         @<span class='ident'>concrete_type_name</span>,
