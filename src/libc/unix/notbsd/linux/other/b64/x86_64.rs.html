@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.16/src/unix/notbsd/linux/other/b64/x86_64.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.17/src/unix/notbsd/linux/other/b64/x86_64.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>x86_64.rs.html -- source</title>
@@ -277,6 +277,17 @@
 <span id="233">233</span>
 <span id="234">234</span>
 <span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! x86_64-specific definitions for 64-bit linux-like values</span>
 
@@ -429,6 +440,17 @@
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_SETFPXREGS</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>19</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_GETREGS</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>12</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_SETREGS</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>13</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_EXITKILL</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>1048576</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACECLONE</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>8</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACEEXEC</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>16</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACEEXIT</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>64</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACEFORK</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>2</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACESYSGOOD</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>1</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACEVFORK</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>4</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACEVFORKDONE</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>32</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_TRACESECCOMP</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>128</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_O_SUSPEND_SECCOMP</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>2097152</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PTRACE_PEEKSIGINFO_SHARED</span>: ::<span class='ident'>c_uint</span> <span class='op'>=</span> <span class='number'>1</span>;
 
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SYS_gettid</span>: ::<span class='ident'>c_long</span> <span class='op'>=</span> <span class='number'>186</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SYS_perf_event_open</span>: ::<span class='ident'>c_long</span> <span class='op'>=</span> <span class='number'>298</span>;

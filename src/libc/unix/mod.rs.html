@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.16/src/unix/mod.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.17/src/unix/mod.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>mod.rs.html -- source</title>
@@ -893,6 +893,17 @@
 <span id="849">849</span>
 <span id="850">850</span>
 <span id="851">851</span>
+<span id="852">852</span>
+<span id="853">853</span>
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Definitions found commonly among almost all Unix derivatives</span>
 <span class='doccomment'>//!</span>
@@ -1120,6 +1131,10 @@
         <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;c&quot;</span>)]</span>
         <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;m&quot;</span>)]</span>
         <span class='kw'>extern</span> {}
+    } <span class='kw'>else</span> <span class='kw'>if</span> <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;haiku&quot;</span>)]</span> {
+        <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;root&quot;</span>)]</span>
+        <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;network&quot;</span>)]</span>
+        <span class='kw'>extern</span> {}
     } <span class='kw'>else</span> {
         <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;c&quot;</span>)]</span>
         <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;m&quot;</span>)]</span>
@@ -1147,6 +1162,8 @@
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>fscanf</span>(<span class='ident'>stream</span>: <span class='op'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>FILE</span>, <span class='ident'>format</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>c_char</span>, ...) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>scanf</span>(<span class='ident'>format</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>c_char</span>, ...) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sscanf</span>(<span class='ident'>s</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>c_char</span>, <span class='ident'>format</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>c_char</span>, ...) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>getchar_unlocked</span>() <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>putchar_unlocked</span>(<span class='ident'>c</span>: ::<span class='ident'>c_int</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
 
     <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;netbsd&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;__socket30&quot;</span>)]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>socket</span>(<span class='ident'>domain</span>: ::<span class='ident'>c_int</span>, <span class='ident'>ty</span>: ::<span class='ident'>c_int</span>, <span class='ident'>protocol</span>: ::<span class='ident'>c_int</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
@@ -1539,6 +1556,10 @@
                <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;mktime$UNIX2003&quot;</span>)]</span>
     <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;netbsd&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;__mktime50&quot;</span>)]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>mktime</span>(<span class='ident'>tm</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>tm</span>) <span class='op'>-&gt;</span> <span class='ident'>time_t</span>;
+    <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;netbsd&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;__time50&quot;</span>)]</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>time</span>(<span class='ident'>time</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>time_t</span>) <span class='op'>-&gt;</span> <span class='ident'>time_t</span>;
+    <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;netbsd&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;__locatime50&quot;</span>)]</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>localtime</span>(<span class='ident'>time</span>: <span class='op'>*</span><span class='kw'>const</span> <span class='ident'>time_t</span>) <span class='op'>-&gt;</span> <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>tm</span>;
 
     <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;netbsd&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;__mknod50&quot;</span>)]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>mknod</span>(<span class='ident'>pathname</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>c_char</span>, <span class='ident'>mode</span>: ::<span class='ident'>mode_t</span>,
@@ -1616,8 +1637,6 @@
 <span class='comment'>// TODO: get rid of this cfg(not(...))</span>
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;android&quot;</span>))]</span> <span class='comment'>// &quot; if &quot; -- appease style checker</span>
 <span class='kw'>extern</span> {
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>getifaddrs</span>(<span class='ident'>ifap</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>ifaddrs</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>freeifaddrs</span>(<span class='ident'>ifa</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>ifaddrs</span>);
     <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;macos&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;glob$INODE64&quot;</span>)]</span>
     <span class='attribute'>#[<span class='ident'>cfg_attr</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;netbsd&quot;</span>, <span class='ident'>link_name</span> <span class='op'>=</span> <span class='string'>&quot;__glob30&quot;</span>)]</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>glob</span>(<span class='ident'>pattern</span>: <span class='op'>*</span><span class='kw'>const</span> <span class='ident'>c_char</span>,
@@ -1741,6 +1760,9 @@
     } <span class='kw'>else</span> <span class='kw'>if</span> <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;solaris&quot;</span>)]</span> {
         <span class='kw'>mod</span> <span class='ident'>solaris</span>;
         <span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>solaris</span>::<span class='op'>*</span>;
+    } <span class='kw'>else</span> <span class='kw'>if</span> <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;haiku&quot;</span>)]</span> {
+        <span class='kw'>mod</span> <span class='ident'>haiku</span>;
+        <span class='kw'>pub</span> <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>haiku</span>::<span class='op'>*</span>;
     } <span class='kw'>else</span> {
         <span class='comment'>// Unknown target_os</span>
     }

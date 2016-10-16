@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.16/src/unix/notbsd/mod.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.17/src/unix/notbsd/mod.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>mod.rs.html -- source</title>
@@ -901,6 +901,14 @@
 <span id="857">857</span>
 <span id="858">858</span>
 <span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
+<span id="867">867</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>dox</span>::<span class='ident'>mem</span>;
 
@@ -910,6 +918,7 @@
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>tcflag_t</span> <span class='op'>=</span> ::<span class='ident'>c_uint</span>;
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>loff_t</span> <span class='op'>=</span> ::<span class='ident'>c_longlong</span>;
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>clockid_t</span> <span class='op'>=</span> ::<span class='ident'>c_int</span>;
+<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>key_t</span> <span class='op'>=</span> ::<span class='ident'>c_int</span>;
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>id_t</span> <span class='op'>=</span> ::<span class='ident'>c_uint</span>;
 
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>timezone</span> {}
@@ -1338,6 +1347,7 @@
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AF_UNIX</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AF_INET</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>2</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AF_INET6</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>10</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AF_NETLINK</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>16</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SOCK_RAW</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>3</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>IPPROTO_TCP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>6</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>IPPROTO_IP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0</span>;
@@ -1370,6 +1380,8 @@
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>IPV6_V6ONLY</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>26</span>;
 
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SO_DEBUG</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>MSG_NOSIGNAL</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x4000</span>;
 
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SHUT_RD</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SHUT_WR</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
@@ -1747,6 +1759,10 @@
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>setns</span>(<span class='ident'>fd</span>: ::<span class='ident'>c_int</span>, <span class='ident'>nstype</span>: ::<span class='ident'>c_int</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sem_timedwait</span>(<span class='ident'>sem</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>sem_t</span>,
                          <span class='ident'>abstime</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>timespec</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>accept4</span>(<span class='ident'>fd</span>: ::<span class='ident'>c_int</span>, <span class='ident'>addr</span>: <span class='op'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>sockaddr</span>, <span class='ident'>len</span>: <span class='op'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>socklen_t</span>,
+                   <span class='ident'>flg</span>: ::<span class='ident'>c_int</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pthread_mutex_timedlock</span>(<span class='ident'>lock</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>pthread_mutex_t</span>,
+                                   <span class='ident'>abstime</span>: <span class='op'>*</span><span class='kw'>const</span> ::<span class='ident'>timespec</span>) <span class='op'>-&gt;</span> ::<span class='ident'>c_int</span>;
 }
 
 <span class='macro'>cfg_if</span><span class='macro'>!</span> {

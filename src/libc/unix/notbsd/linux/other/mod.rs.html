@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.16/src/unix/notbsd/linux/other/mod.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/libc-0.2.17/src/unix/notbsd/linux/other/mod.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>mod.rs.html -- source</title>
@@ -601,6 +601,67 @@
 <span id="557">557</span>
 <span id="558">558</span>
 <span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
 </pre><pre class='rust '>
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>fsblkcnt_t</span> <span class='op'>=</span> ::<span class='ident'>c_ulong</span>;
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>fsfilcnt_t</span> <span class='op'>=</span> ::<span class='ident'>c_ulong</span>;
@@ -964,11 +1025,9 @@
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>POSIX_FADV_NOREUSE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>5</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>POSIX_MADV_DONTNEED</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>4</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>_SC_2_C_VERSION</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>96</span>;
-<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>RUSAGE_THREAD</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>O_ACCMODE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>3</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>O_ASYNC</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x2000</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>O_NDELAY</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x800</span>;
-<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>RUSAGE_CHILDREN</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='op'>-</span><span class='number'>1</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>ST_RELATIME</span>: ::<span class='ident'>c_ulong</span> <span class='op'>=</span> <span class='number'>4096</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NI_MAXHOST</span>: ::<span class='ident'>socklen_t</span> <span class='op'>=</span> <span class='number'>1025</span>;
 
@@ -1088,6 +1147,69 @@
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>LINUX_REBOOT_CMD_RESTART2</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0xA1B2C3D4</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>LINUX_REBOOT_CMD_SW_SUSPEND</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0xD000FCE2</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>LINUX_REBOOT_CMD_KEXEC</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x45584543</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_ROUTE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_UNUSED</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_USERSOCK</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>2</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_FIREWALL</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>3</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_SOCK_DIAG</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>4</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_NFLOG</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>5</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_XFRM</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>6</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_SELINUX</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>7</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_ISCSI</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>8</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_AUDIT</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>9</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_FIB_LOOKUP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>10</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_CONNECTOR</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>11</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_NETFILTER</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>12</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_IP6_FW</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>13</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_DNRTMSG</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>14</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_KOBJECT_UEVENT</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>15</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_GENERIC</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>16</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_SCSITRANSPORT</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>18</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_ECRYPTFS</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>19</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_RDMA</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>20</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_CRYPTO</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>21</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_INET_DIAG</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='ident'>NETLINK_SOCK_DIAG</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>MAX_LINKS</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>32</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_REQUEST</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_MULTI</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>2</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_ACK</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>4</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_ECHO</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>8</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_DUMP_INTR</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>16</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_DUMP_FILTERED</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>32</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_ROOT</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x100</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_MATCH</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x200</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_ATOMIC</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x400</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_DUMP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='ident'>NLM_F_ROOT</span> <span class='op'>|</span> <span class='ident'>NLM_F_MATCH</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_REPLACE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x100</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_EXCL</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x200</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_CREATE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x400</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLM_F_APPEND</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x800</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLMSG_NOOP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x1</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLMSG_ERROR</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x2</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLMSG_DONE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x3</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLMSG_OVERRUN</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x4</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLMSG_MIN_TYPE</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0x10</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_ADD_MEMBERSHIP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_DROP_MEMBERSHIP</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>2</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_PKTINFO</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>3</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_BROADCAST_ERROR</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>4</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_NO_ENOBUFS</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>5</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_RX_RING</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>6</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_TX_RING</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>7</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_LISTEN_ALL_NSID</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>8</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_LIST_MEMBERSHIPS</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>9</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NETLINK_CAP_ACK</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>10</span>;
+
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLA_F_NESTED</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span> <span class='op'>&lt;&lt;</span> <span class='number'>15</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLA_F_NET_BYTEORDER</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span> <span class='op'>&lt;&lt;</span> <span class='number'>14</span>;
+<span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NLA_TYPE_MASK</span>: ::<span class='ident'>c_int</span> <span class='op'>=</span> <span class='op'>!</span>(<span class='ident'>NLA_F_NESTED</span> <span class='op'>|</span> <span class='ident'>NLA_F_NET_BYTEORDER</span>);
 
 <span class='macro'>cfg_if</span><span class='macro'>!</span> {
     <span class='kw'>if</span> <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>any</span>(<span class='ident'>target_arch</span> <span class='op'>=</span> <span class='string'>&quot;arm&quot;</span>, <span class='ident'>target_arch</span> <span class='op'>=</span> <span class='string'>&quot;x86&quot;</span>,
