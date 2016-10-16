@@ -59,6 +59,10 @@ macro_rules! __graphql__build_field_matches {
         __graphql__build_field_matches!($resolveargs, $acc, $( $rest )*);
     };
 
+    ( $resolveargs:tt, $acc:tt, , $( $rest:tt )*) => {
+        __graphql__build_field_matches!($resolveargs, $acc, $( $rest )*);
+    };
+
     (
         ($outname:tt, $selfvar:ident, $fieldvar:ident, $argsvar:ident, $executorvar:ident),
         ( $( ( $name:ident; ( $($args:tt)* ); $t:ty; $body:block ) )* ),

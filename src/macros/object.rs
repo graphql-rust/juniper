@@ -333,10 +333,18 @@ macro_rules! graphql_object {
         graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*)
     };
 
+    // eat commas
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr, , $( $rest:tt )*
+    ) => {
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*)
+    };
+
     // base case
     (
         @gather_object_meta,
-        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr, $(,)*
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
     ) => {};
 
     ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty,)* ] ) => {
@@ -417,5 +425,14 @@ macro_rules! graphql_object {
     ) => {
         graphql_object!(
             ( ); $name; $ctxt; $outname; $mainself; $( $items )*);
+    };
+
+    (
+        $name:ty : $ctxt:ty | &$mainself:ident | {
+            $( $items:tt )*
+        }
+    ) => {
+        graphql_object!(
+            ( ); $name; $ctxt; (stringify!($name)); $mainself; $( $items )*);
     };
 }
