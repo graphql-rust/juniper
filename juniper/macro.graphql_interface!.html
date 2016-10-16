@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-6166' class='srclink' href='../src/juniper/src/macros/interface.rs.html#86-383' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-6166' class='srclink' href='../src/juniper/src/macros/interface.rs.html#86-402' title='goto source code'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_interface</span> {
     ( @<span class='ident'>as_item</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>item</span>) <span class='op'>=&gt;</span> { ... };
@@ -82,7 +82,8 @@
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>,
         <span class='ident'>instance_resolvers</span>: <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolvers</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
-    ( @<span class='ident'>gather_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, $(,)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>gather_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, , $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>gather_meta</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>, ) <span class='op'>=&gt;</span> { ... };
     (
         @<span class='ident'>resolve_into_type</span>,
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>,
@@ -134,13 +135,13 @@
     (
         @<span class='ident'>concrete_type_name</span>,
         (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtarg</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxttype</span>:<span class='ident'>ty</span>),
-        <span class='ident'>instance_resolvers</span> : <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> [ $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> , )<span class='op'>*</span> ] $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        <span class='ident'>instance_resolvers</span> : <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> [ $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> ),<span class='op'>*</span> $(,)<span class='op'>*</span> ] $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     ( @<span class='ident'>concrete_type_name</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, ) <span class='op'>=&gt;</span> { ... };
     (
         @<span class='ident'>resolve_into_type</span>,
         (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>typenamearg</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>execarg</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxttype</span>:<span class='ident'>ty</span>),
-        <span class='ident'>instance_resolvers</span> : <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> [ $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> , )<span class='op'>*</span> ] $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        <span class='ident'>instance_resolvers</span> : <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> [ $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> ),<span class='op'>*</span> $(,)<span class='op'>*</span> ] $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
     ) <span class='op'>=&gt;</span> { ... };
     ( @<span class='ident'>resolve_into_type</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>buildargs</span>:<span class='ident'>tt</span>, ) <span class='op'>=&gt;</span> { ... };
     (
@@ -155,6 +156,11 @@
     ) <span class='op'>=&gt;</span> { ... };
     (
         <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
+            $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        }
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
             $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
         }
     ) <span class='op'>=&gt;</span> { ... };

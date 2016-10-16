@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/traitobject-0.0.1/src/lib.rs`.">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/traitobject-0.0.3/src/lib.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>lib.rs.html -- source</title>
@@ -71,6 +71,13 @@
 <span id="27">27</span>
 <span id="28">28</span>
 <span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
 </pre><pre class='rust '>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>cfg_attr</span>(<span class='ident'>test</span>, <span class='ident'>deny</span>(<span class='ident'>warnings</span>))]</span>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>deny</span>(<span class='ident'>missing_docs</span>)]</span>
@@ -100,6 +107,13 @@
     <span class='kw'>let</span> <span class='ident'>x</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='number'>7</span> <span class='kw'>as</span> <span class='kw-2'>&amp;</span><span class='ident'>Send</span>;
     <span class='kw'>unsafe</span> { <span class='macro'>assert</span><span class='macro'>!</span>(<span class='kw-2'>&amp;</span><span class='number'>7</span> <span class='op'>==</span> <span class='ident'>mem</span>::<span class='ident'>transmute</span>::<span class='op'>&lt;</span>_, <span class='kw-2'>&amp;</span><span class='ident'>i32</span><span class='op'>&gt;</span>(<span class='ident'>data</span>(<span class='ident'>x</span>))) };
 }
+
+<span class='doccomment'>/// A trait implemented for all trait objects.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// Implementations for all traits in std are provided.</span>
+<span class='kw'>pub</span> <span class='kw'>unsafe</span> <span class='kw'>trait</span> <span class='ident'>Trait</span> {}
+
+<span class='kw'>mod</span> <span class='ident'>impls</span>;
 
 </pre>
 </section>
