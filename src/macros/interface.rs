@@ -88,6 +88,44 @@ macro_rules! graphql_interface {
     ( @as_item, $i:item) => { $i };
     ( @as_expr, $e:expr) => { $e };
 
+    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
+    (
+        @gather_meta,
+        $reg:expr, $acc:expr, $descr:expr,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+    ) => {
+        $acc.push(__graphql__args!(
+            @apply_args,
+            $reg,
+            $reg.field_inside_result(
+                &$crate::to_snake_case(stringify!($name)),
+                Err("dummy".to_owned()) as $t)
+                .description($desc)
+                .deprecated($reason),
+            $args));
+
+        graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*);
+    };
+
+    // field deprecated <reason> <name>(...) -> <type> { ... }
+    (
+        @gather_meta,
+        $reg:expr, $acc:expr, $descr:expr,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
+    ) => {
+        $acc.push(__graphql__args!(
+            @apply_args,
+            $reg,
+            $reg.field_inside_result(
+                &$crate::to_snake_case(stringify!($name)),
+                Err("dummy".to_owned()) as $t)
+                .deprecated($reason),
+            $args));
+
+        graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*);
+    };
+
+    // field <name>(...) -> <type> as <description> { ... }
     (
         @gather_meta,
         $reg:expr, $acc:expr, $descr:expr,
@@ -105,6 +143,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*);
     };
 
+    // field <name>(...) -> <type> { ... }
     (
         @gather_meta,
         $reg:expr, $acc:expr, $descr:expr,
@@ -121,6 +160,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*);
     };
 
+    // description: <description>
     (
         @gather_meta,
         $reg:expr, $acc:expr, $descr:expr,
@@ -131,16 +171,36 @@ macro_rules! graphql_interface {
         graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*)
     };
 
+    // instance_resolvers: | <ctxtvar> | [...]
     (
         @gather_meta,
         $reg:expr, $acc:expr, $descr:expr,
-        instance_resolvers: | $execvar:pat | $resolvers:tt $( $rest:tt )*
+        instance_resolvers: | $ctxtvar:pat | $resolvers:tt $( $rest:tt )*
     ) => {
         graphql_interface!(@gather_meta, $reg, $acc, $descr, $( $rest )*)
     };
 
     ( @gather_meta, $reg:expr, $acc:expr, $descr:expr, $(,)* ) => {};
 
+    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
+    (
+        @resolve_into_type,
+        $buildargs:tt,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty as $descr:tt $body:block $( $rest:tt )*
+    ) => {
+        graphql_interface!(@resolve_into_type, $buildargs, $( $rest )*)
+    };
+
+    // field deprecated <reason> <name>(...) -> <type> { ... }
+    (
+        @resolve_into_type,
+        $buildargs:tt,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
+    ) => {
+        graphql_interface!(@resolve_into_type, $buildargs, $( $rest )*)
+    };
+
+    // field <name>(...) -> <type> as <description> { ... }
     (
         @resolve_into_type,
         $buildargs:tt,
@@ -149,6 +209,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@resolve_into_type, $buildargs, $( $rest )*)
     };
 
+    // field <name>(...) -> <type> { ... }
     (
         @resolve_into_type,
         $buildargs:tt,
@@ -157,6 +218,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@resolve_into_type, $buildargs, $( $rest )*)
     };
 
+    // description: <description>
     (
         @resolve_into_type,
         $buildargs:tt, description : $value:tt $( $rest:tt )*
@@ -164,13 +226,25 @@ macro_rules! graphql_interface {
         graphql_interface!(@resolve_into_type, $buildargs, $( $rest )*)
     };
 
+    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
     (
-        @resolve_into_type,
-        $buildargs:tt, interfaces : $value:tt $( $rest:tt )*
+        @concrete_type_name,
+        $buildargs:tt,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty as $descr:tt $body:block $( $rest:tt )*
     ) => {
-        graphql_interface!(@resolve_into_type, $buildargs, $( $rest )*)
+        graphql_interface!(@concrete_type_name, $buildargs, $( $rest )*)
     };
 
+    // field deprecated <reason> <name>(...) -> <type> { ... }
+    (
+        @concrete_type_name,
+        $buildargs:tt,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
+    ) => {
+        graphql_interface!(@concrete_type_name, $buildargs, $( $rest )*)
+    };
+
+    // field <name>(...) -> <type> as <description> { ... }
     (
         @concrete_type_name,
         $buildargs:tt,
@@ -179,6 +253,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@concrete_type_name, $buildargs, $( $rest )*)
     };
 
+    // field <name>(...) -> <type> { ... }
     (
         @concrete_type_name,
         $buildargs:tt,
@@ -187,6 +262,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@concrete_type_name, $buildargs, $( $rest )*)
     };
 
+    // description: <description>
     (
         @concrete_type_name,
         $buildargs:tt, description : $value:tt $( $rest:tt )*
@@ -194,13 +270,7 @@ macro_rules! graphql_interface {
         graphql_interface!(@concrete_type_name, $buildargs, $( $rest )*)
     };
 
-    (
-        @concrete_type_name,
-        $buildargs:tt, interfaces : $value:tt $( $rest:tt )*
-    ) => {
-        graphql_interface!(@concrete_type_name, $buildargs, $( $rest )*)
-    };
-
+    // instance_resolvers: | <ctxtvar> | [...]
     (
         @concrete_type_name,
         ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
@@ -225,6 +295,7 @@ macro_rules! graphql_interface {
         ()
     };
 
+    // instance_resolvers: | <ctxtvar> |
     (
         @resolve_into_type,
         ($outname:tt, $typenamearg:ident, $execarg:ident, $ctxttype:ty),

@@ -239,6 +239,44 @@ macro_rules! graphql_object {
     ( @as_item, $i:item) => { $i };
     ( @as_expr, $e:expr) => { $e };
 
+    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+    ) => {
+        $acc.push(__graphql__args!(
+            @apply_args,
+            $reg,
+            $reg.field_inside_result(
+                &$crate::to_snake_case(stringify!($name)),
+                Err("dummy".to_owned()) as $t)
+                .description($desc)
+                .deprecated($reason),
+            $args));
+
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
+    };
+
+    // field deprecated <reason> <name>(...) -> <type> { ... }
+    (
+        @gather_object_meta,
+        $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
+        field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
+    ) => {
+        $acc.push(__graphql__args!(
+            @apply_args,
+            $reg,
+            $reg.field_inside_result(
+                &$crate::to_snake_case(stringify!($name)),
+                Err("dummy".to_owned()) as $t)
+                .deprecated($reason),
+            $args));
+
+        graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
+    };
+
+    // field <name>(...) -> <type> as <description> { ... }
     (
         @gather_object_meta,
         $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
@@ -256,6 +294,7 @@ macro_rules! graphql_object {
         graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
     };
 
+    // field <name>(...) -> <type> { ... }
     (
         @gather_object_meta,
         $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
@@ -272,6 +311,7 @@ macro_rules! graphql_object {
         graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*);
     };
 
+    // description: <description>
     (
         @gather_object_meta,
         $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
@@ -282,6 +322,7 @@ macro_rules! graphql_object {
         graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*)
     };
 
+    // interfaces: [...]
     (
         @gather_object_meta,
         $reg:expr, $acc:expr, $descr:expr, $ifaces:expr,
@@ -292,6 +333,7 @@ macro_rules! graphql_object {
         graphql_object!(@gather_object_meta, $reg, $acc, $descr, $ifaces, $( $rest )*)
     };
 
+    // base case
     (
         @gather_object_meta,
         $reg:expr, $acc:expr, $descr:expr, $ifaces:expr, $(,)*

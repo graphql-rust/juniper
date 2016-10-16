@@ -1,6 +1,31 @@
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __graphql__build_field_matches {
+    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
+    (
+        $resolveargs:tt,
+        ( $( $acc:tt )* ),
+        field deprecated $_reason:tt $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+    ) => {
+        __graphql__build_field_matches!(
+            $resolveargs,
+            (($name; $args; $t; $body) $( $acc )*),
+            $( $rest )*);
+    };
+
+    // field deprecated <reason> <name>(...) -> <type> { ... }
+    (
+        $resolveargs:tt,
+        ( $( $acc:tt )* ),
+        field deprecated $_reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
+    ) => {
+        __graphql__build_field_matches!(
+            $resolveargs,
+            (($name; $args; $t; $body) $( $acc )*),
+            $( $rest )*);
+    };
+
+    // field <name>(...) -> <type> as <description> { ... }
     (
         $resolveargs:tt,
         ( $( $acc:tt )* ), field $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
@@ -11,6 +36,7 @@ macro_rules! __graphql__build_field_matches {
             $( $rest )*);
     };
 
+    // field <name>(...) -> <type> { ... }
     (
         $resolveargs:tt,
         ( $( $acc:tt )* ), field $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
