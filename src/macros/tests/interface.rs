@@ -45,18 +45,18 @@ graphql_object!(Concrete: () |&self| {
 graphql_interface!(DefaultName: () |&self| {
     field simple() -> i64 { 0 }
 
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 
 graphql_interface!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
     field simple() -> i64 { 0 }
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 graphql_interface!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
     field simple() -> i64 { 0 }
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 
@@ -65,7 +65,7 @@ graphql_interface!(DescriptionFirst: () as "DescriptionFirst" |&self| {
 
     field simple() -> i64 { 0 }
 
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 graphql_interface!(FieldsFirst: () as "FieldsFirst" |&self| {
@@ -73,11 +73,11 @@ graphql_interface!(FieldsFirst: () as "FieldsFirst" |&self| {
 
     description: "A description"
 
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 graphql_interface!(InterfacesFirst: () as "InterfacesFirst" |&self| {
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
 
     field simple() -> i64 { 0 }
 
@@ -85,7 +85,7 @@ graphql_interface!(InterfacesFirst: () as "InterfacesFirst" |&self| {
 });
 
 graphql_interface!(CommasWithTrailing: () as "CommasWithTrailing" |&self| {
-    instance_resolvers: |_| [ Some(Concrete) ],
+    instance_resolvers: |_| { Concrete => Some(Concrete) },
 
     field simple() -> i64 { 0 },
 
@@ -94,7 +94,7 @@ graphql_interface!(CommasWithTrailing: () as "CommasWithTrailing" |&self| {
 
 
 graphql_interface!(CommasOnMeta: () as "CommasOnMeta" |&self| {
-    instance_resolvers: |_| [ Some(Concrete) ]
+    instance_resolvers: |_| { Concrete => Some(Concrete) }
     description: "A description",
 
     field simple() -> i64 { 0 }
@@ -102,7 +102,7 @@ graphql_interface!(CommasOnMeta: () as "CommasOnMeta" |&self| {
 
 
 graphql_interface!(ResolversWithTrailingComma: () as "ResolversWithTrailingComma" |&self| {
-    instance_resolvers: |_| [ Some(Concrete), ]
+    instance_resolvers: |_| { Concrete => Some(Concrete), }
     description: "A description",
 
     field simple() -> i64 { 0 }

@@ -37,7 +37,7 @@ macro_rules! graphql_union {
     (
         @ concrete_type_name,
         ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
-        instance_resolvers: | $ctxtvar:pat | { $( $srctype:path => $resolver:expr ),* $(,)* } $( $rest:tt )*
+        instance_resolvers: | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
         let $ctxtvar = &$ctxtarg;
 
@@ -55,7 +55,7 @@ macro_rules! graphql_union {
     (
         @ resolve_into_type,
         ($outname:tt, $typenamearg:ident, $execarg:ident, $ctxttype:ty),
-        instance_resolvers: | $ctxtvar:pat | { $( $srctype:path => $resolver:expr ),* $(,)* } $( $rest:tt )*
+        instance_resolvers: | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
         let $ctxtvar = &$execarg.context();
 
@@ -118,7 +118,9 @@ macro_rules! graphql_union {
                 type_name: &str,
                 _: Option<Vec<$crate::Selection>>,
                 executor: &mut $crate::Executor<$ctxt>,
-            ) -> $crate::ExecutionResult {
+            )
+                -> $crate::ExecutionResult
+            {
                 graphql_union!(
                     @ resolve_into_type,
                     ($outname, type_name, executor, $ctxt),

@@ -52,9 +52,9 @@ graphql_object!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
 graphql_interface!(Interface: () as "Interface" |&self| {
     field simple() -> i64 { 0 }
 
-    instance_resolvers: |_| [
-        Some(DescriptionFirst {}),
-    ]
+    instance_resolvers: |_| {
+        DescriptionFirst => Some(DescriptionFirst {}),
+    }
 });
 
 graphql_object!(DescriptionFirst: () as "DescriptionFirst" |&self| {

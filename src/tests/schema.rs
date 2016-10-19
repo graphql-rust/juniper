@@ -26,10 +26,10 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
         self.appears_in()
     }
 
-    instance_resolvers: |&context| [
-        context.get_human(&self.id()),
-        context.get_droid(&self.id()),
-    ]
+    instance_resolvers: |&context| {
+        &'a Human => context.get_human(&self.id()),
+        &'a Droid => context.get_droid(&self.id()),
+    }
 });
 
 graphql_object!(<'a> &'a Human: Database as "Human" |&self| {

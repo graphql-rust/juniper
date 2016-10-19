@@ -100,9 +100,9 @@ struct Implementor { id: String }
 graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
     field id() -> &str { self.id() }
 
-    instance_resolvers: |&context| [
-        self.as_implementor(),
-    ]
+    instance_resolvers: |&context| {
+        Implementor => self.as_implementor(),
+    }
 });
 
 graphql_object!(Implementor: () as "Implementor" |&self| {

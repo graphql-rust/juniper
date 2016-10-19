@@ -42,9 +42,9 @@ graphql_interface!(Interface: () as "Interface" |&self| {
     field deprecated "Deprecation reason"
         deprecated_descr() -> i64 as "Field description" { 0 }
 
-    instance_resolvers: |&_| [
-        Some(Root {}),
-    ]
+    instance_resolvers: |&_| {
+        Root => Some(Root {}),
+    }
 });
 
 fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)

@@ -36,9 +36,9 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
         Sample::One
     }
 
-    instance_resolvers: |&_| [
-        Some(Root {}),
-    ]
+    instance_resolvers: |&_| {
+        Root => Some(Root {}),
+    }
 });
 
 graphql_object!(Root: () as "Root" |&self| {
