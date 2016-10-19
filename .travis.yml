@@ -43,11 +43,6 @@ before_deploy:
   - rm -rf target/package/
   - cargo package --verbose
 
-after_success:
-  - |
-    travis-cargo coverage --no-sudo -- --features "iron-handlers expose-test-schema"
-    ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/juniper-*
-  
   - |
     if [ "$TRAVIS_BRANCH" = master -a "$TRAVIS_PULL_REQUEST" = false -a "$TRAVIS_RUST_VERSION" = stable ]; then
       set -e
