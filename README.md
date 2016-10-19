@@ -127,8 +127,8 @@ as well.
     * [ ] Sending input objects and partial input objects in variables
     * [ ] Sending enums in variables
     * [ ] General input value type checking and validation
-* [ ] Improve helper macros
-    * [ ] `graphql_union!` helper completely missing
+* [X] Improve helper macros
+    * [X] `graphql_union!` helper completely missing
     * [X] `graphql_input_object!` helper completely missing
     * [X] Add support for deprecating things
     * [X] Custom enum values and descriptions
