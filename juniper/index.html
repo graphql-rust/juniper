@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/juniper/src/lib.rs.html#1-349' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/juniper/src/lib.rs.html#1-353' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'>
 <h1 id='graphql' class='section-header'><a href='#graphql'>GraphQL</a></h1>
 <p><a href="http://graphql.org">GraphQL</a> is a data query language developed by Facebook intended to serve
@@ -61,6 +61,10 @@ them.</p>
 schema, as well as an optional integration into the <a href="http://ironframework.io">Iron framework</a>. It
 tries to keep the number of dynamic operations to a minimum, and give you as the
 schema developer the control of the query execution path.</p>
+
+<p>Juniper only depends on <code>rustc-serialize</code> by default, making it lightweight and
+easy to drop into any project. Through the <code>iron-handlers</code> feature, it also
+depends on Iron.</p>
 
 <h2 id='exposing-data-types' class='section-header'><a href='#exposing-data-types'>Exposing data types</a></h2>
 <p>The <code>GraphQLType</code> trait is the primary interface towards application developers.
@@ -238,6 +242,13 @@ built-in <a href="https://github.com/graphql/graphiql">GraphiQL</a> handler incl
                                   title='juniper::graphql_scalar!'>graphql_scalar!</a></td>
                            <td class='docblock short'>
                                 <p>Expose GraphQL scalars</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.graphql_union!.html'
+                                  title='juniper::graphql_union!'>graphql_union!</a></td>
+                           <td class='docblock short'>
+                                
                            </td>
                        </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>

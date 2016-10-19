@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `graphql_union!` macro in crate `juniper`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, graphql_union!">
+
+    <title>juniper::graphql_union! - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>juniper</a></p><script>window.sidebarCurrent = {name: 'graphql_union!', ty: 'macro', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content macro">
+<h1 class='fqn'><span class='in-band'><a href='index.html'>juniper</a>::<wbr><a class='macro' href=''>graphql_union!</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-6172' class='srclink' href='../src/juniper/src/macros/union.rs.html#2-160' title='goto source code'>[src]</a></span></h1>
+<pre class='rust macro'>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>graphql_union</span> {
+    ( @<span class='ident'>as_item</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>item</span>) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>as_expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>e</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>as_path</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>p</span>:<span class='ident'>path</span>) <span class='op'>=&gt;</span> { ... };
+    ( @<span class='ident'>as_type</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>t</span>:<span class='ident'>ty</span>) <span class='op'>=&gt;</span> { ... };
+    (
+        @ <span class='ident'>gather_meta</span>,
+        (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>),
+        <span class='ident'>description</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>value</span>:<span class='ident'>tt</span> $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @ <span class='ident'>gather_meta</span>,
+        (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>reg</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>acc</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>descr</span>:<span class='ident'>expr</span>),
+        <span class='ident'>instance_resolvers</span>: <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> { $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>srctype</span>:<span class='ident'>ty</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> ),<span class='op'>*</span> $(,)<span class='op'>*</span> } $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @ <span class='ident'>concrete_type_name</span>,
+        (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtarg</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxttype</span>:<span class='ident'>ty</span>),
+        <span class='ident'>instance_resolvers</span>: <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> { $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>srctype</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> ),<span class='op'>*</span> $(,)<span class='op'>*</span> } $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        @ <span class='ident'>resolve_into_type</span>,
+        (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>typenamearg</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>execarg</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxttype</span>:<span class='ident'>ty</span>),
+        <span class='ident'>instance_resolvers</span>: <span class='op'>|</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxtvar</span>:<span class='ident'>pat</span> <span class='op'>|</span> { $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>srctype</span>:<span class='ident'>path</span> <span class='op'>=&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>resolver</span>:<span class='ident'>expr</span> ),<span class='op'>*</span> $(,)<span class='op'>*</span> } $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+    ) <span class='op'>=&gt;</span> { ... };
+    ( @ <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mfn</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span>, , $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @ <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mfn</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>item</span>:<span class='ident'>tt</span> $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>rest</span>:<span class='ident'>tt</span>)<span class='op'>*</span> ) <span class='op'>=&gt;</span> { ... };
+    ( @ <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mfn</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>args</span>:<span class='ident'>tt</span>, ) <span class='op'>=&gt;</span> { ... };
+    (
+        ( $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>lifetime</span>:<span class='ident'>tt</span>),<span class='op'>*</span> ) <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
+            $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        }
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        <span class='op'>&lt;</span>$(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>lifetime</span>:<span class='ident'>tt</span>),<span class='op'>*</span><span class='op'>&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
+            $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        }
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>outname</span>:<span class='ident'>tt</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
+            $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        }
+    ) <span class='op'>=&gt;</span> { ... };
+    (
+        <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>name</span>:<span class='ident'>ty</span> : <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ctxt</span>:<span class='ident'>ty</span> <span class='op'>|</span> <span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>mainself</span>:<span class='ident'>ident</span> <span class='op'>|</span> {
+            $( <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>items</span>:<span class='ident'>tt</span> )<span class='op'>*</span>
+        }
+    ) <span class='op'>=&gt;</span> { ... };
+}</pre>
+</section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "juniper";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>
