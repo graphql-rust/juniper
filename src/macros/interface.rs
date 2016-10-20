@@ -16,20 +16,23 @@ See the documentation for [`graphql_object!`][1] on the general item and type
 syntax. `graphql_interface!` requires an additional `instance_resolvers` item,
 and does _not_ support the `interfaces` item.
 
-`instance_resolvers` is a list/lambda hybrid used to resolve the concrete
+`instance_resolvers` is a match like structure used to resolve the concrete
 instance type of the interface. It starts with a context argument and continues
-with an array of expressions, each resolving into an `Option<T>` of the possible
-instances:
+with a number of match arms; on the left side is the indicated type, and on the
+right an expression that resolve into `Option<T>` of the type indicated:
 
 ```rust,ignore
 instance_resolvers: |&context| {
-    Human => context.get_human(self.id()), // returns Option<Human>
-    Droid => context.get_droid(self.id()), // returns Option<Droid>
+    &Human => context.get_human(self.id()), // returns Option<&Human>
+    &Droid => context.get_droid(self.id()), // returns Option<&Droid>
 },
 ```
 
-Each item in the array will be executed in order when the concrete type is
-required.
+This is used for both the `__typename` field and when resolving a specialized
+fragment, e.g. `...on Human`. For `__typename`, the resolvers will be executed
+in order - the first one returning `Some` will be the determined type name. When
+resolving fragment type conditions, only the corresponding match arm will be
+executed.
 
 ## Example
 
@@ -71,8 +74,8 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |&context| {
-        Human => context.humans.get(self.id()),
-        Droid => context.droids.get(self.id()),
+        &Human => context.humans.get(self.id()),
+        &Droid => context.droids.get(self.id()),
     }
 });
 

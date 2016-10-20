@@ -1,3 +1,22 @@
+/**
+Expose GraphQL unions
+
+Like interfaces, mapping unions can be tricky in idiomatic Rust. Because of
+their similarity, the helper macros are similar, too: you provide a set of
+expressions that resolve the union into the actual concrete type.
+
+## Syntax
+
+See the documentation for [`graphql_object!`][1] on the general item and type
+syntax. `graphql_union!` supports only `description` and `interface_resolvers`
+items, no fields or interfaces can be declared.
+
+See the documentation for [`graphql_interface!`][2] on the syntax for interface
+resolvers.
+
+[1]: macro.graphql_object!.html
+[2]: macro.graphql_interface!.html
+*/
 #[macro_export]
 macro_rules! graphql_union {
     ( @as_item, $i:item) => { $i };
