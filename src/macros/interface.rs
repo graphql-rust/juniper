@@ -175,7 +175,7 @@ macro_rules! graphql_interface {
         let $ctxtvar = &$ctxtarg;
 
         $(
-            if let Some(_) = $resolver {
+            if let Some(_) = $resolver as Option<$srctype> {
                 return (<$srctype as $crate::GraphQLType<$ctxttype>>::name()).unwrap().to_owned();
             }
         )*

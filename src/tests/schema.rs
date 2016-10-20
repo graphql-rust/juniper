@@ -27,8 +27,8 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     }
 
     instance_resolvers: |&context| {
-        &'a Human => context.get_human(&self.id()),
-        &'a Droid => context.get_droid(&self.id()),
+        &Human => context.get_human(&self.id()),
+        &Droid => context.get_droid(&self.id()),
     }
 });
 

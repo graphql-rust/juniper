@@ -38,7 +38,7 @@ graphql_object!(Concrete: () |&self| {
 
 graphql_union!(DefaultName: () |&self| {
     instance_resolvers: |&_| {
-        Concrete => match *self { DefaultName::Concrete(ref c) => Some(c) }
+        &Concrete => match *self { DefaultName::Concrete(ref c) => Some(c) }
     }
 });
 
@@ -57,27 +57,27 @@ graphql_union!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
 graphql_union!(DescriptionFirst: () |&self| {
     description: "A description"
     instance_resolvers: |&_| {
-        Concrete => match *self { DescriptionFirst::Concrete(ref c) => Some(c) }
+        &Concrete => match *self { DescriptionFirst::Concrete(ref c) => Some(c) }
     }
 });
 
 graphql_union!(ResolversFirst: () |&self| {
     instance_resolvers: |&_| {
-        Concrete => match *self { ResolversFirst::Concrete(ref c) => Some(c) }
+        &Concrete => match *self { ResolversFirst::Concrete(ref c) => Some(c) }
     }
     description: "A description"
 });
 
 graphql_union!(CommasWithTrailing: () |&self| {
     instance_resolvers: |&_| {
-        Concrete => match *self { CommasWithTrailing::Concrete(ref c) => Some(c) }
+        &Concrete => match *self { CommasWithTrailing::Concrete(ref c) => Some(c) }
     },
     description: "A description",
 });
 
 graphql_union!(ResolversWithTrailingComma: () |&self| {
     instance_resolvers: |&_| {
-        Concrete => match *self { ResolversWithTrailingComma::Concrete(ref c) => Some(c) },
+        &Concrete => match *self { ResolversWithTrailingComma::Concrete(ref c) => Some(c) },
     }
     description: "A description"
 });
