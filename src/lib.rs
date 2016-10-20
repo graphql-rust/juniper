@@ -43,7 +43,7 @@ struct Database { users: HashMap<String, User> }
 // object to provide e.g. database access to the field accessors.
 //
 // In this example, we use the Database struct as our context.
-graphql_object!(User: Database as "User" |&self| {
+graphql_object!(User: Database |&self| {
 
     // Expose a simple field as a GraphQL string.
     field id() -> &String {
@@ -76,7 +76,7 @@ graphql_object!(User: Database as "User" |&self| {
 
 // The context object is passed down to all referenced types - all your exposed
 // types need to have the same context type.
-graphql_object!(QueryRoot: Database as "Query" |&self| {
+graphql_object!(QueryRoot: Database |&self| {
 
     // Arguments work just like they do on functions.
     field user(&mut executor, id: String) -> Option<&User> {
@@ -112,7 +112,7 @@ use juniper::iron_handlers::GraphQLHandler;
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# graphql_object!(User: Database as "User" |&self| {
+# graphql_object!(User: Database |&self| {
 #     field id() -> FieldResult<&String> {
 #         Ok(&self.id)
 #     }
@@ -128,7 +128,7 @@ use juniper::iron_handlers::GraphQLHandler;
 #     }
 # });
 #
-# graphql_object!(QueryRoot: Database as "Query" |&self| {
+# graphql_object!(QueryRoot: Database |&self| {
 #     field user(&mut executor, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
 #     }

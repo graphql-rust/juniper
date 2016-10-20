@@ -57,7 +57,7 @@ graphql_enum!(EnumDeprecation {
     EnumDeprecation::Bar => "BAR" as "The BAR value" deprecated "Please don't use BAR any more",
 });
 
-graphql_object!(Root: () as "Root" |&self| {
+graphql_object!(Root: () |&self| {
     field default_name() -> DefaultName { DefaultName::Foo }
     field named() -> Named { Named::Foo }
     field no_trailing_comma() -> NoTrailingComma { NoTrailingComma::Foo }

@@ -13,7 +13,7 @@ The simplest case exposes fields on a struct:
 # #[macro_use] extern crate juniper;
 struct User { id: String, name: String, group_ids: Vec<String> }
 
-graphql_object!(User: () as "User" |&self| {
+graphql_object!(User: () |&self| {
     field id() -> &String {
         &self.id
     }
@@ -42,7 +42,7 @@ arguments:
 # #[macro_use] extern crate juniper;
 struct User { id: String, name: String, group_ids: Vec<String> }
 
-graphql_object!(User: () as "User" |&self| {
+graphql_object!(User: () |&self| {
     description: "A user in the database"
 
     field id() -> &String as "The user's unique identifier" {
@@ -105,7 +105,7 @@ graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
     }
 });
 
-graphql_object!(Implementor: () as "Implementor" |&self| {
+graphql_object!(Implementor: () |&self| {
     field id() -> &str { &self.id }
 
     interfaces: [&Interface]
@@ -130,7 +130,7 @@ continue executing despite some fields failing.
 # use juniper::FieldResult;
 struct User { id: String }
 
-graphql_object!(User: () as "User" |&self| {
+graphql_object!(User: () |&self| {
     field id() -> FieldResult<&String> {
         Ok(&self.id)
     }

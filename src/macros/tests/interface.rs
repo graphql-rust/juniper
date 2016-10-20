@@ -19,7 +19,7 @@ Syntax to validate:
 
 struct Concrete;
 
-struct DefaultName;
+struct CustomName;
 
 #[allow(dead_code)]
 struct WithLifetime<'a> { data: PhantomData<&'a i64> }
@@ -42,7 +42,7 @@ graphql_object!(Concrete: () |&self| {
     field simple() -> i64 { 0 }
 });
 
-graphql_interface!(DefaultName: () |&self| {
+graphql_interface!(CustomName: () as "ACustomNamedInterface" |&self| {
     field simple() -> i64 { 0 }
 
     instance_resolvers: |_| { Concrete => Some(Concrete) }
@@ -60,7 +60,7 @@ graphql_interface!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
 });
 
 
-graphql_interface!(DescriptionFirst: () as "DescriptionFirst" |&self| {
+graphql_interface!(DescriptionFirst: () |&self| {
     description: "A description"
 
     field simple() -> i64 { 0 }
@@ -68,7 +68,7 @@ graphql_interface!(DescriptionFirst: () as "DescriptionFirst" |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
-graphql_interface!(FieldsFirst: () as "FieldsFirst" |&self| {
+graphql_interface!(FieldsFirst: () |&self| {
     field simple() -> i64 { 0 }
 
     description: "A description"
@@ -76,7 +76,7 @@ graphql_interface!(FieldsFirst: () as "FieldsFirst" |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
-graphql_interface!(InterfacesFirst: () as "InterfacesFirst" |&self| {
+graphql_interface!(InterfacesFirst: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 
     field simple() -> i64 { 0 }
@@ -84,7 +84,7 @@ graphql_interface!(InterfacesFirst: () as "InterfacesFirst" |&self| {
     description: "A description"
 });
 
-graphql_interface!(CommasWithTrailing: () as "CommasWithTrailing" |&self| {
+graphql_interface!(CommasWithTrailing: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) },
 
     field simple() -> i64 { 0 },
@@ -93,7 +93,7 @@ graphql_interface!(CommasWithTrailing: () as "CommasWithTrailing" |&self| {
 });
 
 
-graphql_interface!(CommasOnMeta: () as "CommasOnMeta" |&self| {
+graphql_interface!(CommasOnMeta: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) }
     description: "A description",
 
@@ -101,7 +101,7 @@ graphql_interface!(CommasOnMeta: () as "CommasOnMeta" |&self| {
 });
 
 
-graphql_interface!(ResolversWithTrailingComma: () as "ResolversWithTrailingComma" |&self| {
+graphql_interface!(ResolversWithTrailingComma: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete), }
     description: "A description",
 
@@ -109,7 +109,7 @@ graphql_interface!(ResolversWithTrailingComma: () as "ResolversWithTrailingComma
 });
 
 graphql_object!(<'a> Root: () as "Root" |&self| {
-    field default_name() -> DefaultName { DefaultName {} }
+    field custom_name() -> CustomName { CustomName {} }
 
     field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
     field with_generics() -> WithGenerics<i64> { WithGenerics { data: 123 } }
@@ -167,9 +167,9 @@ fn run_type_info_query<F>(type_name: &str, f: F)
 }
 
 #[test]
-fn introspect_default_name() {
-    run_type_info_query("DefaultName", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("DefaultName")));
+fn introspect_custom_name() {
+    run_type_info_query("ACustomNamedInterface", |object, fields| {
+        assert_eq!(object.get("name"), Some(&Value::string("ACustomNamedInterface")));
         assert_eq!(object.get("description"), Some(&Value::null()));
 
         assert!(fields.contains(&Value::object(vec![

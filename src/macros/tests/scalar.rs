@@ -61,7 +61,7 @@ graphql_scalar!(ScalarDescription {
     }
 });
 
-graphql_object!(Root: () as "Root" |&self| {
+graphql_object!(Root: () |&self| {
     field default_name() -> DefaultName { DefaultName(0) }
     field other_order() -> OtherOrder { OtherOrder(0) }
     field named() -> Named { Named(0) }

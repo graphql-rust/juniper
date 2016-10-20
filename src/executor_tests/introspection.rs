@@ -41,7 +41,7 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
     }
 });
 
-graphql_object!(Root: () as "Root" |&self| {
+graphql_object!(Root: () |&self| {
     description: "The root query object in the schema"
 
     interfaces: [Interface]

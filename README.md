@@ -72,7 +72,7 @@ graphql_enum!(Episode {
     Episode::Jedi => "JEDI",
 });
 
-graphql_object!(Human: () as "Human" |&self| {
+graphql_object!(Human: () |&self| {
     description: "A humanoid creature in the Star Wars universe"
 
     // Field resolver methods look almost like ordinary methods. The macro picks

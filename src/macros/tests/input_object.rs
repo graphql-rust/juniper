@@ -48,7 +48,7 @@ graphql_input_object!(
     }
 );
 
-graphql_object!(Root: () as "Root" |&self| {
+graphql_object!(Root: () |&self| {
     field test_field(
         a1: DefaultName,
         a2: NoTrailingComma,

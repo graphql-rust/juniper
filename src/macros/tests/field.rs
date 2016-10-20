@@ -17,7 +17,7 @@ Syntax to validate:
 
 */
 
-graphql_object!(Root: () as "Root" |&self| {
+graphql_object!(Root: () |&self| {
     field simple() -> i64 { 0 }
 
     field description() -> i64 as "Field description" { 0 }
@@ -31,7 +31,7 @@ graphql_object!(Root: () as "Root" |&self| {
     interfaces: [Interface]
 });
 
-graphql_interface!(Interface: () as "Interface" |&self| {
+graphql_interface!(Interface: () |&self| {
     field simple() -> i64 { 0 }
 
     field description() -> i64 as "Field description" { 0 }

@@ -18,7 +18,7 @@ Syntax to validate:
 
 */
 
-graphql_object!(Root: () as "Root" |&self| {
+graphql_object!(Root: () |&self| {
     field simple() -> i64 { 0 }
     field exec_arg(&mut executor) -> i64 { 0 }
     field exec_arg_and_more(&mut executor, arg: i64) -> i64 { 0 }

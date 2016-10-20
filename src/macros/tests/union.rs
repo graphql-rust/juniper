@@ -19,7 +19,7 @@ Syntax to validate:
 
 struct Concrete;
 
-enum DefaultName { Concrete(Concrete) }
+enum CustomName { Concrete(Concrete) }
 
 enum WithLifetime<'a> { Int(PhantomData<&'a i64>) }
 enum WithGenerics<T> { Generic(T) }
@@ -36,9 +36,9 @@ graphql_object!(Concrete: () |&self| {
     field simple() -> i64 { 123 }
 });
 
-graphql_union!(DefaultName: () |&self| {
+graphql_union!(CustomName: () as "ACustomNamedUnion" |&self| {
     instance_resolvers: |&_| {
-        &Concrete => match *self { DefaultName::Concrete(ref c) => Some(c) }
+        &Concrete => match *self { CustomName::Concrete(ref c) => Some(c) }
     }
 });
 
@@ -83,7 +83,7 @@ graphql_union!(ResolversWithTrailingComma: () |&self| {
 });
 
 graphql_object!(<'a> Root: () as "Root" |&self| {
-    field default_name() -> DefaultName { DefaultName::Concrete(Concrete) }
+    field custom_name() -> CustomName { CustomName::Concrete(Concrete) }
     field with_lifetime() -> WithLifetime<'a> { WithLifetime::Int(PhantomData) }
     field with_generics() -> WithGenerics<i64> { WithGenerics::Generic(123) }
     field description_first() -> DescriptionFirst { DescriptionFirst::Concrete(Concrete) }
@@ -135,9 +135,9 @@ fn run_type_info_query<F>(type_name: &str, f: F)
 
 
 #[test]
-fn introspect_default_name() {
-    run_type_info_query("DefaultName", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("DefaultName")));
+fn introspect_custom_name() {
+    run_type_info_query("ACustomNamedUnion", |union, possible_types| {
+        assert_eq!(union.get("name"), Some(&Value::string("ACustomNamedUnion")));
         assert_eq!(union.get("description"), Some(&Value::null()));
 
         assert!(possible_types.contains(&Value::object(vec![
