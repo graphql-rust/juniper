@@ -25,7 +25,7 @@ impl<T, CtxT> GraphQLType<CtxT> for Option<T> where T: GraphQLType<CtxT> {
 impl<T> FromInputValue for Option<T> where T: FromInputValue {
     fn from(v: &InputValue) -> Option<Option<T>> {
         match v {
-            &InputValue::Null => None,
+            &InputValue::Null => Some(None),
             v => match v.convert() {
                 Some(x) => Some(Some(x)),
                 None => None,
@@ -79,7 +79,12 @@ impl<T> FromInputValue for Vec<T> where T: FromInputValue {
                     None
                 }
             },
-            _ => None,
+            ref other =>
+                if let Some(e) = other.convert() {
+                    Some(vec![ e ])
+                } else {
+                    None
+                }
         }
     }
 }

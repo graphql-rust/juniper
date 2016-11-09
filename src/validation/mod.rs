@@ -5,6 +5,7 @@ mod traits;
 mod context;
 mod multi_visitor;
 mod rules;
+mod input_value;
 
 #[cfg(test)]
 mod test_harness;
@@ -14,6 +15,7 @@ pub use self::visitor::visit;
 pub use self::context::{RuleError, ValidatorContext};
 pub use self::rules::visit_all_rules;
 pub use self::multi_visitor::MultiVisitor;
+pub use self::input_value::validate_input_values;
 
 #[cfg(test)]
 pub use self::test_harness::{

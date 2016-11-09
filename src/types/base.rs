@@ -76,9 +76,11 @@ impl Arguments {
 
         if let (&mut Some(ref mut args), &Some(ref meta_args)) = (&mut args, meta_args) {
             for arg in meta_args {
-                if !args.contains_key(&arg.name) {
+                if !args.contains_key(&arg.name) || args[&arg.name].is_null() {
                     if let Some(ref default_value) = arg.default_value {
                         args.insert(arg.name.clone(), default_value.clone());
+                    } else {
+                        args.insert(arg.name.clone(), InputValue::null());
                     }
                 }
             }

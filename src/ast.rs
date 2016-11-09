@@ -289,7 +289,8 @@ impl InputValue {
     /// Resolve all variables to their values.
     pub fn into_const(self, vars: &HashMap<String, InputValue>) -> InputValue {
         match self {
-            InputValue::Variable(v) => vars[&v].clone(),
+            InputValue::Variable(v) => vars.get(&v)
+                .map_or_else(InputValue::null, Clone::clone),
             InputValue::List(l) => InputValue::List(
                 l.into_iter().map(|s| s.map(|v| v.into_const(vars))).collect()
             ),

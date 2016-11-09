@@ -50,8 +50,13 @@ macro_rules! graphql_input_object {
         Some($name {
             $( $field_name: {
                 let n: String = $crate::to_snake_case(stringify!($field_name));
-                let v: &$crate::InputValue = $var[&n[..]];
-                $crate::FromInputValue::from(v).unwrap()
+                let v: Option<&&$crate::InputValue> = $var.get(&n[..]);
+
+                if let Some(v) = v {
+                    $crate::FromInputValue::from(v).unwrap()
+                } else {
+                    $crate::FromInputValue::from(&$crate::InputValue::null()).unwrap()
+                }
             } ),*
         })
     };

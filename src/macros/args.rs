@@ -24,17 +24,6 @@ macro_rules! __graphql__args {
     (
         @assign_arg_vars,
         $args:ident, $executorvar:ident,
-        $name:ident : Option<$ty:ty> as $desc:tt $($rest:tt)*
-    ) => {
-        let $name: Option<$ty> = $args
-            .get(&$crate::to_snake_case(stringify!($name)))
-            .unwrap_or(None);
-        __graphql__args!(@assign_arg_vars, $args, $executorvar, $($rest)*);
-    };
-
-    (
-        @assign_arg_vars,
-        $args:ident, $executorvar:ident,
         $name:ident $(= $default:tt)* : $ty:ty $(as $desc:tt)*, $($rest:tt)*
     ) => {
         let $name: $ty = $args

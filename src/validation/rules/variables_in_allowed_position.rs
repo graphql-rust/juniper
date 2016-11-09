@@ -54,8 +54,6 @@ impl<'a> VariableInAllowedPosition<'a> {
                         (_, t) => t.clone(),
                     };
 
-                    println!("Variable {} of type {} used in position expecting {}", var_name.item, expected_type, var_type);
-
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
                         ctx.report_error(
                             &error_message(&var_name.item, &format!("{}", expected_type), &format!("{}", var_type)),

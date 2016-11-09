@@ -204,7 +204,7 @@ use std::collections::HashMap;
 use rustc_serialize::json::{ToJson, Json};
 
 use parser::{parse_document_source, ParseError, Spanning, SourcePosition};
-use validation::{RuleError, ValidatorContext, visit_all_rules};
+use validation::{RuleError, ValidatorContext, visit_all_rules, validate_input_values};
 use executor::execute_validated_query;
 
 pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
@@ -241,6 +241,14 @@ pub fn execute<'a, CtxT, QueryT, MutationT>(
           MutationT: GraphQLType<CtxT>,
 {
     let document = try!(parse_document_source(document_source));
+
+    {
+        let errors = validate_input_values(variables, &document, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
 
     {
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);

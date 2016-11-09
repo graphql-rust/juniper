@@ -338,3 +338,13 @@ impl fmt::Display for DirectiveLocation {
         })
     }
 }
+
+impl<'a> fmt::Display for TypeType<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            TypeType::Concrete(ref t) => f.write_str(&t.name().unwrap()),
+            TypeType::List(ref i) => write!(f, "[{}]", i),
+            TypeType::NonNull(ref i) => write!(f, "{}!", i),
+        }
+    }
+}
