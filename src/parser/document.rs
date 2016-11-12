@@ -171,6 +171,20 @@ fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selec
                         directives: directives.map(|s| s.item),
                     })))
         },
+        Token::At => {
+            let directives = try!(parse_directives(parser));
+            let selection_set = try!(parse_selection_set(parser));
+
+            Ok(Selection::InlineFragment(
+                Spanning::start_end(
+                    &start_pos.clone(),
+                    &selection_set.end,
+                    InlineFragment {
+                        type_condition: None,
+                        directives: directives.map(|s| s.item),
+                        selection_set: selection_set.item,
+                    })))
+        },
         _ => Err(parser.next().map(ParseError::UnexpectedToken)),
     }
 }

@@ -218,12 +218,12 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The executor can be used to drive selections into sub-objects.
     ///
-    /// The default implementation panics through `unimplemented!()`.
+    /// The default implementation panics.
     #[allow(unused_variables)]
     fn resolve_field(&self, field_name: &str, arguments: &Arguments, executor: &mut Executor<CtxT>)
         -> ExecutionResult
     {
-        unimplemented!()
+        panic!("resolve_field must be implemented by object types");
     }
 
     /// Resolve this interface or union into a concrete type
@@ -231,18 +231,22 @@ pub trait GraphQLType<CtxT>: Sized {
     /// Try to resolve the current type into the type name provided. If the
     /// type matches, pass the instance along to `executor.resolve`.
     ///
-    /// The default implementation panics through `unimplemented()`.
+    /// The default implementation panics.
     #[allow(unused_variables)]
     fn resolve_into_type(&self, type_name: &str, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> ExecutionResult {
-        unimplemented!();
+        if Self::name().unwrap() == type_name {
+            Ok(self.resolve(selection_set, executor))
+        } else {
+            panic!("resolve_into_type must be implemented by unions and interfaces");
+        }
     }
 
     /// Return the concrete type name for this instance/union.
     ///
-    /// The default implementation panics through `unimplemented()`.
+    /// The default implementation panics.
     #[allow(unused_variables)]
     fn concrete_type_name(&self, context: &CtxT) -> String {
-        unimplemented!();
+        panic!("concrete_type_name must be implemented by unions and interfaces");
     }
 
     /// Resolve the provided selection set against the current object.
@@ -254,7 +258,7 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The default implementation uses `resolve_field` to resolve all fields,
     /// including those through fragment expansion, for object types. For
-    /// non-object types, this method panics through `unimplemented!()`.
+    /// non-object types, this method panics.
     fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
@@ -262,7 +266,7 @@ pub trait GraphQLType<CtxT>: Sized {
             Value::object(result)
         }
         else {
-            unimplemented!();
+            panic!("resolve() must be implemented by non-object output types");
         }
     }
 }
