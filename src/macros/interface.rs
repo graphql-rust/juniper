@@ -171,6 +171,19 @@ macro_rules! graphql_interface {
 
     // instance_resolvers: | <ctxtvar> | [...]
     (
+        @ gather_meta,
+        ($reg:expr, $acc:expr, $descr:expr),
+        instance_resolvers : | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
+    ) => {
+        $(
+            let _ = $reg.get_type::<$srctype>();
+        )*
+
+            graphql_interface!(@gather_meta, ($reg, $acc, $descr), $( $rest )*)
+    };
+
+    // instance_resolvers: | <ctxtvar> | [...]
+    (
         @ concrete_type_name,
         ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
         instance_resolvers : | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
