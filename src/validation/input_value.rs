@@ -162,7 +162,17 @@ fn unify_enum<'a>(
     path: &Path<'a>,
 ) {
     match value {
-        &InputValue::String(_) | &InputValue::Enum(_) => (),
+        &InputValue::String(ref name) | &InputValue::Enum(ref name) => {
+            if !meta.values.iter().any(|ev| &ev.name == name) {
+                push_unification_error(
+                    errors,
+                    var_name,
+                    var_pos,
+                    path,
+                    &format!(r#"Invalid value for enum "{}""#, meta.name),
+                )
+            }
+        }
         _ => push_unification_error(
             errors,
             var_name,
