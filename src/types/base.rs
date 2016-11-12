@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 use ast::{InputValue, Selection, Directive, FromInputValue};
 use value::Value;
@@ -324,8 +325,11 @@ fn resolve_selection_set_into<T, CtxT>(
                     &mut sub_exec);
 
                 match field_result {
-                    Ok(v) => { result.insert(response_name.clone(), v); }
-                    Err(e) => { sub_exec.push_error(e, start_pos); }
+                    Ok(v) => merge_key_into(result, response_name.clone(), v),
+                    Err(e) => {
+                        sub_exec.push_error(e, start_pos);
+                        result.insert(response_name.clone(), Value::null());
+                    }
                 }
             },
             Selection::FragmentSpread(Spanning { item: spread, .. }) => {
@@ -406,5 +410,42 @@ fn is_excluded(directives: &Option<Vec<Directive>>, vars: &HashMap<String, Input
     }
     else {
         false
+    }
+}
+
+fn merge_key_into(
+    result: &mut HashMap<String, Value>,
+    response_name: String,
+    value: Value,
+) {
+    match result.entry(response_name) {
+        Entry::Occupied(mut e) => {
+            println!("Merging object at '{}'", e.key());
+            match (e.get_mut().as_mut_object_value(), value) {
+                (Some(dest_obj), Value::Object(src_obj)) => {
+                    merge_maps(dest_obj, src_obj);
+                },
+                _ => {
+                    println!("Not merging object/object - this is bad :(");
+                }
+            }
+        },
+        Entry::Vacant(e) => {
+            e.insert(value);
+        },
+    }
+}
+
+fn merge_maps(
+    dest: &mut HashMap<String, Value>,
+    src: HashMap<String, Value>,
+) {
+    for (key, value) in src {
+        if dest.contains_key(&key) {
+            merge_key_into(dest, key, value);
+        }
+        else {
+            dest.insert(key, value);
+        }
     }
 }

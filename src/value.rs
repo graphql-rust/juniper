@@ -75,6 +75,14 @@ impl Value {
         }
     }
 
+    /// Mutable view into the underlying object value, if present.
+    pub fn as_mut_object_value(&mut self) -> Option<&mut HashMap<String, Value>> {
+        match *self {
+            Value::Object(ref mut o) => Some(o),
+            _ => None,
+        }
+    }
+
     /// View the underlying list value, if present.
     pub fn as_list_value(&self) -> Option<&Vec<Value>> {
         match *self {

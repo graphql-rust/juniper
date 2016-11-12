@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
+use ::GraphQLError;
 use ast::{InputValue, ToInputValue, Document, Selection, Fragment, Definition, Type, FromInputValue, OperationType};
 use value::Value;
 use parser::SourcePosition;
@@ -198,6 +199,15 @@ impl<'a> FieldPath<'a> {
 }
 
 impl ExecutionError {
+    #[doc(hidden)]
+    pub fn new(location: SourcePosition, path: &[&str], message: &str) -> ExecutionError {
+        ExecutionError {
+            location: location,
+            path: path.iter().map(|s| (*s).to_owned()).collect(),
+            message: message.to_owned(),
+        }
+    }
+
     /// The error message
     pub fn message(&self) -> &str {
         &self.message
@@ -214,16 +224,16 @@ impl ExecutionError {
     }
 }
 
-pub fn execute_validated_query<QueryT, MutationT, CtxT>(
+pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
     document: Document,
     operation_name: Option<&str>,
     root_node: &RootNode<CtxT, QueryT, MutationT>,
     variables: &HashMap<String, InputValue>,
     context: &CtxT
 )
-    -> (Value, Vec<ExecutionError>)
+    -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
     where QueryT: GraphQLType<CtxT>,
-          MutationT: GraphQLType<CtxT>,
+          MutationT: GraphQLType<CtxT>
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -232,7 +242,7 @@ pub fn execute_validated_query<QueryT, MutationT, CtxT>(
         match def {
             Definition::Operation(op) => {
                 if operation_name.is_none() && operation.is_some() {
-                    panic!("Must provide operation name if query contains multiple operations");
+                    return Err(GraphQLError::MultipleOperationsProvided);
                 }
 
                 let move_op = operation_name.is_none()
@@ -246,7 +256,11 @@ pub fn execute_validated_query<QueryT, MutationT, CtxT>(
         };
     }
 
-    let op = operation.expect("Could not find operation to execute");
+    let op = match operation {
+        Some(op) => op,
+        None => return Err(GraphQLError::UnknownOperationName),
+    };
+
     let mut errors = Vec::new();
     let value;
 
@@ -269,7 +283,7 @@ pub fn execute_validated_query<QueryT, MutationT, CtxT>(
 
     errors.sort();
 
-    (value, errors)
+    Ok((value, errors))
 }
 
 impl<CtxT> Registry<CtxT> {

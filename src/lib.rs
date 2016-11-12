@@ -226,6 +226,9 @@ pub use schema::meta;
 pub enum GraphQLError<'a> {
     ParseError(Spanning<ParseError<'a>>),
     ValidationError(Vec<RuleError>),
+    NoOperationProvided,
+    MultipleOperationsProvided,
+    UnknownOperationName,
 }
 
 /// Execute a query in a provided schema
@@ -260,7 +263,7 @@ pub fn execute<'a, CtxT, QueryT, MutationT>(
         }
     }
 
-    Ok(execute_validated_query(document, operation_name, root_node, variables, context))
+    execute_validated_query(document, operation_name, root_node, variables, context)
 }
 
 impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
@@ -274,6 +277,12 @@ impl<'a> ToJson for GraphQLError<'a> {
         let errs = match *self {
             GraphQLError::ParseError(ref err) => parse_error_to_json(err),
             GraphQLError::ValidationError(ref errs) => errs.to_json(),
+            GraphQLError::MultipleOperationsProvided => Json::String(
+                "Must provide operation name if query contains multiple operations.".to_owned()),
+            GraphQLError::NoOperationProvided => Json::String(
+                "Must provide an operation".to_owned()),
+            GraphQLError::UnknownOperationName => Json::String(
+                "Unknown operation".to_owned()),
         };
 
         Json::Object(vec![
