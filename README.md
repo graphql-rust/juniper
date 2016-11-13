@@ -122,10 +122,10 @@ obvious dead-ends with respect to probable future features, and improving test
 coverage for general execution. There are some chores that need to be completed
 as well.
 
-* [ ] Extensive execution testing
-    * [ ] Sending input objects and partial input objects in variables
-    * [ ] Sending enums in variables
-    * [ ] General input value type checking and validation
+* [X] Extensive execution testing
+    * [X] Sending input objects and partial input objects in variables
+    * [X] Sending enums in variables
+    * [X] General input value type checking and validation
 * [X] Improve helper macros
     * [X] `graphql_union!` helper completely missing
     * [X] `graphql_input_object!` helper completely missing
@@ -133,7 +133,7 @@ as well.
     * [X] Custom enum values and descriptions
     * [X] Improved syntax for fields that can't fail resolution - make
       `FieldResult<T>` optional maybe?
-* [ ] Investigate asynchronous execution - implementing it is not necessary, but
+* [X] Investigate asynchronous execution - implementing it is not necessary, but
   at least look at what API changes will be needed for us to hook into
   [Tokio][tokio], for example.
 * [ ] Larger examples to illustrate things like database access
