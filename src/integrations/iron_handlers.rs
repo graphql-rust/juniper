@@ -24,7 +24,7 @@ use ::{InputValue, GraphQLType, RootNode, execute};
 /// mapping.
 pub struct GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
-          CtxT: Send + Sync + 'static,
+          CtxT: 'static,
           Query: GraphQLType<CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<CtxT> + Send + Sync + 'static,
 {
@@ -40,14 +40,14 @@ pub struct GraphiQLHandler {
 impl<CtxFactory, Query, Mutation, CtxT>
     GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
-          CtxT: Send + Sync + 'static,
+          CtxT: 'static,
           Query: GraphQLType<CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<CtxT> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
     /// The context factory will receive the Iron request object and is
-    /// expected to construct a context object for the given schema. This can 
+    /// expected to construct a context object for the given schema. This can
     /// be used to construct e.g. database connections or similar data that
     /// the schema needs to execute the query.
     pub fn new(context_factory: CtxFactory, query: Query, mutation: Mutation) -> Self {
@@ -149,7 +149,7 @@ impl<CtxFactory, Query, Mutation, CtxT>
     Handler
     for GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
-          CtxT: Send + Sync + 'static,
+          CtxT: 'static,
           Query: GraphQLType<CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<CtxT> + Send + Sync + 'static,
 {
@@ -240,7 +240,7 @@ impl Handler for GraphiQLHandler {
 #[cfg(test)]
 mod tests {
     use rustc_serialize::json::Json;
-    
+
     use iron::prelude::*;
     use iron::status;
     use iron::headers;
