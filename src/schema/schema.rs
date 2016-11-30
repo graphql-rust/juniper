@@ -84,7 +84,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
         }
     }
 
-    field of_type() -> Option<&TypeType> {
+    field of_type() -> Option<&Box<TypeType>> {
         match *self {
             TypeType::Concrete(_) => None,
             TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),

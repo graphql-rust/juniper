@@ -69,13 +69,13 @@ macro_rules! __graphql__build_field_matches {
     ) => {
         $(
             if $fieldvar == &$crate::to_snake_case(stringify!($name)) {
-                let result: $t = {
+                let result: $t = (|| {
                     __graphql__args!(
                         @assign_arg_vars,
                         $argsvar, $executorvar, $($args)*
                     );
                     $body
-                };
+                })();
 
                 return ($crate::IntoFieldResult::into(result)).and_then(|r| $executorvar.resolve(&r))
             }

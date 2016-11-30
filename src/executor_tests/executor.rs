@@ -26,9 +26,9 @@ mod field_execution {
     graphql_object!(DeepDataType: () |&self| {
         field a() -> &str { "Already Been Done" }
         field b() -> &str { "Boring" }
-        field c() -> &[Option<&str>] { &[Some("Contrived"), None, Some("Confusing")] }
+        field c() -> Vec<Option<&str>> { vec![Some("Contrived"), None, Some("Confusing")] }
 
-        field deeper() -> &[Option<DataType>] { &[Some(DataType), None, Some(DataType) ] }
+        field deeper() -> Vec<Option<DataType>> { vec![Some(DataType), None, Some(DataType) ] }
     });
 
     #[test]

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use value::Value;
 use ast::InputValue;
 use schema::model::RootNode;
+use executor::FieldResult;
 
 struct Interface;
 struct Root;
@@ -14,6 +15,8 @@ Syntax to validate:
 * Object vs. interface
 * Description vs. no description
 * Deprecated vs. not deprecated
+* FieldResult vs. object directly
+* Return vs. implicit return
 
 */
 
@@ -27,6 +30,12 @@ graphql_object!(Root: () |&self| {
 
     field deprecated "Deprecation reason"
         deprecated_descr() -> i64 as "Field description" { 0 }
+
+    field with_field_result() -> FieldResult<i64> { Ok(0) }
+
+    field with_return() -> i64 { return 0; }
+
+    field with_return_field_result() -> FieldResult<i64> { return Ok(0); }
 
     interfaces: [Interface]
 });
