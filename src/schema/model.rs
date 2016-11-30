@@ -21,6 +21,17 @@ pub struct RootNode<InnerT, QueryT, MutationT=()> {
     phantom_wrapped: PhantomData<InnerT>,
 }
 
+// RootNode implements Send + Sync if both the mutation type and query
+// type implements them. SchemaType also needs to implement them.
+//
+// InnerT does _not_ need to implement Send + Sync because it does not
+// actually appear in the struct.
+unsafe impl<InnerT, QueryT, MutationT> Send for RootNode<InnerT, QueryT, MutationT>
+    where QueryT: Send, MutationT: Send, SchemaType: Send { }
+
+unsafe impl<InnerT, QueryT, MutationT> Sync for RootNode<InnerT, QueryT, MutationT>
+    where QueryT: Sync, MutationT: Sync, SchemaType: Sync { }
+
 /// Metadata for a schema
 pub struct SchemaType {
     types: HashMap<String, MetaType>,
