@@ -15,6 +15,9 @@ Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
 pre-built integration for the [Iron framework][iron].
 
+* [Cargo crate](https://crates.io/crates/juniper)
+* [API Documentation](https://docs.rs/juniper/0.5.2/juniper/)
+
 ## Installation
 
 Add Juniper to your Cargo.toml:
