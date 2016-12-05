@@ -190,7 +190,7 @@ pub mod parser;
 mod value;
 mod types;
 mod schema;
-pub mod validation;
+mod validation;
 mod executor;
 mod integrations;
 
@@ -204,7 +204,7 @@ use std::collections::HashMap;
 use rustc_serialize::json::{ToJson, Json};
 
 use parser::{parse_document_source, ParseError, Spanning, SourcePosition};
-use validation::{RuleError, ValidatorContext, visit_all_rules, validate_input_values};
+use validation::{ValidatorContext, visit_all_rules, validate_input_values};
 use executor::execute_validated_query;
 
 pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
@@ -213,6 +213,7 @@ pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use executor::{
     Executor, Registry, ExecutionResult, ExecutionError, FieldResult, IntoFieldResult,
 };
+pub use validation::RuleError;
 pub use types::scalars::ID;
 pub use schema::model::RootNode;
 
