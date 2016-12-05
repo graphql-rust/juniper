@@ -16,7 +16,7 @@ make integration with existing servers straightforward. It optionally provides a
 pre-built integration for the [Iron framework][iron].
 
 * [Cargo crate](https://crates.io/crates/juniper)
-* [API Documentation](https://docs.rs/juniper/0.5.2/juniper/)
+* [API Documentation](https://docs.rs/juniper/0.5.3/juniper/)
 
 ## Installation
 
@@ -24,7 +24,7 @@ Add Juniper to your Cargo.toml:
 
 ```toml
 [dependencies]
-juniper = "0.5.2"
+juniper = "0.5.3"
 ```
 
 If you want the Iron integration enabled, you need to enable the `iron-handlers`
@@ -32,7 +32,7 @@ feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.5.2", features = ["iron-handlers"] }
+juniper = { version = "0.5.3", features = ["iron-handlers"] }
 ```
 
 ## Building schemas
