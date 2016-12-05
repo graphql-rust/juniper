@@ -193,6 +193,7 @@ mod schema;
 mod validation;
 mod executor;
 mod integrations;
+#[macro_use] mod result_ext;
 
 #[cfg(all(test, not(feature="expose-test-schema")))] mod tests;
 #[cfg(feature="expose-test-schema")] pub mod tests;
@@ -216,6 +217,7 @@ pub use executor::{
 pub use validation::RuleError;
 pub use types::scalars::ID;
 pub use schema::model::RootNode;
+pub use result_ext::ResultExt;
 
 pub use schema::meta;
 
