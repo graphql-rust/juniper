@@ -136,7 +136,7 @@ macro_rules! graphql_union {
                 &$mainself,
                 type_name: &str,
                 _: Option<Vec<$crate::Selection>>,
-                executor: &mut $crate::Executor<$ctxt>,
+                executor: &$crate::Executor<$ctxt>,
             )
                 -> $crate::ExecutionResult
             {

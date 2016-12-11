@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::sync::RwLock;
 
 use ::GraphQLError;
 use ast::{InputValue, ToInputValue, Document, Selection, Fragment, Definition, Type, FromInputValue, OperationType};
@@ -41,7 +42,7 @@ pub struct Executor<'a, CtxT> where CtxT: 'a {
     current_selection_set: Option<Vec<Selection>>,
     schema: &'a SchemaType,
     context: &'a CtxT,
-    errors: &'a mut Vec<ExecutionError>,
+    errors: &'a RwLock<Vec<ExecutionError>>,
     field_path: FieldPath<'a>,
 }
 
@@ -81,7 +82,7 @@ impl<T> IntoFieldResult<T> for FieldResult<T> {
 
 impl<'a, CtxT> Executor<'a, CtxT> {
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    pub fn resolve<T: GraphQLType<CtxT>>(&mut self, value: &T) -> ExecutionResult {
+    pub fn resolve<T: GraphQLType<CtxT>>(&self, value: &T) -> ExecutionResult {
         Ok(value.resolve(
             match self.current_selection_set {
                 Some(ref sel) => Some(sel.clone()),
@@ -93,7 +94,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_value<T: GraphQLType<CtxT>>(&mut self, value: &T) -> Value {
+    pub fn resolve_into_value<T: GraphQLType<CtxT>>(&self, value: &T) -> Value {
         match self.resolve(value) {
             Ok(v) => v,
             Err(e) => {
@@ -108,7 +109,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     ///
     /// This can be used to connect different types, e.g. from different Rust
     /// libraries, that require different context types.
-    pub fn replaced_context<'b, NewCtxT>(&'b mut self, ctx: &'b NewCtxT) -> Executor<'b, NewCtxT> {
+    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, NewCtxT> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -122,7 +123,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
 
     #[doc(hidden)]
     pub fn sub_executor(
-        &mut self,
+        &self,
         field_name: Option<String>,
         location: SourcePosition,
         selection_set: Option<Vec<Selection>>,
@@ -167,11 +168,13 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     /// Add an error to the execution engine
-    pub fn push_error(&mut self, error: String, location: SourcePosition) {
+    pub fn push_error(&self, error: String, location: SourcePosition) {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
 
-        self.errors.push(ExecutionError {
+        let mut errors = self.errors.write().unwrap();
+
+        errors.push(ExecutionError {
             location: location,
             path: path,
             message: error,
@@ -261,17 +264,17 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         None => return Err(GraphQLError::UnknownOperationName),
     };
 
-    let mut errors = Vec::new();
+    let errors = RwLock::new(Vec::new());
     let value;
 
     {
-        let mut executor = Executor {
+        let executor = Executor {
             fragments: &fragments.into_iter().map(|f| (f.item.name.item.clone(), f.item)).collect(),
             variables: variables,
             current_selection_set: Some(op.item.selection_set),
             schema: &root_node.schema,
             context: context,
-            errors: &mut errors,
+            errors: &errors,
             field_path: FieldPath::Root(op.start),
         };
 
@@ -281,6 +284,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         };
     }
 
+    let mut errors = errors.into_inner().unwrap();
     errors.sort();
 
     Ok((value, errors))

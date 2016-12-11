@@ -15,9 +15,9 @@ macro_rules! __graphql__args {
 
     (
         @assign_arg_vars,
-        $args:ident, $executorvar:ident, &mut $exec:ident $($rest:tt)*
+        $args:ident, $executorvar:ident, &$exec:ident $($rest:tt)*
     ) => {
-        let __graphql__args!(@as_pattern, $exec) = &mut $executorvar;
+        let __graphql__args!(@as_pattern, $exec) = &$executorvar;
         __graphql__args!(@assign_arg_vars, $args, $executorvar, $($rest)*);
     };
 
@@ -59,7 +59,7 @@ macro_rules! __graphql__args {
 
     (
         @apply_args,
-        $reg:expr, $base:expr, ( &mut executor $( $rest:tt )* )
+        $reg:expr, $base:expr, ( &executor $( $rest:tt )* )
     ) => {
         __graphql__args!(
             @apply_args,

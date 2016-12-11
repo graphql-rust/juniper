@@ -67,7 +67,7 @@ graphql_object!(User: Database |&self| {
     //
     // In this example, the context is used to convert the friend_ids array
     // into actual User objects.
-    field friends(&mut executor) -> Vec<&User> {
+    field friends(&executor) -> Vec<&User> {
         self.friend_ids.iter()
             .filter_map(|id| executor.context().users.get(id))
             .collect()
@@ -79,7 +79,7 @@ graphql_object!(User: Database |&self| {
 graphql_object!(QueryRoot: Database |&self| {
 
     // Arguments work just like they do on functions.
-    field user(&mut executor, id: String) -> Option<&User> {
+    field user(&executor, id: String) -> Option<&User> {
         executor.context().users.get(&id)
     }
 });
@@ -121,7 +121,7 @@ use juniper::iron_handlers::GraphQLHandler;
 #         Ok(&self.name)
 #     }
 #
-#     field friends(&mut executor) -> FieldResult<Vec<&User>> {
+#     field friends(&executor) -> FieldResult<Vec<&User>> {
 #         Ok(self.friend_ids.iter()
 #             .filter_map(|id| executor.context().users.get(id))
 #             .collect())
@@ -129,7 +129,7 @@ use juniper::iron_handlers::GraphQLHandler;
 # });
 #
 # graphql_object!(QueryRoot: Database |&self| {
-#     field user(&mut executor, id: String) -> FieldResult<Option<&User>> {
+#     field user(&executor, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
 #     }
 # });

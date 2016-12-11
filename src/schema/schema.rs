@@ -19,7 +19,7 @@ impl<CtxT, QueryT, MutationT> GraphQLType<CtxT> for RootNode<CtxT, QueryT, Mutat
         QueryT::meta(registry)
     }
 
-    fn resolve_field(&self, field: &str, args: &Arguments, executor: &mut Executor<CtxT>) -> ExecutionResult {
+    fn resolve_field(&self, field: &str, args: &Arguments, executor: &Executor<CtxT>) -> ExecutionResult {
         match field {
             "__schema" => executor.replaced_context(&self.schema).resolve(&self.schema),
             "__type" => {
@@ -99,7 +99,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
         }
     }
 
-    field interfaces(&mut executor) -> Option<Vec<TypeType>> {
+    field interfaces(&executor) -> Option<Vec<TypeType>> {
         match *self {
             TypeType::Concrete(&MetaType::Object(ObjectMeta { ref interface_names, .. })) => {
                 let schema = executor.context();
@@ -112,7 +112,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
         }
     }
 
-    field possible_types(&mut executor) -> Option<Vec<TypeType>> {
+    field possible_types(&executor) -> Option<Vec<TypeType>> {
         let schema = executor.context();
         match *self {
             TypeType::Concrete(&MetaType::Union(UnionMeta { ref of_type_names, .. })) => {
@@ -162,7 +162,7 @@ graphql_object!(Field: SchemaType as "__Field" |&self| {
         self.arguments.as_ref().map_or_else(|| Vec::new(), |v| v.iter().collect())
     }
 
-    field type(&mut executor) -> TypeType {
+    field type(&executor) -> TypeType {
         executor.context().make_type(&self.field_type)
     }
 
@@ -184,7 +184,7 @@ graphql_object!(Argument: SchemaType as "__InputValue" |&self| {
         &self.description
     }
 
-    field type(&mut executor) -> TypeType {
+    field type(&executor) -> TypeType {
         executor.context().make_type(&self.arg_type)
     }
 

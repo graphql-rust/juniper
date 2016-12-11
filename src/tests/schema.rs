@@ -17,7 +17,7 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
         Some(self.name())
     }
 
-    field friends(&mut executor) -> Vec<&Character>
+    field friends(&executor) -> Vec<&Character>
     as "The friends of the character" {
         executor.context().get_friends(self.as_character())
     }
@@ -45,7 +45,7 @@ graphql_object!(<'a> &'a Human: Database as "Human" |&self| {
         Some(self.name())
     }
 
-    field friends(&mut executor) -> Vec<&Character>
+    field friends(&executor) -> Vec<&Character>
     as "The friends of the human" {
         executor.context().get_friends(self.as_character())
     }
@@ -72,7 +72,7 @@ graphql_object!(<'a> &'a Droid: Database as "Droid" |&self| {
         Some(self.name())
     }
 
-    field friends(&mut executor) -> Vec<&Character>
+    field friends(&executor) -> Vec<&Character>
     as "The friends of the droid" {
         executor.context().get_friends(self.as_character())
     }

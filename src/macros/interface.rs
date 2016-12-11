@@ -249,7 +249,7 @@ macro_rules! graphql_interface {
 
             #[allow(unused_variables)]
             #[allow(unused_mut)]
-            fn resolve_field(&$mainself, field: &str, args: &$crate::Arguments, mut executor: &mut $crate::Executor<$ctxt>) -> $crate::ExecutionResult {
+            fn resolve_field(&$mainself, field: &str, args: &$crate::Arguments, mut executor: &$crate::Executor<$ctxt>) -> $crate::ExecutionResult {
                 __graphql__build_field_matches!(
                     ($outname, $mainself, field, args, executor),
                     (),
@@ -267,7 +267,7 @@ macro_rules! graphql_interface {
                 &$mainself,
                 type_name: &str,
                 _: Option<Vec<$crate::Selection>>,
-                executor: &mut $crate::Executor<$ctxt>,
+                executor: &$crate::Executor<$ctxt>,
             )
                 -> $crate::ExecutionResult
             {

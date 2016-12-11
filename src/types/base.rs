@@ -165,7 +165,7 @@ impl GraphQLType<Database> for User {
         &self,
         field_name: &str,
         args: &Arguments,
-        executor: &mut Executor<Database>
+        executor: &Executor<Database>
     )
         -> ExecutionResult
     {
@@ -221,7 +221,7 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_field(&self, field_name: &str, arguments: &Arguments, executor: &mut Executor<CtxT>)
+    fn resolve_field(&self, field_name: &str, arguments: &Arguments, executor: &Executor<CtxT>)
         -> ExecutionResult
     {
         panic!("resolve_field must be implemented by object types");
@@ -234,7 +234,7 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_into_type(&self, type_name: &str, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> ExecutionResult {
+    fn resolve_into_type(&self, type_name: &str, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> ExecutionResult {
         if Self::name().unwrap() == type_name {
             Ok(self.resolve(selection_set, executor))
         } else {
@@ -260,7 +260,7 @@ pub trait GraphQLType<CtxT>: Sized {
     /// The default implementation uses `resolve_field` to resolve all fields,
     /// including those through fragment expansion, for object types. For
     /// non-object types, this method panics.
-    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &mut Executor<CtxT>) -> Value {
+    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
             resolve_selection_set_into(self, selection_set, executor, &mut result);
@@ -275,7 +275,7 @@ pub trait GraphQLType<CtxT>: Sized {
 fn resolve_selection_set_into<T, CtxT>(
     instance: &T,
     selection_set: Vec<Selection>,
-    executor: &mut Executor<CtxT>,
+    executor: &Executor<CtxT>,
     result: &mut HashMap<String, Value>)
     where T: GraphQLType<CtxT>
 {

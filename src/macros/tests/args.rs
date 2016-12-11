@@ -20,8 +20,8 @@ Syntax to validate:
 
 graphql_object!(Root: () |&self| {
     field simple() -> i64 { 0 }
-    field exec_arg(&mut executor) -> i64 { 0 }
-    field exec_arg_and_more(&mut executor, arg: i64) -> i64 { 0 }
+    field exec_arg(&executor) -> i64 { 0 }
+    field exec_arg_and_more(&executor, arg: i64) -> i64 { 0 }
 
     field single_arg(arg: i64) -> i64 { 0 }
     field multi_args(

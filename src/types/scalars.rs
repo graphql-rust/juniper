@@ -49,7 +49,7 @@ impl<'a, CtxT> GraphQLType<CtxT> for &'a str {
         registry.build_scalar_type::<String>().into_meta()
     }
 
-    fn resolve(&self, _: Option<Vec<Selection>>, _: &mut Executor<CtxT>) -> Value {
+    fn resolve(&self, _: Option<Vec<Selection>>, _: &Executor<CtxT>) -> Value {
         Value::string(self)
     }
 }

@@ -194,7 +194,7 @@ string as documentation on the field.
 ### Field arguments
 
 ```text
-&mut executor
+&executor
 arg_name: ArgType
 arg_name = default_value: ArgType
 arg_name: ArgType as "Argument description"
@@ -202,7 +202,7 @@ arg_name = default_value: ArgType as "Argument description"
 ```
 
 Field arguments can take many forms. If the field needs access to the executor
-or context, it can take an [Executor][1] instance by specifying `&mut executor`
+or context, it can take an [Executor][1] instance by specifying `&executor`
 as the first argument.
 
 The other cases are similar to regular Rust arguments, with two additions:
@@ -382,7 +382,7 @@ macro_rules! graphql_object {
                 &$mainself,
                 field: &str,
                 args: &$crate::Arguments,
-                mut executor: &mut $crate::Executor<$ctxt>
+                executor: &$crate::Executor<$ctxt>
             )
                 -> $crate::ExecutionResult
             {

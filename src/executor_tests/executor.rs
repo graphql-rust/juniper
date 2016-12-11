@@ -167,7 +167,7 @@ mod threads_context_correctly {
     struct Schema;
 
     graphql_object!(Schema: String |&self| {
-        field a(&mut executor) -> String { executor.context().clone() }
+        field a(&executor) -> String { executor.context().clone() }
     });
 
     #[test]
