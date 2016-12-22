@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use ast::{InputValue, Selection, FromInputValue, ToInputValue};
 use value::Value;
 
@@ -40,16 +42,18 @@ graphql_scalar!(String as "String" {
 });
 
 
-impl<'a, CtxT> GraphQLType<CtxT> for &'a str {
+impl<'a> GraphQLType for &'a str {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("String")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_scalar_type::<String>().into_meta()
     }
 
-    fn resolve(&self, _: Option<Vec<Selection>>, _: &Executor<CtxT>) -> Value {
+    fn resolve(&self, _: Option<Vec<Selection>>, _: &Executor<Self::Context>) -> Value {
         Value::string(self)
     }
 }
@@ -111,12 +115,14 @@ graphql_scalar!(f64 as "Float" {
 });
 
 
-impl<CtxT> GraphQLType<CtxT> for () {
+impl GraphQLType for () {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("__Unit")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_scalar_type::<Self>().into_meta()
     }
 }
@@ -129,6 +135,42 @@ impl FromInputValue for () {
 
 impl IntoFieldResult<()> for () {
     fn into(self) -> FieldResult<()> {
+        Ok(self)
+    }
+}
+
+
+/// Utility type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the mutation, no mutation will be
+/// generated for the schema.
+pub struct EmptyMutation<T> {
+    phantom: PhantomData<T>,
+}
+
+impl<T> EmptyMutation<T> {
+    /// Construct a new empty mutation
+    pub fn new() -> EmptyMutation<T> {
+        EmptyMutation {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<T> GraphQLType for EmptyMutation<T> {
+    type Context = T;
+
+    fn name() -> Option<&'static str> {
+        Some("__EmptyMutation")
+    }
+
+    fn meta(registry: &mut Registry) -> MetaType {
+        registry.build_object_type::<Self>()(&[]).into_meta()
+    }
+}
+
+impl<T> IntoFieldResult<EmptyMutation<T>> for EmptyMutation<T> {
+    fn into(self) -> FieldResult<EmptyMutation<T>> {
         Ok(self)
     }
 }

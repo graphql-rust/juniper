@@ -4,6 +4,7 @@ use value::Value;
 use ast::InputValue;
 use schema::model::RootNode;
 use executor::FieldResult;
+use types::scalars::EmptyMutation;
 
 struct Interface;
 struct Root;
@@ -71,7 +72,7 @@ fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
     let vars = vec![
         ("typeName".to_owned(), InputValue::string(type_name)),
     ].into_iter().collect();

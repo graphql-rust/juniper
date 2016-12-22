@@ -59,12 +59,14 @@ macro_rules! graphql_enum {
         ( $name:path, $outname:tt, $descr:tt ),
         [ $( ( $eval:tt, $ename:tt, $edescr:tt, $edepr:tt ) , )* ]
     ) => {
-        impl<CtxT> $crate::GraphQLType<CtxT> for $name {
+        impl $crate::GraphQLType for $name {
+            type Context = ();
+
             fn name() -> Option<&'static str> {
                 Some(graphql_enum!(@as_expr, $outname))
             }
 
-            fn meta(registry: &mut $crate::Registry<CtxT>) -> $crate::meta::MetaType {
+            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
                 graphql_enum!(
                     @maybe_apply, $descr, description,
                     registry.build_enum_type::<$name>()(&[
@@ -81,7 +83,7 @@ macro_rules! graphql_enum {
                     .into_meta()
             }
 
-            fn resolve(&self, _: Option<Vec<$crate::Selection>>, _: &$crate::Executor<CtxT>) -> $crate::Value {
+            fn resolve(&self, _: Option<Vec<$crate::Selection>>, _: &$crate::Executor<Self::Context>) -> $crate::Value {
                 match self {
                     $(
                         &graphql_enum!(@as_pattern, $eval) =>

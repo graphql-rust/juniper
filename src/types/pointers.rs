@@ -5,12 +5,14 @@ use schema::meta::MetaType;
 use executor::{Executor, Registry, ExecutionResult, IntoFieldResult, FieldResult};
 use types::base::{Arguments, GraphQLType};
 
-impl<T, CtxT> GraphQLType<CtxT> for Box<T> where T: GraphQLType<CtxT> {
+impl<T, CtxT> GraphQLType for Box<T> where T: GraphQLType<Context=CtxT> {
+    type Context = CtxT;
+
     fn name() -> Option<&'static str> {
         T::name()
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         T::meta(registry)
     }
 
@@ -49,12 +51,14 @@ impl<T> IntoFieldResult<Box<T>> for Box<T> {
     }
 }
 
-impl<'a, T, CtxT> GraphQLType<CtxT> for &'a T where T: GraphQLType<CtxT> {
+impl<'a, T, CtxT> GraphQLType for &'a T where T: GraphQLType<Context=CtxT> {
+    type Context = CtxT;
+
     fn name() -> Option<&'static str> {
         T::name()
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         T::meta(registry)
     }
 

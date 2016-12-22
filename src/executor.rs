@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::sync::RwLock;
 
 use ::GraphQLError;
@@ -20,10 +19,9 @@ use types::base::GraphQLType;
 /// The registry gathers metadata for all types in a schema. It provides
 /// convenience methods to convert types implementing the `GraphQLType` trait
 /// into `Type` instances and automatically registers them.
-pub struct Registry<CtxT> {
+pub struct Registry {
     /// Currently registered types
     pub types: HashMap<String, MetaType>,
-    phantom: PhantomData<CtxT>,
 }
 
 #[derive(Clone)]
@@ -80,9 +78,46 @@ impl<T> IntoFieldResult<T> for FieldResult<T> {
     }
 }
 
+/// Conversion trait for context types
+///
+/// This is currently only used for converting arbitrary contexts into
+/// the empty tuple, but will in the future be used to support general
+/// context conversion for larger schemas.
+pub trait FromContext<T> {
+    /// Perform the conversion
+    fn from_context(value: &T) -> &Self;
+}
+
+/// Marker trait for types that can act as context objects for GraphQL types.
+pub trait Context { }
+
+static NULL_CONTEXT: () = ();
+
+impl<T> FromContext<T> for () {
+    fn from_context(_: &T) -> &Self {
+        &NULL_CONTEXT
+    }
+}
+
+impl<T> FromContext<T> for T where T: Context {
+    fn from_context(value: &T) -> &Self {
+        value
+    }
+}
+
 impl<'a, CtxT> Executor<'a, CtxT> {
+    /// Resolve a single arbitrary value, mapping the context to a new type
+    pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<Context=NewCtxT>>(
+        &self, value: &T
+    ) -> ExecutionResult
+        where NewCtxT: FromContext<CtxT>,
+    {
+        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from_context(&self.context))
+            .resolve(value)
+    }
+
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    pub fn resolve<T: GraphQLType<CtxT>>(&self, value: &T) -> ExecutionResult {
+    pub fn resolve<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> ExecutionResult {
         Ok(value.resolve(
             match self.current_selection_set {
                 Some(ref sel) => Some(sel.clone()),
@@ -94,7 +129,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_value<T: GraphQLType<CtxT>>(&self, value: &T) -> Value {
+    pub fn resolve_into_value<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> Value {
         match self.resolve(value) {
             Ok(v) => v,
             Err(e) => {
@@ -230,13 +265,13 @@ impl ExecutionError {
 pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
     document: Document,
     operation_name: Option<&str>,
-    root_node: &RootNode<CtxT, QueryT, MutationT>,
+    root_node: &RootNode<QueryT, MutationT>,
     variables: &HashMap<String, InputValue>,
     context: &CtxT
 )
     -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
-    where QueryT: GraphQLType<CtxT>,
-          MutationT: GraphQLType<CtxT>
+    where QueryT: GraphQLType<Context=CtxT>,
+          MutationT: GraphQLType<Context=CtxT>
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -290,12 +325,11 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
     Ok((value, errors))
 }
 
-impl<CtxT> Registry<CtxT> {
+impl Registry {
     /// Construct a new registry
-    pub fn new(types: HashMap<String, MetaType>) -> Registry<CtxT> {
+    pub fn new(types: HashMap<String, MetaType>) -> Registry {
         Registry {
             types: types,
-            phantom: PhantomData,
         }
     }
 
@@ -303,7 +337,7 @@ impl<CtxT> Registry<CtxT> {
     ///
     /// If the registry hasn't seen a type with this name before, it will
     /// construct its metadata and store it.
-    pub fn get_type<T>(&mut self) -> Type where T: GraphQLType<CtxT> {
+    pub fn get_type<T>(&mut self) -> Type where T: GraphQLType {
         if let Some(name) = T::name() {
             if !self.types.contains_key(name) {
                 self.insert_placeholder(name, Type::NonNullNamed(name.to_owned()));
@@ -318,7 +352,7 @@ impl<CtxT> Registry<CtxT> {
     }
 
     /// Create a field with the provided name
-    pub fn field<T>(&mut self, name: &str) -> Field where T: GraphQLType<CtxT> {
+    pub fn field<T>(&mut self, name: &str) -> Field where T: GraphQLType {
         Field {
             name: name.to_owned(),
             description: None,
@@ -329,7 +363,7 @@ impl<CtxT> Registry<CtxT> {
     }
 
     #[doc(hidden)]
-    pub fn field_convert<T: IntoFieldResult<I>, I>(&mut self, name: &str) -> Field where I: GraphQLType<CtxT> {
+    pub fn field_convert<T: IntoFieldResult<I>, I>(&mut self, name: &str) -> Field where I: GraphQLType {
         Field {
             name: name.to_owned(),
             description: None,
@@ -340,7 +374,7 @@ impl<CtxT> Registry<CtxT> {
     }
 
     #[doc(hidden)]
-    pub fn field_inside_result<T>(&mut self, name: &str, _: FieldResult<T>) -> Field where T: GraphQLType<CtxT> {
+    pub fn field_inside_result<T>(&mut self, name: &str, _: FieldResult<T>) -> Field where T: GraphQLType {
         Field {
             name: name.to_owned(),
             description: None,
@@ -351,7 +385,7 @@ impl<CtxT> Registry<CtxT> {
     }
 
     /// Create an argument with the provided name
-    pub fn arg<T>(&mut self, name: &str) -> Argument where T: GraphQLType<CtxT> + FromInputValue {
+    pub fn arg<T>(&mut self, name: &str) -> Argument where T: GraphQLType + FromInputValue {
         Argument::new(name, self.get_type::<T>())
     }
 
@@ -365,7 +399,7 @@ impl<CtxT> Registry<CtxT> {
         value: &T,
     )
         -> Argument
-        where T: GraphQLType<CtxT> + ToInputValue + FromInputValue
+        where T: GraphQLType + ToInputValue + FromInputValue
     {
         Argument::new(name, self.get_type::<Option<T>>())
             .default_value(value.to())
@@ -384,20 +418,20 @@ impl<CtxT> Registry<CtxT> {
     /// This expects the type to implement `FromInputValue`.
     pub fn build_scalar_type<T>(&mut self)
         -> ScalarMeta
-        where T: FromInputValue + GraphQLType<CtxT>
+        where T: FromInputValue + GraphQLType
     {
         let name = T::name().expect("Scalar types must be named. Implement name()");
         ScalarMeta::new::<T>(name)
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType<CtxT>>(&mut self) -> ListMeta {
+    pub fn build_list_type<T: GraphQLType>(&mut self) -> ListMeta {
         let of_type = self.get_type::<T>();
         ListMeta::new(of_type)
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType<CtxT>>(&mut self) -> NullableMeta {
+    pub fn build_nullable_type<T: GraphQLType>(&mut self) -> NullableMeta {
         let of_type = self.get_type::<T>();
         NullableMeta::new(of_type)
     }
@@ -408,7 +442,7 @@ impl<CtxT> Registry<CtxT> {
     /// function that needs to be called with the list of fields on the object.
     pub fn build_object_type<T>(&mut self)
         -> Box<Fn(&[Field]) -> ObjectMeta>
-        where T: GraphQLType<CtxT>
+        where T: GraphQLType
     {
         let name = T::name().expect("Object types must be named. Implement name()");
         let typename_field = self.field::<String>("__typename");
@@ -423,7 +457,7 @@ impl<CtxT> Registry<CtxT> {
     /// Create an enum meta type
     pub fn build_enum_type<T>(&mut self)
         -> Box<Fn(&[EnumValue]) -> EnumMeta>
-        where T: FromInputValue + GraphQLType<CtxT>
+        where T: FromInputValue + GraphQLType
     {
         let name = T::name().expect("Enum types must be named. Implement name()");
 
@@ -433,7 +467,7 @@ impl<CtxT> Registry<CtxT> {
     /// Create an interface meta type builder
     pub fn build_interface_type<T>(&mut self)
         -> Box<Fn(&[Field]) -> InterfaceMeta>
-        where T: GraphQLType<CtxT>
+        where T: GraphQLType
     {
         let name = T::name().expect("Interface types must be named. Implement name()");
         let typename_field = self.field::<String>("__typename");
@@ -448,7 +482,7 @@ impl<CtxT> Registry<CtxT> {
     /// Create a union meta type builder
     pub fn build_union_type<T>(&mut self)
         -> Box<Fn(&[Type]) -> UnionMeta>
-        where T: GraphQLType<CtxT>
+        where T: GraphQLType
     {
         let name = T::name().expect("Union types must be named. Implement name()");
 
@@ -458,7 +492,7 @@ impl<CtxT> Registry<CtxT> {
     /// Create an input object meta type builder
     pub fn build_input_object_type<T>(&mut self)
         -> Box<Fn(&[Argument]) -> InputObjectMeta>
-        where T: FromInputValue + GraphQLType<CtxT>
+        where T: FromInputValue + GraphQLType
     {
         let name = T::name().expect("Input object types must be named. Implement name()");
 

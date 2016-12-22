@@ -148,12 +148,14 @@ macro_rules! graphql_input_object {
             }
         }
 
-        impl<CtxT> $crate::GraphQLType<CtxT> for $name {
+        impl $crate::GraphQLType for $name {
+            type Context = ();
+
             fn name() -> Option<&'static str> {
                 Some($outname)
             }
 
-            fn meta(registry: &mut $crate::Registry<CtxT>) -> $crate::meta::MetaType {
+            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
                 graphql_input_object!(
                     @maybe_apply, $descr, description,
                     registry.build_input_object_type::<$name>()(

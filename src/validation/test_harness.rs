@@ -2,7 +2,7 @@ use parser::parse_document_source;
 use ast::{FromInputValue, InputValue};
 use types::base::GraphQLType;
 use executor::Registry;
-use types::scalars::ID;
+use types::scalars::{EmptyMutation, ID};
 use schema::model::{DirectiveType, DirectiveLocation, RootNode};
 use schema::meta::{EnumValue, MetaType};
 use validation::{Visitor, RuleError, ValidatorContext, MultiVisitor, visit};
@@ -51,12 +51,14 @@ struct ComplexInput {
     string_list_field: Option<Vec<Option<String>>>,
 }
 
-impl<CtxT> GraphQLType<CtxT> for Being {
+impl GraphQLType for Being {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Being")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_interface_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -65,12 +67,14 @@ impl<CtxT> GraphQLType<CtxT> for Being {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Pet {
+impl GraphQLType for Pet {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Pet")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_interface_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -79,12 +83,14 @@ impl<CtxT> GraphQLType<CtxT> for Pet {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Canine {
+impl GraphQLType for Canine {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Canine")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_interface_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -93,12 +99,14 @@ impl<CtxT> GraphQLType<CtxT> for Canine {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for DogCommand {
+impl GraphQLType for DogCommand {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("DogCommand")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_enum_type::<Self>()(&[
                 EnumValue::new("SIT"),
                 EnumValue::new("HEEL"),
@@ -119,12 +127,14 @@ impl FromInputValue for DogCommand {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Dog {
+impl GraphQLType for Dog {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Dog")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -148,12 +158,14 @@ impl<CtxT> GraphQLType<CtxT> for Dog {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for FurColor {
+impl GraphQLType for FurColor {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("FurColor")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_enum_type::<Self>()(&[
                 EnumValue::new("BROWN"),
                 EnumValue::new("BLACK"),
@@ -176,12 +188,14 @@ impl FromInputValue for FurColor {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Cat {
+impl GraphQLType for Cat {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Cat")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -198,12 +212,14 @@ impl<CtxT> GraphQLType<CtxT> for Cat {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for CatOrDog {
+impl GraphQLType for CatOrDog {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("CatOrDog")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_union_type::<Self>()(&[
                 registry.get_type::<Cat>(),
                 registry.get_type::<Dog>(),
@@ -212,12 +228,14 @@ impl<CtxT> GraphQLType<CtxT> for CatOrDog {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Intelligent {
+impl GraphQLType for Intelligent {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Intelligent")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_interface_type::<Self>()(&[
                 registry.field::<Option<i64>>("iq"),
             ])
@@ -225,12 +243,14 @@ impl<CtxT> GraphQLType<CtxT> for Intelligent {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Human {
+impl GraphQLType for Human {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Human")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -246,12 +266,14 @@ impl<CtxT> GraphQLType<CtxT> for Human {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for Alien {
+impl GraphQLType for Alien {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("Alien")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[
                 registry.field::<Option<String>>("name")
                     .argument(registry.arg::<Option<bool>>("surname")),
@@ -266,12 +288,14 @@ impl<CtxT> GraphQLType<CtxT> for Alien {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for DogOrHuman {
+impl GraphQLType for DogOrHuman {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("DogOrHuman")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_union_type::<Self>()(&[
                 registry.get_type::<Dog>(),
                 registry.get_type::<Human>(),
@@ -280,12 +304,14 @@ impl<CtxT> GraphQLType<CtxT> for DogOrHuman {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for HumanOrAlien {
+impl GraphQLType for HumanOrAlien {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("HumanOrAlien")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_union_type::<Self>()(&[
                 registry.get_type::<Human>(),
                 registry.get_type::<Alien>(),
@@ -294,12 +320,14 @@ impl<CtxT> GraphQLType<CtxT> for HumanOrAlien {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for ComplexInput {
+impl GraphQLType for ComplexInput {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("ComplexInput")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_input_object_type::<Self>()(&[
                 registry.arg::<bool>("requiredField"),
                 registry.arg::<Option<i64>>("intField"),
@@ -331,12 +359,14 @@ impl FromInputValue for ComplexInput {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for ComplicatedArgs {
+impl GraphQLType for ComplicatedArgs {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("ComplicatedArgs")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[
                 registry.field::<Option<String>>("intArgField")
                     .argument(registry.arg::<Option<i64>>("intArg")),
@@ -372,12 +402,14 @@ impl<CtxT> GraphQLType<CtxT> for ComplicatedArgs {
     }
 }
 
-impl<CtxT> GraphQLType<CtxT> for QueryRoot {
+impl GraphQLType for QueryRoot {
+    type Context = ();
+
     fn name() -> Option<&'static str> {
         Some("QueryRoot")
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[
                 registry.field::<Option<Human>>("human")
                     .argument(registry.arg::<Option<ID>>("id")),
@@ -396,11 +428,11 @@ impl<CtxT> GraphQLType<CtxT> for QueryRoot {
 
 pub fn validate<'a, R, V, F>(r: R, q: &str, factory: F)
     -> Vec<RuleError>
-    where R: GraphQLType<()>,
+    where R: GraphQLType,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
 {
-    let mut root = RootNode::<(), R, ()>::new(r, ());
+    let mut root = RootNode::new(r, EmptyMutation::<()>::new());
 
     root.schema.add_directive(DirectiveType::new("onQuery", &[DirectiveLocation::Query], &[]));
     root.schema.add_directive(DirectiveType::new("onMutation", &[DirectiveLocation::Mutation], &[]));
@@ -429,7 +461,7 @@ pub fn expect_passes_rule<'a, V, F>(factory: F, q: &str)
 }
 
 pub fn expect_passes_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &str)
-    where R: GraphQLType<()>,
+    where R: GraphQLType,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
 {
@@ -449,7 +481,7 @@ pub fn expect_fails_rule<'a, V, F>(factory: F, q: &str, expected_errors: &[RuleE
 }
 
 pub fn expect_fails_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &str, expected_errors: &[RuleError])
-    where R: GraphQLType<()>,
+    where R: GraphQLType,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
 {

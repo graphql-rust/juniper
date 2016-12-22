@@ -9,7 +9,7 @@ use std::env;
 use mount::Mount;
 use logger::Logger;
 use iron::prelude::*;
-use juniper::FieldResult;
+use juniper::EmptyMutation;
 use juniper::iron_handlers::{GraphQLHandler, GraphiQLHandler};
 use juniper::tests::model::Database;
 
@@ -20,7 +20,11 @@ fn context_factory(_: &mut Request) -> Database {
 fn main() {
     let mut mount = Mount::new();
 
-    let graphql_endpoint = GraphQLHandler::new(context_factory, Database::new(), ());
+    let graphql_endpoint = GraphQLHandler::new(
+        context_factory,
+        Database::new(),
+        EmptyMutation::<Database>::new(),
+    );
     let graphiql_endpoint = GraphiQLHandler::new("/graphql");
 
     mount.mount("/", graphiql_endpoint);

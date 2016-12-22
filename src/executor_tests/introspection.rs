@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use value::Value;
 use schema::model::RootNode;
+use types::scalars::EmptyMutation;
 
 enum Sample {
     One,
@@ -67,7 +68,7 @@ fn test_execution() {
         second: sampleScalar(first: 10 second: 20)
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");
@@ -104,7 +105,7 @@ fn enum_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");
@@ -182,7 +183,7 @@ fn interface_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");
@@ -283,7 +284,7 @@ fn object_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");
@@ -395,7 +396,7 @@ fn scalar_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");

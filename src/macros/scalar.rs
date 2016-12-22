@@ -61,12 +61,14 @@ macro_rules! graphql_scalar {
             ( $fiv_arg:ident, $fiv_result:ty, $fiv_body:block )
         )
     ) => {
-        impl<CtxT> $crate::GraphQLType<CtxT> for $name {
+        impl $crate::GraphQLType for $name {
+            type Context = ();
+
             fn name() -> Option<&'static str> {
                 Some($outname)
             }
 
-            fn meta(registry: &mut $crate::Registry<CtxT>) -> $crate::meta::MetaType {
+            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
                 graphql_scalar!(
                     @maybe_apply, $descr, description,
                     registry.build_scalar_type::<Self>())
@@ -76,7 +78,7 @@ macro_rules! graphql_scalar {
             fn resolve(
                 &$resolve_selfvar,
                 _: Option<Vec<$crate::Selection>>,
-                _: &$crate::Executor<CtxT>) -> $crate::Value {
+                _: &$crate::Executor<Self::Context>) -> $crate::Value {
                 $resolve_body
             }
         }

@@ -33,14 +33,18 @@ existing object types as GraphQL objects:
 ```rust
 #[macro_use] extern crate juniper;
 # use std::collections::HashMap;
-use juniper::FieldResult;
+use juniper::{Context, FieldResult};
 
 struct User { id: String, name: String, friend_ids: Vec<String>  }
 struct QueryRoot;
 struct Database { users: HashMap<String, User> }
 
+impl Context for Database {}
+
 // GraphQL objects can access a "context object" during execution. Use this
-// object to provide e.g. database access to the field accessors.
+// object to provide e.g. database access to the field accessors. This object
+// must implement the `Context` trait. If you don't need a context, use the
+// empty tuple `()` to indicate this.
 //
 // In this example, we use the Database struct as our context.
 graphql_object!(User: Database |&self| {
@@ -105,6 +109,7 @@ extern crate iron;
 
 use iron::prelude::*;
 use juniper::iron_handlers::GraphQLHandler;
+use juniper::{Context, EmptyMutation};
 
 # use juniper::FieldResult;
 #
@@ -150,11 +155,14 @@ fn context_factory(_: &mut Request) -> Database {
     }
 }
 
+impl Context for Database {}
+
 fn main() {
     // GraphQLHandler takes a context factory function, the root object,
     // and the mutation object. If we don't have any mutations to expose, we
     // can use the empty tuple () to indicate absence.
-    let graphql_endpoint = GraphQLHandler::new(context_factory, QueryRoot, ());
+    let graphql_endpoint = GraphQLHandler::new(
+        context_factory, QueryRoot, EmptyMutation::<Database>::new());
 
     // Start serving the schema at the root on port 8080.
     Iron::new(graphql_endpoint).http("localhost:8080").unwrap();
@@ -212,10 +220,11 @@ pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
 pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use executor::{
+    Context, FromContext,
     Executor, Registry, ExecutionResult, ExecutionError, FieldResult, IntoFieldResult,
 };
 pub use validation::RuleError;
-pub use types::scalars::ID;
+pub use types::scalars::{EmptyMutation, ID};
 pub use schema::model::RootNode;
 pub use result_ext::ResultExt;
 
@@ -238,13 +247,13 @@ pub enum GraphQLError<'a> {
 pub fn execute<'a, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &RootNode<CtxT, QueryT, MutationT>,
+    root_node: &RootNode<QueryT, MutationT>,
     variables: &HashMap<String, InputValue>,
     context: &CtxT,
 )
     -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
-    where QueryT: GraphQLType<CtxT>,
-          MutationT: GraphQLType<CtxT>,
+    where QueryT: GraphQLType<Context=CtxT>,
+          MutationT: GraphQLType<Context=CtxT>,
 {
     let document = try!(parse_document_source(document_source));
 

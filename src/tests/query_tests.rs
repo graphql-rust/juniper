@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use ast::InputValue;
 use value::Value;
 use schema::model::RootNode;
+use types::scalars::EmptyMutation;
 use tests::model::Database;
 
 #[test]
@@ -14,7 +15,7 @@ fn test_hero_name() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -39,7 +40,7 @@ fn test_hero_name_and_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -80,7 +81,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -162,7 +163,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
 fn test_query_name() {
     let doc = r#"{ human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -178,7 +179,7 @@ fn test_query_name() {
 fn test_query_alias_single() {
     let doc = r#"{ luke: human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -198,7 +199,7 @@ fn test_query_alias_multiple() {
             leia: human(id: "1003") { name }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -226,7 +227,7 @@ fn test_query_alias_multiple_with_fragment() {
             homePlanet
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -247,7 +248,7 @@ fn test_query_alias_multiple_with_fragment() {
 fn test_query_name_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let vars = vec![
         ("someId".to_owned(), InputValue::string("1000")),
@@ -267,7 +268,7 @@ fn test_query_name_variable() {
 fn test_query_name_invalid_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let vars = vec![
         ("someId".to_owned(), InputValue::string("some invalid id")),
@@ -285,7 +286,7 @@ fn test_query_name_invalid_variable() {
 fn test_query_friends_names() {
     let doc = r#"{ human(id: "1000") { friends { name } } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -325,7 +326,7 @@ fn test_query_inline_fragments_droid() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),
@@ -350,7 +351,7 @@ fn test_query_inline_fragments_human() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &HashMap::new(), &database),

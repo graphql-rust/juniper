@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use value::Value;
 use ast::InputValue;
 use schema::model::RootNode;
+use types::scalars::EmptyMutation;
 
 struct TestType;
 
@@ -19,7 +20,7 @@ graphql_object!(TestType: () |&self| {
 fn run_variable_query<F>(query: &str, vars: HashMap<String, InputValue>, f: F)
     where F: Fn(&HashMap<String, Value>) -> ()
 {
-    let schema = RootNode::new(TestType, ());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(query, None, &schema, &vars, &())
         .expect("Execution failed");

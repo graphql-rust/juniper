@@ -6,6 +6,7 @@ use schema::model::RootNode;
 use ::GraphQLError::ValidationError;
 use validation::RuleError;
 use parser::SourcePosition;
+use types::scalars::EmptyMutation;
 
 #[derive(Debug)]
 enum Color { Red, Green, Blue }
@@ -30,7 +31,7 @@ graphql_object!(TestType: () |&self| {
 fn run_variable_query<F>(query: &str, vars: HashMap<String, InputValue>, f: F)
     where F: Fn(&HashMap<String, Value>) -> ()
 {
-    let schema = RootNode::new(TestType, ());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(query, None, &schema, &vars, &())
         .expect("Execution failed");
@@ -74,7 +75,7 @@ fn serializes_as_output() {
 
 #[test]
 fn does_not_accept_string_literals() {
-    let schema = RootNode::new(TestType, ());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"{ toString(color: "RED") }"#;
     let vars = vec![
@@ -107,7 +108,7 @@ fn accepts_strings_in_variables() {
 
 #[test]
 fn does_not_accept_incorrect_enum_name_in_variables() {
-    let schema = RootNode::new(TestType, ());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![
@@ -127,7 +128,7 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
 
 #[test]
 fn does_not_accept_incorrect_type_in_variables() {
-    let schema = RootNode::new(TestType, ());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![

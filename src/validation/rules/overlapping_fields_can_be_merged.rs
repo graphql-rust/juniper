@@ -1164,12 +1164,14 @@ mod tests {
     struct Node;
     struct QueryRoot;
 
-    impl<CtxT> GraphQLType<CtxT> for SomeBox {
+    impl GraphQLType for SomeBox {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("SomeBox")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_interface_type::<Self>()(&[
                     registry.field::<Option<SomeBox>>("deepBox"),
                     registry.field::<Option<String>>("unrelatedField"),
@@ -1178,12 +1180,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for StringBox {
+    impl GraphQLType for StringBox {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("StringBox")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<Option<String>>("scalar"),
                     registry.field::<Option<StringBox>>("deepBox"),
@@ -1199,12 +1203,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for IntBox {
+    impl GraphQLType for IntBox {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("IntBox")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<Option<i64>>("scalar"),
                     registry.field::<Option<IntBox>>("deepBox"),
@@ -1220,12 +1226,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for NonNullStringBox1 {
+    impl GraphQLType for NonNullStringBox1 {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("NonNullStringBox1")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_interface_type::<Self>()(&[
                     registry.field::<String>("scalar"),
                 ])
@@ -1233,12 +1241,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for NonNullStringBox1Impl {
+    impl GraphQLType for NonNullStringBox1Impl {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("NonNullStringBox1Impl")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<String>("scalar"),
                     registry.field::<Option<SomeBox>>("deepBox"),
@@ -1252,12 +1262,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for NonNullStringBox2 {
+    impl GraphQLType for NonNullStringBox2 {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("NonNullStringBox2")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_interface_type::<Self>()(&[
                     registry.field::<String>("scalar"),
                 ])
@@ -1265,12 +1277,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for NonNullStringBox2Impl {
+    impl GraphQLType for NonNullStringBox2Impl {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("NonNullStringBox2Impl")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<String>("scalar"),
                     registry.field::<Option<SomeBox>>("deepBox"),
@@ -1284,12 +1298,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for Node {
+    impl GraphQLType for Node {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("Node")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<Option<ID>>("id"),
                     registry.field::<Option<String>>("name"),
@@ -1298,12 +1314,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for Edge {
+    impl GraphQLType for Edge {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("Edge")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<Option<Node>>("node"),
                 ])
@@ -1311,12 +1329,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for Connection {
+    impl GraphQLType for Connection {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("Connection")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.build_object_type::<Self>()(&[
                     registry.field::<Option<Vec<Option<Edge>>>>("edges"),
                 ])
@@ -1324,12 +1344,14 @@ mod tests {
         }
     }
 
-    impl<CtxT> GraphQLType<CtxT> for QueryRoot {
+    impl GraphQLType for QueryRoot {
+        type Context = ();
+
         fn name() -> Option<&'static str> {
             Some("QueryRoot")
         }
 
-        fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+        fn meta(registry: &mut Registry) -> MetaType {
             registry.get_type::<IntBox>();
             registry.get_type::<StringBox>();
             registry.get_type::<NonNullStringBox1Impl>();

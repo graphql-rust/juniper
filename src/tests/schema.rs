@@ -1,4 +1,7 @@
 use tests::model::{Character, Human, Droid, Database, Episode};
+use executor::Context;
+
+impl Context for Database {}
 
 graphql_enum!(Episode {
     Episode::NewHope => "NEW_HOPE",

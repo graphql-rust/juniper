@@ -192,7 +192,7 @@ macro_rules! graphql_interface {
 
         $(
             if let Some(_) = $resolver as Option<$srctype> {
-                return (<$srctype as $crate::GraphQLType<$ctxttype>>::name()).unwrap().to_owned();
+                return (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned();
             }
         )*
 
@@ -208,7 +208,7 @@ macro_rules! graphql_interface {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType<$ctxttype>>::name()).unwrap().to_owned() {
+            if $typenamearg == (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned() {
                 return $execarg.resolve(&$resolver);
             }
         )*
@@ -227,14 +227,16 @@ macro_rules! graphql_interface {
             $( $items:tt )*
         }
     ) => {
-        graphql_interface!(@as_item, impl<$($lifetime)*> $crate::GraphQLType<$ctxt> for $name {
+        graphql_interface!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
+            type Context = $ctxt;
+
             fn name() -> Option<&'static str> {
                 Some($outname)
             }
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta(registry: &mut $crate::Registry<$ctxt>) -> $crate::meta::MetaType {
+            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
                 let mut fields = Vec::new();
                 let mut description = None;
                 graphql_interface!(@ gather_meta, (registry, fields, description), $($items)*);
@@ -249,14 +251,14 @@ macro_rules! graphql_interface {
 
             #[allow(unused_variables)]
             #[allow(unused_mut)]
-            fn resolve_field(&$mainself, field: &str, args: &$crate::Arguments, mut executor: &$crate::Executor<$ctxt>) -> $crate::ExecutionResult {
+            fn resolve_field(&$mainself, field: &str, args: &$crate::Arguments, mut executor: &$crate::Executor<Self::Context>) -> $crate::ExecutionResult {
                 __graphql__build_field_matches!(
                     ($outname, $mainself, field, args, executor),
                     (),
                     $($items)*);
             }
 
-            fn concrete_type_name(&$mainself, context: &$ctxt) -> String {
+            fn concrete_type_name(&$mainself, context: &Self::Context) -> String {
                 graphql_interface!(
                     @ concrete_type_name,
                     ($outname, context, $ctxt),
@@ -267,7 +269,7 @@ macro_rules! graphql_interface {
                 &$mainself,
                 type_name: &str,
                 _: Option<Vec<$crate::Selection>>,
-                executor: &$crate::Executor<$ctxt>,
+                executor: &$crate::Executor<Self::Context>,
             )
                 -> $crate::ExecutionResult
             {

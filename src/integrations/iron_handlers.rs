@@ -25,11 +25,11 @@ use ::{InputValue, GraphQLType, RootNode, execute};
 pub struct GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
-          Query: GraphQLType<CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<CtxT> + Send + Sync + 'static,
+          Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
 {
     context_factory: CtxFactory,
-    root_node: RootNode<CtxT, Query, Mutation>,
+    root_node: RootNode<Query, Mutation>,
 }
 
 /// Handler that renders GraphiQL - a graphical query editor interface
@@ -41,8 +41,8 @@ impl<CtxFactory, Query, Mutation, CtxT>
     GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
-          Query: GraphQLType<CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<CtxT> + Send + Sync + 'static,
+          Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
@@ -150,8 +150,8 @@ impl<CtxFactory, Query, Mutation, CtxT>
     for GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
-          Query: GraphQLType<CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<CtxT> + Send + Sync + 'static,
+          Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
 {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         match req.method {
@@ -248,6 +248,7 @@ mod tests {
     use iron::{Handler, Headers};
 
     use ::tests::model::Database;
+    use types::scalars::EmptyMutation;
 
     use super::GraphQLHandler;
 
@@ -259,7 +260,7 @@ mod tests {
         Box::new(GraphQLHandler::new(
             context_factory,
             Database::new(),
-            (),
+            EmptyMutation::<Database>::new(),
         ))
     }
 

@@ -2,6 +2,7 @@ mod field_execution {
     use value::Value;
     use ast::InputValue;
     use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
 
     struct DataType;
     struct DeepDataType;
@@ -33,7 +34,7 @@ mod field_execution {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(DataType, ());
+        let schema = RootNode::new(DataType, EmptyMutation::<()>::new());
         let doc = r"
           query Example($size: Int) {
             a,
@@ -109,6 +110,7 @@ mod field_execution {
 mod merge_parallel_fragments {
     use value::Value;
     use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
 
     struct Type;
 
@@ -121,7 +123,7 @@ mod merge_parallel_fragments {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Type, ());
+        let schema = RootNode::new(Type, EmptyMutation::<()>::new());
         let doc = r"
           { a, ...FragOne, ...FragTwo }
           fragment FragOne on Type {
@@ -162,6 +164,7 @@ mod merge_parallel_fragments {
 
 mod threads_context_correctly {
     use value::Value;
+    use types::scalars::EmptyMutation;
     use schema::model::RootNode;
 
     struct Schema;
@@ -172,7 +175,7 @@ mod threads_context_correctly {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<String>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
@@ -197,6 +200,7 @@ mod nulls_out_errors {
     use schema::model::RootNode;
     use executor::{ExecutionError, FieldResult};
     use parser::SourcePosition;
+    use types::scalars::EmptyMutation;
 
     struct Schema;
 
@@ -207,7 +211,7 @@ mod nulls_out_errors {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ sync, syncError }";
 
         let vars = vec![].into_iter().collect();
@@ -239,6 +243,7 @@ mod nulls_out_errors {
 mod named_operations {
     use value::Value;
     use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
     use ::GraphQLError;
 
     struct Schema;
@@ -249,7 +254,7 @@ mod named_operations {
 
     #[test]
     fn uses_inline_operation_if_no_name_provided() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
@@ -268,7 +273,7 @@ mod named_operations {
 
     #[test]
     fn uses_only_named_operation() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { a }";
 
         let vars = vec![].into_iter().collect();
@@ -287,7 +292,7 @@ mod named_operations {
 
     #[test]
     fn uses_named_operation_if_name_provided() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
@@ -306,7 +311,7 @@ mod named_operations {
 
     #[test]
     fn error_if_multiple_operations_provided_but_no_name() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
@@ -319,7 +324,7 @@ mod named_operations {
 
     #[test]
     fn error_if_unknown_operation_name_provided() {
-        let schema = RootNode::new(Schema, ());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();

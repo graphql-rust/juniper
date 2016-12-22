@@ -348,14 +348,16 @@ macro_rules! graphql_object {
         ( $($lifetime:tt)* );
         $name:ty; $ctxt:ty; $outname:expr; $mainself:ident; $($items:tt)*
     ) => {
-        graphql_object!(@as_item, impl<$($lifetime)*> $crate::GraphQLType<$ctxt> for $name {
+        graphql_object!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
+            type Context = $ctxt;
+
             fn name() -> Option<&'static str> {
                 Some($outname)
             }
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta(registry: &mut $crate::Registry<$ctxt>) -> $crate::meta::MetaType {
+            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
                 let mut fields = Vec::new();
                 let mut description = None;
                 let mut interfaces: Option<Vec<$crate::Type>> = None;
@@ -382,7 +384,7 @@ macro_rules! graphql_object {
                 &$mainself,
                 field: &str,
                 args: &$crate::Arguments,
-                executor: &$crate::Executor<$ctxt>
+                executor: &$crate::Executor<Self::Context>
             )
                 -> $crate::ExecutionResult
             {

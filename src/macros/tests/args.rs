@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use value::Value;
 use schema::model::RootNode;
+use types::scalars::EmptyMutation;
 
 struct Root;
 
@@ -87,7 +88,7 @@ fn run_args_info_query<F>(field_name: &str, f: F)
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");

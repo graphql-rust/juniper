@@ -5,12 +5,14 @@ use schema::meta::MetaType;
 use executor::{Executor, Registry, IntoFieldResult, FieldResult};
 use types::base::{GraphQLType};
 
-impl<T, CtxT> GraphQLType<CtxT> for Option<T> where T: GraphQLType<CtxT> {
+impl<T, CtxT> GraphQLType for Option<T> where T: GraphQLType<Context=CtxT> {
+    type Context = CtxT;
+
     fn name() -> Option<&'static str> {
         None
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_nullable_type::<T>().into_meta()
     }
 
@@ -50,12 +52,14 @@ impl<T> IntoFieldResult<Option<T>> for Option<T> {
 }
 
 
-impl<T, CtxT> GraphQLType<CtxT> for Vec<T> where T: GraphQLType<CtxT> {
+impl<T, CtxT> GraphQLType for Vec<T> where T: GraphQLType<Context=CtxT> {
+    type Context = CtxT;
+
     fn name() -> Option<&'static str> {
         None
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_list_type::<T>().into_meta()
     }
 
@@ -102,12 +106,14 @@ impl<T> IntoFieldResult<Vec<T>> for Vec<T> {
 }
 
 
-impl<'a, T, CtxT> GraphQLType<CtxT> for &'a [T] where T: GraphQLType<CtxT> {
+impl<'a, T, CtxT> GraphQLType for &'a [T] where T: GraphQLType<Context=CtxT> {
+    type Context = CtxT;
+
     fn name() -> Option<&'static str> {
         None
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         registry.build_list_type::<T>().into_meta()
     }
 

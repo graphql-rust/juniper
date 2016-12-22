@@ -1,36 +1,23 @@
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::fmt;
 
 use types::base::{GraphQLType};
-use executor::Registry;
+use executor::{Registry, Context};
 use ast::Type;
 use schema::meta::{MetaType, ObjectMeta, PlaceholderMeta, UnionMeta, InterfaceMeta, Argument};
 
 /// Root query node of a schema
 ///
-/// This brings the mutatino and query types together, and provides the
+/// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
-pub struct RootNode<InnerT, QueryT, MutationT=()> {
+pub struct RootNode<QueryT, MutationT> {
     #[doc(hidden)]
     pub query_type: QueryT,
     #[doc(hidden)]
     pub mutation_type: MutationT,
     #[doc(hidden)]
     pub schema: SchemaType,
-    phantom_wrapped: PhantomData<InnerT>,
 }
-
-// RootNode implements Send + Sync if both the mutation type and query
-// type implements them. SchemaType also needs to implement them.
-//
-// InnerT does _not_ need to implement Send + Sync because it does not
-// actually appear in the struct.
-unsafe impl<InnerT, QueryT, MutationT> Send for RootNode<InnerT, QueryT, MutationT>
-    where QueryT: Send, MutationT: Send, SchemaType: Send { }
-
-unsafe impl<InnerT, QueryT, MutationT> Sync for RootNode<InnerT, QueryT, MutationT>
-    where QueryT: Sync, MutationT: Sync, SchemaType: Sync { }
 
 /// Metadata for a schema
 pub struct SchemaType {
@@ -39,6 +26,8 @@ pub struct SchemaType {
     mutation_type_name: Option<String>,
     directives: HashMap<String, DirectiveType>,
 }
+
+impl Context for SchemaType {}
 
 pub enum TypeType<'a> {
     Concrete(&'a MetaType),
@@ -63,82 +52,72 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
-impl<InnerT, QueryT, MutationT> RootNode<InnerT, QueryT, MutationT>
-    where QueryT: GraphQLType<InnerT>,
-          MutationT: GraphQLType<InnerT>,
+impl<QueryT, MutationT> RootNode<QueryT, MutationT>
+    where QueryT: GraphQLType,
+          MutationT: GraphQLType,
 {
     /// Construct a new root node from query and mutation nodes
     ///
-    /// If the schema should not support mutations, you can pass in `()` to
-    /// remove the mutation type from the schema.
-    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> RootNode<InnerT, QueryT, MutationT> {
+    /// If the schema should not support mutations, use the
+    /// `new` constructor instead.
+    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> RootNode<QueryT, MutationT> {
         RootNode {
             query_type: query_obj,
             mutation_type: mutation_obj,
-            schema: SchemaType::new::<InnerT, QueryT, MutationT>(),
-            phantom_wrapped: PhantomData,
+            schema: SchemaType::new::<QueryT, MutationT>(),
         }
     }
 }
 
 impl SchemaType {
-    pub fn new<CtxT, QueryT, MutationT>() -> SchemaType
-        where QueryT: GraphQLType<CtxT>,
-              MutationT: GraphQLType<CtxT>,
+    pub fn new<QueryT, MutationT>() -> SchemaType
+        where QueryT: GraphQLType,
+              MutationT: GraphQLType,
     {
-        let mut types = HashMap::new();
         let mut directives = HashMap::new();
         let query_type_name: String;
         let mutation_type_name: String;
 
-        {
-            let mut registry = Registry::<CtxT>::new(types);
-            query_type_name = registry.get_type::<QueryT>().innermost_name().to_owned();
-            mutation_type_name = registry.get_type::<MutationT>().innermost_name().to_owned();
-            types = registry.types;
-        }
+        let mut registry = Registry::new(HashMap::new());
+        query_type_name = registry.get_type::<QueryT>().innermost_name().to_owned();
+        mutation_type_name = registry.get_type::<MutationT>().innermost_name().to_owned();
 
-        {
-            let mut registry = Registry::<SchemaType>::new(types);
-            registry.get_type::<SchemaType>();
-            directives.insert(
-                "skip".to_owned(),
-                DirectiveType::new_skip(&mut registry));
-            directives.insert(
-                "include".to_owned(),
-                DirectiveType::new_include(&mut registry));
+        registry.get_type::<SchemaType>();
+        directives.insert(
+            "skip".to_owned(),
+            DirectiveType::new_skip(&mut registry));
+        directives.insert(
+            "include".to_owned(),
+            DirectiveType::new_include(&mut registry));
 
-            let mut meta_fields = vec![
-                registry.field::<SchemaType>("__schema"),
-                registry.field::<TypeType>("__type")
-                    .argument(registry.arg::<String>("name")),
-            ];
+        let mut meta_fields = vec![
+            registry.field::<SchemaType>("__schema"),
+            registry.field::<TypeType>("__type")
+                .argument(registry.arg::<String>("name")),
+        ];
 
-            if let Some(root_type) = registry.types.get_mut(&query_type_name) {
-                if let &mut MetaType::Object(ObjectMeta { ref mut fields, .. }) = root_type {
-                    fields.append(&mut meta_fields);
-                }
-                else {
-                    panic!("Root type is not an object");
-                }
+        if let Some(root_type) = registry.types.get_mut(&query_type_name) {
+            if let &mut MetaType::Object(ObjectMeta { ref mut fields, .. }) = root_type {
+                fields.append(&mut meta_fields);
             }
             else {
-                panic!("Root type not found");
+                panic!("Root type is not an object");
             }
-
-            types = registry.types;
+        }
+        else {
+            panic!("Root type not found");
         }
 
-        for meta_type in types.values() {
+        for meta_type in registry.types.values() {
             if let MetaType::Placeholder(PlaceholderMeta { ref of_type }) = *meta_type {
                 panic!("Type {:?} is still a placeholder type", of_type);
             }
         }
 
         SchemaType {
-            types: types,
+            types: registry.types,
             query_type_name: query_type_name,
-            mutation_type_name: if &mutation_type_name != "__Unit" { Some(mutation_type_name) } else { None },
+            mutation_type_name: if &mutation_type_name != "__EmptyMutation" { Some(mutation_type_name) } else { None },
             directives: directives,
         }
     }
@@ -305,7 +284,7 @@ impl DirectiveType {
         }
     }
 
-    fn new_skip<CtxT>(registry: &mut Registry<CtxT>) -> DirectiveType {
+    fn new_skip(registry: &mut Registry) -> DirectiveType {
         Self::new(
             "skip",
             &[
@@ -318,7 +297,7 @@ impl DirectiveType {
             ])
     }
 
-    fn new_include<CtxT>(registry: &mut Registry<CtxT>) -> DirectiveType {
+    fn new_include(registry: &mut Registry) -> DirectiveType {
         Self::new(
             "include",
             &[

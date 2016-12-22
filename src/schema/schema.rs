@@ -7,15 +7,17 @@ use schema::meta::{MetaType, ObjectMeta, EnumMeta, InputObjectMeta, UnionMeta, I
                    Field, Argument, EnumValue};
 use schema::model::{RootNode, SchemaType, TypeType, DirectiveType, DirectiveLocation};
 
-impl<CtxT, QueryT, MutationT> GraphQLType<CtxT> for RootNode<CtxT, QueryT, MutationT>
-    where QueryT: GraphQLType<CtxT>,
-          MutationT: GraphQLType<CtxT>
+impl<CtxT, QueryT, MutationT> GraphQLType for RootNode<QueryT, MutationT>
+    where QueryT: GraphQLType<Context=CtxT>,
+          MutationT: GraphQLType<Context=CtxT>
 {
+    type Context = CtxT;
+
     fn name() -> Option<&'static str> {
         QueryT::name()
     }
 
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         QueryT::meta(registry)
     }
 

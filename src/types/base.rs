@@ -135,7 +135,7 @@ equivalent of the `User` object as shown in the example in the documentation
 root:
 
 ```rust
-use juniper::{GraphQLType, Registry, FieldResult,
+use juniper::{GraphQLType, Registry, FieldResult, Context,
               Arguments, Executor, ExecutionResult};
 use juniper::meta::MetaType;
 # use std::collections::HashMap;
@@ -143,15 +143,19 @@ use juniper::meta::MetaType;
 struct User { id: String, name: String, friend_ids: Vec<String>  }
 struct Database { users: HashMap<String, User> }
 
-impl GraphQLType<Database> for User {
+impl Context for Database {}
+
+impl GraphQLType for User {
+    type Context = Database;
+
     fn name() -> Option<&'static str> {
         Some("User")
     }
 
-    fn meta(registry: &mut Registry<Database>) -> MetaType {
+    fn meta(registry: &mut Registry) -> MetaType {
         // First, we need to define all fields and their types on this type.
         //
-        // If need arguments, want to implement interfaces, or want to add
+        // If we need arguments, want to implement interfaces, or want to add
         // documentation strings, we can do it here.
         registry.build_object_type::<User>()(&[
                 registry.field::<&String>("id"),
@@ -171,12 +175,15 @@ impl GraphQLType<Database> for User {
     {
         // Next, we need to match the queried field name. All arms of this
         // match statement return `ExecutionResult`, which makes it hard to
-        // statically verify that the type you pass on to `executor.resolve`
+        // statically verify that the type you pass on to `executor.resolve*`
         // actually matches the one that you defined in `meta()` above.
         let database = executor.context();
         match field_name {
-            "id" => executor.resolve(&self.id),
-            "name" => executor.resolve(&self.name),
+            // Because scalars are defined with another `Context` associated
+            // type, you must use resolve_with_ctx here to make the executor
+            // perform automatic type conversion of its argument.
+            "id" => executor.resolve_with_ctx(&self.id),
+            "name" => executor.resolve_with_ctx(&self.name),
 
             // You pass a vector of User objects to `executor.resolve`, and it
             // will determine which fields of the sub-objects to actually
@@ -201,7 +208,14 @@ impl GraphQLType<Database> for User {
 ```
 
 */
-pub trait GraphQLType<CtxT>: Sized {
+pub trait GraphQLType: Sized {
+    /// The expected context type for this GraphQL type
+    ///
+    /// The context is threaded through query execution to all affected nodes,
+    /// and can be used to hold common data, e.g. database connections or
+    /// request session information.
+    type Context;
+
     /// The name of the GraphQL type to expose.
     ///
     /// This function will be called multiple times during schema construction.
@@ -210,7 +224,7 @@ pub trait GraphQLType<CtxT>: Sized {
     fn name() -> Option<&'static str>;
 
     /// The meta type representing this GraphQL type.
-    fn meta(registry: &mut Registry<CtxT>) -> MetaType;
+    fn meta(registry: &mut Registry) -> MetaType;
 
     /// Resolve the value of a single field on this type.
     ///
@@ -221,7 +235,7 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_field(&self, field_name: &str, arguments: &Arguments, executor: &Executor<CtxT>)
+    fn resolve_field(&self, field_name: &str, arguments: &Arguments, executor: &Executor<Self::Context>)
         -> ExecutionResult
     {
         panic!("resolve_field must be implemented by object types");
@@ -234,7 +248,7 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_into_type(&self, type_name: &str, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> ExecutionResult {
+    fn resolve_into_type(&self, type_name: &str, selection_set: Option<Vec<Selection>>, executor: &Executor<Self::Context>) -> ExecutionResult {
         if Self::name().unwrap() == type_name {
             Ok(self.resolve(selection_set, executor))
         } else {
@@ -246,7 +260,7 @@ pub trait GraphQLType<CtxT>: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn concrete_type_name(&self, context: &CtxT) -> String {
+    fn concrete_type_name(&self, context: &Self::Context) -> String {
         panic!("concrete_type_name must be implemented by unions and interfaces");
     }
 
@@ -260,7 +274,7 @@ pub trait GraphQLType<CtxT>: Sized {
     /// The default implementation uses `resolve_field` to resolve all fields,
     /// including those through fragment expansion, for object types. For
     /// non-object types, this method panics.
-    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &Executor<Self::Context>) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
             resolve_selection_set_into(self, selection_set, executor, &mut result);
@@ -277,7 +291,7 @@ fn resolve_selection_set_into<T, CtxT>(
     selection_set: Vec<Selection>,
     executor: &Executor<CtxT>,
     result: &mut HashMap<String, Value>)
-    where T: GraphQLType<CtxT>
+    where T: GraphQLType<Context=CtxT>
 {
     let meta_type = executor.schema()
         .concrete_type_by_name(T::name().expect("Resolving named type's selection set"))

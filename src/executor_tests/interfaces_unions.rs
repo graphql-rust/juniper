@@ -1,6 +1,7 @@
 mod interface {
     use value::Value;
     use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
 
     trait Pet {
         fn name(&self) -> &str;
@@ -71,7 +72,7 @@ mod interface {
                     Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
                 ],
             },
-            ());
+            EmptyMutation::<()>::new());
         let doc = r"
           {
             pets {
@@ -118,6 +119,7 @@ mod interface {
 mod union {
     use value::Value;
     use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
 
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> { None }
@@ -178,7 +180,7 @@ mod union {
                     Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
                 ],
             },
-            ());
+            EmptyMutation::<()>::new());
         let doc = r"
           {
             pets {

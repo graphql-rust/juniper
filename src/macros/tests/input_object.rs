@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use ast::{InputValue, FromInputValue};
 use value::Value;
 use schema::model::RootNode;
+use types::scalars::EmptyMutation;
 
 struct Root;
 
@@ -62,7 +63,7 @@ graphql_object!(Root: () |&self| {
 });
 
 fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>, &Vec<Value>) -> () {
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
         .expect("Execution failed");

@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 use ast::InputValue;
 use value::Value;
 use schema::model::RootNode;
+use types::scalars::EmptyMutation;
 
 /*
 
@@ -109,7 +110,7 @@ fn run_type_info_query<F>(type_name: &str, f: F)
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, ());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
     let vars = vec![
         ("typeName".to_owned(), InputValue::string(type_name)),
     ].into_iter().collect();

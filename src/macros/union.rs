@@ -62,7 +62,7 @@ macro_rules! graphql_union {
 
         $(
             if let Some(_) = $resolver as Option<$srctype> {
-                return (<$srctype as $crate::GraphQLType<$ctxttype>>::name()).unwrap().to_owned();
+                return (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned();
             }
         )*
 
@@ -79,7 +79,7 @@ macro_rules! graphql_union {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType<$ctxttype>>::name()).unwrap().to_owned() {
+            if $typenamearg == (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned() {
                 return $execarg.resolve(&$resolver);
             }
         )*
@@ -105,14 +105,16 @@ macro_rules! graphql_union {
             $( $items:tt )*
         }
     ) => {
-        graphql_union!(@as_item, impl<$($lifetime)*> $crate::GraphQLType<$ctxt> for $name {
+        graphql_union!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
+            type Context = $ctxt;
+
             fn name() -> Option<&'static str> {
                 Some($outname)
             }
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta(registry: &mut $crate::Registry<$ctxt>) -> $crate::meta::MetaType {
+            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
                 let mut types;
                 let mut description = None;
                 graphql_union!(@ gather_meta, (registry, types, description), $($items)*);
@@ -125,7 +127,7 @@ macro_rules! graphql_union {
                 mt.into_meta()
             }
 
-            fn concrete_type_name(&$mainself, context: &$ctxt) -> String {
+            fn concrete_type_name(&$mainself, context: &Self::Context) -> String {
                 graphql_union!(
                     @ concrete_type_name,
                     ($outname, context, $ctxt),
@@ -136,7 +138,7 @@ macro_rules! graphql_union {
                 &$mainself,
                 type_name: &str,
                 _: Option<Vec<$crate::Selection>>,
-                executor: &$crate::Executor<$ctxt>,
+                executor: &$crate::Executor<Self::Context>,
             )
                 -> $crate::ExecutionResult
             {
