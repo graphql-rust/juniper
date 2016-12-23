@@ -2,7 +2,7 @@ use ast::{Selection, InputValue, ToInputValue, FromInputValue};
 use value::Value;
 
 use schema::meta::MetaType;
-use executor::{Executor, Registry, ExecutionResult, IntoFieldResult, FieldResult};
+use executor::{Executor, Registry, ExecutionResult};
 use types::base::{Arguments, GraphQLType};
 
 impl<T, CtxT> GraphQLType for Box<T> where T: GraphQLType<Context=CtxT> {
@@ -45,12 +45,6 @@ impl<T> ToInputValue for Box<T> where T: ToInputValue {
     }
 }
 
-impl<T> IntoFieldResult<Box<T>> for Box<T> {
-    fn into(self) -> FieldResult<Box<T>> {
-        Ok(self)
-    }
-}
-
 impl<'a, T, CtxT> GraphQLType for &'a T where T: GraphQLType<Context=CtxT> {
     type Context = CtxT;
 
@@ -79,11 +73,5 @@ impl<'a, T, CtxT> GraphQLType for &'a T where T: GraphQLType<Context=CtxT> {
 impl<'a, T> ToInputValue for &'a T where T: ToInputValue {
     fn to(&self) -> InputValue {
         (**self).to()
-    }
-}
-
-impl<'a, T> IntoFieldResult<&'a T> for &'a T {
-    fn into(self) -> FieldResult<&'a T> {
-        Ok(self)
     }
 }

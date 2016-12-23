@@ -166,21 +166,29 @@ mod threads_context_correctly {
     use value::Value;
     use types::scalars::EmptyMutation;
     use schema::model::RootNode;
+    use executor::Context;
 
     struct Schema;
 
-    graphql_object!(Schema: String |&self| {
-        field a(&executor) -> String { executor.context().clone() }
+    struct TestContext {
+        value: String,
+    }
+
+    impl Context for TestContext {}
+
+    graphql_object!(Schema: TestContext |&self| {
+        field a(&executor) -> String { executor.context().value.clone() }
     });
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema, EmptyMutation::<String>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<TestContext>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &"Context value".to_owned())
+        let (result, errs) = ::execute(doc, None, &schema, &vars,
+                                       &TestContext { value: "Context value".to_owned() })
             .expect("Execution failed");
 
         assert_eq!(errs, []);
@@ -191,6 +199,209 @@ mod threads_context_correctly {
             result,
             Value::object(vec![
                 ("a", Value::string("Context value")),
+            ].into_iter().collect()));
+    }
+}
+
+mod dynamic_context_switching {
+    use std::collections::HashMap;
+
+    use value::Value;
+    use types::scalars::EmptyMutation;
+    use schema::model::RootNode;
+    use parser::SourcePosition;
+    use executor::{FieldResult, Context, ExecutionError};
+
+    struct Schema;
+
+    struct InnerContext {
+        value: String,
+    }
+
+    struct OuterContext {
+        items: HashMap<i64, InnerContext>,
+    }
+
+    impl Context for OuterContext {}
+    impl Context for InnerContext {}
+
+    struct ItemRef;
+
+    graphql_object!(Schema: OuterContext |&self| {
+        field item_opt(&executor, key: i64) -> Option<(&InnerContext, ItemRef)> {
+            executor.context().items.get(&key).map(|c| (c, ItemRef))
+        }
+
+        field item_res(&executor, key: i64) -> FieldResult<(&InnerContext, ItemRef)> {
+            executor.context().items.get(&key)
+                .ok_or(format!("Could not find key {}", key))
+                .map(|c| (c, ItemRef))
+        }
+
+        field item_res_opt(&executor, key: i64) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
+            if key > 100 {
+                Err(format!("Key too large: {}", key))
+            } else {
+                Ok(executor.context().items.get(&key)
+                   .map(|c| (c, ItemRef)))
+            }
+        }
+
+        field item_always(&executor, key: i64) -> (&InnerContext, ItemRef) {
+            executor.context().items.get(&key)
+                .map(|c| (c, ItemRef))
+                .unwrap()
+        }
+    });
+
+    graphql_object!(ItemRef: InnerContext |&self| {
+        field value(&executor) -> String { executor.context().value.clone() }
+    });
+
+    #[test]
+    fn test_opt() {
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let doc = r"{ first: itemOpt(key: 0) { value }, missing: itemOpt(key: 2) { value } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let ctx = OuterContext {
+            items: vec![
+                (0, InnerContext { value: "First value".to_owned() }),
+                (1, InnerContext { value: "Second value".to_owned() }),
+            ].into_iter().collect(),
+        };
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
+            .expect("Execution failed");
+
+        assert_eq!(errs, []);
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            Value::object(vec![
+                ("first", Value::object(vec![
+                    ("value", Value::string("First value")),
+                ].into_iter().collect())),
+                ("missing", Value::null()),
+            ].into_iter().collect()));
+    }
+
+    #[test]
+    fn test_res() {
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let doc = r"
+          {
+            first: itemRes(key: 0) { value }
+            missing: itemRes(key: 2) { value }
+          }
+          ";
+
+        let vars = vec![].into_iter().collect();
+
+        let ctx = OuterContext {
+            items: vec![
+                (0, InnerContext { value: "First value".to_owned() }),
+                (1, InnerContext { value: "Second value".to_owned() }),
+            ].into_iter().collect(),
+        };
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
+            .expect("Execution failed");
+
+        assert_eq!(errs, vec![
+            ExecutionError::new(
+                SourcePosition::new(70, 3, 12),
+                &["missing"],
+                "Could not find key 2",
+            ),
+        ]);
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            Value::object(vec![
+                ("first", Value::object(vec![
+                    ("value", Value::string("First value")),
+                ].into_iter().collect())),
+                ("missing", Value::null()),
+            ].into_iter().collect()));
+    }
+
+    #[test]
+    fn test_res_opt() {
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let doc = r"
+          {
+            first: itemResOpt(key: 0) { value }
+            missing: itemResOpt(key: 2) { value }
+            tooLarge: itemResOpt(key: 200) { value }
+          }
+          ";
+
+        let vars = vec![].into_iter().collect();
+
+        let ctx = OuterContext {
+            items: vec![
+                (0, InnerContext { value: "First value".to_owned() }),
+                (1, InnerContext { value: "Second value".to_owned() }),
+            ].into_iter().collect(),
+        };
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
+            .expect("Execution failed");
+
+        assert_eq!(errs, [
+            ExecutionError::new(
+                SourcePosition::new(123, 4, 12),
+                &["tooLarge"],
+                "Key too large: 200",
+            ),
+        ]);
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            Value::object(vec![
+                ("first", Value::object(vec![
+                    ("value", Value::string("First value")),
+                ].into_iter().collect())),
+                ("missing", Value::null()),
+                ("tooLarge", Value::null()),
+            ].into_iter().collect()));
+    }
+
+    #[test]
+    fn test_always() {
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let doc = r"{ first: itemAlways(key: 0) { value } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let ctx = OuterContext {
+            items: vec![
+                (0, InnerContext { value: "First value".to_owned() }),
+                (1, InnerContext { value: "Second value".to_owned() }),
+            ].into_iter().collect(),
+        };
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
+            .expect("Execution failed");
+
+        assert_eq!(errs, []);
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            Value::object(vec![
+                ("first", Value::object(vec![
+                    ("value", Value::string("First value")),
+                ].into_iter().collect())),
             ].into_iter().collect()));
     }
 }

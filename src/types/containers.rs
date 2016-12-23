@@ -2,7 +2,7 @@ use ast::{InputValue, ToInputValue, FromInputValue, Selection};
 use value::Value;
 use schema::meta::MetaType;
 
-use executor::{Executor, Registry, IntoFieldResult, FieldResult};
+use executor::{Executor, Registry};
 use types::base::{GraphQLType};
 
 impl<T, CtxT> GraphQLType for Option<T> where T: GraphQLType<Context=CtxT> {
@@ -44,13 +44,6 @@ impl<T> ToInputValue for Option<T> where T: ToInputValue {
         }
     }
 }
-
-impl<T> IntoFieldResult<Option<T>> for Option<T> {
-    fn into(self) -> FieldResult<Option<T>> {
-        Ok(self)
-    }
-}
-
 
 impl<T, CtxT> GraphQLType for Vec<T> where T: GraphQLType<Context=CtxT> {
     type Context = CtxT;
@@ -99,13 +92,6 @@ impl<T> ToInputValue for Vec<T> where T: ToInputValue {
     }
 }
 
-impl<T> IntoFieldResult<Vec<T>> for Vec<T> {
-    fn into(self) -> FieldResult<Vec<T>> {
-        Ok(self)
-    }
-}
-
-
 impl<'a, T, CtxT> GraphQLType for &'a [T] where T: GraphQLType<Context=CtxT> {
     type Context = CtxT;
 
@@ -127,11 +113,5 @@ impl<'a, T, CtxT> GraphQLType for &'a [T] where T: GraphQLType<Context=CtxT> {
 impl<'a, T> ToInputValue for &'a [T] where T: ToInputValue {
     fn to(&self) -> InputValue {
         InputValue::list(self.iter().map(|v| v.to()).collect())
-    }
-}
-
-impl<'a, T> IntoFieldResult<&'a [T]> for &'a [T] {
-    fn into(self) -> FieldResult<&'a [T]> {
-        Ok(self)
     }
 }

@@ -221,7 +221,7 @@ pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use executor::{
     Context, FromContext,
-    Executor, Registry, ExecutionResult, ExecutionError, FieldResult, IntoFieldResult,
+    Executor, Registry, ExecutionResult, ExecutionError, FieldResult, IntoResolvable,
 };
 pub use validation::RuleError;
 pub use types::scalars::{EmptyMutation, ID};

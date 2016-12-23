@@ -148,12 +148,6 @@ macro_rules! graphql_union {
                     $($items)*);
             }
         });
-
-        impl<$($lifetime)*> $crate::IntoFieldResult<$name> for $name {
-            fn into(self) -> $crate::FieldResult<$name> {
-                Ok(self)
-            }
-        }
     };
 
     (

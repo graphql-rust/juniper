@@ -5,7 +5,7 @@ use value::Value;
 
 use schema::meta::MetaType;
 
-use executor::{Executor, Registry, FieldResult, IntoFieldResult};
+use executor::{Executor, Registry};
 use types::base::GraphQLType;
 
 /// An ID as defined by the GraphQL specification
@@ -61,12 +61,6 @@ impl<'a> GraphQLType for &'a str {
 impl<'a> ToInputValue for &'a str {
     fn to(&self) -> InputValue {
         InputValue::string(self)
-    }
-}
-
-impl<'a> IntoFieldResult<&'a str> for &'a str {
-    fn into(self) -> FieldResult<&'a str> {
-        Ok(self)
     }
 }
 
@@ -133,12 +127,6 @@ impl FromInputValue for () {
     }
 }
 
-impl IntoFieldResult<()> for () {
-    fn into(self) -> FieldResult<()> {
-        Ok(self)
-    }
-}
-
 
 /// Utility type to define read-only schemas
 ///
@@ -166,11 +154,5 @@ impl<T> GraphQLType for EmptyMutation<T> {
 
     fn meta(registry: &mut Registry) -> MetaType {
         registry.build_object_type::<Self>()(&[]).into_meta()
-    }
-}
-
-impl<T> IntoFieldResult<EmptyMutation<T>> for EmptyMutation<T> {
-    fn into(self) -> FieldResult<EmptyMutation<T>> {
-        Ok(self)
     }
 }

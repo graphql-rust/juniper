@@ -61,46 +61,79 @@ pub type FieldResult<T> = Result<T, String>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult = Result<Value, String>;
 
-/// Convert a value into a successful field result
-///
-/// Used by the helper macros to support both returning a naked value
-/// *and* a `FieldResult` from a field.
-pub trait IntoFieldResult<T>: Sized {
-    /// Wrap `self` in a `Result`
-    ///
-    /// The implementation of this should always be `Ok(self)`.
-    fn into(self) -> FieldResult<T>;
+#[doc(hidden)]
+pub trait IntoResolvable<'a, T: GraphQLType, C>: Sized {
+    #[doc(hidden)]
+    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>>;
 }
 
-impl<T> IntoFieldResult<T> for FieldResult<T> {
-    fn into(self) -> FieldResult<T> {
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for T where T::Context: FromContext<C> {
+    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+        Ok(Some((FromContext::from(ctx), self)))
+    }
+}
+
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<T> where T::Context: FromContext<C> {
+    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+        self.map(|v| Some((FromContext::from(ctx), v)))
+    }
+}
+
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for (&'a T::Context, T) {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+        Ok(Some(self))
+    }
+}
+
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for Option<(&'a T::Context, T)> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+        Ok(self)
+    }
+}
+
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<(&'a T::Context, T)> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+        self.map(|v| Some(v))
+    }
+}
+
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<Option<(&'a T::Context, T)>> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
         self
     }
 }
 
 /// Conversion trait for context types
 ///
-/// This is currently only used for converting arbitrary contexts into
-/// the empty tuple, but will in the future be used to support general
-/// context conversion for larger schemas.
+/// Used to support different context types for different parts of an
+/// application. By making each GraphQL type only aware of as much
+/// context as it needs to, isolation and robustness can be
+/// improved. Implement this trait if you have contexts that can
+/// generally be converted between each other.
+///
+/// The empty tuple `()` can be converted into from any context type,
+/// making it suitable for GraphQL that don't need _any_ context to
+/// work, e.g. scalars or enums.
 pub trait FromContext<T> {
     /// Perform the conversion
-    fn from_context(value: &T) -> &Self;
+    fn from(value: &T) -> &Self;
 }
 
 /// Marker trait for types that can act as context objects for GraphQL types.
 pub trait Context { }
 
+impl<'a, C: Context> Context for &'a C {}
+
 static NULL_CONTEXT: () = ();
 
 impl<T> FromContext<T> for () {
-    fn from_context(_: &T) -> &Self {
+    fn from(_: &T) -> &Self {
         &NULL_CONTEXT
     }
 }
 
 impl<T> FromContext<T> for T where T: Context {
-    fn from_context(value: &T) -> &Self {
+    fn from(value: &T) -> &Self {
         value
     }
 }
@@ -112,7 +145,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     ) -> ExecutionResult
         where NewCtxT: FromContext<CtxT>,
     {
-        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from_context(&self.context))
+        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(&self.context))
             .resolve(value)
     }
 
@@ -363,23 +396,14 @@ impl Registry {
     }
 
     #[doc(hidden)]
-    pub fn field_convert<T: IntoFieldResult<I>, I>(&mut self, name: &str) -> Field where I: GraphQLType {
+    pub fn field_convert<'a, T: IntoResolvable<'a, I, C>, I, C>(&mut self, name: &str) -> Field
+        where I: GraphQLType
+    {
         Field {
             name: name.to_owned(),
             description: None,
             arguments: None,
             field_type: self.get_type::<I>(),
-            deprecation_reason: None,
-        }
-    }
-
-    #[doc(hidden)]
-    pub fn field_inside_result<T>(&mut self, name: &str, _: FieldResult<T>) -> Field where T: GraphQLType {
-        Field {
-            name: name.to_owned(),
-            description: None,
-            arguments: None,
-            field_type: self.get_type::<T>(),
             deprecation_reason: None,
         }
     }

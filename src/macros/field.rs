@@ -77,8 +77,11 @@ macro_rules! __graphql__build_field_matches {
                     $body
                 })();
 
-                return ($crate::IntoFieldResult::into(result)).and_then(
-                    |r| $executorvar.resolve_with_ctx(&r))
+                return ($crate::IntoResolvable::into(result, $executorvar.context())).and_then(
+                    |res| match res {
+                        Some((ctx, r)) => $executorvar.replaced_context(ctx).resolve_with_ctx(&r),
+                        None => Ok($crate::Value::null()),
+                    })
             }
         )*
         panic!("Field {} not found on type {}", $fieldvar, $outname);

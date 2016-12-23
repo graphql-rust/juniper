@@ -99,7 +99,7 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_convert::<$t, _>(
+            $reg.field_convert::<$t, _, Self::Context>(
                 &$crate::to_snake_case(stringify!($name)))
                 .description($desc)
                 .deprecated($reason),
@@ -117,7 +117,7 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_convert::<$t, _>(
+            $reg.field_convert::<$t, _, Self::Context>(
                 &$crate::to_snake_case(stringify!($name)))
                 .deprecated($reason),
             $args));
@@ -134,7 +134,7 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_convert::<$t, _>(
+            $reg.field_convert::<$t, _, Self::Context>(
                 &$crate::to_snake_case(stringify!($name)))
                 .description($desc),
             $args));
@@ -151,7 +151,7 @@ macro_rules! graphql_interface {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
-            $reg.field_convert::<$t, _>(
+            $reg.field_convert::<$t, _, Self::Context>(
                 &$crate::to_snake_case(stringify!($name))),
             $args));
 
@@ -279,12 +279,6 @@ macro_rules! graphql_interface {
                     $($items)*);
             }
         });
-
-        impl<$($lifetime)*> $crate::IntoFieldResult<$name> for $name {
-            fn into(self) -> $crate::FieldResult<$name> {
-                Ok(self)
-            }
-        }
     };
 
     (
