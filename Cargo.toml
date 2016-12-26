@@ -9,6 +9,11 @@ repository = "https://github.com/mhallin/juniper"
 readme = "README.md"
 keywords = ["graphql", "server", "iron", "http", "web"]
 
+[[bench]]
+name = "bench"
+harness = false
+path = "benches/bench.rs"
+
 [features]
 default = []
 nightly = []
@@ -25,3 +30,4 @@ router = "^0.2.0"
 mount = "^0.2.1"
 logger = "^0.1.0"
 iron-test = "^0.4.0"
+bencher = "^0.1.2"

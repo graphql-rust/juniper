@@ -1,14 +1,16 @@
-use test::Bencher;
+#[macro_use] extern crate bencher;
+extern crate juniper;
+
+use bencher::Bencher;
 
 use std::collections::{HashMap};
 
-use schema::model::RootNode;
-use tests::model::Database;
+use juniper::{execute, RootNode, EmptyMutation};
+use juniper::tests::model::Database;
 
-#[bench]
 fn query_type_name(b: &mut Bencher) {
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let doc = r#"
         query IntrospectionQueryTypeQuery {
@@ -19,13 +21,12 @@ fn query_type_name(b: &mut Bencher) {
           }
         }"#;
 
-    b.iter(|| ::execute(doc, None, &schema, &HashMap::new(), &database));
+    b.iter(|| execute(doc, None, &schema, &HashMap::new(), &database));
 }
 
-#[bench]
 fn introspection_query(b: &mut Bencher) {
     let database = Database::new();
-    let schema = RootNode::new(&database, ());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let doc = r#"
   query IntrospectionQuery {
@@ -121,5 +122,8 @@ fn introspection_query(b: &mut Bencher) {
   }
 "#;
 
-    b.iter(|| ::execute(doc, None, &schema, &HashMap::new(), &database));
+    b.iter(|| execute(doc, None, &schema, &HashMap::new(), &database));
 }
+
+benchmark_group!(queries, query_type_name, introspection_query);
+benchmark_main!(queries);
