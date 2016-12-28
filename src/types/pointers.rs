@@ -16,7 +16,7 @@ impl<T, CtxT> GraphQLType for Box<T> where T: GraphQLType<Context=CtxT> {
         T::meta(registry)
     }
 
-    fn resolve_into_type(&self, name: &str, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> ExecutionResult {
+    fn resolve_into_type(&self, name: &str, selection_set: Option<&[Selection]>, executor: &Executor<CtxT>) -> ExecutionResult {
         (**self).resolve_into_type(name, selection_set, executor)
     }
 
@@ -25,7 +25,7 @@ impl<T, CtxT> GraphQLType for Box<T> where T: GraphQLType<Context=CtxT> {
         (**self).resolve_field(field, args, executor)
     }
 
-    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(&self, selection_set: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
         (**self).resolve(selection_set, executor)
     }
 }
@@ -56,7 +56,7 @@ impl<'a, T, CtxT> GraphQLType for &'a T where T: GraphQLType<Context=CtxT> {
         T::meta(registry)
     }
 
-    fn resolve_into_type(&self, name: &str, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> ExecutionResult {
+    fn resolve_into_type(&self, name: &str, selection_set: Option<&[Selection]>, executor: &Executor<CtxT>) -> ExecutionResult {
         (**self).resolve_into_type(name, selection_set, executor)
     }
 
@@ -65,7 +65,7 @@ impl<'a, T, CtxT> GraphQLType for &'a T where T: GraphQLType<Context=CtxT> {
         (**self).resolve_field(field, args, executor)
     }
 
-    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(&self, selection_set: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
         (**self).resolve(selection_set, executor)
     }
 }

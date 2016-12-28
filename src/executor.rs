@@ -37,7 +37,7 @@ pub enum FieldPath<'a> {
 pub struct Executor<'a, CtxT> where CtxT: 'a {
     fragments: &'a HashMap<&'a str, &'a Fragment>,
     variables: &'a HashMap<String, InputValue>,
-    current_selection_set: Option<Vec<Selection>>,
+    current_selection_set: Option<&'a [Selection]>,
     schema: &'a SchemaType,
     context: &'a CtxT,
     errors: &'a RwLock<Vec<ExecutionError>>,
@@ -151,12 +151,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub fn resolve<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> ExecutionResult {
-        Ok(value.resolve(
-            match self.current_selection_set {
-                Some(ref sel) => Some(sel.clone()),
-                None => None,
-            },
-            self))
+        Ok(value.resolve(self.current_selection_set, self))
     }
 
     /// Resolve a single arbitrary value into a return value
@@ -194,7 +189,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         &self,
         field_name: Option<String>,
         location: SourcePosition,
-        selection_set: Option<Vec<Selection>>,
+        selection_set: Option<&'a [Selection]>,
     )
         -> Executor<CtxT>
     {
@@ -339,7 +334,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         let executor = Executor {
             fragments: &fragments.iter().map(|f| (f.item.name.item.as_str(), &f.item)).collect(),
             variables: variables,
-            current_selection_set: Some(op.item.selection_set),
+            current_selection_set: Some(&op.item.selection_set[..]),
             schema: &root_node.schema,
             context: context,
             errors: &errors,

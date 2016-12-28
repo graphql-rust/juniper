@@ -137,7 +137,7 @@ macro_rules! graphql_union {
             fn resolve_into_type(
                 &$mainself,
                 type_name: &str,
-                _: Option<Vec<$crate::Selection>>,
+                _: Option<&[$crate::Selection]>,
                 executor: &$crate::Executor<Self::Context>,
             )
                 -> $crate::ExecutionResult

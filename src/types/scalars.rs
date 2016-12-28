@@ -53,7 +53,7 @@ impl<'a> GraphQLType for &'a str {
         registry.build_scalar_type::<String>().into_meta()
     }
 
-    fn resolve(&self, _: Option<Vec<Selection>>, _: &Executor<Self::Context>) -> Value {
+    fn resolve(&self, _: Option<&[Selection]>, _: &Executor<Self::Context>) -> Value {
         Value::string(self)
     }
 }

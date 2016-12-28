@@ -248,7 +248,7 @@ pub trait GraphQLType: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_into_type(&self, type_name: &str, selection_set: Option<Vec<Selection>>, executor: &Executor<Self::Context>) -> ExecutionResult {
+    fn resolve_into_type(&self, type_name: &str, selection_set: Option<&[Selection]>, executor: &Executor<Self::Context>) -> ExecutionResult {
         if Self::name().unwrap() == type_name {
             Ok(self.resolve(selection_set, executor))
         } else {
@@ -274,7 +274,7 @@ pub trait GraphQLType: Sized {
     /// The default implementation uses `resolve_field` to resolve all fields,
     /// including those through fragment expansion, for object types. For
     /// non-object types, this method panics.
-    fn resolve(&self, selection_set: Option<Vec<Selection>>, executor: &Executor<Self::Context>) -> Value {
+    fn resolve(&self, selection_set: Option<&[Selection]>, executor: &Executor<Self::Context>) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
             resolve_selection_set_into(self, selection_set, executor, &mut result);
@@ -288,7 +288,7 @@ pub trait GraphQLType: Sized {
 
 fn resolve_selection_set_into<T, CtxT>(
     instance: &T,
-    selection_set: Vec<Selection>,
+    selection_set: &[Selection],
     executor: &Executor<CtxT>,
     result: &mut HashMap<String, Value>)
     where T: GraphQLType<Context=CtxT>
@@ -299,11 +299,11 @@ fn resolve_selection_set_into<T, CtxT>(
 
     for selection in selection_set {
         match selection {
-            Selection::Field(Spanning { item: f, start: start_pos, .. }) => {
+            &Selection::Field(Spanning { item: ref f, start: ref start_pos, .. }) => {
                 if is_excluded(
-                        &match f.directives {
-                            Some(sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
-                            None => None,
+                        &match &f.directives {
+                            &Some(ref sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
+                            &None => None,
                         },
                         executor.variables()) {
                     continue;
@@ -327,13 +327,13 @@ fn resolve_selection_set_into<T, CtxT>(
                 let mut sub_exec = executor.sub_executor(
                     Some(response_name.clone()),
                     start_pos.clone(),
-                    f.selection_set);
+                    f.selection_set.as_ref().map(|v| &v[..]));
 
                 let field_result = instance.resolve_field(
                     &f.name.item,
                     &Arguments::new(
-                        f.arguments.map(|m|
-                            m.item.into_iter().map(|(k, v)|
+                        f.arguments.as_ref().map(|m|
+                            m.item.iter().cloned().map(|(k, v)|
                                 (k.item, v.item.into_const(exec_vars))).collect()),
                         &meta_field.arguments),
                     &mut sub_exec);
@@ -341,16 +341,16 @@ fn resolve_selection_set_into<T, CtxT>(
                 match field_result {
                     Ok(v) => merge_key_into(result, response_name.clone(), v),
                     Err(e) => {
-                        sub_exec.push_error(e, start_pos);
+                        sub_exec.push_error(e, start_pos.clone());
                         result.insert(response_name.clone(), Value::null());
                     }
                 }
             },
-            Selection::FragmentSpread(Spanning { item: spread, .. }) => {
+            &Selection::FragmentSpread(Spanning { item: ref spread, .. }) => {
                 if is_excluded(
-                        &match spread.directives {
-                            Some(sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
-                            None => None,
+                        &match &spread.directives {
+                            &Some(ref sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
+                            &None => None,
                         },
                         executor.variables()) {
                     continue;
@@ -360,13 +360,13 @@ fn resolve_selection_set_into<T, CtxT>(
                     .expect("Fragment could not be found");
 
                 resolve_selection_set_into(
-                    instance, fragment.selection_set.clone(), executor, result);
+                    instance, &fragment.selection_set[..], executor, result);
             },
-            Selection::InlineFragment(Spanning { item: fragment, start: start_pos, .. }) => {
+            &Selection::InlineFragment(Spanning { item: ref fragment, start: ref start_pos, .. }) => {
                 if is_excluded(
-                        &match fragment.directives {
-                            Some(sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
-                            None => None
+                        &match &fragment.directives {
+                            &Some(ref sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
+                            &None => None
                         },
                         executor.variables()) {
                     continue;
@@ -375,12 +375,12 @@ fn resolve_selection_set_into<T, CtxT>(
                 let mut sub_exec = executor.sub_executor(
                     None,
                     start_pos.clone(),
-                    Some(fragment.selection_set.clone()));
+                    Some(&fragment.selection_set[..]));
 
-                if let Some(type_condition) = fragment.type_condition {
+                if let &Some(ref type_condition) = &fragment.type_condition {
                     let sub_result = instance.resolve_into_type(
                         &type_condition.item,
-                        Some(fragment.selection_set.clone()),
+                        Some(&fragment.selection_set[..]),
                         &mut sub_exec);
 
                     if let Ok(Value::Object(mut hash_map)) = sub_result {
@@ -389,13 +389,13 @@ fn resolve_selection_set_into<T, CtxT>(
                         }
                     }
                     else if let Err(e) = sub_result {
-                         sub_exec.push_error(e, start_pos);
+                         sub_exec.push_error(e, start_pos.clone());
                     }
                 }
                 else {
                     resolve_selection_set_into(
                         instance,
-                        fragment.selection_set.clone(),
+                        &fragment.selection_set[..],
                         &mut sub_exec,
                         result);
                 }

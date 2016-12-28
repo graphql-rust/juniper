@@ -83,7 +83,7 @@ macro_rules! graphql_enum {
                     .into_meta()
             }
 
-            fn resolve(&self, _: Option<Vec<$crate::Selection>>, _: &$crate::Executor<Self::Context>) -> $crate::Value {
+            fn resolve(&self, _: Option<&[$crate::Selection]>, _: &$crate::Executor<Self::Context>) -> $crate::Value {
                 match self {
                     $(
                         &graphql_enum!(@as_pattern, $eval) =>

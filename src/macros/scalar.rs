@@ -77,7 +77,7 @@ macro_rules! graphql_scalar {
 
             fn resolve(
                 &$resolve_selfvar,
-                _: Option<Vec<$crate::Selection>>,
+                _: Option<&[$crate::Selection]>,
                 _: &$crate::Executor<Self::Context>) -> $crate::Value {
                 $resolve_body
             }

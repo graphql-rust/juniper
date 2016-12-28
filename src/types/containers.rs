@@ -16,7 +16,7 @@ impl<T, CtxT> GraphQLType for Option<T> where T: GraphQLType<Context=CtxT> {
         registry.build_nullable_type::<T>().into_meta()
     }
 
-    fn resolve(&self, _: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(&self, _: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
         match *self {
             Some(ref obj) => executor.resolve_into_value(obj),
             None => Value::null(),
@@ -56,7 +56,7 @@ impl<T, CtxT> GraphQLType for Vec<T> where T: GraphQLType<Context=CtxT> {
         registry.build_list_type::<T>().into_meta()
     }
 
-    fn resolve(&self, _: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(&self, _: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
         Value::list(
             self.iter().map(|e| executor.resolve_into_value(e)).collect()
         )
@@ -103,7 +103,7 @@ impl<'a, T, CtxT> GraphQLType for &'a [T] where T: GraphQLType<Context=CtxT> {
         registry.build_list_type::<T>().into_meta()
     }
 
-    fn resolve(&self, _: Option<Vec<Selection>>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(&self, _: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
         Value::list(
             self.iter().map(|e| executor.resolve_into_value(e)).collect()
         )
