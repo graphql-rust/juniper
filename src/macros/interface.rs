@@ -236,11 +236,11 @@ macro_rules! graphql_interface {
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
+            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
                 let mut fields = Vec::new();
                 let mut description = None;
                 graphql_interface!(@ gather_meta, (registry, fields, description), $($items)*);
-                let mut mt = registry.build_interface_type::<$name>()(&fields);
+                let mut mt = registry.build_interface_type::<$name>(&fields);
 
                 if let Some(description) = description {
                     mt = mt.description(description);

@@ -12,7 +12,7 @@ impl<T, CtxT> GraphQLType for Box<T> where T: GraphQLType<Context=CtxT> {
         T::name()
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         T::meta(registry)
     }
 
@@ -52,7 +52,7 @@ impl<'a, T, CtxT> GraphQLType for &'a T where T: GraphQLType<Context=CtxT> {
         T::name()
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         T::meta(registry)
     }
 

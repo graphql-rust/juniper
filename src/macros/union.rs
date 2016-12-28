@@ -114,11 +114,11 @@ macro_rules! graphql_union {
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
+            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
                 let mut types;
                 let mut description = None;
                 graphql_union!(@ gather_meta, (registry, types, description), $($items)*);
-                let mut mt = registry.build_union_type::<$name>()(&types);
+                let mut mt = registry.build_union_type::<$name>(&types);
 
                 if let Some(description) = description {
                     mt = mt.description(description);

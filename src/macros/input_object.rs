@@ -155,12 +155,11 @@ macro_rules! graphql_input_object {
                 Some($outname)
             }
 
-            fn meta(registry: &mut $crate::Registry) -> $crate::meta::MetaType {
+            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+                let fields = graphql_input_object!(@generate_meta_fields, registry, $fields);
                 graphql_input_object!(
                     @maybe_apply, $descr, description,
-                    registry.build_input_object_type::<$name>()(
-                        graphql_input_object!(@generate_meta_fields, registry, $fields)
-                    )).into_meta()
+                    registry.build_input_object_type::<$name>(fields)).into_meta()
             }
         }
     };

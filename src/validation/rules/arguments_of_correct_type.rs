@@ -5,7 +5,7 @@ use parser::Spanning;
 use validation::{Visitor, ValidatorContext};
 
 pub struct ArgumentsOfCorrectType<'a> {
-    current_args: Option<&'a Vec<Argument>>,
+    current_args: Option<&'a Vec<Argument<'a>>>,
 }
 
 pub fn factory<'a>() -> ArgumentsOfCorrectType<'a> {

@@ -58,11 +58,13 @@ impl GraphQLType for Being {
         Some("Being")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_interface_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields =&[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+        ];
+
+        registry.build_interface_type::<Self>(fields)
             .into_meta()
     }
 }
@@ -74,11 +76,13 @@ impl GraphQLType for Pet {
         Some("Pet")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_interface_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+        ];
+
+        registry.build_interface_type::<Self>(fields)
             .into_meta()
     }
 }
@@ -90,11 +94,13 @@ impl GraphQLType for Canine {
         Some("Canine")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_interface_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+        ];
+
+        registry.build_interface_type::<Self>(fields)
             .into_meta()
     }
 }
@@ -106,13 +112,12 @@ impl GraphQLType for DogCommand {
         Some("DogCommand")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_enum_type::<Self>()(&[
-                EnumValue::new("SIT"),
-                EnumValue::new("HEEL"),
-                EnumValue::new("DOWN"),
-            ])
-            .into_meta()
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_enum_type::<Self>(&[
+            EnumValue::new("SIT"),
+            EnumValue::new("HEEL"),
+            EnumValue::new("DOWN"),
+        ]).into_meta()
     }
 }
 
@@ -134,21 +139,23 @@ impl GraphQLType for Dog {
         Some("Dog")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-                registry.field::<Option<String>>("nickname"),
-                registry.field::<Option<i64>>("barkVolume"),
-                registry.field::<Option<bool>>("barks"),
-                registry.field::<Option<bool>>("doesKnowCommand")
-                    .argument(registry.arg::<Option<DogCommand>>("dogCommand")),
-                registry.field::<Option<bool>>("isHousetrained")
-                    .argument(registry.arg_with_default("atOtherHomes", &true)),
-                registry.field::<Option<bool>>("isAtLocation")
-                    .argument(registry.arg::<Option<i64>>("x"))
-                    .argument(registry.arg::<Option<i64>>("y")),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+            registry.field::<Option<String>>("nickname"),
+            registry.field::<Option<i64>>("barkVolume"),
+            registry.field::<Option<bool>>("barks"),
+            registry.field::<Option<bool>>("doesKnowCommand")
+                .argument(registry.arg::<Option<DogCommand>>("dogCommand")),
+            registry.field::<Option<bool>>("isHousetrained")
+                .argument(registry.arg_with_default("atOtherHomes", &true)),
+            registry.field::<Option<bool>>("isAtLocation")
+                .argument(registry.arg::<Option<i64>>("x"))
+                .argument(registry.arg::<Option<i64>>("y")),
+        ];
+
+        registry.build_object_type::<Self>(fields)
             .interfaces(&[
                 registry.get_type::<Being>(),
                 registry.get_type::<Pet>(),
@@ -165,13 +172,13 @@ impl GraphQLType for FurColor {
         Some("FurColor")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_enum_type::<Self>()(&[
-                EnumValue::new("BROWN"),
-                EnumValue::new("BLACK"),
-                EnumValue::new("TAN"),
-                EnumValue::new("SPOTTED"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_enum_type::<Self>(&[
+            EnumValue::new("BROWN"),
+            EnumValue::new("BLACK"),
+            EnumValue::new("TAN"),
+            EnumValue::new("SPOTTED"),
+        ])
             .into_meta()
     }
 }
@@ -195,15 +202,17 @@ impl GraphQLType for Cat {
         Some("Cat")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-                registry.field::<Option<String>>("nickname"),
-                registry.field::<Option<bool>>("meows"),
-                registry.field::<Option<i64>>("meowVolume"),
-                registry.field::<Option<FurColor>>("furColor"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+            registry.field::<Option<String>>("nickname"),
+            registry.field::<Option<bool>>("meows"),
+            registry.field::<Option<i64>>("meowVolume"),
+            registry.field::<Option<FurColor>>("furColor"),
+        ];
+
+        registry.build_object_type::<Self>(fields)
             .interfaces(&[
                 registry.get_type::<Being>(),
                 registry.get_type::<Pet>(),
@@ -219,11 +228,13 @@ impl GraphQLType for CatOrDog {
         Some("CatOrDog")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_union_type::<Self>()(&[
-                registry.get_type::<Cat>(),
-                registry.get_type::<Dog>(),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let types = &[
+            registry.get_type::<Cat>(),
+            registry.get_type::<Dog>(),
+        ];
+
+        registry.build_union_type::<Self>(types)
             .into_meta()
     }
 }
@@ -235,10 +246,12 @@ impl GraphQLType for Intelligent {
         Some("Intelligent")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_interface_type::<Self>()(&[
-                registry.field::<Option<i64>>("iq"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<i64>>("iq"),
+        ];
+
+        registry.build_interface_type::<Self>(fields)
             .into_meta()
     }
 }
@@ -250,14 +263,15 @@ impl GraphQLType for Human {
         Some("Human")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-                registry.field::<Option<Vec<Option<Pet>>>>("pets"),
-                registry.field::<Option<Vec<Human>>>("relatives"),
-                registry.field::<Option<i64>>("iq"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+            registry.field::<Option<Vec<Option<Pet>>>>("pets"),
+            registry.field::<Option<Vec<Human>>>("relatives"),
+            registry.field::<Option<i64>>("iq"),
+        ];
+        registry.build_object_type::<Self>(fields)
             .interfaces(&[
                 registry.get_type::<Being>(),
                 registry.get_type::<Intelligent>(),
@@ -273,13 +287,15 @@ impl GraphQLType for Alien {
         Some("Alien")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[
-                registry.field::<Option<String>>("name")
-                    .argument(registry.arg::<Option<bool>>("surname")),
-                registry.field::<Option<i64>>("iq"),
-                registry.field::<Option<i64>>("numEyes"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("name")
+                .argument(registry.arg::<Option<bool>>("surname")),
+            registry.field::<Option<i64>>("iq"),
+            registry.field::<Option<i64>>("numEyes"),
+        ];
+
+        registry.build_object_type::<Self>(fields)
             .interfaces(&[
                 registry.get_type::<Being>(),
                 registry.get_type::<Intelligent>(),
@@ -295,11 +311,13 @@ impl GraphQLType for DogOrHuman {
         Some("DogOrHuman")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_union_type::<Self>()(&[
-                registry.get_type::<Dog>(),
-                registry.get_type::<Human>(),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let types = &[
+            registry.get_type::<Dog>(),
+            registry.get_type::<Human>(),
+        ];
+
+        registry.build_union_type::<Self>(types)
             .into_meta()
     }
 }
@@ -311,11 +329,13 @@ impl GraphQLType for HumanOrAlien {
         Some("HumanOrAlien")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_union_type::<Self>()(&[
-                registry.get_type::<Human>(),
-                registry.get_type::<Alien>(),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let types = &[
+            registry.get_type::<Human>(),
+            registry.get_type::<Alien>(),
+        ];
+
+        registry.build_union_type::<Self>(types)
             .into_meta()
     }
 }
@@ -327,14 +347,16 @@ impl GraphQLType for ComplexInput {
         Some("ComplexInput")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_input_object_type::<Self>()(&[
-                registry.arg::<bool>("requiredField"),
-                registry.arg::<Option<i64>>("intField"),
-                registry.arg::<Option<String>>("stringField"),
-                registry.arg::<Option<bool>>("booleanField"),
-                registry.arg::<Option<Vec<Option<String>>>>("stringListField"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.arg::<bool>("requiredField"),
+            registry.arg::<Option<i64>>("intField"),
+            registry.arg::<Option<String>>("stringField"),
+            registry.arg::<Option<bool>>("booleanField"),
+            registry.arg::<Option<Vec<Option<String>>>>("stringListField"),
+        ];
+
+        registry.build_input_object_type::<Self>(fields)
             .into_meta()
     }
 }
@@ -366,38 +388,40 @@ impl GraphQLType for ComplicatedArgs {
         Some("ComplicatedArgs")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[
-                registry.field::<Option<String>>("intArgField")
-                    .argument(registry.arg::<Option<i64>>("intArg")),
-                registry.field::<Option<String>>("nonNullIntArgField")
-                    .argument(registry.arg::<i64>("nonNullIntArg")),
-                registry.field::<Option<String>>("stringArgField")
-                    .argument(registry.arg::<Option<String>>("stringArg")),
-                registry.field::<Option<String>>("booleanArgField")
-                    .argument(registry.arg::<Option<bool>>("booleanArg")),
-                registry.field::<Option<String>>("enumArgField")
-                    .argument(registry.arg::<Option<FurColor>>("enumArg")),
-                registry.field::<Option<String>>("floatArgField")
-                    .argument(registry.arg::<Option<f64>>("floatArg")),
-                registry.field::<Option<String>>("idArgField")
-                    .argument(registry.arg::<Option<ID>>("idArg")),
-                registry.field::<Option<String>>("stringListArgField")
-                    .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg")),
-                registry.field::<Option<String>>("complexArgField")
-                    .argument(registry.arg::<Option<ComplexInput>>("complexArg")),
-                registry.field::<Option<String>>("multipleReqs")
-                    .argument(registry.arg::<i64>("req1"))
-                    .argument(registry.arg::<i64>("req2")),
-                registry.field::<Option<String>>("multipleOpts")
-                    .argument(registry.arg_with_default("opt1", &0i64))
-                    .argument(registry.arg_with_default("opt2", &0i64)),
-                registry.field::<Option<String>>("multipleOptAndReq")
-                    .argument(registry.arg::<i64>("req1"))
-                    .argument(registry.arg::<i64>("req2"))
-                    .argument(registry.arg_with_default("opt1", &0i64))
-                    .argument(registry.arg_with_default("opt2", &0i64)),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<String>>("intArgField")
+                .argument(registry.arg::<Option<i64>>("intArg")),
+            registry.field::<Option<String>>("nonNullIntArgField")
+                .argument(registry.arg::<i64>("nonNullIntArg")),
+            registry.field::<Option<String>>("stringArgField")
+                .argument(registry.arg::<Option<String>>("stringArg")),
+            registry.field::<Option<String>>("booleanArgField")
+                .argument(registry.arg::<Option<bool>>("booleanArg")),
+            registry.field::<Option<String>>("enumArgField")
+                .argument(registry.arg::<Option<FurColor>>("enumArg")),
+            registry.field::<Option<String>>("floatArgField")
+                .argument(registry.arg::<Option<f64>>("floatArg")),
+            registry.field::<Option<String>>("idArgField")
+                .argument(registry.arg::<Option<ID>>("idArg")),
+            registry.field::<Option<String>>("stringListArgField")
+                .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg")),
+            registry.field::<Option<String>>("complexArgField")
+                .argument(registry.arg::<Option<ComplexInput>>("complexArg")),
+            registry.field::<Option<String>>("multipleReqs")
+                .argument(registry.arg::<i64>("req1"))
+                .argument(registry.arg::<i64>("req2")),
+            registry.field::<Option<String>>("multipleOpts")
+                .argument(registry.arg_with_default("opt1", &0i64))
+                .argument(registry.arg_with_default("opt2", &0i64)),
+            registry.field::<Option<String>>("multipleOptAndReq")
+                .argument(registry.arg::<i64>("req1"))
+                .argument(registry.arg::<i64>("req2"))
+                .argument(registry.arg_with_default("opt1", &0i64))
+                .argument(registry.arg_with_default("opt2", &0i64)),
+        ];
+
+        registry.build_object_type::<Self>(fields)
             .into_meta()
     }
 }
@@ -409,19 +433,21 @@ impl GraphQLType for QueryRoot {
         Some("QueryRoot")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[
-                registry.field::<Option<Human>>("human")
-                    .argument(registry.arg::<Option<ID>>("id")),
-                registry.field::<Option<Alien>>("alien"),
-                registry.field::<Option<Dog>>("dog"),
-                registry.field::<Option<Cat>>("cat"),
-                registry.field::<Option<Pet>>("pet"),
-                registry.field::<Option<CatOrDog>>("catOrDog"),
-                registry.field::<Option<DogOrHuman>>("dorOrHuman"),
-                registry.field::<Option<HumanOrAlien>>("humanOrAlien"),
-                registry.field::<Option<ComplicatedArgs>>("complicatedArgs"),
-            ])
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        let fields = &[
+            registry.field::<Option<Human>>("human")
+                .argument(registry.arg::<Option<ID>>("id")),
+            registry.field::<Option<Alien>>("alien"),
+            registry.field::<Option<Dog>>("dog"),
+            registry.field::<Option<Cat>>("cat"),
+            registry.field::<Option<Pet>>("pet"),
+            registry.field::<Option<CatOrDog>>("catOrDog"),
+            registry.field::<Option<DogOrHuman>>("dorOrHuman"),
+            registry.field::<Option<HumanOrAlien>>("humanOrAlien"),
+            registry.field::<Option<ComplicatedArgs>>("complicatedArgs"),
+        ];
+
+        registry.build_object_type::<Self>(fields)
             .into_meta()
     }
 }

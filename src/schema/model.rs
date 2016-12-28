@@ -10,36 +10,36 @@ use schema::meta::{MetaType, ObjectMeta, PlaceholderMeta, UnionMeta, InterfaceMe
 ///
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
-pub struct RootNode<QueryT, MutationT> {
+pub struct RootNode<'a, QueryT, MutationT> {
     #[doc(hidden)]
     pub query_type: QueryT,
     #[doc(hidden)]
     pub mutation_type: MutationT,
     #[doc(hidden)]
-    pub schema: SchemaType,
+    pub schema: SchemaType<'a>,
 }
 
 /// Metadata for a schema
-pub struct SchemaType {
-    types: HashMap<String, MetaType>,
+pub struct SchemaType<'a> {
+    types: HashMap<String, MetaType<'a>>,
     query_type_name: String,
     mutation_type_name: Option<String>,
-    directives: HashMap<String, DirectiveType>,
+    directives: HashMap<String, DirectiveType<'a>>,
 }
 
-impl Context for SchemaType {}
+impl<'a> Context for SchemaType<'a> {}
 
 pub enum TypeType<'a> {
-    Concrete(&'a MetaType),
+    Concrete(&'a MetaType<'a>),
     NonNull(Box<TypeType<'a>>),
     List(Box<TypeType<'a>>),
 }
 
-pub struct DirectiveType {
+pub struct DirectiveType<'a> {
     pub name: String,
     pub description: Option<String>,
     pub locations: Vec<DirectiveLocation>,
-    pub arguments: Vec<Argument>,
+    pub arguments: Vec<Argument<'a>>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -52,7 +52,7 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
-impl<QueryT, MutationT> RootNode<QueryT, MutationT>
+impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>
     where QueryT: GraphQLType,
           MutationT: GraphQLType,
 {
@@ -60,7 +60,7 @@ impl<QueryT, MutationT> RootNode<QueryT, MutationT>
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
-    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> RootNode<QueryT, MutationT> {
+    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> RootNode<'a, QueryT, MutationT> {
         RootNode {
             query_type: query_obj,
             mutation_type: mutation_obj,
@@ -69,8 +69,8 @@ impl<QueryT, MutationT> RootNode<QueryT, MutationT>
     }
 }
 
-impl SchemaType {
-    pub fn new<QueryT, MutationT>() -> SchemaType
+impl<'a> SchemaType<'a> {
+    pub fn new<QueryT, MutationT>() -> SchemaType<'a>
         where QueryT: GraphQLType,
               MutationT: GraphQLType,
     {
@@ -122,7 +122,7 @@ impl SchemaType {
         }
     }
 
-    pub fn add_directive(&mut self, directive: DirectiveType) {
+    pub fn add_directive(&mut self, directive: DirectiveType<'a>) {
         self.directives.insert(directive.name.clone(), directive);
     }
 
@@ -230,7 +230,7 @@ impl SchemaType {
             .any(|t| (t as *const MetaType) == (possible_type as *const MetaType))
     }
 
-    pub fn is_subtype(&self, sub_type: &Type, super_type: &Type) -> bool {
+    pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
         use ast::Type::*;
 
         if super_type == sub_type {
@@ -274,8 +274,8 @@ impl<'a> TypeType<'a> {
     }
 }
 
-impl DirectiveType {
-    pub fn new(name: &str, locations: &[DirectiveLocation], arguments: &[Argument]) -> DirectiveType {
+impl<'a> DirectiveType<'a> {
+    pub fn new(name: &str, locations: &[DirectiveLocation], arguments: &[Argument<'a>]) -> DirectiveType<'a> {
         DirectiveType {
             name: name.to_owned(),
             description: None,
@@ -284,7 +284,7 @@ impl DirectiveType {
         }
     }
 
-    fn new_skip(registry: &mut Registry) -> DirectiveType {
+    fn new_skip(registry: &mut Registry<'a>) -> DirectiveType<'a> {
         Self::new(
             "skip",
             &[
@@ -297,7 +297,7 @@ impl DirectiveType {
             ])
     }
 
-    fn new_include(registry: &mut Registry) -> DirectiveType {
+    fn new_include(registry: &mut Registry<'a>) -> DirectiveType<'a> {
         Self::new(
             "include",
             &[
@@ -310,7 +310,7 @@ impl DirectiveType {
             ])
     }
 
-    pub fn description(mut self, description: &str) -> DirectiveType {
+    pub fn description(mut self, description: &str) -> DirectiveType<'a> {
         self.description = Some(description.to_owned());
         self
     }

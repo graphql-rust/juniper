@@ -7,9 +7,9 @@ use ast::{InputValue, FromInputValue, Type};
 use types::base::TypeKind;
 
 /// Scalar type metadata
-pub struct ScalarMeta {
+pub struct ScalarMeta<'a> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: &'a str,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -18,35 +18,35 @@ pub struct ScalarMeta {
 
 /// List type metadata
 #[derive(Debug)]
-pub struct ListMeta {
+pub struct ListMeta<'a> {
     #[doc(hidden)]
-    pub of_type: Type,
+    pub of_type: Type<'a>,
 }
 
 /// Nullable type metadata
 #[derive(Debug)]
-pub struct NullableMeta {
+pub struct NullableMeta<'a> {
     #[doc(hidden)]
-    pub of_type: Type,
+    pub of_type: Type<'a>,
 }
 
 /// Object type metadata
 #[derive(Debug)]
-pub struct ObjectMeta {
+pub struct ObjectMeta<'a> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: &'a str,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
-    pub fields: Vec<Field>,
+    pub fields: Vec<Field<'a>>,
     #[doc(hidden)]
     pub interface_names: Vec<String>,
 }
 
 /// Enum type metadata
-pub struct EnumMeta {
+pub struct EnumMeta<'a> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: &'a str,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -57,20 +57,20 @@ pub struct EnumMeta {
 
 /// Interface type metadata
 #[derive(Debug)]
-pub struct InterfaceMeta {
+pub struct InterfaceMeta<'a> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: &'a str,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
-    pub fields: Vec<Field>,
+    pub fields: Vec<Field<'a>>,
 }
 
 /// Union type metadata
 #[derive(Debug)]
-pub struct UnionMeta {
+pub struct UnionMeta<'a> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: &'a str,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -78,13 +78,13 @@ pub struct UnionMeta {
 }
 
 /// Input object metadata
-pub struct InputObjectMeta {
+pub struct InputObjectMeta<'a> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: &'a str,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
-    pub input_fields: Vec<Argument>,
+    pub input_fields: Vec<Argument<'a>>,
     #[doc(hidden)]
     pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
 }
@@ -94,58 +94,58 @@ pub struct InputObjectMeta {
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
 #[derive(Debug)]
-pub struct PlaceholderMeta {
+pub struct PlaceholderMeta<'a> {
     #[doc(hidden)]
-    pub of_type: Type,
+    pub of_type: Type<'a>,
 }
 
 /// Generic type metadata
 #[derive(Debug)]
-pub enum MetaType {
+pub enum MetaType<'a> {
     #[doc(hidden)]
-    Scalar(ScalarMeta),
+    Scalar(ScalarMeta<'a>),
     #[doc(hidden)]
-    List(ListMeta),
+    List(ListMeta<'a>),
     #[doc(hidden)]
-    Nullable(NullableMeta),
+    Nullable(NullableMeta<'a>),
     #[doc(hidden)]
-    Object(ObjectMeta),
+    Object(ObjectMeta<'a>),
     #[doc(hidden)]
-    Enum(EnumMeta),
+    Enum(EnumMeta<'a>),
     #[doc(hidden)]
-    Interface(InterfaceMeta),
+    Interface(InterfaceMeta<'a>),
     #[doc(hidden)]
-    Union(UnionMeta),
+    Union(UnionMeta<'a>),
     #[doc(hidden)]
-    InputObject(InputObjectMeta),
+    InputObject(InputObjectMeta<'a>),
     #[doc(hidden)]
-    Placeholder(PlaceholderMeta),
+    Placeholder(PlaceholderMeta<'a>),
 }
 
 /// Metadata for a field
 #[derive(Debug, Clone)]
-pub struct Field {
+pub struct Field<'a> {
     #[doc(hidden)]
     pub name: String,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
-    pub arguments: Option<Vec<Argument>>,
+    pub arguments: Option<Vec<Argument<'a>>>,
     #[doc(hidden)]
-    pub field_type: Type,
+    pub field_type: Type<'a>,
     #[doc(hidden)]
     pub deprecation_reason: Option<String>,
 }
 
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
-pub struct Argument {
+pub struct Argument<'a> {
     #[doc(hidden)]
     pub name: String,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
-    pub arg_type: Type,
+    pub arg_type: Type<'a>,
     #[doc(hidden)]
     pub default_value: Option<InputValue>,
 }
@@ -168,7 +168,7 @@ pub struct EnumValue {
     pub deprecation_reason: Option<String>,
 }
 
-impl MetaType {
+impl<'a> MetaType<'a> {
     /// Access the name of the type, if applicable
     ///
     /// Lists, non-null wrappers, and placeholders don't have names.
@@ -243,7 +243,7 @@ impl MetaType {
     }
 
     /// Construct a `Type` literal instance based on the metadata
-    pub fn as_type(&self) -> Type {
+    pub fn as_type(&self) -> Type<'a> {
         match *self {
             MetaType::Scalar(ScalarMeta { ref name, .. }) |
             MetaType::Object(ObjectMeta { ref name, .. }) |
@@ -251,7 +251,7 @@ impl MetaType {
             MetaType::Interface(InterfaceMeta { ref name, .. }) |
             MetaType::Union(UnionMeta { ref name, .. }) |
             MetaType::InputObject(InputObjectMeta { ref name, .. }) =>
-                Type::NonNullNamed(name.to_owned()),
+                Type::NonNullNamed(name),
             MetaType::List(ListMeta { ref of_type }) =>
                 Type::NonNullList(Box::new(of_type.clone())),
             MetaType::Nullable(NullableMeta { ref of_type }) =>
@@ -327,11 +327,11 @@ impl MetaType {
     }
 }
 
-impl ScalarMeta {
+impl<'a> ScalarMeta<'a> {
     /// Build a new scalar type metadata with the specified name
-    pub fn new<T: FromInputValue>(name: &str) -> ScalarMeta {
+    pub fn new<T: FromInputValue>(name: &'a str) -> ScalarMeta<'a> {
         ScalarMeta {
-            name: name.to_owned(),
+            name: name,
             description: None,
             try_parse_fn: Box::new(
                 |v: &InputValue| <T as FromInputValue>::from(v).is_some()),
@@ -341,50 +341,50 @@ impl ScalarMeta {
     /// Set the description for the given scalar type
     ///
     /// If a description already was set prior to calling this method, it will be overwritten.
-    pub fn description(mut self, description: &str) -> ScalarMeta {
+    pub fn description(mut self, description: &str) -> ScalarMeta<'a> {
         self.description = Some(description.to_owned());
         self
     }
 
     /// Wrap the scalar in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::Scalar(self)
     }
 }
 
-impl ListMeta {
+impl<'a> ListMeta<'a> {
     /// Build a new list type by wrapping the specified type
-    pub fn new(of_type: Type) -> ListMeta {
+    pub fn new(of_type: Type<'a>) -> ListMeta<'a> {
         ListMeta {
             of_type: of_type,
         }
     }
 
     /// Wrap the list in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::List(self)
     }
 }
 
-impl NullableMeta {
+impl<'a> NullableMeta<'a> {
     /// Build a new nullable type by wrapping the specified type
-    pub fn new(of_type: Type) -> NullableMeta {
+    pub fn new(of_type: Type<'a>) -> NullableMeta<'a> {
         NullableMeta {
             of_type: of_type,
         }
     }
 
     /// Wrap the nullable type in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::Nullable(self)
     }
 }
 
-impl ObjectMeta {
+impl<'a> ObjectMeta<'a> {
     /// Build a new object type with the specified name and fields
-    pub fn new(name: &str, fields: &[Field]) -> ObjectMeta {
+    pub fn new(name: &'a str, fields: &[Field<'a>]) -> ObjectMeta<'a> {
         ObjectMeta {
-            name: name.to_owned(),
+            name: name,
             description: None,
             fields: fields.to_vec(),
             interface_names: vec![],
@@ -394,32 +394,32 @@ impl ObjectMeta {
     /// Set the description for the object
     ///
     /// If a description was provided prior to calling this method, it will be overwritten.
-    pub fn description(mut self, description: &str) -> ObjectMeta {
+    pub fn description(mut self, description: &str) -> ObjectMeta<'a> {
         self.description = Some(description.to_owned());
         self
     }
 
     /// Set the interfaces this type implements
     ///
-    /// If a list of interfaces already was provided prior to calling this method, they will be 
+    /// If a list of interfaces already was provided prior to calling this method, they will be
     /// overwritten.
-    pub fn interfaces(mut self, interfaces: &[Type]) -> ObjectMeta {
+    pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> ObjectMeta<'a> {
         self.interface_names = interfaces.iter()
             .map(|t| t.innermost_name().to_owned()).collect();
         self
     }
 
     /// Wrap this object type in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::Object(self)
     }
 }
 
-impl EnumMeta {
+impl<'a> EnumMeta<'a> {
     /// Build a new enum type with the specified name and possible values
-    pub fn new<T: FromInputValue>(name: &str, values: &[EnumValue]) -> EnumMeta {
+    pub fn new<T: FromInputValue>(name: &'a str, values: &[EnumValue]) -> EnumMeta<'a> {
         EnumMeta {
-            name: name.to_owned(),
+            name: name,
             description: None,
             values: values.to_vec(),
             try_parse_fn: Box::new(
@@ -430,22 +430,22 @@ impl EnumMeta {
     /// Set the description of the type
     ///
     /// If a description was provided prior to calling this method, it will be overwritten
-    pub fn description(mut self, description: &str) -> EnumMeta {
+    pub fn description(mut self, description: &str) -> EnumMeta<'a> {
         self.description = Some(description.to_owned());
         self
     }
 
     /// Wrap this enum type in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::Enum(self)
     }
 }
 
-impl InterfaceMeta {
+impl<'a> InterfaceMeta<'a> {
     /// Build a new interface type with the specified name and fields
-    pub fn new(name: &str, fields: &[Field]) -> InterfaceMeta {
+    pub fn new(name: &'a str, fields: &[Field<'a>]) -> InterfaceMeta<'a> {
         InterfaceMeta {
-            name: name.to_owned(),
+            name: name,
             description: None,
             fields: fields.to_vec(),
         }
@@ -454,22 +454,22 @@ impl InterfaceMeta {
     /// Set the description of the type
     ///
     /// If a description was provided prior to calling this method, it will be overwritten.
-    pub fn description(mut self, description: &str) -> InterfaceMeta {
+    pub fn description(mut self, description: &str) -> InterfaceMeta<'a> {
         self.description = Some(description.to_owned());
         self
     }
 
     /// Wrap this interface type in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::Interface(self)
     }
 }
 
-impl UnionMeta {
+impl<'a> UnionMeta<'a> {
     /// Build a new union type with the specified name and possible types
-    pub fn new(name: &str, of_types: &[Type]) -> UnionMeta {
+    pub fn new(name: &'a str, of_types: &[Type]) -> UnionMeta<'a> {
         UnionMeta {
-            name: name.to_owned(),
+            name: name,
             description: None,
             of_type_names: of_types.iter()
                 .map(|t| t.innermost_name().to_owned()).collect(),
@@ -479,22 +479,22 @@ impl UnionMeta {
     /// Set the description of the type
     ///
     /// If a description was provided prior to calling this method, it will be overwritten.
-    pub fn description(mut self, description: &str) -> UnionMeta {
+    pub fn description(mut self, description: &str) -> UnionMeta<'a> {
         self.description = Some(description.to_owned());
         self
     }
 
     /// Wrap this union type in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::Union(self)
     }
 }
 
-impl InputObjectMeta {
+impl<'a> InputObjectMeta<'a> {
     /// Build a new input type with the specified name and input fields
-    pub fn new<T: FromInputValue>(name: &str, input_fields: &[Argument]) -> InputObjectMeta {
+    pub fn new<T: FromInputValue>(name: &'a str, input_fields: &[Argument<'a>]) -> InputObjectMeta<'a> {
         InputObjectMeta {
-            name: name.to_owned(),
+            name: name,
             description: None,
             input_fields: input_fields.to_vec(),
             try_parse_fn: Box::new(
@@ -505,22 +505,22 @@ impl InputObjectMeta {
     /// Set the description of the type
     ///
     /// If a description was provided prior to calling this method, it will be overwritten.
-    pub fn description(mut self, description: &str) -> InputObjectMeta {
+    pub fn description(mut self, description: &str) -> InputObjectMeta<'a> {
         self.description = Some(description.to_owned());
         self
     }
 
     /// Wrap this union type in a generic meta type
-    pub fn into_meta(self) -> MetaType {
+    pub fn into_meta(self) -> MetaType<'a> {
         MetaType::InputObject(self)
     }
 }
 
-impl Field {
+impl<'a> Field<'a> {
     /// Set the description of the field
     ///
     /// This overwrites the description if any was previously set.
-    pub fn description(mut self, description: &str) -> Field {
+    pub fn description(mut self, description: &str) -> Field<'a> {
         self.description = Some(description.to_owned());
         self
     }
@@ -528,7 +528,7 @@ impl Field {
     /// Add an argument to the field
     ///
     /// Arguments are unordered and can't contain duplicates by name.
-    pub fn argument(mut self, argument: Argument) -> Field {
+    pub fn argument(mut self, argument: Argument<'a>) -> Field<'a> {
         match self.arguments {
             None => { self.arguments = Some(vec![argument]); }
             Some(ref mut args) => { args.push(argument); }
@@ -540,15 +540,15 @@ impl Field {
     /// Set the deprecation reason
     ///
     /// This overwrites the deprecation reason if any was previously set.
-    pub fn deprecated(mut self, reason: &str) -> Field {
+    pub fn deprecated(mut self, reason: &str) -> Field<'a> {
         self.deprecation_reason = Some(reason.to_owned());
         self
     }
 }
 
-impl Argument {
+impl<'a> Argument<'a> {
     #[doc(hidden)]
-    pub fn new(name: &str, arg_type: Type) -> Argument {
+    pub fn new(name: &str, arg_type: Type<'a>) -> Argument<'a> {
         Argument {
             name: name.to_owned(),
             description: None,
@@ -560,7 +560,7 @@ impl Argument {
     /// Set the description of the argument
     ///
     /// This overwrites the description if any was previously set.
-    pub fn description(mut self, description: &str) -> Argument {
+    pub fn description(mut self, description: &str) -> Argument<'a> {
         self.description = Some(description.to_owned());
         self
     }
@@ -568,7 +568,7 @@ impl Argument {
     /// Set the default value of the argument
     ///
     /// This overwrites the description if any was previously set.
-    pub fn default_value(mut self, default_value: InputValue) -> Argument {
+    pub fn default_value(mut self, default_value: InputValue) -> Argument<'a> {
         self.default_value = Some(default_value);
         self
     }
@@ -601,7 +601,7 @@ impl EnumValue {
     }
 }
 
-impl fmt::Debug for ScalarMeta {
+impl<'a> fmt::Debug for ScalarMeta<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("ScalarMeta")
             .field("name", &self.name)
@@ -610,7 +610,7 @@ impl fmt::Debug for ScalarMeta {
     }
 }
 
-impl fmt::Debug for EnumMeta {
+impl<'a> fmt::Debug for EnumMeta<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("EnumMeta")
             .field("name", &self.name)
@@ -620,7 +620,7 @@ impl fmt::Debug for EnumMeta {
     }
 }
 
-impl fmt::Debug for InputObjectMeta {
+impl<'a> fmt::Debug for InputObjectMeta<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("InputObjectMeta")
             .field("name", &self.name)

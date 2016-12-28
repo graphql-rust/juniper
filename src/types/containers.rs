@@ -12,7 +12,7 @@ impl<T, CtxT> GraphQLType for Option<T> where T: GraphQLType<Context=CtxT> {
         None
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_nullable_type::<T>().into_meta()
     }
 
@@ -52,7 +52,7 @@ impl<T, CtxT> GraphQLType for Vec<T> where T: GraphQLType<Context=CtxT> {
         None
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_list_type::<T>().into_meta()
     }
 
@@ -99,7 +99,7 @@ impl<'a, T, CtxT> GraphQLType for &'a [T] where T: GraphQLType<Context=CtxT> {
         None
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_list_type::<T>().into_meta()
     }
 

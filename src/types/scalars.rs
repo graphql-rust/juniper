@@ -49,7 +49,7 @@ impl<'a> GraphQLType for &'a str {
         Some("String")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_scalar_type::<String>().into_meta()
     }
 
@@ -116,7 +116,7 @@ impl GraphQLType for () {
         Some("__Unit")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_scalar_type::<Self>().into_meta()
     }
 }
@@ -152,7 +152,7 @@ impl<T> GraphQLType for EmptyMutation<T> {
         Some("__EmptyMutation")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
-        registry.build_object_type::<Self>()(&[]).into_meta()
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_object_type::<Self>(&[]).into_meta()
     }
 }

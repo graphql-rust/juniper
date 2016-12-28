@@ -14,7 +14,7 @@ struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
 struct ConflictReason(String, ConflictReasonMessage);
 
 #[derive(Debug)]
-struct AstAndDef<'a>(Option<&'a str>, &'a Spanning<Field>, Option<&'a FieldType>);
+struct AstAndDef<'a>(Option<&'a str>, &'a Spanning<Field>, Option<&'a FieldType<'a>>);
 
 type AstAndDefCollection<'a> = OrderedMap<&'a str, Vec<AstAndDef<'a>>>;
 
@@ -1171,11 +1171,13 @@ mod tests {
             Some("SomeBox")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_interface_type::<Self>()(&[
-                    registry.field::<Option<SomeBox>>("deepBox"),
-                    registry.field::<Option<String>>("unrelatedField"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<Option<SomeBox>>("deepBox"),
+                registry.field::<Option<String>>("unrelatedField"),
+            ];
+
+            registry.build_interface_type::<Self>(fields)
                 .into_meta()
         }
     }
@@ -1187,15 +1189,17 @@ mod tests {
             Some("StringBox")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<Option<String>>("scalar"),
-                    registry.field::<Option<StringBox>>("deepBox"),
-                    registry.field::<Option<String>>("unrelatedField"),
-                    registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox"),
-                    registry.field::<Option<StringBox>>("stringBox"),
-                    registry.field::<Option<IntBox>>("intBox"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<Option<String>>("scalar"),
+                registry.field::<Option<StringBox>>("deepBox"),
+                registry.field::<Option<String>>("unrelatedField"),
+                registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox"),
+                registry.field::<Option<StringBox>>("stringBox"),
+                registry.field::<Option<IntBox>>("intBox"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .interfaces(&[
                     registry.get_type::<SomeBox>(),
                 ])
@@ -1210,15 +1214,17 @@ mod tests {
             Some("IntBox")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<Option<i64>>("scalar"),
-                    registry.field::<Option<IntBox>>("deepBox"),
-                    registry.field::<Option<String>>("unrelatedField"),
-                    registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox"),
-                    registry.field::<Option<StringBox>>("stringBox"),
-                    registry.field::<Option<IntBox>>("intBox"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<Option<i64>>("scalar"),
+                registry.field::<Option<IntBox>>("deepBox"),
+                registry.field::<Option<String>>("unrelatedField"),
+                registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox"),
+                registry.field::<Option<StringBox>>("stringBox"),
+                registry.field::<Option<IntBox>>("intBox"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .interfaces(&[
                     registry.get_type::<SomeBox>(),
                 ])
@@ -1233,10 +1239,12 @@ mod tests {
             Some("NonNullStringBox1")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_interface_type::<Self>()(&[
-                    registry.field::<String>("scalar"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<String>("scalar"),
+            ];
+
+            registry.build_interface_type::<Self>(fields)
                 .into_meta()
         }
     }
@@ -1248,12 +1256,14 @@ mod tests {
             Some("NonNullStringBox1Impl")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<String>("scalar"),
-                    registry.field::<Option<SomeBox>>("deepBox"),
-                    registry.field::<Option<String>>("unrelatedField"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<String>("scalar"),
+                registry.field::<Option<SomeBox>>("deepBox"),
+                registry.field::<Option<String>>("unrelatedField"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .interfaces(&[
                     registry.get_type::<NonNullStringBox1>(),
                     registry.get_type::<SomeBox>(),
@@ -1269,10 +1279,12 @@ mod tests {
             Some("NonNullStringBox2")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_interface_type::<Self>()(&[
-                    registry.field::<String>("scalar"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<String>("scalar"),
+            ];
+
+            registry.build_interface_type::<Self>(fields)
                 .into_meta()
         }
     }
@@ -1284,12 +1296,14 @@ mod tests {
             Some("NonNullStringBox2Impl")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<String>("scalar"),
-                    registry.field::<Option<SomeBox>>("deepBox"),
-                    registry.field::<Option<String>>("unrelatedField"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<String>("scalar"),
+                registry.field::<Option<SomeBox>>("deepBox"),
+                registry.field::<Option<String>>("unrelatedField"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .interfaces(&[
                     registry.get_type::<NonNullStringBox2>(),
                     registry.get_type::<SomeBox>(),
@@ -1305,11 +1319,13 @@ mod tests {
             Some("Node")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<Option<ID>>("id"),
-                    registry.field::<Option<String>>("name"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<Option<ID>>("id"),
+                registry.field::<Option<String>>("name"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .into_meta()
         }
     }
@@ -1321,10 +1337,12 @@ mod tests {
             Some("Edge")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<Option<Node>>("node"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<Option<Node>>("node"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .into_meta()
         }
     }
@@ -1336,10 +1354,12 @@ mod tests {
             Some("Connection")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<Option<Vec<Option<Edge>>>>("edges"),
-                ])
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+            let fields = &[
+                registry.field::<Option<Vec<Option<Edge>>>>("edges"),
+            ];
+
+            registry.build_object_type::<Self>(fields)
                 .into_meta()
         }
     }
@@ -1351,16 +1371,17 @@ mod tests {
             Some("QueryRoot")
         }
 
-        fn meta(registry: &mut Registry) -> MetaType {
+        fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
             registry.get_type::<IntBox>();
             registry.get_type::<StringBox>();
             registry.get_type::<NonNullStringBox1Impl>();
             registry.get_type::<NonNullStringBox2Impl>();
 
-            registry.build_object_type::<Self>()(&[
-                    registry.field::<Option<SomeBox>>("someBox"),
-                    registry.field::<Option<Connection>>("connection"),
-                ])
+            let fields = &[
+                registry.field::<Option<SomeBox>>("someBox"),
+                registry.field::<Option<Connection>>("connection"),
+            ];
+            registry.build_object_type::<Self>(fields)
                 .into_meta()
         }
     }

@@ -5,7 +5,7 @@ use parser::Spanning;
 use schema::meta::MetaType;
 
 pub struct PossibleFragmentSpreads<'a> {
-    fragment_types: HashMap<&'a str, &'a MetaType>,
+    fragment_types: HashMap<&'a str, &'a MetaType<'a>>,
 }
 
 pub fn factory<'a>() -> PossibleFragmentSpreads<'a> {

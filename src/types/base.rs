@@ -152,17 +152,18 @@ impl GraphQLType for User {
         Some("User")
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         // First, we need to define all fields and their types on this type.
         //
         // If we need arguments, want to implement interfaces, or want to add
         // documentation strings, we can do it here.
-        registry.build_object_type::<User>()(&[
-                registry.field::<&String>("id"),
-                registry.field::<&String>("name"),
-                registry.field::<Vec<&User>>("friends"),
-            ])
-            .into_meta()
+        let fields = &[
+            registry.field::<&String>("id"),
+            registry.field::<&String>("name"),
+            registry.field::<Vec<&User>>("friends"),
+        ];
+
+        registry.build_object_type::<User>(fields).into_meta()
     }
 
     fn resolve_field(
@@ -224,7 +225,7 @@ pub trait GraphQLType: Sized {
     fn name() -> Option<&'static str>;
 
     /// The meta type representing this GraphQL type.
-    fn meta(registry: &mut Registry) -> MetaType;
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r>;
 
     /// Resolve the value of a single field on this type.
     ///

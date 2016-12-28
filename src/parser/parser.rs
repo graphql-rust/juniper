@@ -148,12 +148,12 @@ impl<'a> Parser<'a> {
     }
 
     #[doc(hidden)]
-    pub fn expect_name(&mut self) -> ParseResult<'a, String> {
+    pub fn expect_name(&mut self) -> ParseResult<'a, &'a str> {
         match *self.peek() {
             Spanning { item: Token::Name(_), .. } =>
                 Ok(self.next().map(|token|
                     if let Token::Name(name) = token {
-                        name.to_owned()
+                        name
                     }
                     else {
                         panic!("Internal parse error in `expect_name`");

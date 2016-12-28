@@ -13,19 +13,19 @@ use parser::Spanning;
 /// This enum carries no semantic information and might refer to types that do
 /// not exist.
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub enum Type {
+pub enum Type<'a> {
     /// A nullable named type, e.g. `String`
-    Named(String),
+    Named(&'a str),
     /// A nullable list type, e.g. `[String]`
     ///
     /// The list itself is what's nullable, the containing type might be non-null.
-    List(Box<Type>),
+    List(Box<Type<'a>>),
     /// A non-null named type, e.g. `String!`
-    NonNullNamed(String),
+    NonNullNamed(&'a str),
     /// A non-null list type, e.g. `[String]!`.
     ///
     /// The list itself is what's non-null, the containing type might be null.
-    NonNullList(Box<Type>),
+    NonNullList(Box<Type<'a>>),
 }
 
 /// A JSON-like value that can be passed into the query execution, either
@@ -49,8 +49,8 @@ pub enum InputValue {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct VariableDefinition {
-    pub var_type: Spanning<Type>,
+pub struct VariableDefinition<'a> {
+    pub var_type: Spanning<Type<'a>>,
     pub default_value: Option<Spanning<InputValue>>,
 }
 
@@ -60,8 +60,8 @@ pub struct Arguments {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct VariableDefinitions {
-    pub items: Vec<(Spanning<String>, VariableDefinition)>,
+pub struct VariableDefinitions<'a> {
+    pub items: Vec<(Spanning<String>, VariableDefinition<'a>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -122,10 +122,10 @@ pub enum OperationType {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Operation {
+pub struct Operation<'a> {
     pub operation_type: OperationType,
     pub name: Option<Spanning<String>>,
-    pub variable_definitions: Option<Spanning<VariableDefinitions>>,
+    pub variable_definitions: Option<Spanning<VariableDefinitions<'a>>>,
     pub directives: Option<Vec<Spanning<Directive>>>,
     pub selection_set: Vec<Selection>,
 }
@@ -139,12 +139,12 @@ pub struct Fragment {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum Definition {
-    Operation(Spanning<Operation>),
+pub enum Definition<'a> {
+    Operation(Spanning<Operation<'a>>),
     Fragment(Spanning<Fragment>),
 }
 
-pub type Document = Vec<Definition>;
+pub type Document<'a> = Vec<Definition<'a>>;
 
 /// Parse an unstructured input value into a Rust data type.
 ///
@@ -163,7 +163,7 @@ pub trait ToInputValue: Sized {
     fn to(&self) -> InputValue;
 }
 
-impl Type {
+impl<'a> Type<'a> {
     /// Get the name of a named type.
     ///
     /// Only applies to named types; lists will return `None`.
@@ -193,7 +193,7 @@ impl Type {
     }
 }
 
-impl fmt::Display for Type {
+impl<'a> fmt::Display for Type<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Type::Named(ref n) => write!(f, "{}", n),
@@ -447,7 +447,7 @@ impl Arguments {
     }
 }
 
-impl VariableDefinitions {
+impl<'a> VariableDefinitions<'a> {
     pub fn iter(&self) -> slice::Iter<(Spanning<String>, VariableDefinition)> {
         self.items.iter()
     }

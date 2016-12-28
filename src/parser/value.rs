@@ -57,7 +57,7 @@ fn parse_object_field<'a>(parser: &mut Parser<'a>, is_const: bool) -> ParseResul
     Ok(Spanning::start_end(
         &key.start.clone(),
         &value.end.clone(),
-        (key, value)))
+        (key.map(|s| s.to_owned()), value)))
 }
 
 fn parse_variable_literal<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue> {

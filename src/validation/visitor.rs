@@ -17,14 +17,14 @@ fn visit_definitions<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'
         let def_type = match *def {
                 Definition::Fragment(Spanning {
                         item: Fragment { type_condition: Spanning { item: ref name, .. }, .. }, .. }) =>
-                    Some(Type::NonNullNamed(name.to_owned())),
+                    Some(Type::NonNullNamed(name)),
                 Definition::Operation(Spanning {
                         item: Operation { operation_type: OperationType::Query, .. }, .. }) =>
-                    Some(Type::NonNullNamed(ctx.schema.concrete_query_type().name().unwrap().to_owned())),
+                    Some(Type::NonNullNamed(ctx.schema.concrete_query_type().name().unwrap())),
                 Definition::Operation(Spanning {
                         item: Operation { operation_type: OperationType::Mutation, .. }, .. }) =>
                     ctx.schema.concrete_mutation_type()
-                        .map(|t| Type::NonNullNamed(t.name().unwrap().to_owned())),
+                        .map(|t| Type::NonNullNamed(t.name().unwrap())),
             };
 
         ctx.with_pushed_type(def_type.as_ref(), |ctx| {
@@ -93,7 +93,7 @@ fn visit_directives<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a
     }
 }
 
-fn visit_arguments<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, meta_args: &Option<&Vec<Argument>>, arguments: &'a Option<Spanning<Arguments>>) {
+fn visit_arguments<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, meta_args: &Option<&Vec<Argument<'a>>>, arguments: &'a Option<Spanning<Arguments>>) {
     if let Some(ref arguments) = *arguments {
         for argument in arguments.item.iter() {
             let arg_type = meta_args
@@ -161,7 +161,7 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorConte
 }
 
 fn visit_inline_fragment<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, fragment: &'a Spanning<InlineFragment>) {
-    let type_name = fragment.item.type_condition.clone().map(|s| s.item);
+    let type_name = fragment.item.type_condition.as_ref().map(|s| s.item.as_str());
 
     let mut visit_fn = move |ctx: &mut ValidatorContext<'a>| {
         v.enter_inline_fragment(ctx, fragment);

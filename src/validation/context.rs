@@ -16,13 +16,13 @@ pub struct RuleError {
 
 #[doc(hidden)]
 pub struct ValidatorContext<'a> {
-    pub schema: &'a SchemaType,
+    pub schema: &'a SchemaType<'a>,
     errors: Vec<RuleError>,
-    type_stack: Vec<Option<&'a MetaType>>,
-    type_literal_stack: Vec<Option<Type>>,
-    input_type_stack: Vec<Option<&'a MetaType>>,
-    input_type_literal_stack: Vec<Option<Type>>,
-    parent_type_stack: Vec<Option<&'a MetaType>>,
+    type_stack: Vec<Option<&'a MetaType<'a>>>,
+    type_literal_stack: Vec<Option<Type<'a>>>,
+    input_type_stack: Vec<Option<&'a MetaType<'a>>>,
+    input_type_literal_stack: Vec<Option<Type<'a>>>,
+    parent_type_stack: Vec<Option<&'a MetaType<'a>>>,
     fragment_names: HashSet<String>,
 }
 
@@ -86,7 +86,7 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type>, f: F)
+    pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F)
         -> R
         where F: FnOnce(&mut ValidatorContext<'a>) -> R
     {
@@ -120,7 +120,7 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type>, f: F)
+    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F)
         -> R
         where F: FnOnce(&mut ValidatorContext<'a>) -> R
     {
@@ -142,12 +142,12 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn current_type(&self) -> Option<&'a MetaType> {
+    pub fn current_type(&self) -> Option<&'a MetaType<'a>> {
         *self.type_stack.last().unwrap_or(&None)
     }
 
     #[doc(hidden)]
-    pub fn current_type_literal(&self) -> Option<&Type> {
+    pub fn current_type_literal(&self) -> Option<&Type<'a>> {
         match self.type_literal_stack.last() {
             Some(&Some(ref t)) => Some(t),
             _ => None
@@ -155,12 +155,12 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn parent_type(&self) -> Option<&'a MetaType> {
+    pub fn parent_type(&self) -> Option<&'a MetaType<'a>> {
         *self.parent_type_stack.last().unwrap_or(&None)
     }
 
     #[doc(hidden)]
-    pub fn current_input_type_literal(&self) -> Option<&Type> {
+    pub fn current_input_type_literal(&self) -> Option<&Type<'a>> {
         match self.input_type_literal_stack.last() {
             Some(&Some(ref t)) => Some(t),
             _ => None,

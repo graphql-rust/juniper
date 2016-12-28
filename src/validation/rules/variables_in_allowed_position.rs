@@ -12,8 +12,8 @@ pub enum Scope<'a> {
 
 pub struct VariableInAllowedPosition<'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type)>>,
-    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<String>, VariableDefinition)>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type<'a>)>>,
+    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<String>, VariableDefinition<'a>)>>,
     current_scope: Option<Scope<'a>>,
 }
 

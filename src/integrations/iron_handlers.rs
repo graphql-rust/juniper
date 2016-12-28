@@ -22,14 +22,14 @@ use ::{InputValue, GraphQLType, RootNode, execute};
 /// this endpoint containing the field `"query"` and optionally `"variables"`.
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
-pub struct GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
+pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
 {
     context_factory: CtxFactory,
-    root_node: RootNode<Query, Mutation>,
+    root_node: RootNode<'a, Query, Mutation>,
 }
 
 /// Handler that renders GraphiQL - a graphical query editor interface
@@ -37,8 +37,8 @@ pub struct GraphiQLHandler {
     graphql_url: String,
 }
 
-impl<CtxFactory, Query, Mutation, CtxT>
-    GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
+impl<'a, CtxFactory, Query, Mutation, CtxT>
+    GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
@@ -145,13 +145,13 @@ impl GraphiQLHandler {
     }
 }
 
-impl<CtxFactory, Query, Mutation, CtxT>
+impl<'a, CtxFactory, Query, Mutation, CtxT>
     Handler
-    for GraphQLHandler<CtxFactory, Query, Mutation, CtxT>
+    for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static, 'a: 'static,
 {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         match req.method {

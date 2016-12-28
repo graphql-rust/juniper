@@ -7,7 +7,7 @@ use schema::meta::{MetaType, ObjectMeta, EnumMeta, InputObjectMeta, UnionMeta, I
                    Field, Argument, EnumValue};
 use schema::model::{RootNode, SchemaType, TypeType, DirectiveType, DirectiveLocation};
 
-impl<CtxT, QueryT, MutationT> GraphQLType for RootNode<QueryT, MutationT>
+impl<'a, CtxT, QueryT, MutationT> GraphQLType for RootNode<'a, QueryT, MutationT>
     where QueryT: GraphQLType<Context=CtxT>,
           MutationT: GraphQLType<Context=CtxT>
 {
@@ -17,7 +17,7 @@ impl<CtxT, QueryT, MutationT> GraphQLType for RootNode<QueryT, MutationT>
         QueryT::name()
     }
 
-    fn meta(registry: &mut Registry) -> MetaType {
+    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         QueryT::meta(registry)
     }
 
@@ -33,7 +33,7 @@ impl<CtxT, QueryT, MutationT> GraphQLType for RootNode<QueryT, MutationT>
     }
 }
 
-graphql_object!(SchemaType: SchemaType as "__Schema" |&self| {
+graphql_object!(<'a> SchemaType<'a>: SchemaType<'a> as "__Schema" |&self| {
     field types() -> Vec<TypeType> {
         self.type_list()
     }
@@ -51,7 +51,7 @@ graphql_object!(SchemaType: SchemaType as "__Schema" |&self| {
     }
 });
 
-graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
+graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
     field name() -> Option<&str> {
         match *self {
             TypeType::Concrete(t) => t.name(),
@@ -123,12 +123,12 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
                     .filter_map(|tn| schema.type_by_name(tn))
                     .collect())
             }
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { name: ref iface_name, .. })) => {
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { name: iface_name, .. })) => {
                 Some(schema.concrete_type_list()
                     .iter()
                     .filter_map(|&ct|
                         if let &MetaType::Object(ObjectMeta { ref name, ref interface_names, .. }) = ct {
-                            if interface_names.contains(iface_name) {
+                            if interface_names.contains(&iface_name.to_owned()) {
                                 schema.type_by_name(name)
                             } else { None }
                         } else { None }
@@ -151,7 +151,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType as "__Type" |&self| {
     }
 });
 
-graphql_object!(Field: SchemaType as "__Field" |&self| {
+graphql_object!(<'a> Field<'a>: SchemaType<'a> as "__Field" |&self| {
     field name() -> &String {
         &self.name
     }
@@ -177,7 +177,7 @@ graphql_object!(Field: SchemaType as "__Field" |&self| {
     }
 });
 
-graphql_object!(Argument: SchemaType as "__InputValue" |&self| {
+graphql_object!(<'a> Argument<'a>: SchemaType<'a> as "__InputValue" |&self| {
     field name() -> &String {
         &self.name
     }
@@ -195,7 +195,7 @@ graphql_object!(Argument: SchemaType as "__InputValue" |&self| {
     }
 });
 
-graphql_object!(EnumValue: SchemaType as "__EnumValue" |&self| {
+graphql_object!(EnumValue: () as "__EnumValue" |&self| {
     field name() -> &String {
         &self.name
     }
@@ -225,7 +225,7 @@ graphql_enum!(TypeKind as "__TypeKind" {
 });
 
 
-graphql_object!(DirectiveType: SchemaType as "__Directive" |&self| {
+graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| {
     field name() -> &String {
         &self.name
     }
