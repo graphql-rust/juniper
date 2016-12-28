@@ -35,7 +35,7 @@ pub enum FieldPath<'a> {
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
 pub struct Executor<'a, CtxT> where CtxT: 'a {
-    fragments: &'a HashMap<String, Fragment>,
+    fragments: &'a HashMap<&'a str, &'a Fragment>,
     variables: &'a HashMap<String, InputValue>,
     current_selection_set: Option<Vec<Selection>>,
     schema: &'a SchemaType,
@@ -232,7 +232,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
 
     #[doc(hidden)]
     pub fn fragment_by_name(&self, name: &str) -> Option<&'a Fragment> {
-        self.fragments.get(name)
+        self.fragments.get(name).map(|f| *f)
     }
 
     /// Add an error to the execution engine
@@ -337,7 +337,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
 
     {
         let executor = Executor {
-            fragments: &fragments.into_iter().map(|f| (f.item.name.item.clone(), f.item)).collect(),
+            fragments: &fragments.iter().map(|f| (f.item.name.item.as_str(), &f.item)).collect(),
             variables: variables,
             current_selection_set: Some(op.item.selection_set),
             schema: &root_node.schema,
