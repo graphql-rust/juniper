@@ -64,24 +64,24 @@ pub enum TypeKind {
 }
 
 /// Field argument container
-pub struct Arguments {
-    args: Option<HashMap<String, InputValue>>,
+pub struct Arguments<'a> {
+    args: Option<HashMap<&'a str, InputValue>>,
 }
 
-impl Arguments {
+impl<'a> Arguments<'a> {
     #[doc(hidden)]
-    pub fn new(mut args: Option<HashMap<String, InputValue>>, meta_args: &Option<Vec<Argument>>) -> Arguments {
+    pub fn new(mut args: Option<HashMap<&'a str, InputValue>>, meta_args: &'a Option<Vec<Argument>>) -> Arguments<'a> {
         if meta_args.is_some() && args.is_none() {
             args = Some(HashMap::new());
         }
 
         if let (&mut Some(ref mut args), &Some(ref meta_args)) = (&mut args, meta_args) {
             for arg in meta_args {
-                if !args.contains_key(&arg.name) || args[&arg.name].is_null() {
+                if !args.contains_key(arg.name.as_str()) || args[arg.name.as_str()].is_null() {
                     if let Some(ref default_value) = arg.default_value {
-                        args.insert(arg.name.clone(), default_value.clone());
+                        args.insert(arg.name.as_str(), default_value.clone());
                     } else {
-                        args.insert(arg.name.clone(), InputValue::null());
+                        args.insert(arg.name.as_str(), InputValue::null());
                     }
                 }
             }
@@ -333,8 +333,8 @@ fn resolve_selection_set_into<T, CtxT>(
                     &f.name.item,
                     &Arguments::new(
                         f.arguments.as_ref().map(|m|
-                            m.item.iter().cloned().map(|(k, v)|
-                                (k.item, v.item.into_const(exec_vars))).collect()),
+                            m.item.iter().map(|&(ref k, ref v)|
+                                (k.item.as_str(), v.item.clone().into_const(exec_vars))).collect()),
                         &meta_field.arguments),
                     &mut sub_exec);
 
