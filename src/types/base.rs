@@ -300,12 +300,7 @@ fn resolve_selection_set_into<T, CtxT>(
     for selection in selection_set {
         match selection {
             &Selection::Field(Spanning { item: ref f, start: ref start_pos, .. }) => {
-                if is_excluded(
-                        &match &f.directives {
-                            &Some(ref sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
-                            &None => None,
-                        },
-                        executor.variables()) {
+                if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
 
@@ -347,12 +342,7 @@ fn resolve_selection_set_into<T, CtxT>(
                 }
             },
             &Selection::FragmentSpread(Spanning { item: ref spread, .. }) => {
-                if is_excluded(
-                        &match &spread.directives {
-                            &Some(ref sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
-                            &None => None,
-                        },
-                        executor.variables()) {
+                if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
 
@@ -363,12 +353,7 @@ fn resolve_selection_set_into<T, CtxT>(
                     instance, &fragment.selection_set[..], executor, result);
             },
             &Selection::InlineFragment(Spanning { item: ref fragment, start: ref start_pos, .. }) => {
-                if is_excluded(
-                        &match &fragment.directives {
-                            &Some(ref sel) => Some(sel.iter().cloned().map(|s| s.item).collect()),
-                            &None => None
-                        },
-                        executor.variables()) {
+                if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }
 
@@ -404,9 +389,9 @@ fn resolve_selection_set_into<T, CtxT>(
     }
 }
 
-fn is_excluded(directives: &Option<Vec<Directive>>, vars: &HashMap<String, InputValue>) -> bool {
+fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &HashMap<String, InputValue>) -> bool {
     if let Some(ref directives) = *directives {
-        for directive in directives {
+        for &Spanning { item: ref directive, .. } in directives {
             let condition: bool = directive.arguments.iter()
                 .flat_map(|m| m.item.get("if"))
                 .flat_map(|v| v.item.clone().into_const(vars).convert())
