@@ -325,7 +325,7 @@ fn resolve_selection_set_into<T, CtxT>(
                 let exec_vars = executor.variables();
 
                 let mut sub_exec = executor.sub_executor(
-                    Some(response_name.clone()),
+                    Some(response_name),
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]));
 

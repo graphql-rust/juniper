@@ -27,7 +27,7 @@ pub struct Registry {
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
-    Field(String, SourcePosition, &'a FieldPath<'a>),
+    Field(&'a str, SourcePosition, &'a FieldPath<'a>),
 }
 
 /// Query execution engine
@@ -187,7 +187,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     #[doc(hidden)]
     pub fn sub_executor(
         &self,
-        field_name: Option<String>,
+        field_name: Option<&'a str>,
         location: SourcePosition,
         selection_set: Option<&'a [Selection]>,
     )
@@ -251,7 +251,7 @@ impl<'a> FieldPath<'a> {
             FieldPath::Root(_) => (),
             FieldPath::Field(ref name, _, ref parent) => {
                 parent.construct_path(acc);
-                acc.push(name.clone());
+                acc.push((*name).to_owned());
             }
         }
     }
