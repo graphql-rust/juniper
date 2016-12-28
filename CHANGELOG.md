@@ -41,6 +41,31 @@ using the macros and not deriving `GraphQLType` directly.
    MyContext ...)` you will need to add `impl Context for MyContext
    {}`. Simple as that.
 
+* `Registry` and all meta type structs now takes one lifetime
+  parameter, which affects `GraphQLType`'s `meta` method. This only
+  affects people who implement the trait manually.
+
+  **How to fix:** Change the type signature of `meta()` to read `fn
+    meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r>`.
+
+* The type builder methods on `Registry` no longer return functions
+  taking types or fields. Due to how the borrow checker works with
+  expressions, you will have to split up the instantiation into two
+  statements. This only affects people who implement the `GraphQLType`
+  trait manually.
+
+  **How to fix:** Change the contents of your `meta()` methods to
+    something like this:
+
+  ```rust
+  fn meta<'r>(registry: &mut Registry<r>) -> MetaType<'r> {
+      let fields = &[ /* your fields ... */ ];
+
+      registry.build_object_type::<Self>(fields).into_meta()
+  }
+
+  ```
+
 
 ### Added
 
@@ -127,6 +152,12 @@ using the macros and not deriving `GraphQLType` directly.
   });
 
   ```
+
+### Improvements
+
+* Parser and query execution has now reduced the allocation overhead
+  by reusing as much as possible from the query source and meta type
+  information.
 
 ## [0.5.3] – 2016-12-05
 
