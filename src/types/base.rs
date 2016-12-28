@@ -307,16 +307,16 @@ fn resolve_selection_set_into<T, CtxT>(
 
                 let response_name = &f.alias.as_ref().unwrap_or(&f.name).item;
 
-                if &f.name.item == "__typename" {
+                if f.name.item == "__typename" {
                     result.insert(
-                        response_name.clone(),
+                        (*response_name).to_owned(),
                         Value::string(
                             instance.concrete_type_name(executor.context())));
                     continue;
                 }
 
                 let meta_field = meta_type.field_by_name(&f.name.item)
-                    .expect(&format!("Field {} not found on type {:?}", f.name.item, meta_type.name()));
+                    .unwrap_or_else(|| panic!(format!("Field {} not found on type {:?}", f.name.item, meta_type.name())));
 
                 let exec_vars = executor.variables();
 
@@ -330,15 +330,15 @@ fn resolve_selection_set_into<T, CtxT>(
                     &Arguments::new(
                         f.arguments.as_ref().map(|m|
                             m.item.iter().map(|&(ref k, ref v)|
-                                (k.item.as_str(), v.item.clone().into_const(exec_vars))).collect()),
+                                (k.item, v.item.clone().into_const(exec_vars))).collect()),
                         &meta_field.arguments),
                     &mut sub_exec);
 
                 match field_result {
-                    Ok(v) => merge_key_into(result, response_name.clone(), v),
+                    Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
                         sub_exec.push_error(e, start_pos.clone());
-                        result.insert(response_name.clone(), Value::null());
+                        result.insert((*response_name).to_owned(), Value::null());
                     }
                 }
             },
@@ -415,10 +415,10 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &HashMap<Str
 
 fn merge_key_into(
     result: &mut HashMap<String, Value>,
-    response_name: String,
+    response_name: &str,
     value: Value,
 ) {
-    match result.entry(response_name) {
+    match result.entry(response_name.to_owned()) {
         Entry::Occupied(mut e) => {
             println!("Merging object at '{}'", e.key());
             match (e.get_mut().as_mut_object_value(), value) {
@@ -442,7 +442,7 @@ fn merge_maps(
 ) {
     for (key, value) in src {
         if dest.contains_key(&key) {
-            merge_key_into(dest, key, value);
+            merge_key_into(dest, &key, value);
         }
         else {
             dest.insert(key, value);

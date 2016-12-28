@@ -46,7 +46,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         self.current_args = None;
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, _): &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         if let Some((ref pos, args)) = self.current_args {
             if args.iter().filter(|a| a.name == arg_name.item).next().is_none() {
                 let message = match *pos {

@@ -44,7 +44,7 @@ fn simple_ast() {
                                     name: Spanning::start_end(
                                         &SourcePosition::new(31, 2, 16),
                                         &SourcePosition::new(35, 2, 20),
-                                        "node".to_owned()),
+                                        "node"),
                                     arguments: Some(Spanning::start_end(
                                         &SourcePosition::new(35, 2, 20),
                                         &SourcePosition::new(42, 2, 27),
@@ -54,7 +54,7 @@ fn simple_ast() {
                                                     Spanning::start_end(
                                                         &SourcePosition::new(36, 2, 21),
                                                         &SourcePosition::new(38, 2, 23),
-                                                        "id".to_owned()),
+                                                        "id"),
                                                     Spanning::start_end(
                                                         &SourcePosition::new(40, 2, 25),
                                                         &SourcePosition::new(41, 2, 26),
@@ -73,7 +73,7 @@ fn simple_ast() {
                                                     name: Spanning::start_end(
                                                         &SourcePosition::new(65, 3, 20),
                                                         &SourcePosition::new(67, 3, 22),
-                                                        "id".to_owned()),
+                                                        "id"),
                                                     arguments: None,
                                                     directives: None,
                                                     selection_set: None,
@@ -87,7 +87,7 @@ fn simple_ast() {
                                                     name: Spanning::start_end(
                                                         &SourcePosition::new(88, 4, 20),
                                                         &SourcePosition::new(92, 4, 24),
-                                                        "name".to_owned()),
+                                                        "name"),
                                                     arguments: None,
                                                     directives: None,
                                                     selection_set: None,

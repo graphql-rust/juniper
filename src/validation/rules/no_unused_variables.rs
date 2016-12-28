@@ -10,7 +10,7 @@ pub enum Scope<'a> {
 }
 
 pub struct NoUnusedVariables<'a> {
-    defined_variables: HashMap<Option<&'a str>, HashSet<&'a Spanning<String>>>,
+    defined_variables: HashMap<Option<&'a str>, HashSet<&'a Spanning<&'a str>>>,
     used_variables: HashMap<Scope<'a>, Vec<&'a str>>,
     current_scope: Option<Scope<'a>>,
     spreads: HashMap<Scope<'a>, Vec<&'a str>>,
@@ -56,13 +56,13 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
             let mut visited = HashSet::new();
             self.find_used_vars(
                 &Scope::Operation(op_name.clone()),
-                &def_vars.iter().map(|def| def.item.as_str()).collect(),
+                &def_vars.iter().map(|def| def.item).collect(),
                 &mut used,
                 &mut visited);
 
             ctx.append_errors(def_vars
                 .iter()
-                .filter(|var| !used.contains(var.item.as_str()))
+                .filter(|var| !used.contains(var.item))
                 .map(|var| RuleError::new(
                     &error_message(&var.item, op_name.clone()),
                     &[var.start.clone()]))
@@ -71,7 +71,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     }
 
     fn enter_operation_definition(&mut self, _: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
-        let op_name = op.item.name.as_ref().map(|s| s.item.as_str());
+        let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name.clone()));
         self.defined_variables.insert(op_name, HashSet::new());
     }
@@ -88,7 +88,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         }
     }
 
-    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
                 vars.insert(var_name);
@@ -96,7 +96,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         }
     }
 
-    fn enter_argument(&mut self, _: &mut ValidatorContext<'a>, &(_, ref value): &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_argument(&mut self, _: &mut ValidatorContext<'a>, &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())

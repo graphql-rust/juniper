@@ -55,35 +55,35 @@ pub struct VariableDefinition<'a> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Arguments {
-    pub items: Vec<(Spanning<String>, Spanning<InputValue>)>,
+pub struct Arguments<'a> {
+    pub items: Vec<(Spanning<&'a str>, Spanning<InputValue>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct VariableDefinitions<'a> {
-    pub items: Vec<(Spanning<String>, VariableDefinition<'a>)>,
+    pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Field {
-    pub alias: Option<Spanning<String>>,
-    pub name: Spanning<String>,
-    pub arguments: Option<Spanning<Arguments>>,
-    pub directives: Option<Vec<Spanning<Directive>>>,
-    pub selection_set: Option<Vec<Selection>>,
+pub struct Field<'a> {
+    pub alias: Option<Spanning<&'a str>>,
+    pub name: Spanning<&'a str>,
+    pub arguments: Option<Spanning<Arguments<'a>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Option<Vec<Selection<'a>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct FragmentSpread {
-    pub name: Spanning<String>,
-    pub directives: Option<Vec<Spanning<Directive>>>,
+pub struct FragmentSpread<'a> {
+    pub name: Spanning<&'a str>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct InlineFragment {
-    pub type_condition: Option<Spanning<String>>,
-    pub directives: Option<Vec<Spanning<Directive>>>,
-    pub selection_set: Vec<Selection>,
+pub struct InlineFragment<'a> {
+    pub type_condition: Option<Spanning<&'a str>>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Vec<Selection<'a>>,
 }
 
 /// Entry in a GraphQL selection set
@@ -103,16 +103,16 @@ pub struct InlineFragment {
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 #[allow(missing_docs)]
-pub enum Selection {
-    Field(Spanning<Field>),
-    FragmentSpread(Spanning<FragmentSpread>),
-    InlineFragment(Spanning<InlineFragment>),
+pub enum Selection<'a> {
+    Field(Spanning<Field<'a>>),
+    FragmentSpread(Spanning<FragmentSpread<'a>>),
+    InlineFragment(Spanning<InlineFragment<'a>>),
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Directive {
-    pub name: Spanning<String>,
-    pub arguments: Option<Spanning<Arguments>>,
+pub struct Directive<'a> {
+    pub name: Spanning<&'a str>,
+    pub arguments: Option<Spanning<Arguments<'a>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -124,24 +124,24 @@ pub enum OperationType {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Operation<'a> {
     pub operation_type: OperationType,
-    pub name: Option<Spanning<String>>,
+    pub name: Option<Spanning<&'a str>>,
     pub variable_definitions: Option<Spanning<VariableDefinitions<'a>>>,
-    pub directives: Option<Vec<Spanning<Directive>>>,
-    pub selection_set: Vec<Selection>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Vec<Selection<'a>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Fragment {
-    pub name: Spanning<String>,
-    pub type_condition: Spanning<String>,
-    pub directives: Option<Vec<Spanning<Directive>>>,
-    pub selection_set: Vec<Selection>,
+pub struct Fragment<'a> {
+    pub name: Spanning<&'a str>,
+    pub type_condition: Spanning<&'a str>,
+    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub selection_set: Vec<Selection<'a>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Definition<'a> {
     Operation(Spanning<Operation<'a>>),
-    Fragment(Spanning<Fragment>),
+    Fragment(Spanning<Fragment<'a>>),
 }
 
 pub type Document<'a> = Vec<Definition<'a>>;
@@ -417,21 +417,17 @@ impl ToJson for InputValue {
     }
 }
 
-impl Arguments {
-    pub fn into_iter(self) -> vec::IntoIter<(Spanning<String>, Spanning<InputValue>)> {
+impl<'a> Arguments<'a> {
+    pub fn into_iter(self) -> vec::IntoIter<(Spanning<&'a str>, Spanning<InputValue>)> {
         self.items.into_iter()
     }
 
-    pub fn iter(&self) -> slice::Iter<(Spanning<String>, Spanning<InputValue>)> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue>)> {
         self.items.iter()
     }
 
-    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<String>, Spanning<InputValue>)> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue>)> {
         self.items.iter_mut()
-    }
-
-    pub fn drain<'a>(&'a mut self) -> vec::Drain<'a, (Spanning<String>, Spanning<InputValue>)> {
-        self.items.drain(..)
     }
 
     pub fn len(&self) -> usize {
@@ -448,7 +444,7 @@ impl Arguments {
 }
 
 impl<'a> VariableDefinitions<'a> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<String>, VariableDefinition)> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition)> {
         self.items.iter()
     }
 }

@@ -19,7 +19,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
         self.names = HashMap::new();
     }
 
-    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition)) {
         match self.names.entry(&var_name.item) {
             Entry::Occupied(e) => {
                 ctx.report_error(

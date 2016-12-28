@@ -452,7 +452,7 @@ impl GraphQLType for QueryRoot {
     }
 }
 
-pub fn validate<'a, R, V, F>(r: R, q: &str, factory: F)
+pub fn validate<'a, R, V, F>(r: R, q: &'a str, factory: F)
     -> Vec<RuleError>
     where R: GraphQLType,
           V: Visitor<'a> + 'a,
@@ -479,14 +479,14 @@ pub fn validate<'a, R, V, F>(r: R, q: &str, factory: F)
     ctx.into_errors()
 }
 
-pub fn expect_passes_rule<'a, V, F>(factory: F, q: &str)
+pub fn expect_passes_rule<'a, V, F>(factory: F, q: &'a str)
     where V: Visitor<'a> + 'a,
           F: Fn() -> V
 {
     expect_passes_rule_with_schema(QueryRoot, factory, q);
 }
 
-pub fn expect_passes_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &str)
+pub fn expect_passes_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &'a str)
     where R: GraphQLType,
           V: Visitor<'a> + 'a,
           F: Fn() -> V
@@ -499,14 +499,14 @@ pub fn expect_passes_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &str)
     }
 }
 
-pub fn expect_fails_rule<'a, V, F>(factory: F, q: &str, expected_errors: &[RuleError])
+pub fn expect_fails_rule<'a, V, F>(factory: F, q: &'a str, expected_errors: &[RuleError])
     where V: Visitor<'a> + 'a,
           F: Fn() -> V
 {
     expect_fails_rule_with_schema(QueryRoot, factory, q, expected_errors);
 }
 
-pub fn expect_fails_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &str, expected_errors: &[RuleError])
+pub fn expect_fails_rule_with_schema<'a, R, V, F>(r: R, factory: F, q: &'a str, expected_errors: &[RuleError])
     where R: GraphQLType,
           V: Visitor<'a> + 'a,
           F: Fn() -> V

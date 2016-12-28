@@ -46,10 +46,10 @@ impl<'a> Visitor<'a> for MultiVisitor<'a> {
         self.visit_all(|v| v.exit_fragment_definition(ctx, f));
     }
 
-    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, def: &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, def: &'a (Spanning<&'a str>, VariableDefinition)) {
         self.visit_all(|v| v.enter_variable_definition(ctx, def));
     }
-    fn exit_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, def: &'a (Spanning<String>, VariableDefinition)) {
+    fn exit_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, def: &'a (Spanning<&'a str>, VariableDefinition)) {
         self.visit_all(|v| v.exit_variable_definition(ctx, def));
     }
 
@@ -60,10 +60,10 @@ impl<'a> Visitor<'a> for MultiVisitor<'a> {
         self.visit_all(|v| v.exit_directive(ctx, d));
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, arg: &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, arg: &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         self.visit_all(|v| v.enter_argument(ctx, arg));
     }
-    fn exit_argument(&mut self, ctx: &mut ValidatorContext<'a>, arg: &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn exit_argument(&mut self, ctx: &mut ValidatorContext<'a>, arg: &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         self.visit_all(|v| v.exit_argument(ctx, arg));
     }
 

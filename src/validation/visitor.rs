@@ -161,8 +161,6 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorConte
 }
 
 fn visit_inline_fragment<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, fragment: &'a Spanning<InlineFragment>) {
-    let type_name = fragment.item.type_condition.as_ref().map(|s| s.item.as_str());
-
     let mut visit_fn = move |ctx: &mut ValidatorContext<'a>| {
         v.enter_inline_fragment(ctx, fragment);
 
@@ -172,7 +170,7 @@ fn visit_inline_fragment<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorConte
         v.exit_inline_fragment(ctx, fragment);
     };
 
-    if let Some(type_name) = type_name {
+    if let &Some(Spanning { item: ref type_name, .. }) = &fragment.item.type_condition {
         ctx.with_pushed_type(Some(&Type::NonNullNamed(type_name)), visit_fn);
     }
     else {

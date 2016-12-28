@@ -9,7 +9,7 @@ pub fn factory() -> UniqueVariableNames {
 }
 
 impl<'a> Visitor<'a> for UniqueVariableNames {
-    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, ref var_def): &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(var_type) = ctx.schema.concrete_type_by_name(var_def.var_type.item.innermost_name()) {
             if !var_type.is_input() {
                 ctx.report_error(

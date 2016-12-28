@@ -15,14 +15,14 @@ pub trait Visitor<'a> {
     fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Fragment>) {}
     fn exit_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Fragment>) {}
 
-    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<String>, VariableDefinition)) {}
-    fn exit_variable_definition(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<String>, VariableDefinition)) {}
+    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<&'a str>, VariableDefinition)) {}
+    fn exit_variable_definition(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<&'a str>, VariableDefinition)) {}
 
     fn enter_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {}
     fn exit_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {}
 
-    fn enter_argument(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<String>, Spanning<InputValue>)) {}
-    fn exit_argument(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<String>, Spanning<InputValue>)) {}
+    fn enter_argument(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<&'a str>, Spanning<InputValue>)) {}
+    fn exit_argument(&mut self, _: &mut ValidatorContext<'a>, _: &'a (Spanning<&'a str>, Spanning<InputValue>)) {}
 
     fn enter_selection_set(&mut self, _: &mut ValidatorContext<'a>, _: &'a Vec<Selection>) {}
     fn exit_selection_set(&mut self, _: &mut ValidatorContext<'a>, _: &'a Vec<Selection>) {}

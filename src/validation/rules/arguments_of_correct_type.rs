@@ -35,7 +35,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         self.current_args = None;
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, ref arg_value): &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, ref arg_value): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         if let Some(argument_meta) = self.current_args
             .and_then(|args| args.iter().filter(|a| a.name == arg_name.item).next())
         {

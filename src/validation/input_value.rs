@@ -47,7 +47,7 @@ fn validate_var_defs(
             Some(t) if t.is_input() => {
                 let ct = schema.make_type(&def.var_type.item);
 
-                if def.var_type.item.is_non_null() && is_absent_or_null(values.get(&name.item)) {
+                if def.var_type.item.is_non_null() && is_absent_or_null(values.get(name.item)) {
                     errors.push(RuleError::new(
                         &format!(
                             r#"Variable "${}" of required type "{}" was not provided."#,
@@ -55,7 +55,7 @@ fn validate_var_defs(
                         ),
                         &[ name.start.clone() ],
                     ));
-                } else if let Some(ref v) = values.get(&name.item) {
+                } else if let Some(ref v) = values.get(name.item) {
                     unify_value(&name.item, &name.start, v, &ct, schema, errors, Path::Root);
                 }
             },

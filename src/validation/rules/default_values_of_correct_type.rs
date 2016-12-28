@@ -12,7 +12,7 @@ pub fn factory() -> DefaultValuesOfCorrectType {
 }
 
 impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
-    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, ref var_def): &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(Spanning { item: ref var_value, ref start, .. }) = var_def.default_value {
             if var_def.var_type.item.is_non_null() {
                 ctx.report_error(

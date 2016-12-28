@@ -54,7 +54,7 @@ fn parse_operation_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Op
         let start_pos = parser.peek().start.clone();
         let operation_type = try!(parse_operation_type(parser));
         let name = match parser.peek().item {
-            Token::Name(_) => Some(try!(parser.expect_name()).map(|s| s.to_owned())),
+            Token::Name(_) => Some(try!(parser.expect_name())),
             _ => None
         };
         let variable_definitions = try!(parse_variable_definitions(parser));
@@ -74,7 +74,7 @@ fn parse_operation_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Op
     }
 }
 
-fn parse_fragment_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Fragment> {
+fn parse_fragment_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Fragment<'a>> {
     let Spanning { start: start_pos, .. } = try!(parser.expect(&Token::Name("fragment")));
     let name = match parser.expect_name() {
         Ok(n) => if n.item == "on" {
@@ -95,14 +95,14 @@ fn parse_fragment_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Fra
         &start_pos,
         &selection_set.end,
         Fragment {
-            name: name.map(|s| s.to_owned()),
-            type_condition: type_cond.map(|s| s.to_owned()),
+            name: name,
+            type_condition: type_cond,
             directives: directives.map(|s| s.item),
             selection_set: selection_set.item,
         }))
 }
 
-fn parse_optional_selection_set<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Vec<Selection>> {
+fn parse_optional_selection_set<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Vec<Selection<'a>>> {
     if parser.peek().item == Token::CurlyOpen {
         Ok(Some(try!(parse_selection_set(parser))))
     }
@@ -111,21 +111,21 @@ fn parse_optional_selection_set<'a>(parser: &mut Parser<'a>) -> OptionParseResul
     }
 }
 
-fn parse_selection_set<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Vec<Selection>> {
+fn parse_selection_set<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Vec<Selection<'a>>> {
     parser.unlocated_delimited_nonempty_list(
         &Token::CurlyOpen,
         parse_selection,
         &Token::CurlyClose)
 }
 
-fn parse_selection<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selection> {
+fn parse_selection<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selection<'a>> {
     match parser.peek().item {
         Token::Ellipsis => parse_fragment(parser),
         _ => parse_field(parser).map(Selection::Field),
     }
 }
 
-fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selection> {
+fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selection<'a>> {
     let Spanning { start: ref start_pos, .. } = try!(parser.expect(&Token::Ellipsis));
 
     match parser.peek().item {
@@ -140,7 +140,7 @@ fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selec
                     &start_pos.clone(),
                     &selection_set.end,
                     InlineFragment {
-                        type_condition: Some(name.map(|s| s.to_owned())),
+                        type_condition: Some(name),
                         directives: directives.map(|s| s.item),
                         selection_set: selection_set.item,
                     })))
@@ -167,7 +167,7 @@ fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selec
                     &start_pos.clone(),
                     &directives.as_ref().map_or(&frag_name.end, |s| &s.end).clone(),
                     FragmentSpread {
-                        name: frag_name.map(|s| s.to_owned()),
+                        name: frag_name,
                         directives: directives.map(|s| s.item),
                     })))
         },
@@ -189,11 +189,11 @@ fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selec
     }
 }
 
-fn parse_field<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Field> {
-    let mut alias = Some(try!(parser.expect_name()).map(|s| s.to_owned()));
+fn parse_field<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Field<'a>> {
+    let mut alias = Some(try!(parser.expect_name()));
 
     let name = if try!(parser.skip(&Token::Colon)).is_some() {
-        try!(parser.expect_name()).map(|s| s.to_owned())
+        try!(parser.expect_name())
     }
     else {
         alias.take().unwrap()
@@ -212,14 +212,14 @@ fn parse_field<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Field> {
             .clone(),
         Field {
             alias: alias,
-            name: name.map(|s| s.to_owned()),
+            name: name,
             arguments: arguments,
             directives: directives.map(|s| s.item),
             selection_set: selection_set.map(|s| s.item),
         }))
 }
 
-fn parse_arguments<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Arguments> {
+fn parse_arguments<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Arguments<'a>> {
     if parser.peek().item != Token::ParenOpen {
         Ok(None)
     } else {
@@ -231,7 +231,7 @@ fn parse_arguments<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Argumen
     }
 }
 
-fn parse_argument<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue>)> {
+fn parse_argument<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Spanning<&'a str>, Spanning<InputValue>)> {
     let name = try!(parser.expect_name());
     try!(parser.expect(&Token::Colon));
     let value = try!(parse_value_literal(parser, false));
@@ -239,7 +239,7 @@ fn parse_argument<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Spanning<Stri
     Ok(Spanning::start_end(
         &name.start.clone(),
         &value.end.clone(),
-        (name.map(|s| s.to_owned()), value)))
+        (name, value)))
 }
 
 fn parse_operation_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, OperationType> {
@@ -263,7 +263,7 @@ fn parse_variable_definitions<'a>(parser: &mut Parser<'a>) -> OptionParseResult<
     }
 }
 
-fn parse_variable_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Spanning<String>, VariableDefinition<'a>)> {
+fn parse_variable_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Spanning<&'a str>, VariableDefinition<'a>)> {
     let Spanning { start: start_pos, .. } = try!(parser.expect(&Token::Dollar));
     let var_name = try!(parser.expect_name());
     try!(parser.expect(&Token::Colon));
@@ -283,7 +283,7 @@ fn parse_variable_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Sp
             Spanning::start_end(
                 &start_pos,
                 &var_name.end,
-                var_name.item.to_owned(),
+                var_name.item,
             ),
             VariableDefinition {
                 var_type: var_type,
@@ -292,7 +292,7 @@ fn parse_variable_definition<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Sp
         )))
 }
 
-fn parse_directives<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Vec<Spanning<Directive>>> {
+fn parse_directives<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Vec<Spanning<Directive<'a>>>> {
     if parser.peek().item != Token::At {
         Ok(None)
     }
@@ -306,7 +306,7 @@ fn parse_directives<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Vec<Sp
     }
 }
 
-fn parse_directive<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Directive> {
+fn parse_directive<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Directive<'a>> {
     let Spanning { start: start_pos, .. } = try!(parser.expect(&Token::At));
     let name = try!(parser.expect_name());
     let arguments = try!(parse_arguments(parser));
@@ -315,7 +315,7 @@ fn parse_directive<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Directive> {
         &start_pos,
         &arguments.as_ref().map_or(&name.end, |s| &s.end).clone(),
         Directive {
-            name: name.map(|s| s.to_owned()),
+            name: name,
             arguments: arguments,
         }))
 }

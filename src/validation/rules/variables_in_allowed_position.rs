@@ -13,7 +13,7 @@ pub enum Scope<'a> {
 pub struct VariableInAllowedPosition<'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
     variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type<'a>)>>,
-    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<String>, VariableDefinition<'a>)>>,
+    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a>)>>,
     current_scope: Option<Scope<'a>>,
 }
 
@@ -30,7 +30,7 @@ impl<'a> VariableInAllowedPosition<'a> {
     fn collect_incorrect_usages(
         &self,
         from: &Scope<'a>,
-        var_defs: &Vec<&'a (Spanning<String>, VariableDefinition)>,
+        var_defs: &Vec<&'a (Spanning<&'a str>, VariableDefinition)>,
         ctx: &mut ValidatorContext<'a>,
         visited: &mut HashSet<Scope<'a>>,
     )
@@ -83,7 +83,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     }
 
     fn enter_operation_definition(&mut self, _: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
-        self.current_scope = Some(Scope::Operation(op.item.name.as_ref().map(|s| s.item.as_str())));
+        self.current_scope = Some(Scope::Operation(op.item.name.as_ref().map(|s| s.item)));
     }
 
     fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
@@ -95,7 +95,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         }
     }
 
-    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, def: &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, def: &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
                 .entry(scope.clone())

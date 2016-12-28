@@ -14,7 +14,7 @@ struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
 struct ConflictReason(String, ConflictReasonMessage);
 
 #[derive(Debug)]
-struct AstAndDef<'a>(Option<&'a str>, &'a Spanning<Field>, Option<&'a FieldType<'a>>);
+struct AstAndDef<'a>(Option<&'a str>, &'a Spanning<Field<'a>>, Option<&'a FieldType<'a>>);
 
 type AstAndDefCollection<'a> = OrderedMap<&'a str, Vec<AstAndDef<'a>>>;
 
@@ -116,7 +116,7 @@ impl<'a> PairSet<'a> {
 }
 
 pub struct OverlappingFieldsCanBeMerged<'a> {
-    named_fragments: HashMap<&'a str, &'a Fragment>,
+    named_fragments: HashMap<&'a str, &'a Fragment<'a>>,
     compared_fragments: RefCell<PairSet<'a>>,
 }
 
@@ -573,11 +573,11 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                     let field_def = parent_type.and_then(|t| t.field_by_name(field_name));
                     let response_name = f.item.alias.as_ref().map(|s| &s.item).unwrap_or_else(|| &field_name);
 
-                    if !ast_and_defs.contains_key(response_name.as_str()) {
+                    if !ast_and_defs.contains_key(response_name) {
                         ast_and_defs.insert(response_name, Vec::new());
                     }
 
-                    ast_and_defs.get_mut(response_name.as_str()).unwrap()
+                    ast_and_defs.get_mut(response_name).unwrap()
                         .push(AstAndDef(parent_type.and_then(MetaType::name), f, field_def));
                 },
                 Selection::FragmentSpread(Spanning { item: FragmentSpread { ref name, ..}, ..}) => {

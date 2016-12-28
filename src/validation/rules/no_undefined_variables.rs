@@ -69,7 +69,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     }
 
     fn enter_operation_definition(&mut self, _: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
-        let op_name = op.item.name.as_ref().map(|s| s.item.as_str());
+        let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables.insert(op_name, (op.start.clone(), HashSet::new()));
     }
@@ -86,7 +86,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         }
     }
 
-    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name) {
                 vars.insert(&var_name.item);
@@ -94,7 +94,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         }
     }
 
-    fn enter_argument(&mut self, _: &mut ValidatorContext<'a>, &(_, ref value): &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_argument(&mut self, _: &mut ValidatorContext<'a>, &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())

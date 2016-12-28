@@ -49,7 +49,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
 
         for def in defs {
             if let Definition::Operation(Spanning { item: Operation { ref name, .. }, ..}) = *def {
-                let op_name = name.as_ref().map(|s| s.item.as_str());
+                let op_name = name.as_ref().map(|s| s.item);
                 self.find_reachable_fragments(&Scope::Operation(op_name), &mut reachable);
             }
         }

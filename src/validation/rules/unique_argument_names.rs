@@ -23,7 +23,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
         self.known_names = HashMap::new();
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, _): &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         match self.known_names.entry(&arg_name.item) {
             Entry::Occupied(e) => {
                 ctx.report_error(

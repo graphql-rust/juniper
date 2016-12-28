@@ -55,7 +55,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
     }
 
     fn exit_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
-        assert_eq!(Some(fragment.item.name.item.as_str()), self.current_fragment);
+        assert_eq!(Some(fragment.item.name.item), self.current_fragment);
         self.current_fragment = None;
     }
 

@@ -23,7 +23,7 @@ pub struct ValidatorContext<'a> {
     input_type_stack: Vec<Option<&'a MetaType<'a>>>,
     input_type_literal_stack: Vec<Option<Type<'a>>>,
     parent_type_stack: Vec<Option<&'a MetaType<'a>>>,
-    fragment_names: HashSet<String>,
+    fragment_names: HashSet<&'a str>,
 }
 
 impl RuleError {
@@ -51,7 +51,7 @@ impl RuleError {
 
 impl<'a> ValidatorContext<'a> {
     #[doc(hidden)]
-    pub fn new(schema: &'a SchemaType, document: &Document) -> ValidatorContext<'a> {
+    pub fn new(schema: &'a SchemaType, document: &Document<'a>) -> ValidatorContext<'a> {
         ValidatorContext {
             errors: Vec::new(),
             schema: schema,
@@ -62,7 +62,7 @@ impl<'a> ValidatorContext<'a> {
             input_type_literal_stack: Vec::new(),
             fragment_names: document.iter()
                 .filter_map(|def| match *def {
-                    Definition::Fragment(ref frag) => Some(frag.item.name.item.clone()),
+                    Definition::Fragment(ref frag) => Some(frag.item.name.item),
                     _ => None,
                 })
                 .collect()

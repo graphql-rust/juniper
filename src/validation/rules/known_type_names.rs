@@ -20,7 +20,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
         validate_type(ctx, &type_cond.item, &type_cond.start);
     }
 
-    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(_, ref var_def): &'a (Spanning<String>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition)) {
         let type_name = var_def.var_type.item.innermost_name();
         validate_type(ctx, &type_name, &var_def.var_type.start);
     }

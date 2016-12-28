@@ -42,7 +42,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
 
     fn enter_fragment_spread(&mut self, ctx: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
         if let (Some(ref parent_type), Some(ref frag_type))
-            = (ctx.parent_type(), self.fragment_types.get(spread.item.name.item.as_str()))
+            = (ctx.parent_type(), self.fragment_types.get(spread.item.name.item))
         {
             if !ctx.schema.type_overlap(parent_type, frag_type) {
                 ctx.report_error(
