@@ -187,6 +187,7 @@ built-in [GraphiQL][6] handler included.
 #![warn(missing_docs)]
 
 extern crate rustc_serialize;
+#[cfg(feature="serde")] extern crate serde;
 
 #[cfg(feature="nightly")] extern crate test;
 #[cfg(feature="iron-handlers")] #[macro_use(itry, iexpect)] extern crate iron;
