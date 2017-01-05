@@ -346,7 +346,7 @@ impl ToJson for ExecutionError {
 }
 
 #[doc(hidden)]
-pub fn to_snake_case(s: &str) -> String {
+pub fn to_camel_case(s: &str) -> String {
     let mut dest = String::new();
 
     for (i, part) in s.split('_').enumerate() {
@@ -369,14 +369,14 @@ pub fn to_snake_case(s: &str) -> String {
 }
 
 #[test]
-fn test_to_snake_case() {
-    assert_eq!(&to_snake_case("test")[..], "test");
-    assert_eq!(&to_snake_case("_test")[..], "Test");
-    assert_eq!(&to_snake_case("first_second")[..], "firstSecond");
-    assert_eq!(&to_snake_case("first_")[..], "first");
-    assert_eq!(&to_snake_case("a_b_c")[..], "aBC");
-    assert_eq!(&to_snake_case("a_bc")[..], "aBc");
-    assert_eq!(&to_snake_case("a_b")[..], "aB");
-    assert_eq!(&to_snake_case("a")[..], "a");
-    assert_eq!(&to_snake_case("")[..], "");
+fn test_to_camel_case() {
+    assert_eq!(&to_camel_case("test")[..], "test");
+    assert_eq!(&to_camel_case("_test")[..], "Test");
+    assert_eq!(&to_camel_case("first_second")[..], "firstSecond");
+    assert_eq!(&to_camel_case("first_")[..], "first");
+    assert_eq!(&to_camel_case("a_b_c")[..], "aBC");
+    assert_eq!(&to_camel_case("a_bc")[..], "aBc");
+    assert_eq!(&to_camel_case("a_b")[..], "aB");
+    assert_eq!(&to_camel_case("a")[..], "a");
+    assert_eq!(&to_camel_case("")[..], "");
 }

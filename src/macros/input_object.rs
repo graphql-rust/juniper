@@ -49,7 +49,7 @@ macro_rules! graphql_input_object {
     ) => {
         Some($name {
             $( $field_name: {
-                let n: String = $crate::to_snake_case(stringify!($field_name));
+                let n: String = $crate::to_camel_case(stringify!($field_name));
                 let v: Option<&&$crate::InputValue> = $var.get(&n[..]);
 
                 if let Some(v) = v {
@@ -84,7 +84,7 @@ macro_rules! graphql_input_object {
                     @apply_description,
                     $($descr)*,
                     $reg.arg::<$field_type>(
-                        &$crate::to_snake_case(stringify!($field_name))))
+                        &$crate::to_camel_case(stringify!($field_name))))
             ),*
         ]
     };
