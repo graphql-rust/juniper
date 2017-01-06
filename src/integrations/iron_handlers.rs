@@ -108,11 +108,12 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         let result = execute(query, None, &self.root_node, variables, &context);
 
         let content_type = "application/json".parse::<Mime>().unwrap();
+        let mut map = BTreeMap::new();
 
         match result {
             Ok((result, errors)) => {
-                let mut map = BTreeMap::new();
                 map.insert("data".to_owned(), result.to_json());
+
                 if !errors.is_empty() {
                     map.insert("errors".to_owned(), errors.to_json());
                 }
@@ -124,7 +125,9 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
             }
 
             Err(err) => {
-                let data = err.to_json();
+                map.insert("errors".to_owned(), err.to_json());
+
+                let data = Json::Object(map);
                 let json = data.pretty();
 
                 Ok(Response::with((content_type, status::BadRequest, json.to_string())))

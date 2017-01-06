@@ -286,20 +286,16 @@ impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
 
 impl<'a> ToJson for GraphQLError<'a> {
     fn to_json(&self) -> Json {
-        let errs = match *self {
+        match *self {
             GraphQLError::ParseError(ref err) => parse_error_to_json(err),
             GraphQLError::ValidationError(ref errs) => errs.to_json(),
             GraphQLError::MultipleOperationsProvided => Json::String(
-                "Must provide operation name if query contains multiple operations.".to_owned()),
+                "Must provide operation name if query contains multiple operations".to_owned()),
             GraphQLError::NoOperationProvided => Json::String(
                 "Must provide an operation".to_owned()),
             GraphQLError::UnknownOperationName => Json::String(
                 "Unknown operation".to_owned()),
-        };
-
-        Json::Object(vec![
-            ("errors".to_owned(), errs),
-        ].into_iter().collect())
+        }
     }
 }
 
