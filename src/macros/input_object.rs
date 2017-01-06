@@ -64,10 +64,10 @@ macro_rules! graphql_input_object {
     // Generate the struct declaration, including (Rust) meta attributes
     (
         @generate_struct_fields,
-        ( $($meta:tt)* ), $name:tt,
+        ( $($meta:tt)* ), ( $($pubmod:tt)* ), $name:tt,
         ( $($field_name:ident : $field_type:ty $(as $descr:tt)* $(,)* ),* )
     ) => {
-        $($meta)* struct $name {
+        $($meta)* $($pubmod)* struct $name {
             $( $field_name: $field_type, )*
         }
     };
@@ -93,12 +93,26 @@ macro_rules! graphql_input_object {
     // struct $name { ... }
     (
         @parse,
-        ( $_ignore1:tt, $_ignore2:tt, $_ignore3:tt, $_ignore4:tt, $descr:tt ),
+        ( $_ignore1:tt, $_ignore2:tt, $_ignore3:tt, $_ignore4:tt, $_ignore5:tt, $descr:tt ),
         $(#[$meta:meta])* struct $name:ident { $($fields:tt)* } $($rest:tt)*
     ) => {
         graphql_input_object!(
             @parse,
-            ( ( $(#[$meta])* ), $name, (stringify!($name)), ($($fields)*), $descr ),
+            ( ( $(#[$meta])* ), ( ), $name, (stringify!($name)), ($($fields)*), $descr ),
+            $($rest)*
+        );
+    };
+
+    // #[...] pub struct $name { ... }
+    // pub struct $name { ... }
+    (
+        @parse,
+        ( $_ignore1:tt, $_ignore2:tt, $_ignore3:tt, $_ignore4:tt, $_ignore5:tt, $descr:tt ),
+        $(#[$meta:meta])* pub struct $name:ident { $($fields:tt)* } $($rest:tt)*
+    ) => {
+        graphql_input_object!(
+            @parse,
+            ( ( $(#[$meta])* ), ( pub ), $name, (stringify!($name)), ($($fields)*), $descr ),
             $($rest)*
         );
     };
@@ -107,12 +121,26 @@ macro_rules! graphql_input_object {
     // struct $name as "GraphQLName" { ... }
     (
         @parse,
-        ( $_ignore1:tt, $_ignore2:tt, $_ignore3:tt, $_ignore4:tt, $descr:tt ),
+        ( $_ignore1:tt, $_ignore2:tt, $_ignore3:tt, $_ignore4:tt, $_ignore5:tt, $descr:tt ),
         $(#[$meta:meta])* struct $name:ident as $outname:tt { $($fields:tt)* } $($rest:tt)*
     ) => {
         graphql_input_object!(
             @parse,
-            ( ( $($meta)* ), $name, $outname, ($($fields)*), $descr ),
+            ( ( $($meta)* ), ( ), $name, $outname, ($($fields)*), $descr ),
+            $($rest)*
+        );
+    };
+
+    // #[...] pub struct $name as "GraphQLName" { ... }
+    // pub struct $name as "GraphQLName" { ... }
+    (
+        @parse,
+        ( $_ignore1:tt, $_ignore2:tt, $_ignore3:tt, $_ignore4:tt, $_ignore5:tt, $descr:tt ),
+        $(#[$meta:meta])* pub struct $name:ident as $outname:tt { $($fields:tt)* } $($rest:tt)*
+    ) => {
+        graphql_input_object!(
+            @parse,
+            ( ( $($meta)* ), ( pub ), $name, $outname, ($($fields)*), $descr ),
             $($rest)*
         );
     };
@@ -120,12 +148,12 @@ macro_rules! graphql_input_object {
     // description: <description>
     (
         @parse,
-        ( $meta:tt, $name:tt, $outname:tt, $fields:tt, $_ignore:tt ),
+        ( $meta:tt, $pubmod:tt, $name:tt, $outname:tt, $fields:tt, $_ignore:tt ),
         description: $descr:tt $($rest:tt)*
     ) => {
         graphql_input_object!(
             @parse,
-            ( $meta, $name, $outname, $fields, $descr ),
+            ( $meta, $pubmod, $name, $outname, $fields, $descr ),
             $($rest)*
         );
     };
@@ -133,9 +161,9 @@ macro_rules! graphql_input_object {
     // No more data to parse, generate the struct and impls
     (
         @parse,
-        ( $meta:tt, $name:tt, $outname:tt, $fields:tt, $descr:tt ),
+        ( $meta:tt, $pubmod:tt, $name:tt, $outname:tt, $fields:tt, $descr:tt ),
     ) => {
-        graphql_input_object!(@generate_struct_fields, $meta, $name, $fields);
+        graphql_input_object!(@generate_struct_fields, $meta, $pubmod, $name, $fields);
 
         impl $crate::FromInputValue for $name {
             fn from(value: &$crate::InputValue) -> Option<$name> {
@@ -164,12 +192,21 @@ macro_rules! graphql_input_object {
         }
     };
 
-    // Entry point: parse calls starting with the struct declaration
+    // Entry point: parse calls starting with a struct declaration
     ( $(#[$meta:meta])* struct $($items:tt)* ) => {
         graphql_input_object!(
             @parse,
-            ( ( ), None, None, None, None ),
+            ( ( ), ( ), None, None, None, None ),
             $(#[$meta])* struct $($items)*
+        );
+    };
+
+    // Entry point: parse calls starting with a public struct declaration
+    ( $(#[$meta:meta])* pub struct $($items:tt)* ) => {
+        graphql_input_object!(
+            @parse,
+            ( ( ), ( ), None, None, None, None ),
+            $(#[$meta])* pub struct $($items)*
         );
     };
 
@@ -177,7 +214,7 @@ macro_rules! graphql_input_object {
     ( description: $($items:tt)* ) => {
         graphql_input_object!(
             @parse,
-            ( ( ), None, None, None, None ),
+            ( ( ), ( ), None, None, None, None ),
             description: $($items)*
         );
     };

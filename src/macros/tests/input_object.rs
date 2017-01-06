@@ -43,6 +43,34 @@ graphql_input_object!(
 );
 
 graphql_input_object!(
+    pub struct Public {
+        field_one: String,
+    }
+);
+
+graphql_input_object!(
+    description: "Description for the input object"
+
+    pub struct PublicWithDescription {
+        field_one: String,
+    }
+);
+
+graphql_input_object!(
+    description: "Description for the input object"
+
+    pub struct NamedPublicWithDescription as "APublicNamedInputObjectWithDescription" {
+        field_one: String,
+    }
+);
+
+graphql_input_object!(
+    pub struct NamedPublic as "APublicNamedInputObject" {
+        field_one: String,
+    }
+);
+
+graphql_input_object!(
     struct FieldDescription {
         field_one: String as "The first field",
         field_two: String as "The second field",
@@ -56,7 +84,11 @@ graphql_object!(Root: () |&self| {
         a3: Derive,
         a4: Named,
         a5: Description,
-        a6: FieldDescription
+        a6: FieldDescription,
+        a7: Public,
+        a8: PublicWithDescription,
+        a9: NamedPublicWithDescription,
+        a10: NamedPublic,
     ) -> i64 {
         0
     }
