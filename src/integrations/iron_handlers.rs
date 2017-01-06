@@ -214,15 +214,15 @@ impl Handler for GraphiQLHandler {
     <head>
         <title>GraphQL</title>
         {stylesheet_source}
-        <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.7.3/graphiql.css">
+        <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.8.1/graphiql.css">
     </head>
     <body>
         <div id="app"></div>
 
-        <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.2.1/react.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.2.1/react-dom.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.7.3/graphiql.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.1/fetch.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.8.1/graphiql.js"></script>
         <script>var GRAPHQL_URL = '{graphql_url}';</script>
         {fetcher_source}
     </body>
