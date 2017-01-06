@@ -1,7 +1,28 @@
 Change log
 ==========
 
-## 0.6.0 – Unreleased
+## [0.6.1] – 2017-01-06
+
+### New features
+
+* Optional Serde support (#8)
+
+### Improvements
+
+* The `graphql_input_object!` macro can now be used to define input
+  objects as public Rust structs.
+* GraphiQL in the Iron GraphiQL handler has been updated to 0.8.1
+  (#11)
+
+### Minor breaking changes
+
+Some undocumented but public APIs were changed.
+
+* `to_snake_case` correctly renamed to `to_camel_case` (#9)
+* JSON serialization of `GraphQLError` changed to be more consistent
+  with how other values were serialized (#10).
+
+## [0.6.0] – 2017-01-02
 
 TL;DR: Many big changes in how context types work and how they
 interact with the executor. Not too much to worry about if you're only
@@ -216,4 +237,6 @@ using the macros and not deriving `GraphQLType` directly.
   cases of the macros have gotten tests to verify their correctness.
 
 
+[0.6.1]: https://github.com/mhallin/juniper/compare/0.6.0...0.6.1
+[0.6.0]: https://github.com/mhallin/juniper/compare/0.5.3...0.6.0
 [0.5.3]: https://github.com/mhallin/juniper/compare/0.5.2...0.5.3
