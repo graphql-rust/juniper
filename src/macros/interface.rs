@@ -100,7 +100,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_snake_case(stringify!($name)))
+                &$crate::to_camel_case(stringify!($name)))
                 .description($desc)
                 .deprecated($reason),
             $args));
@@ -118,7 +118,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_snake_case(stringify!($name)))
+                &$crate::to_camel_case(stringify!($name)))
                 .deprecated($reason),
             $args));
 
@@ -135,7 +135,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_snake_case(stringify!($name)))
+                &$crate::to_camel_case(stringify!($name)))
                 .description($desc),
             $args));
 
@@ -152,7 +152,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_snake_case(stringify!($name))),
+                &$crate::to_camel_case(stringify!($name))),
             $args));
 
         graphql_interface!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*);

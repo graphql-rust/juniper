@@ -27,7 +27,7 @@ macro_rules! __graphql__args {
         $name:ident $(= $default:tt)* : $ty:ty $(as $desc:tt)*, $($rest:tt)*
     ) => {
         let $name: $ty = $args
-            .get(&$crate::to_snake_case(stringify!($name)))
+            .get(&$crate::to_camel_case(stringify!($name)))
             .expect("Argument missing - validation must have failed");
         __graphql__args!(@assign_arg_vars, $args, $executorvar, $($rest)*);
     };
@@ -38,7 +38,7 @@ macro_rules! __graphql__args {
         $name:ident  $(= $default:tt)* : $ty:ty $(as $desc:expr)*
     ) => {
         let $name: $ty = $args
-            .get(&$crate::to_snake_case(stringify!($name)))
+            .get(&$crate::to_camel_case(stringify!($name)))
             .expect("Argument missing - validation must have failed");
     };
 
@@ -73,7 +73,7 @@ macro_rules! __graphql__args {
         $reg:expr, $base:expr, ( $name:ident = $default:tt : $t:ty )
     ) => {
         $base.argument($reg.arg_with_default::<$t>(
-            &$crate::to_snake_case(stringify!($name)),
+            &$crate::to_camel_case(stringify!($name)),
             &__graphql__args!(@as_expr, $default)))
     };
 
@@ -85,7 +85,7 @@ macro_rules! __graphql__args {
             @apply_args,
             $reg,
             $base.argument($reg.arg_with_default::<$t>(
-                &$crate::to_snake_case(stringify!($name)),
+                &$crate::to_camel_case(stringify!($name)),
                 &__graphql__args!(@as_expr, $default))),
             ( $($rest)* ))
     };
@@ -99,7 +99,7 @@ macro_rules! __graphql__args {
             @apply_args,
             $reg,
             $base.argument($reg.arg_with_default::<$t>(
-                &$crate::to_snake_case(stringify!($name)),
+                &$crate::to_camel_case(stringify!($name)),
                 &__graphql__args!(@as_expr, $default))
                 .description($desc)),
             ( $($rest)* ))
@@ -110,7 +110,7 @@ macro_rules! __graphql__args {
         $reg:expr, $base:expr, ( $name:ident : $t:ty )
     ) => {
         $base.argument($reg.arg::<$t>(
-            &$crate::to_snake_case(stringify!($name))))
+            &$crate::to_camel_case(stringify!($name))))
     };
 
     (
@@ -121,7 +121,7 @@ macro_rules! __graphql__args {
             @apply_args,
             $reg,
             $base.argument($reg.arg::<$t>(
-                &$crate::to_snake_case(stringify!($name)))),
+                &$crate::to_camel_case(stringify!($name)))),
             ( $($rest)* ))
     };
 
@@ -134,7 +134,7 @@ macro_rules! __graphql__args {
             $reg,
             $base.argument(
                 $reg.arg::<$t>(
-                    &$crate::to_snake_case(stringify!($name)))
+                    &$crate::to_camel_case(stringify!($name)))
                 .description($desc)),
             ( $($rest)* ))
     };
