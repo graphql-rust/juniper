@@ -186,7 +186,7 @@ built-in [GraphiQL][6] handler included.
 #![cfg_attr(feature="nightly", feature(test))]
 #![warn(missing_docs)]
 
-extern crate rustc_serialize;
+#[cfg(feature="rustc-serialize")] extern crate rustc_serialize;
 #[cfg(feature="serde")] extern crate serde;
 
 #[cfg(feature="nightly")] extern crate test;
@@ -211,9 +211,7 @@ mod integrations;
 
 use std::collections::HashMap;
 
-use rustc_serialize::json::{ToJson, Json};
-
-use parser::{parse_document_source, ParseError, Spanning, SourcePosition};
+use parser::{parse_document_source, ParseError, Spanning};
 use validation::{ValidatorContext, visit_all_rules, validate_input_values};
 use executor::execute_validated_query;
 
@@ -282,63 +280,6 @@ pub fn execute<'a, CtxT, QueryT, MutationT>(
 impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
     fn from(f: Spanning<ParseError<'a>>) -> GraphQLError<'a> {
         GraphQLError::ParseError(f)
-    }
-}
-
-impl<'a> ToJson for GraphQLError<'a> {
-    fn to_json(&self) -> Json {
-        match *self {
-            GraphQLError::ParseError(ref err) => parse_error_to_json(err),
-            GraphQLError::ValidationError(ref errs) => errs.to_json(),
-            GraphQLError::MultipleOperationsProvided => Json::String(
-                "Must provide operation name if query contains multiple operations".to_owned()),
-            GraphQLError::NoOperationProvided => Json::String(
-                "Must provide an operation".to_owned()),
-            GraphQLError::UnknownOperationName => Json::String(
-                "Unknown operation".to_owned()),
-        }
-    }
-}
-
-fn parse_error_to_json(err: &Spanning<ParseError>) -> Json {
-    Json::Array(vec![
-        Json::Object(vec![
-            ("message".to_owned(), format!("{}", err.item).to_json()),
-            ("locations".to_owned(), vec![
-                Json::Object(vec![
-                    ("line".to_owned(), (err.start.line() + 1).to_json()),
-                    ("column".to_owned(), (err.start.column() + 1).to_json())
-                ].into_iter().collect()),
-            ].to_json()),
-        ].into_iter().collect()),
-    ])
-}
-
-impl ToJson for RuleError {
-    fn to_json(&self) -> Json {
-        Json::Object(vec![
-            ("message".to_owned(), self.message().to_json()),
-            ("locations".to_owned(), self.locations().to_json()),
-        ].into_iter().collect())
-    }
-}
-
-impl ToJson for SourcePosition {
-    fn to_json(&self) -> Json {
-        Json::Object(vec![
-            ("line".to_owned(), (self.line() + 1).to_json()),
-            ("column".to_owned(), (self.column() + 1).to_json()),
-        ].into_iter().collect())
-    }
-}
-
-impl ToJson for ExecutionError {
-    fn to_json(&self) -> Json {
-        Json::Object(vec![
-            ("message".to_owned(), self.message().to_json()),
-            ("locations".to_owned(), vec![self.location().clone()].to_json()),
-            ("path".to_owned(), self.path().to_json()),
-        ].into_iter().collect())
     }
 }
 

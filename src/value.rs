@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use rustc_serialize::json::{ToJson, Json};
-
 use parser::Spanning;
 use ast::{InputValue, ToInputValue};
 
@@ -97,20 +95,6 @@ impl Value {
             Value::String(ref s) => Some(s),
             _ => None,
         }
-    }
-}
-
-impl ToJson for Value {
-    fn to_json(&self) -> Json {
-        match *self {
-            Value::Null => Json::Null,
-            Value::Int(i) => Json::I64(i),
-            Value::Float(f) => Json::F64(f),
-            Value::String(ref s) => Json::String(s.clone()),
-            Value::Boolean(b) => Json::Boolean(b),
-            Value::List(ref l) => Json::Array(l.iter().map(|x| x.to_json()).collect()),
-            Value::Object(ref o) => Json::Object(o.iter().map(|(k,v)| (k.clone(), v.to_json())).collect()),
-       }
     }
 }
 

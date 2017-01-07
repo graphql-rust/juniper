@@ -4,8 +4,6 @@ use std::hash::Hash;
 use std::vec;
 use std::slice;
 
-use rustc_serialize::json::{ToJson, Json};
-
 use parser::Spanning;
 
 /// A type literal in the syntax tree
@@ -266,26 +264,6 @@ impl InputValue {
         InputValue::Object(o)
     }
 
-    /// Convert a `Json` structure into an `InputValue`.
-    ///
-    /// This consumes the JSON instance.
-    ///
-    /// Notes:
-    /// * No enums or variables will be produced by this method.
-    /// * All lists and objects will be unlocated
-    pub fn from_json(json: Json) -> InputValue {
-        match json {
-            Json::I64(i) => InputValue::int(i),
-            Json::U64(u) => InputValue::float(u as f64),
-            Json::F64(f) => InputValue::float(f),
-            Json::String(s) => InputValue::string(s),
-            Json::Boolean(b) => InputValue::boolean(b),
-            Json::Array(a) => InputValue::list(a.into_iter().map(InputValue::from_json).collect()),
-            Json::Object(o) => InputValue::object(o.into_iter().map(|(k,v)| (k, InputValue::from_json(v))).collect()),
-            Json::Null => InputValue::null(),
-        }
-    }
-
     /// Resolve all variables to their values.
     pub fn into_const(self, vars: &HashMap<String, InputValue>) -> InputValue {
         match self {
@@ -403,17 +381,38 @@ impl InputValue {
     }
 }
 
-impl ToJson for InputValue {
-    fn to_json(&self) -> Json {
+impl fmt::Display for InputValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            InputValue::Null | InputValue::Variable(_) => Json::Null,
-            InputValue::Int(i) => Json::I64(i),
-            InputValue::Float(f) => Json::F64(f),
-            InputValue::String(ref s) | InputValue::Enum(ref s) => Json::String(s.clone()),
-            InputValue::Boolean(b) => Json::Boolean(b),
-            InputValue::List(ref l) => Json::Array(l.iter().map(|x| x.item.to_json()).collect()),
-            InputValue::Object(ref o) => Json::Object(o.iter().map(|&(ref k, ref v)| (k.item.clone(), v.item.to_json())).collect()),
-       }
+            InputValue::Null => write!(f, "null"),
+            InputValue::Int(v) => write!(f, "{}", v),
+            InputValue::Float(v) => write!(f, "{}", v),
+            InputValue::String(ref v) => write!(f, "\"{}\"", v),
+            InputValue::Boolean(v) => write!(f, "{}", v),
+            InputValue::Enum(ref v) => write!(f, "{}", v),
+            InputValue::Variable(ref v) => write!(f, "${}", v),
+            InputValue::List(ref v) => {
+                try!(write!(f, "["));
+
+                for (i, spanning) in v.iter().enumerate() {
+                    try!(spanning.item.fmt(f));
+                    if i < v.len() - 1 { try!(write!(f, ", ")); }
+                }
+
+                write!(f, "]")
+            },
+            InputValue::Object(ref o) => {
+                try!(write!(f, "{{"));
+
+                for (i, &(ref k, ref v)) in o.iter().enumerate() {
+                    try!(write!(f, "{}: ", k.item));
+                    try!(v.item.fmt(f));
+                    if i < o.len() - 1 { try!(write!(f, ", ")); }
+                }
+
+                write!(f, "}}")
+            }
+        }
     }
 }
 
@@ -446,5 +445,46 @@ impl<'a> Arguments<'a> {
 impl<'a> VariableDefinitions<'a> {
     pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition)> {
         self.items.iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InputValue;
+    use parser::Spanning;
+
+    #[test]
+    fn test_input_value_fmt() {
+        let value = InputValue::null();
+        assert_eq!(format!("{}", value), "null");
+
+        let value = InputValue::int(123);
+        assert_eq!(format!("{}", value), "123");
+
+        let value = InputValue::float(12.3);
+        assert_eq!(format!("{}", value), "12.3");
+
+        let value = InputValue::string("FOO".to_owned());
+        assert_eq!(format!("{}", value), "\"FOO\"");
+
+        let value = InputValue::boolean(true);
+        assert_eq!(format!("{}", value), "true");
+
+        let value = InputValue::enum_value("BAR".to_owned());
+        assert_eq!(format!("{}", value), "BAR");
+
+        let value = InputValue::variable("baz".to_owned());
+        assert_eq!(format!("{}", value), "$baz");
+
+        let list = vec![InputValue::int(1), InputValue::int(2)];
+        let value = InputValue::list(list);
+        assert_eq!(format!("{}", value), "[1, 2]");
+
+        let object = vec![
+            (Spanning::unlocated("foo".to_owned()), Spanning::unlocated(InputValue::int(1))),
+            (Spanning::unlocated("bar".to_owned()), Spanning::unlocated(InputValue::int(2))),
+        ];
+        let value = InputValue::parsed_object(object);
+        assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }
 }

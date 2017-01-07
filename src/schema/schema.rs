@@ -1,5 +1,3 @@
-use rustc_serialize::json::ToJson;
-
 use types::base::{GraphQLType, Arguments, TypeKind};
 use executor::{Executor, Registry, ExecutionResult};
 
@@ -191,7 +189,7 @@ graphql_object!(<'a> Argument<'a>: SchemaType<'a> as "__InputValue" |&self| {
     }
 
     field default_value() -> Option<String> {
-        self.default_value.as_ref().map(|v| v.to_json().to_string())
+        self.default_value.as_ref().map(|v| format!("{}", v))
     }
 });
 
