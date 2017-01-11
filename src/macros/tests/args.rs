@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
@@ -90,7 +91,7 @@ fn run_args_info_query<F>(field_name: &str, f: F)
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);

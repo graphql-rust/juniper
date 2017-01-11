@@ -3,9 +3,7 @@ extern crate juniper;
 
 use bencher::Bencher;
 
-use std::collections::{HashMap};
-
-use juniper::{execute, RootNode, EmptyMutation};
+use juniper::{execute, RootNode, EmptyMutation, Variables};
 use juniper::tests::model::Database;
 
 fn query_type_name(b: &mut Bencher) {
@@ -21,7 +19,7 @@ fn query_type_name(b: &mut Bencher) {
           }
         }"#;
 
-    b.iter(|| execute(doc, None, &schema, &HashMap::new(), &database));
+    b.iter(|| execute(doc, None, &schema, &Variables::new(), &database));
 }
 
 fn introspection_query(b: &mut Bencher) {
@@ -122,7 +120,7 @@ fn introspection_query(b: &mut Bencher) {
   }
 "#;
 
-    b.iter(|| execute(doc, None, &schema, &HashMap::new(), &database));
+    b.iter(|| execute(doc, None, &schema, &Variables::new(), &database));
 }
 
 benchmark_group!(queries, query_type_name, introspection_query);

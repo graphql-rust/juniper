@@ -4,6 +4,7 @@ use std::hash::Hash;
 use std::vec;
 use std::slice;
 
+use executor::Variables;
 use parser::Spanning;
 
 /// A type literal in the syntax tree
@@ -265,7 +266,7 @@ impl InputValue {
     }
 
     /// Resolve all variables to their values.
-    pub fn into_const(self, vars: &HashMap<String, InputValue>) -> InputValue {
+    pub fn into_const(self, vars: &Variables) -> InputValue {
         match self {
             InputValue::Variable(v) => vars.get(&v)
                 .map_or_else(InputValue::null, Clone::clone),

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use value::Value;
 use ast::InputValue;
+use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 
@@ -17,7 +18,7 @@ graphql_object!(TestType: () |&self| {
     }
 });
 
-fn run_variable_query<F>(query: &str, vars: HashMap<String, InputValue>, f: F)
+fn run_variable_query<F>(query: &str, vars: Variables, f: F)
     where F: Fn(&HashMap<String, Value>) -> ()
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
@@ -37,7 +38,7 @@ fn run_variable_query<F>(query: &str, vars: HashMap<String, InputValue>, f: F)
 fn run_query<F>(query: &str, f: F)
     where F: Fn(&HashMap<String, Value>) -> ()
 {
-    run_variable_query(query, HashMap::new(), f);
+    run_variable_query(query, Variables::new(), f);
 }
 
 #[test]

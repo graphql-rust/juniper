@@ -209,8 +209,6 @@ mod integrations;
 
 #[cfg(test)] mod executor_tests;
 
-use std::collections::HashMap;
-
 use parser::{parse_document_source, ParseError, Spanning};
 use validation::{ValidatorContext, visit_all_rules, validate_input_values};
 use executor::execute_validated_query;
@@ -219,8 +217,9 @@ pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
 pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use executor::{
-    Context, FromContext,
-    Executor, Registry, ExecutionResult, ExecutionError, FieldResult, IntoResolvable,
+    Executor, ExecutionError, Registry,
+    Context, FromContext, IntoResolvable,
+    FieldResult, ExecutionResult, Variables,
 };
 pub use validation::RuleError;
 pub use types::scalars::{EmptyMutation, ID};
@@ -247,7 +246,7 @@ pub fn execute<'a, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &RootNode<QueryT, MutationT>,
-    variables: &HashMap<String, InputValue>,
+    variables: &Variables,
     context: &CtxT,
 )
     -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>

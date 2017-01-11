@@ -6,11 +6,11 @@ use iron::mime::Mime;
 use iron::status;
 use iron::method;
 
-use std::collections::{HashMap, BTreeMap};
+use std::collections::BTreeMap;
 
 use rustc_serialize::json::{ToJson, Json};
 
-use ::{InputValue, GraphQLType, RootNode, execute};
+use ::{InputValue, GraphQLType, RootNode, Variables, execute};
 
 /// Handler that executes GraphQL queries in the given schema
 ///
@@ -62,7 +62,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         let url = req.url.clone().into_generic_url();
 
         let mut query = None;
-        let variables = HashMap::new();
+        let variables = Variables::new();
 
         for (k, v) in url.query_pairs() {
             if k == "query" {
@@ -84,17 +84,16 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         };
 
         let mut query = None;
-        let mut variables = HashMap::new();
+        let mut variables = Variables::new();
 
         for (k, v) in json_obj.into_iter() {
             if k == "query" {
                 query = v.as_string().map(|s| s.to_owned());
             }
             else if k == "variables" {
-                variables = match InputValue::from_json(v).to_object_value() {
-                    Some(o) => o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect(),
-                    _ => HashMap::new(),
-                };
+                variables = InputValue::from_json(v).to_object_value()
+                    .map(|o| o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect())
+                    .unwrap_or_default();
             }
         }
 
@@ -103,7 +102,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         self.execute(req, &query, &variables)
     }
 
-    fn execute(&self, req: &mut Request, query: &str, variables: &HashMap<String, InputValue>) -> IronResult<Response> {
+    fn execute(&self, req: &mut Request, query: &str, variables: &Variables) -> IronResult<Response> {
         let context = (self.context_factory)(req);
         let result = execute(query, None, &self.root_node, variables, &context);
 
