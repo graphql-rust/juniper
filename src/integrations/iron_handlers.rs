@@ -189,10 +189,7 @@ impl Handler for GraphiQLHandler {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        query: params.query,
-                        variables: JSON.parse(params.variables || '{}')
-                    }),
+                    body: JSON.stringify(params)
                 }).then(function (response) {
                     return response.text();
                 }).then(function (body) {
