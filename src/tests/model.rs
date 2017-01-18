@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::collections::HashMap;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
