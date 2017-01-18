@@ -1,4 +1,6 @@
+use std::convert::From;
 use std::marker::PhantomData;
+use std::ops::Deref;
 
 use ast::{InputValue, Selection, FromInputValue, ToInputValue};
 use value::Value;
@@ -11,7 +13,22 @@ use types::base::GraphQLType;
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ID(String);
+
+impl From<String> for ID {
+    fn from(s: String) -> ID {
+        ID(s)
+    }
+}
+
+impl Deref for ID {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
 
 graphql_scalar!(ID as "ID" {
     resolve(&self) -> Value {
@@ -154,5 +171,23 @@ impl<T> GraphQLType for EmptyMutation<T> {
 
     fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_object_type::<Self>(&[]).into_meta()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ID;
+
+    #[test]
+    fn test_id_from_string() {
+        let actual = ID::from(String::from("foo"));
+        let expected = ID(String::from("foo"));
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_id_deref() {
+        let id = ID(String::from("foo"));
+        assert_eq!(id.len(), 3);
     }
 }
