@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
@@ -70,7 +69,7 @@ fn test_execution() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);
@@ -107,7 +106,7 @@ fn enum_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);
@@ -185,7 +184,7 @@ fn interface_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);
@@ -286,7 +285,7 @@ fn object_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);
@@ -398,7 +397,7 @@ fn scalar_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);

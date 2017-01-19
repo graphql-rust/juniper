@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use ast::InputValue;
+use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
@@ -18,7 +17,7 @@ fn test_hero_name() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("hero", Value::object(vec![
                     ("name", Value::string("R2-D2")),
@@ -43,7 +42,7 @@ fn test_hero_name_and_friends() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("hero", Value::object(vec![
                     ("id", Value::string("2001")),
@@ -84,7 +83,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("hero", Value::object(vec![
                     ("id", Value::string("2001")),
@@ -166,7 +165,7 @@ fn test_query_name() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("human", Value::object(vec![
                     ("name", Value::string("Luke Skywalker")),
@@ -182,7 +181,7 @@ fn test_query_alias_single() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("luke", Value::object(vec![
                     ("name", Value::string("Luke Skywalker")),
@@ -202,7 +201,7 @@ fn test_query_alias_multiple() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("luke", Value::object(vec![
                     ("name", Value::string("Luke Skywalker")),
@@ -230,7 +229,7 @@ fn test_query_alias_multiple_with_fragment() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("luke", Value::object(vec![
                     ("name", Value::string("Luke Skywalker")),
@@ -289,7 +288,7 @@ fn test_query_friends_names() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("human", Value::object(vec![
                     ("friends", Value::list(vec![
@@ -329,7 +328,7 @@ fn test_query_inline_fragments_droid() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("hero", Value::object(vec![
                     ("__typename", Value::string("Droid")),
@@ -354,7 +353,7 @@ fn test_query_inline_fragments_human() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("hero", Value::object(vec![
                     ("__typename", Value::string("Human")),

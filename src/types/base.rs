@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
 use ast::{InputValue, Selection, Directive, FromInputValue};
+use executor::Variables;
 use value::Value;
 
 use schema::meta::{Argument, MetaType};
@@ -390,7 +391,7 @@ fn resolve_selection_set_into<T, CtxT>(
     }
 }
 
-fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &HashMap<String, InputValue>) -> bool {
+fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) -> bool {
     if let Some(ref directives) = *directives {
         for &Spanning { item: ref directive, .. } in directives {
             let condition: bool = directive.arguments.iter()

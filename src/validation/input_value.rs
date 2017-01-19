@@ -1,8 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt;
 
 use parser::SourcePosition;
 use ast::{InputValue, Document, Definition, VariableDefinitions};
+use executor::Variables;
 use validation::RuleError;
 use schema::model::{SchemaType, TypeType};
 use schema::meta::{MetaType, ScalarMeta, InputObjectMeta, EnumMeta};
@@ -15,7 +16,7 @@ enum Path<'a> {
 }
 
 pub fn validate_input_values(
-    values: &HashMap<String, InputValue>,
+    values: &Variables,
     document: &Document,
     schema: &SchemaType,
 )
@@ -36,7 +37,7 @@ pub fn validate_input_values(
 }
 
 fn validate_var_defs(
-    values: &HashMap<String, InputValue>,
+    values: &Variables,
     var_defs: &VariableDefinitions,
     schema: &SchemaType,
     errors: &mut Vec<RuleError>,

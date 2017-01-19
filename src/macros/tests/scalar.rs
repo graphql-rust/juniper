@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
@@ -72,7 +73,7 @@ graphql_object!(Root: () |&self| {
 fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>) -> () {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &HashMap::new(), &())
+    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
         .expect("Execution failed");
 
     assert_eq!(errs, []);

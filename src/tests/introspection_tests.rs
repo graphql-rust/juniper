@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
+use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use tests::model::Database;
@@ -19,7 +20,7 @@ fn test_query_type_name() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("__schema", Value::object(vec![
                     ("queryType", Value::object(vec![
@@ -42,7 +43,7 @@ fn test_specific_type_name() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("__type", Value::object(vec![
                     ("name", Value::string("Droid")),
@@ -65,7 +66,7 @@ fn test_specific_object_type_name_and_kind() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("__type", Value::object(vec![
                     ("name", Value::string("Droid")),
@@ -89,7 +90,7 @@ fn test_specific_interface_type_name_and_kind() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((Value::object(vec![
                 ("__type", Value::object(vec![
                     ("name", Value::string("Character")),
@@ -113,7 +114,7 @@ fn test_documentation() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &HashMap::new(), &database),
+        ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(vec![
                 ("__type", Value::object(vec![
@@ -138,7 +139,7 @@ fn test_possible_types() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let result = ::execute(doc, None, &schema, &HashMap::new(), &database);
+    let result = ::execute(doc, None, &schema, &Variables::new(), &database);
 
     println!("Result: {:#?}", result);
 

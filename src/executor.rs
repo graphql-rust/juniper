@@ -36,7 +36,7 @@ pub enum FieldPath<'a> {
 /// of the current field stack, context, variables, and errors.
 pub struct Executor<'a, CtxT> where CtxT: 'a {
     fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
-    variables: &'a HashMap<String, InputValue>,
+    variables: &'a Variables,
     current_selection_set: Option<&'a [Selection<'a>]>,
     schema: &'a SchemaType<'a>,
     context: &'a CtxT,
@@ -60,6 +60,9 @@ pub type FieldResult<T> = Result<T, String>;
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult = Result<Value, String>;
+
+/// The map of variables used for substitution during query execution
+pub type Variables = HashMap<String, InputValue>;
 
 #[doc(hidden)]
 pub trait IntoResolvable<'a, T: GraphQLType, C>: Sized {
@@ -221,7 +224,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> &'a HashMap<String, InputValue> {
+    pub fn variables(&self) -> &'a Variables {
         self.variables
     }
 
@@ -294,7 +297,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
     document: Document,
     operation_name: Option<&str>,
     root_node: &RootNode<QueryT, MutationT>,
-    variables: &HashMap<String, InputValue>,
+    variables: &Variables,
     context: &CtxT
 )
     -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
