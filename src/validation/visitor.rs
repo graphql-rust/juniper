@@ -226,7 +226,7 @@ fn enter_input_value<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'
     let end = &input_value.end;
 
     match input_value.item {
-        Null => panic!("null values can't appear in the AST"),
+        Null => v.enter_null_value(ctx, Spanning::start_end(start, end, ())),
         Int(ref i) => v.enter_int_value(ctx, Spanning::start_end(start, end, *i)),
         Float(ref f) => v.enter_float_value(ctx, Spanning::start_end(start, end, *f)),
         String(ref s) => v.enter_string_value(ctx, Spanning::start_end(start, end, s)),
@@ -245,7 +245,7 @@ fn exit_input_value<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a
     let end = &input_value.end;
 
     match input_value.item {
-        Null => panic!("null values can't appear in the AST"),
+        Null => v.exit_null_value(ctx, Spanning::start_end(start, end, ())),
         Int(ref i) => v.exit_int_value(ctx, Spanning::start_end(start, end, *i)),
         Float(ref f) => v.exit_float_value(ctx, Spanning::start_end(start, end, *f)),
         String(ref s) => v.exit_string_value(ctx, Spanning::start_end(start, end, s)),

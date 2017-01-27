@@ -65,6 +65,33 @@ mod tests {
     use validation::{RuleError, expect_passes_rule, expect_fails_rule};
 
     #[test]
+    fn good_null_value() {
+        expect_passes_rule(factory, r#"
+            {
+              complicatedArgs {
+                intArgField(intArg: null)
+              }
+            }
+        "#);
+    }
+
+    #[test]
+    fn null_into_int() {
+        expect_fails_rule(factory, r#"
+            {
+              complicatedArgs {
+                nonNullIntArgField(nonNullIntArg: null)
+              }
+            }
+        "#,
+            &[
+                RuleError::new(&error_message("nonNullIntArg", "Int!"), &[
+                    SourcePosition::new(97, 3, 50),
+                ])
+            ]);
+    }
+
+    #[test]
     fn good_int_value() {
         expect_passes_rule(factory, r#"
             {

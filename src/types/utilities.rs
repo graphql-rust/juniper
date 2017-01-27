@@ -21,7 +21,7 @@ pub fn is_valid_literal_value(schema: &SchemaType, arg_type: &TypeType, arg_valu
         }
         TypeType::Concrete(t) => {
             match *arg_value {
-                ref v @ InputValue::Null |
+                InputValue::Null => true,
                 ref v @ InputValue::Int(_) |
                 ref v @ InputValue::Float(_) |
                 ref v @ InputValue::String(_) |

@@ -339,6 +339,17 @@ fn allow_nullable_inputs_to_be_omitted_in_variable() {
 }
 
 #[test]
+fn allow_nullable_inputs_to_be_explicitly_null() {
+    run_query(
+        r#"{ fieldWithNullableStringInput(input: null) }"#,
+        |result| {
+            assert_eq!(
+                result.get("fieldWithNullableStringInput"),
+                Some(&Value::string(r#"None"#)));
+        });
+}
+
+#[test]
 fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
     run_variable_query(
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,

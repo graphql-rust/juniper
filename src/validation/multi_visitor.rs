@@ -95,6 +95,13 @@ impl<'a> Visitor<'a> for MultiVisitor<'a> {
         self.visit_all(|v| v.exit_inline_fragment(ctx, f));
     }
 
+    fn enter_null_value(&mut self, ctx: &mut ValidatorContext<'a>, n: Spanning<()>) {
+        self.visit_all(|v| v.enter_null_value(ctx, n.clone()));
+    }
+    fn exit_null_value(&mut self, ctx: &mut ValidatorContext<'a>, n: Spanning<()>) {
+        self.visit_all(|v| v.exit_null_value(ctx, n.clone()));
+    }
+
     fn enter_int_value(&mut self, ctx: &mut ValidatorContext<'a>, i: Spanning<i64>) {
         self.visit_all(|v| v.enter_int_value(ctx, i.clone()));
     }

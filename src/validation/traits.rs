@@ -36,6 +36,9 @@ pub trait Visitor<'a> {
     fn enter_inline_fragment(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<InlineFragment>) {}
     fn exit_inline_fragment(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<InlineFragment>) {}
 
+    fn enter_null_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<()>) {}
+    fn exit_null_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<()>) {}
+
     fn enter_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i64>) {}
     fn exit_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i64>) {}
 
