@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use ast::InputValue;
 use schema::model::{SchemaType, TypeType};
-use schema::meta::{MetaType, InputObjectMeta};
+use schema::meta::{MetaType, InputObjectMeta, EnumMeta};
 
 pub fn is_valid_literal_value(schema: &SchemaType, arg_type: &TypeType, arg_value: &InputValue) -> bool {
     match *arg_type {
@@ -20,6 +20,13 @@ pub fn is_valid_literal_value(schema: &SchemaType, arg_type: &TypeType, arg_valu
             }
         }
         TypeType::Concrete(t) => {
+            // Even though InputValue::String can be parsed into an enum, they
+            // are not valid as enum *literals* in a GraphQL query.
+            match (arg_value, arg_type.to_concrete()) {
+                (&InputValue::String(_), Some(&MetaType::Enum(EnumMeta { .. }))) => return false,
+                _ => ()
+            }
+
             match *arg_value {
                 ref v @ InputValue::Null |
                 ref v @ InputValue::Int(_) |

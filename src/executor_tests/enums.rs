@@ -96,7 +96,7 @@ fn does_not_accept_string_literals() {
 #[test]
 fn accepts_strings_in_variables() {
     run_variable_query(
-        "{ toString(color: RED) }",
+        "query q($color: Color!) { toString(color: $color) }",
         vec![
             ("color".to_owned(), InputValue::string("RED")),
         ].into_iter().collect(),
