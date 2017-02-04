@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use executor::Variables;
 use value::Value;
 use schema::model::RootNode;

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use value::Value;
-use ast::InputValue;
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
