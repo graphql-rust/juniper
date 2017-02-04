@@ -2,14 +2,16 @@ language: rust
 cache: cargo
 
 rust:
+  - stable
+  - beta
+  - nightly
+
+  # The five most recent stable releases before "stable"
   - 1.10.0
   - 1.11.0
   - 1.12.1
   - 1.13.0
   - 1.14.0
-  - stable
-  - beta
-  - nightly
 
 matrix:
   allow_failures:

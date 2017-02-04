@@ -38,6 +38,8 @@ usable as arguments and default values.
 */
 #[macro_export]
 macro_rules! graphql_scalar {
+    ( @as_expr, $e:expr) => { $e };
+
     // Calls $val.$func($arg) if $arg is not None
     ( @maybe_apply, None, $func:ident, $val:expr ) => { $val };
     ( @maybe_apply, $arg:tt, $func:ident, $val:expr ) => { $val.$func($arg) };
@@ -65,7 +67,7 @@ macro_rules! graphql_scalar {
             type Context = ();
 
             fn name() -> Option<&'static str> {
-                Some($outname)
+                Some(graphql_scalar!( @as_expr, $outname ))
             }
 
             fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
