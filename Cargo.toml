@@ -8,6 +8,7 @@ documentation = "http://mhallin.github.io/juniper"
 repository = "https://github.com/mhallin/juniper"
 readme = "README.md"
 keywords = ["graphql", "server", "iron", "http", "web"]
+categories = ["web-programming"]
 
 [[bench]]
 name = "bench"
