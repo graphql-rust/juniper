@@ -378,6 +378,10 @@ macro_rules! graphql_object {
                 mt.into_meta()
             }
 
+            fn concrete_type_name(&self, _: &Self::Context) -> String {
+                $outname.to_owned()
+            }
+
             #[allow(unused_variables)]
             #[allow(unused_mut)]
             fn resolve_field(

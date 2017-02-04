@@ -362,3 +362,24 @@ fn test_query_inline_fragments_human() {
             ].into_iter().collect()),
             vec![])));
 }
+
+#[test]
+fn test_object_typename() {
+    let doc = r#"
+        {
+            human(id: "1000") {
+                __typename
+            }
+        }"#;
+    let database = Database::new();
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+
+    assert_eq!(
+        ::execute(doc, None, &schema, &Variables::new(), &database),
+        Ok((Value::object(vec![
+                ("human", Value::object(vec![
+                    ("__typename", Value::string("Human")),
+                ].into_iter().collect())),
+            ].into_iter().collect()),
+            vec![])));
+}
