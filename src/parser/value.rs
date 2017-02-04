@@ -24,7 +24,7 @@ pub fn parse_value_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> Parse
         Spanning { item: Token::Name("false"), .. } =>
             Ok(parser.next().map(|_| InputValue::boolean(false))),
         Spanning { item: Token::Name("null"), .. } =>
-            Err(parser.next().map(ParseError::UnexpectedToken)),
+            Ok(parser.next().map(|_| InputValue::null())),
         Spanning { item: Token::Name(name), .. } =>
             Ok(parser.next().map(|_| InputValue::enum_value(name.to_owned()))),
         _ => Err(parser.next().map(ParseError::UnexpectedToken)),
