@@ -1,6 +1,33 @@
 Change log
 ==========
 
+## [0.6.2] – 2017-02-05
+
+### New features
+
+* The ``null`` literal is now supported in the GraphQL language. (#26)
+* Rustc-serialize is now optional, but enabled by default. If you
+  _only_ want Serde support, include Juniper without default features
+  and enable Serde. (#12)
+* The built-in ``ID`` type now has a public constructor and derives a
+  few traits (``Clone``, ``Debug``, ``Eq``, ``PartialEq``,
+  ``From<String>``, ``Deref<Target=str>``). (#19)
+* Juniper is now built and tested against all Rust compilers since
+  version 1.12.1.
+
+### Minor breaking change
+
+* Serde has been updated to 0.9. (#25)
+
+### Bugfixes
+
+* The built-in GraphiQL handler had a bug in variable serialization.
+  (#16)
+* The example should now build and run without problems on
+  Windows. (#15)
+* Object types now properly implement ``__typename``. (#22)
+* String variables are now properly parsed into GraphQL enums. (#17)
+
 ## [0.6.1] – 2017-01-06
 
 ### New features
@@ -236,7 +263,7 @@ using the macros and not deriving `GraphQLType` directly.
 * Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
-
+[0.6.2]: https://github.com/mhallin/juniper/compare/0.6.1...0.6.2
 [0.6.1]: https://github.com/mhallin/juniper/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/mhallin/juniper/compare/0.5.3...0.6.0
 [0.5.3]: https://github.com/mhallin/juniper/compare/0.5.2...0.5.3
