@@ -5,49 +5,57 @@ Change log
 
 ### New features
 
-* The ``null`` literal is now supported in the GraphQL language. (#26)
+* The `null` literal is now supported in the GraphQL
+  language. ([#26](https://github.com/mhallin/juniper/pull/26))
 * Rustc-serialize is now optional, but enabled by default. If you
   _only_ want Serde support, include Juniper without default features
-  and enable Serde. (#12)
-* The built-in ``ID`` type now has a public constructor and derives a
-  few traits (``Clone``, ``Debug``, ``Eq``, ``PartialEq``,
-  ``From<String>``, ``Deref<Target=str>``). (#19)
+  and enable
+  Serde. ([#12](https://github.com/mhallin/juniper/pull/12))
+* The built-in `ID` type now has a public constructor and derives a
+  few traits (`Clone`, `Debug`, `Eq`, `PartialEq`, `From<String>`,
+  `Deref<Target=str>`). ([#19](https://github.com/mhallin/juniper/pull/19))
 * Juniper is now built and tested against all Rust compilers since
   version 1.12.1.
 
 ### Minor breaking change
 
-* Serde has been updated to 0.9. (#25)
+* Serde has been updated to
+  0.9. ([#25](https://github.com/mhallin/juniper/pull/25))
 
 ### Bugfixes
 
 * The built-in GraphiQL handler had a bug in variable serialization.
-  (#16)
+  ([#16](https://github.com/mhallin/juniper/pull/16))
 * The example should now build and run without problems on
-  Windows. (#15)
-* Object types now properly implement ``__typename``. (#22)
-* String variables are now properly parsed into GraphQL enums. (#17)
+  Windows. ([#15](https://github.com/mhallin/juniper/pull/15))
+* Object types now properly implement
+  `__typename`. ([#22](https://github.com/mhallin/juniper/pull/22))
+* String variables are now properly parsed into GraphQL
+  enums. ([#17](https://github.com/mhallin/juniper/pull/17))
 
 ## [0.6.1] – 2017-01-06
 
 ### New features
 
-* Optional Serde support (#8)
+* Optional Serde support
+  ([#8](https://github.com/mhallin/juniper/pull/8))
 
 ### Improvements
 
 * The `graphql_input_object!` macro can now be used to define input
   objects as public Rust structs.
 * GraphiQL in the Iron GraphiQL handler has been updated to 0.8.1
-  (#11)
+  (#[#11](https://github.com/mhallin/juniper/pull/11))
 
 ### Minor breaking changes
 
 Some undocumented but public APIs were changed.
 
-* `to_snake_case` correctly renamed to `to_camel_case` (#9)
+* `to_snake_case` correctly renamed to `to_camel_case`
+  ([#9](https://github.com/mhallin/juniper/pull/9))
 * JSON serialization of `GraphQLError` changed to be more consistent
-  with how other values were serialized (#10).
+  with how other values were serialized
+  ([#10](https://github.com/mhallin/juniper/pull/10)).
 
 ## [0.6.0] – 2017-01-02
 
