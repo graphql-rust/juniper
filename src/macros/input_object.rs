@@ -70,7 +70,7 @@ macro_rules! graphql_input_object {
                 println!("Found variable for {:?}: {:?} in {:?}", n, v, $var);
 
                 match v {
-                    $( Some(&&InputValue::Null) | None if true => $default, )*
+                    $( Some(&&$crate::InputValue::Null) | None if true => $default, )*
                         Some(v) => $crate::FromInputValue::from(v).unwrap(),
                         _ => $crate::FromInputValue::from(&$crate::InputValue::null()).unwrap()
                 }
