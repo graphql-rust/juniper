@@ -49,6 +49,14 @@ graphql_input_object!(
     }
 );
 
+graphql_input_object!(
+    #[derive(Debug)]
+    struct ExampleInputObject {
+        a: Option<String>,
+        b: i64,
+    }
+);
+
 graphql_object!(TestType: () |&self| {
     field field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)
@@ -84,6 +92,10 @@ graphql_object!(TestType: () |&self| {
 
     field nn_list_nn(input: Vec<String>) -> String {
         format!("{:?}", input)
+    }
+
+    field example_input(arg: ExampleInputObject) -> String {
+        format!("a: {:?}, b: {:?}", arg.a, arg.b)
     }
 });
 
@@ -747,4 +759,135 @@ fn default_argument_when_nullable_variable_set_to_null() {
                 result.get("fieldWithDefaultArgumentValue"),
                 Some(&Value::string(r#""Hello World""#)));
         });
+}
+
+#[test]
+fn nullable_input_object_arguments_successful_without_variables() {
+    run_query(
+        r#"{ exampleInput(arg: {a: "abc", b: 123}) }"#,
+        |result| {
+            assert_eq!(
+                result.get("exampleInput"),
+                Some(&Value::string(r#"a: Some("abc"), b: 123"#)));
+        });
+
+    run_query(
+        r#"{ exampleInput(arg: {a: null, b: 1}) }"#,
+        |result| {
+            assert_eq!(
+                result.get("exampleInput"),
+                Some(&Value::string(r#"a: None, b: 1"#)));
+        });
+}
+
+#[test]
+fn nullable_input_object_arguments_successful_with_variables() {
+    run_variable_query(
+        r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#,
+        vec![
+            ("var".to_owned(), InputValue::int(123)),
+        ].into_iter().collect(),
+        |result| {
+            assert_eq!(
+                result.get("exampleInput"),
+                Some(&Value::string(r#"a: None, b: 123"#)));
+        });
+
+    run_variable_query(
+        r#"query q($var: String) { exampleInput(arg: {a: $var, b: 1}) }"#,
+        vec![
+            ("var".to_owned(), InputValue::null()),
+        ].into_iter().collect(),
+        |result| {
+            assert_eq!(
+                result.get("exampleInput"),
+                Some(&Value::string(r#"a: None, b: 1"#)));
+        });
+
+    run_variable_query(
+        r#"query q($var: String) { exampleInput(arg: {a: $var, b: 1}) }"#,
+        vec![
+        ].into_iter().collect(),
+        |result| {
+            assert_eq!(
+                result.get("exampleInput"),
+                Some(&Value::string(r#"a: None, b: 1"#)));
+        });
+}
+
+#[test]
+fn does_not_allow_missing_required_field() {
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+    let query = r#"{ exampleInput(arg: {a: "abc"}) }"#;
+    let vars = vec![
+    ].into_iter().collect();
+
+    let error = ::execute(query, None, &schema, &vars, &())
+        .unwrap_err();
+
+    assert_eq!(error, ValidationError(vec![
+        RuleError::new(
+            r#"Invalid value for argument "arg", expected type "ExampleInputObject!""#,
+            &[SourcePosition::new(20, 0, 20)],
+        ),
+    ]));
+}
+
+#[test]
+fn does_not_allow_null_in_required_field() {
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+    let query = r#"{ exampleInput(arg: {a: "abc", b: null}) }"#;
+    let vars = vec![
+    ].into_iter().collect();
+
+    let error = ::execute(query, None, &schema, &vars, &())
+        .unwrap_err();
+
+    assert_eq!(error, ValidationError(vec![
+        RuleError::new(
+            r#"Invalid value for argument "arg", expected type "ExampleInputObject!""#,
+            &[SourcePosition::new(20, 0, 20)],
+        ),
+    ]));
+}
+
+#[test]
+fn does_not_allow_missing_variable_for_required_field() {
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+    let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
+    let vars = vec![
+    ].into_iter().collect();
+
+    let error = ::execute(query, None, &schema, &vars, &())
+        .unwrap_err();
+
+    assert_eq!(error, ValidationError(vec![
+        RuleError::new(
+            r#"Variable "$var" of required type "Int!" was not provided."#,
+            &[SourcePosition::new(8, 0, 8)],
+        ),
+    ]));
+}
+
+#[test]
+fn does_not_allow_null_variable_for_required_field() {
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+    let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
+    let vars = vec![
+        ("var".to_owned(), InputValue::null()),
+    ].into_iter().collect();
+
+    let error = ::execute(query, None, &schema, &vars, &())
+        .unwrap_err();
+
+    assert_eq!(error, ValidationError(vec![
+        RuleError::new(
+            r#"Variable "$var" of required type "Int!" was not provided."#,
+            &[SourcePosition::new(8, 0, 8)],
+        ),
+    ]));
 }
