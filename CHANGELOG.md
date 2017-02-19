@@ -1,6 +1,13 @@
 Change log
 ==========
 
+## [0.6.3] – 2017-02-19
+
+### New features
+
+* Add support for default values on input object fields
+  ([#28](https://github.com/mhallin/juniper/issues/28))
+
 ## [0.6.2] – 2017-02-05
 
 ### New features
@@ -271,6 +278,7 @@ using the macros and not deriving `GraphQLType` directly.
 * Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
+[0.6.3]: https://github.com/mhallin/juniper/compare/0.6.2...0.6.3
 [0.6.2]: https://github.com/mhallin/juniper/compare/0.6.1...0.6.2
 [0.6.1]: https://github.com/mhallin/juniper/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/mhallin/juniper/compare/0.5.3...0.6.0
