@@ -9,7 +9,7 @@ is what will be generated:
 
 ```rust
 # #[macro_use] extern crate juniper;
-
+#
 graphql_input_object!(
     description: "Coordinates for the user"
 
@@ -28,6 +28,21 @@ and arguments.
 
 If you want to expose the struct under a different name than the Rust
 type, you can write `struct Coordinates as "MyCoordinates" { ...`.
+
+You can specify *default values* for input object fields; the syntax
+is similar to argument default values:
+
+```rust
+# #[macro_use] extern crate juniper;
+#
+graphql_input_object!(
+    struct SampleObject {
+        foo = 123: i64 as "A sample field, defaults to 123 if omitted"
+    }
+);
+
+# fn main() { }
+```
 
 */
 #[macro_export]
