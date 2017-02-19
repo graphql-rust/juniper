@@ -330,13 +330,34 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         None => return Err(GraphQLError::UnknownOperationName),
     };
 
+    let default_variable_values = op.item.variable_definitions
+        .map(|defs| defs.item.items.iter().filter_map(
+            |&(ref name, ref def)| def.default_value.as_ref().map(
+                |i| (name.item.to_owned(), i.item.clone())))
+             .collect::<HashMap<String, InputValue>>());
+
     let errors = RwLock::new(Vec::new());
     let value;
 
     {
+        let mut all_vars;
+        let mut final_vars = variables;
+
+        if let Some(defaults) = default_variable_values {
+            all_vars = variables.clone();
+
+            for (name, value) in defaults {
+                if !all_vars.contains_key(&name) {
+                    all_vars.insert(name, value);
+                }
+            }
+
+            final_vars = &all_vars;
+        }
+
         let executor = Executor {
             fragments: &fragments.iter().map(|f| (f.item.name.item, &f.item)).collect(),
-            variables: variables,
+            variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
             schema: &root_node.schema,
             context: context,

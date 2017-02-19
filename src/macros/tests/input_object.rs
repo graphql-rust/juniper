@@ -78,6 +78,13 @@ graphql_input_object!(
     }
 );
 
+graphql_input_object!(
+    struct FieldWithDefaults {
+        field_one = 123: i64,
+        field_two = 456: i64 as "The second field",
+    }
+);
+
 graphql_object!(Root: () |&self| {
     field test_field(
         a1: DefaultName,
@@ -90,6 +97,7 @@ graphql_object!(Root: () |&self| {
         a8: PublicWithDescription,
         a9: NamedPublicWithDescription,
         a10: NamedPublic,
+        a11: FieldWithDefaults,
     ) -> i64 {
         0
     }
@@ -411,6 +419,46 @@ fn field_description_introspection() {
                 ].into_iter().collect())),
             ].into_iter().collect())),
             ("defaultValue", Value::null()),
+        ].into_iter().collect())));
+    });
+}
+
+#[test]
+fn field_with_defaults_introspection() {
+    let doc = r#"
+    {
+        __type(name: "FieldWithDefaults") {
+            name
+            inputFields {
+                name
+                type {
+                    name
+                }
+                defaultValue
+            }
+        }
+    }
+    "#;
+
+    run_type_info_query(doc, |type_info, fields| {
+        assert_eq!(type_info.get("name"), Some(&Value::string("FieldWithDefaults")));
+
+        assert_eq!(fields.len(), 2);
+
+        assert!(fields.contains(&Value::object(vec![
+            ("name", Value::string("fieldOne")),
+            ("type", Value::object(vec![
+                ("name", Value::string("Int")),
+            ].into_iter().collect())),
+            ("defaultValue", Value::string("123")),
+        ].into_iter().collect())));
+
+        assert!(fields.contains(&Value::object(vec![
+            ("name", Value::string("fieldTwo")),
+            ("type", Value::object(vec![
+                ("name", Value::string("Int")),
+            ].into_iter().collect())),
+            ("defaultValue", Value::string("456")),
         ].into_iter().collect())));
     });
 }

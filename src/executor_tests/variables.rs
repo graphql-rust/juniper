@@ -57,6 +57,13 @@ graphql_input_object!(
     }
 );
 
+graphql_input_object!(
+    #[derive(Debug)]
+    struct InputWithDefaults {
+        a = 123: i64,
+    }
+);
+
 graphql_object!(TestType: () |&self| {
     field field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)
@@ -96,6 +103,10 @@ graphql_object!(TestType: () |&self| {
 
     field example_input(arg: ExampleInputObject) -> String {
         format!("a: {:?}, b: {:?}", arg.a, arg.b)
+    }
+
+    field input_with_defaults(arg: InputWithDefaults) -> String {
+        format!("a: {:?}", arg.a)
     }
 });
 
@@ -890,4 +901,47 @@ fn does_not_allow_null_variable_for_required_field() {
             &[SourcePosition::new(8, 0, 8)],
         ),
     ]));
+}
+
+#[test]
+fn input_object_with_default_values() {
+    run_query(
+        r#"{ inputWithDefaults(arg: {a: 1}) }"#,
+        |result| {
+            assert_eq!(
+                result.get("inputWithDefaults"),
+                Some(&Value::string(r#"a: 1"#)));
+        });
+
+    run_variable_query(
+        r#"query q($var: Int!) { inputWithDefaults(arg: {a: $var}) }"#,
+        vec![
+            ("var".to_owned(), InputValue::int(1)),
+        ].into_iter().collect(),
+        |result| {
+            assert_eq!(
+                result.get("inputWithDefaults"),
+                Some(&Value::string(r#"a: 1"#)));
+        });
+
+    run_variable_query(
+        r#"query q($var: Int = 1) { inputWithDefaults(arg: {a: $var}) }"#,
+        vec![
+        ].into_iter().collect(),
+        |result| {
+            assert_eq!(
+                result.get("inputWithDefaults"),
+                Some(&Value::string(r#"a: 1"#)));
+        });
+
+    run_variable_query(
+        r#"query q($var: Int = 1) { inputWithDefaults(arg: {a: $var}) }"#,
+        vec![
+            ("var".to_owned(), InputValue::int(2)),
+        ].into_iter().collect(),
+        |result| {
+            assert_eq!(
+                result.get("inputWithDefaults"),
+                Some(&Value::string(r#"a: 2"#)));
+        });
 }

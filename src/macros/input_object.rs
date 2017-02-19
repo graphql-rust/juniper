@@ -45,17 +45,19 @@ macro_rules! graphql_input_object {
     (
         @generate_from_input_value,
         $name:tt, $var:tt,
-        ( $($field_name:ident : $field_type:ty $(as $descr:tt)* $(,)* ),* )
+        ( $($field_name:ident $(= $default:tt)* : $field_type:ty $(as $descr:tt)* $(,)* ),* )
     ) => {
         Some($name {
             $( $field_name: {
                 let n: String = $crate::to_camel_case(stringify!($field_name));
                 let v: Option<&&$crate::InputValue> = $var.get(&n[..]);
 
-                if let Some(v) = v {
-                    $crate::FromInputValue::from(v).unwrap()
-                } else {
-                    $crate::FromInputValue::from(&$crate::InputValue::null()).unwrap()
+                println!("Found variable for {:?}: {:?} in {:?}", n, v, $var);
+
+                match v {
+                    $( Some(&&InputValue::Null) | None if true => $default, )*
+                        Some(v) => $crate::FromInputValue::from(v).unwrap(),
+                        _ => $crate::FromInputValue::from(&$crate::InputValue::null()).unwrap()
                 }
             } ),*
         })
@@ -65,26 +67,53 @@ macro_rules! graphql_input_object {
     (
         @generate_struct_fields,
         ( $($meta:tt)* ), ( $($pubmod:tt)* ), $name:tt,
-        ( $($field_name:ident : $field_type:ty $(as $descr:tt)* $(,)* ),* )
+        ( $($field_name:ident $(= $default:tt)* : $field_type:ty $(as $descr:tt)* $(,)* ),* )
     ) => {
         $($meta)* $($pubmod)* struct $name {
             $( $field_name: $field_type, )*
         }
     };
 
-    // Generate the input field meta list, i.e. &[Argument].
+    // Generate single field meta for field with default value
+    (
+        @generate_single_meta_field,
+        $reg:tt,
+        ( $field_name:ident = $default:tt : $field_type:ty $(as $descr:tt)* )
+    ) => {
+        graphql_input_object!(
+            @apply_description,
+            $($descr)*,
+            $reg.arg_with_default::<$field_type>(
+                &$crate::to_camel_case(stringify!($field_name)),
+                &$default))
+    };
+
+    // Generate single field meta for field without default value
+    (
+        @generate_single_meta_field,
+        $reg:tt,
+        ( $field_name:ident : $field_type:ty $(as $descr:tt)* )
+    ) => {
+        graphql_input_object!(
+            @apply_description,
+            $($descr)*,
+            $reg.arg::<$field_type>(
+                &$crate::to_camel_case(stringify!($field_name))))
+    };
+
+    // Generate the input field meta list, i.e. &[Argument] for
     (
         @generate_meta_fields,
         $reg:tt,
-        ( $($field_name:ident : $field_type:ty $(as $descr:tt)* $(,)* ),* )
+        ( $($field_name:ident $(= $default:tt)* : $field_type:ty $(as $descr:tt)* $(,)* ),* )
     ) => {
         &[
             $(
                 graphql_input_object!(
-                    @apply_description,
-                    $($descr)*,
-                    $reg.arg::<$field_type>(
-                        &$crate::to_camel_case(stringify!($field_name))))
+                    @generate_single_meta_field,
+                    $reg,
+                    ( $field_name $(= $default)* : $field_type $(as $descr)* )
+                )
             ),*
         ]
     };
