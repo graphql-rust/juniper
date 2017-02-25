@@ -191,7 +191,7 @@ macro_rules! graphql_interface {
         let $ctxtvar = &$ctxtarg;
 
         $(
-            if let Some(_) = $resolver as Option<$srctype> {
+            if ($resolver as Option<$srctype>).is_some() {
                 return (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned();
             }
         )*
@@ -208,7 +208,7 @@ macro_rules! graphql_interface {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned() {
+            if $typenamearg == (<$srctype as $crate::GraphQLType>::name()).unwrap() {
                 return $execarg.resolve(&$resolver);
             }
         )*

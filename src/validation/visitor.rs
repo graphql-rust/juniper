@@ -16,7 +16,7 @@ fn visit_definitions<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'
     for def in d {
         let def_type = match *def {
                 Definition::Fragment(Spanning {
-                        item: Fragment { type_condition: Spanning { item: ref name, .. }, .. }, .. }) =>
+                        item: Fragment { type_condition: Spanning { item: name, .. }, .. }, .. }) =>
                     Some(Type::NonNullNamed(name)),
                 Definition::Operation(Spanning {
                         item: Operation { operation_type: OperationType::Query, .. }, .. }) =>
@@ -84,7 +84,7 @@ fn visit_variable_definitions<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut Validator
 fn visit_directives<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, directives: &'a Option<Vec<Spanning<Directive>>>) {
     if let Some(ref directives) = *directives {
         for directive in directives {
-            let directive_arguments = ctx.schema.directive_by_name(&directive.item.name.item).map(|d| &d.arguments);
+            let directive_arguments = ctx.schema.directive_by_name(directive.item.name.item).map(|d| &d.arguments);
 
             v.enter_directive(ctx, directive);
             visit_arguments(v, ctx, &directive_arguments, &directive.item.arguments);
@@ -97,7 +97,7 @@ fn visit_arguments<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>
     if let Some(ref arguments) = *arguments {
         for argument in arguments.item.iter() {
             let arg_type = meta_args
-                .and_then(|args| args.iter().filter(|a| a.name == argument.0.item).next())
+                .and_then(|args| args.iter().find(|a| a.name == argument.0.item))
                 .map(|a| &a.arg_type);
 
             ctx.with_pushed_input_type(arg_type, |ctx| {
@@ -133,7 +133,7 @@ fn visit_selection<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>
 
 fn visit_field<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, field: &'a Spanning<Field>) {
     let meta_field = ctx.parent_type()
-        .and_then(|t| t.field_by_name(&field.item.name.item));
+        .and_then(|t| t.field_by_name(field.item.name.item));
 
     let field_type = meta_field.map(|f| &f.field_type);
     let field_args = meta_field.and_then(|f| f.arguments.as_ref());
@@ -170,7 +170,7 @@ fn visit_inline_fragment<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorConte
         v.exit_inline_fragment(ctx, fragment);
     };
 
-    if let &Some(Spanning { item: ref type_name, .. }) = &fragment.item.type_condition {
+    if let Some(Spanning { item: type_name, .. }) = fragment.item.type_condition {
         ctx.with_pushed_type(Some(&Type::NonNullNamed(type_name)), visit_fn);
     }
     else {
@@ -186,7 +186,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'
             for field in fields {
                 let inner_type = ctx.current_input_type_literal()
                     .and_then(|t| match *t {
-                        Type::NonNullNamed(ref name) | Type::Named(ref name) =>
+                        Type::NonNullNamed(name) | Type::Named(name) =>
                             ctx.schema.concrete_type_by_name(name),
                         _ => None,
                     })

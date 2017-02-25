@@ -84,9 +84,9 @@ macro_rules! graphql_enum {
             }
 
             fn resolve(&self, _: Option<&[$crate::Selection]>, _: &$crate::Executor<Self::Context>) -> $crate::Value {
-                match self {
+                match *self {
                     $(
-                        &graphql_enum!(@as_pattern, $eval) =>
+                        graphql_enum!(@as_pattern, $eval) =>
                             $crate::Value::string(graphql_enum!(@as_expr, $ename)) ),*
                 }
             }
@@ -105,9 +105,9 @@ macro_rules! graphql_enum {
 
         impl $crate::ToInputValue for $name {
             fn to(&self) -> $crate::InputValue {
-                match self {
+                match *self {
                     $(
-                        &graphql_enum!(@as_pattern, $eval) =>
+                        graphql_enum!(@as_pattern, $eval) =>
                             $crate::InputValue::string(graphql_enum!(@as_expr, $ename)) ),*
                 }
             }

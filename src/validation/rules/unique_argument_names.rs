@@ -24,10 +24,10 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
     }
 
     fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
-        match self.known_names.entry(&arg_name.item) {
+        match self.known_names.entry(arg_name.item) {
             Entry::Occupied(e) => {
                 ctx.report_error(
-                    &error_message(&arg_name.item),
+                    &error_message(arg_name.item),
                     &[e.get().clone(), arg_name.start.clone()]);
             }
             Entry::Vacant(e) => {

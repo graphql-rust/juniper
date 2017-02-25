@@ -16,15 +16,15 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
         if let Some(Spanning { item: ref var_value, ref start, .. }) = var_def.default_value {
             if var_def.var_type.item.is_non_null() {
                 ctx.report_error(
-                    &non_null_error_message(&var_name.item, &format!("{}", var_def.var_type.item)),
+                    &non_null_error_message(var_name.item, &format!("{}", var_def.var_type.item)),
                     &[start.clone()])
             }
             else {
                 let meta_type = ctx.schema.make_type(&var_def.var_type.item);
 
-                if !is_valid_literal_value(&ctx.schema, &meta_type, var_value) {
+                if !is_valid_literal_value(ctx.schema, &meta_type, var_value) {
                     ctx.report_error(
-                        &type_error_message(&var_name.item, &format!("{}", var_def.var_type.item)),
+                        &type_error_message(var_name.item, &format!("{}", var_def.var_type.item)),
                         &[start.clone()]);
                 }
             }

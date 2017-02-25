@@ -11,18 +11,18 @@ pub fn factory() -> KnownTypeNames {
 impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_inline_fragment(&mut self, ctx: &mut ValidatorContext<'a>, fragment: &'a Spanning<InlineFragment>) {
         if let Some(ref type_cond) = fragment.item.type_condition {
-            validate_type(ctx, &type_cond.item, &type_cond.start);
+            validate_type(ctx, type_cond.item, &type_cond.start);
         }
     }
 
     fn enter_fragment_definition(&mut self, ctx: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
         let type_cond = &fragment.item.type_condition;
-        validate_type(ctx, &type_cond.item, &type_cond.start);
+        validate_type(ctx, type_cond.item, &type_cond.start);
     }
 
     fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition)) {
         let type_name = var_def.var_type.item.innermost_name();
-        validate_type(ctx, &type_name, &var_def.var_type.start);
+        validate_type(ctx, type_name, &var_def.var_type.start);
     }
 }
 

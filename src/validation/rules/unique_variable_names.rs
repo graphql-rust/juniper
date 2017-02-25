@@ -20,10 +20,10 @@ impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
     }
 
     fn enter_variable_definition(&mut self, ctx: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition)) {
-        match self.names.entry(&var_name.item) {
+        match self.names.entry(var_name.item) {
             Entry::Occupied(e) => {
                 ctx.report_error(
-                    &error_message(&var_name.item),
+                    &error_message(var_name.item),
                     &[e.get().clone(), var_name.start.clone()]);
             }
             Entry::Vacant(e) => {

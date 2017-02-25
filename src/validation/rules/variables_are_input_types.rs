@@ -13,7 +13,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames {
         if let Some(var_type) = ctx.schema.concrete_type_by_name(var_def.var_type.item.innermost_name()) {
             if !var_type.is_input() {
                 ctx.report_error(
-                    &error_message(&var_name.item, &format!("{}", var_def.var_type.item)),
+                    &error_message(var_name.item, &format!("{}", var_def.var_type.item)),
                     &[var_def.var_type.start.clone()]);
             }
         }

@@ -97,7 +97,7 @@ impl<'a> ValidatorContext<'a> {
             self.type_stack.push(None);
         }
 
-        self.type_literal_stack.push(t.map(|t| t.clone()));
+        self.type_literal_stack.push(t.cloned());
 
         let res = f(self);
 
@@ -131,7 +131,7 @@ impl<'a> ValidatorContext<'a> {
             self.input_type_stack.push(None);
         }
 
-        self.input_type_literal_stack.push(t.map(|t| t.clone()));
+        self.input_type_literal_stack.push(t.cloned());
 
         let res = f(self);
 

@@ -25,7 +25,7 @@ pub fn validate_input_values(
     let mut errs = vec![];
 
     for def in document {
-        if let &Definition::Operation(ref op) = def {
+        if let Definition::Operation(ref op) = *def {
             if let Some(ref vars) = op.item.variable_definitions {
                 validate_var_defs(values, &vars.item, schema, &mut errs);
             }
@@ -56,8 +56,8 @@ fn validate_var_defs(
                         ),
                         &[ name.start.clone() ],
                     ));
-                } else if let Some(ref v) = values.get(name.item) {
-                    unify_value(&name.item, &name.start, v, &ct, schema, errors, Path::Root);
+                } else if let Some(v) = values.get(name.item) {
+                    unify_value(name.item, &name.start, v, &ct, schema, errors, Path::Root);
                 }
             },
             _ => errors.push(RuleError::new(
@@ -89,7 +89,7 @@ fn unify_value<'a>(
                 );
             }
             else {
-                unify_value(var_name, var_pos, value, &inner, schema, errors, path);
+                unify_value(var_name, var_pos, value, inner, schema, errors, path);
             }
         }
 
@@ -101,9 +101,9 @@ fn unify_value<'a>(
             match value.to_list_value() {
                 Some(l) =>
                     for (i, v) in l.iter().enumerate() {
-                        unify_value(var_name, var_pos, v, &inner, schema, errors, Path::ArrayElement(i, &path));
+                        unify_value(var_name, var_pos, v, inner, schema, errors, Path::ArrayElement(i, &path));
                     },
-                _ => unify_value(var_name, var_pos, value, &inner, schema, errors, path)
+                _ => unify_value(var_name, var_pos, value, inner, schema, errors, path)
             }
         }
 
@@ -112,12 +112,12 @@ fn unify_value<'a>(
                 return;
             }
 
-            match mt {
-                &MetaType::Scalar(ref sm) =>
+            match *mt {
+                MetaType::Scalar(ref sm) =>
                     unify_scalar(var_name, var_pos, value, sm, errors, &path),
-                &MetaType::Enum(ref em) =>
+                MetaType::Enum(ref em) =>
                     unify_enum(var_name, var_pos, value, em, errors, &path),
-                &MetaType::InputObject(ref iom) =>
+                MetaType::InputObject(ref iom) =>
                     unify_input_object(var_name, var_pos, value, iom, schema, errors, &path),
                 _ => panic!("Can't unify non-input concrete type"),
             }
@@ -133,8 +133,8 @@ fn unify_scalar<'a>(
     errors: &mut Vec<RuleError>,
     path: &Path<'a>,
 ) {
-    match value {
-        &InputValue::List(_) =>
+    match *value {
+        InputValue::List(_) =>
             push_unification_error(
                 errors,
                 var_name,
@@ -142,7 +142,7 @@ fn unify_scalar<'a>(
                 path,
                 &format!(r#"Expected "{}", found list"#, meta.name),
             ),
-        &InputValue::Object(_) =>
+        InputValue::Object(_) =>
             push_unification_error(
                 errors,
                 var_name,
@@ -162,8 +162,8 @@ fn unify_enum<'a>(
     errors: &mut Vec<RuleError>,
     path: &Path<'a>,
 ) {
-    match value {
-        &InputValue::String(ref name) | &InputValue::Enum(ref name) => {
+    match *value {
+        InputValue::String(ref name) | InputValue::Enum(ref name) => {
             if !meta.values.iter().any(|ev| &ev.name == name) {
                 push_unification_error(
                     errors,
@@ -200,7 +200,7 @@ fn unify_input_object<'a>(
             let mut has_value = false;
             keys.remove(&input_field.name.as_str());
 
-            if let Some(ref value) = obj.get(input_field.name.as_str()) {
+            if let Some(value) = obj.get(input_field.name.as_str()) {
                 if !value.is_null() {
                     has_value = true;
 
@@ -232,8 +232,8 @@ fn unify_input_object<'a>(
                 errors,
                 var_name,
                 var_pos,
-                &Path::ObjectField(&key, path),
-                &format!("Unknown field"),
+                &Path::ObjectField(key, path),
+                "Unknown field",
             );
         }
     }

@@ -16,10 +16,10 @@ pub fn factory<'a>() -> UniqueFragmentNames<'a> {
 
 impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
     fn enter_fragment_definition(&mut self, context: &mut ValidatorContext<'a>, f: &'a Spanning<Fragment>) {
-        match self.names.entry(&f.item.name.item) {
+        match self.names.entry(f.item.name.item) {
             Entry::Occupied(e) => {
                 context.report_error(
-                    &duplicate_message(&f.item.name.item),
+                    &duplicate_message(f.item.name.item),
                     &[e.get().clone(), f.item.name.start.clone()]);
             }
             Entry::Vacant(e) => {

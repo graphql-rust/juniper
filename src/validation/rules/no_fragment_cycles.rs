@@ -50,8 +50,8 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
         assert!(self.current_fragment.is_none());
 
         let fragment_name = &fragment.item.name.item;
-        self.current_fragment = Some(&fragment_name);
-        self.fragment_order.push(&fragment_name);
+        self.current_fragment = Some(fragment_name);
+        self.fragment_order.push(fragment_name);
     }
 
     fn exit_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
@@ -60,14 +60,14 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
     }
 
     fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
-        if let Some(ref current_fragment) = self.current_fragment {
+        if let Some(current_fragment) = self.current_fragment {
             self.spreads
-                .entry(&current_fragment)
-                .or_insert_with(|| vec![])
+                .entry(current_fragment)
+                .or_insert_with(Vec::new)
                 .push(Spanning::start_end(
                     &spread.start.clone(),
                     &spread.end.clone(),
-                    &spread.item.name.item));
+                    spread.item.name.item));
         }
     }
 }
@@ -84,7 +84,7 @@ impl<'a> CycleDetector<'a> {
 
         for node in &self.spreads[from] {
             let name = &node.item;
-            let index = self.path_indices.get(name).map(|i| *i);
+            let index = self.path_indices.get(name).cloned();
 
             if let Some(index) = index {
                 let err_pos = if index < path.len() {

@@ -69,7 +69,7 @@ macro_rules! __graphql__build_field_matches {
     ) => {
         $(
             if $fieldvar == &$crate::to_camel_case(stringify!($name)) {
-                let result: $t = (|| {
+                let result: $t = (||{
                     __graphql__args!(
                         @assign_arg_vars,
                         $argsvar, $executorvar, $($args)*

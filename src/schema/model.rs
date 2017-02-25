@@ -97,7 +97,7 @@ impl<'a> SchemaType<'a> {
         ];
 
         if let Some(root_type) = registry.types.get_mut(&query_type_name) {
-            if let &mut MetaType::Object(ObjectMeta { ref mut fields, .. }) = root_type {
+            if let MetaType::Object(ObjectMeta { ref mut fields, .. }) = *root_type {
                 fields.append(&mut meta_fields);
             }
             else {
@@ -171,13 +171,13 @@ impl<'a> SchemaType<'a> {
 
     pub fn make_type(&self, t: &Type) -> TypeType {
         match *t {
-            Type::NonNullNamed(ref n) =>
+            Type::NonNullNamed(n) =>
                 TypeType::NonNull(Box::new(
                     self.type_by_name(n).expect("Type not found in schema"))),
             Type::NonNullList(ref inner) =>
                 TypeType::NonNull(Box::new(
                     TypeType::List(Box::new(self.make_type(inner))))),
-            Type::Named(ref n) => self.type_by_name(n).expect("Type not found in schema"),
+            Type::Named(n) => self.type_by_name(n).expect("Type not found in schema"),
             Type::List(ref inner) =>
                 TypeType::List(Box::new(self.make_type(inner))),
         }
@@ -211,7 +211,7 @@ impl<'a> SchemaType<'a> {
                     .iter()
                     .flat_map(|t| self.concrete_type_by_name(t))
                     .collect(),
-            MetaType::Interface(InterfaceMeta { ref name, .. }) =>
+            MetaType::Interface(InterfaceMeta { name, .. }) =>
                 self.concrete_type_list()
                     .into_iter()
                     .filter(|t| match **t {
@@ -238,9 +238,9 @@ impl<'a> SchemaType<'a> {
         }
 
         match (super_type, sub_type) {
-            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name)) |
-            (&Named(ref super_name), &Named(ref sub_name)) |
-            (&Named(ref super_name), &NonNullNamed(ref sub_name)) =>
+            (&NonNullNamed(super_name), &NonNullNamed(sub_name)) |
+            (&Named(super_name), &Named(sub_name)) |
+            (&Named(super_name), &NonNullNamed(sub_name)) =>
                 self.is_named_subtype(sub_name, super_name),
             (&NonNullList(ref super_inner), &NonNullList(ref sub_inner)) |
             (&List(ref super_inner), &List(ref sub_inner)) |
@@ -332,7 +332,7 @@ impl fmt::Display for DirectiveLocation {
 impl<'a> fmt::Display for TypeType<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            TypeType::Concrete(ref t) => f.write_str(&t.name().unwrap()),
+            TypeType::Concrete(t) => f.write_str(t.name().unwrap()),
             TypeType::List(ref i) => write!(f, "[{}]", i),
             TypeType::NonNull(ref i) => write!(f, "{}!", i),
         }

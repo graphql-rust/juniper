@@ -46,7 +46,7 @@ impl<K: Eq + Hash + Clone, V> OrderedMap<K, V> {
         }
     }
 
-    fn iter<'a>(&'a self) -> OrderedMapIter<'a, K, V> {
+    fn iter(&self) -> OrderedMapIter<K, V> {
         OrderedMapIter {
             map: &self.data,
             inner: self.insert_order.iter(),
@@ -106,11 +106,11 @@ impl<'a> PairSet<'a> {
 
     fn insert(&mut self, a: &'a str, b: &'a str, mutex: bool) {
         self.data.entry(a)
-            .or_insert_with(|| HashMap::new())
+            .or_insert_with(HashMap::new)
             .insert(b, mutex);
 
         self.data.entry(b)
-            .or_insert_with(|| HashMap::new())
+            .or_insert_with(HashMap::new)
             .insert(a, mutex);
     }
 }
@@ -146,15 +146,15 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
             self.collect_conflicts_between_fields_and_fragment(
                 &mut conflicts,
                 &field_map,
-                &frag_name1,
+                frag_name1,
                 false,
                 ctx);
 
             for frag_name2 in &fragment_names[i+1..] {
                 self.collect_conflicts_between_fragments(
                     &mut conflicts,
-                    &frag_name1,
-                    &frag_name2,
+                    frag_name1,
+                    frag_name2,
                     false,
                     ctx);
             }
@@ -252,7 +252,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
             self.collect_conflicts_between_fields_and_fragment(
                 conflicts,
                 field_map,
-                &fragment_name2,
+                fragment_name2,
                 mutually_exclusive,
                 ctx);
         }
@@ -271,7 +271,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
             if let Some(fields2) = field_map2.get(response_name) {
                 for field1 in fields1 {
                     for field2 in fields2 {
-                        if let Some(conflict) = self.find_conflict(&response_name, field1, field2, mutually_exclusive, ctx) {
+                        if let Some(conflict) = self.find_conflict(response_name, field1, field2, mutually_exclusive, ctx) {
                             conflicts.push(conflict);
                         }
                     }
@@ -290,7 +290,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         for (response_name, fields) in field_map.iter() {
             for (i, field1) in fields.iter().enumerate() {
                 for field2 in &fields[i+1..] {
-                    if let Some(conflict) = self.find_conflict(&response_name, field1, field2, false, ctx) {
+                    if let Some(conflict) = self.find_conflict(response_name, field1, field2, false, ctx) {
                         conflicts.push(conflict);
                     }
                 }
@@ -308,13 +308,13 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
     )
         -> Option<Conflict>
     {
-        let AstAndDef(ref parent_type1, ref ast1, ref def1) = *field1;
-        let AstAndDef(ref parent_type2, ref ast2, ref def2) = *field2;
+        let AstAndDef(ref parent_type1, ast1, ref def1) = *field1;
+        let AstAndDef(ref parent_type2, ast2, ref def2) = *field2;
 
         let mutually_exclusive = parents_mutually_exclusive
             || (parent_type1 != parent_type2
-                && self.is_object_type(ctx, parent_type1.clone())
-                && self.is_object_type(ctx, parent_type2.clone()));
+                && self.is_object_type(ctx, *parent_type1)
+                && self.is_object_type(ctx, *parent_type2));
 
         if !mutually_exclusive {
             let name1 = &ast1.item.name.item;
@@ -345,7 +345,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         let t2 = def2.as_ref().map(|def| &def.field_type);
 
         if let (Some(t1), Some(t2)) = (t1, t2) {
-            if self.is_type_conflict(ctx, &t1, &t2) {
+            if self.is_type_conflict(ctx, t1, t2) {
                 return Some(Conflict(
                     ConflictReason(
                         response_name.to_owned(),
@@ -360,9 +360,9 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
             let conflicts = self.find_conflicts_between_sub_selection_sets(
                 mutually_exclusive,
                 t1.map(|t| t.innermost_name()),
-                &s1,
+                s1,
                 t2.map(|t| t.innermost_name()),
-                &s2,
+                s2,
                 ctx);
 
             return self.subfield_conflicts(
@@ -467,12 +467,11 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         -> bool
     {
         match (t1, t2) {
-            (&Type::List(ref inner1), &Type::List(ref inner2)) =>
-                self.is_type_conflict(ctx, inner1, inner2),
+            (&Type::List(ref inner1), &Type::List(ref inner2)) |
             (&Type::NonNullList(ref inner1), &Type::NonNullList(ref inner2)) =>
                 self.is_type_conflict(ctx, inner1, inner2),
-            (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2)) |
-            (&Type::Named(ref n1), &Type::Named(ref n2)) => {
+            (&Type::NonNullNamed(n1), &Type::NonNullNamed(n2)) |
+            (&Type::Named(n1), &Type::Named(n2)) => {
                 let ct1 = ctx.schema.concrete_type_by_name(n1);
                 let ct2 = ctx.schema.concrete_type_by_name(n2);
 
@@ -504,7 +503,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                 }
 
                 args1.iter().all(|&(ref n1, ref v1)| {
-                    if let Some(&(_, ref v2)) = args2.iter().filter(|&&(ref n2, _)| n1.item == n2.item).next() {
+                    if let Some(&(_, ref v2)) = args2.iter().find(|&&(ref n2, _)| n1.item == n2.item) {
                         v1.item.unlocated_eq(&v2.item)
                     }
                     else {
@@ -536,7 +535,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
     )
         -> (AstAndDefCollection<'a>, Vec<&'a str>)
     {
-        let fragment_type = ctx.schema.concrete_type_by_name(&fragment.type_condition.item);
+        let fragment_type = ctx.schema.concrete_type_by_name(fragment.type_condition.item);
 
         self.get_fields_and_fragment_names(fragment_type, &fragment.selection_set, ctx)
     }
@@ -571,7 +570,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                 Selection::Field(ref f) => {
                     let field_name = &f.item.name.item;
                     let field_def = parent_type.and_then(|t| t.field_by_name(field_name));
-                    let response_name = f.item.alias.as_ref().map(|s| &s.item).unwrap_or_else(|| &field_name);
+                    let response_name = f.item.alias.as_ref().map(|s| &s.item).unwrap_or(field_name);
 
                     if !ast_and_defs.contains_key(response_name) {
                         ast_and_defs.insert(response_name, Vec::new());
@@ -581,13 +580,13 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                         .push(AstAndDef(parent_type.and_then(MetaType::name), f, field_def));
                 },
                 Selection::FragmentSpread(Spanning { item: FragmentSpread { ref name, ..}, ..}) => {
-                    if fragment_names.iter().filter(|n| *n == &name.item).next().is_none() {
-                        fragment_names.push(&name.item);
+                    if fragment_names.iter().find(|n| *n == &name.item).is_none() {
+                        fragment_names.push(name.item);
                     }
                 },
                 Selection::InlineFragment(Spanning { item: ref inline, .. }) => {
                     let parent_type = inline.type_condition.as_ref()
-                        .and_then(|cond| ctx.schema.concrete_type_by_name(&cond.item))
+                        .and_then(|cond| ctx.schema.concrete_type_by_name(cond.item))
                         .or(parent_type);
 
                     self.collect_fields_and_fragment_names(parent_type, &inline.selection_set, ctx, ast_and_defs, fragment_names);
@@ -601,7 +600,7 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged<'a> {
     fn enter_document(&mut self, _: &mut ValidatorContext<'a>, defs: &'a Document) {
         for def in defs {
             if let Definition::Fragment(Spanning { ref item, .. }) = *def {
-                self.named_fragments.insert(&item.name.item, &item);
+                self.named_fragments.insert(item.name.item, item);
             }
         }
     }

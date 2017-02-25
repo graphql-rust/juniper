@@ -43,7 +43,7 @@ impl<'a> NoUnusedVariables<'a> {
 
         if let Some(spreads) = self.spreads.get(from) {
             for spread in spreads {
-                self.find_used_vars(&Scope::Fragment(spread.clone()), defined, used, visited);
+                self.find_used_vars(&Scope::Fragment(spread), defined, used, visited);
             }
         }
     }
@@ -55,7 +55,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
             let mut used = HashSet::new();
             let mut visited = HashSet::new();
             self.find_used_vars(
-                &Scope::Operation(op_name.clone()),
+                &Scope::Operation(*op_name),
                 &def_vars.iter().map(|def| def.item).collect(),
                 &mut used,
                 &mut visited);
@@ -64,7 +64,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
                 .iter()
                 .filter(|var| !used.contains(var.item))
                 .map(|var| RuleError::new(
-                    &error_message(&var.item, op_name.clone()),
+                    &error_message(var.item, *op_name),
                     &[var.start.clone()]))
                 .collect());
         }
@@ -72,19 +72,19 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 
     fn enter_operation_definition(&mut self, _: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
         let op_name = op.item.name.as_ref().map(|s| s.item);
-        self.current_scope = Some(Scope::Operation(op_name.clone()));
+        self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables.insert(op_name, HashSet::new());
     }
 
     fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, f: &'a Spanning<Fragment>) {
-        self.current_scope = Some(Scope::Fragment(&f.item.name.item));
+        self.current_scope = Some(Scope::Fragment(f.item.name.item));
     }
 
     fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
         if let Some(ref scope) = self.current_scope {
             self.spreads.entry(scope.clone())
-                .or_insert_with(|| Vec::new())
-                .push(&spread.item.name.item);
+                .or_insert_with(Vec::new)
+                .push(spread.item.name.item);
         }
     }
 
@@ -100,7 +100,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
-                .or_insert_with(|| Vec::new())
+                .or_insert_with(Vec::new)
                 .append(&mut value.item.referenced_variables());
         }
     }

@@ -300,8 +300,8 @@ fn resolve_selection_set_into<T, CtxT>(
         .expect("Type not found in schema");
 
     for selection in selection_set {
-        match selection {
-            &Selection::Field(Spanning { item: ref f, start: ref start_pos, .. }) => {
+        match *selection {
+            Selection::Field(Spanning { item: ref f, start: ref start_pos, .. }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
@@ -316,24 +316,24 @@ fn resolve_selection_set_into<T, CtxT>(
                     continue;
                 }
 
-                let meta_field = meta_type.field_by_name(&f.name.item)
+                let meta_field = meta_type.field_by_name(f.name.item)
                     .unwrap_or_else(|| panic!(format!("Field {} not found on type {:?}", f.name.item, meta_type.name())));
 
                 let exec_vars = executor.variables();
 
-                let mut sub_exec = executor.sub_executor(
+                let sub_exec = executor.sub_executor(
                     Some(response_name),
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]));
 
                 let field_result = instance.resolve_field(
-                    &f.name.item,
+                    f.name.item,
                     &Arguments::new(
                         f.arguments.as_ref().map(|m|
                             m.item.iter().map(|&(ref k, ref v)|
                                 (k.item, v.item.clone().into_const(exec_vars))).collect()),
                         &meta_field.arguments),
-                    &mut sub_exec);
+                    &sub_exec);
 
                 match field_result {
                     Ok(v) => merge_key_into(result, response_name, v),
@@ -343,32 +343,32 @@ fn resolve_selection_set_into<T, CtxT>(
                     }
                 }
             },
-            &Selection::FragmentSpread(Spanning { item: ref spread, .. }) => {
+            Selection::FragmentSpread(Spanning { item: ref spread, .. }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
 
-                let fragment = &executor.fragment_by_name(&spread.name.item)
+                let fragment = &executor.fragment_by_name(spread.name.item)
                     .expect("Fragment could not be found");
 
                 resolve_selection_set_into(
                     instance, &fragment.selection_set[..], executor, result);
             },
-            &Selection::InlineFragment(Spanning { item: ref fragment, start: ref start_pos, .. }) => {
+            Selection::InlineFragment(Spanning { item: ref fragment, start: ref start_pos, .. }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }
 
-                let mut sub_exec = executor.sub_executor(
+                let sub_exec = executor.sub_executor(
                     None,
                     start_pos.clone(),
                     Some(&fragment.selection_set[..]));
 
-                if let &Some(ref type_condition) = &fragment.type_condition {
+                if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.resolve_into_type(
-                        &type_condition.item,
+                        type_condition.item,
                         Some(&fragment.selection_set[..]),
-                        &mut sub_exec);
+                        &sub_exec);
 
                     if let Ok(Value::Object(mut hash_map)) = sub_result {
                         for (k, v) in hash_map.drain() {
@@ -383,7 +383,7 @@ fn resolve_selection_set_into<T, CtxT>(
                     resolve_selection_set_into(
                         instance,
                         &fragment.selection_set[..],
-                        &mut sub_exec,
+                        &sub_exec,
                         result);
                 }
             },
@@ -399,19 +399,13 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
                 .flat_map(|v| v.item.clone().into_const(vars).convert())
                 .next().unwrap();
 
-            if directive.name.item == "skip" && condition {
-                return true
-            }
-            else if directive.name.item == "include" && !condition {
+            if (directive.name.item == "skip" && condition) ||
+               (directive.name.item == "include" && !condition) {
                 return true
             }
         }
-
-        false
     }
-    else {
-        false
-    }
+    false
 }
 
 fn merge_key_into(
