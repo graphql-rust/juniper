@@ -30,23 +30,13 @@ fn main() {
     mount.mount("/", graphiql_endpoint);
     mount.mount("/graphql", graphql_endpoint);
 
-    let mut chain = Chain::new(mount);
+    let (logger_before, logger_after) = Logger::new(None);
 
-    setup_logger(&mut chain);
+    let mut chain = Chain::new(mount);
+    chain.link_before(logger_before);
+    chain.link_after(logger_after);
 
     let host = env::var("LISTEN").unwrap_or("0.0.0.0:8080".to_owned());
     println!("GraphQL server started on {}", host);
     Iron::new(chain).http(host.as_str()).unwrap();
-}
-
-// Temporary fix - Iron's logger middleware does not work on Windows
-#[cfg(not(windows))]
-fn setup_logger(chain: &mut Chain) {
-    let (logger_before, logger_after) = Logger::new(None);
-    chain.link_before(logger_before);
-    chain.link_after(logger_after);
-}
-
-#[cfg(windows)]
-fn setup_logger(_: &mut Chain) {
 }

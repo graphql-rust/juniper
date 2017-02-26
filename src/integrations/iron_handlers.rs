@@ -5,6 +5,7 @@ use iron::middleware::Handler;
 use iron::mime::Mime;
 use iron::status;
 use iron::method;
+use iron::url::Url;
 
 use std::collections::BTreeMap;
 
@@ -59,7 +60,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
 
 
     fn handle_get(&self, req: &mut Request) -> IronResult<Response> {
-        let url = req.url.clone().into_generic_url();
+        let url: Url = req.url.clone().into();
 
         let mut query = None;
         let variables = Variables::new();
