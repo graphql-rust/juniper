@@ -6,8 +6,7 @@ rust:
   - beta
   - nightly
 
-  # The three most recent stable releases before "stable"
-  - 1.12.1
+  # The two most recent stable releases before "stable"
   - 1.13.0
   - 1.14.0
 
