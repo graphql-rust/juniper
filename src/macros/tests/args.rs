@@ -14,9 +14,18 @@ Syntax to validate:
 * Single arg vs. multi arg
 * Trailing comma vs. no trailing comma
 * Default value vs. no default value
+* Complex default value
 * Description vs. no description
 
 */
+
+graphql_input_object!(
+    #[derive(Debug)]
+    struct Point {
+        x: i64,
+        y: i64,
+    }
+);
 
 graphql_object!(Root: () |&self| {
     field simple() -> i64 { 0 }
@@ -61,6 +70,11 @@ graphql_object!(Root: () |&self| {
     field multi_args_with_default_trailing_comma_descr(
         arg1 = 123: i64 as "The first arg",
         arg2 = 456: i64 as "The second arg",
+    ) -> i64 { 0 }
+
+    field args_with_complex_default(
+        arg1 = ("test".to_owned()): String as "A string default argument",
+        arg2 = (Point { x: 1, y: 2 }): Point as "An input object default argument",
     ) -> i64 { 0 }
 });
 
@@ -456,6 +470,33 @@ fn introspect_field_multi_args_with_default_trailing_comma_descr() {
             ("defaultValue", Value::string("456")),
             ("type", Value::object(vec![
                 ("name", Value::string("Int")),
+                ("ofType", Value::null()),
+            ].into_iter().collect())),
+        ].into_iter().collect())));
+    });
+}
+
+#[test]
+fn introspect_field_args_with_complex_default() {
+    run_args_info_query("argsWithComplexDefault", |args| {
+        assert_eq!(args.len(), 2);
+
+        assert!(args.contains(&Value::object(vec![
+            ("name", Value::string("arg1")),
+            ("description", Value::string("A string default argument")),
+            ("defaultValue", Value::string(r#""test""#)),
+            ("type", Value::object(vec![
+                ("name", Value::string("String")),
+                ("ofType", Value::null()),
+            ].into_iter().collect())),
+        ].into_iter().collect())));
+
+        assert!(args.contains(&Value::object(vec![
+            ("name", Value::string("arg2")),
+            ("description", Value::string("An input object default argument")),
+            ("defaultValue", Value::string(r#"{y: 2, x: 1}"#)),
+            ("type", Value::object(vec![
+                ("name", Value::string("Point")),
                 ("ofType", Value::null()),
             ].into_iter().collect())),
         ].into_iter().collect())));
