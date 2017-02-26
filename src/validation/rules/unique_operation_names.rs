@@ -16,11 +16,11 @@ pub fn factory<'a>() -> UniqueOperationNames<'a> {
 
 impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
     fn enter_operation_definition(&mut self, ctx: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
-        if let &Some(ref op_name) = &op.item.name {
-            match self.names.entry(&op_name.item) {
+        if let Some(ref op_name) = op.item.name {
+            match self.names.entry(op_name.item) {
                 Entry::Occupied(e) => {
                     ctx.report_error(
-                        &error_message(&op_name.item),
+                        &error_message(op_name.item),
                         &[e.get().clone(), op.start.clone()]);
                 }
                 Entry::Vacant(e) => {

@@ -43,7 +43,7 @@ impl<'a> NoUndefinedVariables<'a> {
 
         if let Some(spreads) = self.spreads.get(scope) {
             for spread in spreads {
-                self.find_undef_vars(&Scope::Fragment(spread.clone()), defined, unused, visited);
+                self.find_undef_vars(&Scope::Fragment(spread), defined, unused, visited);
             }
         }
     }
@@ -54,12 +54,12 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         for (op_name, &(ref pos, ref def_vars)) in &self.defined_variables {
             let mut unused = Vec::new();
             let mut visited = HashSet::new();
-            self.find_undef_vars(&Scope::Operation(op_name.clone()), &def_vars, &mut unused, &mut visited);
+            self.find_undef_vars(&Scope::Operation(*op_name), def_vars, &mut unused, &mut visited);
 
             ctx.append_errors(unused
                 .into_iter()
                 .map(|var| RuleError::new(
-                    &error_message(&var.item, op_name.clone()),
+                    &error_message(var.item, *op_name),
                     &[
                         var.start.clone(),
                         pos.clone()
@@ -75,21 +75,21 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     }
 
     fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, f: &'a Spanning<Fragment>) {
-        self.current_scope = Some(Scope::Fragment(&f.item.name.item));
+        self.current_scope = Some(Scope::Fragment(f.item.name.item));
     }
 
     fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
         if let Some(ref scope) = self.current_scope {
             self.spreads.entry(scope.clone())
-                .or_insert_with(|| Vec::new())
-                .push(&spread.item.name.item);
+                .or_insert_with(Vec::new)
+                .push(spread.item.name.item);
         }
     }
 
     fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name) {
-                vars.insert(&var_name.item);
+                vars.insert(var_name.item);
             }
         }
     }
@@ -98,7 +98,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
-                .or_insert_with(|| Vec::new())
+                .or_insert_with(Vec::new)
                 .append(&mut value.item
                     .referenced_variables()
                     .iter()

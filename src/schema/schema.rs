@@ -125,7 +125,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
                 Some(schema.concrete_type_list()
                     .iter()
                     .filter_map(|&ct|
-                        if let &MetaType::Object(ObjectMeta { ref name, ref interface_names, .. }) = ct {
+                        if let MetaType::Object(ObjectMeta { ref name, ref interface_names, .. }) = *ct {
                             if interface_names.contains(&iface_name.to_owned()) {
                                 schema.type_by_name(name)
                             } else { None }
@@ -159,7 +159,7 @@ graphql_object!(<'a> Field<'a>: SchemaType<'a> as "__Field" |&self| {
     }
 
     field args() -> Vec<&Argument> {
-        self.arguments.as_ref().map_or_else(|| Vec::new(), |v| v.iter().collect())
+        self.arguments.as_ref().map_or_else(Vec::new, |v| v.iter().collect())
     }
 
     field type(&executor) -> TypeType {

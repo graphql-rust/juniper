@@ -26,7 +26,7 @@ pub fn factory<'a>() -> NoUnusedFragments<'a> {
 
 impl<'a> NoUnusedFragments<'a> {
     fn find_reachable_fragments(&self, from: &Scope<'a>, result: &mut HashSet<&'a str>) {
-        if let Scope::Fragment(ref name) = *from {
+        if let Scope::Fragment(name) = *from {
             if result.contains(name) {
                 return;
             }
@@ -37,7 +37,7 @@ impl<'a> NoUnusedFragments<'a> {
 
         if let Some(spreads) = self.spreads.get(from) {
             for spread in spreads {
-                self.find_reachable_fragments(&Scope::Fragment(spread.clone()), result)
+                self.find_reachable_fragments(&Scope::Fragment(spread), result)
             }
         }
     }
@@ -57,7 +57,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         for fragment in &self.defined_fragments {
             if !reachable.contains(&fragment.item) {
                 ctx.report_error(
-                    &error_message(&fragment.item),
+                    &error_message(fragment.item),
                     &[fragment.start.clone()]);
             }
         }
@@ -69,18 +69,18 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     }
 
     fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, f: &'a Spanning<Fragment>) {
-        self.current_scope = Some(Scope::Fragment(&f.item.name.item));
+        self.current_scope = Some(Scope::Fragment(f.item.name.item));
         self.defined_fragments.insert(Spanning::start_end(
             &f.start,
             &f.end,
-            &f.item.name.item));
+            f.item.name.item));
     }
 
     fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
         if let Some(ref scope) = self.current_scope {
             self.spreads.entry(scope.clone())
-                .or_insert_with(|| Vec::new())
-                .push(&spread.item.name.item);
+                .or_insert_with(Vec::new)
+                .push(spread.item.name.item);
         }
     }
 }

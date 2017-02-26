@@ -36,7 +36,7 @@ fn parse_list_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> ParseResul
             &Token::BracketOpen,
             |p| parse_value_literal(p, is_const),
             &Token::BracketClose
-        )).map(|items| InputValue::parsed_list(items)))
+        )).map(InputValue::parsed_list))
 }
 
 fn parse_object_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> ParseResult<'a, InputValue> {

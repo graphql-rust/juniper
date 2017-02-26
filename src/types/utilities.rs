@@ -22,28 +22,28 @@ pub fn is_valid_literal_value(schema: &SchemaType, arg_type: &TypeType, arg_valu
         TypeType::Concrete(t) => {
             // Even though InputValue::String can be parsed into an enum, they
             // are not valid as enum *literals* in a GraphQL query.
-            match (arg_value, arg_type.to_concrete()) {
-                (&InputValue::String(_), Some(&MetaType::Enum(EnumMeta { .. }))) => return false,
-                _ => ()
+            if let (&InputValue::String(_), Some(&MetaType::Enum(EnumMeta { .. })))
+                = (arg_value, arg_type.to_concrete()) {
+                return false;
             }
 
             match *arg_value {
-                InputValue::Null => true,
+                InputValue::Null |
+                InputValue::Variable(_) => true,
                 ref v @ InputValue::Int(_) |
                 ref v @ InputValue::Float(_) |
                 ref v @ InputValue::String(_) |
                 ref v @ InputValue::Boolean(_) |
                 ref v @ InputValue::Enum(_) => {
-                    if let Some(ref parse_fn) = t.input_value_parse_fn() {
-                        parse_fn(&v)
+                    if let Some(parse_fn) = t.input_value_parse_fn() {
+                        parse_fn(v)
                     } else {
                         false
                     }
                 },
                 InputValue::List(_) => false,
-                InputValue::Variable(_) => true,
                 InputValue::Object(ref obj) => {
-                    if let &MetaType::InputObject(InputObjectMeta { ref input_fields, .. }) = t {
+                    if let MetaType::InputObject(InputObjectMeta { ref input_fields, .. }) = *t {
                         let mut remaining_required_fields = input_fields.iter()
                             .filter_map(|f| if f.arg_type.is_non_null() { Some(&f.name) } else { None })
                             .collect::<HashSet<_>>();

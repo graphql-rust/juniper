@@ -22,8 +22,8 @@ pub fn factory<'a>() -> KnownArgumentNames<'a> {
 impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn enter_directive(&mut self, ctx: &mut ValidatorContext<'a>, directive: &'a Spanning<Directive>) {
         self.current_args = ctx.schema
-            .directive_by_name(&directive.item.name.item)
-            .map(|d| (ArgumentPosition::Directive(&directive.item.name.item), &d.arguments));
+            .directive_by_name(directive.item.name.item)
+            .map(|d| (ArgumentPosition::Directive(directive.item.name.item), &d.arguments));
     }
 
     fn exit_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {
@@ -32,12 +32,12 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
 
     fn enter_field(&mut self, ctx: &mut ValidatorContext<'a>, field: &'a Spanning<Field>) {
         self.current_args = ctx.parent_type()
-            .and_then(|t| t.field_by_name(&field.item.name.item))
+            .and_then(|t| t.field_by_name(field.item.name.item))
             .and_then(|f| f.arguments.as_ref())
             .map(|args| (
                 ArgumentPosition::Field(
-                    &field.item.name.item,
-                    &ctx.parent_type().expect("Parent type should exist")
+                    field.item.name.item,
+                    ctx.parent_type().expect("Parent type should exist")
                         .name().expect("Parent type should be named")),
                 args));
     }
@@ -48,12 +48,12 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
 
     fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
         if let Some((ref pos, args)) = self.current_args {
-            if args.iter().filter(|a| a.name == arg_name.item).next().is_none() {
+            if args.iter().find(|a| a.name == arg_name.item).is_none() {
                 let message = match *pos {
-                    ArgumentPosition::Field(ref field_name, ref type_name) =>
-                        field_error_message(&arg_name.item, field_name, type_name),
-                    ArgumentPosition::Directive(ref directive_name) =>
-                        directive_error_message(&arg_name.item, directive_name),
+                    ArgumentPosition::Field(field_name, type_name) =>
+                        field_error_message(arg_name.item, field_name, type_name),
+                    ArgumentPosition::Directive(directive_name) =>
+                        directive_error_message(arg_name.item, directive_name),
                 };
 
                 ctx.report_error(

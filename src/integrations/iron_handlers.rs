@@ -87,7 +87,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         let mut query = None;
         let mut variables = Variables::new();
 
-        for (k, v) in json_obj.into_iter() {
+        for (k, v) in json_obj {
             if k == "query" {
                 query = v.as_string().map(|s| s.to_owned());
             }

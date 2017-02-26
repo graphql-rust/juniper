@@ -13,13 +13,13 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
         {
             if let Some(current_type) = context.current_type() {
                 if !current_type.is_composite() {
-                    let type_name = current_type.name().clone().unwrap_or("<unknown>");
+                    let type_name = current_type.name().unwrap_or("<unknown>");
                     let type_cond = &f.item.type_condition;
 
                     context.report_error(
                         &error_message(
-                            Some(&f.item.name.item.clone()),
-                            &type_name),
+                            Some(f.item.name.item),
+                            type_name),
                         &[type_cond.start.clone()]);
                 }
             }
@@ -31,12 +31,12 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
             if let Some(ref type_cond) = f.item.type_condition {
                 let invalid_type_name = context.current_type().iter()
                     .filter(|&t| !t.is_composite())
-                    .map(|t| t.name().clone().unwrap_or("<unknown>"))
+                    .map(|t| t.name().unwrap_or("<unknown>"))
                     .next();
 
                 if let Some(name) = invalid_type_name {
                     context.report_error(
-                        &error_message(None, &name),
+                        &error_message(None, name),
                         &[type_cond.start.clone()]);
                 }
             }

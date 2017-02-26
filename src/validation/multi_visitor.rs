@@ -17,7 +17,7 @@ impl<'a> MultiVisitor<'a> {
     }
 
     fn visit_all<F: FnMut(&mut Box<Visitor<'a> + 'a>) -> ()>(&mut self, mut f: F) {
-        for mut v in self.visitors.iter_mut() {
+        for mut v in &mut self.visitors {
             f(v);
         }
     }

@@ -96,7 +96,7 @@ impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for Option<(&'a T::Context,
 
 impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<(&'a T::Context, T)> {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
-        self.map(|v| Some(v))
+        self.map(Some)
     }
 }
 
@@ -148,7 +148,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     ) -> ExecutionResult
         where NewCtxT: FromContext<CtxT>,
     {
-        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(&self.context))
+        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .resolve(value)
     }
 
@@ -179,7 +179,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
-            current_selection_set: self.current_selection_set.clone(),
+            current_selection_set: self.current_selection_set,
             schema: self.schema,
             context: ctx,
             errors: self.errors,
@@ -252,9 +252,9 @@ impl<'a> FieldPath<'a> {
     fn construct_path(&self, acc: &mut Vec<String>) {
         match *self {
             FieldPath::Root(_) => (),
-            FieldPath::Field(ref name, _, ref parent) => {
+            FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
-                acc.push((*name).to_owned());
+                acc.push(name.to_owned());
             }
         }
     }
@@ -347,9 +347,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
             all_vars = variables.clone();
 
             for (name, value) in defaults {
-                if !all_vars.contains_key(&name) {
-                    all_vars.insert(name, value);
-                }
+                all_vars.entry(name).or_insert(value);
             }
 
             final_vars = &all_vars;

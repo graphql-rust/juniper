@@ -174,12 +174,12 @@ impl<'a> MetaType<'a> {
     /// Lists, non-null wrappers, and placeholders don't have names.
     pub fn name(&self) -> Option<&str> {
         match *self {
-            MetaType::Scalar(ScalarMeta { ref name, .. }) |
-            MetaType::Object(ObjectMeta { ref name, .. }) |
-            MetaType::Enum(EnumMeta { ref name, .. }) |
-            MetaType::Interface(InterfaceMeta { ref name, .. }) |
-            MetaType::Union(UnionMeta { ref name, .. }) |
-            MetaType::InputObject(InputObjectMeta { ref name, .. }) =>
+            MetaType::Scalar(ScalarMeta { name, .. }) |
+            MetaType::Object(ObjectMeta { name, .. }) |
+            MetaType::Enum(EnumMeta { name, .. }) |
+            MetaType::Interface(InterfaceMeta { name, .. }) |
+            MetaType::Union(UnionMeta { name, .. }) |
+            MetaType::InputObject(InputObjectMeta { name, .. }) =>
                 Some(name),
             _ => None,
         }
@@ -226,7 +226,7 @@ impl<'a> MetaType<'a> {
         match *self {
             MetaType::Object(ObjectMeta { ref fields, .. }) |
             MetaType::Interface(InterfaceMeta { ref fields, .. }) =>
-                fields.iter().filter(|f| f.name == name).next(),
+                fields.iter().find(|f| f.name == name),
             _ => None,
         }
     }
@@ -237,7 +237,7 @@ impl<'a> MetaType<'a> {
     pub fn input_field_by_name(&self, name: &str) -> Option<&Argument> {
         match *self {
             MetaType::InputObject(InputObjectMeta { ref input_fields, .. }) =>
-                input_fields.iter().filter(|f| f.name == name).next(),
+                input_fields.iter().find(|f| f.name == name),
             _ => None,
         }
     }
@@ -245,18 +245,18 @@ impl<'a> MetaType<'a> {
     /// Construct a `Type` literal instance based on the metadata
     pub fn as_type(&self) -> Type<'a> {
         match *self {
-            MetaType::Scalar(ScalarMeta { ref name, .. }) |
-            MetaType::Object(ObjectMeta { ref name, .. }) |
-            MetaType::Enum(EnumMeta { ref name, .. }) |
-            MetaType::Interface(InterfaceMeta { ref name, .. }) |
-            MetaType::Union(UnionMeta { ref name, .. }) |
-            MetaType::InputObject(InputObjectMeta { ref name, .. }) =>
+            MetaType::Scalar(ScalarMeta { name, .. }) |
+            MetaType::Object(ObjectMeta { name, .. }) |
+            MetaType::Enum(EnumMeta { name, .. }) |
+            MetaType::Interface(InterfaceMeta { name, .. }) |
+            MetaType::Union(UnionMeta { name, .. }) |
+            MetaType::InputObject(InputObjectMeta { name, .. }) =>
                 Type::NonNullNamed(name),
             MetaType::List(ListMeta { ref of_type }) =>
                 Type::NonNullList(Box::new(of_type.clone())),
             MetaType::Nullable(NullableMeta { ref of_type }) =>
                 match *of_type {
-                    Type::NonNullNamed(ref inner) => Type::Named(inner.to_owned()),
+                    Type::NonNullNamed(inner) => Type::Named(inner),
                     Type::NonNullList(ref inner) => Type::List(inner.clone()),
                     ref t => t.clone(),
                 },

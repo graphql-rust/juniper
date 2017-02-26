@@ -469,7 +469,7 @@ impl<'a> Iterator for Lexer<'a> {
 impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Token::Name(ref name) => write!(f, "{}", name),
+            Token::Name(name) => write!(f, "{}", name),
             Token::Int(i) => write!(f, "{}", i),
             Token::Float(v) => write!(f, "{}", v),
             Token::String(ref s) => write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"")),

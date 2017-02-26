@@ -45,18 +45,17 @@ impl<'a> VariableInAllowedPosition<'a> {
             for &(ref var_name, ref var_type) in usages {
                 if let Some(&&(ref var_def_name, ref var_def)) = var_defs
                     .iter()
-                    .filter(|&&&(ref n, _)| &n.item == var_name.item)
-                    .next()
+                    .find(|&&&(ref n, _)| &n.item == var_name.item)
                 {
                     let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
                         (&Some(_), &Type::List(ref inner)) => Type::NonNullList(inner.clone()),
-                        (&Some(_), &Type::Named(ref inner)) => Type::NonNullNamed(inner.clone()),
+                        (&Some(_), &Type::Named(inner)) => Type::NonNullNamed(inner),
                         (_, t) => t.clone(),
                     };
 
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
                         ctx.report_error(
-                            &error_message(&var_name.item, &format!("{}", expected_type), &format!("{}", var_type)),
+                            &error_message(var_name.item, &format!("{}", expected_type), &format!("{}", var_type)),
                             &[var_def_name.start.clone(), var_name.start.clone()]);
                     }
                 }
@@ -74,12 +73,12 @@ impl<'a> VariableInAllowedPosition<'a> {
 impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, _: &'a Document) {
         for (op_scope, var_defs) in &self.variable_defs {
-            self.collect_incorrect_usages(&op_scope, var_defs, ctx, &mut HashSet::new());
+            self.collect_incorrect_usages(op_scope, var_defs, ctx, &mut HashSet::new());
         }
     }
 
     fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
-        self.current_scope = Some(Scope::Fragment(&fragment.item.name.item));
+        self.current_scope = Some(Scope::Fragment(fragment.item.name.item));
     }
 
     fn enter_operation_definition(&mut self, _: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
@@ -90,8 +89,8 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
-                .or_insert_with(|| HashSet::new())
-                .insert(&spread.item.name.item);
+                .or_insert_with(HashSet::new)
+                .insert(spread.item.name.item);
         }
     }
 
@@ -99,7 +98,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
                 .entry(scope.clone())
-                .or_insert_with(|| Vec::new())
+                .or_insert_with(Vec::new)
                 .push(def);
         }
     }
@@ -108,8 +107,8 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         if let (&Some(ref scope), Some(input_type)) = (&self.current_scope, ctx.current_input_type_literal()) {
             self.variable_usages
                 .entry(scope.clone())
-                .or_insert_with(|| Vec::new())
-                .push((Spanning::start_end(&var_name.start, &var_name.end, &var_name.item), input_type.clone()));
+                .or_insert_with(Vec::new)
+                .push((Spanning::start_end(&var_name.start, &var_name.end, var_name.item), input_type.clone()));
         }
     }
 }
