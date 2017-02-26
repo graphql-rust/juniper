@@ -23,7 +23,6 @@ graphql_input_object!(
     #[derive(Debug)]
     struct Point {
         x: i64,
-        y: i64,
     }
 );
 
@@ -74,7 +73,7 @@ graphql_object!(Root: () |&self| {
 
     field args_with_complex_default(
         arg1 = ("test".to_owned()): String as "A string default argument",
-        arg2 = (Point { x: 1, y: 2 }): Point as "An input object default argument",
+        arg2 = (Point { x: 1 }): Point as "An input object default argument",
     ) -> i64 { 0 }
 });
 
@@ -494,7 +493,7 @@ fn introspect_field_args_with_complex_default() {
         assert!(args.contains(&Value::object(vec![
             ("name", Value::string("arg2")),
             ("description", Value::string("An input object default argument")),
-            ("defaultValue", Value::string(r#"{y: 2, x: 1}"#)),
+            ("defaultValue", Value::string(r#"{x: 1}"#)),
             ("type", Value::object(vec![
                 ("name", Value::string("Point")),
                 ("ofType", Value::null()),
