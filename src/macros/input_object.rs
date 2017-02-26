@@ -78,6 +78,19 @@ macro_rules! graphql_input_object {
         })
     };
 
+    // Generate the ToInputValue::To method body, provided self in $self
+    (
+        @generate_to_input_value,
+        $name:tt, $selfvar:tt,
+        ( $($field_name:ident $(= $default:tt)* : $field_type:ty $(as $descr:tt)* $(,)* ),* )
+    ) => {
+        $crate::InputValue::object(vec![
+            $(
+                ($crate::to_camel_case(stringify!($field_name)), $selfvar.$field_name.to())
+            ),*
+        ].into_iter().collect())
+    };
+
     // Generate the struct declaration, including (Rust) meta attributes
     (
         @generate_struct_fields,
@@ -217,6 +230,12 @@ macro_rules! graphql_input_object {
                 else {
                    None
                 }
+            }
+        }
+
+        impl $crate::ToInputValue for $name {
+            fn to(&self) -> $crate::InputValue {
+                graphql_input_object!(@generate_to_input_value, $name, self, $fields)
             }
         }
 
