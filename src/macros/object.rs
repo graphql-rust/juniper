@@ -215,9 +215,17 @@ default value, _or_ make the type into an `Option<>`, the argument becomes
 optional. For example:
 
 ```text
-arg_name: String               -- required
-arg_name: Option<String>       -- optional, None if unspecified
-arg_name = "default": String   -- optional "default" if unspecified
+arg_name: i64               -- required
+arg_name: Option<i64>       -- optional, None if unspecified
+arg_name = 123: i64         -- optional, "123" if unspecified
+```
+
+Due to some syntactical limitations in the macros, you must parentesize more
+complex default value expressions:
+
+```text
+arg_name = (Point { x: 1, y: 2 }): Point
+arg_name = ("default".to_owned()): String
 ```
 
 [1]: struct.Executor.html
