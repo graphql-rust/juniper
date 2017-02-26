@@ -1,6 +1,21 @@
 Change log
 ==========
 
+## [0.7.0] – 2017-02-26
+
+### Breaking changes
+
+* The `iron-handlers` feature now depends on Iron 0.5
+  ([#30](https://github.com/mhallin/juniper/pull/30)). Because of
+  this, support for Rust 1.12 has been dropped. It might still work if
+  you're not using the Iron integrations feature, however.
+
+### New features
+
+* Input objects defined by the `graphql_input_object!` can now be used
+  as default values to field arguments and other input object fields.
+
+
 ## [0.6.3] – 2017-02-19
 
 ### New features
@@ -278,6 +293,7 @@ using the macros and not deriving `GraphQLType` directly.
 * Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
+[0.6.3]: https://github.com/mhallin/juniper/compare/0.6.3...0.7.0
 [0.6.3]: https://github.com/mhallin/juniper/compare/0.6.2...0.6.3
 [0.6.2]: https://github.com/mhallin/juniper/compare/0.6.1...0.6.2
 [0.6.1]: https://github.com/mhallin/juniper/compare/0.6.0...0.6.1
