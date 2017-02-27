@@ -44,6 +44,11 @@ graphql_object!(<'a> SchemaType<'a>: SchemaType<'a> as "__Schema" |&self| {
         self.mutation_type()
     }
 
+    // Included for compatibility with the introspection query in GraphQL.js
+    field subscription_type() -> Option<TypeType> {
+        None
+    }
+
     field directives() -> Vec<&DirectiveType> {
         self.directive_list()
     }
@@ -238,6 +243,26 @@ graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| 
 
     field args() -> &Vec<Argument> {
         &self.arguments
+    }
+
+    // Included for compatibility with the introspection query in GraphQL.js
+    field deprecated "Use the locations array instead"
+    on_operation() -> bool {
+        self.locations.contains(&DirectiveLocation::Query)
+    }
+
+    // Included for compatibility with the introspection query in GraphQL.js
+    field deprecated "Use the locations array instead"
+    on_fragment() -> bool {
+        self.locations.contains(&DirectiveLocation::FragmentDefinition) ||
+            self.locations.contains(&DirectiveLocation::InlineFragment) ||
+            self.locations.contains(&DirectiveLocation::FragmentSpread)
+    }
+
+    // Included for compatibility with the introspection query in GraphQL.js
+    field deprecated "Use the locations array instead"
+    on_field() -> bool {
+        self.locations.contains(&DirectiveLocation::Field)
     }
 });
 
