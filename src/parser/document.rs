@@ -31,7 +31,7 @@ fn parse_definition<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Def
             Ok(Definition::Operation(try!(parse_operation_definition(parser)))),
         Token::Name("fragment") =>
             Ok(Definition::Fragment(try!(parse_fragment_definition(parser)))),
-        _ => Err(parser.next().map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
 
@@ -130,7 +130,7 @@ fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selec
 
     match parser.peek().item {
         Token::Name("on") => {
-            parser.next();
+            parser.next()?;
             let name = try!(parser.expect_name());
             let directives = try!(parse_directives(parser));
             let selection_set = try!(parse_selection_set(parser));
@@ -185,7 +185,7 @@ fn parse_fragment<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Selec
                         selection_set: selection_set.item,
                     })))
         },
-        _ => Err(parser.next().map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
 
@@ -244,9 +244,9 @@ fn parse_argument<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, (Spanning<&'a 
 
 fn parse_operation_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, OperationType> {
     match parser.peek().item {
-        Token::Name("query") => Ok(parser.next().map(|_| OperationType::Query)),
-        Token::Name("mutation") => Ok(parser.next().map(|_| OperationType::Mutation)),
-        _ => Err(parser.next().map(ParseError::UnexpectedToken))
+        Token::Name("query") => Ok(parser.next()?.map(|_| OperationType::Query)),
+        Token::Name("mutation") => Ok(parser.next()?.map(|_| OperationType::Mutation)),
+        _ => Err(parser.next()?.map(ParseError::UnexpectedToken))
     }
 }
 

@@ -54,28 +54,31 @@ impl<'a> Parser<'a> {
     }
 
     #[doc(hidden)]
-    pub fn next(&mut self) -> Spanning<Token<'a>> {
+    pub fn next(&mut self) -> ParseResult<'a, Token<'a>> {
         if self.tokens.len() == 1 {
-            panic!("Can not parse over EOF marker");
+            Err(Spanning::start_end(
+                &self.peek().start.clone(),
+                &self.peek().end.clone(),
+                ParseError::UnexpectedEndOfFile))
+        } else {
+            Ok(self.tokens.remove(0))
         }
-
-        self.tokens.remove(0)
     }
 
     #[doc(hidden)]
     pub fn expect(&mut self, expected: &Token) -> ParseResult<'a, Token<'a>> {
         if &self.peek().item != expected {
-            Err(self.next().map(ParseError::UnexpectedToken))
+            Err(self.next()?.map(ParseError::UnexpectedToken))
         }
         else {
-            Ok(self.next())
+            self.next()
         }
     }
 
     #[doc(hidden)]
     pub fn skip(&mut self, expected: &Token) -> Result<Option<Spanning<Token<'a>>>, Spanning<ParseError<'a>>> {
         if &self.peek().item == expected {
-            Ok(Some(self.next()))
+            Ok(Some(self.next()?))
         }
         else if self.peek().item == Token::EndOfFile {
             Err(Spanning::zero_width(
@@ -151,7 +154,7 @@ impl<'a> Parser<'a> {
     pub fn expect_name(&mut self) -> ParseResult<'a, &'a str> {
         match *self.peek() {
             Spanning { item: Token::Name(_), .. } =>
-                Ok(self.next().map(|token|
+                Ok(self.next()?.map(|token|
                     if let Token::Name(name) = token {
                         name
                     }
@@ -163,7 +166,7 @@ impl<'a> Parser<'a> {
                     &self.peek().start.clone(),
                     &self.peek().end.clone(),
                     ParseError::UnexpectedEndOfFile)),
-            _ => Err(self.next().map(ParseError::UnexpectedToken)),
+            _ => Err(self.next()?.map(ParseError::UnexpectedToken)),
         }
     }
 }

@@ -8,11 +8,11 @@ pub fn parse_value_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> Parse
         Spanning { item: Token::CurlyOpen, .. } => parse_object_literal(parser, is_const),
         Spanning { item: Token::Dollar, .. } if !is_const => parse_variable_literal(parser),
         Spanning { item: Token::Int(i), .. } =>
-            Ok(parser.next().map(|_| InputValue::int(i))),
+            Ok(parser.next()?.map(|_| InputValue::int(i))),
         Spanning { item: Token::Float(f), .. } =>
-            Ok(parser.next().map(|_| InputValue::float(f))),
+            Ok(parser.next()?.map(|_| InputValue::float(f))),
         Spanning { item: Token::String(_), .. } =>
-            Ok(parser.next().map(|t|
+            Ok(parser.next()?.map(|t|
                 if let Token::String(s) = t {
                     InputValue::string(s)
                 }
@@ -20,14 +20,14 @@ pub fn parse_value_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> Parse
                     panic!("Internal parser error");
                 })),
         Spanning { item: Token::Name("true"), .. } =>
-            Ok(parser.next().map(|_| InputValue::boolean(true))),
+            Ok(parser.next()?.map(|_| InputValue::boolean(true))),
         Spanning { item: Token::Name("false"), .. } =>
-            Ok(parser.next().map(|_| InputValue::boolean(false))),
+            Ok(parser.next()?.map(|_| InputValue::boolean(false))),
         Spanning { item: Token::Name("null"), .. } =>
-            Ok(parser.next().map(|_| InputValue::null())),
+            Ok(parser.next()?.map(|_| InputValue::null())),
         Spanning { item: Token::Name(name), .. } =>
-            Ok(parser.next().map(|_| InputValue::enum_value(name.to_owned()))),
-        _ => Err(parser.next().map(ParseError::UnexpectedToken)),
+            Ok(parser.next()?.map(|_| InputValue::enum_value(name.to_owned()))),
+        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
 

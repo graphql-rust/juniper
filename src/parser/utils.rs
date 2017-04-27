@@ -108,8 +108,7 @@ impl<T> PartialEq for Spanning<T> where T: PartialEq + fmt::Debug {
     }
 }
 
-impl<T> Eq for Spanning<T> where T: Eq + fmt::Debug {
-}
+impl<T> Eq for Spanning<T> where T: Eq + fmt::Debug {}
 
 impl<T> Hash for Spanning<T> where T: Hash + fmt::Debug {
     fn hash<H: Hasher>(&self, state: &mut H) {
