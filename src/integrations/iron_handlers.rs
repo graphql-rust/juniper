@@ -7,11 +7,19 @@ use iron::status;
 use iron::method;
 use iron::url::Url;
 
-use std::collections::BTreeMap;
+use std::io::Read;
+use std::io::Error as IoError;
+use std::io::ErrorKind;
+use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
+use std::boxed::Box;
 
-use rustc_serialize::json::{ToJson, Json};
+use serde_json;
+use serde_json::Value as Json;
+use serde_json::error::Error as SerdeError;
 
-use ::{InputValue, GraphQLType, RootNode, Variables, execute};
+use ::{InputValue, GraphQLType, RootNode, Variables, execute as execute_query};
 
 /// Handler that executes GraphQL queries in the given schema
 ///
@@ -77,59 +85,74 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     }
 
     fn handle_post(&self, req: &mut Request) -> IronResult<Response> {
-        let json_data = itry!(Json::from_reader(&mut req.body));
-
-        let json_obj = match json_data {
-            Json::Object(o) => o,
-            _ => return Ok(Response::with((status::BadRequest, "No JSON object was decoded"))),
-        };
-
-        let mut query = None;
-        let mut variables = Variables::new();
-
-        for (k, v) in json_obj {
-            if k == "query" {
-                query = v.as_string().map(|s| s.to_owned());
+        let mut request_payload = String::new();
+        itry!(req.body.read_to_string(&mut request_payload));
+        let json_data =
+            match serde_json::from_str::<Json>(&*request_payload) {
+                Ok(json) => json,
+                Err(err) => {
+                    let error = IronError::new(
+                        Box::new(GraphQlIronError::Serde(err)),
+                        (status::BadRequest, "No JSON object was decoded."));
+                    return Err(error)
+                }
+            };
+        match json_data {
+            Json::Object(json_obj) => {
+                let mut query = None;
+                let mut variables = Variables::new();
+                for (k, v) in json_obj {
+                    if k == "query" {
+                        query = v.as_str().map(|query| query.to_owned());
+                    }
+                    else if k == "variables" {
+                        variables = InputValue::from_json(v).to_object_value()
+                            .map(|o| o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect())
+                            .unwrap_or_default();
+                    }
+                }
+                let query = iexpect!(query);
+                self.execute(req, &query, &variables)
             }
-            else if k == "variables" {
-                variables = InputValue::from_json(v).to_object_value()
-                    .map(|o| o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect())
-                    .unwrap_or_default();
+            _ => {
+                let error = IronError::new(
+                    Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
+                                                                "Was able parse a JSON item but it\
+                                                                 was not an object as expected."))),
+                            (status::BadRequest, "No JSON object was decoded."));
+                Err(error)
             }
         }
-
-        let query = iexpect!(query);
-
-        self.execute(req, &query, &variables)
     }
 
     fn execute(&self, req: &mut Request, query: &str, variables: &Variables) -> IronResult<Response> {
         let context = (self.context_factory)(req);
-        let result = execute(query, None, &self.root_node, variables, &context);
-
+        let result = execute_query(query, None, &self.root_node, variables, &context);
         let content_type = "application/json".parse::<Mime>().unwrap();
-        let mut map = BTreeMap::new();
+        let mut map = HashMap::new();
 
         match result {
             Ok((result, errors)) => {
-                map.insert("data".to_owned(), result.to_json());
+                let response_data = serde_json::to_value(result)
+                    .expect("Failed to convert response data to JSON.");
+                map.insert("data".to_owned(), response_data);
 
                 if !errors.is_empty() {
-                    map.insert("errors".to_owned(), errors.to_json());
+                    let response_data = serde_json::to_value(errors)
+                        .expect("Failed to convert the errors to JSON.");
+                    map.insert("errors".to_owned(), response_data);
                 }
-
-                let data = Json::Object(map);
-                let json = data.pretty();
-
-                Ok(Response::with((content_type, status::Ok, json.to_string())))
+                let data = serde_json::to_value(map).expect("Failed to convert response to JSON");
+                let json = serde_json::to_string_pretty(&data).expect("Failed to convert response to JSON.");
+                Ok(Response::with((content_type, status::Ok, json)))
             }
-
             Err(err) => {
-                map.insert("errors".to_owned(), err.to_json());
-
-                let data = Json::Object(map);
-                let json = data.pretty();
-
+                let response_data = serde_json::to_value(err)
+                    .expect("Failed to convert error data to JSON.");
+                map.insert("errors".to_owned(), response_data);
+                let data = serde_json::to_value(map).expect("Failed to convert response to JSON");
+                let json = serde_json::to_string_pretty(&data)
+                    .expect("Failed to convert response to JSON");
                 Ok(Response::with((content_type, status::BadRequest, json.to_string())))
             }
         }
@@ -236,11 +259,61 @@ impl Handler for GraphiQLHandler {
     }
 }
 
+/// A general error allowing the developer to see the underlying issue.
+pub enum GraphQlIronError {
+    ///Captures any errors that were caused by Serde.
+    Serde(SerdeError),
+    /// Captures any error related the IO.
+    IO(IoError)
+}
+
+impl fmt::Display for GraphQlIronError {
+    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            GraphQlIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
+            GraphQlIronError::IO(ref err) => fmt::Display::fmt(err, &mut f),
+        }
+    }
+}
+
+impl fmt::Debug for GraphQlIronError {
+    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            GraphQlIronError::Serde(ref err) => fmt::Debug::fmt(err, &mut f),
+            GraphQlIronError::IO(ref err) => fmt::Debug::fmt(err, &mut f),
+        }
+    }
+}
+
+impl Error for GraphQlIronError {
+    fn description(&self) -> &str {
+       match *self {
+           GraphQlIronError::Serde(ref err) => {
+               err.description()
+           },
+           GraphQlIronError::IO(ref err) => {
+               err.description()
+           }
+       }
+   }
+
+   fn cause(&self) -> Option<&Error> {
+       match *self {
+           GraphQlIronError::Serde(ref err) => {
+               err.cause()
+           }
+           GraphQlIronError::IO(ref err) => {
+               err.cause()
+           }
+       }
+   }
+}
+
 
 #[cfg(test)]
 mod tests {
-    use rustc_serialize::json::Json;
-
+    use serde_json::Value as Json;
+    use serde_json;
     use iron::prelude::*;
     use iron::status;
     use iron::headers;
@@ -267,7 +340,7 @@ mod tests {
     fn unwrap_json_response(resp: Response) -> Json {
         let result = response::extract_body_to_string(resp);
 
-        Json::from_str(&result).expect("Could not parse JSON object")
+        serde_json::from_str::<Json>(&result).expect("Could not parse JSON object")
     }
 
     #[test]
@@ -286,7 +359,7 @@ mod tests {
 
         assert_eq!(
             json,
-            Json::from_str(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
+            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
                 .expect("Invalid JSON constant in test"));
     }
 
@@ -307,7 +380,7 @@ mod tests {
 
         assert_eq!(
             json,
-            Json::from_str(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
+            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
                 .expect("Invalid JSON constant in test"));
     }
 
