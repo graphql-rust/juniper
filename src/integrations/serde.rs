@@ -1,13 +1,42 @@
 use serde::{de, ser};
 use serde::ser::SerializeMap;
-use std::collections::HashMap;
 use std::fmt;
+use std::collections::HashMap;
 
 use ::{GraphQLError, Value};
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, Spanning, SourcePosition};
 use validation::RuleError;
+use serde_json::Value as Json;
+
+
+impl InputValue {
+    /// Converts serde_json::Value to juniper::InputValue
+    pub fn from_json(json: Json) -> InputValue {
+        match json {
+          Json::Number(num) => {
+              if let Some(number) = num.as_i64() {
+                  InputValue::int(number)
+              }
+              else if let Some(number) = num.as_f64() {
+                  InputValue::float(number)
+              }
+              else if let Some(number) = num.as_u64() {
+                InputValue::float(number as f64)
+              }
+              else {
+                  panic!("Invalid number data type was found.");
+              }
+          }
+          Json::String(s) => InputValue::string(s),
+          Json::Bool(b) => InputValue::boolean(b),
+          Json::Array(a) => InputValue::list(a.into_iter().map(InputValue::from_json).collect()),
+          Json::Object(o) => InputValue::object(o.into_iter().map(|(k, v)| (k, InputValue::from_json(v))).collect()),
+          Json::Null => InputValue::null(),
+       }
+    }
+}
 
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
