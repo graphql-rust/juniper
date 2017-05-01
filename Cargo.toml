@@ -16,15 +16,16 @@ harness = false
 path = "benches/bench.rs"
 
 [features]
-default = ["rustc-serialize"]
+default = ["serde", "serde_json"]
 nightly = []
-iron-handlers = ["iron", "rustc-serialize"]
+iron-handlers = ["iron", "serde", "serde_json"]
 expose-test-schema = []
 
 [dependencies]
-rustc-serialize = { version = "^0.3.19", optional = true }
 iron = { version = "^0.5.1", optional = true }
 serde = { version = "^0.9.1", optional = true }
+serde_json = {version ="^0.9.1", optional = true }
+
 
 [dev-dependencies]
 iron = "^0.5.1"
