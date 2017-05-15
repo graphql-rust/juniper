@@ -3,7 +3,9 @@ use serde::ser::SerializeMap;
 use std::fmt;
 use std::collections::HashMap;
 
-use ::{GraphQLError, Value, Variables};
+use ::{GraphQLError, Value};
+#[cfg(feature="iron-handlers")]
+use ::Variables;
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, Spanning, SourcePosition};
@@ -225,6 +227,7 @@ pub struct GraphQlQuery {
     variables: Option<InputValue>
 }
 
+#[cfg(feature="iron-handlers")]
 impl GraphQlQuery {
 
     pub fn new(query: String,
@@ -260,6 +263,7 @@ impl GraphQlQuery {
 #[cfg(feature="iron-handlers")]
 pub struct WrappedGraphQLResult<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
 
+#[cfg(feature="iron-handlers")]
 impl<'a> WrappedGraphQLResult<'a> {
     pub fn new(result: Result<(Value, Vec<ExecutionError>),
                GraphQLError<'a>>
@@ -268,6 +272,7 @@ impl<'a> WrappedGraphQLResult<'a> {
     }
 }
 
+#[cfg(feature="iron-handlers")]
 impl<'a> ser::Serialize for WrappedGraphQLResult<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: ser::Serializer,
