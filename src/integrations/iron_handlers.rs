@@ -1,25 +1,23 @@
 //! Optional handlers for the Iron framework. Requires the `iron-handlers` feature enabled.
-
 use iron::prelude::*;
 use iron::middleware::Handler;
 use iron::mime::Mime;
 use iron::status;
 use iron::method;
-use iron::url::Url;
+use urlencoded::{UrlEncodedQuery, UrlDecodingError};
 
 use std::io::Read;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
-use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::boxed::Box;
 
 use serde_json;
-use serde_json::Value as Json;
 use serde_json::error::Error as SerdeError;
 
-use ::{InputValue, GraphQLType, RootNode, Variables, execute as execute_query};
+use ::{InputValue, GraphQLType, RootNode, execute};
+use super::serde::{WrappedGraphQLResult, GraphQlQuery};
 
 /// Handler that executes GraphQL queries in the given schema
 ///
@@ -46,6 +44,53 @@ pub struct GraphiQLHandler {
     graphql_url: String,
 }
 
+
+/// Get queries are allowed to repeat the same key more than once.
+fn check_for_repeat_keys(params: &Vec<String>) -> Result<(), IronError> {
+    if params.len() > 1 {
+        let error = IronError::new(
+            Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
+                                                        "Was able parse a query string \
+                                                        but a duplicate uri key was \
+                                                        found."))),
+                    (status::BadRequest, "Duplicate uri key was found."));
+        Err(error)
+    }
+    else {
+        Ok(())
+    }
+}
+
+fn parse_url_param(param: Option<Vec<String>>) -> Result<Option<String>, IronError> {
+    if let Some(values) = param {
+            check_for_repeat_keys(&values)?;
+            Ok(Some(values[0].to_owned()))
+    }
+    else {
+        Ok(None)
+    }
+}
+
+fn parse_variable_param(param: Option<Vec<String>>) -> Result<Option<InputValue>, IronError> {
+    if let Some(values) = param {
+        check_for_repeat_keys(&values)?;
+        match serde_json::from_str::<InputValue>(values[0].as_ref()) {
+            Ok(input_values) => {
+                Ok(Some(input_values))
+            }
+            Err(err) => {
+                Err(IronError::new(
+                    Box::new(GraphQlIronError::Serde(err)),
+                    (status::BadRequest, "No JSON object was decoded.")))
+            }
+        }
+    }
+    else {
+        Ok(None)
+    }
+}
+
+
 impl<'a, CtxFactory, Query, Mutation, CtxT>
     GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
@@ -67,96 +112,62 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     }
 
 
-    fn handle_get(&self, req: &mut Request) -> IronResult<Response> {
-        let url: Url = req.url.clone().into();
-
-        let mut query = None;
-        let variables = Variables::new();
-
-        for (k, v) in url.query_pairs() {
-            if k == "query" {
-                query = Some(v.into_owned());
-            }
-        }
-
-        let query = iexpect!(query);
-
-        self.execute(req, &query, &variables)
-    }
-
-    fn handle_post(&self, req: &mut Request) -> IronResult<Response> {
-        let mut request_payload = String::new();
-        itry!(req.body.read_to_string(&mut request_payload));
-        let json_data =
-            match serde_json::from_str::<Json>(&*request_payload) {
-                Ok(json) => json,
-                Err(err) => {
-                    let error = IronError::new(
-                        Box::new(GraphQlIronError::Serde(err)),
-                        (status::BadRequest, "No JSON object was decoded."));
-                    return Err(error)
+    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQlQuery> {
+         match req.get_mut::<UrlEncodedQuery>() {
+            Ok(ref mut query_string) => {
+                let input_query = parse_url_param(query_string.remove("query").to_owned())?;
+                if let Some(query) = input_query {
+                    let operation_name =
+                        parse_url_param(query_string.remove("operationName"))?;
+                    let input_variables =
+                        parse_variable_param(query_string.remove("variables"))?;
+                        Ok(GraphQlQuery::new(query,operation_name,input_variables))
+                } else {
+                    Err(IronError::new(
+                        Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
+                                                                    "No query key was found in \
+                                                                    the Get request."))),
+                                (status::BadRequest, "No query was provided.")))
                 }
-            };
-        match json_data {
-            Json::Object(json_obj) => {
-                let mut query = None;
-                let mut variables = Variables::new();
-                for (k, v) in json_obj {
-                    if k == "query" {
-                        query = v.as_str().map(|query| query.to_owned());
-                    }
-                    else if k == "variables" {
-                        variables = InputValue::from_json(v).to_object_value()
-                            .map(|o| o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect())
-                            .unwrap_or_default();
-                    }
-                }
-                let query = iexpect!(query);
-                self.execute(req, &query, &variables)
-            }
-            _ => {
-                let error = IronError::new(
-                    Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
-                                                                "Was able parse a JSON item but it\
-                                                                 was not an object as expected."))),
-                            (status::BadRequest, "No JSON object was decoded."));
-                Err(error)
-            }
-        }
-    }
-
-    fn execute(&self, req: &mut Request, query: &str, variables: &Variables) -> IronResult<Response> {
-        let context = (self.context_factory)(req);
-        let result = execute_query(query, None, &self.root_node, variables, &context);
-        let content_type = "application/json".parse::<Mime>().unwrap();
-        let mut map = HashMap::new();
-
-        match result {
-            Ok((result, errors)) => {
-                let response_data = serde_json::to_value(result)
-                    .expect("Failed to convert response data to JSON.");
-                map.insert("data".to_owned(), response_data);
-
-                if !errors.is_empty() {
-                    let response_data = serde_json::to_value(errors)
-                        .expect("Failed to convert the errors to JSON.");
-                    map.insert("errors".to_owned(), response_data);
-                }
-                let data = serde_json::to_value(map).expect("Failed to convert response to JSON");
-                let json = serde_json::to_string_pretty(&data).expect("Failed to convert response to JSON.");
-                Ok(Response::with((content_type, status::Ok, json)))
             }
             Err(err) => {
-                let response_data = serde_json::to_value(err)
-                    .expect("Failed to convert error data to JSON.");
-                map.insert("errors".to_owned(), response_data);
-                let data = serde_json::to_value(map).expect("Failed to convert response to JSON");
-                let json = serde_json::to_string_pretty(&data)
-                    .expect("Failed to convert response to JSON");
-                Ok(Response::with((content_type, status::BadRequest, json.to_string())))
+                Err(IronError::new(
+                    Box::new(GraphQlIronError::Url(err)),
+                            (status::BadRequest, "No JSON object was decoded.")))
             }
         }
     }
+
+    fn handle_post(&self, req: &mut Request) -> IronResult<GraphQlQuery> {
+        let mut request_payload = String::new();
+        itry!(req.body.read_to_string(&mut request_payload));
+        let graphql_query = serde_json::from_str::<GraphQlQuery>(request_payload.as_str()).map_err(|err|{
+            IronError::new(
+                Box::new(GraphQlIronError::Serde(err)),
+                (status::BadRequest, "No JSON object was decoded."))
+        });
+        graphql_query
+    }
+
+    fn respond(&self, req: &mut Request, graphql: GraphQlQuery) -> IronResult<Response> {
+       let context = (self.context_factory)(req);
+       let variables = graphql.variables();
+       let result = execute(graphql.query(),
+                            graphql.operation_name(),
+                            &self.root_node,
+                            &variables,
+                            &context);
+      let content_type = "application/json".parse::<Mime>().unwrap();
+      if result.is_ok() {
+          let response = WrappedGraphQLResult::new(result);
+          let json = serde_json::to_string_pretty(&response).unwrap();
+          Ok(Response::with((content_type, status::Ok, json)))
+      } else {
+          let response = WrappedGraphQLResult::new(result);
+          let json = serde_json::to_string_pretty(&response).unwrap();
+          Ok(Response::with((content_type, status::BadRequest, json)))
+      }
+   }
 }
 
 impl GraphiQLHandler {
@@ -179,10 +190,16 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
           Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static, 'a: 'static,
 {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
         match req.method {
-            method::Get => self.handle_get(req),
-            method::Post => self.handle_post(req),
+            method::Get =>  {
+                let graphql_query = self.handle_get(&mut req)?;
+                self.respond(&mut req, graphql_query)
+            }
+            method::Post => {
+                let graphql_query = self.handle_post(&mut req)?;
+                self.respond(&mut req, graphql_query)
+            },
             _ => Ok(Response::with((status::MethodNotAllowed)))
         }
     }
@@ -202,7 +219,6 @@ impl Handler for GraphiQLHandler {
             }
         </style>
         "#;
-
         let fetcher_source = r#"
         <script>
             function graphQLFetcher(params) {
@@ -260,11 +276,14 @@ impl Handler for GraphiQLHandler {
 }
 
 /// A general error allowing the developer to see the underlying issue.
+#[derive(Debug)]
 pub enum GraphQlIronError {
     ///Captures any errors that were caused by Serde.
     Serde(SerdeError),
     /// Captures any error related the IO.
-    IO(IoError)
+    IO(IoError),
+    /// Captures any error related to Url Decoding,
+    Url(UrlDecodingError)
 }
 
 impl fmt::Display for GraphQlIronError {
@@ -272,15 +291,7 @@ impl fmt::Display for GraphQlIronError {
         match *self {
             GraphQlIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
             GraphQlIronError::IO(ref err) => fmt::Display::fmt(err, &mut f),
-        }
-    }
-}
-
-impl fmt::Debug for GraphQlIronError {
-    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GraphQlIronError::Serde(ref err) => fmt::Debug::fmt(err, &mut f),
-            GraphQlIronError::IO(ref err) => fmt::Debug::fmt(err, &mut f),
+            GraphQlIronError::Url(ref err) => fmt::Display::fmt(err, &mut f),
         }
     }
 }
@@ -294,6 +305,9 @@ impl Error for GraphQlIronError {
            GraphQlIronError::IO(ref err) => {
                err.description()
            }
+           GraphQlIronError::Url(ref err) => {
+               err.description()
+           }
        }
    }
 
@@ -303,6 +317,9 @@ impl Error for GraphQlIronError {
                err.cause()
            }
            GraphQlIronError::IO(ref err) => {
+               err.cause()
+           }
+           GraphQlIronError::Url(ref err) => {
                err.cause()
            }
        }
@@ -362,6 +379,73 @@ mod tests {
             serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
                 .expect("Invalid JSON constant in test"));
     }
+
+    #[test]
+    fn test_encoded_get() {
+        let response = request::get(
+            "http://localhost:3000/?query=query%20{%20%20%20human(id:%20\"1000\")%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}",
+            Headers::new(),
+            &make_handler())
+            .expect("Unexpected IronError");
+
+        assert_eq!(response.status, Some(status::Ok));
+        assert_eq!(response.headers.get::<headers::ContentType>(),
+                   Some(&headers::ContentType::json()));
+
+        let json = unwrap_json_response(response);
+
+        assert_eq!(
+            json,
+            serde_json::from_str::<Json>(r#"{
+                    "data": {
+                        "human": {
+                            "appearsIn": [
+                                "NEW_HOPE",
+                                "EMPIRE",
+                                "JEDI"
+                                ],
+                                "homePlanet": "Tatooine",
+                                "name": "Luke Skywalker",
+                                "id": "1000"
+                            }
+                        }
+                    }"#)
+                .expect("Invalid JSON constant in test"));
+    }
+
+    #[test]
+    fn test_get_with_variables() {
+        let response = request::get(
+            "http://localhost:3000/?query=query($id:%20String!)%20{%20%20%20human(id:%20$id)%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}&variables={%20%20%20\"id\":%20%20\"1000\"%20}",
+            Headers::new(),
+            &make_handler())
+            .expect("Unexpected IronError");
+
+        assert_eq!(response.status, Some(status::Ok));
+        assert_eq!(response.headers.get::<headers::ContentType>(),
+                   Some(&headers::ContentType::json()));
+
+        let json = unwrap_json_response(response);
+
+        assert_eq!(
+            json,
+            serde_json::from_str::<Json>(r#"{
+                    "data": {
+                        "human": {
+                            "appearsIn": [
+                                "NEW_HOPE",
+                                "EMPIRE",
+                                "JEDI"
+                                ],
+                                "homePlanet": "Tatooine",
+                                "name": "Luke Skywalker",
+                                "id": "1000"
+                            }
+                        }
+                    }"#)
+                .expect("Invalid JSON constant in test"));
+    }
+
 
     #[test]
     fn test_simple_post() {
