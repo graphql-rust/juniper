@@ -186,10 +186,12 @@ built-in [GraphiQL][6] handler included.
 #![cfg_attr(feature="nightly", feature(test))]
 #![warn(missing_docs)]
 #[cfg(feature="nightly")] extern crate test;
-#[cfg(feature="iron-handlers")] #[macro_use(itry, iexpect)] extern crate iron;
+#[cfg(feature="iron-handlers")] #[macro_use(itry)] extern crate iron;
+#[cfg(feature="iron-handlers")] extern crate urlencoded;
 #[cfg(test)] extern crate iron_test;
 extern crate serde;
 extern crate serde_json;
+#[cfg(feature="iron-handlers")] #[macro_use] extern crate serde_derive;
 
 #[macro_use] mod macros;
 mod ast;
