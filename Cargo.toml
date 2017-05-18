@@ -15,6 +15,10 @@ name = "bench"
 harness = false
 path = "benches/bench.rs"
 
+[[example]]
+name = "server"
+required-features = ["iron-handlers", "expose-test-schema"]
+
 [features]
 default = ["rustc-serialize"]
 nightly = []

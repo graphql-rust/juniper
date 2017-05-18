@@ -2,7 +2,7 @@ extern crate iron;
 extern crate mount;
 extern crate logger;
 extern crate rustc_serialize;
-#[macro_use] extern crate juniper;
+extern crate juniper;
 
 use std::env;
 
