@@ -24,7 +24,7 @@ expose-test-schema = []
 [dependencies]
 rustc-serialize = { version = "^0.3.19", optional = true }
 iron = { version = "^0.5.1", optional = true }
-serde = { version = "^0.9.1", optional = true }
+serde = { version = "^1.0.8", optional = true }
 
 [dev-dependencies]
 iron = "^0.5.1"
