@@ -50,13 +50,13 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
     }
 }
 
-impl de::Deserialize for InputValue {
+impl<'de> de::Deserialize<'de> for InputValue {
     fn deserialize<D>(deserializer: D) -> Result<InputValue, D::Error>
-        where D: de::Deserializer,
+        where D: de::Deserializer<'de>,
     {
         struct InputValueVisitor;
 
-        impl de::Visitor for InputValueVisitor {
+        impl<'de> de::Visitor<'de> for InputValueVisitor {
             type Value = InputValue;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -99,23 +99,32 @@ impl de::Deserialize for InputValue {
                 Ok(InputValue::null())
             }
 
-            fn visit_seq<V>(self, visitor: V) -> Result<InputValue, V::Error>
-                where V: de::SeqVisitor,
+            fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
+                where V: de::SeqAccess<'de>,
             {
-                let values = try!(de::impls::VecVisitor::new().visit_seq(visitor));
+                let mut values = Vec::new();
+
+                while let Some(el) = try!(visitor.next_element()) {
+                    values.push(el);
+                }
+
                 Ok(InputValue::list(values))
             }
 
-            fn visit_map<V>(self, visitor: V) -> Result<InputValue, V::Error>
-                where V: de::MapVisitor,
+            fn visit_map<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
+                where V: de::MapAccess<'de>,
             {
-                let values = try!(de::impls::HashMapVisitor::<String, InputValue, _>::new()
-                    .visit_map(visitor));
+                let mut values: HashMap<String, InputValue> = HashMap::new();
+
+                while let Some((key, value)) = try!(visitor.next_entry()) {
+                    values.insert(key, value);
+                }
+
                 Ok(InputValue::object(values))
             }
         }
 
-        deserializer.deserialize(InputValueVisitor)
+        deserializer.deserialize_any(InputValueVisitor)
     }
 }
 
