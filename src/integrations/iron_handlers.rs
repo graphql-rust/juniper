@@ -7,17 +7,14 @@ use iron::method;
 use urlencoded::{UrlEncodedQuery, UrlDecodingError};
 
 use std::io::Read;
-use std::io::Error as IoError;
-use std::io::ErrorKind;
 use std::error::Error;
 use std::fmt;
-use std::boxed::Box;
 
 use serde_json;
 use serde_json::error::Error as SerdeError;
 
-use ::{InputValue, GraphQLType, RootNode, execute};
-use super::serde::{WrappedGraphQLResult, GraphQLQuery};
+use ::{InputValue, GraphQLType, RootNode};
+use ::http;
 
 /// Handler that executes GraphQL queries in the given schema
 ///
@@ -45,45 +42,29 @@ pub struct GraphiQLHandler {
 }
 
 
-/// Get queries are allowed to repeat the same key more than once.
-fn check_for_repeat_keys(params: &Vec<String>) -> Result<(), IronError> {
-    if params.len() > 1 {
-        let error = IronError::new(
-            Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
-                                                        "Was able parse a query string \
-                                                        but a duplicate uri key was \
-                                                        found."))),
-                    (status::BadRequest, "Duplicate uri key was found."));
-        Err(error)
+fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
+    if values.len() == 1 {
+        Ok(values.remove(0))
     }
     else {
-        Ok(())
+        Err(GraphQLIronError::InvalidData("Duplicate URL query parameter").into())
     }
 }
 
-fn parse_url_param(param: Option<Vec<String>>) -> Result<Option<String>, IronError> {
-    if let Some(values) = param {
-            check_for_repeat_keys(&values)?;
-            Ok(Some(values[0].to_owned()))
+fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
+    if let Some(values) = params {
+        get_single_value(values).map(Some)
     }
     else {
         Ok(None)
     }
 }
 
-fn parse_variable_param(param: Option<Vec<String>>) -> Result<Option<InputValue>, IronError> {
-    if let Some(values) = param {
-        check_for_repeat_keys(&values)?;
-        match serde_json::from_str::<InputValue>(values[0].as_ref()) {
-            Ok(input_values) => {
-                Ok(Some(input_values))
-            }
-            Err(err) => {
-                Err(IronError::new(
-                    Box::new(GraphQlIronError::Serde(err)),
-                    (status::BadRequest, "No JSON object was decoded.")))
-            }
-        }
+fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputValue>> {
+    if let Some(values) = params {
+        Ok(serde_json::from_str::<InputValue>(get_single_value(values)?.as_ref())
+            .map(Some)
+            .map_err(GraphQLIronError::Serde)?)
     }
     else {
         Ok(None)
@@ -112,62 +93,36 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     }
 
 
-    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLQuery> {
-         match req.get_mut::<UrlEncodedQuery>() {
-            Ok(ref mut query_string) => {
-                let input_query = parse_url_param(query_string.remove("query").to_owned())?;
-                if let Some(query) = input_query {
-                    let operation_name =
-                        parse_url_param(query_string.remove("operationName"))?;
-                    let input_variables =
-                        parse_variable_param(query_string.remove("variables"))?;
-                        Ok(GraphQLQuery::new(query,operation_name,input_variables))
-                } else {
-                    Err(IronError::new(
-                        Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
-                                                                    "No query key was found in \
-                                                                    the Get request."))),
-                                (status::BadRequest, "No query was provided.")))
-                }
-            }
-            Err(err) => {
-                Err(IronError::new(
-                    Box::new(GraphQlIronError::Url(err)),
-                            (status::BadRequest, "No JSON object was decoded.")))
-            }
-        }
+    fn handle_get(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
+        let url_query_string = req.get_mut::<UrlEncodedQuery>()
+            .map_err(|e| GraphQLIronError::Url(e))?;
+    
+        let input_query = parse_url_param(url_query_string.remove("query"))?
+            .ok_or_else(|| GraphQLIronError::InvalidData("No query provided"))?;
+        let operation_name = parse_url_param(url_query_string.remove("operationName"))?;
+        let variables = parse_variable_param(url_query_string.remove("variables"))?;
+
+        Ok(http::GraphQLRequest::new(input_query, operation_name, variables))
     }
 
-    fn handle_post(&self, req: &mut Request) -> IronResult<GraphQLQuery> {
+    fn handle_post(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let mut request_payload = String::new();
         itry!(req.body.read_to_string(&mut request_payload));
-        let graphql_query = serde_json::from_str::<GraphQLQuery>(request_payload.as_str()).map_err(|err|{
-            IronError::new(
-                Box::new(GraphQlIronError::Serde(err)),
-                (status::BadRequest, "No JSON object was decoded."))
-        });
-        graphql_query
+        
+        Ok(serde_json::from_str::<http::GraphQLRequest>(request_payload.as_str())
+            .map_err(|err| GraphQLIronError::Serde(err))?)
     }
 
-    fn respond(&self, req: &mut Request, graphql: GraphQLQuery) -> IronResult<Response> {
-       let context = (self.context_factory)(req);
-       let variables = graphql.variables();
-       let result = execute(graphql.query(),
-                            graphql.operation_name(),
-                            &self.root_node,
-                            &variables,
-                            &context);
-      let content_type = "application/json".parse::<Mime>().unwrap();
-      if result.is_ok() {
-          let response = WrappedGraphQLResult::new(result);
-          let json = serde_json::to_string_pretty(&response).unwrap();
-          Ok(Response::with((content_type, status::Ok, json)))
-      } else {
-          let response = WrappedGraphQLResult::new(result);
-          let json = serde_json::to_string_pretty(&response).unwrap();
-          Ok(Response::with((content_type, status::BadRequest, json)))
-      }
-   }
+    fn execute(&self, context: &CtxT, request: http::GraphQLRequest) -> IronResult<Response> {
+        let response = request.execute(
+            &self.root_node,
+            context,
+        );
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        let json = serde_json::to_string_pretty(&response).unwrap();
+        let status = if response.is_ok() { status::Ok } else { status::BadRequest };
+        Ok(Response::with((content_type, status, json)))
+    }
 }
 
 impl GraphiQLHandler {
@@ -191,17 +146,15 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
           Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static, 'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
-        match req.method {
-            method::Get =>  {
-                let graphql_query = self.handle_get(&mut req)?;
-                self.respond(&mut req, graphql_query)
-            }
-            method::Post => {
-                let graphql_query = self.handle_post(&mut req)?;
-                self.respond(&mut req, graphql_query)
-            },
-            _ => Ok(Response::with((status::MethodNotAllowed)))
-        }
+        let context = (self.context_factory)(req);
+
+        let graphql_request = match req.method {
+            method::Get => self.handle_get(&mut req)?,
+            method::Post => self.handle_post(&mut req)?,
+            _ => return Ok(Response::with((status::MethodNotAllowed)))
+        };
+
+        self.execute(&context, graphql_request)
     }
 }
 
@@ -209,121 +162,54 @@ impl Handler for GraphiQLHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
         let content_type = "text/html".parse::<Mime>().unwrap();
 
-        let stylesheet_source = r#"
-        <style>
-            html, body, #app {
-                height: 100%;
-                margin: 0;
-                overflow: hidden;
-                width: 100%;
-            }
-        </style>
-        "#;
-        let fetcher_source = r#"
-        <script>
-            function graphQLFetcher(params) {
-                return fetch(GRAPHQL_URL, {
-                    method: 'post',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(params)
-                }).then(function (response) {
-                    return response.text();
-                }).then(function (body) {
-                    try {
-                        return JSON.parse(body);
-                    } catch (error) {
-                        return body;
-                    }
-                });
-            }
-            ReactDOM.render(
-                React.createElement(GraphiQL, {
-                    fetcher: graphQLFetcher,
-                }),
-                document.querySelector('#app'));
-        </script>
-        "#;
-
-        let source = format!(r#"
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>GraphQL</title>
-        {stylesheet_source}
-        <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.8.1/graphiql.css">
-    </head>
-    <body>
-        <div id="app"></div>
-
-        <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.1/fetch.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.8.1/graphiql.js"></script>
-        <script>var GRAPHQL_URL = '{graphql_url}';</script>
-        {fetcher_source}
-    </body>
-</html>
-"#,
-            graphql_url = self.graphql_url,
-            stylesheet_source = stylesheet_source,
-            fetcher_source = fetcher_source);
-
-        Ok(Response::with((content_type, status::Ok, source)))
+        Ok(Response::with((
+            content_type,
+            status::Ok,
+            ::graphiql::graphiql_source(&self.graphql_url),
+        )))
     }
 }
 
-/// A general error allowing the developer to see the underlying issue.
 #[derive(Debug)]
-pub enum GraphQlIronError {
-    ///Captures any errors that were caused by Serde.
+enum GraphQLIronError {
     Serde(SerdeError),
-    /// Captures any error related the IO.
-    IO(IoError),
-    /// Captures any error related to Url Decoding,
-    Url(UrlDecodingError)
+    Url(UrlDecodingError),
+    InvalidData(&'static str),
 }
 
-impl fmt::Display for GraphQlIronError {
+impl fmt::Display for GraphQLIronError {
     fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GraphQlIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQlIronError::IO(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQlIronError::Url(ref err) => fmt::Display::fmt(err, &mut f),
+            GraphQLIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
+            GraphQLIronError::Url(ref err) => fmt::Display::fmt(err, &mut f),
+            GraphQLIronError::InvalidData(ref err) => fmt::Display::fmt(err, &mut f),
         }
     }
 }
 
-impl Error for GraphQlIronError {
+impl Error for GraphQLIronError {
     fn description(&self) -> &str {
        match *self {
-           GraphQlIronError::Serde(ref err) => {
-               err.description()
-           },
-           GraphQlIronError::IO(ref err) => {
-               err.description()
-           }
-           GraphQlIronError::Url(ref err) => {
-               err.description()
-           }
+           GraphQLIronError::Serde(ref err) => err.description(),
+           GraphQLIronError::Url(ref err) => err.description(),
+           GraphQLIronError::InvalidData(ref err) => err,
        }
-   }
+    }
 
-   fn cause(&self) -> Option<&Error> {
-       match *self {
-           GraphQlIronError::Serde(ref err) => {
-               err.cause()
-           }
-           GraphQlIronError::IO(ref err) => {
-               err.cause()
-           }
-           GraphQlIronError::Url(ref err) => {
-               err.cause()
-           }
-       }
-   }
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            GraphQLIronError::Serde(ref err) => Some(err),
+            GraphQLIronError::Url(ref err) => Some(err),
+            GraphQLIronError::InvalidData(_) => None,
+        }
+    }
+}
+
+impl From<GraphQLIronError> for IronError {
+    fn from(err: GraphQLIronError) -> IronError {
+        let message = format!("{}", err);
+        IronError::new(err, (status::BadRequest, message))
+    }
 }
 
 

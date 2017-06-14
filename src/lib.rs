@@ -203,6 +203,8 @@ mod schema;
 mod validation;
 mod executor;
 mod integrations;
+pub mod graphiql;
+pub mod http;
 #[macro_use] mod result_ext;
 
 #[cfg(all(test, not(feature="expose-test-schema")))] mod tests;
