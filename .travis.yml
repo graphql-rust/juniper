@@ -25,6 +25,10 @@ script:
   - cargo build --verbose --features iron-handlers
   - cargo test --verbose --features "iron-handlers expose-test-schema"
 
+before_deploy:
+  - rm -rf target/package/
+  - cargo package --verbose
+
 deploy:
   provider: releases
   api_key:
