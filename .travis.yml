@@ -6,9 +6,10 @@ rust:
   - beta
   - nightly
 
-  # The two most recent stable releases before "stable"
+  # Prevent accidentally breaking older Rust versions
   - 1.15.0
   - 1.16.0
+  - 1.17.0
 
 matrix:
   allow_failures:
