@@ -90,3 +90,120 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use serde_json::Value as Json;
+    use serde_json;
+
+    pub struct TestResponse {
+        pub status_code: i32,
+        pub body: Option<String>,
+        pub content_type: String,
+    }
+
+    pub trait HTTPIntegration {
+        fn get(&self, url: &str) -> TestResponse;
+        fn post(&self, url: &str, body: &str) -> TestResponse;
+    }
+
+    pub fn run_http_test_suite<T: HTTPIntegration>(integration: &T) {
+        println!("Running HTTP Test suite for integration");
+
+        println!("  - test_simple_get");
+        test_simple_get(integration);
+
+        println!("  - test_encoded_get");
+        test_encoded_get(integration);
+
+        println!("  - test_get_with_variables");
+        test_get_with_variables(integration);
+
+        println!("  - test_simple_post");
+        test_simple_post(integration);
+    }
+
+    fn unwrap_json_response(response: &TestResponse) -> Json {
+        serde_json::from_str::<Json>(
+            response.body.as_ref().expect("No data returned from request")
+        ).expect("Could not parse JSON object")
+    }
+
+    fn test_simple_get<T: HTTPIntegration>(integration: &T) {
+        let response = integration.get("/?query={hero{name}}");
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.content_type.as_str(), "application/json");
+
+        assert_eq!(
+            unwrap_json_response(&response),
+            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
+                .expect("Invalid JSON constant in test"));
+    }
+
+    fn test_encoded_get<T: HTTPIntegration>(integration: &T) {
+        let response = integration.get(
+            "/?query=query%20{%20%20%20human(id:%20\"1000\")%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}");
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.content_type.as_str(), "application/json");
+
+        assert_eq!(
+            unwrap_json_response(&response),
+            serde_json::from_str::<Json>(r#"{
+                    "data": {
+                        "human": {
+                            "appearsIn": [
+                                "NEW_HOPE",
+                                "EMPIRE",
+                                "JEDI"
+                                ],
+                                "homePlanet": "Tatooine",
+                                "name": "Luke Skywalker",
+                                "id": "1000"
+                            }
+                        }
+                    }"#)
+                .expect("Invalid JSON constant in test"));
+    }
+
+    fn test_get_with_variables<T: HTTPIntegration>(integration: &T) {
+        let response = integration.get(
+            "/?query=query($id:%20String!)%20{%20%20%20human(id:%20$id)%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}&variables={%20%20%20\"id\":%20%20\"1000\"%20}");
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.content_type, "application/json");
+
+        assert_eq!(
+            unwrap_json_response(&response),
+            serde_json::from_str::<Json>(r#"{
+                    "data": {
+                        "human": {
+                            "appearsIn": [
+                                "NEW_HOPE",
+                                "EMPIRE",
+                                "JEDI"
+                                ],
+                                "homePlanet": "Tatooine",
+                                "name": "Luke Skywalker",
+                                "id": "1000"
+                            }
+                        }
+                    }"#)
+                .expect("Invalid JSON constant in test"));
+    }
+
+    fn test_simple_post<T: HTTPIntegration>(integration: &T) {
+        let response = integration.post(
+            "/",
+            r#"{"query": "{hero{name}}"}"#);
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.content_type, "application/json");
+
+        assert_eq!(
+            unwrap_json_response(&response),
+            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
+                .expect("Invalid JSON constant in test"));
+    }
+}

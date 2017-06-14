@@ -215,21 +215,63 @@ impl From<GraphQLIronError> for IronError {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Value as Json;
-    use serde_json;
     use iron::prelude::*;
-    use iron::status;
-    use iron::headers;
     use iron_test::{request, response};
     use iron::{Handler, Headers};
 
     use ::tests::model::Database;
+    use ::http::tests as http_tests;
     use types::scalars::EmptyMutation;
 
     use super::GraphQLHandler;
 
+    struct TestIronIntegration;
+
+    impl http_tests::HTTPIntegration for TestIronIntegration
+    {
+        fn get(&self, url: &str) -> http_tests::TestResponse {
+            make_test_response(request::get(
+                &("http://localhost:3000".to_owned() + url),
+                Headers::new(),
+                &make_handler(),
+            ))
+        }
+
+        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            make_test_response(request::post(
+                &("http://localhost:3000".to_owned() + url),
+                Headers::new(),
+                body,
+                &make_handler(),
+            ))
+        }
+    }
+
+    #[test]
+    fn test_iron_integration() {
+        let integration = TestIronIntegration;
+
+        http_tests::run_http_test_suite(&integration);
+    }
+
     fn context_factory(_: &mut Request) -> Database {
         Database::new()
+    }
+
+    fn make_test_response(response: IronResult<Response>) -> http_tests::TestResponse {
+        let response = response.expect("Error response from GraphQL handler");
+        let status_code = response.status.expect("No status code returned from handler").to_u16() as i32;
+        let content_type = String::from_utf8(
+            response.headers.get_raw("content-type")
+                .expect("No content type header from handler")[0].clone())
+            .expect("Content-type header invalid UTF-8");
+        let body = response::extract_body_to_string(response);
+
+        http_tests::TestResponse {
+            status_code: status_code,
+            body: Some(body),
+            content_type: content_type,
+        }
     }
 
     fn make_handler() -> Box<Handler> {
@@ -238,130 +280,5 @@ mod tests {
             Database::new(),
             EmptyMutation::<Database>::new(),
         ))
-    }
-
-    fn unwrap_json_response(resp: Response) -> Json {
-        let result = response::extract_body_to_string(resp);
-
-        serde_json::from_str::<Json>(&result).expect("Could not parse JSON object")
-    }
-
-    #[test]
-    fn test_simple_get() {
-        let response = request::get(
-            "http://localhost:3000/?query={hero{name}}",
-            Headers::new(),
-            &make_handler())
-            .expect("Unexpected IronError");
-
-        assert_eq!(response.status, Some(status::Ok));
-        assert_eq!(response.headers.get::<headers::ContentType>(),
-                   Some(&headers::ContentType::json()));
-
-        let json = unwrap_json_response(response);
-
-        assert_eq!(
-            json,
-            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
-                .expect("Invalid JSON constant in test"));
-    }
-
-    #[test]
-    fn test_encoded_get() {
-        let response = request::get(
-            "http://localhost:3000/?query=query%20{%20%20%20human(id:%20\"1000\")%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}",
-            Headers::new(),
-            &make_handler())
-            .expect("Unexpected IronError");
-
-        assert_eq!(response.status, Some(status::Ok));
-        assert_eq!(response.headers.get::<headers::ContentType>(),
-                   Some(&headers::ContentType::json()));
-
-        let json = unwrap_json_response(response);
-
-        assert_eq!(
-            json,
-            serde_json::from_str::<Json>(r#"{
-                    "data": {
-                        "human": {
-                            "appearsIn": [
-                                "NEW_HOPE",
-                                "EMPIRE",
-                                "JEDI"
-                                ],
-                                "homePlanet": "Tatooine",
-                                "name": "Luke Skywalker",
-                                "id": "1000"
-                            }
-                        }
-                    }"#)
-                .expect("Invalid JSON constant in test"));
-    }
-
-    #[test]
-    fn test_get_with_variables() {
-        let response = request::get(
-            "http://localhost:3000/?query=query($id:%20String!)%20{%20%20%20human(id:%20$id)%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}&variables={%20%20%20\"id\":%20%20\"1000\"%20}",
-            Headers::new(),
-            &make_handler())
-            .expect("Unexpected IronError");
-
-        assert_eq!(response.status, Some(status::Ok));
-        assert_eq!(response.headers.get::<headers::ContentType>(),
-                   Some(&headers::ContentType::json()));
-
-        let json = unwrap_json_response(response);
-
-        assert_eq!(
-            json,
-            serde_json::from_str::<Json>(r#"{
-                    "data": {
-                        "human": {
-                            "appearsIn": [
-                                "NEW_HOPE",
-                                "EMPIRE",
-                                "JEDI"
-                                ],
-                                "homePlanet": "Tatooine",
-                                "name": "Luke Skywalker",
-                                "id": "1000"
-                            }
-                        }
-                    }"#)
-                .expect("Invalid JSON constant in test"));
-    }
-
-
-    #[test]
-    fn test_simple_post() {
-        let response = request::post(
-            "http://localhost:3000/",
-            Headers::new(),
-            r#"{"query": "{hero{name}}"}"#,
-            &make_handler())
-            .expect("Unexpected IronError");
-
-        assert_eq!(response.status, Some(status::Ok));
-        assert_eq!(response.headers.get::<headers::ContentType>(),
-                   Some(&headers::ContentType::json()));
-
-        let json = unwrap_json_response(response);
-
-        assert_eq!(
-            json,
-            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
-                .expect("Invalid JSON constant in test"));
-    }
-
-    #[test]
-    fn test_unsupported_method() {
-        let response = request::options(
-            "http://localhost:3000/?query={hero{name}}",
-            Headers::new(),
-            &make_handler())
-            .expect("Unexpected IronError");
-
-        assert_eq!(response.status, Some(status::MethodNotAllowed));
     }
 }
