@@ -38,7 +38,7 @@ script:
   - export TEST_FEATURES="iron-handlers expose-test-schema"
   - |
     if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
-      export TEST_FEATURES="$TEST_FEATURES rocket-handlers"
+      export TEST_FEATURES="$TEST_FEATURES rocket-handlers rocket/testing"
     fi
 
   - cargo test --verbose --features "$TEST_FEATURES"

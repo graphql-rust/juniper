@@ -19,11 +19,20 @@ fn graphiql() -> content::HTML<String> {
     rocket_handlers::graphiql_source("/graphql")
 }
 
+#[get("/graphql?<request>")]
+fn get_graphql_handler(
+    context: State<Database>,
+    request: rocket_handlers::GraphQLRequest,
+    schema: State<Schema>,
+) -> rocket_handlers::GraphQLResponse {
+    request.execute(&schema, &context)
+}
+
 #[post("/graphql", data="<request>")]
 fn post_graphql_handler(
     context: State<Database>,
     request: rocket_handlers::GraphQLRequest,
-    schema: State<Schema>
+    schema: State<Schema>,
 ) -> rocket_handlers::GraphQLResponse {
     request.execute(&schema, &context)
 }
@@ -32,6 +41,6 @@ fn main() {
     rocket::ignite()
         .manage(Database::new())
         .manage(Schema::new(Database::new(), EmptyMutation::<Database>::new()))
-        .mount("/", routes![graphiql, post_graphql_handler])
+        .mount("/", routes![graphiql, get_graphql_handler, post_graphql_handler])
         .launch();
 }
