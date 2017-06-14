@@ -5,10 +5,13 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 description = "GraphQL server library"
 license = "BSD-2-Clause"
 documentation = "http://mhallin.github.io/juniper"
-repository = "https://github.com/mhallin/juniper"
+repository = "https://docs.rs/juniper"
 readme = "README.md"
 keywords = ["graphql", "server", "iron", "http", "web"]
 categories = ["web-programming"]
+
+[package.metadata.docs.rs]
+features = [ "iron-handlers" ]
 
 [[bench]]
 name = "bench"
