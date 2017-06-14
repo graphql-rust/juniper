@@ -14,7 +14,7 @@ schema, as well as an optional integration into the [Iron framework][2]. It
 tries to keep the number of dynamic operations to a minimum, and give you as the
 schema developer the control of the query execution path.
 
-Juniper only depends on `rustc-serialize` by default, making it lightweight and
+Juniper only depends on `serde` and `serde_json` by default, making it lightweight and
 easy to drop into any project. Through the `iron-handlers` feature, it also
 depends on Iron.
 
@@ -185,13 +185,13 @@ built-in [GraphiQL][6] handler included.
 
 #![cfg_attr(feature="nightly", feature(test))]
 #![warn(missing_docs)]
-
-#[cfg(feature="rustc-serialize")] extern crate rustc_serialize;
-#[cfg(feature="serde")] extern crate serde;
-
 #[cfg(feature="nightly")] extern crate test;
-#[cfg(feature="iron-handlers")] #[macro_use(itry, iexpect)] extern crate iron;
+#[cfg(feature="iron-handlers")] #[macro_use(itry)] extern crate iron;
+#[cfg(feature="iron-handlers")] extern crate urlencoded;
 #[cfg(test)] extern crate iron_test;
+extern crate serde;
+extern crate serde_json;
+#[cfg(feature="iron-handlers")] #[macro_use] extern crate serde_derive;
 
 #[macro_use] mod macros;
 mod ast;

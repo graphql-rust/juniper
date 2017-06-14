@@ -1,13 +1,16 @@
 use serde::{de, ser};
 use serde::ser::SerializeMap;
-use std::collections::HashMap;
 use std::fmt;
+use std::collections::HashMap;
 
 use ::{GraphQLError, Value};
+#[cfg(feature="iron-handlers")]
+use ::Variables;
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, Spanning, SourcePosition};
 use validation::RuleError;
+
 
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -210,6 +213,90 @@ impl ser::Serialize for Value {
             Value::Boolean(v) => serializer.serialize_bool(v),
             Value::List(ref v) => v.serialize(serializer),
             Value::Object(ref v) => v.serialize(serializer),
+        }
+    }
+}
+
+/// The expected structure of the decoded JSON Document for either Post or Get requests.
+#[cfg(feature="iron-handlers")]
+#[derive(Deserialize)]
+pub struct GraphQlQuery {
+    query: String,
+    #[serde(rename = "operationName")]
+    operation_name: Option<String>,
+    variables: Option<InputValue>
+}
+
+#[cfg(feature="iron-handlers")]
+impl GraphQlQuery {
+
+    pub fn new(query: String,
+               operation_name: Option<String>,
+               variables: Option<InputValue>
+              ) ->  GraphQlQuery {
+                GraphQlQuery {
+                    query: query,
+                    operation_name: operation_name,
+                    variables: variables
+                }
+           }
+
+    pub fn query(&self) -> &str {
+        self.query.as_str()
+    }
+
+    pub fn operation_name(&self) -> Option<&str> {
+        self.operation_name.as_ref().map(|oper_name| &**oper_name)
+    }
+
+    pub fn variables(&self) -> Variables {
+        self.variables.as_ref().and_then(|iv| {
+          iv.to_object_value().map(|o| {
+              o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect()
+          })
+      }).unwrap_or_default()
+    }
+
+}
+
+
+#[cfg(feature="iron-handlers")]
+pub struct WrappedGraphQLResult<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
+
+#[cfg(feature="iron-handlers")]
+impl<'a> WrappedGraphQLResult<'a> {
+    pub fn new(result: Result<(Value, Vec<ExecutionError>),
+               GraphQLError<'a>>
+           ) -> WrappedGraphQLResult<'a> {
+        WrappedGraphQLResult(result)
+    }
+}
+
+#[cfg(feature="iron-handlers")]
+impl<'a> ser::Serialize for WrappedGraphQLResult<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: ser::Serializer,
+    {
+        match self.0 {
+            Ok((ref res, ref err)) => {
+                let mut map = try!(serializer.serialize_map(None));
+
+                try!(map.serialize_key("data"));
+                try!(map.serialize_value(res));
+
+                if !err.is_empty() {
+                    try!(map.serialize_key("errors"));
+                    try!(map.serialize_value(err));
+                }
+
+                map.end()
+            },
+            Err(ref err) => {
+                let mut map = try!(serializer.serialize_map(Some(1)));
+                try!(map.serialize_key("errors"));
+                try!(map.serialize_value(err));
+                map.end()
+            },
         }
     }
 }

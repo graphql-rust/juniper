@@ -20,15 +20,18 @@ name = "server"
 required-features = ["iron-handlers", "expose-test-schema"]
 
 [features]
-default = ["rustc-serialize"]
+default = ["serde", "serde_json"]
 nightly = []
-iron-handlers = ["iron", "rustc-serialize"]
+iron-handlers = ["iron", "default", "serde_derive", "urlencoded"]
 expose-test-schema = []
 
 [dependencies]
-rustc-serialize = { version = "^0.3.19", optional = true }
 iron = { version = "^0.5.1", optional = true }
 serde = { version = "^0.9.1", optional = true }
+serde_json = {version ="^0.9.1", optional = true }
+serde_derive = {version="^0.9.1", optional = true }
+urlencoded = {version="0.5", optional=true}
+
 
 [dev-dependencies]
 iron = "^0.5.1"
