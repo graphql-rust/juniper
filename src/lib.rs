@@ -14,9 +14,9 @@ schema, as well as an optional integration into the [Iron framework][2]. It
 tries to keep the number of dynamic operations to a minimum, and give you as the
 schema developer the control of the query execution path.
 
-Juniper only depends on `serde` and `serde_json` by default, making it lightweight and
-easy to drop into any project. Through the `iron-handlers` feature, it also
-depends on Iron.
+Juniper only depends on `serde` and `serde_derive` by default, making it
+lightweight and easy to drop into any project. Through the `iron-handlers`
+feature, it also depends on Iron.
 
 ## Exposing data types
 
@@ -190,8 +190,9 @@ built-in [GraphiQL][6] handler included.
 #[cfg(feature="iron-handlers")] extern crate urlencoded;
 #[cfg(test)] extern crate iron_test;
 extern crate serde;
-extern crate serde_json;
-#[cfg(feature="iron-handlers")] #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_derive;
+
+#[cfg(feature="iron-handlers")] extern crate serde_json;
 
 #[macro_use] mod macros;
 mod ast;

@@ -3,9 +3,7 @@ use serde::ser::SerializeMap;
 use std::fmt;
 use std::collections::HashMap;
 
-use ::{GraphQLError, Value};
-#[cfg(feature="iron-handlers")]
-use ::Variables;
+use ::{GraphQLError, Value, Variables};
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, Spanning, SourcePosition};
@@ -218,23 +216,20 @@ impl ser::Serialize for Value {
 }
 
 /// The expected structure of the decoded JSON Document for either Post or Get requests.
-#[cfg(feature="iron-handlers")]
 #[derive(Deserialize)]
-pub struct GraphQlQuery {
+pub struct GraphQLQuery {
     query: String,
     #[serde(rename = "operationName")]
     operation_name: Option<String>,
     variables: Option<InputValue>
 }
 
-#[cfg(feature="iron-handlers")]
-impl GraphQlQuery {
-
+impl GraphQLQuery {
     pub fn new(query: String,
                operation_name: Option<String>,
                variables: Option<InputValue>
-              ) ->  GraphQlQuery {
-                GraphQlQuery {
+              ) ->  GraphQLQuery {
+                GraphQLQuery {
                     query: query,
                     operation_name: operation_name,
                     variables: variables
@@ -260,10 +255,8 @@ impl GraphQlQuery {
 }
 
 
-#[cfg(feature="iron-handlers")]
 pub struct WrappedGraphQLResult<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
 
-#[cfg(feature="iron-handlers")]
 impl<'a> WrappedGraphQLResult<'a> {
     pub fn new(result: Result<(Value, Vec<ExecutionError>),
                GraphQLError<'a>>
@@ -272,7 +265,6 @@ impl<'a> WrappedGraphQLResult<'a> {
     }
 }
 
-#[cfg(feature="iron-handlers")]
 impl<'a> ser::Serialize for WrappedGraphQLResult<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: ser::Serializer,

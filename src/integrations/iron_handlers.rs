@@ -17,7 +17,7 @@ use serde_json;
 use serde_json::error::Error as SerdeError;
 
 use ::{InputValue, GraphQLType, RootNode, execute};
-use super::serde::{WrappedGraphQLResult, GraphQlQuery};
+use super::serde::{WrappedGraphQLResult, GraphQLQuery};
 
 /// Handler that executes GraphQL queries in the given schema
 ///
@@ -112,7 +112,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     }
 
 
-    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQlQuery> {
+    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLQuery> {
          match req.get_mut::<UrlEncodedQuery>() {
             Ok(ref mut query_string) => {
                 let input_query = parse_url_param(query_string.remove("query").to_owned())?;
@@ -121,7 +121,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
                         parse_url_param(query_string.remove("operationName"))?;
                     let input_variables =
                         parse_variable_param(query_string.remove("variables"))?;
-                        Ok(GraphQlQuery::new(query,operation_name,input_variables))
+                        Ok(GraphQLQuery::new(query,operation_name,input_variables))
                 } else {
                     Err(IronError::new(
                         Box::new(GraphQlIronError::IO(IoError::new(ErrorKind::InvalidData,
@@ -138,10 +138,10 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         }
     }
 
-    fn handle_post(&self, req: &mut Request) -> IronResult<GraphQlQuery> {
+    fn handle_post(&self, req: &mut Request) -> IronResult<GraphQLQuery> {
         let mut request_payload = String::new();
         itry!(req.body.read_to_string(&mut request_payload));
-        let graphql_query = serde_json::from_str::<GraphQlQuery>(request_payload.as_str()).map_err(|err|{
+        let graphql_query = serde_json::from_str::<GraphQLQuery>(request_payload.as_str()).map_err(|err|{
             IronError::new(
                 Box::new(GraphQlIronError::Serde(err)),
                 (status::BadRequest, "No JSON object was decoded."))
@@ -149,7 +149,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
         graphql_query
     }
 
-    fn respond(&self, req: &mut Request, graphql: GraphQlQuery) -> IronResult<Response> {
+    fn respond(&self, req: &mut Request, graphql: GraphQLQuery) -> IronResult<Response> {
        let context = (self.context_factory)(req);
        let variables = graphql.variables();
        let result = execute(graphql.query(),
