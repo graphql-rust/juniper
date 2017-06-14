@@ -185,6 +185,11 @@ built-in [GraphiQL][6] handler included.
 
 #![cfg_attr(feature="nightly", feature(test))]
 #![warn(missing_docs)]
+
+#![cfg_attr(feature="rocket-handlers", feature(plugin))]
+#![cfg_attr(feature="rocket-handlers", plugin(rocket_codegen))]
+#[cfg(feature="rocket-handlers")] extern crate rocket;
+
 #[cfg(feature="nightly")] extern crate test;
 #[cfg(feature="iron-handlers")] #[macro_use(itry)] extern crate iron;
 #[cfg(feature="iron-handlers")] extern crate urlencoded;
@@ -192,7 +197,7 @@ built-in [GraphiQL][6] handler included.
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 
-#[cfg(feature="iron-handlers")] extern crate serde_json;
+#[cfg(any(feature="iron-handlers", feature="rocket-handlers"))] extern crate serde_json;
 
 #[macro_use] mod macros;
 mod ast;
@@ -232,6 +237,7 @@ pub use result_ext::ResultExt;
 pub use schema::meta;
 
 #[cfg(feature="iron-handlers")] pub use integrations::iron_handlers;
+#[cfg(feature="rocket-handlers")] pub use integrations::rocket_handlers;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
