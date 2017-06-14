@@ -7,8 +7,6 @@ rust:
   - nightly
 
   # Prevent accidentally breaking older Rust versions
-  - 1.15.0
-  - 1.16.0
   - 1.17.0
   - 1.18.0
 
