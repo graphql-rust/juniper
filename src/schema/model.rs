@@ -117,7 +117,7 @@ impl<'a> SchemaType<'a> {
         SchemaType {
             types: registry.types,
             query_type_name: query_type_name,
-            mutation_type_name: if &mutation_type_name != "__EmptyMutation" { Some(mutation_type_name) } else { None },
+            mutation_type_name: if &mutation_type_name != "_EmptyMutation" { Some(mutation_type_name) } else { None },
             directives: directives,
         }
     }

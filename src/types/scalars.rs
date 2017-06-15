@@ -166,7 +166,7 @@ impl<T> GraphQLType for EmptyMutation<T> {
     type Context = T;
 
     fn name() -> Option<&'static str> {
-        Some("__EmptyMutation")
+        Some("_EmptyMutation")
     }
 
     fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {

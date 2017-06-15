@@ -34,6 +34,9 @@ impl<'a, CtxT, QueryT, MutationT> GraphQLType for RootNode<'a, QueryT, MutationT
 graphql_object!(<'a> SchemaType<'a>: SchemaType<'a> as "__Schema" |&self| {
     field types() -> Vec<TypeType> {
         self.type_list()
+            .into_iter()
+            .filter(|t| t.to_concrete().map(|t| t.name() != Some("_EmptyMutation")).unwrap_or(false))
+            .collect()
     }
 
     field query_type() -> TypeType {
@@ -84,6 +87,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
                 Some(fields
                     .iter()
                     .filter(|f| include_deprecated || f.deprecation_reason.is_none())
+                    .filter(|f| !f.name.starts_with("__"))
                     .collect()),
             _ => None,
         }
