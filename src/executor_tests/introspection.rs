@@ -218,7 +218,7 @@ fn interface_introspection() {
         .get("fields").expect("fields field missing")
         .as_list_value().expect("fields field not an object value");
 
-    assert_eq!(fields.len(), 2);
+    assert_eq!(fields.len(), 1);
 
     assert!(fields.contains(&Value::object(vec![
         ("name", Value::string("sampleEnum")),
@@ -316,7 +316,7 @@ fn object_introspection() {
         .get("fields").expect("fields field missing")
         .as_list_value().expect("fields field not an object value");
 
-    assert_eq!(fields.len(), 5); // The two fields, __typename, __type, __schema
+    assert_eq!(fields.len(), 2);
 
     println!("Fields: {:#?}", fields);
 
