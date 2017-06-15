@@ -108,6 +108,14 @@ graphql_object!(TestType: () |&self| {
     field input_with_defaults(arg: InputWithDefaults) -> String {
         format!("a: {:?}", arg.a)
     }
+
+    field integer_input(value: i64) -> String {
+        format!("value: {}", value)
+    }
+
+    field float_input(value: f64) -> String {
+        format!("value: {}", value)
+    }
 });
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
@@ -944,4 +952,127 @@ fn input_object_with_default_values() {
                 result.get("inputWithDefaults"),
                 Some(&Value::string(r#"a: 2"#)));
         });
+}
+
+
+mod integers {
+    use super::*;
+
+    #[test]
+    fn positive_and_negative_should_work() {
+        run_variable_query(
+            r#"query q($var: Int!) { integerInput(value: $var) }"#,
+            vec![
+                ("var".to_owned(), InputValue::int(1)),
+            ].into_iter().collect(),
+            |result| {
+                assert_eq!(
+                    result.get("integerInput"),
+                    Some(&Value::string(r#"value: 1"#)));
+            });
+
+        run_variable_query(
+            r#"query q($var: Int!) { integerInput(value: $var) }"#,
+            vec![
+                ("var".to_owned(), InputValue::int(-1)),
+            ].into_iter().collect(),
+            |result| {
+                assert_eq!(
+                    result.get("integerInput"),
+                    Some(&Value::string(r#"value: -1"#)));
+            });
+    }
+
+    #[test]
+    fn does_not_coerce_from_float() {
+        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+        let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
+        let vars = vec![
+            ("var".to_owned(), InputValue::float(10.0)),
+        ].into_iter().collect();
+
+        let error = ::execute(query, None, &schema, &vars, &())
+            .unwrap_err();
+
+        assert_eq!(error, ValidationError(vec![
+            RuleError::new(
+                r#"Variable "$var" got invalid value. Expected "Int"."#,
+                &[SourcePosition::new(8, 0, 8)],
+            ),
+        ]));
+    }
+
+    #[test]
+    fn does_not_coerce_from_string() {
+        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+        let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
+        let vars = vec![
+            ("var".to_owned(), InputValue::string("10")),
+        ].into_iter().collect();
+
+        let error = ::execute(query, None, &schema, &vars, &())
+            .unwrap_err();
+
+        assert_eq!(error, ValidationError(vec![
+            RuleError::new(
+                r#"Variable "$var" got invalid value. Expected "Int"."#,
+                &[SourcePosition::new(8, 0, 8)],
+            ),
+        ]));
+    }
+}
+
+
+mod floats {
+    use super::*;
+
+    #[test]
+    fn float_values_should_work() {
+        run_variable_query(
+            r#"query q($var: Float!) { floatInput(value: $var) }"#,
+            vec![
+                ("var".to_owned(), InputValue::float(10.0)),
+            ].into_iter().collect(),
+            |result| {
+                assert_eq!(
+                    result.get("floatInput"),
+                    Some(&Value::string(r#"value: 10"#)));
+            });
+    }
+
+    #[test]
+    fn coercion_from_integers_should_work() {
+        run_variable_query(
+            r#"query q($var: Float!) { floatInput(value: $var) }"#,
+            vec![
+                ("var".to_owned(), InputValue::int(-1)),
+            ].into_iter().collect(),
+            |result| {
+                assert_eq!(
+                    result.get("floatInput"),
+                    Some(&Value::string(r#"value: -1"#)));
+            });
+    }
+
+    #[test]
+    fn does_not_coerce_from_string() {
+        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+        let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
+        let vars = vec![
+            ("var".to_owned(), InputValue::string("10")),
+        ].into_iter().collect();
+
+        let error = ::execute(query, None, &schema, &vars, &())
+            .unwrap_err();
+
+        assert_eq!(error, ValidationError(vec![
+            RuleError::new(
+                r#"Variable "$var" got invalid value. Expected "Float"."#,
+                &[SourcePosition::new(8, 0, 8)],
+            ),
+        ]));
+    }
 }

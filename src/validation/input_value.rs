@@ -133,6 +133,17 @@ fn unify_scalar<'a>(
     errors: &mut Vec<RuleError>,
     path: &Path<'a>,
 ) {
+    if !(meta.try_parse_fn)(value) {
+        push_unification_error(
+            errors,
+            var_name,
+            var_pos,
+            path,
+            &format!(r#"Expected "{}""#, meta.name),
+        );
+        return;
+    }
+
     match *value {
         InputValue::List(_) =>
             push_unification_error(
