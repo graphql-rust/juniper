@@ -45,7 +45,7 @@ enum FurColor {
 #[derive(Debug)]
 struct ComplexInput {
     required_field: bool,
-    int_field: Option<i64>,
+    int_field: Option<i32>,
     string_field: Option<String>,
     boolean_field: Option<bool>,
     string_list_field: Option<Vec<Option<String>>>,
@@ -144,15 +144,15 @@ impl GraphQLType for Dog {
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
             registry.field::<Option<String>>("nickname"),
-            registry.field::<Option<i64>>("barkVolume"),
+            registry.field::<Option<i32>>("barkVolume"),
             registry.field::<Option<bool>>("barks"),
             registry.field::<Option<bool>>("doesKnowCommand")
                 .argument(registry.arg::<Option<DogCommand>>("dogCommand")),
             registry.field::<Option<bool>>("isHousetrained")
                 .argument(registry.arg_with_default("atOtherHomes", &true)),
             registry.field::<Option<bool>>("isAtLocation")
-                .argument(registry.arg::<Option<i64>>("x"))
-                .argument(registry.arg::<Option<i64>>("y")),
+                .argument(registry.arg::<Option<i32>>("x"))
+                .argument(registry.arg::<Option<i32>>("y")),
         ];
 
         registry.build_object_type::<Self>(fields)
@@ -208,7 +208,7 @@ impl GraphQLType for Cat {
                 .argument(registry.arg::<Option<bool>>("surname")),
             registry.field::<Option<String>>("nickname"),
             registry.field::<Option<bool>>("meows"),
-            registry.field::<Option<i64>>("meowVolume"),
+            registry.field::<Option<i32>>("meowVolume"),
             registry.field::<Option<FurColor>>("furColor"),
         ];
 
@@ -248,7 +248,7 @@ impl GraphQLType for Intelligent {
 
     fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
-            registry.field::<Option<i64>>("iq"),
+            registry.field::<Option<i32>>("iq"),
         ];
 
         registry.build_interface_type::<Self>(fields)
@@ -269,7 +269,7 @@ impl GraphQLType for Human {
                 .argument(registry.arg::<Option<bool>>("surname")),
             registry.field::<Option<Vec<Option<Pet>>>>("pets"),
             registry.field::<Option<Vec<Human>>>("relatives"),
-            registry.field::<Option<i64>>("iq"),
+            registry.field::<Option<i32>>("iq"),
         ];
         registry.build_object_type::<Self>(fields)
             .interfaces(&[
@@ -291,8 +291,8 @@ impl GraphQLType for Alien {
         let fields = &[
             registry.field::<Option<String>>("name")
                 .argument(registry.arg::<Option<bool>>("surname")),
-            registry.field::<Option<i64>>("iq"),
-            registry.field::<Option<i64>>("numEyes"),
+            registry.field::<Option<i32>>("iq"),
+            registry.field::<Option<i32>>("numEyes"),
         ];
 
         registry.build_object_type::<Self>(fields)
@@ -350,7 +350,7 @@ impl GraphQLType for ComplexInput {
     fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.arg::<bool>("requiredField"),
-            registry.arg::<Option<i64>>("intField"),
+            registry.arg::<Option<i32>>("intField"),
             registry.arg::<Option<String>>("stringField"),
             registry.arg::<Option<bool>>("booleanField"),
             registry.arg::<Option<Vec<Option<String>>>>("stringListField"),
@@ -391,9 +391,9 @@ impl GraphQLType for ComplicatedArgs {
     fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
         let fields = &[
             registry.field::<Option<String>>("intArgField")
-                .argument(registry.arg::<Option<i64>>("intArg")),
+                .argument(registry.arg::<Option<i32>>("intArg")),
             registry.field::<Option<String>>("nonNullIntArgField")
-                .argument(registry.arg::<i64>("nonNullIntArg")),
+                .argument(registry.arg::<i32>("nonNullIntArg")),
             registry.field::<Option<String>>("stringArgField")
                 .argument(registry.arg::<Option<String>>("stringArg")),
             registry.field::<Option<String>>("booleanArgField")
@@ -409,16 +409,16 @@ impl GraphQLType for ComplicatedArgs {
             registry.field::<Option<String>>("complexArgField")
                 .argument(registry.arg::<Option<ComplexInput>>("complexArg")),
             registry.field::<Option<String>>("multipleReqs")
-                .argument(registry.arg::<i64>("req1"))
-                .argument(registry.arg::<i64>("req2")),
+                .argument(registry.arg::<i32>("req1"))
+                .argument(registry.arg::<i32>("req2")),
             registry.field::<Option<String>>("multipleOpts")
-                .argument(registry.arg_with_default("opt1", &0i64))
-                .argument(registry.arg_with_default("opt2", &0i64)),
+                .argument(registry.arg_with_default("opt1", &0i32))
+                .argument(registry.arg_with_default("opt2", &0i32)),
             registry.field::<Option<String>>("multipleOptAndReq")
-                .argument(registry.arg::<i64>("req1"))
-                .argument(registry.arg::<i64>("req2"))
-                .argument(registry.arg_with_default("opt1", &0i64))
-                .argument(registry.arg_with_default("opt2", &0i64)),
+                .argument(registry.arg::<i32>("req1"))
+                .argument(registry.arg::<i32>("req2"))
+                .argument(registry.arg_with_default("opt1", &0i32))
+                .argument(registry.arg_with_default("opt2", &0i32)),
         ];
 
         registry.build_object_type::<Self>(fields)

@@ -80,8 +80,8 @@ graphql_input_object!(
 
 graphql_input_object!(
     struct FieldWithDefaults {
-        field_one = 123: i64,
-        field_two = 456: i64 as "The second field",
+        field_one = 123: i32,
+        field_two = 456: i32 as "The second field",
     }
 );
 
@@ -98,7 +98,7 @@ graphql_object!(Root: () |&self| {
         a9: NamedPublicWithDescription,
         a10: NamedPublic,
         a11: FieldWithDefaults,
-    ) -> i64 {
+    ) -> i32 {
         0
     }
 });

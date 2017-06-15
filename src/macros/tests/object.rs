@@ -22,7 +22,7 @@ struct Interface;
 struct CustomName;
 
 #[allow(dead_code)]
-struct WithLifetime<'a> { data: PhantomData<&'a i64> }
+struct WithLifetime<'a> { data: PhantomData<&'a i32> }
 
 #[allow(dead_code)]
 struct WithGenerics<T> { data: T }
@@ -37,21 +37,21 @@ struct CommasOnMeta;
 struct Root;
 
 graphql_object!(CustomName: () as "ACustomNamedType" |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 
 graphql_object!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 graphql_object!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 
 graphql_interface!(Interface: () |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     instance_resolvers: |_| {
         DescriptionFirst => Some(DescriptionFirst {}),
@@ -61,13 +61,13 @@ graphql_interface!(Interface: () |&self| {
 graphql_object!(DescriptionFirst: () |&self| {
     description: "A description"
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     interfaces: [Interface]
 });
 
 graphql_object!(FieldsFirst: () |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     description: "A description"
 
@@ -77,7 +77,7 @@ graphql_object!(FieldsFirst: () |&self| {
 graphql_object!(InterfacesFirst: ()|&self| {
     interfaces: [Interface]
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     description: "A description"
 });
@@ -85,7 +85,7 @@ graphql_object!(InterfacesFirst: ()|&self| {
 graphql_object!(CommasWithTrailing: () |&self| {
     interfaces: [Interface],
 
-    field simple() -> i64 { 0 },
+    field simple() -> i32 { 0 },
 
     description: "A description",
 });
@@ -95,14 +95,14 @@ graphql_object!(CommasOnMeta: () |&self| {
     interfaces: [Interface],
     description: "A description",
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 graphql_object!(<'a> Root: () as "Root" |&self| {
     field custom_name() -> CustomName { CustomName {} }
 
     field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
-    field with_generics() -> WithGenerics<i64> { WithGenerics { data: 123 } }
+    field with_generics() -> WithGenerics<i32> { WithGenerics { data: 123 } }
 
     field description_first() -> DescriptionFirst { DescriptionFirst {} }
     field fields_first() -> FieldsFirst { FieldsFirst {} }

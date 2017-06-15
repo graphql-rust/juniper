@@ -97,12 +97,12 @@ graphql_scalar!(bool as "Boolean" {
 });
 
 
-graphql_scalar!(i64 as "Int" {
+graphql_scalar!(i32 as "Int" {
     resolve(&self) -> Value {
         Value::int(*self)
     }
 
-    from_input_value(v: &InputValue) -> Option<i64> {
+    from_input_value(v: &InputValue) -> Option<i32> {
         match *v {
             InputValue::Int(i) => Some(i),
             _ => None,

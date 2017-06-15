@@ -71,7 +71,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 where E: de::Error,
             {
                 if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
-                    Ok(InputValue::int(value))
+                    Ok(InputValue::int(value as i32))
                 }
                 else {
                     Err(E::custom(format!("integer out of range")))
@@ -146,7 +146,7 @@ impl ser::Serialize for InputValue {
     {
         match *self {
             InputValue::Null | InputValue::Variable(_) => serializer.serialize_unit(),
-            InputValue::Int(v) => serializer.serialize_i64(v),
+            InputValue::Int(v) => serializer.serialize_i64(v as i64),
             InputValue::Float(v) => serializer.serialize_f64(v),
             InputValue::String(ref v) | InputValue::Enum(ref v) => serializer.serialize_str(v),
             InputValue::Boolean(v) => serializer.serialize_bool(v),
@@ -226,7 +226,7 @@ impl ser::Serialize for Value {
     {
         match *self {
             Value::Null => serializer.serialize_unit(),
-            Value::Int(v) => serializer.serialize_i64(v),
+            Value::Int(v) => serializer.serialize_i64(v as i64),
             Value::Float(v) => serializer.serialize_f64(v),
             Value::String(ref v) => serializer.serialize_str(v),
             Value::Boolean(v) => serializer.serialize_bool(v),

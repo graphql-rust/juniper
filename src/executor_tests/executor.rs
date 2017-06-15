@@ -15,7 +15,7 @@ mod field_execution {
         field e() -> &str { "Egg" }
         field f() -> &str { "Fish" }
 
-        field pic(size: Option<i64>) -> String {
+        field pic(size: Option<i32>) -> String {
             format!("Pic of size: {}", size.unwrap_or(50))
         }
 
@@ -219,7 +219,7 @@ mod dynamic_context_switching {
     }
 
     struct OuterContext {
-        items: HashMap<i64, InnerContext>,
+        items: HashMap<i32, InnerContext>,
     }
 
     impl Context for OuterContext {}
@@ -228,17 +228,17 @@ mod dynamic_context_switching {
     struct ItemRef;
 
     graphql_object!(Schema: OuterContext |&self| {
-        field item_opt(&executor, key: i64) -> Option<(&InnerContext, ItemRef)> {
+        field item_opt(&executor, key: i32) -> Option<(&InnerContext, ItemRef)> {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
         }
 
-        field item_res(&executor, key: i64) -> FieldResult<(&InnerContext, ItemRef)> {
+        field item_res(&executor, key: i32) -> FieldResult<(&InnerContext, ItemRef)> {
             executor.context().items.get(&key)
                 .ok_or(format!("Could not find key {}", key))
                 .map(|c| (c, ItemRef))
         }
 
-        field item_res_opt(&executor, key: i64) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
+        field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
             if key > 100 {
                 Err(format!("Key too large: {}", key))
             } else {
@@ -247,7 +247,7 @@ mod dynamic_context_switching {
             }
         }
 
-        field item_always(&executor, key: i64) -> (&InnerContext, ItemRef) {
+        field item_always(&executor, key: i32) -> (&InnerContext, ItemRef) {
             executor.context().items.get(&key)
                 .map(|c| (c, ItemRef))
                 .unwrap()

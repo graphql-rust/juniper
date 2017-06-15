@@ -203,7 +203,7 @@ using the macros and not deriving `GraphQLType` directly.
 
   // Each entity has its own context
   struct TopContext {
-    entities: HashMap<i64, EntityContext>,
+    entities: HashMap<i32, EntityContext>,
     db: DatabaseConnection,
   }
 
@@ -219,7 +219,7 @@ using the macros and not deriving `GraphQLType` directly.
     // to switch out the context for the returned value. You can wrap the
     // tuple in Option<>, FieldResult<>, FieldResult<Option<>>, or just return
     // the tuple without wrapping it.
-    field entity(&executor, key: i64) -> Option<(&EntityContext, Entity)> {
+    field entity(&executor, key: i32) -> Option<(&EntityContext, Entity)> {
       executor.context().entities.get(&key)
         .map(|ctx| (ctx, executor.context().db.get_entity(key)))
     }
@@ -247,7 +247,7 @@ using the macros and not deriving `GraphQLType` directly.
 
   ```rust
   graphql_object(MyType: Database |&self| {
-    field count(&executor) -> FieldResult<i64> {
+    field count(&executor) -> FieldResult<i32> {
       let txn = jtry!(executor.context().transaction());
 
       let count = jtry!(txn.execute("SELECT COUNT(*) FROM user"));

@@ -5,10 +5,10 @@ use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 
-struct DefaultName(i64);
-struct OtherOrder(i64);
-struct Named(i64);
-struct ScalarDescription(i64);
+struct DefaultName(i32);
+struct OtherOrder(i32);
+struct Named(i32);
+struct ScalarDescription(i32);
 
 struct Root;
 

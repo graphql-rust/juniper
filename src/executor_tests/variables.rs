@@ -53,14 +53,14 @@ graphql_input_object!(
     #[derive(Debug)]
     struct ExampleInputObject {
         a: Option<String>,
-        b: i64,
+        b: i32,
     }
 );
 
 graphql_input_object!(
     #[derive(Debug)]
     struct InputWithDefaults {
-        a = 123: i64,
+        a = 123: i32,
     }
 );
 
@@ -109,7 +109,7 @@ graphql_object!(TestType: () |&self| {
         format!("a: {:?}", arg.a)
     }
 
-    field integer_input(value: i64) -> String {
+    field integer_input(value: i32) -> String {
         format!("value: {}", value)
     }
 

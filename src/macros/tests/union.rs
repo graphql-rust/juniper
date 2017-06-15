@@ -22,7 +22,7 @@ struct Concrete;
 
 enum CustomName { Concrete(Concrete) }
 
-enum WithLifetime<'a> { Int(PhantomData<&'a i64>) }
+enum WithLifetime<'a> { Int(PhantomData<&'a i32>) }
 enum WithGenerics<T> { Generic(T) }
 
 enum DescriptionFirst { Concrete(Concrete) }
@@ -34,7 +34,7 @@ enum ResolversWithTrailingComma { Concrete(Concrete) }
 struct Root;
 
 graphql_object!(Concrete: () |&self| {
-    field simple() -> i64 { 123 }
+    field simple() -> i32 { 123 }
 });
 
 graphql_union!(CustomName: () as "ACustomNamedUnion" |&self| {
@@ -86,7 +86,7 @@ graphql_union!(ResolversWithTrailingComma: () |&self| {
 graphql_object!(<'a> Root: () as "Root" |&self| {
     field custom_name() -> CustomName { CustomName::Concrete(Concrete) }
     field with_lifetime() -> WithLifetime<'a> { WithLifetime::Int(PhantomData) }
-    field with_generics() -> WithGenerics<i64> { WithGenerics::Generic(123) }
+    field with_generics() -> WithGenerics<i32> { WithGenerics::Generic(123) }
     field description_first() -> DescriptionFirst { DescriptionFirst::Concrete(Concrete) }
     field resolvers_first() -> ResolversFirst { ResolversFirst::Concrete(Concrete) }
     field commas_with_trailing() -> CommasWithTrailing { CommasWithTrailing::Concrete(Concrete) }

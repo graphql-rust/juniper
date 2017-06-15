@@ -37,7 +37,7 @@ pub enum Type<'a> {
 #[allow(missing_docs)]
 pub enum InputValue {
     Null,
-    Int(i64),
+    Int(i32),
     Float(f64),
     String(String),
     Boolean(bool),
@@ -208,7 +208,7 @@ impl InputValue {
     pub fn null() -> InputValue { InputValue::Null }
 
     /// Construct an integer value.
-    pub fn int(i: i64) -> InputValue { InputValue::Int(i) }
+    pub fn int(i: i32) -> InputValue { InputValue::Int(i) }
 
     /// Construct a floating point value.
     pub fn float(f: f64) -> InputValue { InputValue::Float(f) }
@@ -310,7 +310,7 @@ impl InputValue {
     }
 
     /// View the underlying int value, if present.
-    pub fn as_int_value(&self) -> Option<i64> {
+    pub fn as_int_value(&self) -> Option<i32> {
         match *self {
             InputValue::Int(i) => Some(i),
             _ => None,

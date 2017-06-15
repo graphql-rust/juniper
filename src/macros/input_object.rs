@@ -37,7 +37,7 @@ is similar to argument default values:
 #
 graphql_input_object!(
     struct SampleObject {
-        foo = 123: i64 as "A sample field, defaults to 123 if omitted"
+        foo = 123: i32 as "A sample field, defaults to 123 if omitted"
     }
 );
 

@@ -22,59 +22,59 @@ Syntax to validate:
 graphql_input_object!(
     #[derive(Debug)]
     struct Point {
-        x: i64,
+        x: i32,
     }
 );
 
 graphql_object!(Root: () |&self| {
-    field simple() -> i64 { 0 }
-    field exec_arg(&executor) -> i64 { 0 }
-    field exec_arg_and_more(&executor, arg: i64) -> i64 { 0 }
+    field simple() -> i32 { 0 }
+    field exec_arg(&executor) -> i32 { 0 }
+    field exec_arg_and_more(&executor, arg: i32) -> i32 { 0 }
 
-    field single_arg(arg: i64) -> i64 { 0 }
+    field single_arg(arg: i32) -> i32 { 0 }
     field multi_args(
-        arg1: i64,
-        arg2: i64
-    ) -> i64 { 0 }
+        arg1: i32,
+        arg2: i32
+    ) -> i32 { 0 }
     field multi_args_trailing_comma(
-        arg1: i64,
-        arg2: i64,
-    ) -> i64 { 0 }
+        arg1: i32,
+        arg2: i32,
+    ) -> i32 { 0 }
 
-    field single_arg_descr(arg: i64 as "The arg") -> i64 { 0 }
+    field single_arg_descr(arg: i32 as "The arg") -> i32 { 0 }
     field multi_args_descr(
-        arg1: i64 as "The first arg",
-        arg2: i64 as "The second arg"
-    ) -> i64 { 0 }
+        arg1: i32 as "The first arg",
+        arg2: i32 as "The second arg"
+    ) -> i32 { 0 }
     field multi_args_descr_trailing_comma(
-        arg1: i64 as "The first arg",
-        arg2: i64 as "The second arg",
-    ) -> i64 { 0 }
+        arg1: i32 as "The first arg",
+        arg2: i32 as "The second arg",
+    ) -> i32 { 0 }
 
-    field arg_with_default(arg = 123: i64) -> i64 { 0 }
+    field arg_with_default(arg = 123: i32) -> i32 { 0 }
     field multi_args_with_default(
-        arg1 = 123: i64,
-        arg2 = 456: i64
-    ) -> i64 { 0 }
+        arg1 = 123: i32,
+        arg2 = 456: i32
+    ) -> i32 { 0 }
     field multi_args_with_default_trailing_comma(
-        arg1 = 123: i64,
-        arg2 = 456: i64,
-    ) -> i64 { 0 }
+        arg1 = 123: i32,
+        arg2 = 456: i32,
+    ) -> i32 { 0 }
 
-    field arg_with_default_descr(arg = 123: i64 as "The arg") -> i64 { 0 }
+    field arg_with_default_descr(arg = 123: i32 as "The arg") -> i32 { 0 }
     field multi_args_with_default_descr(
-        arg1 = 123: i64 as "The first arg",
-        arg2 = 456: i64 as "The second arg"
-    ) -> i64 { 0 }
+        arg1 = 123: i32 as "The first arg",
+        arg2 = 456: i32 as "The second arg"
+    ) -> i32 { 0 }
     field multi_args_with_default_trailing_comma_descr(
-        arg1 = 123: i64 as "The first arg",
-        arg2 = 456: i64 as "The second arg",
-    ) -> i64 { 0 }
+        arg1 = 123: i32 as "The first arg",
+        arg2 = 456: i32 as "The second arg",
+    ) -> i32 { 0 }
 
     field args_with_complex_default(
         arg1 = ("test".to_owned()): String as "A string default argument",
         arg2 = (Point { x: 1 }): Point as "An input object default argument",
-    ) -> i64 { 0 }
+    ) -> i32 { 0 }
 });
 
 fn run_args_info_query<F>(field_name: &str, f: F)

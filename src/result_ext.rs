@@ -13,8 +13,8 @@ only method `to_field_err` can help with that:
 use std::str::FromStr;
 use juniper::{FieldResult, ResultExt};
 
-fn sample_fn(s: &str) -> FieldResult<i64> {
-    i64::from_str(s).to_field_err()
+fn sample_fn(s: &str) -> FieldResult<i32> {
+    i32::from_str(s).to_field_err()
 }
 
 # fn main() { assert_eq!(sample_fn("12"), Ok(12)); }
@@ -30,8 +30,8 @@ use std::str::FromStr;
 
 use juniper::{FieldResult, ResultExt};
 
-fn sample_fn(s: &str) -> FieldResult<i64> {
-    let value = jtry!(i64::from_str(s));
+fn sample_fn(s: &str) -> FieldResult<i32> {
+    let value = jtry!(i32::from_str(s));
 
     Ok(value)
 }

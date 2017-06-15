@@ -39,8 +39,8 @@ pub trait Visitor<'a> {
     fn enter_null_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<()>) {}
     fn exit_null_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<()>) {}
 
-    fn enter_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i64>) {}
-    fn exit_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i64>) {}
+    fn enter_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i32>) {}
+    fn exit_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i32>) {}
 
     fn enter_float_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<f64>) {}
     fn exit_float_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<f64>) {}

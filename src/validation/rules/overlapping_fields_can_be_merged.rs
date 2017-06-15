@@ -1215,7 +1215,7 @@ mod tests {
 
         fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
             let fields = &[
-                registry.field::<Option<i64>>("scalar"),
+                registry.field::<Option<i32>>("scalar"),
                 registry.field::<Option<IntBox>>("deepBox"),
                 registry.field::<Option<String>>("unrelatedField"),
                 registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox"),

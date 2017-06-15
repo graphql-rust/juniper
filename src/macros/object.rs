@@ -79,7 +79,7 @@ graphql_object!(<'a> &'a SomeTrait: () as "SomeTrait" |&self| {
 struct GenericType<T> { items: Vec<T> }
 
 graphql_object!(<T> GenericType<T>: () as "GenericType" |&self| {
-    field count() -> i64 { self.items.len() as i64 }
+    field count() -> i32 { self.items.len() as i32 }
 });
 
 # fn main() { }
@@ -215,9 +215,9 @@ default value, _or_ make the type into an `Option<>`, the argument becomes
 optional. For example:
 
 ```text
-arg_name: i64               -- required
-arg_name: Option<i64>       -- optional, None if unspecified
-arg_name = 123: i64         -- optional, "123" if unspecified
+arg_name: i32               -- required
+arg_name: Option<i32>       -- optional, None if unspecified
+arg_name = 123: i32         -- optional, "123" if unspecified
 ```
 
 Due to some syntactical limitations in the macros, you must parentesize more

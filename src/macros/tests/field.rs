@@ -22,35 +22,35 @@ Syntax to validate:
 */
 
 graphql_object!(Root: () |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
-    field description() -> i64 as "Field description" { 0 }
-
-    field deprecated "Deprecation reason"
-        deprecated() -> i64 { 0 }
+    field description() -> i32 as "Field description" { 0 }
 
     field deprecated "Deprecation reason"
-        deprecated_descr() -> i64 as "Field description" { 0 }
+        deprecated() -> i32 { 0 }
 
-    field with_field_result() -> FieldResult<i64> { Ok(0) }
+    field deprecated "Deprecation reason"
+        deprecated_descr() -> i32 as "Field description" { 0 }
 
-    field with_return() -> i64 { return 0; }
+    field with_field_result() -> FieldResult<i32> { Ok(0) }
 
-    field with_return_field_result() -> FieldResult<i64> { return Ok(0); }
+    field with_return() -> i32 { return 0; }
+
+    field with_return_field_result() -> FieldResult<i32> { return Ok(0); }
 
     interfaces: [Interface]
 });
 
 graphql_interface!(Interface: () |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
-    field description() -> i64 as "Field description" { 0 }
-
-    field deprecated "Deprecation reason"
-        deprecated() -> i64 { 0 }
+    field description() -> i32 as "Field description" { 0 }
 
     field deprecated "Deprecation reason"
-        deprecated_descr() -> i64 as "Field description" { 0 }
+        deprecated() -> i32 { 0 }
+
+    field deprecated "Deprecation reason"
+        deprecated_descr() -> i32 as "Field description" { 0 }
 
     instance_resolvers: |&_| {
         Root => Some(Root {}),

@@ -23,7 +23,7 @@ struct Concrete;
 struct CustomName;
 
 #[allow(dead_code)]
-struct WithLifetime<'a> { data: PhantomData<&'a i64> }
+struct WithLifetime<'a> { data: PhantomData<&'a i32> }
 
 #[allow(dead_code)]
 struct WithGenerics<T> { data: T }
@@ -40,23 +40,23 @@ struct ResolversWithTrailingComma;
 struct Root;
 
 graphql_object!(Concrete: () |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 graphql_interface!(CustomName: () as "ACustomNamedInterface" |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 
 graphql_interface!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 graphql_interface!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
@@ -64,13 +64,13 @@ graphql_interface!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
 graphql_interface!(DescriptionFirst: () |&self| {
     description: "A description"
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 });
 
 graphql_interface!(FieldsFirst: () |&self| {
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     description: "A description"
 
@@ -80,7 +80,7 @@ graphql_interface!(FieldsFirst: () |&self| {
 graphql_interface!(InterfacesFirst: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) }
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 
     description: "A description"
 });
@@ -88,7 +88,7 @@ graphql_interface!(InterfacesFirst: () |&self| {
 graphql_interface!(CommasWithTrailing: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) },
 
-    field simple() -> i64 { 0 },
+    field simple() -> i32 { 0 },
 
     description: "A description",
 });
@@ -98,7 +98,7 @@ graphql_interface!(CommasOnMeta: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete) }
     description: "A description",
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 
@@ -106,14 +106,14 @@ graphql_interface!(ResolversWithTrailingComma: () |&self| {
     instance_resolvers: |_| { Concrete => Some(Concrete), }
     description: "A description",
 
-    field simple() -> i64 { 0 }
+    field simple() -> i32 { 0 }
 });
 
 graphql_object!(<'a> Root: () as "Root" |&self| {
     field custom_name() -> CustomName { CustomName {} }
 
     field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
-    field with_generics() -> WithGenerics<i64> { WithGenerics { data: 123 } }
+    field with_generics() -> WithGenerics<i32> { WithGenerics { data: 123 } }
 
     field description_first() -> DescriptionFirst { DescriptionFirst {} }
     field fields_first() -> FieldsFirst { FieldsFirst {} }

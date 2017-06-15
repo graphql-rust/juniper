@@ -8,7 +8,7 @@ enum Sample {
     Two,
 }
 
-struct Scalar(i64);
+struct Scalar(i32);
 
 struct Interface {}
 
@@ -51,8 +51,8 @@ graphql_object!(Root: () |&self| {
     }
 
     field sample_scalar(
-        first: i64 as "The first number",
-        second = 123: i64 as "The second number"
+        first: i32 as "The first number",
+        second = 123: i32 as "The second number"
     ) -> Scalar as "A sample scalar field on the object" {
         Scalar(first + second)
     }
