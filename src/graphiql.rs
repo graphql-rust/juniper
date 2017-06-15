@@ -1,3 +1,6 @@
+//! Utility module to generate a GraphiQL interface
+
+/// Generate the HTML source to show a GraphiQL interface
 pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
     let stylesheet_source = r#"
     <style>
@@ -43,15 +46,15 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
 <head>
     <title>GraphQL</title>
     {stylesheet_source}
-    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.8.1/graphiql.css">
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.10.2/graphiql.css">
 </head>
 <body>
     <div id="app"></div>
 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.1/fetch.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.8.1/graphiql.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.3/fetch.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.6.0/react.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.6.0/react-dom.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/graphiql/0.10.2/graphiql.js"></script>
     <script>var GRAPHQL_URL = '{graphql_url}';</script>
     {fetcher_source}
 </body>
