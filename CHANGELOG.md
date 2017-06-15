@@ -1,6 +1,10 @@
 Change log
 ==========
 
+## [0.8.1] – 2017-06-15
+
+Tiny release to fix broken crate metadata on crates.io.
+
 ## [0.8.0] – 2017-06-15
 
 ## Breaking changes
@@ -325,6 +329,7 @@ using the macros and not deriving `GraphQLType` directly.
 * Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
+[0.8.0]: https://github.com/mhallin/juniper/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/mhallin/juniper/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/mhallin/juniper/compare/0.6.3...0.7.0
 [0.6.3]: https://github.com/mhallin/juniper/compare/0.6.2...0.6.3

@@ -24,7 +24,7 @@ Add Juniper to your Cargo.toml:
 
 ```toml
 [dependencies]
-juniper = "0.8.0"
+juniper = "0.8.1"
 ```
 
 If you want the Iron integration enabled, you need to enable the `iron-handlers`
@@ -32,7 +32,7 @@ feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.8.0", features = ["iron-handlers"] }
+juniper = { version = "0.8.1", features = ["iron-handlers"] }
 ```
 
 If you want the Rocket integration enabled, you need to use the nightly Rust
@@ -40,7 +40,7 @@ compiler and enable the `rocket-handlers` feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.8.0", features = ["rocket-handlers"] }
+juniper = { version = "0.8.1", features = ["rocket-handlers"] }
 ```
 
 ## Building schemas
@@ -128,7 +128,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 ## 1.0 Roadmap
 
-> Version 0.8.0 probably be re-released as 1.0 to indicate API stability.
+> Version 0.8.1 probably be re-released as 1.0 to indicate API stability.
 
 The road to 1.0 _focuses_ on two aspects: making sure the API hasn't got any
 obvious dead-ends with respect to probable future features, and improving test
@@ -149,7 +149,7 @@ as well.
 * [X] Investigate asynchronous execution - implementing it is not necessary, but
   at least look at what API changes will be needed for us to hook into
   [Tokio][tokio], for example.
-* [ ] Larger examples to illustrate things like database access
+* [X] Larger examples to illustrate things like database access
 
 [graphql]: http://graphql.org
 [iron]: http://ironframework.io
