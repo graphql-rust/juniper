@@ -67,14 +67,26 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 Ok(InputValue::boolean(value))
             }
 
-            fn visit_i64<E>(self, value: i64) -> Result<InputValue, E> {
-                Ok(InputValue::int(value))
+            fn visit_i64<E>(self, value: i64) -> Result<InputValue, E>
+                where E: de::Error,
+            {
+                if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
+                    Ok(InputValue::int(value))
+                }
+                else {
+                    Err(E::custom(format!("integer out of range")))
+                }
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<InputValue, E>
                 where E: de::Error,
             {
-                self.visit_f64(value as f64)
+                if value <= i32::max_value() as u64 {
+                    self.visit_i64(value as i64)
+                }
+                else {
+                    Err(E::custom(format!("integer out of range")))
+                }
             }
 
             fn visit_f64<E>(self, value: f64) -> Result<InputValue, E> {
