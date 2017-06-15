@@ -67,8 +67,6 @@ macro_rules! graphql_input_object {
                 let n: String = $crate::to_camel_case(stringify!($field_name));
                 let v: Option<&&$crate::InputValue> = $var.get(&n[..]);
 
-                println!("Found variable for {:?}: {:?} in {:?}", n, v, $var);
-
                 match v {
                     $( Some(&&$crate::InputValue::Null) | None if true => $default, )*
                         Some(v) => $crate::FromInputValue::from(v).unwrap(),

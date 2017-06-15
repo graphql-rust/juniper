@@ -415,14 +415,11 @@ fn merge_key_into(
 ) {
     match result.entry(response_name.to_owned()) {
         Entry::Occupied(mut e) => {
-            println!("Merging object at '{}'", e.key());
             match (e.get_mut().as_mut_object_value(), value) {
                 (Some(dest_obj), Value::Object(src_obj)) => {
                     merge_maps(dest_obj, src_obj);
                 },
-                _ => {
-                    println!("Not merging object/object - this is bad :(");
-                }
+                _ => {}
             }
         },
         Entry::Vacant(e) => {
