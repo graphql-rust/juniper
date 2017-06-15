@@ -10,13 +10,14 @@ statically verify their queries against a server without actually executing
 them.
 
 This library provides data types and traits to expose Rust types in a GraphQL
-schema, as well as an optional integration into the [Iron framework][2]. It
-tries to keep the number of dynamic operations to a minimum, and give you as the
-schema developer the control of the query execution path.
+schema, as well as an optional integration into the [Iron framework][2] and
+[Rocket]. It tries to keep the number of dynamic operations to a minimum, and
+give you as the schema developer the control of the query execution path.
 
 Juniper only depends on `serde` and `serde_derive` by default, making it
-lightweight and easy to drop into any project. Through the `iron-handlers`
-feature, it also depends on Iron.
+lightweight and easy to drop into any project. If you enable any of the
+optional framework integrations, it will naturally depend on those frameworks
+too.
 
 ## Exposing data types
 
@@ -98,9 +99,11 @@ the [`graphql_object!`][3] macro.
 ## Integrating with Iron
 
 The most obvious usecase is to expose the GraphQL schema over an HTTP endpoint.
-To support this, the library provides an optional and customizable Iron handler.
+To support this, the library provides optional and customizable handlers for
+both Iron and Rocket.
 
-For example, continuing from the schema created above:
+For example, continuing from the schema created above and using Iron to expose
+the schema on an HTTP endpoint supporting both GET and POST requests:
 
 ```rust,no_run
 extern crate iron;
@@ -180,6 +183,7 @@ built-in [GraphiQL][6] handler included.
 [4]: iron_handlers/index.html
 [5]: iron_handlers/struct.GraphQLHandler.html
 [6]: https://github.com/graphql/graphiql
+[Rocket]: https://rocket.rs
 
 */
 

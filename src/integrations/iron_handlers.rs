@@ -1,4 +1,8 @@
-//! Optional handlers for the Iron framework. Requires the `iron-handlers` feature enabled.
+//! Optional handlers for the [Iron](http://ironframework.io) framework. Requires the `iron-handlers` feature enabled.
+//!
+//! See the [server.rs](https://github.com/mhallin/juniper/blob/master/examples/server.rs)
+//! example for more information on how to use these handlers.
+
 use iron::prelude::*;
 use iron::middleware::Handler;
 use iron::mime::Mime;

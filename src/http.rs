@@ -1,3 +1,5 @@
+//! Utilities for building HTTP endpoints in a library-agnostic manner
+
 use serde::ser;
 use serde::ser::SerializeMap;
 
@@ -5,7 +7,13 @@ use ::{GraphQLError, Value, Variables, GraphQLType, RootNode};
 use ast::InputValue;
 use executor::ExecutionError;
 
-/// The expected structure of the decoded JSON Document for either Post or Get requests.
+/// The expected structure of the decoded JSON document for either POST or GET requests.
+///
+/// For POST, you can use Serde to deserialize the incoming JSON data directly
+/// into this struct - it derives Deserialize for exactly this reason.
+///
+/// For GET, you will need to parse the query string and exctract "query",
+/// "operationName", and "variables" manually.
 #[derive(Deserialize)]
 pub struct GraphQLRequest {
     query: String,
@@ -27,6 +35,7 @@ impl GraphQLRequest {
         }).unwrap_or_default()
     }
 
+    /// Construct a new GraphQL request from parts
     pub fn new(query: String, operation_name: Option<String>, variables: Option<InputValue>) -> GraphQLRequest {
         GraphQLRequest {
             query: query,
@@ -35,6 +44,10 @@ impl GraphQLRequest {
         }
     }
 
+    /// Execute a GraphQL request using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute` function exposed at the
+    /// top level of this crate.
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &RootNode<QueryT, MutationT>,
@@ -54,10 +67,18 @@ impl GraphQLRequest {
     }
 }
 
-
+/// Simple wrapper around the result from executing a GraphQL query
+///
+/// This struct implements Serialize, so you can simply serialize this
+/// to JSON and send it over the wire. Use the `is_ok` method to determine
+/// whether to send a 200 or 400 HTTP status code.
 pub struct GraphQLResponse<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
 
 impl<'a> GraphQLResponse<'a> {
+    /// Was the request successful or not?
+    ///
+    /// Note that there still might be errors in the response even though it's
+    /// considered OK. This is by design in GraphQL.
     pub fn is_ok(&self) -> bool {
         self.0.is_ok()
     }

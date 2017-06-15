@@ -1,3 +1,12 @@
+//! Optional helper functions for the [Rocket](https://rocket.rs) framework. Requires the "rocket-handlers" feature enabled.
+//!
+//! The two exposed types in this module are simple wrapper around the
+//! types exposed by the `http` module, but they are better suited for use
+//! in handler functions in the Rocket framework.
+//!
+//! See the [rocket-server.rs](https://github.com/mhallin/juniper/blob/master/examples/rocket-server.rs)
+//! example for how to use these tools.
+
 use std::io::{Cursor, Read};
 use std::error::Error;
 
@@ -17,14 +26,23 @@ use ::http;
 use types::base::GraphQLType;
 use schema::model::RootNode;
 
-pub struct GraphQLResponse(Status, String);
+/// Simple wrapper around an incoming GraphQL request
+///
+/// See the `http` module for more information. This type can be constructed
+/// automatically from both GET and POST routes by implementing the `FromForm`
+/// and `FromData` traits.
 pub struct GraphQLRequest(http::GraphQLRequest);
 
+/// Simple wrapper around the result of executing a GraphQL query
+pub struct GraphQLResponse(Status, String);
+
+/// Generate an HTML page containing GraphiQL
 pub fn graphiql_source(graphql_endpoint_url: &str) -> content::HTML<String> {
     content::HTML(::graphiql::graphiql_source(graphql_endpoint_url))
 }
 
 impl GraphQLRequest {
+    /// Execute an incoming GraphQL query
     pub fn execute<CtxT, QueryT, MutationT>(
         &self,
         root_node: &RootNode<QueryT, MutationT>,

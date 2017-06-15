@@ -13,7 +13,7 @@ GraphQL servers in Rust that are type-safe and blazingly fast.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Iron framework][iron].
+pre-built integration for the [Iron][iron] and [Rocket] frameworks.
 
 * [Cargo crate](https://crates.io/crates/juniper)
 * [API Documentation](http://mhallin.github.io/juniper)
@@ -24,7 +24,7 @@ Add Juniper to your Cargo.toml:
 
 ```toml
 [dependencies]
-juniper = "0.7.0"
+juniper = "0.8.0"
 ```
 
 If you want the Iron integration enabled, you need to enable the `iron-handlers`
@@ -32,7 +32,15 @@ feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.7.0", features = ["iron-handlers"] }
+juniper = { version = "0.8.0", features = ["iron-handlers"] }
+```
+
+If you want the Rocket integration enabled, you need to use the nightly Rust
+compiler and enable the `rocket-handlers` feature flag:
+
+```toml
+[dependencies]
+juniper = { version = "0.8.0", features = ["rocket-handlers"] }
 ```
 
 ## Building schemas
@@ -100,7 +108,7 @@ graphql_object!(Human: () |&self| {
 ```
 
 You can find the full example in [src/tests/schema.rs][test_schema_rs],
-including polymorphism with traits and interfaces. For an example of the Iron
+including polymorphism with traits and interfaces. For an example of framework
 integration, see the [examples folder][examples].
 
 ## Features
@@ -120,7 +128,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 ## 1.0 Roadmap
 
-> Version 0.7.0 probably be re-released as 1.0 to indicate API stability.
+> Version 0.8.0 probably be re-released as 1.0 to indicate API stability.
 
 The road to 1.0 _focuses_ on two aspects: making sure the API hasn't got any
 obvious dead-ends with respect to probable future features, and improving test
@@ -150,3 +158,4 @@ as well.
 [test_schema_rs]: src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [examples]: examples/
+[Rocket]: https://rocket.rs
