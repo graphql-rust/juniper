@@ -91,7 +91,7 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, any(feature="iron-handlers", feature="rocket-handlers")))]
 pub mod tests {
     use serde_json::Value as Json;
     use serde_json;
