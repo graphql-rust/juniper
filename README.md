@@ -16,7 +16,7 @@ make integration with existing servers straightforward. It optionally provides a
 pre-built integration for the [Iron][iron] and [Rocket] frameworks.
 
 * [Cargo crate](https://crates.io/crates/juniper)
-* [API Documentation](http://mhallin.github.io/juniper)
+* [API Documentation](https://docs.rs/juniper)
 
 ## Installation
 
