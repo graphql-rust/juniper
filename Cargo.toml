@@ -13,6 +13,10 @@ categories = ["web-programming"]
 [package.metadata.docs.rs]
 features = [ "iron-handlers" ]
 
+[badges]
+travis-ci = { repository = "mhallin/juniper" }
+appveyor = { repository = "mhallin/juniper" }
+
 [[bench]]
 name = "bench"
 harness = false
