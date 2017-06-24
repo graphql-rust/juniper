@@ -95,16 +95,16 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
                 "Invalid enum variant {}.\nGraphQL enums may only contain unit variants.",
                 variant.ident));
         }
-        let vattrs = EnumVariantAttrs::from_input(variant);
-        let vident = &variant.ident;
+        let var_attrs = EnumVariantAttrs::from_input(variant);
+        let var_ident = &variant.ident;
 
         // Build value.
-        let name = vattrs.name.unwrap_or(variant.ident.to_string());
-        let descr = match vattrs.description {
+        let name = var_attrs.name.unwrap_or(variant.ident.to_string());
+        let descr = match var_attrs.description {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
         };
-        let depr = match vattrs.deprecation {
+        let depr = match var_attrs.deprecation {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
         };
@@ -119,19 +119,19 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
 
         // Build resolve match clause.
         let resolve = quote!{
-            &#ident::#vident => ::juniper::Value::String(#name.to_string()),
+            &#ident::#var_ident => ::juniper::Value::String(#name.to_string()),
         };
         resolves.push(resolve);
 
         // Buil from_input clause.
         let from_input = quote!{
-            Some(#name) => Some(#ident::#vident),
+            Some(#name) => Some(#ident::#var_ident),
         };
         from_inputs.push(from_input);
 
         // Buil to_input clause.
         let to_input = quote!{
-            &#ident::#vident =>
+            &#ident::#var_ident =>
                 ::juniper::InputValue::string(#name.to_string()),
         };
         to_inputs.push(to_input);
