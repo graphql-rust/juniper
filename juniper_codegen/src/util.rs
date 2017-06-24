@@ -46,3 +46,40 @@ pub fn keyed_item_value(item: &NestedMetaItem, name: &str, must_be_string: bool)
         },
     }
 }
+
+// Note: duplicated from juniper crate!
+#[doc(hidden)]
+pub fn to_camel_case(s: &str) -> String {
+    let mut dest = String::new();
+
+    for (i, part) in s.split('_').enumerate() {
+        if i > 0 && part.len() == 1 {
+            dest.push_str(&part.to_uppercase());
+        }
+        else if i > 0 && part.len() > 1 {
+            let first = part.chars().next().unwrap().to_uppercase().collect::<String>();
+            let second = &part[1..];
+
+            dest.push_str(&first);
+            dest.push_str(second);
+        }
+        else if i == 0 {
+            dest.push_str(part);
+        }
+    }
+
+    dest
+}
+
+#[test]
+fn test_to_camel_case() {
+    assert_eq!(&to_camel_case("test")[..], "test");
+    assert_eq!(&to_camel_case("_test")[..], "Test");
+    assert_eq!(&to_camel_case("first_second")[..], "firstSecond");
+    assert_eq!(&to_camel_case("first_")[..], "first");
+    assert_eq!(&to_camel_case("a_b_c")[..], "aBC");
+    assert_eq!(&to_camel_case("a_bc")[..], "aBc");
+    assert_eq!(&to_camel_case("a_b")[..], "aB");
+    assert_eq!(&to_camel_case("a")[..], "a");
+    assert_eq!(&to_camel_case("")[..], "");
+}
