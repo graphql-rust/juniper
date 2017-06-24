@@ -1,0 +1,19 @@
+[package]
+name = "juniper_codegen"
+version = "0.8.1"
+authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+description = "Internal custom derive trait for Juniper GraphQL"
+license = "BSD-2-Clause"
+documentation = "https://docs.rs/juniper"
+repository = "https://github.com/mhallin/juniper"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.11.11"
+quote = "0.3.15"
+
+[badges]
+travis-ci = { repository = "mhallin/juniper" }
+appveyor = { repository = "mhallin/juniper" }
