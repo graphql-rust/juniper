@@ -1,0 +1,12 @@
+[package]
+name = "juniper_tests"
+version = "0.1.0"
+
+[dependencies]
+juniper = { path = "../juniper" }
+juniper_codegen = { path = "../juniper_codegen" }
+
+[[test]]
+name = "integration_tests"
+path = "src/lib.rs"
+harness = true
