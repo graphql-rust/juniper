@@ -1,4 +1,6 @@
 [workspace]
 members = [
-  "juniper"
+  "juniper",
+  "juniper_codegen",
+  "juniper_tests",
 ]
