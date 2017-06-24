@@ -20,18 +20,18 @@ env:
 
 script:
   # Build library standalone, with Iron, and with Rocket integrations enabled, respectively
-  - cargo build --verbose
-  - cargo build --verbose --features iron-handlers
+  - cargo build --all --verbose
+  - cargo build --all --verbose --features iron-handlers
   - |
     if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
-      cargo build --verbose --features rocket-handlers
+      cargo build --all --verbose --features rocket-handlers
     fi
 
   # Build example binaries; first Iron, then Rocket examples
-  - cargo build --verbose --example server --features "iron-handlers expose-test-schema"
+  - cargo build --all --verbose --example server --features "iron-handlers expose-test-schema"
   - |
     if [ "TRAVIS_RUST_VERSION" = "nightly" ]; then
-      cargo build --verbose --example rocket-server --features "rocket-handlers expose-test-schema"
+      cargo build --all --verbose --example rocket-server --features "rocket-handlers expose-test-schema"
     fi
 
   # Run all tests for the base library and available integrations
@@ -41,7 +41,7 @@ script:
       export TEST_FEATURES="$TEST_FEATURES rocket-handlers rocket/testing"
     fi
 
-  - cargo test --verbose --features "$TEST_FEATURES"
+  - cargo test --all --verbose --features "$TEST_FEATURES"
 
 
 before_deploy:
