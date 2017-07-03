@@ -4,26 +4,32 @@ use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
 
 #[doc(hidden)]
-pub struct MultiVisitor<'a> {
-    visitors: Vec<Box<Visitor<'a> + 'a>>
-}
+pub trait MultiVisitor<'a> {
+    fn visit_all<F: FnMut(&mut Visitor<'a>) -> ()>(&mut self, f: F);
 
-impl<'a> MultiVisitor<'a> {
-    #[doc(hidden)]
-    pub fn new(visitors: Vec<Box<Visitor<'a> + 'a>>) -> MultiVisitor<'a> {
-        MultiVisitor {
-            visitors: visitors
-        }
-    }
-
-    fn visit_all<F: FnMut(&mut Box<Visitor<'a> + 'a>) -> ()>(&mut self, mut f: F) {
-        for mut v in &mut self.visitors {
-            f(v);
-        }
+    fn with<V: Visitor<'a>>(self, visitor: V) -> MultiVisitorCons<V, Self> where Self: Sized {
+        MultiVisitorCons(visitor, self)
     }
 }
 
-impl<'a> Visitor<'a> for MultiVisitor<'a> {
+#[doc(hidden)]
+pub struct MultiVisitorNil;
+
+impl<'a> MultiVisitor<'a> for MultiVisitorNil {
+    fn visit_all<F: FnMut(&mut Visitor<'a>) -> ()>(&mut self, _: F) {}
+}
+
+#[doc(hidden)]
+pub struct MultiVisitorCons<A, B>(A, B);
+
+impl<'a, A: Visitor<'a>, B: MultiVisitor<'a>> MultiVisitor<'a> for MultiVisitorCons<A, B> {
+    fn visit_all<F: FnMut(&mut Visitor<'a>) -> ()>(&mut self, mut f: F) {
+        f(&mut self.0);
+        self.1.visit_all(f);
+    }
+}
+
+impl<'a, M> Visitor<'a> for M where M: MultiVisitor<'a> {
     fn enter_document(&mut self, ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
         self.visit_all(|v| v.enter_document(ctx, doc));
     }

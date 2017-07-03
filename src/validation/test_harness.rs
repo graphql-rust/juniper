@@ -5,7 +5,7 @@ use executor::Registry;
 use types::scalars::{EmptyMutation, ID};
 use schema::model::{DirectiveType, DirectiveLocation, RootNode};
 use schema::meta::{EnumValue, MetaType};
-use validation::{Visitor, RuleError, ValidatorContext, MultiVisitor, visit};
+use validation::{Visitor, RuleError, ValidatorContext, MultiVisitor, MultiVisitorNil, visit};
 
 struct Being;
 struct Pet;
@@ -473,7 +473,7 @@ pub fn validate<'a, R, V, F>(r: R, q: &'a str, factory: F)
         unsafe { ::std::mem::transmute(&root.schema) },
         &doc);
 
-    let mut mv = MultiVisitor::new(vec![ Box::new(factory()) ]);
+    let mut mv = MultiVisitorNil.with(factory());
     visit(&mut mv, &mut ctx, unsafe { ::std::mem::transmute(&doc) });
 
     ctx.into_errors()
