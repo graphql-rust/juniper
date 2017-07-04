@@ -203,6 +203,8 @@ extern crate serde;
 
 #[cfg(any(feature="iron-handlers", feature="rocket-handlers"))] extern crate serde_json;
 
+use std::borrow::Cow;
+
 #[macro_use] mod macros;
 mod ast;
 pub mod parser;
@@ -296,22 +298,22 @@ impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
 }
 
 #[doc(hidden)]
-pub fn to_camel_case(s: &str) -> String {
-    let mut dest = String::new();
+pub fn to_camel_case<'a>(s: &'a str) -> Cow<'a, str> {
+    let mut dest = Cow::Borrowed(s);
 
     for (i, part) in s.split('_').enumerate() {
         if i > 0 && part.len() == 1 {
-            dest.push_str(&part.to_uppercase());
+            dest += Cow::Owned(part.to_uppercase());
         }
         else if i > 0 && part.len() > 1 {
             let first = part.chars().next().unwrap().to_uppercase().collect::<String>();
             let second = &part[1..];
 
-            dest.push_str(&first);
-            dest.push_str(second);
+            dest += Cow::Owned(first);
+            dest += second;
         }
         else if i == 0 {
-            dest.push_str(part);
+            dest = Cow::Borrowed(part);
         }
     }
 

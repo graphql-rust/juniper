@@ -64,7 +64,7 @@ macro_rules! graphql_input_object {
     ) => {
         Some($name {
             $( $field_name: {
-                let n: String = $crate::to_camel_case(stringify!($field_name));
+                let n = $crate::to_camel_case(stringify!($field_name));
                 let v: Option<&&$crate::InputValue> = $var.get(&n[..]);
 
                 match v {
