@@ -48,10 +48,10 @@ impl Value {
 
     /// Construct an object value.
     pub fn object<K>(o: HashMap<K, Value>) -> Value
-        where K: AsRef<str> + Eq + Hash
+        where K: Into<String> + Eq + Hash
     {
         Value::Object(
-            o.into_iter().map(|(k, v)| (k.as_ref().to_owned(), v)).collect()
+            o.into_iter().map(|(k, v)| (k.into(), v)).collect()
         )
     }
 
