@@ -74,3 +74,4 @@ test_script:
   - cd juniper_tests
   - cargo build --verbose
   - cargo test
+
