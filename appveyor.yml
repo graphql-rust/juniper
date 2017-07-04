@@ -48,10 +48,6 @@ install:
 build: false
 
 test_script:
-  # Build and test all crates.
-  - cargo build --all --verbose
-  - cargo test --all
-
   # Build and test main juniper crate with certain features.
   - cd juniper
   - cargo build --verbose --features iron-handlers
@@ -66,3 +62,15 @@ test_script:
   - IF "%CHANNEL%"=="nightly" (set TEST_FEATURES=%TEST_FEATURES% rocket-handlers rocket/testing)
 
   - cargo test --verbose --features "%TEST_FEATURES%"
+  - cd ..
+
+  # Build juniper_codegen and run tests.
+  - cd juniper_codegen
+  - cargo build --verbose
+  - cargo test
+  - cd ..
+
+  # Build and run integration tests.
+  - cd juniper_tests
+  - cargo build --verbose
+  - cargo test
