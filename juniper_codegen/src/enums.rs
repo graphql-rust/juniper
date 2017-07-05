@@ -99,7 +99,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         let var_ident = &variant.ident;
 
         // Build value.
-        let name = var_attrs.name.unwrap_or(variant.ident.to_string());
+        let name = var_attrs.name.unwrap_or(variant.ident.as_ref().to_uppercase());
         let descr = match var_attrs.description {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
