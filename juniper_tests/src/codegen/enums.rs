@@ -27,10 +27,10 @@ fn test_derived_enum() {
   // Test Regular variant.
   assert_eq!(
     SomeEnum::Regular.to(),
-    InputValue::String("Regular".into())
+    InputValue::String("REGULAR".into())
   );
   assert_eq!(
-    FromInputValue::from(&InputValue::String("Regular".into())),
+    FromInputValue::from(&InputValue::String("REGULAR".into())),
     Some(SomeEnum::Regular)
   );
 
