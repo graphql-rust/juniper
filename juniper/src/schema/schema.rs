@@ -11,17 +11,19 @@ where
     MutationT: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
+    type TypeInfo = QueryT::TypeInfo;
 
-    fn name() -> Option<&'static str> {
-        QueryT::name()
+    fn name(info: &QueryT::TypeInfo) -> Option<&str> {
+        QueryT::name(info)
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        QueryT::meta(registry)
+    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+        QueryT::meta(info, registry)
     }
 
     fn resolve_field(
         &self,
+        info: &QueryT::TypeInfo,
         field: &str,
         args: &Arguments,
         executor: &Executor<CtxT>,
@@ -29,14 +31,14 @@ where
         match field {
             "__schema" => executor
                 .replaced_context(&self.schema)
-                .resolve(&self.schema),
+                .resolve(&(), &self.schema),
             "__type" => {
                 let type_name: String = args.get("name").unwrap();
                 executor
                     .replaced_context(&self.schema)
-                    .resolve(&self.schema.type_by_name(&type_name))
+                    .resolve(&(), &self.schema.type_by_name(&type_name))
             }
-            _ => self.query_type.resolve_field(field, args, executor),
+            _ => self.query_type.resolve_field(info, field, args, executor),
         }
     }
 }
@@ -140,12 +142,12 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
                     .filter_map(|tn| schema.type_by_name(tn))
                     .collect())
             }
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { name: iface_name, .. })) => {
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { name: ref iface_name, .. })) => {
                 Some(schema.concrete_type_list()
                     .iter()
                     .filter_map(|&ct|
                         if let MetaType::Object(ObjectMeta { ref name, ref interface_names, .. }) = *ct {
-                            if interface_names.contains(&iface_name.to_owned()) {
+                            if interface_names.contains(&iface_name.to_string()) {
                                 schema.type_by_name(name)
                             } else { None }
                         } else { None }

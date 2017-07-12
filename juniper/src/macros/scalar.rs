@@ -65,20 +65,22 @@ macro_rules! graphql_scalar {
     ) => {
         impl $crate::GraphQLType for $name {
             type Context = ();
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&str> {
                 Some(graphql_scalar!( @as_expr, $outname ))
             }
 
-            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+            fn meta<'r>(info: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
                 graphql_scalar!(
                     @maybe_apply, $descr, description,
-                    registry.build_scalar_type::<Self>())
+                    registry.build_scalar_type::<Self>(info))
                     .into_meta()
             }
 
             fn resolve(
                 &$resolve_selfvar,
+                _: &(),
                 _: Option<&[$crate::Selection]>,
                 _: &$crate::Executor<Self::Context>) -> $crate::Value {
                 $resolve_body

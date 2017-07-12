@@ -61,16 +61,17 @@ graphql_scalar!(String as "String" {
 
 impl<'a> GraphQLType for &'a str {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&str> {
         Some("String")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        registry.build_scalar_type::<String>().into_meta()
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_scalar_type::<String>(&()).into_meta()
     }
 
-    fn resolve(&self, _: Option<&[Selection]>, _: &Executor<Self::Context>) -> Value {
+    fn resolve(&self, _: &(), _: Option<&[Selection]>, _: &Executor<Self::Context>) -> Value {
         Value::string(self)
     }
 }
@@ -128,13 +129,14 @@ graphql_scalar!(f64 as "Float" {
 
 impl GraphQLType for () {
     type Context = ();
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&str> {
         Some("__Unit")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        registry.build_scalar_type::<Self>().into_meta()
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_scalar_type::<Self>(&()).into_meta()
     }
 }
 
@@ -164,13 +166,14 @@ impl<T> EmptyMutation<T> {
 
 impl<T> GraphQLType for EmptyMutation<T> {
     type Context = T;
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&str> {
         Some("_EmptyMutation")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        registry.build_object_type::<Self>(&[]).into_meta()
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
 

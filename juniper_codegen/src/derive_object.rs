@@ -125,7 +125,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
 
         let meta_field = quote!{
             {
-                let field = registry.field::<#field_ty>(#name);
+                let field = registry.field::<#field_ty>(#name, &());
                 let field = #build_description;
                 let field = #build_deprecation;
                 field
@@ -137,7 +137,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
 
 
         let resolver = quote!{
-            #name => executor.resolve_with_ctx(&self.#field_ident),
+            #name => executor.resolve_with_ctx(&(), &self.#field_ident),
         };
         resolvers.push(resolver);
     }
@@ -145,8 +145,9 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
     let toks = quote! {
         impl ::juniper::GraphQLType for #ident {
             type Context = ();
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&str> {
                 Some(#name)
             }
 
@@ -154,16 +155,16 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
                 #name.to_string()
             }
 
-            fn meta<'r>(registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
                 let fields = &[
                     #(#meta_fields)*
                 ];
-                let builder = registry.build_object_type::<#ident>(fields);
+                let builder = registry.build_object_type::<#ident>(&(), fields);
                 let builder = #build_description;
                 builder.into_meta()
             }
 
-            fn resolve_field(&self, field_name: &str, _: &::juniper::Arguments, executor: &::juniper::Executor<Self::Context>)
+            fn resolve_field(&self, _: &(), field_name: &str, _: &::juniper::Arguments, executor: &::juniper::Executor<Self::Context>)
                 -> ::juniper::ExecutionResult
             {
 

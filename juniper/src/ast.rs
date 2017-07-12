@@ -1,4 +1,5 @@
 use std::fmt;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::vec;
@@ -14,13 +15,13 @@ use parser::Spanning;
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Type<'a> {
     /// A nullable named type, e.g. `String`
-    Named(&'a str),
+    Named(Cow<'a, str>),
     /// A nullable list type, e.g. `[String]`
     ///
     /// The list itself is what's nullable, the containing type might be non-null.
     List(Box<Type<'a>>),
     /// A non-null named type, e.g. `String!`
-    NonNullNamed(&'a str),
+    NonNullNamed(Cow<'a, str>),
     /// A non-null list type, e.g. `[String]!`.
     ///
     /// The list itself is what's non-null, the containing type might be null.
@@ -168,7 +169,7 @@ impl<'a> Type<'a> {
     /// Only applies to named types; lists will return `None`.
     pub fn name(&self) -> Option<&str> {
         match *self {
-            Type::Named(n) | Type::NonNullNamed(n) => Some(n),
+            Type::Named(ref n) | Type::NonNullNamed(ref n) => Some(n),
             _ => None,
         }
     }
@@ -178,7 +179,7 @@ impl<'a> Type<'a> {
     /// All type literals contain exactly one named type.
     pub fn innermost_name(&self) -> &str {
         match *self {
-            Type::Named(n) | Type::NonNullNamed(n) => n,
+            Type::Named(ref n) | Type::NonNullNamed(ref n) => n,
             Type::List(ref l) | Type::NonNullList(ref l) => l.innermost_name(),
         }
     }
@@ -195,8 +196,8 @@ impl<'a> Type<'a> {
 impl<'a> fmt::Display for Type<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Type::Named(n) => write!(f, "{}", n),
-            Type::NonNullNamed(n) => write!(f, "{}!", n),
+            Type::Named(ref n) => write!(f, "{}", n),
+            Type::NonNullNamed(ref n) => write!(f, "{}!", n),
             Type::List(ref t) => write!(f, "[{}]", t),
             Type::NonNullList(ref t) => write!(f, "[{}]!", t),
         }

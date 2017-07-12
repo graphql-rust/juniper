@@ -6,3 +6,5 @@ mod schema;
 mod query_tests;
 #[cfg(test)]
 mod introspection_tests;
+#[cfg(test)]
+mod type_info_tests;

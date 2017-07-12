@@ -44,7 +44,7 @@ macro_rules! graphql_union {
     ) => {
         $acc = vec![
             $(
-                $reg.get_type::<$srctype>()
+                $reg.get_type::<$srctype>(&())
             ),*
         ];
 
@@ -62,7 +62,7 @@ macro_rules! graphql_union {
 
         $(
             if let Some(_) = $resolver as Option<$srctype> {
-                return (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned();
+                return (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned();
             }
         )*
 
@@ -79,8 +79,8 @@ macro_rules! graphql_union {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned() {
-                return $execarg.resolve(&$resolver);
+            if $typenamearg == (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned() {
+                return $execarg.resolve(&(), &$resolver);
             }
         )*
 
@@ -107,18 +107,19 @@ macro_rules! graphql_union {
     ) => {
         graphql_union!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
             type Context = $ctxt;
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&str> {
                 Some($outname)
             }
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
                 let mut types;
                 let mut description = None;
                 graphql_union!(@ gather_meta, (registry, types, description), $($items)*);
-                let mut mt = registry.build_union_type::<$name>(&types);
+                let mut mt = registry.build_union_type::<$name>(&(), &types);
 
                 if let Some(description) = description {
                     mt = mt.description(description);
@@ -136,6 +137,7 @@ macro_rules! graphql_union {
 
             fn resolve_into_type(
                 &$mainself,
+                _: &(),
                 type_name: &str,
                 _: Option<&[$crate::Selection]>,
                 executor: &$crate::Executor<Self::Context>,
