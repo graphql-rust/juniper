@@ -1,5 +1,7 @@
+#[cfg(test)]
 use std::collections::HashMap;
 
+#[cfg(test)]
 use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
 #[derive(GraphQLEnum, Debug, PartialEq)]
@@ -14,11 +16,11 @@ enum SomeEnum {
 #[test]
 fn test_derived_enum() {
     // Ensure that rename works.
-    assert_eq!(SomeEnum::name(), Some("Some"));
+    assert_eq!(SomeEnum::name(&()), Some("Some"));
 
     // Ensure validity of meta info.
     let mut registry = juniper::Registry::new(HashMap::new());
-    let meta = SomeEnum::meta(&mut registry);
+    let meta = SomeEnum::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("Some"));
     assert_eq!(meta.description(), Some(&"enum descr".to_string()));

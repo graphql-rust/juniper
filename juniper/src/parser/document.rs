@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use ast::{Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
           InlineFragment, InputValue, Operation, OperationType, Selection, Type,
           VariableDefinition, VariableDefinitions};
@@ -362,7 +364,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Type<'a>> {
         let Spanning { end: end_pos, .. } = try!(parser.expect(&Token::BracketClose));
         Spanning::start_end(&start_pos, &end_pos, Type::List(Box::new(inner_type.item)))
     } else {
-        try!(parser.expect_name()).map(Type::Named)
+        try!(parser.expect_name()).map(|s| Type::Named(Cow::Borrowed(s)))
     };
 
     Ok(match *parser.peek() {

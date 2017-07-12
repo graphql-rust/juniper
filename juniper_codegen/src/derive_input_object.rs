@@ -135,12 +135,12 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         let create_meta_field = match default {
             Some(ref def) => {
                 quote!{
-                    let field = registry.arg_with_default::<#field_ty>( #name, &#def);
+                    let field = registry.arg_with_default::<#field_ty>( #name, &#def, &());
                 }
             }
             None => {
                 quote!{
-                    let field = registry.arg::<#field_ty>(#name);
+                    let field = registry.arg::<#field_ty>(#name, &());
                 }
             }
         };
@@ -186,16 +186,17 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
     quote! {
         impl ::juniper::GraphQLType for #ident {
             type Context = ();
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&'static str> {
                 Some(#name)
             }
 
-            fn meta<'r>(registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
                 let fields = &[
                     #(#meta_fields)*
                 ];
-                let meta = registry.build_input_object_type::<#ident>(fields);
+                let meta = registry.build_input_object_type::<#ident>(&(), fields);
                 #meta_description
                 meta.into_meta()
             }

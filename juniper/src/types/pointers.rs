@@ -10,35 +10,43 @@ where
     T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
 
-    fn name() -> Option<&'static str> {
-        T::name()
+    fn name(info: &T::TypeInfo) -> Option<&str> {
+        T::name(info)
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        T::meta(registry)
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+        T::meta(info, registry)
     }
 
     fn resolve_into_type(
         &self,
+        info: &T::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection]>,
         executor: &Executor<CtxT>,
     ) -> ExecutionResult {
-        (**self).resolve_into_type(name, selection_set, executor)
+        (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
     fn resolve_field(
         &self,
+        info: &T::TypeInfo,
         field: &str,
         args: &Arguments,
         executor: &Executor<CtxT>,
     ) -> ExecutionResult {
-        (**self).resolve_field(field, args, executor)
+        (**self).resolve_field(info, field, args, executor)
     }
 
-    fn resolve(&self, selection_set: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
-        (**self).resolve(selection_set, executor)
+    fn resolve(
+        &self,
+        info: &T::TypeInfo,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> Value {
+        (**self).resolve(info, selection_set, executor)
     }
 }
 
@@ -68,35 +76,43 @@ where
     T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
 
-    fn name() -> Option<&'static str> {
-        T::name()
+    fn name(info: &T::TypeInfo) -> Option<&str> {
+        T::name(info)
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        T::meta(registry)
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+        T::meta(info, registry)
     }
 
     fn resolve_into_type(
         &self,
+        info: &T::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection]>,
         executor: &Executor<CtxT>,
     ) -> ExecutionResult {
-        (**self).resolve_into_type(name, selection_set, executor)
+        (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
     fn resolve_field(
         &self,
+        info: &T::TypeInfo,
         field: &str,
         args: &Arguments,
         executor: &Executor<CtxT>,
     ) -> ExecutionResult {
-        (**self).resolve_field(field, args, executor)
+        (**self).resolve_field(info, field, args, executor)
     }
 
-    fn resolve(&self, selection_set: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
-        (**self).resolve(selection_set, executor)
+    fn resolve(
+        &self,
+        info: &T::TypeInfo,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> Value {
+        (**self).resolve(info, selection_set, executor)
     }
 }
 

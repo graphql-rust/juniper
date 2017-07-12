@@ -1,5 +1,7 @@
+#[cfg(test)]
 use std::collections::HashMap;
 
+#[cfg(test)]
 use juniper::{self, FromInputValue, GraphQLType, ToInputValue};
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -12,11 +14,11 @@ struct Input {
 
 #[test]
 fn test_derived_input_object() {
-    assert_eq!(Input::name(), Some("MyInput"));
+    assert_eq!(Input::name(&()), Some("MyInput"));
 
     // Validate meta info.
     let mut registry = juniper::Registry::new(HashMap::new());
-    let meta = Input::meta(&mut registry);
+    let meta = Input::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyInput"));
     assert_eq!(meta.description(), Some(&"input descr".to_string()));
 

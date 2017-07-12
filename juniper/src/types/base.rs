@@ -152,27 +152,29 @@ impl Context for Database {}
 
 impl GraphQLType for User {
     type Context = Database;
+    type TypeInfo = ();
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("User")
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         // First, we need to define all fields and their types on this type.
         //
         // If we need arguments, want to implement interfaces, or want to add
         // documentation strings, we can do it here.
         let fields = &[
-            registry.field::<&String>("id"),
-            registry.field::<&String>("name"),
-            registry.field::<Vec<&User>>("friends"),
+            registry.field::<&String>("id", &()),
+            registry.field::<&String>("name", &()),
+            registry.field::<Vec<&User>>("friends", &()),
         ];
 
-        registry.build_object_type::<User>(fields).into_meta()
+        registry.build_object_type::<User>(&(), fields).into_meta()
     }
 
     fn resolve_field(
         &self,
+        info: &(),
         field_name: &str,
         args: &Arguments,
         executor: &Executor<Database>
@@ -188,14 +190,14 @@ impl GraphQLType for User {
             // Because scalars are defined with another `Context` associated
             // type, you must use resolve_with_ctx here to make the executor
             // perform automatic type conversion of its argument.
-            "id" => executor.resolve_with_ctx(&self.id),
-            "name" => executor.resolve_with_ctx(&self.name),
+            "id" => executor.resolve_with_ctx(info, &self.id),
+            "name" => executor.resolve_with_ctx(info, &self.name),
 
             // You pass a vector of User objects to `executor.resolve`, and it
             // will determine which fields of the sub-objects to actually
             // resolve based on the query. The executor instance keeps track
             // of its current position in the query.
-            "friends" => executor.resolve(
+            "friends" => executor.resolve(info,
                 &self.friend_ids.iter()
                     .filter_map(|id| database.users.get(id))
                     .collect::<Vec<_>>()
@@ -222,15 +224,22 @@ pub trait GraphQLType: Sized {
     /// request session information.
     type Context;
 
+    /// Type that may carry additional schema information
+    ///
+    /// This can be used to implement a schema that is partly dynamic,
+    /// meaning that it can use information that is not known at compile time,
+    /// for instance by reading it from a configuration file at start-up.
+    type TypeInfo;
+
     /// The name of the GraphQL type to expose.
     ///
     /// This function will be called multiple times during schema construction.
     /// It must _not_ perform any calculation and _always_ return the same
     /// value.
-    fn name() -> Option<&'static str>;
+    fn name(info: &Self::TypeInfo) -> Option<&str>;
 
     /// The meta type representing this GraphQL type.
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r>;
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r>;
 
     /// Resolve the value of a single field on this type.
     ///
@@ -243,6 +252,7 @@ pub trait GraphQLType: Sized {
     #[allow(unused_variables)]
     fn resolve_field(
         &self,
+        info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments,
         executor: &Executor<Self::Context>,
@@ -259,12 +269,13 @@ pub trait GraphQLType: Sized {
     #[allow(unused_variables)]
     fn resolve_into_type(
         &self,
+        info: &Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&[Selection]>,
         executor: &Executor<Self::Context>,
     ) -> ExecutionResult {
-        if Self::name().unwrap() == type_name {
-            Ok(self.resolve(selection_set, executor))
+        if Self::name(info).unwrap() == type_name {
+            Ok(self.resolve(info, selection_set, executor))
         } else {
             panic!("resolve_into_type must be implemented by unions and interfaces");
         }
@@ -290,12 +301,13 @@ pub trait GraphQLType: Sized {
     /// non-object types, this method panics.
     fn resolve(
         &self,
+        info: &Self::TypeInfo,
         selection_set: Option<&[Selection]>,
         executor: &Executor<Self::Context>,
     ) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
-            resolve_selection_set_into(self, selection_set, executor, &mut result);
+            resolve_selection_set_into(self, info, selection_set, executor, &mut result);
             Value::object(result)
         } else {
             panic!("resolve() must be implemented by non-object output types");
@@ -305,6 +317,7 @@ pub trait GraphQLType: Sized {
 
 fn resolve_selection_set_into<T, CtxT>(
     instance: &T,
+    info: &T::TypeInfo,
     selection_set: &[Selection],
     executor: &Executor<CtxT>,
     result: &mut HashMap<String, Value>,
@@ -313,7 +326,11 @@ fn resolve_selection_set_into<T, CtxT>(
 {
     let meta_type = executor
         .schema()
-        .concrete_type_by_name(T::name().expect("Resolving named type's selection set"))
+        .concrete_type_by_name(
+            T::name(info)
+                .expect("Resolving named type's selection set")
+                .as_ref(),
+        )
         .expect("Type not found in schema");
 
     for selection in selection_set {
@@ -354,6 +371,7 @@ fn resolve_selection_set_into<T, CtxT>(
                 );
 
                 let field_result = instance.resolve_field(
+                    info,
                     f.name.item,
                     &Arguments::new(
                         f.arguments.as_ref().map(|m| {
@@ -388,7 +406,13 @@ fn resolve_selection_set_into<T, CtxT>(
                     .fragment_by_name(spread.name.item)
                     .expect("Fragment could not be found");
 
-                resolve_selection_set_into(instance, &fragment.selection_set[..], executor, result);
+                resolve_selection_set_into(
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    executor,
+                    result,
+                );
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
@@ -404,6 +428,7 @@ fn resolve_selection_set_into<T, CtxT>(
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.resolve_into_type(
+                        info,
                         type_condition.item,
                         Some(&fragment.selection_set[..]),
                         &sub_exec,
@@ -419,6 +444,7 @@ fn resolve_selection_set_into<T, CtxT>(
                 } else {
                     resolve_selection_set_into(
                         instance,
+                        info,
                         &fragment.selection_set[..],
                         &sub_exec,
                         result,

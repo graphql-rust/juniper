@@ -93,93 +93,97 @@ macro_rules! graphql_interface {
     // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
     (
         @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
+        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
         field deprecated $reason:tt $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
     ) => {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)))
+                &$crate::to_camel_case(stringify!($name)), $info)
                 .description($desc)
                 .deprecated($reason),
+            $info,
             $args));
 
-        graphql_interface!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*);
+        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
     };
 
     // field deprecated <reason> <name>(...) -> <type> { ... }
     (
         @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
+        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
         field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
     ) => {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)))
+                &$crate::to_camel_case(stringify!($name)), $info)
                 .deprecated($reason),
+            $info,
             $args));
 
-        graphql_interface!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*);
+        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
     };
 
     // field <name>(...) -> <type> as <description> { ... }
     (
         @gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
+        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
         field $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
     ) => {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)))
+                &$crate::to_camel_case(stringify!($name)), $info)
                 .description($desc),
+            $info,
             $args));
 
-        graphql_interface!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*);
+        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
     };
 
     // field <name>(...) -> <type> { ... }
     (
         @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
+        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
         field $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
     ) => {
         $acc.push(__graphql__args!(
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name))),
+                &$crate::to_camel_case(stringify!($name)), $info),
+            $info,
             $args));
 
-        graphql_interface!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*);
+        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
     };
 
     // description: <description>
     (
         @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
+        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
         description : $value:tt $( $rest:tt )*
     ) => {
         $descr = Some(graphql_interface!(@as_expr, $value));
 
-        graphql_interface!(@gather_meta, ($reg, $acc, $descr), $( $rest )*)
+        graphql_interface!(@gather_meta, ($reg, $acc, $info, $descr), $( $rest )*)
     };
 
     // instance_resolvers: | <ctxtvar> | [...]
     (
         @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
+        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
         instance_resolvers : | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
         $(
-            let _ = $reg.get_type::<$srctype>();
+            let _ = $reg.get_type::<$srctype>(&());
         )*
 
-            graphql_interface!(@gather_meta, ($reg, $acc, $descr), $( $rest )*)
+            graphql_interface!(@gather_meta, ($reg, $acc, $info, $descr), $( $rest )*)
     };
 
     // instance_resolvers: | <ctxtvar> | [...]
@@ -192,7 +196,7 @@ macro_rules! graphql_interface {
 
         $(
             if ($resolver as Option<$srctype>).is_some() {
-                return (<$srctype as $crate::GraphQLType>::name()).unwrap().to_owned();
+                return (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned();
             }
         )*
 
@@ -208,8 +212,8 @@ macro_rules! graphql_interface {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name()).unwrap() {
-                return $execarg.resolve(&$resolver);
+            if $typenamearg == (<$srctype as $crate::GraphQLType>::name(&())).unwrap() {
+                return $execarg.resolve(&(), &$resolver);
             }
         )*
 
@@ -229,18 +233,19 @@ macro_rules! graphql_interface {
     ) => {
         graphql_interface!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
             type Context = $ctxt;
+            type TypeInfo = ();
 
-            fn name() -> Option<&'static str> {
+            fn name(_: &()) -> Option<&str> {
                 Some($outname)
             }
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta<'r>(registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+            fn meta<'r>(info: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
                 let mut fields = Vec::new();
                 let mut description = None;
-                graphql_interface!(@ gather_meta, (registry, fields, description), $($items)*);
-                let mut mt = registry.build_interface_type::<$name>(&fields);
+                graphql_interface!(@ gather_meta, (registry, fields, info, description), $($items)*);
+                let mut mt = registry.build_interface_type::<$name>(&(), &fields);
 
                 if let Some(description) = description {
                     mt = mt.description(description);
@@ -251,7 +256,7 @@ macro_rules! graphql_interface {
 
             #[allow(unused_variables)]
             #[allow(unused_mut)]
-            fn resolve_field(&$mainself, field: &str, args: &$crate::Arguments, mut executor: &$crate::Executor<Self::Context>) -> $crate::ExecutionResult {
+            fn resolve_field(&$mainself, info: &(), field: &str, args: &$crate::Arguments, mut executor: &$crate::Executor<Self::Context>) -> $crate::ExecutionResult {
                 __graphql__build_field_matches!(
                     ($outname, $mainself, field, args, executor),
                     (),
@@ -267,6 +272,7 @@ macro_rules! graphql_interface {
 
             fn resolve_into_type(
                 &$mainself,
+                _: &(),
                 type_name: &str,
                 _: Option<&[$crate::Selection]>,
                 executor: &$crate::Executor<Self::Context>,

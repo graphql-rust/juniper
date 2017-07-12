@@ -1,5 +1,7 @@
+#[cfg(test)]
 use std::collections::HashMap;
 
+#[cfg(test)]
 use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
 
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -23,11 +25,11 @@ graphql_object!(Query: () |&self| {
 
 #[test]
 fn test_derived_object() {
-    assert_eq!(Obj::name(), Some("MyObj"));
+    assert_eq!(Obj::name(&()), Some("MyObj"));
 
     // Verify meta info.
     let mut registry = juniper::Registry::new(HashMap::new());
-    let meta = Obj::meta(&mut registry);
+    let meta = Obj::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("MyObj"));
     assert_eq!(meta.description(), Some(&"obj descr".to_string()));

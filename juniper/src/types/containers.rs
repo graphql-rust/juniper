@@ -10,18 +10,24 @@ where
     T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &T::TypeInfo) -> Option<&str> {
         None
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        registry.build_nullable_type::<T>().into_meta()
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_nullable_type::<T>(info).into_meta()
     }
 
-    fn resolve(&self, _: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(
+        &self,
+        info: &T::TypeInfo,
+        _: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> Value {
         match *self {
-            Some(ref obj) => executor.resolve_into_value(obj),
+            Some(ref obj) => executor.resolve_into_value(info, obj),
             None => Value::null(),
         }
     }
@@ -59,19 +65,25 @@ where
     T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &T::TypeInfo) -> Option<&str> {
         None
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        registry.build_list_type::<T>().into_meta()
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_list_type::<T>(info).into_meta()
     }
 
-    fn resolve(&self, _: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(
+        &self,
+        info: &T::TypeInfo,
+        _: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> Value {
         Value::list(
             self.iter()
-                .map(|e| executor.resolve_into_value(e))
+                .map(|e| executor.resolve_into_value(info, e))
                 .collect(),
         )
     }
@@ -115,19 +127,25 @@ where
     T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
+    type TypeInfo = T::TypeInfo;
 
-    fn name() -> Option<&'static str> {
+    fn name(_: &T::TypeInfo) -> Option<&str> {
         None
     }
 
-    fn meta<'r>(registry: &mut Registry<'r>) -> MetaType<'r> {
-        registry.build_list_type::<T>().into_meta()
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+        registry.build_list_type::<T>(info).into_meta()
     }
 
-    fn resolve(&self, _: Option<&[Selection]>, executor: &Executor<CtxT>) -> Value {
+    fn resolve(
+        &self,
+        info: &T::TypeInfo,
+        _: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> Value {
         Value::list(
             self.iter()
-                .map(|e| executor.resolve_into_value(e))
+                .map(|e| executor.resolve_into_value(info, e))
                 .collect(),
         )
     }

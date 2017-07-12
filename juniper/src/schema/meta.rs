@@ -1,6 +1,6 @@
 //! Types used to describe a GraphQL schema
 
-
+use std::borrow::Cow;
 use std::fmt;
 
 use ast::{FromInputValue, InputValue, Type};
@@ -9,7 +9,7 @@ use types::base::TypeKind;
 /// Scalar type metadata
 pub struct ScalarMeta<'a> {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -34,7 +34,7 @@ pub struct NullableMeta<'a> {
 #[derive(Debug)]
 pub struct ObjectMeta<'a> {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -46,7 +46,7 @@ pub struct ObjectMeta<'a> {
 /// Enum type metadata
 pub struct EnumMeta<'a> {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -59,7 +59,7 @@ pub struct EnumMeta<'a> {
 #[derive(Debug)]
 pub struct InterfaceMeta<'a> {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -70,7 +70,7 @@ pub struct InterfaceMeta<'a> {
 #[derive(Debug)]
 pub struct UnionMeta<'a> {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -80,7 +80,7 @@ pub struct UnionMeta<'a> {
 /// Input object metadata
 pub struct InputObjectMeta<'a> {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
     #[doc(hidden)]
@@ -174,12 +174,12 @@ impl<'a> MetaType<'a> {
     /// Lists, non-null wrappers, and placeholders don't have names.
     pub fn name(&self) -> Option<&str> {
         match *self {
-            MetaType::Scalar(ScalarMeta { name, .. }) |
-            MetaType::Object(ObjectMeta { name, .. }) |
-            MetaType::Enum(EnumMeta { name, .. }) |
-            MetaType::Interface(InterfaceMeta { name, .. }) |
-            MetaType::Union(UnionMeta { name, .. }) |
-            MetaType::InputObject(InputObjectMeta { name, .. }) => Some(name),
+            MetaType::Scalar(ScalarMeta { ref name, .. }) |
+            MetaType::Object(ObjectMeta { ref name, .. }) |
+            MetaType::Enum(EnumMeta { ref name, .. }) |
+            MetaType::Interface(InterfaceMeta { ref name, .. }) |
+            MetaType::Union(UnionMeta { ref name, .. }) |
+            MetaType::InputObject(InputObjectMeta { ref name, .. }) => Some(name),
             _ => None,
         }
     }
@@ -257,17 +257,19 @@ impl<'a> MetaType<'a> {
     /// Construct a `Type` literal instance based on the metadata
     pub fn as_type(&self) -> Type<'a> {
         match *self {
-            MetaType::Scalar(ScalarMeta { name, .. }) |
-            MetaType::Object(ObjectMeta { name, .. }) |
-            MetaType::Enum(EnumMeta { name, .. }) |
-            MetaType::Interface(InterfaceMeta { name, .. }) |
-            MetaType::Union(UnionMeta { name, .. }) |
-            MetaType::InputObject(InputObjectMeta { name, .. }) => Type::NonNullNamed(name),
+            MetaType::Scalar(ScalarMeta { ref name, .. }) |
+            MetaType::Object(ObjectMeta { ref name, .. }) |
+            MetaType::Enum(EnumMeta { ref name, .. }) |
+            MetaType::Interface(InterfaceMeta { ref name, .. }) |
+            MetaType::Union(UnionMeta { ref name, .. }) |
+            MetaType::InputObject(InputObjectMeta { ref name, .. }) => {
+                Type::NonNullNamed(name.clone())
+            }
             MetaType::List(ListMeta { ref of_type }) => {
                 Type::NonNullList(Box::new(of_type.clone()))
             }
             MetaType::Nullable(NullableMeta { ref of_type }) => match *of_type {
-                Type::NonNullNamed(inner) => Type::Named(inner),
+                Type::NonNullNamed(ref inner) => Type::Named(inner.clone()),
                 Type::NonNullList(ref inner) => Type::List(inner.clone()),
                 ref t => t.clone(),
             },
@@ -339,7 +341,7 @@ impl<'a> MetaType<'a> {
 
 impl<'a> ScalarMeta<'a> {
     /// Build a new scalar type metadata with the specified name
-    pub fn new<T: FromInputValue>(name: &'a str) -> ScalarMeta<'a> {
+    pub fn new<T: FromInputValue>(name: Cow<'a, str>) -> ScalarMeta<'a> {
         ScalarMeta {
             name: name,
             description: None,
@@ -387,7 +389,7 @@ impl<'a> NullableMeta<'a> {
 
 impl<'a> ObjectMeta<'a> {
     /// Build a new object type with the specified name and fields
-    pub fn new(name: &'a str, fields: &[Field<'a>]) -> ObjectMeta<'a> {
+    pub fn new(name: Cow<'a, str>, fields: &[Field<'a>]) -> ObjectMeta<'a> {
         ObjectMeta {
             name: name,
             description: None,
@@ -424,7 +426,7 @@ impl<'a> ObjectMeta<'a> {
 
 impl<'a> EnumMeta<'a> {
     /// Build a new enum type with the specified name and possible values
-    pub fn new<T: FromInputValue>(name: &'a str, values: &[EnumValue]) -> EnumMeta<'a> {
+    pub fn new<T: FromInputValue>(name: Cow<'a, str>, values: &[EnumValue]) -> EnumMeta<'a> {
         EnumMeta {
             name: name,
             description: None,
@@ -449,7 +451,7 @@ impl<'a> EnumMeta<'a> {
 
 impl<'a> InterfaceMeta<'a> {
     /// Build a new interface type with the specified name and fields
-    pub fn new(name: &'a str, fields: &[Field<'a>]) -> InterfaceMeta<'a> {
+    pub fn new(name: Cow<'a, str>, fields: &[Field<'a>]) -> InterfaceMeta<'a> {
         InterfaceMeta {
             name: name,
             description: None,
@@ -473,7 +475,7 @@ impl<'a> InterfaceMeta<'a> {
 
 impl<'a> UnionMeta<'a> {
     /// Build a new union type with the specified name and possible types
-    pub fn new(name: &'a str, of_types: &[Type]) -> UnionMeta<'a> {
+    pub fn new(name: Cow<'a, str>, of_types: &[Type]) -> UnionMeta<'a> {
         UnionMeta {
             name: name,
             description: None,
@@ -501,7 +503,7 @@ impl<'a> UnionMeta<'a> {
 impl<'a> InputObjectMeta<'a> {
     /// Build a new input type with the specified name and input fields
     pub fn new<T: FromInputValue>(
-        name: &'a str,
+        name: Cow<'a, str>,
         input_fields: &[Argument<'a>],
     ) -> InputObjectMeta<'a> {
         InputObjectMeta {

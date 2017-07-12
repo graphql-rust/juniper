@@ -10,11 +10,15 @@ use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMet
 ///
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
-pub struct RootNode<'a, QueryT, MutationT> {
+pub struct RootNode<'a, QueryT: GraphQLType, MutationT: GraphQLType> {
     #[doc(hidden)]
     pub query_type: QueryT,
     #[doc(hidden)]
+    pub query_info: QueryT::TypeInfo,
+    #[doc(hidden)]
     pub mutation_type: MutationT,
+    #[doc(hidden)]
+    pub mutation_info: MutationT::TypeInfo,
     #[doc(hidden)]
     pub schema: SchemaType<'a>,
 }
@@ -54,24 +58,47 @@ pub enum DirectiveLocation {
 
 impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>
 where
-    QueryT: GraphQLType,
-    MutationT: GraphQLType,
+    QueryT: GraphQLType<TypeInfo = ()>,
+    MutationT: GraphQLType<TypeInfo = ()>,
 {
     /// Construct a new root node from query and mutation nodes
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
     pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> RootNode<'a, QueryT, MutationT> {
+        RootNode::new_with_info(query_obj, mutation_obj, (), ())
+    }
+}
+
+impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>
+where
+    QueryT: GraphQLType,
+    MutationT: GraphQLType,
+{
+    /// Construct a new root node from query and mutation nodes,
+    /// while also providing type info objects for the query and
+    /// mutation types.
+    pub fn new_with_info(
+        query_obj: QueryT,
+        mutation_obj: MutationT,
+        query_info: QueryT::TypeInfo,
+        mutation_info: MutationT::TypeInfo,
+    ) -> RootNode<'a, QueryT, MutationT> {
         RootNode {
             query_type: query_obj,
             mutation_type: mutation_obj,
-            schema: SchemaType::new::<QueryT, MutationT>(),
+            schema: SchemaType::new::<QueryT, MutationT>(&query_info, &mutation_info),
+            query_info: query_info,
+            mutation_info: mutation_info,
         }
     }
 }
 
 impl<'a> SchemaType<'a> {
-    pub fn new<QueryT, MutationT>() -> SchemaType<'a>
+    pub fn new<QueryT, MutationT>(
+        query_info: &QueryT::TypeInfo,
+        mutation_info: &MutationT::TypeInfo,
+    ) -> SchemaType<'a>
     where
         QueryT: GraphQLType,
         MutationT: GraphQLType,
@@ -81,10 +108,16 @@ impl<'a> SchemaType<'a> {
         let mutation_type_name: String;
 
         let mut registry = Registry::new(HashMap::new());
-        query_type_name = registry.get_type::<QueryT>().innermost_name().to_owned();
-        mutation_type_name = registry.get_type::<MutationT>().innermost_name().to_owned();
+        query_type_name = registry
+            .get_type::<QueryT>(query_info)
+            .innermost_name()
+            .to_owned();
+        mutation_type_name = registry
+            .get_type::<MutationT>(mutation_info)
+            .innermost_name()
+            .to_owned();
 
-        registry.get_type::<SchemaType>();
+        registry.get_type::<SchemaType>(&());
         directives.insert("skip".to_owned(), DirectiveType::new_skip(&mut registry));
         directives.insert(
             "include".to_owned(),
@@ -92,10 +125,10 @@ impl<'a> SchemaType<'a> {
         );
 
         let mut meta_fields = vec![
-            registry.field::<SchemaType>("__schema"),
+            registry.field::<SchemaType>("__schema", &()),
             registry
-                .field::<TypeType>("__type")
-                .argument(registry.arg::<String>("name")),
+                .field::<TypeType>("__type", &())
+                .argument(registry.arg::<String>("name", &())),
         ];
 
         if let Some(root_type) = registry.types.get_mut(&query_type_name) {
@@ -180,13 +213,13 @@ impl<'a> SchemaType<'a> {
 
     pub fn make_type(&self, t: &Type) -> TypeType {
         match *t {
-            Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
+            Type::NonNullNamed(ref n) => TypeType::NonNull(Box::new(
                 self.type_by_name(n).expect("Type not found in schema"),
             )),
             Type::NonNullList(ref inner) => {
                 TypeType::NonNull(Box::new(TypeType::List(Box::new(self.make_type(inner)))))
             }
-            Type::Named(n) => self.type_by_name(n).expect("Type not found in schema"),
+            Type::Named(ref n) => self.type_by_name(n).expect("Type not found in schema"),
             Type::List(ref inner) => TypeType::List(Box::new(self.make_type(inner))),
         }
     }
@@ -222,7 +255,7 @@ impl<'a> SchemaType<'a> {
                 .iter()
                 .flat_map(|t| self.concrete_type_by_name(t))
                 .collect(),
-            MetaType::Interface(InterfaceMeta { name, .. }) => self.concrete_type_list()
+            MetaType::Interface(InterfaceMeta { ref name, .. }) => self.concrete_type_list()
                 .into_iter()
                 .filter(|t| match **t {
                     MetaType::Object(ObjectMeta {
@@ -250,9 +283,9 @@ impl<'a> SchemaType<'a> {
         }
 
         match (super_type, sub_type) {
-            (&NonNullNamed(super_name), &NonNullNamed(sub_name)) |
-            (&Named(super_name), &Named(sub_name)) |
-            (&Named(super_name), &NonNullNamed(sub_name)) => {
+            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name)) |
+            (&Named(ref super_name), &Named(ref sub_name)) |
+            (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
                 self.is_named_subtype(sub_name, super_name)
             }
             (&NonNullList(ref super_inner), &NonNullList(ref sub_inner)) |
@@ -309,7 +342,7 @@ impl<'a> DirectiveType<'a> {
                 DirectiveLocation::FragmentSpread,
                 DirectiveLocation::InlineFragment,
             ],
-            &[registry.arg::<bool>("if")],
+            &[registry.arg::<bool>("if", &())],
         )
     }
 
@@ -321,7 +354,7 @@ impl<'a> DirectiveType<'a> {
                 DirectiveLocation::FragmentSpread,
                 DirectiveLocation::InlineFragment,
             ],
-            &[registry.arg::<bool>("if")],
+            &[registry.arg::<bool>("if", &())],
         )
     }
 
