@@ -13,7 +13,7 @@ use std::error::Error;
 use serde_json;
 
 use rocket::Request;
-use rocket::request::{FromForm, FormItems, FromFormValue};
+use rocket::request::{FromForm, FormItems};
 use rocket::data::{FromData, Outcome as FromDataOutcome};
 use rocket::response::{Responder, Response, content};
 use rocket::http::{ContentType, Status};
@@ -37,8 +37,8 @@ pub struct GraphQLRequest(http::GraphQLRequest);
 pub struct GraphQLResponse(Status, String);
 
 /// Generate an HTML page containing GraphiQL
-pub fn graphiql_source(graphql_endpoint_url: &str) -> content::HTML<String> {
-    content::HTML(::graphiql::graphiql_source(graphql_endpoint_url))
+pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
+    content::Html(::graphiql::graphiql_source(graphql_endpoint_url))
 }
 
 impl GraphQLRequest {
@@ -63,19 +63,22 @@ impl GraphQLRequest {
 impl<'f> FromForm<'f> for GraphQLRequest {
     type Error = String;
 
-    fn from_form_items(form_items: &mut FormItems<'f>) -> Result<Self, String> {
+    fn from_form(
+        form_items: &mut FormItems<'f>,
+        strict: bool
+    ) -> Result<Self, String> {
         let mut query = None;
         let mut operation_name = None;
         let mut variables = None;
 
         for (key, value) in form_items {
-            match key {
+            match key.as_str() {
                 "query" => {
                     if query.is_some() {
                         return Err("Query parameter must not occur more than once".to_owned());
                     }
                     else {
-                        query = Some(String::from_form_value(value)?);
+                        query = Some(value.as_str().to_string());
                     }
                 }
                 "operation_name" => {
@@ -83,7 +86,7 @@ impl<'f> FromForm<'f> for GraphQLRequest {
                         return Err("Operation name parameter must not occur more than once".to_owned());
                     }
                     else {
-                        operation_name = Some(String::from_form_value(value)?);
+                        operation_name = Some(value.as_str().to_string());
                     }
                 }
                 "variables" => {
@@ -91,11 +94,15 @@ impl<'f> FromForm<'f> for GraphQLRequest {
                         return Err("Variables parameter must not occur more than once".to_owned());
                     }
                     else {
-                        variables = Some(serde_json::from_str::<InputValue>(&String::from_form_value(value)?)
+                        variables = Some(serde_json::from_str::<InputValue>(value.as_str())
                             .map_err(|err| err.description().to_owned())?);
                     }
                 }
-                _ => {}
+                _ => {
+                    if strict {
+                        return Err(format!("Prohibited extra field '{}'", key).to_owned());
+                    }
+                }
             }
         }
 
@@ -115,7 +122,7 @@ impl<'f> FromForm<'f> for GraphQLRequest {
 impl FromData for GraphQLRequest {
     type Error = String;
 
-    fn from_data(request: &Request, data: Data) -> FromDataOutcome<Self, String> {
+    fn from_data(request: &Request, data: Data) -> FromDataOutcome<Self, Self::Error> {
         if !request.content_type().map_or(false, |ct| ct.is_json()) {
             return Forward(data);
         }
@@ -135,7 +142,7 @@ impl FromData for GraphQLRequest {
 }
 
 impl<'r> Responder<'r> for GraphQLResponse {
-    fn respond(self) -> Result<Response<'r>, Status> {
+    fn respond_to(self, _: &Request) -> Result<Response<'r>, Status> {
         let GraphQLResponse(status, body) = self;
 
         Ok(Response::build()
