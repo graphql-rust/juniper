@@ -1,4 +1,4 @@
-use juniper::{self, execute, GraphQLType, Value, Variables, EmptyMutation, RootNode};
+use juniper::{execute, GraphQLType, Value, Variables, EmptyMutation, RootNode};
 
 #[derive(GraphQLObject, Debug, PartialEq)]
 #[graphql(name="MyObj", description="obj descr")]

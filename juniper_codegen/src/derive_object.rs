@@ -151,7 +151,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
                 Some(#name)
             }
 
-            fn concrete_type_name(&self, context: &Self::Context) -> String {
+            fn concrete_type_name(&self, _: &Self::Context) -> String {
                 #name.to_string()
             }
 
@@ -164,7 +164,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
                 builder.into_meta()
             }
 
-            fn resolve_field(&self, field_name: &str, args: &::juniper::Arguments, executor: &::juniper::Executor<Self::Context>)
+            fn resolve_field(&self, field_name: &str, _: &::juniper::Arguments, executor: &::juniper::Executor<Self::Context>)
                 -> ::juniper::ExecutionResult
             {
 
