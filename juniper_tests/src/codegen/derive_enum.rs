@@ -24,6 +24,9 @@ fn test_derived_enum() {
   let mut registry = juniper::Registry::new(HashMap::new());
   let meta = SomeEnum::meta(&mut registry);
 
+  assert_eq!(meta.name(), Some("Some"));
+  assert_eq!(meta.description(), Some(&"enum descr".to_string()));
+
   // Test Regular variant.
   assert_eq!(
     SomeEnum::Regular.to(),

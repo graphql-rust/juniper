@@ -84,6 +84,11 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
     let attrs = EnumAttrs::from_input(ast);
     let name = attrs.name.unwrap_or(ast.ident.to_string());
 
+    let meta_description = match attrs.description {
+        Some(descr) => quote!{ let meta = meta.description(#descr); },
+        None => quote!{ let meta = meta; },
+    };
+
     let mut values = Vec::<Tokens>::new();
     let mut resolves = Vec::<Tokens>::new();
     let mut from_inputs = Vec::<Tokens>::new();
@@ -146,10 +151,11 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
             }
 
             fn meta<'r>(registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
-                registry.build_enum_type::<#ident>(&[
+                let meta = registry.build_enum_type::<#ident>(&[
                     #(#values)*
-                ])
-                .into_meta()
+                ]);
+                #meta_description
+                meta.into_meta()
             }
 
             fn resolve(&self, _: Option<&[::juniper::Selection]>, _: &::juniper::Executor<Self::Context>) -> ::juniper::Value {

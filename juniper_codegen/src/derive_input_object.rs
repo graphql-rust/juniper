@@ -90,6 +90,11 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
     let attrs = ObjAttrs::from_input(ast);
     let name = attrs.name.unwrap_or(ast.ident.to_string());
 
+    let meta_description = match attrs.description {
+        Some(descr) => quote!{ let meta = meta.description(#descr); },
+        None => quote!{ let meta = meta; },
+    };
+
     let mut meta_fields = Vec::<Tokens>::new();
     let mut from_inputs = Vec::<Tokens>::new();
     let mut to_inputs = Vec::<Tokens>::new();
@@ -110,9 +115,9 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 ::util::to_camel_case(field_ident.as_ref())
             },
         };
-        let descr = match field_attrs.description {
-            Some(s) => quote!{ Some(#s.to_string())  },
-            None => quote!{ None },
+        let field_description = match field_attrs.description {
+            Some(s) => quote!{ let field = field.description(#s); },
+            None => quote!{ let field = field; },
         };
 
         let default = match field_attrs.default {
@@ -127,17 +132,24 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             None => None,
         };
 
-        let meta_field = match default {
+        let create_meta_field = match default {
             Some(ref def) => {
                 quote!{
-                    registry.arg_with_default::<#field_ty>( #name, &#def),
+                    let field = registry.arg_with_default::<#field_ty>( #name, &#def);
                 }
             },
             None => {
                 quote!{
-                    registry.arg::<#field_ty>(#name),
+                    let field = registry.arg::<#field_ty>(#name);
                 }
             }
+        };
+        let meta_field = quote!{
+            {
+                #create_meta_field
+                #field_description
+                field
+            },
         };
         meta_fields.push(meta_field);
 
@@ -183,7 +195,9 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 let fields = &[
                     #(#meta_fields)*
                 ];
-                registry.build_input_object_type::<#ident>(fields).into_meta()
+                let meta = registry.build_input_object_type::<#ident>(fields);
+                #meta_description
+                meta.into_meta()
             }
         }
 
