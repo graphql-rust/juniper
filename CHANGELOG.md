@@ -10,6 +10,7 @@ The repository was restructured to a multi crate workspace to enable several new
 * New juniper_codegen crate which provides custom derives: 
   * `#[derive(GraphQLInputObject)]`
   * `#[derive(GraphQLEnum)]`
+  * `#[derive(GraphQLObject)]`
 
 ## [0.8.1] – 2017-06-15
 

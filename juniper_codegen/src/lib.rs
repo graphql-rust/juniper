@@ -8,6 +8,7 @@ extern crate quote;
 mod util;
 mod enums;
 mod input_objects;
+mod derive_object;
 
 use proc_macro::TokenStream;
 
@@ -24,5 +25,13 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let s = input.to_string();
     let ast = syn::parse_derive_input(&s).unwrap();
     let gen = input_objects::impl_input_object(&ast);
+    gen.parse().unwrap()
+}
+
+#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+pub fn derive_object(input: TokenStream) -> TokenStream {
+    let s = input.to_string();
+    let ast = syn::parse_derive_input(&s).unwrap();
+    let gen = derive_object::impl_object(&ast);
     gen.parse().unwrap()
 }
