@@ -1,16 +1,9 @@
-//! Optional helper functions for the [Rocket](https://rocket.rs) framework. Requires the "rocket-handlers" feature enabled.
-//!
-//! The two exposed types in this module are simple wrapper around the
-//! types exposed by the `http` module, but they are better suited for use
-//! in handler functions in the Rocket framework.
-//!
-//! See the [rocket-server.rs](https://github.com/mhallin/juniper/blob/master/examples/rocket-server.rs)
-//! example for how to use these tools.
+extern crate juniper;
+extern crate serde_json;
+extern crate rocket;
 
 use std::io::{Cursor, Read};
 use std::error::Error;
-
-use serde_json;
 
 use rocket::Request;
 use rocket::request::{FromForm, FormItems};
@@ -20,11 +13,11 @@ use rocket::http::{ContentType, Status};
 use rocket::Data;
 use rocket::Outcome::{Forward, Failure, Success};
 
-use ::InputValue;
-use ::http;
+use juniper::InputValue;
+use juniper::http;
 
-use types::base::GraphQLType;
-use schema::model::RootNode;
+use juniper::GraphQLType;
+use juniper::RootNode;
 
 /// Simple wrapper around an incoming GraphQL request
 ///
@@ -38,7 +31,7 @@ pub struct GraphQLResponse(Status, String);
 
 /// Generate an HTML page containing GraphiQL
 pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
-    content::Html(::graphiql::graphiql_source(graphql_endpoint_url))
+    content::Html(juniper::graphiql::graphiql_source(graphql_endpoint_url))
 }
 
 impl GraphQLRequest {
@@ -161,10 +154,10 @@ mod tests {
     use rocket::State;
     use rocket::testing::MockRequest;
 
-    use ::RootNode;
-    use ::tests::model::Database;
-    use ::http::tests as http_tests;
-    use types::scalars::EmptyMutation;
+    use juniper::RootNode;
+    use juniper::tests::model::Database;
+    use juniper::http::tests as http_tests;
+    use juniper::types::scalars::EmptyMutation;
 
     type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
 

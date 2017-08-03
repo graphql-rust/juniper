@@ -15,7 +15,7 @@ use juniper::rocket_handlers;
 type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
 
 #[get("/")]
-fn graphiql() -> content::HTML<String> {
+fn graphiql() -> content::Html<String> {
     rocket_handlers::graphiql_source("/graphql")
 }
 
