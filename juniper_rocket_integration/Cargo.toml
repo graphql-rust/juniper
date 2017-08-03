@@ -1,0 +1,21 @@
+[package]
+name = "juniper_rocket_integration"
+version = "0.0.1"
+authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+description = "Juniper GraphQL integration with Rocket"
+license = "BSD-2-Clause"
+documentation = "https://docs.rs/juniper"
+repository = "https://github.com/mhallin/juniper"
+
+[dependencies]
+juniper = { path = "../juniper" }
+juniper_codegen = { path = "../juniper_codegen" }
+rocket = { version = "^0.3.0" }
+rocket_codegen = { version = "^0.3.0" }
+serde = { version = "^1.0.8" }
+serde_derive = {version="^1.0.8" }
+serde_json = { version = "^1.0.2" }
+
+[badges]
+travis-ci = { repository = "mhallin/juniper" }
+appveyor = { repository = "mhallin/juniper" }
