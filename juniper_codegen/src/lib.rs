@@ -6,8 +6,8 @@ extern crate syn;
 extern crate quote;
 
 mod util;
-mod enums;
-mod input_objects;
+mod derive_enum;
+mod derive_input_object;
 mod derive_object;
 
 use proc_macro::TokenStream;
@@ -16,7 +16,7 @@ use proc_macro::TokenStream;
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let s = input.to_string();
     let ast = syn::parse_derive_input(&s).unwrap();
-    let gen = enums::impl_enum(&ast);
+    let gen = derive_enum::impl_enum(&ast);
     gen.parse().unwrap()
 }
 
@@ -24,7 +24,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let s = input.to_string();
     let ast = syn::parse_derive_input(&s).unwrap();
-    let gen = input_objects::impl_input_object(&ast);
+    let gen = derive_input_object::impl_input_object(&ast);
     gen.parse().unwrap()
 }
 
