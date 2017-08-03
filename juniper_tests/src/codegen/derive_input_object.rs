@@ -1,4 +1,4 @@
-use juniper::{self, InputValue, ToInputValue, GraphQLType, FromInputValue};
+use juniper::{ToInputValue, GraphQLType, FromInputValue};
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
 #[graphql(name="MyInput")]
