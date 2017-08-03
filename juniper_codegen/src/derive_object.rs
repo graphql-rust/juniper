@@ -101,7 +101,6 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
         let field_ty = &field.ty;
         let field_attrs = ObjFieldAttrs::from_input(field);
         let field_ident = field.ident.as_ref().unwrap();
-        let field_ident_name = field_ident.to_string();
 
         // Build value.
         let name = match field_attrs.name {
