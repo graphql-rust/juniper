@@ -32,7 +32,7 @@ environment:
     - TARGET: x86_64-pc-windows-msvc
       CHANNEL: nightly
 
-# Install Rust and Cargo
+# Install Rust ,Cargo and cargo-make.
 # (Based on from https://github.com/rust-lang/libc/blob/master/appveyor.yml)
 install:
   - curl -sSf -o rustup-init.exe https://win.rustup.rs
@@ -40,6 +40,7 @@ install:
   - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
   - rustc -Vv
   - cargo -V
+  - cargo install --debug cargo-make
 
 
 # 'cargo test' takes care of building for us, so disable Appveyor's build stage. This prevents
@@ -48,30 +49,9 @@ install:
 build: false
 
 test_script:
-  # Build and test main juniper crate with certain features.
-  - cd juniper
-  - cargo build --verbose --features iron-handlers
-  - IF "%CHANNEL%"=="nightly" (cargo build --verbose --features rocket-handlers)
-
-  # Build example binaries; first Iron, then Rocket examples
-  - cargo build --verbose --example server --features "iron-handlers expose-test-schema"
-  - IF "%CHANNEL%"=="nightly" (cargo build --verbose --example rocket-server --features "rocket-handlers expose-test-schema")
-
-  # Run all tests for the base library and available integrations
-  - set TEST_FEATURES=iron-handlers expose-test-schema
-  - IF "%CHANNEL%"=="nightly" (set TEST_FEATURES=%TEST_FEATURES% rocket-handlers rocket/testing)
-
-  - cargo test --verbose --features "%TEST_FEATURES%"
-  - cd ..
-
-  # Build juniper_codegen and run tests.
-  - cd juniper_codegen
-  - cargo build --verbose
-  - cargo test
-  - cd ..
-
-  # Build and run integration tests.
-  - cd juniper_tests
-  - cargo build --verbose
-  - cargo test
+  - cd juniper && cargo build --verbose && cargo test --verbose && cd ..
+  - cd juniper_codegen && cargo build --verbose && cargo test --verbose && cd ..
+  - cd juniper_iron && cargo build --verbose && cargo test --verbose && cd ..
+  - cd juniper_tests && cargo build --verbose && cargo test --verbose && cd ..
+  - IF NOT %TARGET% == %TARGET:msvc=% ( IF %CHANNEL% == "nightly" ( cd juniper_rocket && cargo test --verbose && cargo build --verbose && cd .. ) )
 

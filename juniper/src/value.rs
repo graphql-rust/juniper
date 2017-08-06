@@ -29,30 +29,40 @@ impl Value {
     // CONSTRUCTORS
 
     /// Construct a null value.
-    pub fn null() -> Value { Value::Null }
+    pub fn null() -> Value {
+        Value::Null
+    }
 
     /// Construct an integer value.
-    pub fn int(i: i32) -> Value { Value::Int(i) }
+    pub fn int(i: i32) -> Value {
+        Value::Int(i)
+    }
 
     /// Construct a floating point value.
-    pub fn float(f: f64) -> Value { Value::Float(f) }
+    pub fn float(f: f64) -> Value {
+        Value::Float(f)
+    }
 
     /// Construct a string value.
-    pub fn string<T: AsRef<str>>(s: T) -> Value { Value::String(s.as_ref().to_owned()) }
+    pub fn string<T: AsRef<str>>(s: T) -> Value {
+        Value::String(s.as_ref().to_owned())
+    }
 
     /// Construct a boolean value.
-    pub fn boolean(b: bool) -> Value { Value::Boolean(b) }
+    pub fn boolean(b: bool) -> Value {
+        Value::Boolean(b)
+    }
 
     /// Construct a list value.
-    pub fn list(l: Vec<Value>) -> Value { Value::List(l) }
+    pub fn list(l: Vec<Value>) -> Value {
+        Value::List(l)
+    }
 
     /// Construct an object value.
     pub fn object<K>(o: HashMap<K, Value>) -> Value
         where K: Into<String> + Eq + Hash
     {
-        Value::Object(
-            o.into_iter().map(|(k, v)| (k.into(), v)).collect()
-        )
+        Value::Object(o.into_iter().map(|(k, v)| (k.into(), v)).collect())
     }
 
     // DISCRIMINATORS
@@ -106,10 +116,17 @@ impl ToInputValue for Value {
             Value::Float(f) => InputValue::Float(f),
             Value::String(ref s) => InputValue::String(s.clone()),
             Value::Boolean(b) => InputValue::Boolean(b),
-            Value::List(ref l) => InputValue::List(l.iter().map(|x|
-                Spanning::unlocated(x.to())).collect()),
-            Value::Object(ref o) => InputValue::Object(o.iter().map(|(k,v)|
-                (Spanning::unlocated(k.clone()), Spanning::unlocated(v.to()))).collect()),
+            Value::List(ref l) => {
+                InputValue::List(l.iter().map(|x| Spanning::unlocated(x.to())).collect())
+            }
+            Value::Object(ref o) => {
+                InputValue::Object(o.iter()
+                                       .map(|(k, v)| {
+                                                (Spanning::unlocated(k.clone()),
+                                                 Spanning::unlocated(v.to()))
+                                            })
+                                       .collect())
+            }
         }
     }
 }

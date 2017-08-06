@@ -6,11 +6,9 @@ use parser::value::parse_value_literal;
 
 fn parse_value(s: &str) -> Spanning<InputValue> {
     let mut lexer = Lexer::new(s);
-    let mut parser = Parser::new(&mut lexer)
-        .expect(&format!("Lexer error on input {:#?}", s));
+    let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));
 
-    parse_value_literal(&mut parser, false)
-        .expect(&format!("Parse error on input {:#?}", s))
+    parse_value_literal(&mut parser, false).expect(&format!("Parse error on input {:#?}", s))
 }
 
 #[test]

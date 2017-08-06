@@ -3,7 +3,7 @@
 use serde::ser;
 use serde::ser::SerializeMap;
 
-use ::{GraphQLError, Value, Variables, GraphQLType, RootNode};
+use {GraphQLError, Value, Variables, GraphQLType, RootNode};
 use ast::InputValue;
 use executor::ExecutionError;
 
@@ -19,7 +19,7 @@ pub struct GraphQLRequest {
     query: String,
     #[serde(rename = "operationName")]
     operation_name: Option<String>,
-    variables: Option<InputValue>
+    variables: Option<InputValue>,
 }
 
 impl GraphQLRequest {
@@ -28,15 +28,24 @@ impl GraphQLRequest {
     }
 
     fn variables(&self) -> Variables {
-        self.variables.as_ref().and_then(|iv| {
-            iv.to_object_value().map(|o| {
-                o.into_iter().map(|(k, v)| (k.to_owned(), v.clone())).collect()
-            })
-        }).unwrap_or_default()
+        self.variables
+            .as_ref()
+            .and_then(|iv| {
+                          iv.to_object_value()
+                              .map(|o| {
+                                       o.into_iter()
+                                           .map(|(k, v)| (k.to_owned(), v.clone()))
+                                           .collect()
+                                   })
+                      })
+            .unwrap_or_default()
     }
 
     /// Construct a new GraphQL request from parts
-    pub fn new(query: String, operation_name: Option<String>, variables: Option<InputValue>) -> GraphQLRequest {
+    pub fn new(query: String,
+               operation_name: Option<String>,
+               variables: Option<InputValue>)
+               -> GraphQLRequest {
         GraphQLRequest {
             query: query,
             operation_name: operation_name,
@@ -48,22 +57,18 @@ impl GraphQLRequest {
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
-        &'a self,
-        root_node: &RootNode<QueryT, MutationT>,
-        context: &CtxT,
-    )
-        -> GraphQLResponse<'a>
-        where QueryT: GraphQLType<Context=CtxT>,
-            MutationT: GraphQLType<Context=CtxT>,
+    pub fn execute<'a, CtxT, QueryT, MutationT>(&'a self,
+                                                root_node: &RootNode<QueryT, MutationT>,
+                                                context: &CtxT)
+                                                -> GraphQLResponse<'a>
+        where QueryT: GraphQLType<Context = CtxT>,
+              MutationT: GraphQLType<Context = CtxT>
     {
-        GraphQLResponse(::execute(
-            &self.query,
-            self.operation_name(),
-            root_node,
-            &self.variables(),
-            context,
-        ))
+        GraphQLResponse(::execute(&self.query,
+                                  self.operation_name(),
+                                  root_node,
+                                  &self.variables(),
+                                  context))
     }
 }
 
@@ -86,7 +91,7 @@ impl<'a> GraphQLResponse<'a> {
 
 impl<'a> ser::Serialize for GraphQLResponse<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         match self.0 {
             Ok((ref res, ref err)) => {
@@ -101,18 +106,18 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
                 }
 
                 map.end()
-            },
+            }
             Err(ref err) => {
                 let mut map = try!(serializer.serialize_map(Some(1)));
                 try!(map.serialize_key("errors"));
                 try!(map.serialize_value(err));
                 map.end()
-            },
+            }
         }
     }
 }
 
-#[cfg(all(test, any(feature="iron-handlers", feature="rocket-handlers")))]
+#[cfg(any(test, feature="expose-test-schema"))]
 pub mod tests {
     use serde_json::Value as Json;
     use serde_json;
@@ -145,9 +150,11 @@ pub mod tests {
     }
 
     fn unwrap_json_response(response: &TestResponse) -> Json {
-        serde_json::from_str::<Json>(
-            response.body.as_ref().expect("No data returned from request")
-        ).expect("Could not parse JSON object")
+        serde_json::from_str::<Json>(response
+                                         .body
+                                         .as_ref()
+                                         .expect("No data returned from request"))
+                .expect("Could not parse JSON object")
     }
 
     fn test_simple_get<T: HTTPIntegration>(integration: &T) {
@@ -215,9 +222,7 @@ pub mod tests {
     }
 
     fn test_simple_post<T: HTTPIntegration>(integration: &T) {
-        let response = integration.post(
-            "/",
-            r#"{"query": "{hero{name}}"}"#);
+        let response = integration.post("/", r#"{"query": "{hero{name}}"}"#);
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");

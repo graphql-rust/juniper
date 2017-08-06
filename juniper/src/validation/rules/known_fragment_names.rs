@@ -9,12 +9,13 @@ pub fn factory() -> KnownFragmentNames {
 }
 
 impl<'a> Visitor<'a> for KnownFragmentNames {
-    fn enter_fragment_spread(&mut self, context: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
+    fn enter_fragment_spread(&mut self,
+                             context: &mut ValidatorContext<'a>,
+                             spread: &'a Spanning<FragmentSpread>) {
         let spread_name = &spread.item.name;
         if !context.is_known_fragment(spread_name.item) {
-            context.report_error(
-                &error_message(spread_name.item),
-                &[spread_name.start.clone()]);
+            context.report_error(&error_message(spread_name.item),
+                                 &[spread_name.start.clone()]);
         }
     }
 }
@@ -32,7 +33,8 @@ mod tests {
 
     #[test]
     fn known() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           {
             human(id: 4) {
               ...HumanFields1
@@ -59,7 +61,8 @@ mod tests {
 
     #[test]
     fn unknown() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           {
             human(id: 4) {
               ...UnknownFragment1
@@ -73,16 +76,11 @@ mod tests {
             ...UnknownFragment3
           }
         "#,
-            &[
-                RuleError::new(&error_message("UnknownFragment1"), &[
-                    SourcePosition::new(57, 3, 17),
-                ]),
-                RuleError::new(&error_message("UnknownFragment2"), &[
-                    SourcePosition::new(122, 5, 19),
-                ]),
-                RuleError::new(&error_message("UnknownFragment3"), &[
-                    SourcePosition::new(255, 11, 15),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("UnknownFragment1"),
+                                           &[SourcePosition::new(57, 3, 17)]),
+                            RuleError::new(&error_message("UnknownFragment2"),
+                                           &[SourcePosition::new(122, 5, 19)]),
+                            RuleError::new(&error_message("UnknownFragment3"),
+                                           &[SourcePosition::new(255, 11, 15)])]);
     }
 }

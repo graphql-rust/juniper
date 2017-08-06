@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use std::sync::RwLock;
 
-use ::GraphQLError;
-use ast::{InputValue, ToInputValue, Document, Selection, Fragment, Definition, Type, FromInputValue, OperationType};
+use GraphQLError;
+use ast::{InputValue, ToInputValue, Document, Selection, Fragment, Definition, Type,
+          FromInputValue, OperationType};
 use value::Value;
 use parser::SourcePosition;
 
-use schema::meta::{MetaType, ScalarMeta, ListMeta, NullableMeta,
-                   ObjectMeta, EnumMeta, InterfaceMeta, UnionMeta,
-                   InputObjectMeta, PlaceholderMeta, Field, Argument,
+use schema::meta::{MetaType, ScalarMeta, ListMeta, NullableMeta, ObjectMeta, EnumMeta,
+                   InterfaceMeta, UnionMeta, InputObjectMeta, PlaceholderMeta, Field, Argument,
                    EnumValue};
 use schema::model::{RootNode, SchemaType};
 
@@ -34,7 +34,9 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-pub struct Executor<'a, CtxT> where CtxT: 'a {
+pub struct Executor<'a, CtxT>
+    where CtxT: 'a
+{
     fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
     variables: &'a Variables,
     current_selection_set: Option<&'a [Selection<'a>]>,
@@ -70,13 +72,17 @@ pub trait IntoResolvable<'a, T: GraphQLType, C>: Sized {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>>;
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for T where T::Context: FromContext<C> {
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for T
+    where T::Context: FromContext<C>
+{
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
         Ok(Some((FromContext::from(ctx), self)))
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<T> where T::Context: FromContext<C> {
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<T>
+    where T::Context: FromContext<C>
+{
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
         self.map(|v| Some((FromContext::from(ctx), v)))
     }
@@ -123,7 +129,7 @@ pub trait FromContext<T> {
 }
 
 /// Marker trait for types that can act as context objects for GraphQL types.
-pub trait Context { }
+pub trait Context {}
 
 impl<'a, C: Context> Context for &'a C {}
 
@@ -135,7 +141,9 @@ impl<T> FromContext<T> for () {
     }
 }
 
-impl<T> FromContext<T> for T where T: Context {
+impl<T> FromContext<T> for T
+    where T: Context
+{
     fn from(value: &T) -> &Self {
         value
     }
@@ -143,31 +151,31 @@ impl<T> FromContext<T> for T where T: Context {
 
 impl<'a, CtxT> Executor<'a, CtxT> {
     /// Resolve a single arbitrary value, mapping the context to a new type
-    pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<Context=NewCtxT>>(
-        &self, value: &T
-    ) -> ExecutionResult
-        where NewCtxT: FromContext<CtxT>,
+    pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<Context = NewCtxT>>(&self,
+                                                                        value: &T)
+                                                                        -> ExecutionResult
+        where NewCtxT: FromContext<CtxT>
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .resolve(value)
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    pub fn resolve<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> ExecutionResult {
+    pub fn resolve<T: GraphQLType<Context = CtxT>>(&self, value: &T) -> ExecutionResult {
         Ok(value.resolve(self.current_selection_set, self))
     }
 
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_value<T: GraphQLType<Context=CtxT>>(&self, value: &T) -> Value {
+    pub fn resolve_into_value<T: GraphQLType<Context = CtxT>>(&self, value: &T) -> Value {
         match self.resolve(value) {
             Ok(v) => v,
             Err(e) => {
                 let position = self.field_path.location().clone();
                 self.push_error(e, position);
                 Value::null()
-            },
+            }
         }
     }
 
@@ -188,14 +196,11 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     #[doc(hidden)]
-    pub fn sub_executor(
-        &self,
-        field_name: Option<&'a str>,
-        location: SourcePosition,
-        selection_set: Option<&'a [Selection]>,
-    )
-        -> Executor<CtxT>
-    {
+    pub fn sub_executor(&self,
+                        field_name: Option<&'a str>,
+                        location: SourcePosition,
+                        selection_set: Option<&'a [Selection]>)
+                        -> Executor<CtxT> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -241,10 +246,10 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         let mut errors = self.errors.write().unwrap();
 
         errors.push(ExecutionError {
-            location: location,
-            path: path,
-            message: error,
-        });
+                        location: location,
+                        path: path,
+                        message: error,
+                    });
     }
 }
 
@@ -262,7 +267,7 @@ impl<'a> FieldPath<'a> {
     fn location(&self) -> &SourcePosition {
         match *self {
             FieldPath::Root(ref pos) |
-            FieldPath::Field(_, ref pos, _) => pos
+            FieldPath::Field(_, ref pos, _) => pos,
         }
     }
 }
@@ -293,16 +298,15 @@ impl ExecutionError {
     }
 }
 
-pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
-    document: Document,
-    operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT>,
-    variables: &Variables,
-    context: &CtxT
-)
-    -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
-    where QueryT: GraphQLType<Context=CtxT>,
-          MutationT: GraphQLType<Context=CtxT>
+pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>
+    (document: Document,
+     operation_name: Option<&str>,
+     root_node: &RootNode<QueryT, MutationT>,
+     variables: &Variables,
+     context: &CtxT)
+     -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
+    where QueryT: GraphQLType<Context = CtxT>,
+          MutationT: GraphQLType<Context = CtxT>
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -314,8 +318,8 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
                     return Err(GraphQLError::MultipleOperationsProvided);
                 }
 
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item.as_ref()) == operation_name;
+                let move_op = operation_name.is_none() ||
+                              op.item.name.as_ref().map(|s| s.item.as_ref()) == operation_name;
 
                 if move_op {
                     operation = Some(op);
@@ -330,11 +334,19 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         None => return Err(GraphQLError::UnknownOperationName),
     };
 
-    let default_variable_values = op.item.variable_definitions
-        .map(|defs| defs.item.items.iter().filter_map(
-            |&(ref name, ref def)| def.default_value.as_ref().map(
-                |i| (name.item.to_owned(), i.item.clone())))
-             .collect::<HashMap<String, InputValue>>());
+    let default_variable_values = op.item
+        .variable_definitions
+        .map(|defs| {
+            defs.item
+                .items
+                .iter()
+                .filter_map(|&(ref name, ref def)| {
+                                def.default_value
+                                    .as_ref()
+                                    .map(|i| (name.item.to_owned(), i.item.clone()))
+                            })
+                .collect::<HashMap<String, InputValue>>()
+        });
 
     let errors = RwLock::new(Vec::new());
     let value;
@@ -354,7 +366,10 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
         }
 
         let executor = Executor {
-            fragments: &fragments.iter().map(|f| (f.item.name.item, &f.item)).collect(),
+            fragments: &fragments
+                            .iter()
+                            .map(|f| (f.item.name.item, &f.item))
+                            .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
             schema: &root_node.schema,
@@ -378,16 +393,16 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
 impl<'r> Registry<'r> {
     /// Construct a new registry
     pub fn new(types: HashMap<String, MetaType<'r>>) -> Registry<'r> {
-        Registry {
-            types: types,
-        }
+        Registry { types: types }
     }
 
     /// Get the `Type` instance for a given GraphQL type
     ///
     /// If the registry hasn't seen a type with this name before, it will
     /// construct its metadata and store it.
-    pub fn get_type<T>(&mut self) -> Type<'r> where T: GraphQLType {
+    pub fn get_type<T>(&mut self) -> Type<'r>
+        where T: GraphQLType
+    {
         if let Some(name) = T::name() {
             if !self.types.contains_key(name) {
                 self.insert_placeholder(name, Type::NonNullNamed(name));
@@ -395,14 +410,15 @@ impl<'r> Registry<'r> {
                 self.types.insert(name.to_owned(), meta);
             }
             self.types[name].as_type()
-        }
-        else {
+        } else {
             T::meta(self).as_type()
         }
     }
 
     /// Create a field with the provided name
-    pub fn field<T>(&mut self, name: &str) -> Field<'r> where T: GraphQLType {
+    pub fn field<T>(&mut self, name: &str) -> Field<'r>
+        where T: GraphQLType
+    {
         Field {
             name: name.to_owned(),
             description: None,
@@ -426,7 +442,9 @@ impl<'r> Registry<'r> {
     }
 
     /// Create an argument with the provided name
-    pub fn arg<T>(&mut self, name: &str) -> Argument<'r> where T: GraphQLType + FromInputValue {
+    pub fn arg<T>(&mut self, name: &str) -> Argument<'r>
+        where T: GraphQLType + FromInputValue
+    {
         Argument::new(name, self.get_type::<T>())
     }
 
@@ -434,23 +452,17 @@ impl<'r> Registry<'r> {
     ///
     /// When called with type `T`, the actual argument will be given the type
     /// `Option<T>`.
-    pub fn arg_with_default<T>(
-        &mut self,
-        name: &str,
-        value: &T,
-    )
-        -> Argument<'r>
+    pub fn arg_with_default<T>(&mut self, name: &str, value: &T) -> Argument<'r>
         where T: GraphQLType + ToInputValue + FromInputValue
     {
-        Argument::new(name, self.get_type::<Option<T>>())
-            .default_value(value.to())
+        Argument::new(name, self.get_type::<Option<T>>()).default_value(value.to())
     }
 
     fn insert_placeholder(&mut self, name: &str, of_type: Type<'r>) {
         if !self.types.contains_key(name) {
-            self.types.insert(
-                name.to_owned(),
-                MetaType::Placeholder(PlaceholderMeta { of_type: of_type }));
+            self.types
+                .insert(name.to_owned(),
+                        MetaType::Placeholder(PlaceholderMeta { of_type: of_type }));
         }
     }
 

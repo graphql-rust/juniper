@@ -6,8 +6,12 @@ mod interface {
     trait Pet {
         fn name(&self) -> &str;
 
-        fn as_dog(&self) -> Option<&Dog> { None }
-        fn as_cat(&self) -> Option<&Cat> { None }
+        fn as_dog(&self) -> Option<&Dog> {
+            None
+        }
+        fn as_cat(&self) -> Option<&Cat> {
+            None
+        }
     }
 
     graphql_interface!(<'a> &'a Pet: () as "Pet" |&self| {
@@ -25,8 +29,12 @@ mod interface {
     }
 
     impl Pet for Dog {
-        fn name(&self) -> &str { &self.name }
-        fn as_dog(&self) -> Option<&Dog> { Some(self) }
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn as_dog(&self) -> Option<&Dog> {
+            Some(self)
+        }
     }
 
     graphql_object!(Dog: () |&self| {
@@ -42,8 +50,12 @@ mod interface {
     }
 
     impl Pet for Cat {
-        fn name(&self) -> &str { &self.name }
-        fn as_cat(&self) -> Option<&Cat> { Some(self) }
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn as_cat(&self) -> Option<&Cat> {
+            Some(self)
+        }
     }
 
     graphql_object!(Cat: () |&self| {
@@ -65,14 +77,13 @@ mod interface {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(
-            Schema {
-                pets: vec![
+        let schema = RootNode::new(Schema {
+                                       pets: vec![
                     Box::new(Dog { name: "Odie".to_owned(), woofs: true }),
                     Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
                 ],
-            },
-            EmptyMutation::<()>::new());
+                                   },
+                                   EmptyMutation::<()>::new());
         let doc = r"
           {
             pets {
@@ -86,11 +97,9 @@ mod interface {
             }
           }";
 
-        let vars = vec![
-        ].into_iter().collect();
+        let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -122,8 +131,12 @@ mod union {
     use types::scalars::EmptyMutation;
 
     trait Pet {
-        fn as_dog(&self) -> Option<&Dog> { None }
-        fn as_cat(&self) -> Option<&Cat> { None }
+        fn as_dog(&self) -> Option<&Dog> {
+            None
+        }
+        fn as_cat(&self) -> Option<&Cat> {
+            None
+        }
     }
 
     graphql_union!(<'a> &'a Pet: () as "Pet" |&self| {
@@ -139,7 +152,9 @@ mod union {
     }
 
     impl Pet for Dog {
-        fn as_dog(&self) -> Option<&Dog> { Some(self) }
+        fn as_dog(&self) -> Option<&Dog> {
+            Some(self)
+        }
     }
 
     graphql_object!(Dog: () |&self| {
@@ -153,7 +168,9 @@ mod union {
     }
 
     impl Pet for Cat {
-        fn as_cat(&self) -> Option<&Cat> { Some(self) }
+        fn as_cat(&self) -> Option<&Cat> {
+            Some(self)
+        }
     }
 
     graphql_object!(Cat: () |&self| {
@@ -173,14 +190,13 @@ mod union {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(
-            Schema {
-                pets: vec![
+        let schema = RootNode::new(Schema {
+                                       pets: vec![
                     Box::new(Dog { name: "Odie".to_owned(), woofs: true }),
                     Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
                 ],
-            },
-            EmptyMutation::<()>::new());
+                                   },
+                                   EmptyMutation::<()>::new());
         let doc = r"
           {
             pets {
@@ -195,11 +211,9 @@ mod union {
             }
           }";
 
-        let vars = vec![
-        ].into_iter().collect();
+        let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 

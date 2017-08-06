@@ -103,7 +103,9 @@ graphql_object!(Root: () |&self| {
     }
 });
 
-fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>, &Vec<Value>) -> () {
+fn run_type_info_query<F>(doc: &str, f: F)
+    where F: Fn(&HashMap<String, Value>, &Vec<Value>) -> ()
+{
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
@@ -114,13 +116,18 @@ fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>, 
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     let fields = type_info
-        .get("inputFields").expect("inputFields field missing")
-        .as_list_value().expect("inputFields not a list");
+        .get("inputFields")
+        .expect("inputFields field missing")
+        .as_list_value()
+        .expect("inputFields not a list");
 
     f(type_info, fields);
 }
@@ -181,7 +188,9 @@ fn default_name_input_value() {
     let iv = InputValue::object(vec![
         ("fieldOne", InputValue::string("number one")),
         ("fieldTwo", InputValue::string("number two")),
-    ].into_iter().collect());
+    ]
+                                        .into_iter()
+                                        .collect());
 
     let dv: Option<DefaultName> = FromInputValue::from(&iv);
 

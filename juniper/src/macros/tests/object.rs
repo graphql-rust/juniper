@@ -22,10 +22,14 @@ struct Interface;
 struct CustomName;
 
 #[allow(dead_code)]
-struct WithLifetime<'a> { data: PhantomData<&'a i32> }
+struct WithLifetime<'a> {
+    data: PhantomData<&'a i32>,
+}
 
 #[allow(dead_code)]
-struct WithGenerics<T> { data: T }
+struct WithGenerics<T> {
+    data: T,
+}
 
 struct DescriptionFirst;
 struct FieldsFirst;
@@ -134,23 +138,29 @@ fn run_type_info_query<F>(type_name: &str, f: F)
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
     let vars = vec![
         ("typeName".to_owned(), InputValue::string(type_name)),
-    ].into_iter().collect();
+    ]
+            .into_iter()
+            .collect();
 
-    let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-        .expect("Execution failed");
+    let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     let fields = type_info
-        .get("fields").expect("fields field missing")
-        .as_list_value().expect("fields field not a list value");
+        .get("fields")
+        .expect("fields field missing")
+        .as_list_value()
+        .expect("fields field not a list value");
 
     f(type_info, fields);
 }

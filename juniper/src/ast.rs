@@ -168,8 +168,9 @@ impl<'a> Type<'a> {
     /// Only applies to named types; lists will return `None`.
     pub fn name(&self) -> Option<&str> {
         match *self {
-            Type::Named(n) | Type::NonNullNamed(n) => Some(n),
-            _ => None
+            Type::Named(n) |
+            Type::NonNullNamed(n) => Some(n),
+            _ => None,
         }
     }
 
@@ -178,15 +179,18 @@ impl<'a> Type<'a> {
     /// All type literals contain exactly one named type.
     pub fn innermost_name(&self) -> &str {
         match *self {
-            Type::Named(n) | Type::NonNullNamed(n) => n,
-            Type::List(ref l) | Type::NonNullList(ref l) => l.innermost_name(),
+            Type::Named(n) |
+            Type::NonNullNamed(n) => n,
+            Type::List(ref l) |
+            Type::NonNullList(ref l) => l.innermost_name(),
         }
     }
 
     /// Determines if a type only can represent non-null values.
     pub fn is_non_null(&self) -> bool {
         match *self {
-            Type::NonNullNamed(_) | Type::NonNullList(_) => true,
+            Type::NonNullNamed(_) |
+            Type::NonNullList(_) => true,
             _ => false,
         }
     }
@@ -205,16 +209,24 @@ impl<'a> fmt::Display for Type<'a> {
 
 impl InputValue {
     /// Construct a null value.
-    pub fn null() -> InputValue { InputValue::Null }
+    pub fn null() -> InputValue {
+        InputValue::Null
+    }
 
     /// Construct an integer value.
-    pub fn int(i: i32) -> InputValue { InputValue::Int(i) }
+    pub fn int(i: i32) -> InputValue {
+        InputValue::Int(i)
+    }
 
     /// Construct a floating point value.
-    pub fn float(f: f64) -> InputValue { InputValue::Float(f) }
+    pub fn float(f: f64) -> InputValue {
+        InputValue::Float(f)
+    }
 
     /// Construct a boolean value.
-    pub fn boolean(b: bool) -> InputValue { InputValue::Boolean(b) }
+    pub fn boolean(b: bool) -> InputValue {
+        InputValue::Boolean(b)
+    }
 
     /// Construct a string value.
     pub fn string<T: AsRef<str>>(s: T) -> InputValue {
@@ -252,12 +264,12 @@ impl InputValue {
     pub fn object<K>(o: HashMap<K, InputValue>) -> InputValue
         where K: AsRef<str> + Eq + Hash
     {
-        InputValue::Object(
-            o.into_iter()
-                .map(|(k, v)|
-                    (Spanning::unlocated(k.as_ref().to_owned()), Spanning::unlocated(v)))
-                .collect()
-        )
+        InputValue::Object(o.into_iter()
+                               .map(|(k, v)| {
+                                        (Spanning::unlocated(k.as_ref().to_owned()),
+                                         Spanning::unlocated(v))
+                                    })
+                               .collect())
     }
 
     /// Construct a located object.
@@ -268,20 +280,25 @@ impl InputValue {
     /// Resolve all variables to their values.
     pub fn into_const(self, vars: &Variables) -> InputValue {
         match self {
-            InputValue::Variable(v) => vars.get(&v)
-                .map_or_else(InputValue::null, Clone::clone),
-            InputValue::List(l) => InputValue::List(
-                l.into_iter().map(|s| s.map(|v| v.into_const(vars))).collect()
-            ),
-            InputValue::Object(o) => InputValue::Object(
-                o.into_iter().map(|(sk, sv)| (sk, sv.map(|v| v.into_const(vars)))).collect()
-            ),
+            InputValue::Variable(v) => vars.get(&v).map_or_else(InputValue::null, Clone::clone),
+            InputValue::List(l) => {
+                InputValue::List(l.into_iter()
+                                     .map(|s| s.map(|v| v.into_const(vars)))
+                                     .collect())
+            }
+            InputValue::Object(o) => {
+                InputValue::Object(o.into_iter()
+                                       .map(|(sk, sv)| (sk, sv.map(|v| v.into_const(vars))))
+                                       .collect())
+            }
             v => v,
         }
     }
 
     /// Shorthand form of invoking `FromInputValue::from()`.
-    pub fn convert<T>(&self) -> Option<T> where T: FromInputValue {
+    pub fn convert<T>(&self) -> Option<T>
+        where T: FromInputValue
+    {
         <T as FromInputValue>::from(self)
     }
 
@@ -331,8 +348,11 @@ impl InputValue {
     /// and values in `self`.
     pub fn to_object_value(&self) -> Option<HashMap<&str, &InputValue>> {
         match *self {
-            InputValue::Object(ref o) => Some(
-                o.iter().map(|&(ref sk, ref sv)| (sk.item.as_str(), &sv.item)).collect()),
+            InputValue::Object(ref o) => {
+                Some(o.iter()
+                         .map(|&(ref sk, ref sv)| (sk.item.as_str(), &sv.item))
+                         .collect())
+            }
             _ => None,
         }
     }
@@ -352,8 +372,16 @@ impl InputValue {
     pub fn referenced_variables(&self) -> Vec<&str> {
         match *self {
             InputValue::Variable(ref name) => vec![name],
-            InputValue::List(ref l) => l.iter().flat_map(|v| v.item.referenced_variables()).collect(),
-            InputValue::Object(ref obj) => obj.iter().flat_map(|&(_, ref v)| v.item.referenced_variables()).collect(),
+            InputValue::List(ref l) => {
+                l.iter()
+                    .flat_map(|v| v.item.referenced_variables())
+                    .collect()
+            }
+            InputValue::Object(ref obj) => {
+                obj.iter()
+                    .flat_map(|&(_, ref v)| v.item.referenced_variables())
+                    .collect()
+            }
             _ => vec![],
         }
     }
@@ -370,14 +398,22 @@ impl InputValue {
             (&Enum(ref s1), &Enum(ref s2)) |
             (&Variable(ref s1), &Variable(ref s2)) => s1 == s2,
             (&Boolean(b1), &Boolean(b2)) => b1 == b2,
-            (&List(ref l1), &List(ref l2)) =>
-                l1.iter().zip(l2.iter()).all(|(v1, v2)| v1.item.unlocated_eq(&v2.item)),
-            (&Object(ref o1), &Object(ref o2)) =>
-                o1.len() == o2.len()
-                && o1.iter()
-                    .all(|&(ref sk1, ref sv1)| o2.iter().any(
-                        |&(ref sk2, ref sv2)| sk1.item == sk2.item && sv1.item.unlocated_eq(&sv2.item))),
-            _ => false
+            (&List(ref l1), &List(ref l2)) => {
+                l1.iter()
+                    .zip(l2.iter())
+                    .all(|(v1, v2)| v1.item.unlocated_eq(&v2.item))
+            }
+            (&Object(ref o1), &Object(ref o2)) => {
+                o1.len() == o2.len() &&
+                o1.iter()
+                    .all(|&(ref sk1, ref sv1)| {
+                             o2.iter()
+                                 .any(|&(ref sk2, ref sv2)| {
+                                          sk1.item == sk2.item && sv1.item.unlocated_eq(&sv2.item)
+                                      })
+                         })
+            }
+            _ => false,
         }
     }
 }
@@ -397,18 +433,22 @@ impl fmt::Display for InputValue {
 
                 for (i, spanning) in v.iter().enumerate() {
                     try!(spanning.item.fmt(f));
-                    if i < v.len() - 1 { try!(write!(f, ", ")); }
+                    if i < v.len() - 1 {
+                        try!(write!(f, ", "));
+                    }
                 }
 
                 write!(f, "]")
-            },
+            }
             InputValue::Object(ref o) => {
                 try!(write!(f, "{{"));
 
                 for (i, &(ref k, ref v)) in o.iter().enumerate() {
                     try!(write!(f, "{}: ", k.item));
                     try!(v.item.fmt(f));
-                    if i < o.len() - 1 { try!(write!(f, ", ")); }
+                    if i < o.len() - 1 {
+                        try!(write!(f, ", "));
+                    }
                 }
 
                 write!(f, "}}")
@@ -481,10 +521,9 @@ mod tests {
         let value = InputValue::list(list);
         assert_eq!(format!("{}", value), "[1, 2]");
 
-        let object = vec![
-            (Spanning::unlocated("foo".to_owned()), Spanning::unlocated(InputValue::int(1))),
-            (Spanning::unlocated("bar".to_owned()), Spanning::unlocated(InputValue::int(2))),
-        ];
+        let object =
+            vec![(Spanning::unlocated("foo".to_owned()), Spanning::unlocated(InputValue::int(1))),
+                 (Spanning::unlocated("bar".to_owned()), Spanning::unlocated(InputValue::int(2)))];
         let value = InputValue::parsed_object(object);
         assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }

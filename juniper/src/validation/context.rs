@@ -60,12 +60,13 @@ impl<'a> ValidatorContext<'a> {
             parent_type_stack: Vec::new(),
             input_type_stack: Vec::new(),
             input_type_literal_stack: Vec::new(),
-            fragment_names: document.iter()
+            fragment_names: document
+                .iter()
                 .filter_map(|def| match *def {
-                    Definition::Fragment(ref frag) => Some(frag.item.name.item),
-                    _ => None,
-                })
-                .collect()
+                                Definition::Fragment(ref frag) => Some(frag.item.name.item),
+                                _ => None,
+                            })
+                .collect(),
         }
     }
 
@@ -86,14 +87,13 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F)
-        -> R
+    pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
         where F: FnOnce(&mut ValidatorContext<'a>) -> R
     {
         if let Some(t) = t {
-            self.type_stack.push(self.schema.concrete_type_by_name(t.innermost_name()));
-        }
-        else {
+            self.type_stack
+                .push(self.schema.concrete_type_by_name(t.innermost_name()));
+        } else {
             self.type_stack.push(None);
         }
 
@@ -108,11 +108,11 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_parent_type<F, R>(&mut self, f: F)
-        -> R
+    pub fn with_pushed_parent_type<F, R>(&mut self, f: F) -> R
         where F: FnOnce(&mut ValidatorContext<'a>) -> R
     {
-        self.parent_type_stack.push(*self.type_stack.last().unwrap_or(&None));
+        self.parent_type_stack
+            .push(*self.type_stack.last().unwrap_or(&None));
         let res = f(self);
         self.parent_type_stack.pop();
 
@@ -120,14 +120,13 @@ impl<'a> ValidatorContext<'a> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F)
-        -> R
+    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
         where F: FnOnce(&mut ValidatorContext<'a>) -> R
     {
         if let Some(t) = t {
-            self.input_type_stack.push(self.schema.concrete_type_by_name(t.innermost_name()));
-        }
-        else {
+            self.input_type_stack
+                .push(self.schema.concrete_type_by_name(t.innermost_name()));
+        } else {
             self.input_type_stack.push(None);
         }
 
@@ -150,7 +149,7 @@ impl<'a> ValidatorContext<'a> {
     pub fn current_type_literal(&self) -> Option<&Type<'a>> {
         match self.type_literal_stack.last() {
             Some(&Some(ref t)) => Some(t),
-            _ => None
+            _ => None,
         }
     }
 

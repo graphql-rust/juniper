@@ -179,8 +179,7 @@ impl<'a> MetaType<'a> {
             MetaType::Enum(EnumMeta { name, .. }) |
             MetaType::Interface(InterfaceMeta { name, .. }) |
             MetaType::Union(UnionMeta { name, .. }) |
-            MetaType::InputObject(InputObjectMeta { name, .. }) =>
-                Some(name),
+            MetaType::InputObject(InputObjectMeta { name, .. }) => Some(name),
             _ => None,
         }
     }
@@ -195,8 +194,7 @@ impl<'a> MetaType<'a> {
             MetaType::Enum(EnumMeta { ref description, .. }) |
             MetaType::Interface(InterfaceMeta { ref description, .. }) |
             MetaType::Union(UnionMeta { ref description, .. }) |
-            MetaType::InputObject(InputObjectMeta { ref description, .. }) =>
-                description.as_ref(),
+            MetaType::InputObject(InputObjectMeta { ref description, .. }) => description.as_ref(),
             _ => None,
         }
     }
@@ -225,8 +223,9 @@ impl<'a> MetaType<'a> {
     pub fn field_by_name(&self, name: &str) -> Option<&Field> {
         match *self {
             MetaType::Object(ObjectMeta { ref fields, .. }) |
-            MetaType::Interface(InterfaceMeta { ref fields, .. }) =>
-                fields.iter().find(|f| f.name == name),
+            MetaType::Interface(InterfaceMeta { ref fields, .. }) => {
+                fields.iter().find(|f| f.name == name)
+            }
             _ => None,
         }
     }
@@ -236,8 +235,9 @@ impl<'a> MetaType<'a> {
     /// Only input objects have input fields. This method always returns `None` for other types.
     pub fn input_field_by_name(&self, name: &str) -> Option<&Argument> {
         match *self {
-            MetaType::InputObject(InputObjectMeta { ref input_fields, .. }) =>
-                input_fields.iter().find(|f| f.name == name),
+            MetaType::InputObject(InputObjectMeta { ref input_fields, .. }) => {
+                input_fields.iter().find(|f| f.name == name)
+            }
             _ => None,
         }
     }
@@ -250,16 +250,17 @@ impl<'a> MetaType<'a> {
             MetaType::Enum(EnumMeta { name, .. }) |
             MetaType::Interface(InterfaceMeta { name, .. }) |
             MetaType::Union(UnionMeta { name, .. }) |
-            MetaType::InputObject(InputObjectMeta { name, .. }) =>
-                Type::NonNullNamed(name),
-            MetaType::List(ListMeta { ref of_type }) =>
-                Type::NonNullList(Box::new(of_type.clone())),
-            MetaType::Nullable(NullableMeta { ref of_type }) =>
+            MetaType::InputObject(InputObjectMeta { name, .. }) => Type::NonNullNamed(name),
+            MetaType::List(ListMeta { ref of_type }) => {
+                Type::NonNullList(Box::new(of_type.clone()))
+            }
+            MetaType::Nullable(NullableMeta { ref of_type }) => {
                 match *of_type {
                     Type::NonNullNamed(inner) => Type::Named(inner),
                     Type::NonNullList(ref inner) => Type::List(inner.clone()),
                     ref t => t.clone(),
-                },
+                }
+            }
             MetaType::Placeholder(PlaceholderMeta { ref of_type }) => of_type.clone(),
         }
     }
@@ -274,8 +275,7 @@ impl<'a> MetaType<'a> {
         match *self {
             MetaType::Scalar(ScalarMeta { ref try_parse_fn, .. }) |
             MetaType::Enum(EnumMeta { ref try_parse_fn, .. }) |
-            MetaType::InputObject(InputObjectMeta { ref try_parse_fn, .. }) =>
-                Some(try_parse_fn),
+            MetaType::InputObject(InputObjectMeta { ref try_parse_fn, .. }) => Some(try_parse_fn),
             _ => None,
         }
     }
@@ -333,8 +333,7 @@ impl<'a> ScalarMeta<'a> {
         ScalarMeta {
             name: name,
             description: None,
-            try_parse_fn: Box::new(
-                |v: &InputValue| <T as FromInputValue>::from(v).is_some()),
+            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from(v).is_some()),
         }
     }
 
@@ -355,9 +354,7 @@ impl<'a> ScalarMeta<'a> {
 impl<'a> ListMeta<'a> {
     /// Build a new list type by wrapping the specified type
     pub fn new(of_type: Type<'a>) -> ListMeta<'a> {
-        ListMeta {
-            of_type: of_type,
-        }
+        ListMeta { of_type: of_type }
     }
 
     /// Wrap the list in a generic meta type
@@ -369,9 +366,7 @@ impl<'a> ListMeta<'a> {
 impl<'a> NullableMeta<'a> {
     /// Build a new nullable type by wrapping the specified type
     pub fn new(of_type: Type<'a>) -> NullableMeta<'a> {
-        NullableMeta {
-            of_type: of_type,
-        }
+        NullableMeta { of_type: of_type }
     }
 
     /// Wrap the nullable type in a generic meta type
@@ -404,8 +399,10 @@ impl<'a> ObjectMeta<'a> {
     /// If a list of interfaces already was provided prior to calling this method, they will be
     /// overwritten.
     pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> ObjectMeta<'a> {
-        self.interface_names = interfaces.iter()
-            .map(|t| t.innermost_name().to_owned()).collect();
+        self.interface_names = interfaces
+            .iter()
+            .map(|t| t.innermost_name().to_owned())
+            .collect();
         self
     }
 
@@ -422,8 +419,7 @@ impl<'a> EnumMeta<'a> {
             name: name,
             description: None,
             values: values.to_vec(),
-            try_parse_fn: Box::new(
-                |v: &InputValue| <T as FromInputValue>::from(v).is_some()),
+            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from(v).is_some()),
         }
     }
 
@@ -471,8 +467,10 @@ impl<'a> UnionMeta<'a> {
         UnionMeta {
             name: name,
             description: None,
-            of_type_names: of_types.iter()
-                .map(|t| t.innermost_name().to_owned()).collect(),
+            of_type_names: of_types
+                .iter()
+                .map(|t| t.innermost_name().to_owned())
+                .collect(),
         }
     }
 
@@ -492,13 +490,14 @@ impl<'a> UnionMeta<'a> {
 
 impl<'a> InputObjectMeta<'a> {
     /// Build a new input type with the specified name and input fields
-    pub fn new<T: FromInputValue>(name: &'a str, input_fields: &[Argument<'a>]) -> InputObjectMeta<'a> {
+    pub fn new<T: FromInputValue>(name: &'a str,
+                                  input_fields: &[Argument<'a>])
+                                  -> InputObjectMeta<'a> {
         InputObjectMeta {
             name: name,
             description: None,
             input_fields: input_fields.to_vec(),
-            try_parse_fn: Box::new(
-                |v: &InputValue| <T as FromInputValue>::from(v).is_some()),
+            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from(v).is_some()),
         }
     }
 
@@ -530,8 +529,12 @@ impl<'a> Field<'a> {
     /// Arguments are unordered and can't contain duplicates by name.
     pub fn argument(mut self, argument: Argument<'a>) -> Field<'a> {
         match self.arguments {
-            None => { self.arguments = Some(vec![argument]); }
-            Some(ref mut args) => { args.push(argument); }
+            None => {
+                self.arguments = Some(vec![argument]);
+            }
+            Some(ref mut args) => {
+                args.push(argument);
+            }
         };
 
         self
@@ -553,7 +556,7 @@ impl<'a> Argument<'a> {
             name: name.to_owned(),
             description: None,
             arg_type: arg_type,
-            default_value: None
+            default_value: None,
         }
     }
 

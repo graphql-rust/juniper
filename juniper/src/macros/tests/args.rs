@@ -110,28 +110,41 @@ fn run_args_info_query<F>(field_name: &str, f: F)
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     let fields = type_info
-        .get("fields").expect("fields field missing")
-        .as_list_value().expect("fields not a list");
+        .get("fields")
+        .expect("fields field missing")
+        .as_list_value()
+        .expect("fields not a list");
 
     let field = fields
-        .into_iter().filter(
-            |f| f.as_object_value().expect("Field not an object")
-                .get("name").expect("name field missing from field")
-                .as_string_value().expect("name is not a string")
-                == field_name)
-        .next().expect("Field not found")
-        .as_object_value().expect("Field is not an object");
+        .into_iter()
+        .filter(|f| {
+                    f.as_object_value()
+                        .expect("Field not an object")
+                        .get("name")
+                        .expect("name field missing from field")
+                        .as_string_value()
+                        .expect("name is not a string") == field_name
+                })
+        .next()
+        .expect("Field not found")
+        .as_object_value()
+        .expect("Field is not an object");
 
     println!("Field: {:?}", field);
 
     let args = field
-        .get("args").expect("args missing from field")
-        .as_list_value().expect("args is not a list");
+        .get("args")
+        .expect("args missing from field")
+        .as_list_value()
+        .expect("args is not a list");
 
     println!("Args: {:?}", args);
 

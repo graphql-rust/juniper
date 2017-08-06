@@ -12,7 +12,7 @@ fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
                 if at_eof {
                     break;
                 }
-            },
+            }
             Some(Err(e)) => panic!("Error in input stream: {:#?} for {:#?}", e, s),
             None => panic!("EOF before EndOfFile token in {:#?}", s),
         }
@@ -39,10 +39,10 @@ fn tokenize_error(s: &str) -> Spanning<LexerError> {
                 if t.item == Token::EndOfFile {
                     panic!("Tokenizer did not return error for {:#?}", s);
                 }
-            },
+            }
             Some(Err(e)) => {
                 return e;
-            },
+            }
             None => panic!("Tokenizer did not return error for {:#?}", s),
         }
     }
@@ -274,7 +274,10 @@ fn string_errors() {
 
 #[test]
 fn numbers() {
-    fn assert_float_token_eq(source: &str, start: SourcePosition, end: SourcePosition, expected: f64) {
+    fn assert_float_token_eq(source: &str,
+                             start: SourcePosition,
+                             end: SourcePosition,
+                             expected: f64) {
         let parsed = tokenize_single(source);
         assert_eq!(parsed.start, start);
         assert_eq!(parsed.end, end);
@@ -297,17 +300,15 @@ fn numbers() {
             &SourcePosition::new(1, 0, 1),
             Token::Int(4)));
 
-    assert_float_token_eq(
-        "4.123",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(5, 0, 5),
-        4.123);
+    assert_float_token_eq("4.123",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(5, 0, 5),
+                          4.123);
 
-    assert_float_token_eq(
-        "4.0",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(3, 0, 3),
-        4.0);
+    assert_float_token_eq("4.0",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(3, 0, 3),
+                          4.0);
 
     assert_eq!(
         tokenize_single("-4"),
@@ -330,71 +331,60 @@ fn numbers() {
             &SourcePosition::new(1, 0, 1),
             Token::Int(0)));
 
-    assert_float_token_eq(
-        "-4.123",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(6, 0, 6),
-        -4.123);
+    assert_float_token_eq("-4.123",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(6, 0, 6),
+                          -4.123);
 
-    assert_float_token_eq(
-        "0.123",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(5, 0, 5),
-        0.123);
+    assert_float_token_eq("0.123",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(5, 0, 5),
+                          0.123);
 
-    assert_float_token_eq(
-        "123e4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(5, 0, 5),
-        123e4);
+    assert_float_token_eq("123e4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(5, 0, 5),
+                          123e4);
 
-    assert_float_token_eq(
-        "123E4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(5, 0, 5),
-        123e4);
+    assert_float_token_eq("123E4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(5, 0, 5),
+                          123e4);
 
-    assert_float_token_eq(
-        "123e-4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(6, 0, 6),
-        123e-4);
+    assert_float_token_eq("123e-4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(6, 0, 6),
+                          123e-4);
 
-    assert_float_token_eq(
-        "123e+4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(6, 0, 6),
-        123e4);
+    assert_float_token_eq("123e+4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(6, 0, 6),
+                          123e4);
 
-    assert_float_token_eq(
-        "-1.123e4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(8, 0, 8),
-        -1.123e4);
+    assert_float_token_eq("-1.123e4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(8, 0, 8),
+                          -1.123e4);
 
-    assert_float_token_eq(
-        "-1.123E4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(8, 0, 8),
-        -1.123e4);
+    assert_float_token_eq("-1.123E4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(8, 0, 8),
+                          -1.123e4);
 
-    assert_float_token_eq(
-        "-1.123e-4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(9, 0, 9),
-        -1.123e-4);
+    assert_float_token_eq("-1.123e-4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(9, 0, 9),
+                          -1.123e-4);
 
-    assert_float_token_eq(
-        "-1.123e+4",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(9, 0, 9),
-        -1.123e4);
+    assert_float_token_eq("-1.123e+4",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(9, 0, 9),
+                          -1.123e4);
 
-    assert_float_token_eq(
-        "-1.123e45",
-        SourcePosition::new(0, 0, 0),
-        SourcePosition::new(9, 0, 9),
-        -1.123e45);
+    assert_float_token_eq("-1.123e45",
+                          SourcePosition::new(0, 0, 0),
+                          SourcePosition::new(9, 0, 9),
+                          -1.123e45);
 }
 
 #[test]

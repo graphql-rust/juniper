@@ -27,14 +27,11 @@ pub fn factory<'a>() -> VariableInAllowedPosition<'a> {
 }
 
 impl<'a> VariableInAllowedPosition<'a> {
-    fn collect_incorrect_usages(
-        &self,
-        from: &Scope<'a>,
-        var_defs: &Vec<&'a (Spanning<&'a str>, VariableDefinition)>,
-        ctx: &mut ValidatorContext<'a>,
-        visited: &mut HashSet<Scope<'a>>,
-    )
-    {
+    fn collect_incorrect_usages(&self,
+                                from: &Scope<'a>,
+                                var_defs: &Vec<&'a (Spanning<&'a str>, VariableDefinition)>,
+                                ctx: &mut ValidatorContext<'a>,
+                                visited: &mut HashSet<Scope<'a>>) {
         if visited.contains(from) {
             return;
         }
@@ -43,10 +40,10 @@ impl<'a> VariableInAllowedPosition<'a> {
 
         if let Some(usages) = self.variable_usages.get(from) {
             for &(ref var_name, ref var_type) in usages {
-                if let Some(&&(ref var_def_name, ref var_def)) = var_defs
-                    .iter()
-                    .find(|&&&(ref n, _)| &n.item == var_name.item)
-                {
+                if let Some(&&(ref var_def_name, ref var_def)) =
+                    var_defs
+                        .iter()
+                        .find(|&&&(ref n, _)| &n.item == var_name.item) {
                     let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
                         (&Some(_), &Type::List(ref inner)) => Type::NonNullList(inner.clone()),
                         (&Some(_), &Type::Named(inner)) => Type::NonNullNamed(inner),
@@ -54,9 +51,10 @@ impl<'a> VariableInAllowedPosition<'a> {
                     };
 
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
-                        ctx.report_error(
-                            &error_message(var_name.item, &format!("{}", expected_type), &format!("{}", var_type)),
-                            &[var_def_name.start.clone(), var_name.start.clone()]);
+                        ctx.report_error(&error_message(var_name.item,
+                                                       &format!("{}", expected_type),
+                                                       &format!("{}", var_type)),
+                                         &[var_def_name.start.clone(), var_name.start.clone()]);
                     }
                 }
             }
@@ -77,15 +75,21 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         }
     }
 
-    fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
+    fn enter_fragment_definition(&mut self,
+                                 _: &mut ValidatorContext<'a>,
+                                 fragment: &'a Spanning<Fragment>) {
         self.current_scope = Some(Scope::Fragment(fragment.item.name.item));
     }
 
-    fn enter_operation_definition(&mut self, _: &mut ValidatorContext<'a>, op: &'a Spanning<Operation>) {
+    fn enter_operation_definition(&mut self,
+                                  _: &mut ValidatorContext<'a>,
+                                  op: &'a Spanning<Operation>) {
         self.current_scope = Some(Scope::Operation(op.item.name.as_ref().map(|s| s.item)));
     }
 
-    fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
+    fn enter_fragment_spread(&mut self,
+                             _: &mut ValidatorContext<'a>,
+                             spread: &'a Spanning<FragmentSpread>) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
@@ -94,7 +98,9 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         }
     }
 
-    fn enter_variable_definition(&mut self, _: &mut ValidatorContext<'a>, def: &'a (Spanning<&'a str>, VariableDefinition)) {
+    fn enter_variable_definition(&mut self,
+                                 _: &mut ValidatorContext<'a>,
+                                 def: &'a (Spanning<&'a str>, VariableDefinition)) {
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
                 .entry(scope.clone())
@@ -103,12 +109,16 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         }
     }
 
-    fn enter_variable_value(&mut self, ctx: &mut ValidatorContext<'a>, var_name: Spanning<&'a String>) {
-        if let (&Some(ref scope), Some(input_type)) = (&self.current_scope, ctx.current_input_type_literal()) {
+    fn enter_variable_value(&mut self,
+                            ctx: &mut ValidatorContext<'a>,
+                            var_name: Spanning<&'a String>) {
+        if let (&Some(ref scope), Some(input_type)) =
+            (&self.current_scope, ctx.current_input_type_literal()) {
             self.variable_usages
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push((Spanning::start_end(&var_name.start, &var_name.end, var_name.item), input_type.clone()));
+                .push((Spanning::start_end(&var_name.start, &var_name.end, var_name.item),
+                       input_type.clone()));
         }
     }
 }
@@ -128,7 +138,8 @@ mod tests {
 
     #[test]
     fn boolean_into_boolean() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($booleanArg: Boolean)
           {
             complicatedArgs {
@@ -140,7 +151,8 @@ mod tests {
 
     #[test]
     fn boolean_into_boolean_within_fragment() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment booleanArgFrag on ComplicatedArgs {
             booleanArgField(booleanArg: $booleanArg)
           }
@@ -152,7 +164,8 @@ mod tests {
           }
         "#);
 
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($booleanArg: Boolean)
           {
             complicatedArgs {
@@ -167,7 +180,8 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($nonNullBooleanArg: Boolean!)
           {
             complicatedArgs {
@@ -179,7 +193,8 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean_within_fragment() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment booleanArgFrag on ComplicatedArgs {
             booleanArgField(booleanArg: $nonNullBooleanArg)
           }
@@ -195,7 +210,8 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_with_default() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($intArg: Int = 1)
           {
             complicatedArgs {
@@ -207,7 +223,8 @@ mod tests {
 
     #[test]
     fn string_list_into_string_list() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($stringListVar: [String])
           {
             complicatedArgs {
@@ -219,7 +236,8 @@ mod tests {
 
     #[test]
     fn non_null_string_list_into_string_list() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($stringListVar: [String!])
           {
             complicatedArgs {
@@ -231,7 +249,8 @@ mod tests {
 
     #[test]
     fn string_into_string_list_in_item_position() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($stringVar: String)
           {
             complicatedArgs {
@@ -243,7 +262,8 @@ mod tests {
 
     #[test]
     fn non_null_string_into_string_list_in_item_position() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($stringVar: String!)
           {
             complicatedArgs {
@@ -255,7 +275,8 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($complexVar: ComplexInput)
           {
             complicatedArgs {
@@ -267,7 +288,8 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input_in_field_position() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($boolVar: Boolean = false)
           {
             complicatedArgs {
@@ -279,7 +301,8 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_non_null_boolean_in_directive() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($boolVar: Boolean!)
           {
             dog @include(if: $boolVar)
@@ -289,7 +312,8 @@ mod tests {
 
     #[test]
     fn boolean_in_non_null_in_directive_with_default() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           query Query($boolVar: Boolean = false)
           {
             dog @include(if: $boolVar)
@@ -299,24 +323,23 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           query Query($intArg: Int) {
             complicatedArgs {
               nonNullIntArgField(nonNullIntArg: $intArg)
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("intArg", "Int", "Int!"), &[
-                    SourcePosition::new(23, 1, 22),
-                    SourcePosition::new(117, 3, 48),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("intArg", "Int", "Int!"),
+                                           &[SourcePosition::new(23, 1, 22),
+                                             SourcePosition::new(117, 3, 48)])]);
     }
 
     #[test]
     fn int_into_non_null_int_within_fragment() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment nonNullIntArgFieldFrag on ComplicatedArgs {
             nonNullIntArgField(nonNullIntArg: $intArg)
           }
@@ -327,17 +350,15 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("intArg", "Int", "Int!"), &[
-                    SourcePosition::new(154, 5, 22),
-                    SourcePosition::new(110, 2, 46),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("intArg", "Int", "Int!"),
+                                           &[SourcePosition::new(154, 5, 22),
+                                             SourcePosition::new(110, 2, 46)])]);
     }
 
     #[test]
     fn int_into_non_null_int_within_nested_fragment() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment outerFrag on ComplicatedArgs {
             ...nonNullIntArgFieldFrag
           }
@@ -352,75 +373,64 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("intArg", "Int", "Int!"), &[
-                    SourcePosition::new(255, 9, 22),
-                    SourcePosition::new(211, 6, 46),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("intArg", "Int", "Int!"),
+                                           &[SourcePosition::new(255, 9, 22),
+                                             SourcePosition::new(211, 6, 46)])]);
     }
 
     #[test]
     fn string_over_boolean() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           query Query($stringVar: String) {
             complicatedArgs {
               booleanArgField(booleanArg: $stringVar)
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("stringVar", "String", "Boolean"), &[
-                    SourcePosition::new(23, 1, 22),
-                    SourcePosition::new(117, 3, 42),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("stringVar", "String", "Boolean"),
+                                           &[SourcePosition::new(23, 1, 22),
+                                             SourcePosition::new(117, 3, 42)])]);
     }
 
     #[test]
     fn string_into_string_list() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           query Query($stringVar: String) {
             complicatedArgs {
               stringListArgField(stringListArg: $stringVar)
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("stringVar", "String", "[String]"), &[
-                    SourcePosition::new(23, 1, 22),
-                    SourcePosition::new(123, 3, 48),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("stringVar", "String", "[String]"),
+                                           &[SourcePosition::new(23, 1, 22),
+                                             SourcePosition::new(123, 3, 48)])]);
     }
 
     #[test]
     fn boolean_into_non_null_boolean_in_directive() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           query Query($boolVar: Boolean) {
             dog @include(if: $boolVar)
           }
         "#,
-            &[
-                RuleError::new(&error_message("boolVar", "Boolean", "Boolean!"), &[
-                    SourcePosition::new(23, 1, 22),
-                    SourcePosition::new(73, 2, 29),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("boolVar", "Boolean", "Boolean!"),
+                                           &[SourcePosition::new(23, 1, 22),
+                                             SourcePosition::new(73, 2, 29)])]);
     }
 
     #[test]
     fn string_into_non_null_boolean_in_directive() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           query Query($stringVar: String) {
             dog @include(if: $stringVar)
           }
         "#,
-            &[
-                RuleError::new(&error_message("stringVar", "String", "Boolean!"), &[
-                    SourcePosition::new(23, 1, 22),
-                    SourcePosition::new(74, 2, 29),
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("stringVar", "String", "Boolean!"),
+                                           &[SourcePosition::new(23, 1, 22),
+                                             SourcePosition::new(74, 2, 29)])]);
     }
 }

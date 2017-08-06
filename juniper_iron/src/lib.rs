@@ -1,7 +1,103 @@
-//! Optional handlers for the [Iron](http://ironframework.io) framework. Requires the `iron-handlers` feature enabled.
-//!
-//! See the [server.rs](https://github.com/mhallin/juniper/blob/master/examples/server.rs)
-//! example for more information on how to use these handlers.
+/*!
+
+[Juniper][1] handlers for the [Iron][2] framework.
+
+## Integrating with Iron
+
+
+
+For example, continuing from the schema created above and using Iron to expose
+the schema on an HTTP endpoint supporting both GET and POST requests:
+
+```rust,no_run
+extern crate iron;
+# #[macro_use] extern crate juniper;
+# extern crate juniper_iron;
+# use std::collections::HashMap;
+
+use iron::prelude::*;
+use juniper_iron::GraphQLHandler;
+use juniper::{Context, EmptyMutation};
+
+# use juniper::FieldResult;
+#
+# struct User { id: String, name: String, friend_ids: Vec<String>  }
+# struct QueryRoot;
+# struct Database { users: HashMap<String, User> }
+#
+# graphql_object!(User: Database |&self| {
+#     field id() -> FieldResult<&String> {
+#         Ok(&self.id)
+#     }
+#
+#     field name() -> FieldResult<&String> {
+#         Ok(&self.name)
+#     }
+#
+#     field friends(&executor) -> FieldResult<Vec<&User>> {
+#         Ok(self.friend_ids.iter()
+#             .filter_map(|id| executor.context().users.get(id))
+#             .collect())
+#     }
+# });
+#
+# graphql_object!(QueryRoot: Database |&self| {
+#     field user(&executor, id: String) -> FieldResult<Option<&User>> {
+#         Ok(executor.context().users.get(&id))
+#     }
+# });
+
+// This function is executed for every request. Here, we would realistically
+// provide a database connection or similar. For this example, we'll be
+// creating the database from scratch.
+fn context_factory(_: &mut Request) -> Database {
+    Database {
+        users: vec![
+            ( "1000".to_owned(), User {
+                id: "1000".to_owned(), name: "Robin".to_owned(),
+                friend_ids: vec!["1001".to_owned()] } ),
+            ( "1001".to_owned(), User {
+                id: "1001".to_owned(), name: "Max".to_owned(),
+                friend_ids: vec!["1000".to_owned()] } ),
+        ].into_iter().collect()
+    }
+}
+
+impl Context for Database {}
+
+fn main() {
+    // GraphQLHandler takes a context factory function, the root object,
+    // and the mutation object. If we don't have any mutations to expose, we
+    // can use the empty tuple () to indicate absence.
+    let graphql_endpoint = GraphQLHandler::new(
+        context_factory, QueryRoot, EmptyMutation::<Database>::new());
+
+    // Start serving the schema at the root on port 8080.
+    Iron::new(graphql_endpoint).http("localhost:8080").unwrap();
+}
+
+```
+
+See the [iron_server.rs][5]
+example for more information on how to use these handlers.
+
+See the the [`GraphQLHandler`][3] documentation for more information on what request methods are
+supported.
+There's also a built-in [GraphiQL][4] handler included.
+
+[1]: https://github.com/mhallin/Juniper
+[2]: http://ironframework.io
+[3]: ./struct.GraphQLHandler.html
+[4]: https://github.com/graphql/graphiql
+[5]: https://github.com/mhallin/juniper/blob/master/juniper_iron/examples/iron_server.rs
+
+*/
+
+extern crate serde_json;
+extern crate juniper;
+extern crate urlencoded;
+#[macro_use] extern crate iron;
+#[cfg(test)] extern crate iron_test;
 
 use iron::prelude::*;
 use iron::middleware::Handler;
@@ -14,11 +110,10 @@ use std::io::Read;
 use std::error::Error;
 use std::fmt;
 
-use serde_json;
 use serde_json::error::Error as SerdeError;
 
-use ::{InputValue, GraphQLType, RootNode};
-use ::http;
+use juniper::{InputValue, GraphQLType, RootNode};
+use juniper::http;
 
 /// Handler that executes GraphQL queries in the given schema
 ///
@@ -50,18 +145,18 @@ fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
     if values.len() == 1 {
         Ok(values.remove(0))
     }
-    else {
-        Err(GraphQLIronError::InvalidData("Duplicate URL query parameter").into())
-    }
+        else {
+            Err(GraphQLIronError::InvalidData("Duplicate URL query parameter").into())
+        }
 }
 
 fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
     if let Some(values) = params {
         get_single_value(values).map(Some)
     }
-    else {
-        Ok(None)
-    }
+        else {
+            Ok(None)
+        }
 }
 
 fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputValue>> {
@@ -70,14 +165,14 @@ fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputV
             .map(Some)
             .map_err(GraphQLIronError::Serde)?)
     }
-    else {
-        Ok(None)
-    }
+        else {
+            Ok(None)
+        }
 }
 
 
 impl<'a, CtxFactory, Query, Mutation, CtxT>
-    GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
+GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
@@ -100,7 +195,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     fn handle_get(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let url_query_string = req.get_mut::<UrlEncodedQuery>()
             .map_err(|e| GraphQLIronError::Url(e))?;
-    
+
         let input_query = parse_url_param(url_query_string.remove("query"))?
             .ok_or_else(|| GraphQLIronError::InvalidData("No query provided"))?;
         let operation_name = parse_url_param(url_query_string.remove("operationName"))?;
@@ -112,7 +207,7 @@ impl<'a, CtxFactory, Query, Mutation, CtxT>
     fn handle_post(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let mut request_payload = String::new();
         itry!(req.body.read_to_string(&mut request_payload));
-        
+
         Ok(serde_json::from_str::<http::GraphQLRequest>(request_payload.as_str())
             .map_err(|err| GraphQLIronError::Serde(err))?)
     }
@@ -142,8 +237,8 @@ impl GraphiQLHandler {
 }
 
 impl<'a, CtxFactory, Query, Mutation, CtxT>
-    Handler
-    for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
+Handler
+for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
     where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
           CtxT: 'static,
           Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
@@ -169,7 +264,7 @@ impl Handler for GraphiQLHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            ::graphiql::graphiql_source(&self.graphql_url),
+            juniper::graphiql::graphiql_source(&self.graphql_url),
         )))
     }
 }
@@ -193,11 +288,11 @@ impl fmt::Display for GraphQLIronError {
 
 impl Error for GraphQLIronError {
     fn description(&self) -> &str {
-       match *self {
-           GraphQLIronError::Serde(ref err) => err.description(),
-           GraphQLIronError::Url(ref err) => err.description(),
-           GraphQLIronError::InvalidData(ref err) => err,
-       }
+        match *self {
+            GraphQLIronError::Serde(ref err) => err.description(),
+            GraphQLIronError::Url(ref err) => err.description(),
+            GraphQLIronError::InvalidData(ref err) => err,
+        }
     }
 
     fn cause(&self) -> Option<&Error> {
@@ -216,16 +311,15 @@ impl From<GraphQLIronError> for IronError {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use iron::prelude::*;
     use iron_test::{request, response};
     use iron::{Handler, Headers};
 
-    use ::tests::model::Database;
+    use juniper::tests::model::Database;
     use ::http::tests as http_tests;
-    use types::scalars::EmptyMutation;
+    use juniper::EmptyMutation;
 
     use super::GraphQLHandler;
 

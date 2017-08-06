@@ -148,15 +148,25 @@ fn test_possible_types() {
     assert_eq!(errors, vec![]);
 
     let possible_types = result
-        .as_object_value().expect("execution result not an object")
-        .get("__type").expect("'__type' not present in result")
-        .as_object_value().expect("'__type' not an object")
-        .get("possibleTypes").expect("'possibleTypes' not present in '__type'")
-        .as_list_value().expect("'possibleTypes' not a list")
-        .iter().map(|t| t
-            .as_object_value().expect("possible type not an object")
-            .get("name").expect("'name' not present in type")
-            .as_string_value().expect("'name' not a string"))
+        .as_object_value()
+        .expect("execution result not an object")
+        .get("__type")
+        .expect("'__type' not present in result")
+        .as_object_value()
+        .expect("'__type' not an object")
+        .get("possibleTypes")
+        .expect("'possibleTypes' not present in '__type'")
+        .as_list_value()
+        .expect("'possibleTypes' not a list")
+        .iter()
+        .map(|t| {
+                 t.as_object_value()
+                     .expect("possible type not an object")
+                     .get("name")
+                     .expect("'name' not present in type")
+                     .as_string_value()
+                     .expect("'name' not a string")
+             })
         .collect::<HashSet<_>>();
 
     assert_eq!(

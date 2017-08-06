@@ -30,20 +30,22 @@ Add Juniper to your Cargo.toml:
 juniper = "0.8.1"
 ```
 
-If you want the Iron integration enabled, you need to enable the `iron-handlers`
+If you want Iron integration, you need to depend on the `juniper_iron` crate.
 feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.8.1", features = ["iron-handlers"] }
+juniper = { version = "0.8.1" }
+juniper_iron = { git = "https://github.com/mhallin/juniper" }
+
 ```
 
-If you want the Rocket integration enabled, you need to use the nightly Rust
-compiler and enable the `rocket-handlers` feature flag:
+If you want Rocket integration, you need to depend on the `juniper_rocket` crate.
 
 ```toml
 [dependencies]
-juniper = { version = "0.8.1", features = ["rocket-handlers"] }
+juniper = { version = "0.8.1" }
+juniper_rocket = { git = "https://github.com/mhallin/juniper" }
 ```
 
 ## Building schemas
@@ -160,5 +162,5 @@ as well.
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
-[examples]: examples/
+[examples]: juniper_rocket/examples/
 [Rocket]: https://rocket.rs

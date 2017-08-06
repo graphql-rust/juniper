@@ -114,9 +114,12 @@ fn enum_introspection() {
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     assert_eq!(type_info.get("name"), Some(&Value::string("SampleEnum")));
     assert_eq!(type_info.get("kind"), Some(&Value::string("ENUM")));
@@ -127,8 +130,10 @@ fn enum_introspection() {
     assert_eq!(type_info.get("ofType"), Some(&Value::null()));
 
     let values = type_info
-        .get("enumValues").expect("enumValues field missing")
-        .as_list_value().expect("enumValues not a list");
+        .get("enumValues")
+        .expect("enumValues field missing")
+        .as_list_value()
+        .expect("enumValues not a list");
 
     assert_eq!(values.len(), 2);
 
@@ -192,9 +197,12 @@ fn interface_introspection() {
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     assert_eq!(type_info.get("name"), Some(&Value::string("SampleInterface")));
     assert_eq!(type_info.get("kind"), Some(&Value::string("INTERFACE")));
@@ -205,8 +213,10 @@ fn interface_introspection() {
     assert_eq!(type_info.get("ofType"), Some(&Value::null()));
 
     let possible_types = type_info
-        .get("possibleTypes").expect("possibleTypes field missing")
-        .as_list_value().expect("possibleTypes not a list");
+        .get("possibleTypes")
+        .expect("possibleTypes field missing")
+        .as_list_value()
+        .expect("possibleTypes not a list");
 
     assert_eq!(possible_types.len(), 1);
 
@@ -215,8 +225,10 @@ fn interface_introspection() {
     ].into_iter().collect())));
 
     let fields = type_info
-        .get("fields").expect("fields field missing")
-        .as_list_value().expect("fields field not an object value");
+        .get("fields")
+        .expect("fields field missing")
+        .as_list_value()
+        .expect("fields field not an object value");
 
     assert_eq!(fields.len(), 1);
 
@@ -293,9 +305,12 @@ fn object_introspection() {
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     assert_eq!(type_info.get("name"), Some(&Value::string("Root")));
     assert_eq!(type_info.get("kind"), Some(&Value::string("OBJECT")));
@@ -313,8 +328,10 @@ fn object_introspection() {
     assert_eq!(type_info.get("possibleTypes"), Some(&Value::null()));
 
     let fields = type_info
-        .get("fields").expect("fields field missing")
-        .as_list_value().expect("fields field not an object value");
+        .get("fields")
+        .expect("fields field missing")
+        .as_list_value()
+        .expect("fields field not an object value");
 
     assert_eq!(fields.len(), 2);
 
@@ -405,8 +422,10 @@ fn scalar_introspection() {
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing");
 
     assert_eq!(type_info, &Value::object(vec![
         ("name", Value::string("SampleScalar")),

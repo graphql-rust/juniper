@@ -3,6 +3,7 @@ extern crate mount;
 extern crate logger;
 extern crate serde;
 extern crate juniper;
+extern crate juniper_iron;
 
 use std::env;
 
@@ -10,7 +11,7 @@ use mount::Mount;
 use logger::Logger;
 use iron::prelude::*;
 use juniper::EmptyMutation;
-use juniper::iron_handlers::{GraphQLHandler, GraphiQLHandler};
+use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use juniper::tests::model::Database;
 
 fn context_factory(_: &mut Request) -> Database {

@@ -43,9 +43,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        Ok(Parser {
-            tokens: tokens,
-       })
+        Ok(Parser { tokens: tokens })
     }
 
     #[doc(hidden)]
@@ -56,10 +54,9 @@ impl<'a> Parser<'a> {
     #[doc(hidden)]
     pub fn next(&mut self) -> ParseResult<'a, Token<'a>> {
         if self.tokens.len() == 1 {
-            Err(Spanning::start_end(
-                &self.peek().start.clone(),
-                &self.peek().end.clone(),
-                ParseError::UnexpectedEndOfFile))
+            Err(Spanning::start_end(&self.peek().start.clone(),
+                                    &self.peek().end.clone(),
+                                    ParseError::UnexpectedEndOfFile))
         } else {
             Ok(self.tokens.remove(0))
         }
@@ -69,41 +66,39 @@ impl<'a> Parser<'a> {
     pub fn expect(&mut self, expected: &Token) -> ParseResult<'a, Token<'a>> {
         if &self.peek().item != expected {
             Err(self.next()?.map(ParseError::UnexpectedToken))
-        }
-        else {
+        } else {
             self.next()
         }
     }
 
     #[doc(hidden)]
-    pub fn skip(&mut self, expected: &Token) -> Result<Option<Spanning<Token<'a>>>, Spanning<ParseError<'a>>> {
+    pub fn skip(&mut self,
+                expected: &Token)
+                -> Result<Option<Spanning<Token<'a>>>, Spanning<ParseError<'a>>> {
         if &self.peek().item == expected {
             Ok(Some(self.next()?))
-        }
-        else if self.peek().item == Token::EndOfFile {
-            Err(Spanning::zero_width(
-                &self.peek().start,
-                ParseError::UnexpectedEndOfFile))
-        }
-        else {
+        } else if self.peek().item == Token::EndOfFile {
+            Err(Spanning::zero_width(&self.peek().start, ParseError::UnexpectedEndOfFile))
+        } else {
             Ok(None)
         }
     }
 
     #[doc(hidden)]
-    pub fn delimited_list<T, F>(&mut self, opening: &Token, parser: F, closing: &Token)
-        -> ParseResult<'a, Vec<Spanning<T>>>
-        where T: fmt::Debug, F: Fn(&mut Parser<'a>) -> ParseResult<'a, T>
+    pub fn delimited_list<T, F>(&mut self,
+                                opening: &Token,
+                                parser: F,
+                                closing: &Token)
+                                -> ParseResult<'a, Vec<Spanning<T>>>
+        where T: fmt::Debug,
+              F: Fn(&mut Parser<'a>) -> ParseResult<'a, T>
     {
         let Spanning { start: start_pos, .. } = try!(self.expect(opening));
         let mut items = Vec::new();
 
         loop {
             if let Some(Spanning { end: end_pos, .. }) = try!(self.skip(closing)) {
-                return Ok(Spanning::start_end(
-                    &start_pos,
-                    &end_pos,
-                    items));
+                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
             }
 
             items.push(try!(parser(self)));
@@ -111,9 +106,13 @@ impl<'a> Parser<'a> {
     }
 
     #[doc(hidden)]
-    pub fn delimited_nonempty_list<T, F>(&mut self, opening: &Token, parser: F, closing: &Token)
-        -> ParseResult<'a, Vec<Spanning<T>>>
-        where T: fmt::Debug, F: Fn(&mut Parser<'a>) -> ParseResult<'a, T>
+    pub fn delimited_nonempty_list<T, F>(&mut self,
+                                         opening: &Token,
+                                         parser: F,
+                                         closing: &Token)
+                                         -> ParseResult<'a, Vec<Spanning<T>>>
+        where T: fmt::Debug,
+              F: Fn(&mut Parser<'a>) -> ParseResult<'a, T>
     {
         let Spanning { start: start_pos, .. } = try!(self.expect(opening));
         let mut items = Vec::new();
@@ -122,18 +121,19 @@ impl<'a> Parser<'a> {
             items.push(try!(parser(self)));
 
             if let Some(Spanning { end: end_pos, .. }) = try!(self.skip(closing)) {
-                return Ok(Spanning::start_end(
-                    &start_pos,
-                    &end_pos,
-                    items));
+                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
             }
         }
     }
 
     #[doc(hidden)]
-    pub fn unlocated_delimited_nonempty_list<T, F>(&mut self, opening: &Token, parser: F, closing: &Token)
-        -> ParseResult<'a, Vec<T>>
-        where T: fmt::Debug, F: Fn(&mut Parser<'a>) -> UnlocatedParseResult<'a, T>
+    pub fn unlocated_delimited_nonempty_list<T, F>(&mut self,
+                                                   opening: &Token,
+                                                   parser: F,
+                                                   closing: &Token)
+                                                   -> ParseResult<'a, Vec<T>>
+        where T: fmt::Debug,
+              F: Fn(&mut Parser<'a>) -> UnlocatedParseResult<'a, T>
     {
         let Spanning { start: start_pos, .. } = try!(self.expect(opening));
         let mut items = Vec::new();
@@ -142,10 +142,7 @@ impl<'a> Parser<'a> {
             items.push(try!(parser(self)));
 
             if let Some(Spanning { end: end_pos, .. }) = try!(self.skip(closing)) {
-                return Ok(Spanning::start_end(
-                    &start_pos,
-                    &end_pos,
-                    items));
+                return Ok(Spanning::start_end(&start_pos, &end_pos, items));
             }
         }
     }
@@ -153,19 +150,19 @@ impl<'a> Parser<'a> {
     #[doc(hidden)]
     pub fn expect_name(&mut self) -> ParseResult<'a, &'a str> {
         match *self.peek() {
-            Spanning { item: Token::Name(_), .. } =>
-                Ok(self.next()?.map(|token|
-                    if let Token::Name(name) = token {
-                        name
-                    }
-                    else {
-                        panic!("Internal parse error in `expect_name`");
-                    })),
-            Spanning { item: Token::EndOfFile, .. } =>
-                Err(Spanning::start_end(
-                    &self.peek().start.clone(),
-                    &self.peek().end.clone(),
-                    ParseError::UnexpectedEndOfFile)),
+            Spanning { item: Token::Name(_), .. } => {
+                Ok(self.next()?
+                       .map(|token| if let Token::Name(name) = token {
+                                name
+                            } else {
+                    panic!("Internal parse error in `expect_name`");
+                }))
+            }
+            Spanning { item: Token::EndOfFile, .. } => {
+                Err(Spanning::start_end(&self.peek().start.clone(),
+                                        &self.peek().end.clone(),
+                                        ParseError::UnexpectedEndOfFile))
+            }
             _ => Err(self.next()?.map(ParseError::UnexpectedToken)),
         }
     }
