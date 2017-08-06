@@ -5,23 +5,23 @@
 environment:
   matrix:
     # Stable channel
-    - TARGET: i686-pc-windows-gnu
-      CHANNEL: stable
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: stable
-    - TARGET: x86_64-pc-windows-gnu
-      CHANNEL: stable
-    - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: stable
+    # - TARGET: i686-pc-windows-gnu
+    #   CHANNEL: stable
+    # - TARGET: i686-pc-windows-msvc
+    #   CHANNEL: stable
+    # - TARGET: x86_64-pc-windows-gnu
+    #   CHANNEL: stable
+    # - TARGET: x86_64-pc-windows-msvc
+    #   CHANNEL: stable
     # Beta channel
-    - TARGET: i686-pc-windows-gnu
-      CHANNEL: beta
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: beta
-    - TARGET: x86_64-pc-windows-gnu
-      CHANNEL: beta
-    - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: beta
+    # - TARGET: i686-pc-windows-gnu
+    #   CHANNEL: beta
+    # - TARGET: i686-pc-windows-msvc
+    #   CHANNEL: beta
+    # - TARGET: x86_64-pc-windows-gnu
+    #   CHANNEL: beta
+    # - TARGET: x86_64-pc-windows-msvc
+    #   CHANNEL: beta
     # Nightly channel
     - TARGET: i686-pc-windows-gnu
       CHANNEL: nightly
@@ -49,6 +49,10 @@ install:
 build: false
 
 test_script:
-  - cargo make ci-flow
+  - ECHO.%TARGET% | FIND "msvc">Nul && ( IF "%CHANNEL%"=="nightly" (cd juniper_rocket && cargo build --verbose && cargo test --verbose) )
+  - cd juniper && cargo build --verbose && cargo test --verbose && cd ..
+  - cd juniper_codegen && cargo build --verbose && cargo test --verbose && cd ..
+  - cd juniper_iron && cargo build --verbose && cargo test --verbose && cd ..
+  - cd juniper_tests && cargo build --verbose && cargo test --verbose && cd ..
 
 
