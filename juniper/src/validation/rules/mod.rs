@@ -24,7 +24,7 @@ mod variables_are_input_types;
 mod variables_in_allowed_position;
 
 use ast::Document;
-use validation::{ValidatorContext, MultiVisitor, MultiVisitorNil, visit};
+use validation::{visit, MultiVisitor, MultiVisitorNil, ValidatorContext};
 
 #[doc(hidden)]
 pub fn visit_all_rules<'a>(ctx: &mut ValidatorContext<'a>, doc: &'a Document) {

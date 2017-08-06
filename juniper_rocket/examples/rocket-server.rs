@@ -27,7 +27,7 @@ fn get_graphql_handler(
     request.execute(&schema, &context)
 }
 
-#[post("/graphql", data="<request>")]
+#[post("/graphql", data = "<request>")]
 fn post_graphql_handler(
     context: State<Database>,
     request: juniper_rocket::GraphQLRequest,
@@ -39,7 +39,13 @@ fn post_graphql_handler(
 fn main() {
     rocket::ignite()
         .manage(Database::new())
-        .manage(Schema::new(Database::new(), EmptyMutation::<Database>::new()))
-        .mount("/", routes![graphiql, get_graphql_handler, post_graphql_handler])
+        .manage(Schema::new(
+            Database::new(),
+            EmptyMutation::<Database>::new(),
+        ))
+        .mount(
+            "/",
+            routes![graphiql, get_graphql_handler, post_graphql_handler],
+        )
         .launch();
 }

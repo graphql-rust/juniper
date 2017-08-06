@@ -69,8 +69,8 @@ fn test_execution() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -106,8 +106,8 @@ fn enum_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -189,8 +189,8 @@ fn interface_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -297,8 +297,8 @@ fn object_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -414,8 +414,8 @@ fn scalar_introspection() {
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

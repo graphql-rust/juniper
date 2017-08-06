@@ -111,7 +111,8 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
 
 
 fn run_type_info_query<F>(type_name: &str, f: F)
-    where F: Fn(&HashMap<String, Value>, &Vec<Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>, &Vec<Value>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
@@ -127,9 +128,8 @@ fn run_type_info_query<F>(type_name: &str, f: F)
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
     let vars = vec![
         ("typeName".to_owned(), InputValue::string(type_name)),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 

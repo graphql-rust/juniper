@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ast::{InputValue, FromInputValue};
+use ast::{FromInputValue, InputValue};
 use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
@@ -104,12 +104,13 @@ graphql_object!(Root: () |&self| {
 });
 
 fn run_type_info_query<F>(doc: &str, f: F)
-    where F: Fn(&HashMap<String, Value>, &Vec<Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>, &Vec<Value>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -185,12 +186,13 @@ fn default_name_introspection() {
 
 #[test]
 fn default_name_input_value() {
-    let iv = InputValue::object(vec![
+    let iv = InputValue::object(
+        vec![
         ("fieldOne", InputValue::string("number one")),
         ("fieldTwo", InputValue::string("number two")),
-    ]
-                                        .into_iter()
-                                        .collect());
+    ].into_iter()
+            .collect(),
+    );
 
     let dv: Option<DefaultName> = FromInputValue::from(&iv);
 

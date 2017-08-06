@@ -77,13 +77,15 @@ mod interface {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema {
-                                       pets: vec![
+        let schema = RootNode::new(
+            Schema {
+                pets: vec![
                     Box::new(Dog { name: "Odie".to_owned(), woofs: true }),
                     Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
                 ],
-                                   },
-                                   EmptyMutation::<()>::new());
+            },
+            EmptyMutation::<()>::new(),
+        );
         let doc = r"
           {
             pets {
@@ -190,13 +192,15 @@ mod union {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema {
-                                       pets: vec![
+        let schema = RootNode::new(
+            Schema {
+                pets: vec![
                     Box::new(Dog { name: "Odie".to_owned(), woofs: true }),
                     Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
                 ],
-                                   },
-                                   EmptyMutation::<()>::new());
+            },
+            EmptyMutation::<()>::new(),
+        );
         let doc = r"
           {
             pets {

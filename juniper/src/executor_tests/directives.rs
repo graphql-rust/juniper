@@ -18,7 +18,8 @@ graphql_object!(TestType: () |&self| {
 });
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
-    where F: Fn(&HashMap<String, Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -34,7 +35,8 @@ fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 }
 
 fn run_query<F>(query: &str, f: F)
-    where F: Fn(&HashMap<String, Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -114,20 +116,24 @@ fn fragment_spread_skip_true() {
 
 #[test]
 fn inline_fragment_include_true() {
-    run_query("{ a, ... on TestType @include(if: true) { b } }",
-              |result| {
-        assert_eq!(result.get("a"), Some(&Value::string("a")));
-        assert_eq!(result.get("b"), Some(&Value::string("b")));
-    });
+    run_query(
+        "{ a, ... on TestType @include(if: true) { b } }",
+        |result| {
+            assert_eq!(result.get("a"), Some(&Value::string("a")));
+            assert_eq!(result.get("b"), Some(&Value::string("b")));
+        },
+    );
 }
 
 #[test]
 fn inline_fragment_include_false() {
-    run_query("{ a, ... on TestType @include(if: false) { b } }",
-              |result| {
-        assert_eq!(result.get("a"), Some(&Value::string("a")));
-        assert_eq!(result.get("b"), None);
-    });
+    run_query(
+        "{ a, ... on TestType @include(if: false) { b } }",
+        |result| {
+            assert_eq!(result.get("a"), Some(&Value::string("a")));
+            assert_eq!(result.get("b"), None);
+        },
+    );
 }
 
 #[test]

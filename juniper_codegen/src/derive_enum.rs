@@ -2,7 +2,7 @@ use syn;
 use syn::*;
 use quote::Tokens;
 
-use ::util::*;
+use util::*;
 
 
 #[derive(Default, Debug)]
@@ -28,7 +28,8 @@ impl EnumAttrs {
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
-                    item));
+                    item
+                ));
             }
         }
         res
@@ -63,7 +64,8 @@ impl EnumVariantAttrs {
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
-                    item));
+                    item
+                ));
             }
         }
         res
@@ -76,7 +78,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         Body::Enum(ref var) => var,
         Body::Struct(_) => {
             panic!("#[derive(GraphlQLEnum)] may only be applied to enums, not to structs");
-        },
+        }
     };
 
     // Parse attributes.
@@ -98,13 +100,16 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         if variant.data != VariantData::Unit {
             panic!(format!(
                 "Invalid enum variant {}.\nGraphQL enums may only contain unit variants.",
-                variant.ident));
+                variant.ident
+            ));
         }
         let var_attrs = EnumVariantAttrs::from_input(variant);
         let var_ident = &variant.ident;
 
         // Build value.
-        let name = var_attrs.name.unwrap_or(variant.ident.as_ref().to_uppercase());
+        let name = var_attrs
+            .name
+            .unwrap_or(variant.ident.as_ref().to_uppercase());
         let descr = match var_attrs.description {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
@@ -140,7 +145,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
                 ::juniper::InputValue::string(#name.to_string()),
         };
         to_inputs.push(to_input);
-    };
+    }
 
     quote! {
         impl ::juniper::GraphQLType for #ident {

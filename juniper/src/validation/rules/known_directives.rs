@@ -1,4 +1,4 @@
-use ast::{Directive, Operation, OperationType, Fragment, FragmentSpread, Field, InlineFragment};
+use ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType};
 use validation::{ValidatorContext, Visitor};
 use schema::model::DirectiveLocation;
 use parser::Spanning;
@@ -8,23 +8,28 @@ pub struct KnownDirectives {
 }
 
 pub fn factory() -> KnownDirectives {
-    KnownDirectives { location_stack: Vec::new() }
+    KnownDirectives {
+        location_stack: Vec::new(),
+    }
 }
 
 impl<'a> Visitor<'a> for KnownDirectives {
-    fn enter_operation_definition(&mut self,
-                                  _: &mut ValidatorContext<'a>,
-                                  op: &'a Spanning<Operation>) {
-        self.location_stack
-            .push(match op.item.operation_type {
-                      OperationType::Query => DirectiveLocation::Query,
-                      OperationType::Mutation => DirectiveLocation::Mutation,
-                  });
+    fn enter_operation_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
+    ) {
+        self.location_stack.push(match op.item.operation_type {
+            OperationType::Query => DirectiveLocation::Query,
+            OperationType::Mutation => DirectiveLocation::Mutation,
+        });
     }
 
-    fn exit_operation_definition(&mut self,
-                                 _: &mut ValidatorContext<'a>,
-                                 _: &'a Spanning<Operation>) {
+    fn exit_operation_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<Operation>,
+    ) {
         let top = self.location_stack.pop();
         assert!(top == Some(DirectiveLocation::Query) || top == Some(DirectiveLocation::Mutation));
     }
@@ -38,65 +43,84 @@ impl<'a> Visitor<'a> for KnownDirectives {
         assert_eq!(top, Some(DirectiveLocation::Field));
     }
 
-    fn enter_fragment_definition(&mut self,
-                                 _: &mut ValidatorContext<'a>,
-                                 _: &'a Spanning<Fragment>) {
+    fn enter_fragment_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<Fragment>,
+    ) {
         self.location_stack
             .push(DirectiveLocation::FragmentDefinition);
     }
 
-    fn exit_fragment_definition(&mut self,
-                                _: &mut ValidatorContext<'a>,
-                                _: &'a Spanning<Fragment>) {
+    fn exit_fragment_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<Fragment>,
+    ) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::FragmentDefinition));
     }
 
-    fn enter_fragment_spread(&mut self,
-                             _: &mut ValidatorContext<'a>,
-                             _: &'a Spanning<FragmentSpread>) {
+    fn enter_fragment_spread(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<FragmentSpread>,
+    ) {
         self.location_stack.push(DirectiveLocation::FragmentSpread);
     }
 
-    fn exit_fragment_spread(&mut self,
-                            _: &mut ValidatorContext<'a>,
-                            _: &'a Spanning<FragmentSpread>) {
+    fn exit_fragment_spread(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<FragmentSpread>,
+    ) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::FragmentSpread));
     }
 
-    fn enter_inline_fragment(&mut self,
-                             _: &mut ValidatorContext<'a>,
-                             _: &'a Spanning<InlineFragment>) {
+    fn enter_inline_fragment(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<InlineFragment>,
+    ) {
         self.location_stack.push(DirectiveLocation::InlineFragment);
     }
 
-    fn exit_inline_fragment(&mut self,
-                            _: &mut ValidatorContext<'a>,
-                            _: &'a Spanning<InlineFragment>) {
+    fn exit_inline_fragment(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        _: &'a Spanning<InlineFragment>,
+    ) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::InlineFragment));
     }
 
-    fn enter_directive(&mut self,
-                       ctx: &mut ValidatorContext<'a>,
-                       directive: &'a Spanning<Directive>) {
+    fn enter_directive(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        directive: &'a Spanning<Directive>,
+    ) {
         let directive_name = &directive.item.name.item;
 
         if let Some(directive_type) = ctx.schema.directive_by_name(directive_name) {
             if let Some(current_location) = self.location_stack.last() {
                 if directive_type
-                       .locations
-                       .iter()
-                       .find(|l| l == &current_location)
-                       .is_none() {
-                    ctx.report_error(&misplaced_error_message(directive_name, current_location),
-                                     &[directive.start.clone()]);
+                    .locations
+                    .iter()
+                    .find(|l| l == &current_location)
+                    .is_none()
+                {
+                    ctx.report_error(
+                        &misplaced_error_message(directive_name, current_location),
+                        &[directive.start.clone()],
+                    );
                 }
             }
         } else {
-            ctx.report_error(&unknown_error_message(directive_name),
-                             &[directive.start.clone()]);
+            ctx.report_error(
+                &unknown_error_message(directive_name),
+                &[directive.start.clone()],
+            );
         }
     }
 }
@@ -106,21 +130,26 @@ fn unknown_error_message(directive_name: &str) -> String {
 }
 
 fn misplaced_error_message(directive_name: &str, location: &DirectiveLocation) -> String {
-    format!(r#"Directive "{}" may not be used on {}"#, directive_name, location)
+    format!(
+        r#"Directive "{}" may not be used on {}"#,
+        directive_name,
+        location
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{unknown_error_message, misplaced_error_message, factory};
+    use super::{factory, misplaced_error_message, unknown_error_message};
 
     use parser::SourcePosition;
-    use validation::{RuleError, expect_passes_rule, expect_fails_rule};
+    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
     use schema::model::DirectiveLocation;
 
     #[test]
     fn with_no_directives() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo {
             name
             ...Frag
@@ -129,13 +158,15 @@ mod tests {
           fragment Frag on Dog {
             name
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn with_known_directives() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           {
             dog @include(if: true) {
               name
@@ -144,27 +175,35 @@ mod tests {
               name
             }
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn with_unknown_directive() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           {
             dog @unknown(directive: "value") {
               name
             }
           }
         "#,
-                          &[RuleError::new(&unknown_error_message("unknown"),
-                                           &[SourcePosition::new(29, 2, 16)])]);
+            &[
+                RuleError::new(
+                    &unknown_error_message("unknown"),
+                    &[SourcePosition::new(29, 2, 16)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn with_many_unknown_directives() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           {
             dog @unknown(directive: "value") {
               name
@@ -177,18 +216,28 @@ mod tests {
             }
           }
         "#,
-                          &[RuleError::new(&unknown_error_message("unknown"),
-                                           &[SourcePosition::new(29, 2, 16)]),
-                            RuleError::new(&unknown_error_message("unknown"),
-                                           &[SourcePosition::new(111, 5, 18)]),
-                            RuleError::new(&unknown_error_message("unknown"),
-                                           &[SourcePosition::new(180, 7, 19)])]);
+            &[
+                RuleError::new(
+                    &unknown_error_message("unknown"),
+                    &[SourcePosition::new(29, 2, 16)],
+                ),
+                RuleError::new(
+                    &unknown_error_message("unknown"),
+                    &[SourcePosition::new(111, 5, 18)],
+                ),
+                RuleError::new(
+                    &unknown_error_message("unknown"),
+                    &[SourcePosition::new(180, 7, 19)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn with_well_placed_directives() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo @onQuery {
             name @include(if: true)
             ...Frag @include(if: true)
@@ -199,12 +248,15 @@ mod tests {
           mutation Bar @onMutation {
             someField
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn with_misplaced_directives() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo @include(if: true) {
             name @onQuery
             ...Frag @onQuery
@@ -215,18 +267,23 @@ mod tests {
           }
         "#,
             &[
-                RuleError::new(&misplaced_error_message("include", &DirectiveLocation::Query), &[
-                    SourcePosition::new(21, 1, 20),
-                ]),
-                RuleError::new(&misplaced_error_message("onQuery", &DirectiveLocation::Field), &[
-                    SourcePosition::new(59, 2, 17),
-                ]),
-                RuleError::new(&misplaced_error_message("onQuery", &DirectiveLocation::FragmentSpread), &[
-                    SourcePosition::new(88, 3, 20),
-                ]),
-                RuleError::new(&misplaced_error_message("onQuery", &DirectiveLocation::Mutation), &[
-                    SourcePosition::new(133, 6, 23),
-                ]),
-            ]);
+                RuleError::new(
+                    &misplaced_error_message("include", &DirectiveLocation::Query),
+                    &[SourcePosition::new(21, 1, 20)],
+                ),
+                RuleError::new(
+                    &misplaced_error_message("onQuery", &DirectiveLocation::Field),
+                    &[SourcePosition::new(59, 2, 17)],
+                ),
+                RuleError::new(
+                    &misplaced_error_message("onQuery", &DirectiveLocation::FragmentSpread),
+                    &[SourcePosition::new(88, 3, 20)],
+                ),
+                RuleError::new(
+                    &misplaced_error_message("onQuery", &DirectiveLocation::Mutation),
+                    &[SourcePosition::new(133, 6, 23)],
+                ),
+            ],
+        );
     }
 }

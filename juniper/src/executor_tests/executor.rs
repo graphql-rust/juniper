@@ -63,9 +63,8 @@ mod field_execution {
 
         let vars = vec![
             ("size".to_owned(), InputValue::int(100))
-        ]
-                .into_iter()
-                .collect();
+        ].into_iter()
+            .collect();
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
@@ -187,12 +186,15 @@ mod threads_context_correctly {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc,
-                                       None,
-                                       &schema,
-                                       &vars,
-                                       &TestContext { value: "Context value".to_owned() })
-                .expect("Execution failed");
+        let (result, errs) = ::execute(
+            doc,
+            None,
+            &schema,
+            &vars,
+            &TestContext {
+                value: "Context value".to_owned(),
+            },
+        ).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -213,7 +215,7 @@ mod dynamic_context_switching {
     use types::scalars::EmptyMutation;
     use schema::model::RootNode;
     use parser::SourcePosition;
-    use executor::{FieldResult, Context, ExecutionError};
+    use executor::{Context, ExecutionError, FieldResult};
 
     struct Schema;
 
@@ -272,9 +274,8 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ]
-                    .into_iter()
-                    .collect(),
+            ].into_iter()
+                .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -309,9 +310,8 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ]
-                    .into_iter()
-                    .collect(),
+            ].into_iter()
+                .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -353,9 +353,8 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ]
-                    .into_iter()
-                    .collect(),
+            ].into_iter()
+                .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -392,9 +391,8 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ]
-                    .into_iter()
-                    .collect(),
+            ].into_iter()
+                .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -512,8 +510,8 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, Some("OtherExample"), &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) =
+            ::execute(doc, Some("OtherExample"), &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 

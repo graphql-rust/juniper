@@ -9,12 +9,12 @@ use std::io::{Cursor, Read};
 use std::error::Error;
 
 use rocket::Request;
-use rocket::request::{FromForm, FormItems};
+use rocket::request::{FormItems, FromForm};
 use rocket::data::{FromData, Outcome as FromDataOutcome};
-use rocket::response::{Responder, Response, content};
+use rocket::response::{content, Responder, Response};
 use rocket::http::{ContentType, Status};
 use rocket::Data;
-use rocket::Outcome::{Forward, Failure, Success};
+use rocket::Outcome::{Failure, Forward, Success};
 
 use juniper::InputValue;
 use juniper::http;
@@ -43,13 +43,17 @@ impl GraphQLRequest {
         &self,
         root_node: &RootNode<QueryT, MutationT>,
         context: &CtxT,
-    )
-        -> GraphQLResponse
-        where QueryT: GraphQLType<Context=CtxT>,
-            MutationT: GraphQLType<Context=CtxT>,
+    ) -> GraphQLResponse
+    where
+        QueryT: GraphQLType<Context = CtxT>,
+        MutationT: GraphQLType<Context = CtxT>,
     {
         let response = self.0.execute(root_node, context);
-        let status = if response.is_ok() { Status::Ok } else { Status::BadRequest };
+        let status = if response.is_ok() {
+            Status::Ok
+        } else {
+            Status::BadRequest
+        };
         let json = serde_json::to_string_pretty(&response).unwrap();
 
         GraphQLResponse(status, json)
@@ -59,57 +63,44 @@ impl GraphQLRequest {
 impl<'f> FromForm<'f> for GraphQLRequest {
     type Error = String;
 
-    fn from_form(
-        form_items: &mut FormItems<'f>,
-        strict: bool
-    ) -> Result<Self, String> {
+    fn from_form(form_items: &mut FormItems<'f>, strict: bool) -> Result<Self, String> {
         let mut query = None;
         let mut operation_name = None;
         let mut variables = None;
 
         for (key, value) in form_items {
             match key.as_str() {
-                "query" => {
-                    if query.is_some() {
-                        return Err("Query parameter must not occur more than once".to_owned());
-                    }
-                    else {
-                        query = Some(value.as_str().to_string());
-                    }
-                }
-                "operation_name" => {
-                    if operation_name.is_some() {
-                        return Err("Operation name parameter must not occur more than once".to_owned());
-                    }
-                    else {
-                        operation_name = Some(value.as_str().to_string());
-                    }
-                }
-                "variables" => {
-                    if variables.is_some() {
-                        return Err("Variables parameter must not occur more than once".to_owned());
-                    }
-                    else {
-                        variables = Some(serde_json::from_str::<InputValue>(value.as_str())
-                            .map_err(|err| err.description().to_owned())?);
-                    }
-                }
-                _ => {
-                    if strict {
-                        return Err(format!("Prohibited extra field '{}'", key).to_owned());
-                    }
-                }
+                "query" => if query.is_some() {
+                    return Err("Query parameter must not occur more than once".to_owned());
+                } else {
+                    query = Some(value.as_str().to_string());
+                },
+                "operation_name" => if operation_name.is_some() {
+                    return Err(
+                        "Operation name parameter must not occur more than once".to_owned(),
+                    );
+                } else {
+                    operation_name = Some(value.as_str().to_string());
+                },
+                "variables" => if variables.is_some() {
+                    return Err(
+                        "Variables parameter must not occur more than once".to_owned(),
+                    );
+                } else {
+                    variables = Some(serde_json::from_str::<InputValue>(value.as_str())
+                        .map_err(|err| err.description().to_owned())?);
+                },
+                _ => if strict {
+                    return Err(format!("Prohibited extra field '{}'", key).to_owned());
+                },
             }
         }
 
         if let Some(query) = query {
-            Ok(GraphQLRequest(http::GraphQLRequest::new(
-                query,
-                operation_name,
-                variables
-            )))
-        }
-        else {
+            Ok(GraphQLRequest(
+                http::GraphQLRequest::new(query, operation_name, variables),
+            ))
+        } else {
             Err("Query parameter missing".to_owned())
         }
     }
@@ -130,9 +121,7 @@ impl FromData for GraphQLRequest {
 
         match serde_json::from_str(&body) {
             Ok(value) => Success(GraphQLRequest(value)),
-            Err(failure) => return Failure(
-                (Status::BadRequest, format!("{}", failure)),
-            ),
+            Err(failure) => return Failure((Status::BadRequest, format!("{}", failure))),
         }
     }
 }
@@ -141,11 +130,13 @@ impl<'r> Responder<'r> for GraphQLResponse {
     fn respond_to(self, _: &Request) -> Result<Response<'r>, Status> {
         let GraphQLResponse(status, body) = self;
 
-        Ok(Response::build()
-            .header(ContentType::new("application", "json"))
-            .status(status)
-            .sized_body(Cursor::new(body))
-            .finalize())
+        Ok(
+            Response::build()
+                .header(ContentType::new("application", "json"))
+                .status(status)
+                .sized_body(Cursor::new(body))
+                .finalize(),
+        )
     }
 }
 
@@ -174,7 +165,7 @@ mod tests {
         request.execute(&schema, &context)
     }
 
-    #[post("/", data="<request>")]
+    #[post("/", data = "<request>")]
     fn post_graphql_handler(
         context: State<Database>,
         request: super::GraphQLRequest,

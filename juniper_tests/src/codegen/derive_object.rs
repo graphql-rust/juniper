@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use juniper::{self, execute, GraphQLType, Value, Variables, EmptyMutation, RootNode};
+use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
 
 #[derive(GraphQLObject, Debug, PartialEq)]
-#[graphql(name="MyObj", description="obj descr")]
+#[graphql(name = "MyObj", description = "obj descr")]
 struct Obj {
-  regular_field: bool,
-  #[graphql(name="renamedField", description="descr", deprecation="field descr")]
-  c: i32,
+    regular_field: bool,
+    #[graphql(name = "renamedField", description = "descr", deprecation = "field descr")]
+    c: i32,
 }
 
 struct Query;
@@ -23,16 +23,16 @@ graphql_object!(Query: () |&self| {
 
 #[test]
 fn test_derived_object() {
-  assert_eq!(Obj::name(), Some("MyObj"));
+    assert_eq!(Obj::name(), Some("MyObj"));
 
-  // Verify meta info.
-  let mut registry = juniper::Registry::new(HashMap::new());
-  let meta = Obj::meta(&mut registry);
+    // Verify meta info.
+    let mut registry = juniper::Registry::new(HashMap::new());
+    let meta = Obj::meta(&mut registry);
 
-  assert_eq!(meta.name(), Some("MyObj"));
-  assert_eq!(meta.description(), Some(&"obj descr".to_string()));
+    assert_eq!(meta.name(), Some("MyObj"));
+    assert_eq!(meta.description(), Some(&"obj descr".to_string()));
 
-  let doc = r#"
+    let doc = r#"
         {
             obj {
                 regularField
@@ -40,9 +40,9 @@ fn test_derived_object() {
             }
         }"#;
 
-  let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
-  assert_eq!(
+    assert_eq!(
     execute(doc, None, &schema, &Variables::new(), &()),
     Ok((Value::object(vec![
       ("obj", Value::object(vec![

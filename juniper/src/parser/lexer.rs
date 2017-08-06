@@ -127,8 +127,9 @@ impl<'a> Lexer<'a> {
 
         let start_pos = self.position.clone();
 
-        self.next_char()
-            .expect("Internal error in GraphQL lexer: emit_single_char reached EOF");
+        self.next_char().expect(
+            "Internal error in GraphQL lexer: emit_single_char reached EOF",
+        );
 
         Spanning::single_width(&start_pos, t)
     }
@@ -160,20 +161,31 @@ impl<'a> Lexer<'a> {
         let start_pos = self.position.clone();
 
         for _ in 0..3 {
-            let (_, ch) = try!(self.next_char().ok_or(Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)));
+            let (_, ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+                &self.position,
+                LexerError::UnexpectedEndOfFile
+            )));
             if ch != '.' {
-                return Err(Spanning::zero_width(&start_pos, LexerError::UnexpectedCharacter('.')));
+                return Err(Spanning::zero_width(
+                    &start_pos,
+                    LexerError::UnexpectedCharacter('.'),
+                ));
             }
         }
 
-        Ok(Spanning::start_end(&start_pos, &self.position, Token::Ellipsis))
+        Ok(Spanning::start_end(
+            &start_pos,
+            &self.position,
+            Token::Ellipsis,
+        ))
     }
 
     fn scan_name(&mut self) -> LexerResult<'a> {
         let start_pos = self.position.clone();
-        let (start_idx, start_ch) =
-            try!(self.next_char().ok_or(
-            Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)));
+        let (start_idx, start_ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+            &self.position,
+            LexerError::UnexpectedEndOfFile
+        )));
         assert!(is_name_start(start_ch));
 
         let mut end_idx = start_idx;
@@ -187,16 +199,19 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        Ok(Spanning::start_end(&start_pos,
-                               &self.position,
-                               Token::Name(&self.source[start_idx..end_idx + 1])))
+        Ok(Spanning::start_end(
+            &start_pos,
+            &self.position,
+            Token::Name(&self.source[start_idx..end_idx + 1]),
+        ))
     }
 
     fn scan_string(&mut self) -> LexerResult<'a> {
         let start_pos = self.position.clone();
-        let (_, start_ch) =
-            try!(self.next_char().ok_or(
-            Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)));
+        let (_, start_ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+            &self.position,
+            LexerError::UnexpectedEndOfFile
+        )));
         assert!(start_ch == '"');
 
         let mut acc = String::new();
@@ -204,7 +219,11 @@ impl<'a> Lexer<'a> {
         while let Some((_, ch)) = self.peek_char() {
             if ch == '"' {
                 self.next_char();
-                return Ok(Spanning::start_end(&start_pos, &self.position, Token::String(acc)));
+                return Ok(Spanning::start_end(
+                    &start_pos,
+                    &self.position,
+                    Token::String(acc),
+                ));
             } else if ch == '\\' {
                 self.next_char();
 
@@ -250,47 +269,64 @@ impl<'a> Lexer<'a> {
                         let mut s = String::from("\\");
                         s.push(ch);
 
-                        return Err(Spanning::zero_width(&self.position,
-                                                        LexerError::UnknownEscapeSequence(s)));
+                        return Err(Spanning::zero_width(
+                            &self.position,
+                            LexerError::UnknownEscapeSequence(s),
+                        ));
                     }
                     None => {
-                        return Err(Spanning::zero_width(&self.position,
-                                                        LexerError::UnterminatedString));
+                        return Err(Spanning::zero_width(
+                            &self.position,
+                            LexerError::UnterminatedString,
+                        ));
                     }
                 }
                 if let Some((_, ch)) = self.peek_char() {
                     if ch == 'n' {}
                 } else {
-                    return Err(Spanning::zero_width(&self.position,
-                                                    LexerError::UnterminatedString));
+                    return Err(Spanning::zero_width(
+                        &self.position,
+                        LexerError::UnterminatedString,
+                    ));
                 }
             } else if ch == '\n' || ch == '\r' {
-                return Err(Spanning::zero_width(&self.position, LexerError::UnterminatedString));
+                return Err(Spanning::zero_width(
+                    &self.position,
+                    LexerError::UnterminatedString,
+                ));
             } else if !is_source_char(ch) {
-                return Err(Spanning::zero_width(&self.position,
-                                                LexerError::UnknownCharacterInString(ch)));
+                return Err(Spanning::zero_width(
+                    &self.position,
+                    LexerError::UnknownCharacterInString(ch),
+                ));
             } else {
                 self.next_char();
                 acc.push(ch);
             }
         }
 
-        Err(Spanning::zero_width(&self.position, LexerError::UnterminatedString))
+        Err(Spanning::zero_width(
+            &self.position,
+            LexerError::UnterminatedString,
+        ))
     }
 
-    fn scan_escaped_unicode(&mut self,
-                            start_pos: &SourcePosition)
-                            -> Result<char, Spanning<LexerError>> {
-        let (start_idx, _) =
-            try!(self.peek_char().ok_or(
-            Spanning::zero_width(&self.position, LexerError::UnterminatedString)));
+    fn scan_escaped_unicode(
+        &mut self,
+        start_pos: &SourcePosition,
+    ) -> Result<char, Spanning<LexerError>> {
+        let (start_idx, _) = try!(self.peek_char().ok_or(Spanning::zero_width(
+            &self.position,
+            LexerError::UnterminatedString
+        )));
         let mut end_idx = start_idx;
         let mut len = 0;
 
         for _ in 0..4 {
-            let (idx, ch) =
-                try!(self.next_char().ok_or(
-                Spanning::zero_width(&self.position, LexerError::UnterminatedString)));
+            let (idx, ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+                &self.position,
+                LexerError::UnterminatedString
+            )));
 
             if !ch.is_alphanumeric() {
                 break;
@@ -303,19 +339,24 @@ impl<'a> Lexer<'a> {
         let escape = &self.source[start_idx..end_idx + 1];
 
         if len != 4 {
-            return Err(Spanning::zero_width(start_pos,
-                                            LexerError::UnknownEscapeSequence("\\u".to_owned() +
-                                                                              escape)));
+            return Err(Spanning::zero_width(
+                start_pos,
+                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+            ));
         }
 
-        let code_point = try!(u32::from_str_radix(escape, 16).map_err(|_|
+        let code_point = try!(u32::from_str_radix(escape, 16).map_err(|_| {
             Spanning::zero_width(
                 start_pos,
-                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape))));
+                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+            )
+        }));
 
         char::from_u32(code_point).ok_or_else(|| {
-            Spanning::zero_width(start_pos,
-                                 LexerError::UnknownEscapeSequence("\\u".to_owned() + escape))
+            Spanning::zero_width(
+                start_pos,
+                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+            )
         })
     }
 
@@ -352,27 +393,32 @@ impl<'a> Lexer<'a> {
         let mantissa = frac_part
             .map(|f| f as f64)
             .map(|frac| if frac > 0f64 {
-                     frac / 10f64.powf(frac.log10().floor() + 1f64)
-                 } else {
-                     0f64
-                 })
+                frac / 10f64.powf(frac.log10().floor() + 1f64)
+            } else {
+                0f64
+            })
             .map(|m| if int_part < 0 { -m } else { m });
 
         let exp = exp_part.map(|e| e as f64).map(|e| 10f64.powf(e));
 
-        Ok(Spanning::start_end(&start_pos, &self.position, match (mantissa, exp) {
-            (None, None) => Token::Int(int_part),
-            (None, Some(exp)) => Token::Float((int_part as f64) * exp),
-            (Some(mantissa), None) => Token::Float((int_part as f64) + mantissa),
-            (Some(mantissa), Some(exp)) => Token::Float(((int_part as f64) + mantissa) * exp),
-        }))
+        Ok(Spanning::start_end(
+            &start_pos,
+            &self.position,
+            match (mantissa, exp) {
+                (None, None) => Token::Int(int_part),
+                (None, Some(exp)) => Token::Float((int_part as f64) * exp),
+                (Some(mantissa), None) => Token::Float((int_part as f64) + mantissa),
+                (Some(mantissa), Some(exp)) => Token::Float(((int_part as f64) + mantissa) * exp),
+            },
+        ))
     }
 
     fn scan_integer_part(&mut self) -> Result<i32, Spanning<LexerError>> {
         let is_negative = {
-            let (_, init_ch) =
-                try!(self.peek_char().ok_or(
-                Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)));
+            let (_, init_ch) = try!(self.peek_char().ok_or(Spanning::zero_width(
+                &self.position,
+                LexerError::UnexpectedEndOfFile
+            )));
 
             if init_ch == '-' {
                 self.next_char();
@@ -382,16 +428,19 @@ impl<'a> Lexer<'a> {
             }
         };
 
-        let (_, ch) = try!(self.peek_char().ok_or(
-            Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)));
+        let (_, ch) = try!(self.peek_char().ok_or(Spanning::zero_width(
+            &self.position,
+            LexerError::UnexpectedEndOfFile
+        )));
 
         if ch == '0' {
             self.next_char();
 
             match self.peek_char() {
-                Some((_, '0')) => {
-                    Err(Spanning::zero_width(&self.position, LexerError::UnexpectedCharacter(ch)))
-                }
+                Some((_, '0')) => Err(Spanning::zero_width(
+                    &self.position,
+                    LexerError::UnexpectedCharacter(ch),
+                )),
                 _ => Ok(0),
             }
         } else {
@@ -401,13 +450,17 @@ impl<'a> Lexer<'a> {
 
     fn scan_digits(&mut self) -> Result<i32, Spanning<LexerError>> {
         let start_pos = self.position.clone();
-        let (start_idx, ch) =
-            try!(self.peek_char().ok_or(
-            Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)));
+        let (start_idx, ch) = try!(self.peek_char().ok_or(Spanning::zero_width(
+            &self.position,
+            LexerError::UnexpectedEndOfFile
+        )));
         let mut end_idx = start_idx;
 
         if !ch.is_digit(10) {
-            return Err(Spanning::zero_width(&self.position, LexerError::UnexpectedCharacter(ch)));
+            return Err(Spanning::zero_width(
+                &self.position,
+                LexerError::UnexpectedCharacter(ch),
+            ));
         }
 
         while let Some((idx, ch)) = self.peek_char() {
@@ -419,8 +472,9 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        i32::from_str_radix(&self.source[start_idx..end_idx + 1], 10)
-            .map_err(|_| Spanning::zero_width(&start_pos, LexerError::InvalidNumber))
+        i32::from_str_radix(&self.source[start_idx..end_idx + 1], 10).map_err(|_| {
+            Spanning::zero_width(&start_pos, LexerError::InvalidNumber)
+        })
     }
 }
 
@@ -437,34 +491,35 @@ impl<'a> Iterator for Lexer<'a> {
         let ch = self.iterator.peek().map(|&(_, ch)| ch);
 
         Some(match ch {
-                 Some('!') => Ok(self.emit_single_char(Token::ExclamationMark)),
-                 Some('$') => Ok(self.emit_single_char(Token::Dollar)),
-                 Some('(') => Ok(self.emit_single_char(Token::ParenOpen)),
-                 Some(')') => Ok(self.emit_single_char(Token::ParenClose)),
-                 Some('[') => Ok(self.emit_single_char(Token::BracketOpen)),
-                 Some(']') => Ok(self.emit_single_char(Token::BracketClose)),
-                 Some('{') => Ok(self.emit_single_char(Token::CurlyOpen)),
-                 Some('}') => Ok(self.emit_single_char(Token::CurlyClose)),
-                 Some(':') => Ok(self.emit_single_char(Token::Colon)),
-                 Some('=') => Ok(self.emit_single_char(Token::Equals)),
-                 Some('@') => Ok(self.emit_single_char(Token::At)),
-                 Some('|') => Ok(self.emit_single_char(Token::Pipe)),
-                 Some('.') => self.scan_ellipsis(),
-                 Some('"') => self.scan_string(),
-                 Some(ch) => {
-                     if is_number_start(ch) {
-                         self.scan_number()
-                     } else if is_name_start(ch) {
-                         self.scan_name()
-                     } else {
-                         Err(Spanning::zero_width(&self.position, LexerError::UnknownCharacter(ch)))
-                     }
-                 }
-                 None => {
-                     self.has_reached_eof = true;
-                     Ok(Spanning::zero_width(&self.position, Token::EndOfFile))
-                 }
-             })
+            Some('!') => Ok(self.emit_single_char(Token::ExclamationMark)),
+            Some('$') => Ok(self.emit_single_char(Token::Dollar)),
+            Some('(') => Ok(self.emit_single_char(Token::ParenOpen)),
+            Some(')') => Ok(self.emit_single_char(Token::ParenClose)),
+            Some('[') => Ok(self.emit_single_char(Token::BracketOpen)),
+            Some(']') => Ok(self.emit_single_char(Token::BracketClose)),
+            Some('{') => Ok(self.emit_single_char(Token::CurlyOpen)),
+            Some('}') => Ok(self.emit_single_char(Token::CurlyClose)),
+            Some(':') => Ok(self.emit_single_char(Token::Colon)),
+            Some('=') => Ok(self.emit_single_char(Token::Equals)),
+            Some('@') => Ok(self.emit_single_char(Token::At)),
+            Some('|') => Ok(self.emit_single_char(Token::Pipe)),
+            Some('.') => self.scan_ellipsis(),
+            Some('"') => self.scan_string(),
+            Some(ch) => if is_number_start(ch) {
+                self.scan_number()
+            } else if is_name_start(ch) {
+                self.scan_name()
+            } else {
+                Err(Spanning::zero_width(
+                    &self.position,
+                    LexerError::UnknownCharacter(ch),
+                ))
+            },
+            None => {
+                self.has_reached_eof = true;
+                Ok(Spanning::zero_width(&self.position, Token::EndOfFile))
+            }
+        })
     }
 }
 

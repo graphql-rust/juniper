@@ -2,7 +2,7 @@ use syn;
 use syn::*;
 use quote::Tokens;
 
-use ::util::*;
+use util::*;
 
 #[derive(Default, Debug)]
 struct ObjAttrs {
@@ -27,7 +27,8 @@ impl ObjAttrs {
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLObject)]: {:?}",
-                    item));
+                    item
+                ));
             }
         }
         res
@@ -62,7 +63,8 @@ impl ObjFieldAttrs {
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLObject)]: {:?}",
-                    item));
+                    item
+                ));
             }
         }
         res
@@ -71,17 +73,15 @@ impl ObjFieldAttrs {
 
 pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
     let fields = match ast.body {
-        Body::Struct(ref data) => {
-            match data {
-                &VariantData::Struct(ref fields) => fields,
-                _ => {
-                    panic!("#[derive(GraphQLObject)] may only be used on regular structs with fields");
-                },
+        Body::Struct(ref data) => match data {
+            &VariantData::Struct(ref fields) => fields,
+            _ => {
+                panic!("#[derive(GraphQLObject)] may only be used on regular structs with fields");
             }
         },
         Body::Enum(_) => {
             panic!("#[derive(GraphlQLObject)] may only be applied to structs, not to enums");
-        },
+        }
     };
 
     // Parse attributes.
@@ -107,11 +107,11 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
             Some(ref name) => {
                 // Custom name specified.
                 name.to_string()
-            },
+            }
             None => {
                 // Note: auto camel casing when no custom name specified.
                 ::util::to_camel_case(field_ident.as_ref())
-            },
+            }
         };
         let build_description = match field_attrs.description {
             Some(s) => quote!{ field.description(#s)  },

@@ -1,5 +1,5 @@
-use ast::{Document, Operation, Fragment, VariableDefinition, Selection, Directive, InputValue,
-          Field, FragmentSpread, InlineFragment};
+use ast::{Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
+          Operation, Selection, VariableDefinition};
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
 
@@ -8,7 +8,8 @@ pub trait MultiVisitor<'a> {
     fn visit_all<F: FnMut(&mut Visitor<'a>) -> ()>(&mut self, f: F);
 
     fn with<V: Visitor<'a>>(self, visitor: V) -> MultiVisitorCons<V, Self>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         MultiVisitorCons(visitor, self)
     }
@@ -32,7 +33,8 @@ impl<'a, A: Visitor<'a>, B: MultiVisitor<'a>> MultiVisitor<'a> for MultiVisitorC
 }
 
 impl<'a, M> Visitor<'a> for M
-    where M: MultiVisitor<'a>
+where
+    M: MultiVisitor<'a>,
 {
     fn enter_document(&mut self, ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
         self.visit_all(|v| v.enter_document(ctx, doc));
@@ -42,36 +44,48 @@ impl<'a, M> Visitor<'a> for M
         self.visit_all(|v| v.exit_document(ctx, doc));
     }
 
-    fn enter_operation_definition(&mut self,
-                                  ctx: &mut ValidatorContext<'a>,
-                                  op: &'a Spanning<Operation>) {
+    fn enter_operation_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
+    ) {
         self.visit_all(|v| v.enter_operation_definition(ctx, op));
     }
-    fn exit_operation_definition(&mut self,
-                                 ctx: &mut ValidatorContext<'a>,
-                                 op: &'a Spanning<Operation>) {
+    fn exit_operation_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
+    ) {
         self.visit_all(|v| v.exit_operation_definition(ctx, op));
     }
 
-    fn enter_fragment_definition(&mut self,
-                                 ctx: &mut ValidatorContext<'a>,
-                                 f: &'a Spanning<Fragment>) {
+    fn enter_fragment_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
+    ) {
         self.visit_all(|v| v.enter_fragment_definition(ctx, f));
     }
-    fn exit_fragment_definition(&mut self,
-                                ctx: &mut ValidatorContext<'a>,
-                                f: &'a Spanning<Fragment>) {
+    fn exit_fragment_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
+    ) {
         self.visit_all(|v| v.exit_fragment_definition(ctx, f));
     }
 
-    fn enter_variable_definition(&mut self,
-                                 ctx: &mut ValidatorContext<'a>,
-                                 def: &'a (Spanning<&'a str>, VariableDefinition)) {
+    fn enter_variable_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        def: &'a (Spanning<&'a str>, VariableDefinition),
+    ) {
         self.visit_all(|v| v.enter_variable_definition(ctx, def));
     }
-    fn exit_variable_definition(&mut self,
-                                ctx: &mut ValidatorContext<'a>,
-                                def: &'a (Spanning<&'a str>, VariableDefinition)) {
+    fn exit_variable_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        def: &'a (Spanning<&'a str>, VariableDefinition),
+    ) {
         self.visit_all(|v| v.exit_variable_definition(ctx, def));
     }
 
@@ -82,14 +96,18 @@ impl<'a, M> Visitor<'a> for M
         self.visit_all(|v| v.exit_directive(ctx, d));
     }
 
-    fn enter_argument(&mut self,
-                      ctx: &mut ValidatorContext<'a>,
-                      arg: &'a (Spanning<&'a str>, Spanning<InputValue>)) {
+    fn enter_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        arg: &'a (Spanning<&'a str>, Spanning<InputValue>),
+    ) {
         self.visit_all(|v| v.enter_argument(ctx, arg));
     }
-    fn exit_argument(&mut self,
-                     ctx: &mut ValidatorContext<'a>,
-                     arg: &'a (Spanning<&'a str>, Spanning<InputValue>)) {
+    fn exit_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        arg: &'a (Spanning<&'a str>, Spanning<InputValue>),
+    ) {
         self.visit_all(|v| v.exit_argument(ctx, arg));
     }
 
@@ -107,25 +125,33 @@ impl<'a, M> Visitor<'a> for M
         self.visit_all(|v| v.exit_field(ctx, f));
     }
 
-    fn enter_fragment_spread(&mut self,
-                             ctx: &mut ValidatorContext<'a>,
-                             s: &'a Spanning<FragmentSpread>) {
+    fn enter_fragment_spread(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        s: &'a Spanning<FragmentSpread>,
+    ) {
         self.visit_all(|v| v.enter_fragment_spread(ctx, s));
     }
-    fn exit_fragment_spread(&mut self,
-                            ctx: &mut ValidatorContext<'a>,
-                            s: &'a Spanning<FragmentSpread>) {
+    fn exit_fragment_spread(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        s: &'a Spanning<FragmentSpread>,
+    ) {
         self.visit_all(|v| v.exit_fragment_spread(ctx, s));
     }
 
-    fn enter_inline_fragment(&mut self,
-                             ctx: &mut ValidatorContext<'a>,
-                             f: &'a Spanning<InlineFragment>) {
+    fn enter_inline_fragment(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        f: &'a Spanning<InlineFragment>,
+    ) {
         self.visit_all(|v| v.enter_inline_fragment(ctx, f));
     }
-    fn exit_inline_fragment(&mut self,
-                            ctx: &mut ValidatorContext<'a>,
-                            f: &'a Spanning<InlineFragment>) {
+    fn exit_inline_fragment(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        f: &'a Spanning<InlineFragment>,
+    ) {
         self.visit_all(|v| v.exit_inline_fragment(ctx, f));
     }
 
@@ -178,36 +204,48 @@ impl<'a, M> Visitor<'a> for M
         self.visit_all(|v| v.exit_variable_value(ctx, s.clone()));
     }
 
-    fn enter_list_value(&mut self,
-                        ctx: &mut ValidatorContext<'a>,
-                        l: Spanning<&'a Vec<Spanning<InputValue>>>) {
+    fn enter_list_value(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        l: Spanning<&'a Vec<Spanning<InputValue>>>,
+    ) {
         self.visit_all(|v| v.enter_list_value(ctx, l.clone()));
     }
-    fn exit_list_value(&mut self,
-                       ctx: &mut ValidatorContext<'a>,
-                       l: Spanning<&'a Vec<Spanning<InputValue>>>) {
+    fn exit_list_value(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        l: Spanning<&'a Vec<Spanning<InputValue>>>,
+    ) {
         self.visit_all(|v| v.exit_list_value(ctx, l.clone()));
     }
 
-    fn enter_object_value(&mut self,
-                          ctx: &mut ValidatorContext<'a>,
-                          o: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>) {
+    fn enter_object_value(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        o: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>,
+    ) {
         self.visit_all(|v| v.enter_object_value(ctx, o.clone()));
     }
-    fn exit_object_value(&mut self,
-                         ctx: &mut ValidatorContext<'a>,
-                         o: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>) {
+    fn exit_object_value(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        o: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>,
+    ) {
         self.visit_all(|v| v.exit_object_value(ctx, o.clone()));
     }
 
-    fn enter_object_field(&mut self,
-                          ctx: &mut ValidatorContext<'a>,
-                          f: &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn enter_object_field(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        f: &'a (Spanning<String>, Spanning<InputValue>),
+    ) {
         self.visit_all(|v| v.enter_object_field(ctx, f));
     }
-    fn exit_object_field(&mut self,
-                         ctx: &mut ValidatorContext<'a>,
-                         f: &'a (Spanning<String>, Spanning<InputValue>)) {
+    fn exit_object_field(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        f: &'a (Spanning<String>, Spanning<InputValue>),
+    ) {
         self.visit_all(|v| v.exit_object_field(ctx, f));
     }
 }

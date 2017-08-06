@@ -1,6 +1,6 @@
-use std::collections::{HashSet, HashMap};
-use ast::{Document, Fragment, FragmentSpread, VariableDefinition, Operation, InputValue};
-use validation::{ValidatorContext, Visitor, RuleError};
+use std::collections::{HashMap, HashSet};
+use ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition};
+use validation::{RuleError, ValidatorContext, Visitor};
 use parser::Spanning;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -26,11 +26,13 @@ pub fn factory<'a>() -> NoUnusedVariables<'a> {
 }
 
 impl<'a> NoUnusedVariables<'a> {
-    fn find_used_vars(&self,
-                      from: &Scope<'a>,
-                      defined: &HashSet<&'a str>,
-                      used: &mut HashSet<&'a str>,
-                      visited: &mut HashSet<Scope<'a>>) {
+    fn find_used_vars(
+        &self,
+        from: &Scope<'a>,
+        defined: &HashSet<&'a str>,
+        used: &mut HashSet<&'a str>,
+        visited: &mut HashSet<Scope<'a>>,
+    ) {
         if visited.contains(from) {
             return;
         }
@@ -58,39 +60,48 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         for (op_name, def_vars) in &self.defined_variables {
             let mut used = HashSet::new();
             let mut visited = HashSet::new();
-            self.find_used_vars(&Scope::Operation(*op_name),
-                                &def_vars.iter().map(|def| def.item).collect(),
-                                &mut used,
-                                &mut visited);
+            self.find_used_vars(
+                &Scope::Operation(*op_name),
+                &def_vars.iter().map(|def| def.item).collect(),
+                &mut used,
+                &mut visited,
+            );
 
-            ctx.append_errors(def_vars
-                                  .iter()
-                                  .filter(|var| !used.contains(var.item))
-                                  .map(|var| {
-                                           RuleError::new(&error_message(var.item, *op_name),
-                                                          &[var.start.clone()])
-                                       })
-                                  .collect());
+            ctx.append_errors(
+                def_vars
+                    .iter()
+                    .filter(|var| !used.contains(var.item))
+                    .map(|var| {
+                        RuleError::new(&error_message(var.item, *op_name), &[var.start.clone()])
+                    })
+                    .collect(),
+            );
         }
     }
 
-    fn enter_operation_definition(&mut self,
-                                  _: &mut ValidatorContext<'a>,
-                                  op: &'a Spanning<Operation>) {
+    fn enter_operation_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        op: &'a Spanning<Operation>,
+    ) {
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables.insert(op_name, HashSet::new());
     }
 
-    fn enter_fragment_definition(&mut self,
-                                 _: &mut ValidatorContext<'a>,
-                                 f: &'a Spanning<Fragment>) {
+    fn enter_fragment_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        f: &'a Spanning<Fragment>,
+    ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
     }
 
-    fn enter_fragment_spread(&mut self,
-                             _: &mut ValidatorContext<'a>,
-                             spread: &'a Spanning<FragmentSpread>) {
+    fn enter_fragment_spread(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        spread: &'a Spanning<FragmentSpread>,
+    ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(scope.clone())
@@ -99,9 +110,11 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         }
     }
 
-    fn enter_variable_definition(&mut self,
-                                 _: &mut ValidatorContext<'a>,
-                                 &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition)) {
+    fn enter_variable_definition(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition),
+    ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
                 vars.insert(var_name);
@@ -109,9 +122,11 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         }
     }
 
-    fn enter_argument(&mut self,
-                      _: &mut ValidatorContext<'a>,
-                      &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
+    fn enter_argument(
+        &mut self,
+        _: &mut ValidatorContext<'a>,
+        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>),
+    ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(scope.clone())
@@ -123,7 +138,11 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 
 fn error_message(var_name: &str, op_name: Option<&str>) -> String {
     if let Some(op_name) = op_name {
-        format!(r#"Variable "${}" is not defined by operation "{}""#, var_name, op_name)
+        format!(
+            r#"Variable "${}" is not defined by operation "{}""#,
+            var_name,
+            op_name
+        )
     } else {
         format!(r#"Variable "${}" is not defined"#, var_name)
     }
@@ -134,22 +153,25 @@ mod tests {
     use super::{error_message, factory};
 
     use parser::SourcePosition;
-    use validation::{RuleError, expect_passes_rule, expect_fails_rule};
+    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
 
     #[test]
     fn uses_all_variables() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query ($a: String, $b: String, $c: String) {
             field(a: $a, b: $b, c: $c)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn uses_all_variables_deeply() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo($a: String, $b: String, $c: String) {
             field(a: $a) {
               field(b: $b) {
@@ -157,13 +179,15 @@ mod tests {
               }
             }
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn uses_all_variables_deeply_in_inline_fragments() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo($a: String, $b: String, $c: String) {
             ... on Type {
               field(a: $a) {
@@ -175,13 +199,15 @@ mod tests {
               }
             }
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn uses_all_variables_in_fragments() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo($a: String, $b: String, $c: String) {
             ...FragA
           }
@@ -198,13 +224,15 @@ mod tests {
           fragment FragC on Type {
             field(c: $c)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn variable_used_by_fragment_in_multiple_operations() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo($a: String) {
             ...FragA
           }
@@ -217,13 +245,15 @@ mod tests {
           fragment FragB on Type {
             field(b: $b)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn variable_used_by_recursive_fragment() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo($a: String) {
             ...FragA
           }
@@ -232,39 +262,52 @@ mod tests {
               ...FragA
             }
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn variable_not_used() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query ($a: String, $b: String, $c: String) {
             field(a: $a, b: $b)
           }
         "#,
-                          &[RuleError::new(&error_message("c", None),
-                                           &[SourcePosition::new(42, 1, 41)])]);
+            &[
+                RuleError::new(&error_message("c", None), &[SourcePosition::new(42, 1, 41)]),
+            ],
+        );
     }
 
     #[test]
     fn multiple_variables_not_used_1() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo($a: String, $b: String, $c: String) {
             field(b: $b)
           }
         "#,
-                          &[RuleError::new(&error_message("a", Some("Foo")),
-                                           &[SourcePosition::new(21, 1, 20)]),
-                            RuleError::new(&error_message("c", Some("Foo")),
-                                           &[SourcePosition::new(45, 1, 44)])]);
+            &[
+                RuleError::new(
+                    &error_message("a", Some("Foo")),
+                    &[SourcePosition::new(21, 1, 20)],
+                ),
+                RuleError::new(
+                    &error_message("c", Some("Foo")),
+                    &[SourcePosition::new(45, 1, 44)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn variable_not_used_in_fragment() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo($a: String, $b: String, $c: String) {
             ...FragA
           }
@@ -282,14 +325,20 @@ mod tests {
             field
           }
         "#,
-                          &[RuleError::new(&error_message("c", Some("Foo")),
-                                           &[SourcePosition::new(45, 1, 44)])]);
+            &[
+                RuleError::new(
+                    &error_message("c", Some("Foo")),
+                    &[SourcePosition::new(45, 1, 44)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn multiple_variables_not_used_2() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo($a: String, $b: String, $c: String) {
             ...FragA
           }
@@ -307,16 +356,24 @@ mod tests {
             field
           }
         "#,
-                          &[RuleError::new(&error_message("a", Some("Foo")),
-                                           &[SourcePosition::new(21, 1, 20)]),
-                            RuleError::new(&error_message("c", Some("Foo")),
-                                           &[SourcePosition::new(45, 1, 44)])]);
+            &[
+                RuleError::new(
+                    &error_message("a", Some("Foo")),
+                    &[SourcePosition::new(21, 1, 20)],
+                ),
+                RuleError::new(
+                    &error_message("c", Some("Foo")),
+                    &[SourcePosition::new(45, 1, 44)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn variable_not_used_by_unreferenced_fragment() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo($b: String) {
             ...FragA
           }
@@ -327,14 +384,20 @@ mod tests {
             field(b: $b)
           }
         "#,
-                          &[RuleError::new(&error_message("b", Some("Foo")),
-                                           &[SourcePosition::new(21, 1, 20)])]);
+            &[
+                RuleError::new(
+                    &error_message("b", Some("Foo")),
+                    &[SourcePosition::new(21, 1, 20)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn variable_not_used_by_fragment_used_by_other_operation() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo($b: String) {
             ...FragA
           }
@@ -348,9 +411,16 @@ mod tests {
             field(b: $b)
           }
         "#,
-                          &[RuleError::new(&error_message("b", Some("Foo")),
-                                           &[SourcePosition::new(21, 1, 20)]),
-                            RuleError::new(&error_message("a", Some("Bar")),
-                                           &[SourcePosition::new(88, 4, 20)])]);
+            &[
+                RuleError::new(
+                    &error_message("b", Some("Foo")),
+                    &[SourcePosition::new(21, 1, 20)],
+                ),
+                RuleError::new(
+                    &error_message("a", Some("Bar")),
+                    &[SourcePosition::new(88, 4, 20)],
+                ),
+            ],
+        );
     }
 }

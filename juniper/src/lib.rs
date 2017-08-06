@@ -109,17 +109,16 @@ To support this, Juniper offers additional crates that integrate with popular we
 [Rocket]: https://rocket.rs
 
 */
-
-#![cfg_attr(feature="nightly", feature(test))]
+#![cfg_attr(feature = "nightly", feature(test))]
 #![warn(missing_docs)]
 
-#[cfg(feature="nightly")]
+#[cfg(feature = "nightly")]
 extern crate test;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-#[cfg(any(test, feature="expose-test-schema"))]
+#[cfg(any(test, feature = "expose-test-schema"))]
 extern crate serde_json;
 
 use std::borrow::Cow;
@@ -139,23 +138,23 @@ pub mod http;
 #[macro_use]
 mod result_ext;
 
-#[cfg(all(test, not(feature="expose-test-schema")))]
+#[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
-#[cfg(feature="expose-test-schema")]
+#[cfg(feature = "expose-test-schema")]
 pub mod tests;
 
 #[cfg(test)]
 mod executor_tests;
 
 use parser::{parse_document_source, ParseError, Spanning};
-use validation::{ValidatorContext, visit_all_rules, validate_input_values};
+use validation::{validate_input_values, visit_all_rules, ValidatorContext};
 use executor::execute_validated_query;
 
-pub use ast::{ToInputValue, FromInputValue, InputValue, Type, Selection};
+pub use ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
 pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
-pub use executor::{Executor, ExecutionError, Registry, Context, FromContext, IntoResolvable,
-                   FieldResult, ExecutionResult, Variables};
+pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldResult, FromContext,
+                   IntoResolvable, Registry, Variables};
 pub use validation::RuleError;
 pub use types::scalars::{EmptyMutation, ID};
 pub use schema::model::RootNode;
@@ -175,15 +174,16 @@ pub enum GraphQLError<'a> {
 }
 
 /// Execute a query in a provided schema
-pub fn execute<'a, CtxT, QueryT, MutationT>
-    (document_source: &'a str,
-     operation_name: Option<&str>,
-     root_node: &RootNode<QueryT, MutationT>,
-     variables: &Variables,
-     context: &CtxT)
-     -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
-    where QueryT: GraphQLType<Context = CtxT>,
-          MutationT: GraphQLType<Context = CtxT>
+pub fn execute<'a, CtxT, QueryT, MutationT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &RootNode<QueryT, MutationT>,
+    variables: &Variables,
+    context: &CtxT,
+) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
+where
+    QueryT: GraphQLType<Context = CtxT>,
+    MutationT: GraphQLType<Context = CtxT>,
 {
     let document = try!(parse_document_source(document_source));
 

@@ -2,7 +2,7 @@ use syn;
 use syn::*;
 use quote::Tokens;
 
-use ::util::*;
+use util::*;
 
 
 #[derive(Default, Debug)]
@@ -28,7 +28,8 @@ impl ObjAttrs {
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
-                    item));
+                    item
+                ));
             }
         }
         res
@@ -63,7 +64,8 @@ impl ObjFieldAttrs {
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
-                    item));
+                    item
+                ));
             }
         }
         res
@@ -72,17 +74,17 @@ impl ObjFieldAttrs {
 
 pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
     let fields = match ast.body {
-        Body::Struct(ref data) => {
-            match data {
-                &VariantData::Struct(ref fields) => fields,
-                _ => {
-                    panic!("#[derive(GraphQLInputObject)] may only be used on regular structs with fields");
-                },
+        Body::Struct(ref data) => match data {
+            &VariantData::Struct(ref fields) => fields,
+            _ => {
+                panic!(
+                    "#[derive(GraphQLInputObject)] may only be used on regular structs with fields"
+                );
             }
         },
         Body::Enum(_) => {
             panic!("#[derive(GraphlQLInputObject)] may only be applied to structs, not to enums");
-        },
+        }
     };
 
     // Parse attributes.
@@ -109,11 +111,11 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             Some(ref name) => {
                 // Custom name specified.
                 name.to_string()
-            },
+            }
             None => {
                 // Note: auto camel casing when no custom name specified.
                 ::util::to_camel_case(field_ident.as_ref())
-            },
+            }
         };
         let field_description = match field_attrs.description {
             Some(s) => quote!{ let field = field.description(#s); },
@@ -121,12 +123,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         };
 
         let default = match field_attrs.default {
-            Some(ref def) => {
-                match syn::parse_token_trees(def) {
-                    Ok(t) => Some(quote!{ #(#t)* }),
-                    Err(_) => {
-                        panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
-                    },
+            Some(ref def) => match syn::parse_token_trees(def) {
+                Ok(t) => Some(quote!{ #(#t)* }),
+                Err(_) => {
+                    panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
                 }
             },
             None => None,
@@ -137,7 +137,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 quote!{
                     let field = registry.arg_with_default::<#field_ty>( #name, &#def);
                 }
-            },
+            }
             None => {
                 quote!{
                     let field = registry.arg::<#field_ty>(#name);
@@ -160,7 +160,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 quote!{
                     Some(&&::juniper::InputValue::Null) | None if true => #def,
                 }
-            },
+            }
             None => quote!{},
         };
 

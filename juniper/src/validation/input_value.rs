@@ -2,11 +2,11 @@ use std::collections::HashSet;
 use std::fmt;
 
 use parser::SourcePosition;
-use ast::{InputValue, Document, Definition, VariableDefinitions};
+use ast::{Definition, Document, InputValue, VariableDefinitions};
 use executor::Variables;
 use validation::RuleError;
 use schema::model::{SchemaType, TypeType};
-use schema::meta::{MetaType, ScalarMeta, InputObjectMeta, EnumMeta};
+use schema::meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta};
 
 #[derive(Debug)]
 enum Path<'a> {
@@ -15,10 +15,11 @@ enum Path<'a> {
     ObjectField(&'a str, &'a Path<'a>),
 }
 
-pub fn validate_input_values(values: &Variables,
-                             document: &Document,
-                             schema: &SchemaType)
-                             -> Vec<RuleError> {
+pub fn validate_input_values(
+    values: &Variables,
+    document: &Document,
+    schema: &SchemaType,
+) -> Vec<RuleError> {
     let mut errs = vec![];
 
     for def in document {
@@ -33,10 +34,12 @@ pub fn validate_input_values(values: &Variables,
     errs
 }
 
-fn validate_var_defs(values: &Variables,
-                     var_defs: &VariableDefinitions,
-                     schema: &SchemaType,
-                     errors: &mut Vec<RuleError>) {
+fn validate_var_defs(
+    values: &Variables,
+    var_defs: &VariableDefinitions,
+    schema: &SchemaType,
+    errors: &mut Vec<RuleError>,
+) {
     for &(ref name, ref def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
@@ -44,11 +47,14 @@ fn validate_var_defs(values: &Variables,
                 let ct = schema.make_type(&def.var_type.item);
 
                 if def.var_type.item.is_non_null() && is_absent_or_null(values.get(name.item)) {
-                    errors.push(RuleError::new(&format!(
+                    errors.push(RuleError::new(
+                        &format!(
                             r#"Variable "${}" of required type "{}" was not provided."#,
-                            name.item, def.var_type.item,
+                            name.item,
+                            def.var_type.item,
                         ),
-                                               &[name.start.clone()]));
+                        &[name.start.clone()],
+                    ));
                 } else if let Some(v) = values.get(name.item) {
                     unify_value(name.item, &name.start, v, &ct, schema, errors, Path::Root);
                 }
@@ -64,25 +70,27 @@ fn validate_var_defs(values: &Variables,
     }
 }
 
-fn unify_value<'a>(var_name: &str,
-                   var_pos: &SourcePosition,
-                   value: &InputValue,
-                   meta_type: &TypeType<'a>,
-                   schema: &SchemaType,
-                   errors: &mut Vec<RuleError>,
-                   path: Path<'a>) {
+fn unify_value<'a>(
+    var_name: &str,
+    var_pos: &SourcePosition,
+    value: &InputValue,
+    meta_type: &TypeType<'a>,
+    schema: &SchemaType,
+    errors: &mut Vec<RuleError>,
+    path: Path<'a>,
+) {
     match *meta_type {
-        TypeType::NonNull(ref inner) => {
-            if value.is_null() {
-                push_unification_error(errors,
-                                       var_name,
-                                       var_pos,
-                                       &path,
-                                       &format!(r#"Expected "{}", found null"#, meta_type));
-            } else {
-                unify_value(var_name, var_pos, value, inner, schema, errors, path);
-            }
-        }
+        TypeType::NonNull(ref inner) => if value.is_null() {
+            push_unification_error(
+                errors,
+                var_name,
+                var_pos,
+                &path,
+                &format!(r#"Expected "{}", found null"#, meta_type),
+            );
+        } else {
+            unify_value(var_name, var_pos, value, inner, schema, errors, path);
+        },
 
         TypeType::List(ref inner) => {
             if value.is_null() {
@@ -90,17 +98,17 @@ fn unify_value<'a>(var_name: &str,
             }
 
             match value.to_list_value() {
-                Some(l) => {
-                    for (i, v) in l.iter().enumerate() {
-                        unify_value(var_name,
-                                    var_pos,
-                                    v,
-                                    inner,
-                                    schema,
-                                    errors,
-                                    Path::ArrayElement(i, &path));
-                    }
-                }
+                Some(l) => for (i, v) in l.iter().enumerate() {
+                    unify_value(
+                        var_name,
+                        var_pos,
+                        v,
+                        inner,
+                        schema,
+                        errors,
+                        Path::ArrayElement(i, &path),
+                    );
+                },
                 _ => unify_value(var_name, var_pos, value, inner, schema, errors, path),
             }
         }
@@ -124,55 +132,62 @@ fn unify_value<'a>(var_name: &str,
     }
 }
 
-fn unify_scalar<'a>(var_name: &str,
-                    var_pos: &SourcePosition,
-                    value: &InputValue,
-                    meta: &ScalarMeta,
-                    errors: &mut Vec<RuleError>,
-                    path: &Path<'a>) {
+fn unify_scalar<'a>(
+    var_name: &str,
+    var_pos: &SourcePosition,
+    value: &InputValue,
+    meta: &ScalarMeta,
+    errors: &mut Vec<RuleError>,
+    path: &Path<'a>,
+) {
     if !(meta.try_parse_fn)(value) {
-        push_unification_error(errors,
-                               var_name,
-                               var_pos,
-                               path,
-                               &format!(r#"Expected "{}""#, meta.name));
+        push_unification_error(
+            errors,
+            var_name,
+            var_pos,
+            path,
+            &format!(r#"Expected "{}""#, meta.name),
+        );
         return;
     }
 
     match *value {
-        InputValue::List(_) => {
-            push_unification_error(errors,
-                                   var_name,
-                                   var_pos,
-                                   path,
-                                   &format!(r#"Expected "{}", found list"#, meta.name))
-        }
-        InputValue::Object(_) => {
-            push_unification_error(errors,
-                                   var_name,
-                                   var_pos,
-                                   path,
-                                   &format!(r#"Expected "{}", found object"#, meta.name))
-        }
+        InputValue::List(_) => push_unification_error(
+            errors,
+            var_name,
+            var_pos,
+            path,
+            &format!(r#"Expected "{}", found list"#, meta.name),
+        ),
+        InputValue::Object(_) => push_unification_error(
+            errors,
+            var_name,
+            var_pos,
+            path,
+            &format!(r#"Expected "{}", found object"#, meta.name),
+        ),
         _ => (),
     }
 }
 
-fn unify_enum<'a>(var_name: &str,
-                  var_pos: &SourcePosition,
-                  value: &InputValue,
-                  meta: &EnumMeta,
-                  errors: &mut Vec<RuleError>,
-                  path: &Path<'a>) {
+fn unify_enum<'a>(
+    var_name: &str,
+    var_pos: &SourcePosition,
+    value: &InputValue,
+    meta: &EnumMeta,
+    errors: &mut Vec<RuleError>,
+    path: &Path<'a>,
+) {
     match *value {
-        InputValue::String(ref name) |
-        InputValue::Enum(ref name) => {
+        InputValue::String(ref name) | InputValue::Enum(ref name) => {
             if !meta.values.iter().any(|ev| &ev.name == name) {
-                push_unification_error(errors,
-                                       var_name,
-                                       var_pos,
-                                       path,
-                                       &format!(r#"Invalid value for enum "{}""#, meta.name))
+                push_unification_error(
+                    errors,
+                    var_name,
+                    var_pos,
+                    path,
+                    &format!(r#"Invalid value for enum "{}""#, meta.name),
+                )
             }
         }
         _ => push_unification_error(
@@ -185,13 +200,15 @@ fn unify_enum<'a>(var_name: &str,
     }
 }
 
-fn unify_input_object<'a>(var_name: &str,
-                          var_pos: &SourcePosition,
-                          value: &InputValue,
-                          meta: &InputObjectMeta,
-                          schema: &SchemaType,
-                          errors: &mut Vec<RuleError>,
-                          path: &Path<'a>) {
+fn unify_input_object<'a>(
+    var_name: &str,
+    var_pos: &SourcePosition,
+    value: &InputValue,
+    meta: &InputObjectMeta,
+    schema: &SchemaType,
+    errors: &mut Vec<RuleError>,
+    path: &Path<'a>,
+) {
     if let Some(ref obj) = value.to_object_value() {
         let mut keys = obj.keys().collect::<HashSet<&&str>>();
 
@@ -203,13 +220,15 @@ fn unify_input_object<'a>(var_name: &str,
                 if !value.is_null() {
                     has_value = true;
 
-                    unify_value(var_name,
-                                var_pos,
-                                value,
-                                &schema.make_type(&input_field.arg_type),
-                                schema,
-                                errors,
-                                Path::ObjectField(&input_field.name, path));
+                    unify_value(
+                        var_name,
+                        var_pos,
+                        value,
+                        &schema.make_type(&input_field.arg_type),
+                        schema,
+                        errors,
+                        Path::ObjectField(&input_field.name, path),
+                    );
                 }
             }
 
@@ -225,18 +244,22 @@ fn unify_input_object<'a>(var_name: &str,
         }
 
         for key in keys {
-            push_unification_error(errors,
-                                   var_name,
-                                   var_pos,
-                                   &Path::ObjectField(key, path),
-                                   "Unknown field");
+            push_unification_error(
+                errors,
+                var_name,
+                var_pos,
+                &Path::ObjectField(key, path),
+                "Unknown field",
+            );
         }
     } else {
-        push_unification_error(errors,
-                               var_name,
-                               var_pos,
-                               path,
-                               &format!(r#"Expected "{}", found not an object"#, meta.name));
+        push_unification_error(
+            errors,
+            var_name,
+            var_pos,
+            path,
+            &format!(r#"Expected "{}", found not an object"#, meta.name),
+        );
     }
 }
 
@@ -244,16 +267,22 @@ fn is_absent_or_null(v: Option<&InputValue>) -> bool {
     v.map_or(true, InputValue::is_null)
 }
 
-fn push_unification_error<'a>(errors: &mut Vec<RuleError>,
-                              var_name: &str,
-                              var_pos: &SourcePosition,
-                              path: &Path<'a>,
-                              message: &str) {
-    errors.push(RuleError::new(&format!(
+fn push_unification_error<'a>(
+    errors: &mut Vec<RuleError>,
+    var_name: &str,
+    var_pos: &SourcePosition,
+    path: &Path<'a>,
+    message: &str,
+) {
+    errors.push(RuleError::new(
+        &format!(
             r#"Variable "${}" got invalid value. {}{}."#,
-            var_name, path, message,
+            var_name,
+            path,
+            message,
         ),
-                               &[var_pos.clone()]));
+        &[var_pos.clone()],
+    ));
 }
 
 impl<'a> fmt::Display for Path<'a> {
