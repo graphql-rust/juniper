@@ -3,8 +3,7 @@ use parser::{Spanning, SourcePosition, ParseError, Token};
 use parser::document::parse_document_source;
 
 fn parse_document(s: &str) -> Document {
-    parse_document_source(s)
-        .expect(&format!("Parse error on input {:#?}", s))
+    parse_document_source(s).expect(&format!("Parse error on input {:#?}", s))
 }
 
 fn parse_document_error<'a>(s: &'a str) -> Spanning<ParseError<'a>> {

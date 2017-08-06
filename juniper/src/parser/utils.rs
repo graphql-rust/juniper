@@ -61,14 +61,14 @@ impl<T: fmt::Debug> Spanning<T> {
 
     #[doc(hidden)]
     pub fn spanning(v: Vec<Spanning<T>>) -> Option<Spanning<Vec<Spanning<T>>>> {
-        if let (Some(start), Some(end)) = (v.first().map(|s| s.start.clone()), v.last().map(|s| s.end.clone())) {
+        if let (Some(start), Some(end)) =
+            (v.first().map(|s| s.start.clone()), v.last().map(|s| s.end.clone())) {
             Some(Spanning {
-                item: v,
-                start: start,
-                end: end,
-            })
-        }
-        else {
+                     item: v,
+                     start: start,
+                     end: end,
+                 })
+        } else {
             None
         }
     }
@@ -92,7 +92,9 @@ impl<T: fmt::Debug> Spanning<T> {
     }
 }
 
-impl<T> Clone for Spanning<T> where T: Clone + fmt::Debug {
+impl<T> Clone for Spanning<T>
+    where T: Clone + fmt::Debug
+{
     fn clone(&self) -> Self {
         Spanning {
             start: self.start.clone(),
@@ -102,7 +104,9 @@ impl<T> Clone for Spanning<T> where T: Clone + fmt::Debug {
     }
 }
 
-impl<T> PartialEq for Spanning<T> where T: PartialEq + fmt::Debug {
+impl<T> PartialEq for Spanning<T>
+    where T: PartialEq + fmt::Debug
+{
     fn eq(&self, other: &Self) -> bool {
         self.start == other.start && self.end == other.end && self.item == other.item
     }
@@ -110,7 +114,9 @@ impl<T> PartialEq for Spanning<T> where T: PartialEq + fmt::Debug {
 
 impl<T> Eq for Spanning<T> where T: Eq + fmt::Debug {}
 
-impl<T> Hash for Spanning<T> where T: Hash + fmt::Debug {
+impl<T> Hash for Spanning<T>
+    where T: Hash + fmt::Debug
+{
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.start.hash(state);
         self.end.hash(state);
@@ -155,7 +161,7 @@ impl SourcePosition {
     /// The index of the character in the input source
     ///
     /// Zero-based index. Take a substring of the original source starting at
-    /// this index to access the item pointed to by this `SourcePosition`. 
+    /// this index to access the item pointed to by this `SourcePosition`.
     pub fn index(&self) -> usize {
         self.index
     }

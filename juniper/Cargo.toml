@@ -7,11 +7,8 @@ license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper/0.8.1/juniper/"
 repository = "https://github.com/mhallin/juniper"
 readme = "README.md"
-keywords = ["graphql", "server", "iron", "web", "rocket"]
+keywords = ["graphql", "server", "web", "rocket"]
 categories = ["web-programming"]
-
-[package.metadata.docs.rs]
-features = [ "iron-handlers" ]
 
 [badges]
 travis-ci = { repository = "mhallin/juniper" }
@@ -22,36 +19,15 @@ name = "bench"
 harness = false
 path = "benches/bench.rs"
 
-[[example]]
-name = "server"
-required-features = ["iron-handlers", "expose-test-schema"]
-
-[[example]]
-name = "rocket-server"
-required-features = ["rocket-handlers", "expose-test-schema"]
-
 [features]
 nightly = []
-iron-handlers = ["iron", "serde_json", "urlencoded"]
-rocket-handlers = ["rocket", "rocket_codegen", "serde_json"]
 expose-test-schema = []
 
 [dependencies]
 serde = { version = "^1.0.8" }
 serde_derive = {version="^1.0.8" }
-
-serde_json = { version = "^1.0.2", optional = true }
-
-iron = { version = "^0.5.1", optional = true }
-urlencoded = { version = "^0.5.0", optional = true }
-
-rocket = { version = "^0.3.0", optional = true }
-rocket_codegen = { version = "^0.3.0", optional = true }
+serde_json = { version="^1.0.2", optional = true }
 
 [dev-dependencies]
-iron = "^0.5.1"
-router = "^0.5.0"
-mount = "^0.3.0"
-logger = "^0.3.0"
-iron-test = "^0.5.0"
 bencher = "^0.1.2"
+serde_json = { version = "^1.0.2" }

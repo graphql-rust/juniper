@@ -70,7 +70,9 @@ graphql_object!(Root: () |&self| {
     field scalar_description() -> ScalarDescription { ScalarDescription(0) }
 });
 
-fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>) -> () {
+fn run_type_info_query<F>(doc: &str, f: F)
+    where F: Fn(&HashMap<String, Value>) -> ()
+{
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
@@ -81,9 +83,12 @@ fn run_type_info_query<F>(doc: &str, f: F) where F: Fn(&HashMap<String, Value>) 
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     f(type_info);
 }

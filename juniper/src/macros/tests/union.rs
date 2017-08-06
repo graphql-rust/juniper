@@ -20,16 +20,30 @@ Syntax to validate:
 
 struct Concrete;
 
-enum CustomName { Concrete(Concrete) }
+enum CustomName {
+    Concrete(Concrete),
+}
 
-enum WithLifetime<'a> { Int(PhantomData<&'a i32>) }
-enum WithGenerics<T> { Generic(T) }
+enum WithLifetime<'a> {
+    Int(PhantomData<&'a i32>),
+}
+enum WithGenerics<T> {
+    Generic(T),
+}
 
-enum DescriptionFirst { Concrete(Concrete) }
-enum ResolversFirst { Concrete(Concrete) }
+enum DescriptionFirst {
+    Concrete(Concrete),
+}
+enum ResolversFirst {
+    Concrete(Concrete),
+}
 
-enum CommasWithTrailing { Concrete(Concrete) }
-enum ResolversWithTrailingComma { Concrete(Concrete) }
+enum CommasWithTrailing {
+    Concrete(Concrete),
+}
+enum ResolversWithTrailingComma {
+    Concrete(Concrete),
+}
 
 struct Root;
 
@@ -113,23 +127,29 @@ fn run_type_info_query<F>(type_name: &str, f: F)
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
     let vars = vec![
         ("typeName".to_owned(), InputValue::string(type_name)),
-    ].into_iter().collect();
+    ]
+            .into_iter()
+            .collect();
 
-    let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-        .expect("Execution failed");
+    let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     let possible_types = type_info
-        .get("possibleTypes").expect("possibleTypes field missing")
-        .as_list_value().expect("possibleTypes field not a list value");
+        .get("possibleTypes")
+        .expect("possibleTypes field missing")
+        .as_list_value()
+        .expect("possibleTypes field not a list value");
 
     f(type_info, possible_types);
 }

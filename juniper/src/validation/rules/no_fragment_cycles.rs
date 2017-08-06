@@ -46,7 +46,9 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
         ctx.append_errors(detector.errors);
     }
 
-    fn enter_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
+    fn enter_fragment_definition(&mut self,
+                                 _: &mut ValidatorContext<'a>,
+                                 fragment: &'a Spanning<Fragment>) {
         assert!(self.current_fragment.is_none());
 
         let fragment_name = &fragment.item.name.item;
@@ -54,20 +56,23 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
         self.fragment_order.push(fragment_name);
     }
 
-    fn exit_fragment_definition(&mut self, _: &mut ValidatorContext<'a>, fragment: &'a Spanning<Fragment>) {
+    fn exit_fragment_definition(&mut self,
+                                _: &mut ValidatorContext<'a>,
+                                fragment: &'a Spanning<Fragment>) {
         assert_eq!(Some(fragment.item.name.item), self.current_fragment);
         self.current_fragment = None;
     }
 
-    fn enter_fragment_spread(&mut self, _: &mut ValidatorContext<'a>, spread: &'a Spanning<FragmentSpread>) {
+    fn enter_fragment_spread(&mut self,
+                             _: &mut ValidatorContext<'a>,
+                             spread: &'a Spanning<FragmentSpread>) {
         if let Some(current_fragment) = self.current_fragment {
             self.spreads
                 .entry(current_fragment)
                 .or_insert_with(Vec::new)
-                .push(Spanning::start_end(
-                    &spread.start.clone(),
-                    &spread.end.clone(),
-                    spread.item.name.item));
+                .push(Spanning::start_end(&spread.start.clone(),
+                                          &spread.end.clone(),
+                                          spread.item.name.item));
         }
     }
 }
@@ -88,16 +93,14 @@ impl<'a> CycleDetector<'a> {
 
             if let Some(index) = index {
                 let err_pos = if index < path.len() {
-                        path[index]
-                    } else {
-                        node
-                    };
+                    path[index]
+                } else {
+                    node
+                };
 
-                self.errors.push(RuleError::new(
-                    &error_message(name),
-                    &[err_pos.start.clone()]));
-            }
-            else if !self.visited.contains(name) {
+                self.errors
+                    .push(RuleError::new(&error_message(name), &[err_pos.start.clone()]));
+            } else if !self.visited.contains(name) {
                 path.push(node);
                 self.detect_from(name, path);
                 path.pop();
@@ -121,7 +124,8 @@ mod tests {
 
     #[test]
     fn single_reference_is_valid() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { name }
         "#);
@@ -129,7 +133,8 @@ mod tests {
 
     #[test]
     fn spreading_twice_is_not_circular() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment fragA on Dog { ...fragB, ...fragB }
           fragment fragB on Dog { name }
         "#);
@@ -137,7 +142,8 @@ mod tests {
 
     #[test]
     fn spreading_twice_indirectly_is_not_circular() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment fragA on Dog { ...fragB, ...fragC }
           fragment fragB on Dog { ...fragC }
           fragment fragC on Dog { name }
@@ -146,7 +152,8 @@ mod tests {
 
     #[test]
     fn double_spread_within_abstract_types() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment nameFragment on Pet {
             ... on Dog { name }
             ... on Cat { name }
@@ -161,7 +168,8 @@ mod tests {
 
     #[test]
     fn does_not_false_positive_on_unknown_fragment() {
-        expect_passes_rule(factory, r#"
+        expect_passes_rule(factory,
+                           r#"
           fragment nameFragment on Pet {
             ...UnknownFragment
           }
@@ -170,73 +178,64 @@ mod tests {
 
     #[test]
     fn spreading_recursively_within_field_fails() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Human { relatives { ...fragA } },
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(49, 1, 48)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(49, 1, 48)])]);
     }
 
     #[test]
     fn no_spreading_itself_directly() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Dog { ...fragA }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(35, 1, 34)])]);
     }
 
     #[test]
     fn no_spreading_itself_directly_within_inline_fragment() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Pet {
             ... on Dog {
               ...fragA
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(74, 3, 14)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(74, 3, 14)])]);
     }
 
     #[test]
     fn no_spreading_itself_indirectly() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { ...fragA }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(35, 1, 34)])]);
     }
 
     #[test]
     fn no_spreading_itself_indirectly_reports_opposite_order() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragB on Dog { ...fragA }
           fragment fragA on Dog { ...fragB }
         "#,
-            &[
-                RuleError::new(&error_message("fragB"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragB"),
+                                           &[SourcePosition::new(35, 1, 34)])]);
     }
 
     #[test]
     fn no_spreading_itself_indirectly_within_inline_fragment() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Pet {
             ... on Dog {
               ...fragB
@@ -248,16 +247,14 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(74, 3, 14)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(74, 3, 14)])]);
     }
 
     #[test]
     fn no_spreading_itself_deeply() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { ...fragC }
           fragment fragC on Dog { ...fragO }
@@ -267,67 +264,53 @@ mod tests {
           fragment fragO on Dog { ...fragP }
           fragment fragP on Dog { ...fragA, ...fragX }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-                RuleError::new(&error_message("fragO"), &[
-                    SourcePosition::new(305, 7, 34)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(35, 1, 34)]),
+                            RuleError::new(&error_message("fragO"),
+                                           &[SourcePosition::new(305, 7, 34)])]);
     }
 
     #[test]
     fn no_spreading_itself_deeply_two_paths() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Dog { ...fragB, ...fragC }
           fragment fragB on Dog { ...fragA }
           fragment fragC on Dog { ...fragA }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(45, 1, 44)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(35, 1, 34)]),
+                            RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(45, 1, 44)])]);
     }
 
     #[test]
     fn no_spreading_itself_deeply_two_paths_alt_traversal_order() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Dog { ...fragC }
           fragment fragB on Dog { ...fragC }
           fragment fragC on Dog { ...fragA, ...fragB }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-                RuleError::new(&error_message("fragC"), &[
-                    SourcePosition::new(135, 3, 44)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(35, 1, 34)]),
+                            RuleError::new(&error_message("fragC"),
+                                           &[SourcePosition::new(135, 3, 44)])]);
     }
 
     #[test]
     fn no_spreading_itself_deeply_and_immediately() {
-        expect_fails_rule(factory, r#"
+        expect_fails_rule(factory,
+                          r#"
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { ...fragB, ...fragC }
           fragment fragC on Dog { ...fragA, ...fragB }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[
-                    SourcePosition::new(35, 1, 34)
-                ]),
-                RuleError::new(&error_message("fragB"), &[
-                    SourcePosition::new(80, 2, 34)
-                ]),
-                RuleError::new(&error_message("fragB"), &[
-                    SourcePosition::new(90, 2, 44)
-                ]),
-            ]);
+                          &[RuleError::new(&error_message("fragA"),
+                                           &[SourcePosition::new(35, 1, 34)]),
+                            RuleError::new(&error_message("fragB"),
+                                           &[SourcePosition::new(80, 2, 34)]),
+                            RuleError::new(&error_message("fragB"),
+                                           &[SourcePosition::new(90, 2, 44)])]);
     }
 }

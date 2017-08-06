@@ -40,7 +40,7 @@ Tiny release to fix broken crate metadata on crates.io.
 
 * A new `rocket-handlers` feature now includes some tools to use the
   [Rocket](https://rocket.rs) framework. [A simple
-  example](examples/rocket-server.rs) has been added to the examples folder.
+  example](juniper_rocket/examples/rocket-server.rs) has been added to the examples folder.
 
 ## Bugfixes
 

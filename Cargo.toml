@@ -3,5 +3,6 @@ members = [
   "juniper",
   "juniper_codegen",
   "juniper_tests",
-  "juniper_rocket_integration",
+  "juniper_iron",
+  "juniper_rocket",
 ]

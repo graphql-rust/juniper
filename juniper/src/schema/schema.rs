@@ -6,8 +6,8 @@ use schema::meta::{MetaType, ObjectMeta, EnumMeta, InputObjectMeta, UnionMeta, I
 use schema::model::{RootNode, SchemaType, TypeType, DirectiveType, DirectiveLocation};
 
 impl<'a, CtxT, QueryT, MutationT> GraphQLType for RootNode<'a, QueryT, MutationT>
-    where QueryT: GraphQLType<Context=CtxT>,
-          MutationT: GraphQLType<Context=CtxT>
+    where QueryT: GraphQLType<Context = CtxT>,
+          MutationT: GraphQLType<Context = CtxT>
 {
     type Context = CtxT;
 
@@ -19,14 +19,24 @@ impl<'a, CtxT, QueryT, MutationT> GraphQLType for RootNode<'a, QueryT, MutationT
         QueryT::meta(registry)
     }
 
-    fn resolve_field(&self, field: &str, args: &Arguments, executor: &Executor<CtxT>) -> ExecutionResult {
+    fn resolve_field(&self,
+                     field: &str,
+                     args: &Arguments,
+                     executor: &Executor<CtxT>)
+                     -> ExecutionResult {
         match field {
-            "__schema" => executor.replaced_context(&self.schema).resolve(&self.schema),
+            "__schema" => {
+                executor
+                    .replaced_context(&self.schema)
+                    .resolve(&self.schema)
+            }
             "__type" => {
                 let type_name: String = args.get("name").unwrap();
-                executor.replaced_context(&self.schema).resolve(&self.schema.type_by_name(&type_name))
-            },
-            _=> self.query_type.resolve_field(field, args, executor),
+                executor
+                    .replaced_context(&self.schema)
+                    .resolve(&self.schema.type_by_name(&type_name))
+            }
+            _ => self.query_type.resolve_field(field, args, executor),
         }
     }
 }

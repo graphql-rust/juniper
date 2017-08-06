@@ -6,12 +6,30 @@ use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 
 
-enum DefaultName { Foo, Bar }
-enum Named { Foo, Bar }
-enum NoTrailingComma { Foo, Bar }
-enum EnumDescription { Foo, Bar }
-enum EnumValueDescription { Foo, Bar }
-enum EnumDeprecation { Foo, Bar }
+enum DefaultName {
+    Foo,
+    Bar,
+}
+enum Named {
+    Foo,
+    Bar,
+}
+enum NoTrailingComma {
+    Foo,
+    Bar,
+}
+enum EnumDescription {
+    Foo,
+    Bar,
+}
+enum EnumValueDescription {
+    Foo,
+    Bar,
+}
+enum EnumDeprecation {
+    Foo,
+    Bar,
+}
 
 struct Root;
 
@@ -68,7 +86,9 @@ graphql_object!(Root: () |&self| {
     field enum_deprecation() -> EnumDeprecation { EnumDeprecation::Foo }
 });
 
-fn run_type_info_query<F>(doc: &str, f: F) where F: Fn((&HashMap<String, Value>, &Vec<Value>)) -> () {
+fn run_type_info_query<F>(doc: &str, f: F)
+    where F: Fn((&HashMap<String, Value>, &Vec<Value>)) -> ()
+{
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
@@ -79,13 +99,18 @@ fn run_type_info_query<F>(doc: &str, f: F) where F: Fn((&HashMap<String, Value>,
     println!("Result: {:?}", result);
 
     let type_info = result
-        .as_object_value().expect("Result is not an object")
-        .get("__type").expect("__type field missing")
-        .as_object_value().expect("__type field not an object value");
+        .as_object_value()
+        .expect("Result is not an object")
+        .get("__type")
+        .expect("__type field missing")
+        .as_object_value()
+        .expect("__type field not an object value");
 
     let values = type_info
-        .get("enumValues").expect("enumValues field missing")
-        .as_list_value().expect("enumValues not a list");
+        .get("enumValues")
+        .expect("enumValues field missing")
+        .as_list_value()
+        .expect("enumValues not a list");
 
     f((type_info, values));
 }

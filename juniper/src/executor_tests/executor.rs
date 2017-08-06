@@ -63,10 +63,11 @@ mod field_execution {
 
         let vars = vec![
             ("size".to_owned(), InputValue::int(100))
-        ].into_iter().collect();
+        ]
+                .into_iter()
+                .collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -137,8 +138,7 @@ mod merge_parallel_fragments {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -187,9 +187,12 @@ mod threads_context_correctly {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars,
+        let (result, errs) = ::execute(doc,
+                                       None,
+                                       &schema,
+                                       &vars,
                                        &TestContext { value: "Context value".to_owned() })
-            .expect("Execution failed");
+                .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -269,11 +272,12 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ].into_iter().collect(),
+            ]
+                    .into_iter()
+                    .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -305,11 +309,12 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ].into_iter().collect(),
+            ]
+                    .into_iter()
+                    .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, vec![
             ExecutionError::new(
@@ -348,11 +353,12 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ].into_iter().collect(),
+            ]
+                    .into_iter()
+                    .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, [
             ExecutionError::new(
@@ -386,11 +392,12 @@ mod dynamic_context_switching {
             items: vec![
                 (0, InnerContext { value: "First value".to_owned() }),
                 (1, InnerContext { value: "Second value".to_owned() }),
-            ].into_iter().collect(),
+            ]
+                    .into_iter()
+                    .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx)
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -427,8 +434,7 @@ mod nulls_out_errors {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:?}", result);
 
@@ -455,7 +461,7 @@ mod named_operations {
     use value::Value;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use ::GraphQLError;
+    use GraphQLError;
 
     struct Schema;
 
@@ -470,8 +476,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -489,8 +494,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &())
-            .expect("Execution failed");
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -527,8 +531,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = ::execute(doc, None, &schema, &vars, &())
-            .unwrap_err();
+        let err = ::execute(doc, None, &schema, &vars, &()).unwrap_err();
 
         assert_eq!(err, GraphQLError::MultipleOperationsProvided);
     }
@@ -540,8 +543,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = ::execute(doc, Some("UnknownExample"), &schema, &vars, &())
-            .unwrap_err();
+        let err = ::execute(doc, Some("UnknownExample"), &schema, &vars, &()).unwrap_err();
 
         assert_eq!(err, GraphQLError::UnknownOperationName);
     }

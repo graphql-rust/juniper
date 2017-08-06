@@ -3,7 +3,7 @@ use serde::ser::SerializeMap;
 use std::fmt;
 use std::collections::HashMap;
 
-use ::{GraphQLError, Value};
+use {GraphQLError, Value};
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, Spanning, SourcePosition};
@@ -12,7 +12,7 @@ use validation::RuleError;
 
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         let mut map = try!(serializer.serialize_map(Some(3)));
 
@@ -32,27 +32,25 @@ impl ser::Serialize for ExecutionError {
 
 impl<'a> ser::Serialize for GraphQLError<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         match *self {
             GraphQLError::ParseError(ref err) => vec![err].serialize(serializer),
             GraphQLError::ValidationError(ref errs) => errs.serialize(serializer),
             GraphQLError::NoOperationProvided => {
                 serializer.serialize_str("Must provide an operation")
-            },
+            }
             GraphQLError::MultipleOperationsProvided => {
                 serializer.serialize_str("Must provide operation name if query contains multiple operations")
-            },
-            GraphQLError::UnknownOperationName => {
-                serializer.serialize_str("Unknown operation")
-            },
+            }
+            GraphQLError::UnknownOperationName => serializer.serialize_str("Unknown operation"),
         }
     }
 }
 
 impl<'de> de::Deserialize<'de> for InputValue {
     fn deserialize<D>(deserializer: D) -> Result<InputValue, D::Error>
-        where D: de::Deserializer<'de>,
+        where D: de::Deserializer<'de>
     {
         struct InputValueVisitor;
 
@@ -68,23 +66,21 @@ impl<'de> de::Deserialize<'de> for InputValue {
             }
 
             fn visit_i64<E>(self, value: i64) -> Result<InputValue, E>
-                where E: de::Error,
+                where E: de::Error
             {
                 if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
                     Ok(InputValue::int(value as i32))
-                }
-                else {
+                } else {
                     Err(E::custom(format!("integer out of range")))
                 }
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<InputValue, E>
-                where E: de::Error,
+                where E: de::Error
             {
                 if value <= i32::max_value() as u64 {
                     self.visit_i64(value as i64)
-                }
-                else {
+                } else {
                     Err(E::custom(format!("integer out of range")))
                 }
             }
@@ -94,7 +90,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             }
 
             fn visit_str<E>(self, value: &str) -> Result<InputValue, E>
-                where E: de::Error,
+                where E: de::Error
             {
                 self.visit_string(value.into())
             }
@@ -112,7 +108,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             }
 
             fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
-                where V: de::SeqAccess<'de>,
+                where V: de::SeqAccess<'de>
             {
                 let mut values = Vec::new();
 
@@ -124,7 +120,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             }
 
             fn visit_map<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
-                where V: de::MapAccess<'de>,
+                where V: de::MapAccess<'de>
             {
                 let mut values: HashMap<String, InputValue> = HashMap::new();
 
@@ -142,30 +138,35 @@ impl<'de> de::Deserialize<'de> for InputValue {
 
 impl ser::Serialize for InputValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         match *self {
-            InputValue::Null | InputValue::Variable(_) => serializer.serialize_unit(),
+            InputValue::Null |
+            InputValue::Variable(_) => serializer.serialize_unit(),
             InputValue::Int(v) => serializer.serialize_i64(v as i64),
             InputValue::Float(v) => serializer.serialize_f64(v),
-            InputValue::String(ref v) | InputValue::Enum(ref v) => serializer.serialize_str(v),
+            InputValue::String(ref v) |
+            InputValue::Enum(ref v) => serializer.serialize_str(v),
             InputValue::Boolean(v) => serializer.serialize_bool(v),
             InputValue::List(ref v) => {
-                v.iter().map(|x| x.item.clone()).collect::<Vec<_>>().serialize(serializer)
-            },
+                v.iter()
+                    .map(|x| x.item.clone())
+                    .collect::<Vec<_>>()
+                    .serialize(serializer)
+            }
             InputValue::Object(ref v) => {
                 v.iter()
                     .map(|&(ref k, ref v)| (k.item.clone(), v.item.clone()))
                     .collect::<HashMap<_, _>>()
                     .serialize(serializer)
-            },
+            }
         }
     }
 }
 
 impl ser::Serialize for RuleError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         let mut map = try!(serializer.serialize_map(Some(2)));
 
@@ -181,7 +182,7 @@ impl ser::Serialize for RuleError {
 
 impl ser::Serialize for SourcePosition {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         let mut map = try!(serializer.serialize_map(Some(2)));
 
@@ -199,7 +200,7 @@ impl ser::Serialize for SourcePosition {
 
 impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         let mut map = try!(serializer.serialize_map(Some(2)));
 
@@ -222,7 +223,7 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
 
 impl ser::Serialize for Value {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer,
+        where S: ser::Serializer
     {
         match *self {
             Value::Null => serializer.serialize_unit(),

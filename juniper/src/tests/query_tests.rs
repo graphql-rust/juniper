@@ -251,7 +251,9 @@ fn test_query_name_variable() {
 
     let vars = vec![
         ("someId".to_owned(), InputValue::string("1000")),
-    ].into_iter().collect();
+    ]
+            .into_iter()
+            .collect();
 
     assert_eq!(
         ::execute(doc, None, &schema, &vars, &database),
@@ -271,7 +273,9 @@ fn test_query_name_invalid_variable() {
 
     let vars = vec![
         ("someId".to_owned(), InputValue::string("some invalid id")),
-    ].into_iter().collect();
+    ]
+            .into_iter()
+            .collect();
 
     assert_eq!(
         ::execute(doc, None, &schema, &vars, &database),

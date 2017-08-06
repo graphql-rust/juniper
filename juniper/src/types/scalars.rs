@@ -156,9 +156,7 @@ pub struct EmptyMutation<T> {
 impl<T> EmptyMutation<T> {
     /// Construct a new empty mutation
     pub fn new() -> EmptyMutation<T> {
-        EmptyMutation {
-            phantom: PhantomData,
-        }
+        EmptyMutation { phantom: PhantomData }
     }
 }
 
