@@ -34,7 +34,8 @@ graphql_object!(TestType: () |&self| {
 });
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
-    where F: Fn(&HashMap<String, Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -50,7 +51,8 @@ fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 }
 
 fn run_query<F>(query: &str, f: F)
-    where F: Fn(&HashMap<String, Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -92,17 +94,18 @@ fn does_not_accept_string_literals() {
 
 #[test]
 fn accepts_strings_in_variables() {
-    run_variable_query("query q($color: Color!) { toString(color: $color) }",
-                       vec![
+    run_variable_query(
+        "query q($color: Color!) { toString(color: $color) }",
+        vec![
             ("color".to_owned(), InputValue::string("RED")),
-        ]
-                               .into_iter()
-                               .collect(),
-                       |result| {
-        assert_eq!(
+        ].into_iter()
+            .collect(),
+        |result| {
+            assert_eq!(
                 result.get("toString"),
                 Some(&Value::string("Color::Red")));
-    });
+        },
+    );
 }
 
 #[test]
@@ -112,9 +115,8 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![
         ("color".to_owned(), InputValue::string("BLURPLE")),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -133,9 +135,8 @@ fn does_not_accept_incorrect_type_in_variables() {
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![
         ("color".to_owned(), InputValue::int(123)),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 

@@ -11,6 +11,6 @@ mod tests;
 
 pub use self::document::parse_document_source;
 
-pub use self::parser::{Parser, ParseError, ParseResult, UnlocatedParseResult, OptionParseResult};
-pub use self::lexer::{Token, Lexer, LexerError};
-pub use self::utils::{Spanning, SourcePosition};
+pub use self::parser::{OptionParseResult, ParseError, ParseResult, Parser, UnlocatedParseResult};
+pub use self::lexer::{Lexer, LexerError, Token};
+pub use self::utils::{SourcePosition, Spanning};

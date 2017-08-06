@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::fmt;
 
 use types::base::GraphQLType;
-use executor::{Registry, Context};
+use executor::{Context, Registry};
 use ast::Type;
-use schema::meta::{MetaType, ObjectMeta, PlaceholderMeta, UnionMeta, InterfaceMeta, Argument};
+use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 
 /// Root query node of a schema
 ///
@@ -53,8 +53,9 @@ pub enum DirectiveLocation {
 }
 
 impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>
-    where QueryT: GraphQLType,
-          MutationT: GraphQLType
+where
+    QueryT: GraphQLType,
+    MutationT: GraphQLType,
 {
     /// Construct a new root node from query and mutation nodes
     ///
@@ -71,8 +72,9 @@ impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>
 
 impl<'a> SchemaType<'a> {
     pub fn new<QueryT, MutationT>() -> SchemaType<'a>
-        where QueryT: GraphQLType,
-              MutationT: GraphQLType
+    where
+        QueryT: GraphQLType,
+        MutationT: GraphQLType,
     {
         let mut directives = HashMap::new();
         let query_type_name: String;
@@ -84,12 +86,15 @@ impl<'a> SchemaType<'a> {
 
         registry.get_type::<SchemaType>();
         directives.insert("skip".to_owned(), DirectiveType::new_skip(&mut registry));
-        directives.insert("include".to_owned(),
-                          DirectiveType::new_include(&mut registry));
+        directives.insert(
+            "include".to_owned(),
+            DirectiveType::new_include(&mut registry),
+        );
 
         let mut meta_fields = vec![
             registry.field::<SchemaType>("__schema"),
-            registry.field::<TypeType>("__type")
+            registry
+                .field::<TypeType>("__type")
                 .argument(registry.arg::<String>("name")),
         ];
 
@@ -134,9 +139,11 @@ impl<'a> SchemaType<'a> {
     }
 
     pub fn query_type(&self) -> TypeType {
-        TypeType::Concrete(self.types
-                               .get(&self.query_type_name)
-                               .expect("Query type does not exist in schema"))
+        TypeType::Concrete(
+            self.types
+                .get(&self.query_type_name)
+                .expect("Query type does not exist in schema"),
+        )
     }
 
     pub fn concrete_query_type(&self) -> &MetaType {
@@ -147,20 +154,20 @@ impl<'a> SchemaType<'a> {
 
     pub fn mutation_type(&self) -> Option<TypeType> {
         if let Some(ref mutation_type_name) = self.mutation_type_name {
-            Some(self.type_by_name(mutation_type_name)
-                     .expect("Mutation type does not exist in schema"))
+            Some(
+                self.type_by_name(mutation_type_name)
+                    .expect("Mutation type does not exist in schema"),
+            )
         } else {
             None
         }
     }
 
     pub fn concrete_mutation_type(&self) -> Option<&MetaType> {
-        self.mutation_type_name
-            .as_ref()
-            .map(|name| {
-                     self.concrete_type_by_name(name)
-                         .expect("Mutation type does not exist in schema")
-                 })
+        self.mutation_type_name.as_ref().map(|name| {
+            self.concrete_type_by_name(name)
+                .expect("Mutation type does not exist in schema")
+        })
     }
 
     pub fn type_list(&self) -> Vec<TypeType> {
@@ -173,9 +180,9 @@ impl<'a> SchemaType<'a> {
 
     pub fn make_type(&self, t: &Type) -> TypeType {
         match *t {
-            Type::NonNullNamed(n) => {
-                TypeType::NonNull(Box::new(self.type_by_name(n).expect("Type not found in schema")))
-            }
+            Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
+                self.type_by_name(n).expect("Type not found in schema"),
+            )),
             Type::NonNullList(ref inner) => {
                 TypeType::NonNull(Box::new(TypeType::List(Box::new(self.make_type(inner)))))
             }
@@ -198,11 +205,9 @@ impl<'a> SchemaType<'a> {
         }
 
         match (t1.is_abstract(), t2.is_abstract()) {
-            (true, true) => {
-                self.possible_types(t1)
-                    .iter()
-                    .any(|t| self.is_possible_type(t2, t))
-            }
+            (true, true) => self.possible_types(t1)
+                .iter()
+                .any(|t| self.is_possible_type(t2, t)),
             (true, false) => self.is_possible_type(t1, t2),
             (false, true) => self.is_possible_type(t2, t1),
             (false, false) => false,
@@ -211,31 +216,30 @@ impl<'a> SchemaType<'a> {
 
     pub fn possible_types(&self, t: &MetaType) -> Vec<&MetaType> {
         match *t {
-            MetaType::Union(UnionMeta { ref of_type_names, .. }) => {
-                of_type_names
-                    .iter()
-                    .flat_map(|t| self.concrete_type_by_name(t))
-                    .collect()
-            }
-            MetaType::Interface(InterfaceMeta { name, .. }) => {
-                self.concrete_type_list()
-                    .into_iter()
-                    .filter(|t| match **t {
-                                MetaType::Object(ObjectMeta { ref interface_names, .. }) => {
-                                    interface_names.iter().any(|iname| iname == name)
-                                }
-                                _ => false,
-                            })
-                    .collect()
-            }
+            MetaType::Union(UnionMeta {
+                ref of_type_names, ..
+            }) => of_type_names
+                .iter()
+                .flat_map(|t| self.concrete_type_by_name(t))
+                .collect(),
+            MetaType::Interface(InterfaceMeta { name, .. }) => self.concrete_type_list()
+                .into_iter()
+                .filter(|t| match **t {
+                    MetaType::Object(ObjectMeta {
+                        ref interface_names,
+                        ..
+                    }) => interface_names.iter().any(|iname| iname == name),
+                    _ => false,
+                })
+                .collect(),
             _ => panic!("Can't retrieve possible types from non-abstract meta type"),
         }
     }
 
     pub fn is_possible_type(&self, abstract_type: &MetaType, possible_type: &MetaType) -> bool {
-        self.possible_types(abstract_type)
-            .into_iter()
-            .any(|t| (t as *const MetaType) == (possible_type as *const MetaType))
+        self.possible_types(abstract_type).into_iter().any(|t| {
+            (t as *const MetaType) == (possible_type as *const MetaType)
+        })
     }
 
     pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
@@ -263,8 +267,10 @@ impl<'a> SchemaType<'a> {
     pub fn is_named_subtype(&self, sub_type_name: &str, super_type_name: &str) -> bool {
         if sub_type_name == super_type_name {
             true
-        } else if let (Some(sub_type), Some(super_type)) =
-            (self.concrete_type_by_name(sub_type_name), self.concrete_type_by_name(super_type_name)) {
+        } else if let (Some(sub_type), Some(super_type)) = (
+            self.concrete_type_by_name(sub_type_name),
+            self.concrete_type_by_name(super_type_name),
+        ) {
             super_type.is_abstract() && self.is_possible_type(super_type, sub_type)
         } else {
             false
@@ -282,10 +288,11 @@ impl<'a> TypeType<'a> {
 }
 
 impl<'a> DirectiveType<'a> {
-    pub fn new(name: &str,
-               locations: &[DirectiveLocation],
-               arguments: &[Argument<'a>])
-               -> DirectiveType<'a> {
+    pub fn new(
+        name: &str,
+        locations: &[DirectiveLocation],
+        arguments: &[Argument<'a>],
+    ) -> DirectiveType<'a> {
         DirectiveType {
             name: name.to_owned(),
             description: None,
@@ -295,19 +302,27 @@ impl<'a> DirectiveType<'a> {
     }
 
     fn new_skip(registry: &mut Registry<'a>) -> DirectiveType<'a> {
-        Self::new("skip",
-                  &[DirectiveLocation::Field,
-                    DirectiveLocation::FragmentSpread,
-                    DirectiveLocation::InlineFragment],
-                  &[registry.arg::<bool>("if")])
+        Self::new(
+            "skip",
+            &[
+                DirectiveLocation::Field,
+                DirectiveLocation::FragmentSpread,
+                DirectiveLocation::InlineFragment,
+            ],
+            &[registry.arg::<bool>("if")],
+        )
     }
 
     fn new_include(registry: &mut Registry<'a>) -> DirectiveType<'a> {
-        Self::new("include",
-                  &[DirectiveLocation::Field,
-                    DirectiveLocation::FragmentSpread,
-                    DirectiveLocation::InlineFragment],
-                  &[registry.arg::<bool>("if")])
+        Self::new(
+            "include",
+            &[
+                DirectiveLocation::Field,
+                DirectiveLocation::FragmentSpread,
+                DirectiveLocation::InlineFragment,
+            ],
+            &[registry.arg::<bool>("if")],
+        )
     }
 
     pub fn description(mut self, description: &str) -> DirectiveType<'a> {
@@ -319,13 +334,13 @@ impl<'a> DirectiveType<'a> {
 impl fmt::Display for DirectiveLocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match *self {
-                        DirectiveLocation::Query => "query",
-                        DirectiveLocation::Mutation => "mutation",
-                        DirectiveLocation::Field => "field",
-                        DirectiveLocation::FragmentDefinition => "fragment definition",
-                        DirectiveLocation::FragmentSpread => "fragment spread",
-                        DirectiveLocation::InlineFragment => "inline fragment",
-                    })
+            DirectiveLocation::Query => "query",
+            DirectiveLocation::Mutation => "mutation",
+            DirectiveLocation::Field => "field",
+            DirectiveLocation::FragmentDefinition => "fragment definition",
+            DirectiveLocation::FragmentSpread => "fragment spread",
+            DirectiveLocation::InlineFragment => "inline fragment",
+        })
     }
 }
 

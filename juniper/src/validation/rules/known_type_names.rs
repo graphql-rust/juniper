@@ -9,24 +9,30 @@ pub fn factory() -> KnownTypeNames {
 }
 
 impl<'a> Visitor<'a> for KnownTypeNames {
-    fn enter_inline_fragment(&mut self,
-                             ctx: &mut ValidatorContext<'a>,
-                             fragment: &'a Spanning<InlineFragment>) {
+    fn enter_inline_fragment(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        fragment: &'a Spanning<InlineFragment>,
+    ) {
         if let Some(ref type_cond) = fragment.item.type_condition {
             validate_type(ctx, type_cond.item, &type_cond.start);
         }
     }
 
-    fn enter_fragment_definition(&mut self,
-                                 ctx: &mut ValidatorContext<'a>,
-                                 fragment: &'a Spanning<Fragment>) {
+    fn enter_fragment_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        fragment: &'a Spanning<Fragment>,
+    ) {
         let type_cond = &fragment.item.type_condition;
         validate_type(ctx, type_cond.item, &type_cond.start);
     }
 
-    fn enter_variable_definition(&mut self,
-                                 ctx: &mut ValidatorContext<'a>,
-                                 &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition)) {
+    fn enter_variable_definition(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        &(_, ref var_def): &'a (Spanning<&'a str>, VariableDefinition),
+    ) {
         let type_name = var_def.var_type.item.innermost_name();
         validate_type(ctx, type_name, &var_def.var_type.start);
     }
@@ -47,12 +53,13 @@ mod tests {
     use super::{error_message, factory};
 
     use parser::SourcePosition;
-    use validation::{RuleError, expect_passes_rule, expect_fails_rule};
+    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
 
     #[test]
     fn known_type_names_are_valid() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           query Foo($var: String, $required: [String!]!) {
             user(id: 4) {
               pets { ... on Pet { name }, ...PetFields, ... { name } }
@@ -61,13 +68,15 @@ mod tests {
           fragment PetFields on Pet {
             name
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn unknown_type_names_are_invalid() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           query Foo($var: JumbledUpLetters) {
             user(id: 4) {
               name
@@ -78,11 +87,14 @@ mod tests {
             name
           }
         "#,
-                          &[RuleError::new(&error_message("JumbledUpLetters"),
-                                           &[SourcePosition::new(27, 1, 26)]),
-                            RuleError::new(&error_message("Badger"),
-                                           &[SourcePosition::new(120, 4, 28)]),
-                            RuleError::new(&error_message("Peettt"),
-                                           &[SourcePosition::new(210, 7, 32)])]);
+            &[
+                RuleError::new(
+                    &error_message("JumbledUpLetters"),
+                    &[SourcePosition::new(27, 1, 26)],
+                ),
+                RuleError::new(&error_message("Badger"), &[SourcePosition::new(120, 4, 28)]),
+                RuleError::new(&error_message("Peettt"), &[SourcePosition::new(210, 7, 32)]),
+            ],
+        );
     }
 }

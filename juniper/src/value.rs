@@ -60,7 +60,8 @@ impl Value {
 
     /// Construct an object value.
     pub fn object<K>(o: HashMap<K, Value>) -> Value
-        where K: Into<String> + Eq + Hash
+    where
+        K: Into<String> + Eq + Hash,
     {
         Value::Object(o.into_iter().map(|(k, v)| (k.into(), v)).collect())
     }
@@ -119,14 +120,13 @@ impl ToInputValue for Value {
             Value::List(ref l) => {
                 InputValue::List(l.iter().map(|x| Spanning::unlocated(x.to())).collect())
             }
-            Value::Object(ref o) => {
-                InputValue::Object(o.iter()
-                                       .map(|(k, v)| {
-                                                (Spanning::unlocated(k.clone()),
-                                                 Spanning::unlocated(v.to()))
-                                            })
-                                       .collect())
-            }
+            Value::Object(ref o) => InputValue::Object(
+                o.iter()
+                    .map(|(k, v)| {
+                        (Spanning::unlocated(k.clone()), Spanning::unlocated(v.to()))
+                    })
+                    .collect(),
+            ),
         }
     }
 }

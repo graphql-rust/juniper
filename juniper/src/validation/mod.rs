@@ -18,5 +18,5 @@ pub use self::multi_visitor::{MultiVisitor, MultiVisitorNil};
 pub use self::input_value::validate_input_values;
 
 #[cfg(test)]
-pub use self::test_harness::{expect_passes_rule, expect_fails_rule,
-                             expect_passes_rule_with_schema, expect_fails_rule_with_schema};
+pub use self::test_harness::{expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+                             expect_passes_rule_with_schema};

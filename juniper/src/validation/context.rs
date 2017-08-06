@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use ast::{Document, Definition, Type};
+use ast::{Definition, Document, Type};
 
 use schema::meta::MetaType;
 use schema::model::SchemaType;
@@ -63,9 +63,9 @@ impl<'a> ValidatorContext<'a> {
             fragment_names: document
                 .iter()
                 .filter_map(|def| match *def {
-                                Definition::Fragment(ref frag) => Some(frag.item.name.item),
-                                _ => None,
-                            })
+                    Definition::Fragment(ref frag) => Some(frag.item.name.item),
+                    _ => None,
+                })
                 .collect(),
         }
     }
@@ -88,7 +88,8 @@ impl<'a> ValidatorContext<'a> {
 
     #[doc(hidden)]
     pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
-        where F: FnOnce(&mut ValidatorContext<'a>) -> R
+    where
+        F: FnOnce(&mut ValidatorContext<'a>) -> R,
     {
         if let Some(t) = t {
             self.type_stack
@@ -109,7 +110,8 @@ impl<'a> ValidatorContext<'a> {
 
     #[doc(hidden)]
     pub fn with_pushed_parent_type<F, R>(&mut self, f: F) -> R
-        where F: FnOnce(&mut ValidatorContext<'a>) -> R
+    where
+        F: FnOnce(&mut ValidatorContext<'a>) -> R,
     {
         self.parent_type_stack
             .push(*self.type_stack.last().unwrap_or(&None));
@@ -121,7 +123,8 @@ impl<'a> ValidatorContext<'a> {
 
     #[doc(hidden)]
     pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
-        where F: FnOnce(&mut ValidatorContext<'a>) -> R
+    where
+        F: FnOnce(&mut ValidatorContext<'a>) -> R,
     {
         if let Some(t) = t {
             self.input_type_stack

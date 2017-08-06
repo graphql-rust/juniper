@@ -61,13 +61,15 @@ impl<T: fmt::Debug> Spanning<T> {
 
     #[doc(hidden)]
     pub fn spanning(v: Vec<Spanning<T>>) -> Option<Spanning<Vec<Spanning<T>>>> {
-        if let (Some(start), Some(end)) =
-            (v.first().map(|s| s.start.clone()), v.last().map(|s| s.end.clone())) {
+        if let (Some(start), Some(end)) = (
+            v.first().map(|s| s.start.clone()),
+            v.last().map(|s| s.end.clone()),
+        ) {
             Some(Spanning {
-                     item: v,
-                     start: start,
-                     end: end,
-                 })
+                item: v,
+                start: start,
+                end: end,
+            })
         } else {
             None
         }
@@ -93,7 +95,8 @@ impl<T: fmt::Debug> Spanning<T> {
 }
 
 impl<T> Clone for Spanning<T>
-    where T: Clone + fmt::Debug
+where
+    T: Clone + fmt::Debug,
 {
     fn clone(&self) -> Self {
         Spanning {
@@ -105,17 +108,23 @@ impl<T> Clone for Spanning<T>
 }
 
 impl<T> PartialEq for Spanning<T>
-    where T: PartialEq + fmt::Debug
+where
+    T: PartialEq + fmt::Debug,
 {
     fn eq(&self, other: &Self) -> bool {
         self.start == other.start && self.end == other.end && self.item == other.item
     }
 }
 
-impl<T> Eq for Spanning<T> where T: Eq + fmt::Debug {}
+impl<T> Eq for Spanning<T>
+where
+    T: Eq + fmt::Debug,
+{
+}
 
 impl<T> Hash for Spanning<T>
-    where T: Hash + fmt::Debug
+where
+    T: Hash + fmt::Debug,
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.start.hash(state);

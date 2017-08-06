@@ -1,4 +1,4 @@
-use ast::{Field, InputValue, Directive};
+use ast::{Directive, Field, InputValue};
 use schema::meta::Argument;
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
@@ -18,13 +18,19 @@ pub fn factory<'a>() -> KnownArgumentNames<'a> {
 }
 
 impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
-    fn enter_directive(&mut self,
-                       ctx: &mut ValidatorContext<'a>,
-                       directive: &'a Spanning<Directive>) {
-        self.current_args =
-            ctx.schema
-                .directive_by_name(directive.item.name.item)
-                .map(|d| (ArgumentPosition::Directive(directive.item.name.item), &d.arguments));
+    fn enter_directive(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        directive: &'a Spanning<Directive>,
+    ) {
+        self.current_args = ctx.schema.directive_by_name(directive.item.name.item).map(
+            |d| {
+                (
+                    ArgumentPosition::Directive(directive.item.name.item),
+                    &d.arguments,
+                )
+            },
+        );
     }
 
     fn exit_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {
@@ -36,22 +42,28 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
             .and_then(|t| t.field_by_name(field.item.name.item))
             .and_then(|f| f.arguments.as_ref())
             .map(|args| {
-                     (ArgumentPosition::Field(field.item.name.item,
-                                              ctx.parent_type()
-                                                  .expect("Parent type should exist")
-                                                  .name()
-                                                  .expect("Parent type should be named")),
-                      args)
-                 });
+                (
+                    ArgumentPosition::Field(
+                        field.item.name.item,
+                        ctx.parent_type()
+                            .expect("Parent type should exist")
+                            .name()
+                            .expect("Parent type should be named"),
+                    ),
+                    args,
+                )
+            });
     }
 
     fn exit_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {
         self.current_args = None;
     }
 
-    fn enter_argument(&mut self,
-                      ctx: &mut ValidatorContext<'a>,
-                      &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>)) {
+    fn enter_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>),
+    ) {
         if let Some((ref pos, args)) = self.current_args {
             if args.iter().find(|a| a.name == arg_name.item).is_none() {
                 let message = match *pos {
@@ -72,76 +84,92 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
 fn field_error_message(arg_name: &str, field_name: &str, type_name: &str) -> String {
     format!(
         r#"Unknown argument "{}" on field "{}" of type "{}""#,
-        arg_name, field_name, type_name)
+        arg_name,
+        field_name,
+        type_name
+    )
 }
 
 fn directive_error_message(arg_name: &str, directive_name: &str) -> String {
     format!(
         r#"Unknown argument "{}" on directive "{}""#,
-        arg_name, directive_name)
+        arg_name,
+        directive_name
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{field_error_message, directive_error_message, factory};
+    use super::{directive_error_message, factory, field_error_message};
 
     use parser::SourcePosition;
-    use validation::{RuleError, expect_passes_rule, expect_fails_rule};
+    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
 
     #[test]
     fn single_arg_is_known() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           fragment argOnRequiredArg on Dog {
             doesKnowCommand(dogCommand: SIT)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn multiple_args_are_known() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           fragment multipleArgs on ComplicatedArgs {
             multipleReqs(req1: 1, req2: 2)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn ignores_args_of_unknown_fields() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           fragment argOnUnknownField on Dog {
             unknownField(unknownArg: SIT)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn multiple_args_in_reverse_order_are_known() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           fragment multipleArgsReverseOrder on ComplicatedArgs {
             multipleReqs(req2: 2, req1: 1)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn no_args_on_optional_arg() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           fragment noArgOnOptionalArg on Dog {
             isHousetrained
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn args_are_known_deeply() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           {
             dog {
               doesKnowCommand(dogCommand: SIT)
@@ -154,67 +182,85 @@ mod tests {
               }
             }
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn directive_args_are_known() {
-        expect_passes_rule(factory,
-                           r#"
+        expect_passes_rule(
+            factory,
+            r#"
           {
             dog @skip(if: true)
           }
-        "#);
+        "#,
+        );
     }
 
     #[test]
     fn undirective_args_are_invalid() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           {
             dog @skip(unless: true)
           }
         "#,
-                          &[RuleError::new(&directive_error_message("unless", "skip"),
-                                           &[SourcePosition::new(35, 2, 22)])]);
+            &[
+                RuleError::new(
+                    &directive_error_message("unless", "skip"),
+                    &[SourcePosition::new(35, 2, 22)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn invalid_arg_name() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           fragment invalidArgName on Dog {
             doesKnowCommand(unknown: true)
           }
         "#,
-                          &[RuleError::new(&field_error_message("unknown",
-                                                                "doesKnowCommand",
-                                                                "Dog"),
-                                           &[SourcePosition::new(72, 2, 28)])]);
+            &[
+                RuleError::new(
+                    &field_error_message("unknown", "doesKnowCommand", "Dog"),
+                    &[SourcePosition::new(72, 2, 28)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn unknown_args_amongst_known_args() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           fragment oneGoodArgOneInvalidArg on Dog {
             doesKnowCommand(whoknows: 1, dogCommand: SIT, unknown: true)
           }
         "#,
-                          &[RuleError::new(&field_error_message("whoknows",
-                                                                "doesKnowCommand",
-                                                                "Dog"),
-                                           &[SourcePosition::new(81, 2, 28)]),
-                            RuleError::new(&field_error_message("unknown",
-                                                                "doesKnowCommand",
-                                                                "Dog"),
-                                           &[SourcePosition::new(111, 2, 58)])]);
+            &[
+                RuleError::new(
+                    &field_error_message("whoknows", "doesKnowCommand", "Dog"),
+                    &[SourcePosition::new(81, 2, 28)],
+                ),
+                RuleError::new(
+                    &field_error_message("unknown", "doesKnowCommand", "Dog"),
+                    &[SourcePosition::new(111, 2, 58)],
+                ),
+            ],
+        );
     }
 
     #[test]
     fn unknown_args_deeply() {
-        expect_fails_rule(factory,
-                          r#"
+        expect_fails_rule(
+            factory,
+            r#"
           {
             dog {
               doesKnowCommand(unknown: true)
@@ -228,13 +274,16 @@ mod tests {
             }
           }
         "#,
-                          &[RuleError::new(&field_error_message("unknown",
-                                                                "doesKnowCommand",
-                                                                "Dog"),
-                                           &[SourcePosition::new(61, 3, 30)]),
-                            RuleError::new(&field_error_message("unknown",
-                                                                "doesKnowCommand",
-                                                                "Dog"),
-                                           &[SourcePosition::new(193, 8, 34)])]);
+            &[
+                RuleError::new(
+                    &field_error_message("unknown", "doesKnowCommand", "Dog"),
+                    &[SourcePosition::new(61, 3, 30)],
+                ),
+                RuleError::new(
+                    &field_error_message("unknown", "doesKnowCommand", "Dog"),
+                    &[SourcePosition::new(193, 8, 34)],
+                ),
+            ],
+        );
     }
 }

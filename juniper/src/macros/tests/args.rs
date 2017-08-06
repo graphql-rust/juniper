@@ -78,7 +78,8 @@ graphql_object!(Root: () |&self| {
 });
 
 fn run_args_info_query<F>(field_name: &str, f: F)
-    where F: Fn(&Vec<Value>) -> ()
+where
+    F: Fn(&Vec<Value>) -> (),
 {
     let doc = r#"
     {
@@ -102,8 +103,8 @@ fn run_args_info_query<F>(field_name: &str, f: F)
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -126,13 +127,13 @@ fn run_args_info_query<F>(field_name: &str, f: F)
     let field = fields
         .into_iter()
         .filter(|f| {
-                    f.as_object_value()
-                        .expect("Field not an object")
-                        .get("name")
-                        .expect("name field missing from field")
-                        .as_string_value()
-                        .expect("name is not a string") == field_name
-                })
+            f.as_object_value()
+                .expect("Field not an object")
+                .get("name")
+                .expect("name field missing from field")
+                .as_string_value()
+                .expect("name is not a string") == field_name
+        })
         .next()
         .expect("Field not found")
         .as_object_value()

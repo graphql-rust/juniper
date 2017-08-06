@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-use ast::{InputValue, Selection, Directive, FromInputValue};
+use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
 use value::Value;
 
 use schema::meta::{Argument, MetaType};
-use executor::{Executor, Registry, ExecutionResult};
+use executor::{ExecutionResult, Executor, Registry};
 use parser::Spanning;
 
 /// GraphQL type kind
@@ -71,9 +71,10 @@ pub struct Arguments<'a> {
 
 impl<'a> Arguments<'a> {
     #[doc(hidden)]
-    pub fn new(mut args: Option<HashMap<&'a str, InputValue>>,
-               meta_args: &'a Option<Vec<Argument>>)
-               -> Arguments<'a> {
+    pub fn new(
+        mut args: Option<HashMap<&'a str, InputValue>>,
+        meta_args: &'a Option<Vec<Argument>>,
+    ) -> Arguments<'a> {
         if meta_args.is_some() && args.is_none() {
             args = Some(HashMap::new());
         }
@@ -101,15 +102,14 @@ impl<'a> Arguments<'a> {
     /// Returns `Some` if the argument is present _and_ type conversion
     /// succeeeds.
     pub fn get<T>(&self, key: &str) -> Option<T>
-        where T: FromInputValue
+    where
+        T: FromInputValue,
     {
         match self.args {
-            Some(ref args) => {
-                match args.get(key) {
-                    Some(v) => Some(v.convert().unwrap()),
-                    None => None,
-                }
-            }
+            Some(ref args) => match args.get(key) {
+                Some(v) => Some(v.convert().unwrap()),
+                None => None,
+            },
             None => None,
         }
     }
@@ -241,11 +241,12 @@ pub trait GraphQLType: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_field(&self,
-                     field_name: &str,
-                     arguments: &Arguments,
-                     executor: &Executor<Self::Context>)
-                     -> ExecutionResult {
+    fn resolve_field(
+        &self,
+        field_name: &str,
+        arguments: &Arguments,
+        executor: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         panic!("resolve_field must be implemented by object types");
     }
 
@@ -256,11 +257,12 @@ pub trait GraphQLType: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn resolve_into_type(&self,
-                         type_name: &str,
-                         selection_set: Option<&[Selection]>,
-                         executor: &Executor<Self::Context>)
-                         -> ExecutionResult {
+    fn resolve_into_type(
+        &self,
+        type_name: &str,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<Self::Context>,
+    ) -> ExecutionResult {
         if Self::name().unwrap() == type_name {
             Ok(self.resolve(selection_set, executor))
         } else {
@@ -286,10 +288,11 @@ pub trait GraphQLType: Sized {
     /// The default implementation uses `resolve_field` to resolve all fields,
     /// including those through fragment expansion, for object types. For
     /// non-object types, this method panics.
-    fn resolve(&self,
-               selection_set: Option<&[Selection]>,
-               executor: &Executor<Self::Context>)
-               -> Value {
+    fn resolve(
+        &self,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<Self::Context>,
+    ) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = HashMap::new();
             resolve_selection_set_into(self, selection_set, executor, &mut result);
@@ -300,11 +303,13 @@ pub trait GraphQLType: Sized {
     }
 }
 
-fn resolve_selection_set_into<T, CtxT>(instance: &T,
-                                       selection_set: &[Selection],
-                                       executor: &Executor<CtxT>,
-                                       result: &mut HashMap<String, Value>)
-    where T: GraphQLType<Context = CtxT>
+fn resolve_selection_set_into<T, CtxT>(
+    instance: &T,
+    selection_set: &[Selection],
+    executor: &Executor<CtxT>,
+    result: &mut HashMap<String, Value>,
+) where
+    T: GraphQLType<Context = CtxT>,
 {
     let meta_type = executor
         .schema()
@@ -314,10 +319,10 @@ fn resolve_selection_set_into<T, CtxT>(instance: &T,
     for selection in selection_set {
         match *selection {
             Selection::Field(Spanning {
-                                 item: ref f,
-                                 start: ref start_pos,
-                                 ..
-                             }) => {
+                item: ref f,
+                start: ref start_pos,
+                ..
+            }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
@@ -325,32 +330,44 @@ fn resolve_selection_set_into<T, CtxT>(instance: &T,
                 let response_name = &f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    result.insert((*response_name).to_owned(),
-                                  Value::string(instance.concrete_type_name(executor.context())));
+                    result.insert(
+                        (*response_name).to_owned(),
+                        Value::string(instance.concrete_type_name(executor.context())),
+                    );
                     continue;
                 }
 
-                let meta_field = meta_type.field_by_name(f.name.item)
-                    .unwrap_or_else(|| panic!(format!("Field {} not found on type {:?}", f.name.item, meta_type.name())));
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
+                });
 
                 let exec_vars = executor.variables();
 
-                let sub_exec =
-                    executor.sub_executor(Some(response_name),
-                                          start_pos.clone(),
-                                          f.selection_set.as_ref().map(|v| &v[..]));
+                let sub_exec = executor.sub_executor(
+                    Some(response_name),
+                    start_pos.clone(),
+                    f.selection_set.as_ref().map(|v| &v[..]),
+                );
 
-                let field_result = instance.resolve_field(f.name.item,
-                                                          &Arguments::new(f.arguments
-                                                                              .as_ref()
-                                                                              .map(|m| {
-                    m.item
-                        .iter()
-                        .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
-                        .collect()
-                }),
-                                                                          &meta_field.arguments),
-                                                          &sub_exec);
+                let field_result = instance.resolve_field(
+                    f.name.item,
+                    &Arguments::new(
+                        f.arguments.as_ref().map(|m| {
+                            m.item
+                                .iter()
+                                .map(|&(ref k, ref v)| {
+                                    (k.item, v.item.clone().into_const(exec_vars))
+                                })
+                                .collect()
+                        }),
+                        &meta_field.arguments,
+                    ),
+                    &sub_exec,
+                );
 
                 match field_result {
                     Ok(v) => merge_key_into(result, response_name, v),
@@ -360,34 +377,37 @@ fn resolve_selection_set_into<T, CtxT>(instance: &T,
                     }
                 }
             }
-            Selection::FragmentSpread(Spanning { item: ref spread, .. }) => {
+            Selection::FragmentSpread(Spanning {
+                item: ref spread, ..
+            }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
 
                 let fragment = &executor
-                                    .fragment_by_name(spread.name.item)
-                                    .expect("Fragment could not be found");
+                    .fragment_by_name(spread.name.item)
+                    .expect("Fragment could not be found");
 
                 resolve_selection_set_into(instance, &fragment.selection_set[..], executor, result);
             }
             Selection::InlineFragment(Spanning {
-                                          item: ref fragment,
-                                          start: ref start_pos,
-                                          ..
-                                      }) => {
+                item: ref fragment,
+                start: ref start_pos,
+                ..
+            }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }
 
-                let sub_exec =
-                    executor
-                        .sub_executor(None, start_pos.clone(), Some(&fragment.selection_set[..]));
+                let sub_exec = executor
+                    .sub_executor(None, start_pos.clone(), Some(&fragment.selection_set[..]));
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance.resolve_into_type(type_condition.item,
-                                                                Some(&fragment.selection_set[..]),
-                                                                &sub_exec);
+                    let sub_result = instance.resolve_into_type(
+                        type_condition.item,
+                        Some(&fragment.selection_set[..]),
+                        &sub_exec,
+                    );
 
                     if let Ok(Value::Object(mut hash_map)) = sub_result {
                         for (k, v) in hash_map.drain() {
@@ -397,10 +417,12 @@ fn resolve_selection_set_into<T, CtxT>(instance: &T,
                         sub_exec.push_error(e, start_pos.clone());
                     }
                 } else {
-                    resolve_selection_set_into(instance,
-                                               &fragment.selection_set[..],
-                                               &sub_exec,
-                                               result);
+                    resolve_selection_set_into(
+                        instance,
+                        &fragment.selection_set[..],
+                        &sub_exec,
+                        result,
+                    );
                 }
             }
         }
@@ -409,7 +431,11 @@ fn resolve_selection_set_into<T, CtxT>(instance: &T,
 
 fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) -> bool {
     if let Some(ref directives) = *directives {
-        for &Spanning { item: ref directive, .. } in directives {
+        for &Spanning {
+            item: ref directive,
+            ..
+        } in directives
+        {
             let condition: bool = directive
                 .arguments
                 .iter()
@@ -419,7 +445,8 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
                 .unwrap();
 
             if (directive.name.item == "skip" && condition) ||
-               (directive.name.item == "include" && !condition) {
+                (directive.name.item == "include" && !condition)
+            {
                 return true;
             }
         }
@@ -429,14 +456,12 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
 
 fn merge_key_into(result: &mut HashMap<String, Value>, response_name: &str, value: Value) {
     match result.entry(response_name.to_owned()) {
-        Entry::Occupied(mut e) => {
-            match (e.get_mut().as_mut_object_value(), value) {
-                (Some(dest_obj), Value::Object(src_obj)) => {
-                    merge_maps(dest_obj, src_obj);
-                }
-                _ => {}
+        Entry::Occupied(mut e) => match (e.get_mut().as_mut_object_value(), value) {
+            (Some(dest_obj), Value::Object(src_obj)) => {
+                merge_maps(dest_obj, src_obj);
             }
-        }
+            _ => {}
+        },
         Entry::Vacant(e) => {
             e.insert(value);
         }

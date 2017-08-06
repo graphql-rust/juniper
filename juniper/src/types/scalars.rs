@@ -2,7 +2,7 @@ use std::convert::From;
 use std::marker::PhantomData;
 use std::ops::Deref;
 
-use ast::{InputValue, Selection, FromInputValue, ToInputValue};
+use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use value::Value;
 
 use schema::meta::MetaType;
@@ -156,7 +156,9 @@ pub struct EmptyMutation<T> {
 impl<T> EmptyMutation<T> {
     /// Construct a new empty mutation
     pub fn new() -> EmptyMutation<T> {
-        EmptyMutation { phantom: PhantomData }
+        EmptyMutation {
+            phantom: PhantomData,
+        }
     }
 }
 

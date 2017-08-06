@@ -1,4 +1,4 @@
-use tests::model::{Character, Human, Droid, Database, Episode};
+use tests::model::{Character, Database, Droid, Episode, Human};
 use executor::Context;
 
 impl Context for Database {}

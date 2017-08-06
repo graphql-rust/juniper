@@ -1,12 +1,13 @@
-use ast::{Selection, InputValue, ToInputValue, FromInputValue};
+use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use value::Value;
 
 use schema::meta::MetaType;
-use executor::{Executor, Registry, ExecutionResult};
+use executor::{ExecutionResult, Executor, Registry};
 use types::base::{Arguments, GraphQLType};
 
 impl<T, CtxT> GraphQLType for Box<T>
-    where T: GraphQLType<Context = CtxT>
+where
+    T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
 
@@ -18,19 +19,21 @@ impl<T, CtxT> GraphQLType for Box<T>
         T::meta(registry)
     }
 
-    fn resolve_into_type(&self,
-                         name: &str,
-                         selection_set: Option<&[Selection]>,
-                         executor: &Executor<CtxT>)
-                         -> ExecutionResult {
+    fn resolve_into_type(
+        &self,
+        name: &str,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> ExecutionResult {
         (**self).resolve_into_type(name, selection_set, executor)
     }
 
-    fn resolve_field(&self,
-                     field: &str,
-                     args: &Arguments,
-                     executor: &Executor<CtxT>)
-                     -> ExecutionResult {
+    fn resolve_field(
+        &self,
+        field: &str,
+        args: &Arguments,
+        executor: &Executor<CtxT>,
+    ) -> ExecutionResult {
         (**self).resolve_field(field, args, executor)
     }
 
@@ -40,7 +43,8 @@ impl<T, CtxT> GraphQLType for Box<T>
 }
 
 impl<T> FromInputValue for Box<T>
-    where T: FromInputValue
+where
+    T: FromInputValue,
 {
     fn from(v: &InputValue) -> Option<Box<T>> {
         match <T as FromInputValue>::from(v) {
@@ -51,7 +55,8 @@ impl<T> FromInputValue for Box<T>
 }
 
 impl<T> ToInputValue for Box<T>
-    where T: ToInputValue
+where
+    T: ToInputValue,
 {
     fn to(&self) -> InputValue {
         (**self).to()
@@ -59,7 +64,8 @@ impl<T> ToInputValue for Box<T>
 }
 
 impl<'a, T, CtxT> GraphQLType for &'a T
-    where T: GraphQLType<Context = CtxT>
+where
+    T: GraphQLType<Context = CtxT>,
 {
     type Context = CtxT;
 
@@ -71,19 +77,21 @@ impl<'a, T, CtxT> GraphQLType for &'a T
         T::meta(registry)
     }
 
-    fn resolve_into_type(&self,
-                         name: &str,
-                         selection_set: Option<&[Selection]>,
-                         executor: &Executor<CtxT>)
-                         -> ExecutionResult {
+    fn resolve_into_type(
+        &self,
+        name: &str,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<CtxT>,
+    ) -> ExecutionResult {
         (**self).resolve_into_type(name, selection_set, executor)
     }
 
-    fn resolve_field(&self,
-                     field: &str,
-                     args: &Arguments,
-                     executor: &Executor<CtxT>)
-                     -> ExecutionResult {
+    fn resolve_field(
+        &self,
+        field: &str,
+        args: &Arguments,
+        executor: &Executor<CtxT>,
+    ) -> ExecutionResult {
         (**self).resolve_field(field, args, executor)
     }
 
@@ -93,7 +101,8 @@ impl<'a, T, CtxT> GraphQLType for &'a T
 }
 
 impl<'a, T> ToInputValue for &'a T
-    where T: ToInputValue
+where
+    T: ToInputValue,
 {
     fn to(&self) -> InputValue {
         (**self).to()

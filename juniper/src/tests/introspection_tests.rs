@@ -21,14 +21,31 @@ fn test_query_type_name() {
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
-        Ok((Value::object(vec![
-                ("__schema", Value::object(vec![
-                    ("queryType", Value::object(vec![
-                        ("name", Value::string("Query")),
-                    ].into_iter().collect())),
-                ].into_iter().collect())),
-            ].into_iter().collect()),
-            vec![])));
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "__schema",
+                        Value::object(
+                            vec![
+                                (
+                                    "queryType",
+                                    Value::object(
+                                        vec![("name", Value::string("Query"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[test]
@@ -44,12 +61,19 @@ fn test_specific_type_name() {
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
-        Ok((Value::object(vec![
-                ("__type", Value::object(vec![
-                    ("name", Value::string("Droid")),
-                ].into_iter().collect())),
-            ].into_iter().collect()),
-            vec![])));
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "__type",
+                        Value::object(vec![("name", Value::string("Droid"))].into_iter().collect()),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[test]
@@ -67,13 +91,25 @@ fn test_specific_object_type_name_and_kind() {
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
-        Ok((Value::object(vec![
-                ("__type", Value::object(vec![
-                    ("name", Value::string("Droid")),
-                    ("kind", Value::string("OBJECT")),
-                ].into_iter().collect())),
-            ].into_iter().collect()),
-            vec![])));
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "__type",
+                        Value::object(
+                            vec![
+                                ("name", Value::string("Droid")),
+                                ("kind", Value::string("OBJECT")),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[test]
@@ -91,13 +127,25 @@ fn test_specific_interface_type_name_and_kind() {
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
-        Ok((Value::object(vec![
-                ("__type", Value::object(vec![
-                    ("name", Value::string("Character")),
-                    ("kind", Value::string("INTERFACE")),
-                ].into_iter().collect())),
-            ].into_iter().collect()),
-            vec![])));
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "__type",
+                        Value::object(
+                            vec![
+                                ("name", Value::string("Character")),
+                                ("kind", Value::string("INTERFACE")),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[test]
@@ -116,13 +164,29 @@ fn test_documentation() {
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
-            Value::object(vec![
-                ("__type", Value::object(vec![
-                    ("name", Value::string("Droid")),
-                    ("description", Value::string("A mechanical creature in the Star Wars universe.")),
-                ].into_iter().collect())),
-            ].into_iter().collect()),
-            vec![])));
+            Value::object(
+                vec![
+                    (
+                        "__type",
+                        Value::object(
+                            vec![
+                                ("name", Value::string("Droid")),
+                                (
+                                    "description",
+                                    Value::string(
+                                        "A mechanical creature in the Star Wars universe.",
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[test]
@@ -160,19 +224,14 @@ fn test_possible_types() {
         .expect("'possibleTypes' not a list")
         .iter()
         .map(|t| {
-                 t.as_object_value()
-                     .expect("possible type not an object")
-                     .get("name")
-                     .expect("'name' not present in type")
-                     .as_string_value()
-                     .expect("'name' not a string")
-             })
+            t.as_object_value()
+                .expect("possible type not an object")
+                .get("name")
+                .expect("'name' not present in type")
+                .as_string_value()
+                .expect("'name' not a string")
+        })
         .collect::<HashSet<_>>();
 
-    assert_eq!(
-        possible_types,
-        vec![
-            "Human",
-            "Droid",
-        ].into_iter().collect());
+    assert_eq!(possible_types, vec!["Human", "Droid"].into_iter().collect());
 }

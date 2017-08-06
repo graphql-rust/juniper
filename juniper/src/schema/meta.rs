@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use ast::{InputValue, FromInputValue, Type};
+use ast::{FromInputValue, InputValue, Type};
 use types::base::TypeKind;
 
 /// Scalar type metadata
@@ -189,12 +189,24 @@ impl<'a> MetaType<'a> {
     /// Lists, nullable wrappers, and placeholders don't have names.
     pub fn description(&self) -> Option<&String> {
         match *self {
-            MetaType::Scalar(ScalarMeta { ref description, .. }) |
-            MetaType::Object(ObjectMeta { ref description, .. }) |
-            MetaType::Enum(EnumMeta { ref description, .. }) |
-            MetaType::Interface(InterfaceMeta { ref description, .. }) |
-            MetaType::Union(UnionMeta { ref description, .. }) |
-            MetaType::InputObject(InputObjectMeta { ref description, .. }) => description.as_ref(),
+            MetaType::Scalar(ScalarMeta {
+                ref description, ..
+            }) |
+            MetaType::Object(ObjectMeta {
+                ref description, ..
+            }) |
+            MetaType::Enum(EnumMeta {
+                ref description, ..
+            }) |
+            MetaType::Interface(InterfaceMeta {
+                ref description, ..
+            }) |
+            MetaType::Union(UnionMeta {
+                ref description, ..
+            }) |
+            MetaType::InputObject(InputObjectMeta {
+                ref description, ..
+            }) => description.as_ref(),
             _ => None,
         }
     }
@@ -235,9 +247,9 @@ impl<'a> MetaType<'a> {
     /// Only input objects have input fields. This method always returns `None` for other types.
     pub fn input_field_by_name(&self, name: &str) -> Option<&Argument> {
         match *self {
-            MetaType::InputObject(InputObjectMeta { ref input_fields, .. }) => {
-                input_fields.iter().find(|f| f.name == name)
-            }
+            MetaType::InputObject(InputObjectMeta {
+                ref input_fields, ..
+            }) => input_fields.iter().find(|f| f.name == name),
             _ => None,
         }
     }
@@ -254,13 +266,11 @@ impl<'a> MetaType<'a> {
             MetaType::List(ListMeta { ref of_type }) => {
                 Type::NonNullList(Box::new(of_type.clone()))
             }
-            MetaType::Nullable(NullableMeta { ref of_type }) => {
-                match *of_type {
-                    Type::NonNullNamed(inner) => Type::Named(inner),
-                    Type::NonNullList(ref inner) => Type::List(inner.clone()),
-                    ref t => t.clone(),
-                }
-            }
+            MetaType::Nullable(NullableMeta { ref of_type }) => match *of_type {
+                Type::NonNullNamed(inner) => Type::Named(inner),
+                Type::NonNullList(ref inner) => Type::List(inner.clone()),
+                ref t => t.clone(),
+            },
             MetaType::Placeholder(PlaceholderMeta { ref of_type }) => of_type.clone(),
         }
     }
@@ -273,9 +283,15 @@ impl<'a> MetaType<'a> {
     /// Only scalars, enums, and input objects have parse functions.
     pub fn input_value_parse_fn(&self) -> Option<&Box<Fn(&InputValue) -> bool + Send + Sync>> {
         match *self {
-            MetaType::Scalar(ScalarMeta { ref try_parse_fn, .. }) |
-            MetaType::Enum(EnumMeta { ref try_parse_fn, .. }) |
-            MetaType::InputObject(InputObjectMeta { ref try_parse_fn, .. }) => Some(try_parse_fn),
+            MetaType::Scalar(ScalarMeta {
+                ref try_parse_fn, ..
+            }) |
+            MetaType::Enum(EnumMeta {
+                ref try_parse_fn, ..
+            }) |
+            MetaType::InputObject(InputObjectMeta {
+                ref try_parse_fn, ..
+            }) => Some(try_parse_fn),
             _ => None,
         }
     }
@@ -285,9 +301,7 @@ impl<'a> MetaType<'a> {
     /// Objects, interfaces, and unions are composite.
     pub fn is_composite(&self) -> bool {
         match *self {
-            MetaType::Object(_) |
-            MetaType::Interface(_) |
-            MetaType::Union(_) => true,
+            MetaType::Object(_) | MetaType::Interface(_) | MetaType::Union(_) => true,
             _ => false,
         }
     }
@@ -297,8 +311,7 @@ impl<'a> MetaType<'a> {
     /// Only enums and scalars are leaf types.
     pub fn is_leaf(&self) -> bool {
         match *self {
-            MetaType::Enum(_) |
-            MetaType::Scalar(_) => true,
+            MetaType::Enum(_) | MetaType::Scalar(_) => true,
             _ => false,
         }
     }
@@ -308,8 +321,7 @@ impl<'a> MetaType<'a> {
     /// Only interfaces and unions are abstract types.
     pub fn is_abstract(&self) -> bool {
         match *self {
-            MetaType::Interface(_) |
-            MetaType::Union(_) => true,
+            MetaType::Interface(_) | MetaType::Union(_) => true,
             _ => false,
         }
     }
@@ -319,9 +331,7 @@ impl<'a> MetaType<'a> {
     /// Only scalars, enums, and input objects are input types.
     pub fn is_input(&self) -> bool {
         match *self {
-            MetaType::Scalar(_) |
-            MetaType::Enum(_) |
-            MetaType::InputObject(_) => true,
+            MetaType::Scalar(_) | MetaType::Enum(_) | MetaType::InputObject(_) => true,
             _ => false,
         }
     }
@@ -490,9 +500,10 @@ impl<'a> UnionMeta<'a> {
 
 impl<'a> InputObjectMeta<'a> {
     /// Build a new input type with the specified name and input fields
-    pub fn new<T: FromInputValue>(name: &'a str,
-                                  input_fields: &[Argument<'a>])
-                                  -> InputObjectMeta<'a> {
+    pub fn new<T: FromInputValue>(
+        name: &'a str,
+        input_fields: &[Argument<'a>],
+    ) -> InputObjectMeta<'a> {
         InputObjectMeta {
             name: name,
             description: None,

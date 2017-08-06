@@ -96,15 +96,17 @@ There's also a built-in [GraphiQL][4] handler included.
 extern crate serde_json;
 extern crate juniper;
 extern crate urlencoded;
-#[macro_use] extern crate iron;
-#[cfg(test)] extern crate iron_test;
+#[macro_use]
+extern crate iron;
+#[cfg(test)]
+extern crate iron_test;
 
 use iron::prelude::*;
 use iron::middleware::Handler;
 use iron::mime::Mime;
 use iron::status;
 use iron::method;
-use urlencoded::{UrlEncodedQuery, UrlDecodingError};
+use urlencoded::{UrlDecodingError, UrlEncodedQuery};
 
 use std::io::Read;
 use std::error::Error;
@@ -112,7 +114,7 @@ use std::fmt;
 
 use serde_json::error::Error as SerdeError;
 
-use juniper::{InputValue, GraphQLType, RootNode};
+use juniper::{GraphQLType, InputValue, RootNode};
 use juniper::http;
 
 /// Handler that executes GraphQL queries in the given schema
@@ -126,10 +128,11 @@ use juniper::http;
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
 pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
-    where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
-          CtxT: 'static,
-          Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+where
+    CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
+    CtxT: 'static,
+    Query: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT> + Send + Sync + 'static,
 {
     context_factory: CtxFactory,
     root_node: RootNode<'a, Query, Mutation>,
@@ -144,39 +147,39 @@ pub struct GraphiQLHandler {
 fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
     if values.len() == 1 {
         Ok(values.remove(0))
+    } else {
+        Err(
+            GraphQLIronError::InvalidData("Duplicate URL query parameter").into(),
+        )
     }
-        else {
-            Err(GraphQLIronError::InvalidData("Duplicate URL query parameter").into())
-        }
 }
 
 fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
     if let Some(values) = params {
         get_single_value(values).map(Some)
+    } else {
+        Ok(None)
     }
-        else {
-            Ok(None)
-        }
 }
 
 fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputValue>> {
     if let Some(values) = params {
-        Ok(serde_json::from_str::<InputValue>(get_single_value(values)?.as_ref())
-            .map(Some)
+        Ok(serde_json::from_str::<InputValue>(
+            get_single_value(values)?.as_ref(),
+        ).map(Some)
             .map_err(GraphQLIronError::Serde)?)
+    } else {
+        Ok(None)
     }
-        else {
-            Ok(None)
-        }
 }
 
 
-impl<'a, CtxFactory, Query, Mutation, CtxT>
-GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
-    where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
-          CtxT: 'static,
-          Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static,
+impl<'a, CtxFactory, Query, Mutation, CtxT> GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
+where
+    CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
+    CtxT: 'static,
+    Query: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
@@ -201,25 +204,31 @@ GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
         let operation_name = parse_url_param(url_query_string.remove("operationName"))?;
         let variables = parse_variable_param(url_query_string.remove("variables"))?;
 
-        Ok(http::GraphQLRequest::new(input_query, operation_name, variables))
+        Ok(http::GraphQLRequest::new(
+            input_query,
+            operation_name,
+            variables,
+        ))
     }
 
     fn handle_post(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let mut request_payload = String::new();
         itry!(req.body.read_to_string(&mut request_payload));
 
-        Ok(serde_json::from_str::<http::GraphQLRequest>(request_payload.as_str())
-            .map_err(|err| GraphQLIronError::Serde(err))?)
+        Ok(serde_json::from_str::<http::GraphQLRequest>(
+            request_payload.as_str(),
+        ).map_err(|err| GraphQLIronError::Serde(err))?)
     }
 
     fn execute(&self, context: &CtxT, request: http::GraphQLRequest) -> IronResult<Response> {
-        let response = request.execute(
-            &self.root_node,
-            context,
-        );
+        let response = request.execute(&self.root_node, context);
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();
-        let status = if response.is_ok() { status::Ok } else { status::BadRequest };
+        let status = if response.is_ok() {
+            status::Ok
+        } else {
+            status::BadRequest
+        };
         Ok(Response::with((content_type, status, json)))
     }
 }
@@ -236,13 +245,14 @@ impl GraphiQLHandler {
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, CtxT>
-Handler
-for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
-    where CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
-          CtxT: 'static,
-          Query: GraphQLType<Context=CtxT> + Send + Sync + 'static,
-          Mutation: GraphQLType<Context=CtxT> + Send + Sync + 'static, 'a: 'static,
+impl<'a, CtxFactory, Query, Mutation, CtxT> Handler
+    for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
+where
+    CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
+    CtxT: 'static,
+    Query: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
         let context = (self.context_factory)(req);
@@ -250,7 +260,7 @@ for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
         let graphql_request = match req.method {
             method::Get => self.handle_get(&mut req)?,
             method::Post => self.handle_post(&mut req)?,
-            _ => return Ok(Response::with((status::MethodNotAllowed)))
+            _ => return Ok(Response::with((status::MethodNotAllowed))),
         };
 
         self.execute(&context, graphql_request)
@@ -318,15 +328,14 @@ mod tests {
     use iron::{Handler, Headers};
 
     use juniper::tests::model::Database;
-    use ::http::tests as http_tests;
+    use http::tests as http_tests;
     use juniper::EmptyMutation;
 
     use super::GraphQLHandler;
 
     struct TestIronIntegration;
 
-    impl http_tests::HTTPIntegration for TestIronIntegration
-    {
+    impl http_tests::HTTPIntegration for TestIronIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             make_test_response(request::get(
                 &("http://localhost:3000".to_owned() + url),
@@ -358,11 +367,17 @@ mod tests {
 
     fn make_test_response(response: IronResult<Response>) -> http_tests::TestResponse {
         let response = response.expect("Error response from GraphQL handler");
-        let status_code = response.status.expect("No status code returned from handler").to_u16() as i32;
+        let status_code = response
+            .status
+            .expect("No status code returned from handler")
+            .to_u16() as i32;
         let content_type = String::from_utf8(
-            response.headers.get_raw("content-type")
-                .expect("No content type header from handler")[0].clone())
-            .expect("Content-type header invalid UTF-8");
+            response
+                .headers
+                .get_raw("content-type")
+                .expect("No content type header from handler")[0]
+                .clone(),
+        ).expect("Content-type header invalid UTF-8");
         let body = response::extract_body_to_string(response);
 
         http_tests::TestResponse {

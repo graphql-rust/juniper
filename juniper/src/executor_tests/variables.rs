@@ -119,7 +119,8 @@ graphql_object!(TestType: () |&self| {
 });
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
-    where F: Fn(&HashMap<String, Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -135,7 +136,8 @@ fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 }
 
 fn run_query<F>(query: &str, f: F)
-    where F: Fn(&HashMap<String, Value>) -> ()
+where
+    F: Fn(&HashMap<String, Value>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -237,9 +239,8 @@ fn variable_error_on_nested_non_null() {
             ("b", InputValue::string("bar")),
             ("c", InputValue::null()),
         ].into_iter().collect()))
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -258,9 +259,8 @@ fn variable_error_on_incorrect_type() {
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![
         ("input".to_owned(), InputValue::string("foo bar")),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -282,9 +282,8 @@ fn variable_error_on_omit_non_null() {
             ("a", InputValue::string("foo")),
             ("b", InputValue::string("bar")),
         ].into_iter().collect()))
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -308,9 +307,8 @@ fn variable_multiple_errors_with_nesting() {
                 ("a", InputValue::string("foo")),
             ].into_iter().collect())),
         ].into_iter().collect()))
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -338,9 +336,8 @@ fn variable_error_on_additional_field() {
             ("c", InputValue::string("baz")),
             ("extra", InputValue::string("dog")),
         ].into_iter().collect()))
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -373,12 +370,14 @@ fn allow_nullable_inputs_to_be_omitted_in_variable() {
 
 #[test]
 fn allow_nullable_inputs_to_be_explicitly_null() {
-    run_query(r#"{ fieldWithNullableStringInput(input: null) }"#,
-              |result| {
-        assert_eq!(
+    run_query(
+        r#"{ fieldWithNullableStringInput(input: null) }"#,
+        |result| {
+            assert_eq!(
                 result.get("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#)));
-    });
+        },
+    );
 }
 
 #[test]
@@ -411,12 +410,14 @@ fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
 
 #[test]
 fn allow_nullable_inputs_to_be_set_to_value_directly() {
-    run_query(r#"{ fieldWithNullableStringInput(input: "a") }"#,
-              |result| {
-        assert_eq!(
+    run_query(
+        r#"{ fieldWithNullableStringInput(input: "a") }"#,
+        |result| {
+            assert_eq!(
                 result.get("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"Some("a")"#)));
-    });
+        },
+    );
 }
 
 #[test]
@@ -443,9 +444,8 @@ fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![
         ("value".to_owned(), InputValue::null()),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -473,63 +473,68 @@ fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
 
 #[test]
 fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
-    run_query(r#"{ fieldWithNonNullableStringInput(input: "a") }"#,
-              |result| {
-        assert_eq!(
+    run_query(
+        r#"{ fieldWithNonNullableStringInput(input: "a") }"#,
+        |result| {
+            assert_eq!(
                 result.get("fieldWithNonNullableStringInput"),
                 Some(&Value::string(r#""a""#)));
-    });
+        },
+    );
 }
 
 #[test]
 fn allow_lists_to_be_null() {
-    run_variable_query(r#"query q($input: [String]) { list(input: $input) }"#,
-                       vec![
+    run_variable_query(
+        r#"query q($input: [String]) { list(input: $input) }"#,
+        vec![
             ("input".to_owned(), InputValue::null()),
-        ]
-                               .into_iter()
-                               .collect(),
-                       |result| {
-        assert_eq!(
+        ].into_iter()
+            .collect(),
+        |result| {
+            assert_eq!(
                 result.get("list"),
                 Some(&Value::string(r#"None"#)));
-    });
+        },
+    );
 }
 
 #[test]
 fn allow_lists_to_contain_values() {
-    run_variable_query(r#"query q($input: [String]) { list(input: $input) }"#,
-                       vec![
+    run_variable_query(
+        r#"query q($input: [String]) { list(input: $input) }"#,
+        vec![
             ("input".to_owned(), InputValue::list(vec![
                 InputValue::string("A"),
             ])),
-        ]
-                               .into_iter()
-                               .collect(),
-                       |result| {
-        assert_eq!(
+        ].into_iter()
+            .collect(),
+        |result| {
+            assert_eq!(
                 result.get("list"),
                 Some(&Value::string(r#"Some([Some("A")])"#)));
-    });
+        },
+    );
 }
 
 #[test]
 fn allow_lists_to_contain_null() {
-    run_variable_query(r#"query q($input: [String]) { list(input: $input) }"#,
-                       vec![
+    run_variable_query(
+        r#"query q($input: [String]) { list(input: $input) }"#,
+        vec![
             ("input".to_owned(), InputValue::list(vec![
                 InputValue::string("A"),
                 InputValue::null(),
                 InputValue::string("B"),
             ])),
-        ]
-                               .into_iter()
-                               .collect(),
-                       |result| {
-        assert_eq!(
+        ].into_iter()
+            .collect(),
+        |result| {
+            assert_eq!(
                 result.get("list"),
                 Some(&Value::string(r#"Some([Some("A"), None, Some("B")])"#)));
-    });
+        },
+    );
 }
 
 #[test]
@@ -539,9 +544,8 @@ fn does_not_allow_non_null_lists_to_be_null() {
     let query = r#"query q($input: [String]!) { nnList(input: $input) }"#;
     let vars = vec![
         ("input".to_owned(), InputValue::null()),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -631,9 +635,8 @@ fn does_not_allow_lists_of_non_null_to_contain_null() {
             InputValue::null(),
             InputValue::string("B"),
         ])),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -656,9 +659,8 @@ fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
             InputValue::null(),
             InputValue::string("B"),
         ])),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -677,9 +679,8 @@ fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![
         ("value".to_owned(), InputValue::null()),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -718,9 +719,8 @@ fn does_not_allow_invalid_types_to_be_used_as_values() {
             InputValue::string("A"),
             InputValue::string("B"),
         ])),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -742,9 +742,8 @@ fn does_not_allow_unknown_types_to_be_used_as_values() {
             InputValue::string("A"),
             InputValue::string("B"),
         ])),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -897,9 +896,8 @@ fn does_not_allow_null_variable_for_required_field() {
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![
         ("var".to_owned(), InputValue::null()),
-    ]
-            .into_iter()
-            .collect();
+    ].into_iter()
+        .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -958,29 +956,31 @@ mod integers {
 
     #[test]
     fn positive_and_negative_should_work() {
-        run_variable_query(r#"query q($var: Int!) { integerInput(value: $var) }"#,
-                           vec![
+        run_variable_query(
+            r#"query q($var: Int!) { integerInput(value: $var) }"#,
+            vec![
                 ("var".to_owned(), InputValue::int(1)),
-            ]
-                                   .into_iter()
-                                   .collect(),
-                           |result| {
-            assert_eq!(
+            ].into_iter()
+                .collect(),
+            |result| {
+                assert_eq!(
                     result.get("integerInput"),
                     Some(&Value::string(r#"value: 1"#)));
-        });
+            },
+        );
 
-        run_variable_query(r#"query q($var: Int!) { integerInput(value: $var) }"#,
-                           vec![
+        run_variable_query(
+            r#"query q($var: Int!) { integerInput(value: $var) }"#,
+            vec![
                 ("var".to_owned(), InputValue::int(-1)),
-            ]
-                                   .into_iter()
-                                   .collect(),
-                           |result| {
-            assert_eq!(
+            ].into_iter()
+                .collect(),
+            |result| {
+                assert_eq!(
                     result.get("integerInput"),
                     Some(&Value::string(r#"value: -1"#)));
-        });
+            },
+        );
     }
 
     #[test]
@@ -990,9 +990,8 @@ mod integers {
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![
             ("var".to_owned(), InputValue::float(10.0)),
-        ]
-                .into_iter()
-                .collect();
+        ].into_iter()
+            .collect();
 
         let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -1011,9 +1010,8 @@ mod integers {
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![
             ("var".to_owned(), InputValue::string("10")),
-        ]
-                .into_iter()
-                .collect();
+        ].into_iter()
+            .collect();
 
         let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -1032,32 +1030,34 @@ mod floats {
 
     #[test]
     fn float_values_should_work() {
-        run_variable_query(r#"query q($var: Float!) { floatInput(value: $var) }"#,
-                           vec![
+        run_variable_query(
+            r#"query q($var: Float!) { floatInput(value: $var) }"#,
+            vec![
                 ("var".to_owned(), InputValue::float(10.0)),
-            ]
-                                   .into_iter()
-                                   .collect(),
-                           |result| {
-            assert_eq!(
+            ].into_iter()
+                .collect(),
+            |result| {
+                assert_eq!(
                     result.get("floatInput"),
                     Some(&Value::string(r#"value: 10"#)));
-        });
+            },
+        );
     }
 
     #[test]
     fn coercion_from_integers_should_work() {
-        run_variable_query(r#"query q($var: Float!) { floatInput(value: $var) }"#,
-                           vec![
+        run_variable_query(
+            r#"query q($var: Float!) { floatInput(value: $var) }"#,
+            vec![
                 ("var".to_owned(), InputValue::int(-1)),
-            ]
-                                   .into_iter()
-                                   .collect(),
-                           |result| {
-            assert_eq!(
+            ].into_iter()
+                .collect(),
+            |result| {
+                assert_eq!(
                     result.get("floatInput"),
                     Some(&Value::string(r#"value: -1"#)));
-        });
+            },
+        );
     }
 
     #[test]
@@ -1067,9 +1067,8 @@ mod floats {
         let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
         let vars = vec![
             ("var".to_owned(), InputValue::string("10")),
-        ]
-                .into_iter()
-                .collect();
+        ].into_iter()
+            .collect();
 
         let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 

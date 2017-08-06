@@ -87,12 +87,13 @@ graphql_object!(Root: () |&self| {
 });
 
 fn run_type_info_query<F>(doc: &str, f: F)
-    where F: Fn((&HashMap<String, Value>, &Vec<Value>)) -> ()
+where
+    F: Fn((&HashMap<String, Value>, &Vec<Value>)) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(doc, None, &schema, &Variables::new(), &())
-        .expect("Execution failed");
+    let (result, errs) =
+        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
