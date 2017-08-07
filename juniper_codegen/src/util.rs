@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use syn::*;
 
 pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<&Vec<NestedMetaItem>> {
@@ -44,12 +46,12 @@ pub fn keyed_item_value(item: &NestedMetaItem, name: &str, must_be_string: bool)
 
 // Note: duplicated from juniper crate!
 #[doc(hidden)]
-pub fn to_camel_case(s: &str) -> String {
-    let mut dest = String::new();
+pub fn to_camel_case<'a>(s: &'a str) -> Cow<'a, str> {
+    let mut dest = Cow::Borrowed(s);
 
     for (i, part) in s.split('_').enumerate() {
         if i > 0 && part.len() == 1 {
-            dest.push_str(&part.to_uppercase());
+            dest += Cow::Owned(part.to_uppercase());
         } else if i > 0 && part.len() > 1 {
             let first = part.chars()
                 .next()
@@ -58,10 +60,10 @@ pub fn to_camel_case(s: &str) -> String {
                 .collect::<String>();
             let second = &part[1..];
 
-            dest.push_str(&first);
-            dest.push_str(second);
+            dest += Cow::Owned(first);
+            dest += second;
         } else if i == 0 {
-            dest.push_str(part);
+            dest = Cow::Borrowed(part);
         }
     }
 

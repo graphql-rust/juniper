@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use syn;
 use syn::*;
 use quote::Tokens;
@@ -106,7 +108,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
         let name = match field_attrs.name {
             Some(ref name) => {
                 // Custom name specified.
-                name.to_string()
+                Cow::Borrowed(name.as_ref())
             }
             None => {
                 // Note: auto camel casing when no custom name specified.
