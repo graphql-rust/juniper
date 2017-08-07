@@ -3,7 +3,7 @@
 > GraphQL server library for Rust
 
 [![Build Status](https://travis-ci.org/graphql-rust/juniper.svg?branch=master)](https://travis-ci.org/graphql-rust/juniper)
-[![Build status](https://ci.appveyor.com/api/projects/status/fq6m6e7dof6trrpf/branch/master?svg=true)](https://ci.appveyor.com/project/graphql-rust/juniper/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/vsrwmsh9wobxugbs?svg=true)](https://ci.appveyor.com/project/theduke/juniper/branch/master)
 [![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000)](https://crates.io/crates/juniper)
 [![Gitter chat](https://badges.gitter.im/juniper-graphql/gitter.png)](https://gitter.im/juniper-graphql)
 
