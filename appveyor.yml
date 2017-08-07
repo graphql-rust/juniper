@@ -49,6 +49,4 @@ install:
 build: false
 
 test_script:
-  - cd juniper && cargo build --verbose && cargo test --verbose && cd ..
-  - cd juniper_codegen && cargo build --verbose && cargo test --verbose && cd ..
-  - cd juniper_tests && cargo build --verbose && cargo test --verbose && cd ..
+  - cargo make ci-flow
