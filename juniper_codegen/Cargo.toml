@@ -5,7 +5,7 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 description = "Internal custom derive trait for Juniper GraphQL"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper"
-repository = "https://github.com/mhallin/juniper"
+repository = "https://github.com/graphql-rust/juniper"
 
 [lib]
 proc-macro = true
@@ -15,5 +15,5 @@ syn = "0.11.11"
 quote = "0.3.15"
 
 [badges]
-travis-ci = { repository = "mhallin/juniper" }
-appveyor = { repository = "mhallin/juniper" }
+travis-ci = { repository = "graphql-rust/juniper" }
+appveyor = { repository = "graphql-rust/juniper" }

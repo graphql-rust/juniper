@@ -27,15 +27,15 @@ Tiny release to fix broken crate metadata on crates.io.
 
   If an incoming integer is out of range for a 32 bit signed integer type, an
   error will be returned to the client.
-  ([#52](https://github.com/mhallin/juniper/issues/52),
-  [#49](https://github.com/mhallin/juniper/issues/49))
+  ([#52](https://github.com/graphql-rust/juniper/issues/52),
+  [#49](https://github.com/graphql-rust/juniper/issues/49))
 
 * Serde has been updated to 1.0. If your application depends on an older
   version, you will need to first update your application before you can upgrade
-  to a more recent Juniper. ([#43](https://github.com/mhallin/juniper/pull/43))
+  to a more recent Juniper. ([#43](https://github.com/graphql-rust/juniper/pull/43))
 
 * `rustc_serialize` support has been dropped since this library is now
-  deprecated. ([#51](https://github.com/mhallin/juniper/pull/51))
+  deprecated. ([#51](https://github.com/graphql-rust/juniper/pull/51))
 
 ## New features
 
@@ -46,14 +46,14 @@ Tiny release to fix broken crate metadata on crates.io.
 ## Bugfixes
 
 * A panic in the parser has been replaced with a proper error
-  ([#44](https://github.com/mhallin/juniper/pull/44))
+  ([#44](https://github.com/graphql-rust/juniper/pull/44))
 
 ## [0.7.0] – 2017-02-26
 
 ### Breaking changes
 
 * The `iron-handlers` feature now depends on Iron 0.5
-  ([#30](https://github.com/mhallin/juniper/pull/30)). Because of
+  ([#30](https://github.com/graphql-rust/juniper/pull/30)). Because of
   this, support for Rust 1.12 has been dropped. It might still work if
   you're not using the Iron integrations feature, however.
 
@@ -68,63 +68,63 @@ Tiny release to fix broken crate metadata on crates.io.
 ### New features
 
 * Add support for default values on input object fields
-  ([#28](https://github.com/mhallin/juniper/issues/28))
+  ([#28](https://github.com/graphql-rust/juniper/issues/28))
 
 ## [0.6.2] – 2017-02-05
 
 ### New features
 
 * The `null` literal is now supported in the GraphQL
-  language. ([#26](https://github.com/mhallin/juniper/pull/26))
+  language. ([#26](https://github.com/graphql-rust/juniper/pull/26))
 * Rustc-serialize is now optional, but enabled by default. If you
   _only_ want Serde support, include Juniper without default features
   and enable
-  Serde. ([#12](https://github.com/mhallin/juniper/pull/12))
+  Serde. ([#12](https://github.com/graphql-rust/juniper/pull/12))
 * The built-in `ID` type now has a public constructor and derives a
   few traits (`Clone`, `Debug`, `Eq`, `PartialEq`, `From<String>`,
-  `Deref<Target=str>`). ([#19](https://github.com/mhallin/juniper/pull/19))
+  `Deref<Target=str>`). ([#19](https://github.com/graphql-rust/juniper/pull/19))
 * Juniper is now built and tested against all Rust compilers since
   version 1.12.1.
 
 ### Minor breaking change
 
 * Serde has been updated to
-  0.9. ([#25](https://github.com/mhallin/juniper/pull/25))
+  0.9. ([#25](https://github.com/graphql-rust/juniper/pull/25))
 
 ### Bugfixes
 
 * The built-in GraphiQL handler had a bug in variable serialization.
-  ([#16](https://github.com/mhallin/juniper/pull/16))
+  ([#16](https://github.com/graphql-rust/juniper/pull/16))
 * The example should now build and run without problems on
-  Windows. ([#15](https://github.com/mhallin/juniper/pull/15))
+  Windows. ([#15](https://github.com/graphql-rust/juniper/pull/15))
 * Object types now properly implement
-  `__typename`. ([#22](https://github.com/mhallin/juniper/pull/22))
+  `__typename`. ([#22](https://github.com/graphql-rust/juniper/pull/22))
 * String variables are now properly parsed into GraphQL
-  enums. ([#17](https://github.com/mhallin/juniper/pull/17))
+  enums. ([#17](https://github.com/graphql-rust/juniper/pull/17))
 
 ## [0.6.1] – 2017-01-06
 
 ### New features
 
 * Optional Serde support
-  ([#8](https://github.com/mhallin/juniper/pull/8))
+  ([#8](https://github.com/graphql-rust/juniper/pull/8))
 
 ### Improvements
 
 * The `graphql_input_object!` macro can now be used to define input
   objects as public Rust structs.
 * GraphiQL in the Iron GraphiQL handler has been updated to 0.8.1
-  (#[#11](https://github.com/mhallin/juniper/pull/11))
+  (#[#11](https://github.com/graphql-rust/juniper/pull/11))
 
 ### Minor breaking changes
 
 Some undocumented but public APIs were changed.
 
 * `to_snake_case` correctly renamed to `to_camel_case`
-  ([#9](https://github.com/mhallin/juniper/pull/9))
+  ([#9](https://github.com/graphql-rust/juniper/pull/9))
 * JSON serialization of `GraphQLError` changed to be more consistent
   with how other values were serialized
-  ([#10](https://github.com/mhallin/juniper/pull/10)).
+  ([#10](https://github.com/graphql-rust/juniper/pull/10)).
 
 ## [0.6.0] – 2017-01-02
 
@@ -340,11 +340,11 @@ using the macros and not deriving `GraphQLType` directly.
 * Macro syntax stability has also been improved. All syntactical edge
   cases of the macros have gotten tests to verify their correctness.
 
-[0.8.0]: https://github.com/mhallin/juniper/compare/0.8.0...0.8.1
-[0.8.0]: https://github.com/mhallin/juniper/compare/0.7.0...0.8.0
-[0.7.0]: https://github.com/mhallin/juniper/compare/0.6.3...0.7.0
-[0.6.3]: https://github.com/mhallin/juniper/compare/0.6.2...0.6.3
-[0.6.2]: https://github.com/mhallin/juniper/compare/0.6.1...0.6.2
-[0.6.1]: https://github.com/mhallin/juniper/compare/0.6.0...0.6.1
-[0.6.0]: https://github.com/mhallin/juniper/compare/0.5.3...0.6.0
-[0.5.3]: https://github.com/mhallin/juniper/compare/0.5.2...0.5.3
+[0.8.0]: https://github.com/graphql-rust/juniper/compare/0.8.0...0.8.1
+[0.8.0]: https://github.com/graphql-rust/juniper/compare/0.7.0...0.8.0
+[0.7.0]: https://github.com/graphql-rust/juniper/compare/0.6.3...0.7.0
+[0.6.3]: https://github.com/graphql-rust/juniper/compare/0.6.2...0.6.3
+[0.6.2]: https://github.com/graphql-rust/juniper/compare/0.6.1...0.6.2
+[0.6.1]: https://github.com/graphql-rust/juniper/compare/0.6.0...0.6.1
+[0.6.0]: https://github.com/graphql-rust/juniper/compare/0.5.3...0.6.0
+[0.5.3]: https://github.com/graphql-rust/juniper/compare/0.5.2...0.5.3
