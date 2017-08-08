@@ -57,11 +57,12 @@ graphql_object!(User: Database |&self| {
         &self.name
     }
 
-    // FieldResult<T> is an alias for Result<T, String> - simply return
-    // a string from this method and it will be correctly inserted into
-    // the execution response.
+    // FieldResult<T> is an alias for Result<T, FieldError>, which can be
+    // converted to from anything that implements std::fmt::Display - simply
+    // return an error with a string using the ? operator from this method and
+    // it will be correctly inserted into the execution response.
     field secret() -> FieldResult<&String> {
-        Err("Can't touch this".to_owned())
+        Err("Can't touch this".to_owned())?
     }
 
     // Field accessors can optionally take an "executor" as their first
@@ -153,8 +154,8 @@ use executor::execute_validated_query;
 pub use ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
 pub use value::Value;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
-pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldResult, FromContext,
-                   IntoResolvable, Registry, Variables};
+pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
+                   FromContext, IntoResolvable, Registry, Variables};
 pub use validation::RuleError;
 pub use types::scalars::{EmptyMutation, ID};
 pub use schema::model::RootNode;

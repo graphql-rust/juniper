@@ -215,7 +215,8 @@ mod dynamic_context_switching {
     use types::scalars::EmptyMutation;
     use schema::model::RootNode;
     use parser::SourcePosition;
-    use executor::{Context, ExecutionError, FieldResult};
+    use executor::{Context, ExecutionError, FieldError, FieldResult};
+    use result_ext::ResultExt;
 
     struct Schema;
 
@@ -241,11 +242,12 @@ mod dynamic_context_switching {
             executor.context().items.get(&key)
                 .ok_or(format!("Could not find key {}", key))
                 .map(|c| (c, ItemRef))
+                .to_field_result()
         }
 
         field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
             if key > 100 {
-                Err(format!("Key too large: {}", key))
+                Err(format!("Key too large: {}", key)).to_field_result()
             } else {
                 Ok(executor.context().items.get(&key)
                    .map(|c| (c, ItemRef)))
@@ -320,7 +322,7 @@ mod dynamic_context_switching {
             ExecutionError::new(
                 SourcePosition::new(70, 3, 12),
                 &["missing"],
-                "Could not find key 2",
+                FieldError::new("Could not find key 2", Value::null()),
             ),
         ]);
 
@@ -363,7 +365,7 @@ mod dynamic_context_switching {
             ExecutionError::new(
                 SourcePosition::new(123, 4, 12),
                 &["tooLarge"],
-                "Key too large: 200",
+                FieldError::new("Key too large: 200", Value::null()),
             ),
         ]);
 
@@ -414,7 +416,7 @@ mod dynamic_context_switching {
 mod nulls_out_errors {
     use value::Value;
     use schema::model::RootNode;
-    use executor::{ExecutionError, FieldResult};
+    use executor::{ExecutionError, FieldError, FieldResult};
     use parser::SourcePosition;
     use types::scalars::EmptyMutation;
 
@@ -422,7 +424,7 @@ mod nulls_out_errors {
 
     graphql_object!(Schema: () |&self| {
         field sync() -> FieldResult<&str> { Ok("sync") }
-        field sync_error() -> FieldResult<&str> { Err("Error for syncError".to_owned()) }
+        field sync_error() -> FieldResult<&str> { Err("Error for syncError")? }
     });
 
     #[test]
@@ -449,7 +451,7 @@ mod nulls_out_errors {
                 ExecutionError::new(
                     SourcePosition::new(8, 0, 8),
                     &["syncError"],
-                    "Error for syncError",
+                    FieldError::new("Error for syncError", Value::null()),
                 ),
             ]);
     }
