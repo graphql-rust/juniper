@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use types::base::GraphQLType;
+use types::name::Name;
 use executor::{Context, Registry};
 use ast::Type;
 use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
@@ -25,7 +26,7 @@ pub struct RootNode<'a, QueryT: GraphQLType, MutationT: GraphQLType> {
 
 /// Metadata for a schema
 pub struct SchemaType<'a> {
-    types: HashMap<String, MetaType<'a>>,
+    types: HashMap<Name, MetaType<'a>>,
     query_type_name: String,
     mutation_type_name: Option<String>,
     directives: HashMap<String, DirectiveType<'a>>,

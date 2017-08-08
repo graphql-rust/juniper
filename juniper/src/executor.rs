@@ -13,6 +13,7 @@ use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, Interf
 use schema::model::{RootNode, SchemaType};
 
 use types::base::GraphQLType;
+use types::name::Name;
 
 /// A type registry used to build schemas
 ///
@@ -21,7 +22,7 @@ use types::base::GraphQLType;
 /// into `Type` instances and automatically registers them.
 pub struct Registry<'r> {
     /// Currently registered types
-    pub types: HashMap<String, MetaType<'r>>,
+    pub types: HashMap<Name, MetaType<'r>>,
 }
 
 #[derive(Clone)]
@@ -408,7 +409,7 @@ where
 
 impl<'r> Registry<'r> {
     /// Construct a new registry
-    pub fn new(types: HashMap<String, MetaType<'r>>) -> Registry<'r> {
+    pub fn new(types: HashMap<Name, MetaType<'r>>) -> Registry<'r> {
         Registry { types: types }
     }
 
@@ -421,12 +422,16 @@ impl<'r> Registry<'r> {
         T: GraphQLType,
     {
         if let Some(name) = T::name(info) {
-            if !self.types.contains_key(&name.to_string()) {
-                self.insert_placeholder(&name, Type::NonNullNamed(Cow::Owned(name.to_string())));
+            let validated_name = name.parse::<Name>().unwrap();
+            if !self.types.contains_key(name) {
+                self.insert_placeholder(
+                    validated_name.clone(),
+                    Type::NonNullNamed(Cow::Owned(name.to_string())),
+                );
                 let meta = T::meta(info, self);
-                self.types.insert(name.to_string(), meta);
+                self.types.insert(validated_name, meta);
             }
-            self.types[&name.to_string()].as_type()
+            self.types[name].as_type()
         } else {
             T::meta(info, self).as_type()
         }
@@ -483,10 +488,10 @@ impl<'r> Registry<'r> {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to())
     }
 
-    fn insert_placeholder(&mut self, name: &str, of_type: Type<'r>) {
-        if !self.types.contains_key(name) {
+    fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
+        if !self.types.contains_key(&name) {
             self.types.insert(
-                name.to_owned(),
+                name,
                 MetaType::Placeholder(PlaceholderMeta { of_type: of_type }),
             );
         }
