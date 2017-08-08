@@ -109,6 +109,21 @@ impl<T: Display> From<T> for FieldError {
 impl FieldError {
     /// Construct a new error with additional data
     ///
+    /// You can use the `graphql_value!` macro to construct an error:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate juniper;
+    /// use juniper::FieldError;
+    ///
+    /// # fn sample() {
+    /// FieldError::new(
+    ///     "Could not open connection to the database",
+    ///     graphql_value!({ "internal_error": "Connection refused" })
+    /// );
+    /// # }
+    /// # fn main() { }
+    /// ```
+    ///
     /// The `data` parameter will be added to the `"data"` field of the error
     /// object in the JSON response:
     ///
