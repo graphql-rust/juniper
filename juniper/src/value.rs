@@ -130,3 +130,152 @@ impl ToInputValue for Value {
         }
     }
 }
+
+impl<'a> From<&'a str> for Value {
+    fn from(s: &'a str) -> Value {
+        Value::string(s)
+    }
+}
+
+impl From<String> for Value {
+    fn from(s: String) -> Value {
+        Value::string(s)
+    }
+}
+
+impl From<bool> for Value {
+    fn from(b: bool) -> Value {
+        Value::boolean(b)
+    }
+}
+
+impl From<i32> for Value {
+    fn from(i: i32) -> Value {
+        Value::int(i)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(f: f64) -> Value {
+        Value::float(f)
+    }
+}
+
+impl<T> From<Option<T>> for Value where Value: From<T> {
+    fn from(v: Option<T>) -> Value {
+        match v {
+            Some(v) => Value::from(v),
+            None => Value::null()
+        }
+    }
+}
+
+/// Construct JSON-like values by using JSON syntax
+///
+/// This macro can be used to create `Value` instances using a JSON syntax.
+/// Value objects are used mostly when creating custom errors from fields.
+///
+/// Here are some examples; the resulting JSON will look just like what you
+/// passed in.
+/// ```rust
+/// #[macro_use] extern crate juniper;
+/// 
+/// graphql_value!(1234);
+/// graphql_value!("test");
+/// graphql_value!([ 1234, "test", true ]);
+/// graphql_value!({ "key": "value", "foo": 1234 });
+/// ```
+#[macro_export]
+macro_rules! graphql_value {
+    ([ $($arg:tt),* $(,)* ]) => {
+        $crate::Value::list(vec![
+            $( graphql_value!($arg), )*
+        ])
+    };
+    ({ $($key:tt : $val:tt ),* $(,)* }) => {
+        $crate::Value::object(vec![
+            $( ($key, graphql_value!($val)), )*
+        ].into_iter().collect())
+    };
+    ($e:expr) => ($crate::Value::from($e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Value;
+
+    #[test]
+    fn value_macro_string() {
+        assert_eq!(
+            graphql_value!("test"),
+            Value::string("test")
+        );
+    }
+
+    #[test]
+    fn value_macro_int() {
+        assert_eq!(
+            graphql_value!(123),
+            Value::int(123)
+        );
+    }
+
+    #[test]
+    fn value_macro_float() {
+        assert_eq!(
+            graphql_value!(123.5),
+            Value::float(123.5)
+        );
+    }
+
+    #[test]
+    fn value_macro_boolean() {
+        assert_eq!(
+            graphql_value!(false),
+            Value::boolean(false)
+        );
+    }
+
+    #[test]
+    fn value_macro_option() {
+        assert_eq!(
+            graphql_value!(Some("test")),
+            Value::string("test")
+        );
+        assert_eq!(
+            graphql_value!((None as Option<String>)),
+            Value::null()
+        );
+    }
+
+    #[test]
+    fn value_macro_list() {
+        assert_eq!(
+            graphql_value!([ 123, "Test", false ]),
+            Value::list(vec![
+                Value::int(123),
+                Value::string("Test"),
+                Value::boolean(false),
+            ])
+        );
+        assert_eq!(
+            graphql_value!([ 123, [ 456 ], 789 ]),
+            Value::list(vec![
+                Value::int(123),
+                Value::list(vec![ Value::int(456) ]),
+                Value::int(789),
+            ])
+        );
+    }
+
+    #[test]
+    fn value_macro_object() {
+        assert_eq!(
+            graphql_value!({ "key": 123, "next": true }),
+            Value::object(vec![
+                ("key", Value::int(123)),
+                ("next", Value::boolean(true)),
+            ].into_iter().collect())
+        );
+    }
+}
