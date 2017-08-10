@@ -45,7 +45,7 @@ If you want Rocket integration, you need to depend on the `juniper_rocket` crate
 ```toml
 [dependencies]
 juniper = { version = "0.8.1" }
-juniper_rocket = { git = "https://github.com/graphql-rustl/juniper_rocket" }
+juniper_rocket = { git = "https://github.com/graphql-rust/juniper_rocket" }
 ```
 
 ## Building schemas
