@@ -288,8 +288,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         match self.resolve(info, value) {
             Ok(v) => v,
             Err(e) => {
-                let position = self.field_path.location().clone();
-                self.push_error(e, position);
+                self.push_error(e);
                 Value::null()
             }
         }
@@ -355,8 +354,19 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         self.fragments.get(name).map(|f| *f)
     }
 
-    /// Add an error to the execution engine
-    pub fn push_error(&self, error: FieldError, location: SourcePosition) {
+    /// The current location of the executor
+    pub fn location(&self) -> &SourcePosition {
+        self.field_path.location()
+    }
+
+    /// Add an error to the execution engine at the current executor location
+    pub fn push_error(&self, error: FieldError) {
+        let location = self.location().clone();
+        self.push_error_at(error, location);
+    }
+
+    /// Add an error to the execution engine at a specific location
+    pub fn push_error_at(&self, error: FieldError, location: SourcePosition) {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
 
