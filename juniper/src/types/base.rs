@@ -390,7 +390,7 @@ fn resolve_selection_set_into<T, CtxT>(
                 match field_result {
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error(e, start_pos.clone());
+                        sub_exec.push_error_at(e, start_pos.clone());
                         result.insert((*response_name).to_owned(), Value::null());
                     }
                 }
@@ -439,7 +439,7 @@ fn resolve_selection_set_into<T, CtxT>(
                             result.insert(k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error(e, start_pos.clone());
+                        sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
                     resolve_selection_set_into(
