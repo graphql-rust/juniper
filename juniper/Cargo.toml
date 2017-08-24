@@ -25,6 +25,7 @@ expose-test-schema = []
 default = ["uuid"]
 
 [dependencies]
+ordermap = { version = "^0.2.11", features = ["serde-1"] }
 serde = { version = "^1.0.8" }
 serde_derive = {version="^1.0.8" }
 serde_json = { version="^1.0.2", optional = true }

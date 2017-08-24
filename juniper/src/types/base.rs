@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
+use ordermap::OrderMap;
+use ordermap::Entry;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
@@ -66,17 +66,17 @@ pub enum TypeKind {
 
 /// Field argument container
 pub struct Arguments<'a> {
-    args: Option<HashMap<&'a str, InputValue>>,
+    args: Option<OrderMap<&'a str, InputValue>>,
 }
 
 impl<'a> Arguments<'a> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<HashMap<&'a str, InputValue>>,
+        mut args: Option<OrderMap<&'a str, InputValue>>,
         meta_args: &'a Option<Vec<Argument>>,
     ) -> Arguments<'a> {
         if meta_args.is_some() && args.is_none() {
-            args = Some(HashMap::new());
+            args = Some(OrderMap::new());
         }
 
         if let (&mut Some(ref mut args), &Some(ref meta_args)) = (&mut args, meta_args) {
@@ -306,7 +306,7 @@ pub trait GraphQLType: Sized {
         executor: &Executor<Self::Context>,
     ) -> Value {
         if let Some(selection_set) = selection_set {
-            let mut result = HashMap::new();
+            let mut result = OrderMap::new();
             resolve_selection_set_into(self, info, selection_set, executor, &mut result);
             Value::object(result)
         } else {
@@ -320,7 +320,7 @@ fn resolve_selection_set_into<T, CtxT>(
     info: &T::TypeInfo,
     selection_set: &[Selection],
     executor: &Executor<CtxT>,
-    result: &mut HashMap<String, Value>,
+    result: &mut OrderMap<String, Value>,
 ) where
     T: GraphQLType<Context = CtxT>,
 {
@@ -435,7 +435,7 @@ fn resolve_selection_set_into<T, CtxT>(
                     );
 
                     if let Ok(Value::Object(mut hash_map)) = sub_result {
-                        for (k, v) in hash_map.drain() {
+                        for (k, v) in hash_map.drain(..) {
                             result.insert(k, v);
                         }
                     } else if let Err(e) = sub_result {
@@ -480,7 +480,7 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
     false
 }
 
-fn merge_key_into(result: &mut HashMap<String, Value>, response_name: &str, value: Value) {
+fn merge_key_into(result: &mut OrderMap<String, Value>, response_name: &str, value: Value) {
     match result.entry(response_name.to_owned()) {
         Entry::Occupied(mut e) => match (e.get_mut().as_mut_object_value(), value) {
             (Some(dest_obj), Value::Object(src_obj)) => {
@@ -494,7 +494,7 @@ fn merge_key_into(result: &mut HashMap<String, Value>, response_name: &str, valu
     }
 }
 
-fn merge_maps(dest: &mut HashMap<String, Value>, src: HashMap<String, Value>) {
+fn merge_maps(dest: &mut OrderMap<String, Value>, src: OrderMap<String, Value>) {
     for (key, value) in src {
         if dest.contains_key(&key) {
             merge_key_into(dest, &key, value);

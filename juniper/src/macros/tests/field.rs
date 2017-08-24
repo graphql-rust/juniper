@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use ordermap::OrderMap;
 
 use value::Value;
 use ast::InputValue;
@@ -59,7 +59,7 @@ graphql_interface!(Interface: () |&self| {
 
 fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
 where
-    F: Fn(&HashMap<String, Value>) -> (),
+    F: Fn(&OrderMap<String, Value>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
