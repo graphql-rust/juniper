@@ -1,14 +1,14 @@
+use ordermap::OrderMap;
 use serde::{de, ser};
 use serde::ser::SerializeMap;
+
 use std::fmt;
-use std::collections::HashMap;
 
 use {GraphQLError, Value};
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
-
 
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -130,7 +130,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             where
                 V: de::MapAccess<'de>,
             {
-                let mut values: HashMap<String, InputValue> = HashMap::new();
+                let mut values: OrderMap<String, InputValue> = OrderMap::new();
 
                 while let Some((key, value)) = try!(visitor.next_entry()) {
                     values.insert(key, value);
@@ -161,7 +161,7 @@ impl ser::Serialize for InputValue {
                 .serialize(serializer),
             InputValue::Object(ref v) => v.iter()
                 .map(|&(ref k, ref v)| (k.item.clone(), v.item.clone()))
-                .collect::<HashMap<_, _>>()
+                .collect::<OrderMap<_, _>>()
                 .serialize(serializer),
         }
     }
@@ -214,7 +214,7 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
         try!(map.serialize_key("message"));
         try!(map.serialize_value(&message));
 
-        let mut location = HashMap::new();
+        let mut location = OrderMap::new();
         location.insert("line".to_owned(), self.start.line() + 1);
         location.insert("column".to_owned(), self.start.column() + 1);
 

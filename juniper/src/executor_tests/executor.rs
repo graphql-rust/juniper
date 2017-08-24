@@ -148,15 +148,15 @@ mod merge_parallel_fragments {
             Value::object(vec![
                 ("a", Value::string("Apple")),
                 ("b", Value::string("Banana")),
-                ("c", Value::string("Cherry")),
                 ("deep", Value::object(vec![
                     ("b", Value::string("Banana")),
-                    ("c", Value::string("Cherry")),
                     ("deeper", Value::object(vec![
                         ("b", Value::string("Banana")),
                         ("c", Value::string("Cherry")),
                     ].into_iter().collect())),
+                    ("c", Value::string("Cherry")),
                 ].into_iter().collect())),
+                ("c", Value::string("Cherry")),
             ].into_iter().collect()));
     }
 }
@@ -209,7 +209,7 @@ mod threads_context_correctly {
 }
 
 mod dynamic_context_switching {
-    use std::collections::HashMap;
+    use ordermap::OrderMap;
 
     use value::Value;
     use types::scalars::EmptyMutation;
@@ -224,7 +224,7 @@ mod dynamic_context_switching {
     }
 
     struct OuterContext {
-        items: HashMap<i32, InnerContext>,
+        items: OrderMap<i32, InnerContext>,
     }
 
     impl Context for OuterContext {}

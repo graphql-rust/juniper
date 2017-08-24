@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use ordermap::OrderMap;
 
 use executor::Variables;
 use value::Value;
@@ -72,7 +72,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&HashMap<String, Value>) -> (),
+    F: Fn(&OrderMap<String, Value>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 

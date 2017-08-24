@@ -34,6 +34,70 @@ fn test_hero_name() {
 }
 
 #[test]
+fn test_hero_field_order() {
+    let database = Database::new();
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+
+    let doc = r#"
+        {
+            hero {
+                id
+                name
+            }
+        }"#;
+    assert_eq!(
+        ::execute(doc, None, &schema, &Variables::new(), &database),
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "hero",
+                        Value::object(
+                            vec![
+                                ("id", Value::string("2001")),
+                                ("name", Value::string("R2-D2")),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
+
+    let doc_reversed = r#"
+        {
+            hero {
+                name
+                id
+            }
+        }"#;
+    assert_eq!(
+        ::execute(doc_reversed, None, &schema, &Variables::new(), &database),
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "hero",
+                        Value::object(
+                            vec![
+                                ("name", Value::string("R2-D2")),
+                                ("id", Value::string("2001")),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
+}
+
+#[test]
 fn test_hero_name_and_friends() {
     let doc = r#"
         {
@@ -537,8 +601,8 @@ fn test_query_inline_fragments_droid() {
                         "hero",
                         Value::object(
                             vec![
-                                ("__typename", Value::string("Droid")),
                                 ("name", Value::string("R2-D2")),
+                                ("__typename", Value::string("Droid")),
                                 ("primaryFunction", Value::string("Astromech")),
                             ].into_iter()
                                 .collect(),
@@ -574,8 +638,8 @@ fn test_query_inline_fragments_human() {
                         "hero",
                         Value::object(
                             vec![
-                                ("__typename", Value::string("Human")),
                                 ("name", Value::string("Luke Skywalker")),
+                                ("__typename", Value::string("Human")),
                             ].into_iter()
                                 .collect(),
                         ),

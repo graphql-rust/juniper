@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use ordermap::OrderMap;
 
 use ast::InputValue;
 use parser::{Lexer, Parser, SourcePosition, Spanning};
 use parser::value::parse_value_literal;
+
 
 fn parse_value(s: &str) -> Spanning<InputValue> {
     let mut lexer = Lexer::new(s);
@@ -112,7 +113,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            InputValue::object(HashMap::<String, InputValue>::new())
+            InputValue::object(OrderMap::<String, InputValue>::new())
         )
     );
     assert_eq!(

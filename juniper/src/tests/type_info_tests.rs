@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use ordermap::OrderMap;
 
 use executor::{ExecutionResult, Executor, Registry, Variables};
 use value::Value;
@@ -13,7 +13,7 @@ pub struct NodeTypeInfo {
 }
 
 pub struct Node {
-    attributes: HashMap<String, String>,
+    attributes: OrderMap<String, String>,
 }
 
 impl GraphQLType for Node {
@@ -59,7 +59,7 @@ fn test_node() {
         attribute_names: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
     };
     let mut node = Node {
-        attributes: HashMap::new(),
+        attributes: OrderMap::new(),
     };
     node.attributes.insert("foo".to_string(), "1".to_string());
     node.attributes.insert("bar".to_string(), "2".to_string());
