@@ -121,6 +121,10 @@ extern crate serde_derive;
 #[cfg(any(test, feature = "expose-test-schema"))]
 extern crate serde_json;
 
+
+#[cfg(any(test, feature = "uuid"))]
+extern crate uuid;
+
 use std::borrow::Cow;
 
 #[macro_use]
