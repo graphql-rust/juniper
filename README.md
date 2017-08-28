@@ -42,9 +42,11 @@ juniper_iron = { git = "https://github.com/graphql-rust/juniper_iron" }
 
 If you want Rocket integration, you need to depend on the `juniper_rocket` crate.
 
+**Note**: Until 0.9 is released, you will need to use a Git dependency to the current master branch.
+
 ```toml
 [dependencies]
-juniper = { version = "0.8.1" }
+juniper = { git = "https://github.com/graphql-rust/juniper" }
 juniper_rocket = { git = "https://github.com/graphql-rust/juniper_rocket" }
 ```
 
