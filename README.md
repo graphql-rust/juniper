@@ -27,7 +27,7 @@ Add Juniper to your Cargo.toml:
 
 ```toml
 [dependencies]
-juniper = "0.8.1"
+juniper = { git = "https://github.com/graphql-rust/juniper" }
 ```
 
 If you want Iron integration, you need to depend on the `juniper_iron` crate.
@@ -35,7 +35,7 @@ feature flag:
 
 ```toml
 [dependencies]
-juniper = { version = "0.8.1" }
+juniper = { git = "https://github.com/graphql-rust/juniper" }
 juniper_iron = { git = "https://github.com/graphql-rust/juniper_iron" }
 
 ```
