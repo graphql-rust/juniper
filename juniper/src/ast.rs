@@ -154,7 +154,7 @@ pub type Document<'a> = Vec<Definition<'a>>;
 /// enums or scalars.
 pub trait FromInputValue: Sized {
     /// Performs the conversion.
-    fn from(v: &InputValue) -> Option<Self>;
+    fn from_input_value(v: &InputValue) -> Option<Self>;
 }
 
 /// Losslessly clones a Rust data type into an InputValue.
@@ -302,7 +302,7 @@ impl InputValue {
     where
         T: FromInputValue,
     {
-        <T as FromInputValue>::from(self)
+        <T as FromInputValue>::from_input_value(self)
     }
 
     /// Does the value represent null?

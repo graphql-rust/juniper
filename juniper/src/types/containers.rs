@@ -37,7 +37,7 @@ impl<T> FromInputValue for Option<T>
 where
     T: FromInputValue,
 {
-    fn from(v: &InputValue) -> Option<Option<T>> {
+    fn from_input_value(v: &InputValue) -> Option<Option<T>> {
         match v {
             &InputValue::Null => Some(None),
             v => match v.convert() {
@@ -93,7 +93,7 @@ impl<T> FromInputValue for Vec<T>
 where
     T: FromInputValue,
 {
-    fn from(v: &InputValue) -> Option<Vec<T>> {
+    fn from_input_value(v: &InputValue) -> Option<Vec<T>> {
         match *v {
             InputValue::List(ref ls) => {
                 let v: Vec<_> = ls.iter().filter_map(|i| i.item.convert()).collect();

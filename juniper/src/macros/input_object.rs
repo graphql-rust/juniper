@@ -69,8 +69,8 @@ macro_rules! graphql_input_object {
 
                 match v {
                     $( Some(&&$crate::InputValue::Null) | None if true => $default, )*
-                        Some(v) => $crate::FromInputValue::from(v).unwrap(),
-                        _ => $crate::FromInputValue::from(&$crate::InputValue::null()).unwrap()
+                        Some(v) => $crate::FromInputValue::from_input_value(v).unwrap(),
+                        _ => $crate::FromInputValue::from_input_value(&$crate::InputValue::null()).unwrap()
                 }
             } ),*
         })
@@ -221,7 +221,7 @@ macro_rules! graphql_input_object {
         graphql_input_object!(@generate_struct_fields, $meta, $pubmod, $name, $fields);
 
         impl $crate::FromInputValue for $name {
-            fn from(value: &$crate::InputValue) -> Option<$name> {
+            fn from_input_value(value: &$crate::InputValue) -> Option<$name> {
                 if let Some(obj) = value.to_object_value() {
                     graphql_input_object!(@generate_from_input_value, $name, obj, $fields)
                 }

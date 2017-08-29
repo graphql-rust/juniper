@@ -172,7 +172,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         }
 
         impl ::juniper::FromInputValue for #ident {
-            fn from(v: &::juniper::InputValue) -> Option<#ident> {
+            fn from_input_value(v: &::juniper::InputValue) -> Option<#ident> {
                 match v.as_enum_value().or_else(|| v.as_string_value()) {
                     #(#from_inputs)*
                     _ => None,

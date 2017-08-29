@@ -28,14 +28,14 @@ fn test_derived_enum() {
     // Test Regular variant.
     assert_eq!(SomeEnum::Regular.to(), InputValue::String("REGULAR".into()));
     assert_eq!(
-        FromInputValue::from(&InputValue::String("REGULAR".into())),
+        FromInputValue::from_input_value(&InputValue::String("REGULAR".into())),
         Some(SomeEnum::Regular)
     );
 
     // Test FULL variant.
     assert_eq!(SomeEnum::Full.to(), InputValue::String("FULL".into()));
     assert_eq!(
-        FromInputValue::from(&InputValue::String("FULL".into())),
+        FromInputValue::from_input_value(&InputValue::String("FULL".into())),
         Some(SomeEnum::Full)
     );
 }
