@@ -131,7 +131,7 @@ impl GraphQLType for DogCommand {
 }
 
 impl FromInputValue for DogCommand {
-    fn from(v: &InputValue) -> Option<DogCommand> {
+    fn from_input_value(v: &InputValue) -> Option<DogCommand> {
         match v.as_enum_value() {
             Some("SIT") => Some(DogCommand::Sit),
             Some("HEEL") => Some(DogCommand::Heel),
@@ -204,7 +204,7 @@ impl GraphQLType for FurColor {
 }
 
 impl FromInputValue for FurColor {
-    fn from(v: &InputValue) -> Option<FurColor> {
+    fn from_input_value(v: &InputValue) -> Option<FurColor> {
         match v.as_enum_value() {
             Some("BROWN") => Some(FurColor::Brown),
             Some("BLACK") => Some(FurColor::Black),
@@ -382,7 +382,7 @@ impl GraphQLType for ComplexInput {
 }
 
 impl FromInputValue for ComplexInput {
-    fn from(v: &InputValue) -> Option<ComplexInput> {
+    fn from_input_value(v: &InputValue) -> Option<ComplexInput> {
         let obj = match v.to_object_value() {
             Some(o) => o,
             None => return None,

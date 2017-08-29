@@ -345,7 +345,7 @@ impl<'a> ScalarMeta<'a> {
         ScalarMeta {
             name: name,
             description: None,
-            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from(v).is_some()),
+            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from_input_value(v).is_some()),
         }
     }
 
@@ -431,7 +431,7 @@ impl<'a> EnumMeta<'a> {
             name: name,
             description: None,
             values: values.to_vec(),
-            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from(v).is_some()),
+            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from_input_value(v).is_some()),
         }
     }
 
@@ -510,7 +510,7 @@ impl<'a> InputObjectMeta<'a> {
             name: name,
             description: None,
             input_fields: input_fields.to_vec(),
-            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from(v).is_some()),
+            try_parse_fn: Box::new(|v: &InputValue| <T as FromInputValue>::from_input_value(v).is_some()),
         }
     }
 

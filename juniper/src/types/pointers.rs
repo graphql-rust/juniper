@@ -54,8 +54,8 @@ impl<T> FromInputValue for Box<T>
 where
     T: FromInputValue,
 {
-    fn from(v: &InputValue) -> Option<Box<T>> {
-        match <T as FromInputValue>::from(v) {
+    fn from_input_value(v: &InputValue) -> Option<Box<T>> {
+        match <T as FromInputValue>::from_input_value(v) {
             Some(v) => Some(Box::new(v)),
             None => None,
         }

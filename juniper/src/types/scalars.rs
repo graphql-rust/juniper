@@ -141,7 +141,7 @@ impl GraphQLType for () {
 }
 
 impl FromInputValue for () {
-    fn from(_: &InputValue) -> Option<()> {
+    fn from_input_value(_: &InputValue) -> Option<()> {
         None
     }
 }

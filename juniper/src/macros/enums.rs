@@ -94,7 +94,7 @@ macro_rules! graphql_enum {
         }
 
         impl $crate::FromInputValue for $name {
-            fn from(v: &$crate::InputValue) -> Option<$name> {
+            fn from_input_value(v: &$crate::InputValue) -> Option<$name> {
                 match v.as_enum_value().or_else(|| v.as_string_value()) {
                     $(
                         Some(graphql_enum!(@as_pattern, $ename))

@@ -94,7 +94,7 @@ macro_rules! graphql_scalar {
         }
 
         impl $crate::FromInputValue for $name {
-            fn from($fiv_arg: &$crate::InputValue) -> $fiv_result {
+            fn from_input_value($fiv_arg: &$crate::InputValue) -> $fiv_result {
                 $fiv_body
             }
         }

@@ -24,7 +24,7 @@ mod test {
         let raw = "123e4567-e89b-12d3-a456-426655440000";
         let input = ::InputValue::String(raw.to_string());
 
-        let parsed: Uuid = ::FromInputValue::from(&input).unwrap();
+        let parsed: Uuid = ::FromInputValue::from_input_value(&input).unwrap();
         let id = Uuid::parse_str(raw).unwrap();
 
         assert_eq!(parsed, id);

@@ -169,8 +169,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
                     #from_input_default
-                    Some(v) => ::juniper::FromInputValue::from(v).unwrap(),
-                    _ => ::juniper::FromInputValue::from(&::juniper::InputValue::null()).unwrap()
+                    Some(v) => ::juniper::FromInputValue::from_input_value(v).unwrap(),
+                    _ => ::juniper::FromInputValue::from_input_value(&::juniper::InputValue::null()).unwrap()
                 }
             },
         };
@@ -203,7 +203,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         }
 
         impl ::juniper::FromInputValue for #ident {
-            fn from(value: &::juniper::InputValue) -> Option<#ident> {
+            fn from_input_value(value: &::juniper::InputValue) -> Option<#ident> {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {
                         #(#from_inputs)*
