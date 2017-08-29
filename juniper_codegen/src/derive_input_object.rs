@@ -178,7 +178,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
 
         // Build to_input clause.
         let to_input = quote!{
-            (#name, self.#field_ident.to()),
+            (#name, self.#field_ident.to_input_value()),
         };
         to_inputs.push(to_input);
     }
@@ -217,7 +217,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         }
 
         impl ::juniper::ToInputValue for #ident {
-            fn to(&self) -> ::juniper::InputValue {
+            fn to_input_value(&self) -> ::juniper::InputValue {
                 ::juniper::InputValue::object(vec![
                     #(#to_inputs)*
                 ].into_iter().collect())

@@ -485,7 +485,7 @@ impl<'r> Registry<'r> {
     where
         T: GraphQLType + ToInputValue + FromInputValue,
     {
-        Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to())
+        Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {

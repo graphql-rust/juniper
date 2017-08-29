@@ -77,7 +77,7 @@ impl<'a> GraphQLType for &'a str {
 }
 
 impl<'a> ToInputValue for &'a str {
-    fn to(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue {
         InputValue::string(self)
     }
 }

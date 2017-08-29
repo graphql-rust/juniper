@@ -52,9 +52,9 @@ impl<T> ToInputValue for Option<T>
 where
     T: ToInputValue,
 {
-    fn to(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue {
         match *self {
-            Some(ref v) => v.to(),
+            Some(ref v) => v.to_input_value(),
             None => InputValue::null(),
         }
     }
@@ -117,8 +117,8 @@ impl<T> ToInputValue for Vec<T>
 where
     T: ToInputValue,
 {
-    fn to(&self) -> InputValue {
-        InputValue::list(self.iter().map(|v| v.to()).collect())
+    fn to_input_value(&self) -> InputValue {
+        InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
     }
 }
 
@@ -155,7 +155,7 @@ impl<'a, T> ToInputValue for &'a [T]
 where
     T: ToInputValue,
 {
-    fn to(&self) -> InputValue {
-        InputValue::list(self.iter().map(|v| v.to()).collect())
+    fn to_input_value(&self) -> InputValue {
+        InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
     }
 }

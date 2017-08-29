@@ -84,7 +84,7 @@ macro_rules! graphql_input_object {
     ) => {
         $crate::InputValue::object(vec![
             $(
-                ($crate::to_camel_case(stringify!($field_name)), $selfvar.$field_name.to())
+                ($crate::to_camel_case(stringify!($field_name)), $selfvar.$field_name.to_input_value())
             ),*
         ].into_iter().collect())
     };
@@ -232,7 +232,7 @@ macro_rules! graphql_input_object {
         }
 
         impl $crate::ToInputValue for $name {
-            fn to(&self) -> $crate::InputValue {
+            fn to_input_value(&self) -> $crate::InputValue {
                 graphql_input_object!(@generate_to_input_value, $name, self, $fields)
             }
         }

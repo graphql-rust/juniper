@@ -110,7 +110,7 @@ impl Value {
 }
 
 impl ToInputValue for Value {
-    fn to(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue {
         match *self {
             Value::Null => InputValue::Null,
             Value::Int(i) => InputValue::Int(i),
@@ -118,12 +118,12 @@ impl ToInputValue for Value {
             Value::String(ref s) => InputValue::String(s.clone()),
             Value::Boolean(b) => InputValue::Boolean(b),
             Value::List(ref l) => {
-                InputValue::List(l.iter().map(|x| Spanning::unlocated(x.to())).collect())
+                InputValue::List(l.iter().map(|x| Spanning::unlocated(x.to_input_value())).collect())
             }
             Value::Object(ref o) => InputValue::Object(
                 o.iter()
                     .map(|(k, v)| {
-                        (Spanning::unlocated(k.clone()), Spanning::unlocated(v.to()))
+                        (Spanning::unlocated(k.clone()), Spanning::unlocated(v.to_input_value()))
                     })
                     .collect(),
             ),

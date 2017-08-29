@@ -160,7 +160,7 @@ pub trait FromInputValue: Sized {
 /// Losslessly clones a Rust data type into an InputValue.
 pub trait ToInputValue: Sized {
     /// Performs the conversion.
-    fn to(&self) -> InputValue;
+    fn to_input_value(&self) -> InputValue;
 }
 
 impl<'a> Type<'a> {

@@ -51,7 +51,7 @@ macro_rules! graphql_scalar {
     // string or none).
     //
     // ( $resolve_selfvar, $resolve_body ): the "self" argument and body for the
-    // resolve() method on GraphQLType and the to() method on ToInputValue.
+    // resolve() method on GraphQLType and the to_input_value() method on ToInputValue.
     //
     // ( $fiv_arg, $fiv_result, $fiv_body ): the method argument, result type,
     // and body for the from() method on FromInputValue.
@@ -88,8 +88,8 @@ macro_rules! graphql_scalar {
         }
 
         impl $crate::ToInputValue for $name {
-            fn to(&$resolve_selfvar) -> $crate::InputValue {
-                $crate::ToInputValue::to(&$resolve_body)
+            fn to_input_value(&$resolve_selfvar) -> $crate::InputValue {
+                $crate::ToInputValue::to_input_value(&$resolve_body)
             }
         }
 
