@@ -181,7 +181,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         }
 
         impl ::juniper::ToInputValue for #ident {
-            fn to(&self) -> ::juniper::InputValue {
+            fn to_input_value(&self) -> ::juniper::InputValue {
                 match self {
                     #(#to_inputs)*
                 }

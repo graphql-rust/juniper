@@ -66,8 +66,8 @@ impl<T> ToInputValue for Box<T>
 where
     T: ToInputValue,
 {
-    fn to(&self) -> InputValue {
-        (**self).to()
+    fn to_input_value(&self) -> InputValue {
+        (**self).to_input_value()
     }
 }
 
@@ -120,7 +120,7 @@ impl<'a, T> ToInputValue for &'a T
 where
     T: ToInputValue,
 {
-    fn to(&self) -> InputValue {
-        (**self).to()
+    fn to_input_value(&self) -> InputValue {
+        (**self).to_input_value()
     }
 }

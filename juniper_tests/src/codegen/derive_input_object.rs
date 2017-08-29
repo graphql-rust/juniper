@@ -26,6 +26,6 @@ fn test_derived_input_object() {
         regular_field: "a".to_string(),
         c: 33,
     };
-    let restored: Input = FromInputValue::from_input_value(&obj.to()).unwrap();
+    let restored: Input = FromInputValue::from_input_value(&obj.to_input_value()).unwrap();
     assert_eq!(obj, restored);
 }

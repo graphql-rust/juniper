@@ -105,7 +105,7 @@ macro_rules! graphql_enum {
         }
 
         impl $crate::ToInputValue for $name {
-            fn to(&self) -> $crate::InputValue {
+            fn to_input_value(&self) -> $crate::InputValue {
                 match *self {
                     $(
                         graphql_enum!(@as_pattern, $eval) =>
