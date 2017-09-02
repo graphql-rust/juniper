@@ -7,6 +7,11 @@ build = "build.rs"
 [dependencies]
 juniper = { git = "https://github.com/graphql-rust/juniper" }
 juniper_codegen = { git = "https://github.com/graphql-rust/juniper" }
+
+juniper_iron = { git = "https://github.com/graphql-rust/juniper_iron" }
+iron = "^0.5.0"
+mount = "^0.3.0"
+
 skeptic = "0.12"
 
 [build-dependencies]
