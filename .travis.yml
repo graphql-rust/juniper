@@ -10,3 +10,7 @@ before_install:
 script:
   - yarn build
   - yarn test
+
+branches:
+  only:
+  - source
