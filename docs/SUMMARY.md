@@ -1,16 +1,21 @@
 # Summary
 
 * [Introduction](README.md)
-* Defining types
-  * [Objects](objects.md)
-  * [Input objects](input_object.md)
-  * [Enums](enums.md)
-  * [Interfaces](interfaces.md)
-  * [Unions](unions.md)
-  * [Scalars](scalars.md)
-* [Schemas and mutations](schemas_and_mutations.md)
-* [Contexts](context.md)
+* [Defining objects](defining_objects.md)
+  * [Complex fields](complex_fields.md)
+  * [Using contexts](using_contexts.md)
+  * [Error handling]
+* [Schemas and mutations]
+* Other types
+  * [Enums]
+  * [Interfaces]
+  * [Input objects]
+  * [Scalars]
+  * [Unions]
 * Adding a server
-  * [Rocket](rocket.md)
+  * [Rocket]
   * [Iron](iron.md)
-* [Error handling](error_handling.md)
+* Advanced topics
+  * [Non-struct objects]
+  * [Context switching]
+  * [Dynamic type system]

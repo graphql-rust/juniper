@@ -8,6 +8,9 @@ integrations with [Rocket] and [Iron] depending on your needs.
 
 ## Installation
 
+Note: this manual covers the currently unreleased branch of Juniper. For now,
+you'll have to install it via Git references:
+
 !FILENAME Cargo.toml
 ```toml
 [dependencies]
