@@ -120,10 +120,16 @@ even have to be backed by a trait!
 
 ## Emitting errors
 
-`FieldResult<T>` is a simple type alias for `Result<T, String>`. In the end,
-errors that fields emit are serialized into strings in the response. However,
-the execution system will keep track of the source of all errors, and will
-continue executing despite some fields failing.
+`FieldResult<T>` is a type alias for `Result<T, FieldError>`, where
+`FieldResult` is a tuple that contains an error message and optionally a
+JSON-like data structure. In the end, errors that fields emit are serialized
+into strings in the response. However, the execution system will keep track of
+the source of all errors, and will continue executing despite some fields
+failing.
+
+Anything that implements `std::fmt::Display` can be converted to a `FieldError`
+automatically via the `?` operator, or you can construct them yourself using
+`FieldError::new`.
 
 ```
 # #[macro_use] extern crate juniper;
@@ -136,7 +142,7 @@ graphql_object!(User: () |&self| {
     }
 
     field name() -> FieldResult<&String> {
-        Err("Does not have a name".to_owned())
+        Err("Does not have a name".to_owned())?
     }
 });
 

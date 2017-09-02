@@ -15,10 +15,10 @@ impl ser::Serialize for ExecutionError {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(3)));
+        let mut map = try!(serializer.serialize_map(Some(4)));
 
         try!(map.serialize_key("message"));
-        try!(map.serialize_value(self.message()));
+        try!(map.serialize_value(self.error().message()));
 
         let locations = vec![self.location()];
         try!(map.serialize_key("locations"));
@@ -26,6 +26,11 @@ impl ser::Serialize for ExecutionError {
 
         try!(map.serialize_key("path"));
         try!(map.serialize_value(self.path()));
+
+        if !self.error().data().is_null() {
+            try!(map.serialize_key("data"));
+            try!(map.serialize_value(self.error().data()));
+        }
 
         map.end()
     }

@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+use std::fmt::Display;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -52,18 +54,116 @@ where
 ///
 /// All execution errors contain the source position in the query of the field
 /// that failed to resolve. It also contains the field stack.
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct ExecutionError {
     location: SourcePosition,
     path: Vec<String>,
+    error: FieldError,
+}
+
+impl Eq for ExecutionError {}
+
+impl PartialOrd for ExecutionError {
+    fn partial_cmp(&self, other: &ExecutionError) -> Option<Ordering> {
+        (&self.location, &self.path, &self.error.message)
+            .partial_cmp(&(&other.location, &other.path, &other.error.message))
+    }
+}
+
+impl Ord for ExecutionError {
+    fn cmp(&self, other: &ExecutionError) -> Ordering {
+        (&self.location, &self.path, &self.error.message)
+            .cmp(&(&other.location, &other.path, &other.error.message))
+    }
+}
+
+/// Error type for errors that occur during field resolution
+///
+/// Field errors are represented by a human-readable error message and an
+/// optional `Value` structure containing additional information.
+///
+/// They can be converted to from any type that implements `std::fmt::Display`,
+/// which makes error chaining with the `?` operator a breeze:
+///
+/// ```rust
+/// # use juniper::FieldError;
+/// fn get_string(data: Vec<u8>) -> Result<String, FieldError> {
+///     let s = String::from_utf8(data)?;
+///     Ok(s)
+/// }
+/// ```
+#[derive(Debug, PartialEq)]
+pub struct FieldError {
     message: String,
+    data: Value,
+}
+
+impl<T: Display> From<T> for FieldError {
+    fn from(e: T) -> FieldError {
+        FieldError {
+            message: format!("{}", e),
+            data: Value::null(),
+        }
+    }
+}
+
+impl FieldError {
+    /// Construct a new error with additional data
+    ///
+    /// You can use the `graphql_value!` macro to construct an error:
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate juniper;
+    /// use juniper::FieldError;
+    ///
+    /// # fn sample() {
+    /// FieldError::new(
+    ///     "Could not open connection to the database",
+    ///     graphql_value!({ "internal_error": "Connection refused" })
+    /// );
+    /// # }
+    /// # fn main() { }
+    /// ```
+    ///
+    /// The `data` parameter will be added to the `"data"` field of the error
+    /// object in the JSON response:
+    ///
+    /// ```json
+    /// {
+    ///   "errors": [
+    ///     "message": "Could not open connection to the database",
+    ///     "locations": [{"line": 2, "column": 4}],
+    ///     "data": {
+    ///       "internal_error": "Connection refused"
+    ///     }
+    ///   ]
+    /// }
+    /// ```
+    ///
+    /// If the argument is `Value::null()`, no extra data will be included.
+    pub fn new<T: Display>(e: T, data: Value) -> FieldError {
+        FieldError {
+            message: format!("{}", e),
+            data: data,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    #[doc(hidden)]
+    pub fn data(&self) -> &Value {
+        &self.data
+    }
 }
 
 /// The result of resolving the value of a field of type `T`
-pub type FieldResult<T> = Result<T, String>;
+pub type FieldResult<T> = Result<T, FieldError>;
 
 /// The result of resolving an unspecified field
-pub type ExecutionResult = Result<Value, String>;
+pub type ExecutionResult = Result<Value, FieldError>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables = HashMap<String, InputValue>;
@@ -256,7 +356,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     /// Add an error to the execution engine
-    pub fn push_error(&self, error: String, location: SourcePosition) {
+    pub fn push_error(&self, error: FieldError, location: SourcePosition) {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
 
@@ -265,7 +365,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         errors.push(ExecutionError {
             location: location,
             path: path,
-            message: error,
+            error: error,
         });
     }
 }
@@ -290,17 +390,17 @@ impl<'a> FieldPath<'a> {
 
 impl ExecutionError {
     #[doc(hidden)]
-    pub fn new(location: SourcePosition, path: &[&str], message: &str) -> ExecutionError {
+    pub fn new(location: SourcePosition, path: &[&str], error: FieldError) -> ExecutionError {
         ExecutionError {
             location: location,
             path: path.iter().map(|s| (*s).to_owned()).collect(),
-            message: message.to_owned(),
+            error: error,
         }
     }
 
     /// The error message
-    pub fn message(&self) -> &str {
-        &self.message
+    pub fn error(&self) -> &FieldError {
+        &self.error
     }
 
     /// The source location _in the query_ of the field that failed to resolve
