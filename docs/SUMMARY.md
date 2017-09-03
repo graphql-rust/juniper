@@ -10,7 +10,7 @@
   * [Enums](enums.md)
   * [Interfaces](interfaces.md)
   * [Input objects](input_objects.md)
-  * [Scalars]
+  * [Scalars](scalars.md)
   * [Unions]
 * Adding a server
   * [Rocket]
