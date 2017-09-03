@@ -7,7 +7,7 @@
   * [Error handling](error_handling.md)
 * [Schemas and mutations](schemas_and_mutations.md)
 * Other types
-  * [Enums]
+  * [Enums](enums.md)
   * [Interfaces]
   * [Input objects]
   * [Scalars]
