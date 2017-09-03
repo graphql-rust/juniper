@@ -11,7 +11,7 @@
   * [Interfaces](interfaces.md)
   * [Input objects](input_objects.md)
   * [Scalars](scalars.md)
-  * [Unions]
+  * [Unions](unions.md)
 * Adding a server
   * [Rocket]
   * [Iron](iron.md)
