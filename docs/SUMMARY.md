@@ -9,7 +9,7 @@
 * Other types
   * [Enums](enums.md)
   * [Interfaces](interfaces.md)
-  * [Input objects]
+  * [Input objects](input_objects.md)
   * [Scalars]
   * [Unions]
 * Adding a server
