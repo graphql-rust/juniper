@@ -4,8 +4,8 @@
 * [Defining objects](defining_objects.md)
   * [Complex fields](complex_fields.md)
   * [Using contexts](using_contexts.md)
-  * [Error handling]
-* [Schemas and mutations]
+  * [Error handling](error_handling.md)
+* [Schemas and mutations](schemas_and_mutations.md)
 * Other types
   * [Enums]
   * [Interfaces]
@@ -17,5 +17,6 @@
   * [Iron](iron.md)
 * Advanced topics
   * [Non-struct objects]
+  * [Objects and generics]
   * [Context switching]
   * [Dynamic type system]
