@@ -8,7 +8,7 @@
 * [Schemas and mutations](schemas_and_mutations.md)
 * Other types
   * [Enums](enums.md)
-  * [Interfaces]
+  * [Interfaces](interfaces.md)
   * [Input objects]
   * [Scalars]
   * [Unions]
