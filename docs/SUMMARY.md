@@ -16,7 +16,7 @@
   * [Rocket]
   * [Iron](iron.md)
 * Advanced topics
-  * [Non-struct objects]
-  * [Objects and generics]
+  * [Non-struct objects](non_struct_objects.md)
+  * [Objects and generics](objects_and_generics.md)
   * [Context switching]
   * [Dynamic type system]
