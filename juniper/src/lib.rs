@@ -124,6 +124,9 @@ extern crate serde_json;
 
 extern crate ordermap;
 
+#[cfg(any(test, feature = "url"))]
+extern crate url;
+
 #[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
 
