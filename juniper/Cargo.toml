@@ -22,14 +22,13 @@ path = "benches/bench.rs"
 [features]
 nightly = []
 expose-test-schema = []
-default = ["url", "uuid"]
 
 [dependencies]
 ordermap = { version = "^0.2.11", features = ["serde-1"] }
 serde = { version = "^1.0.8" }
 serde_derive = {version="^1.0.8" }
 serde_json = { version="^1.0.2", optional = true }
-url = { version = "^1.5.1", optional = true }
+url = { version = "1.5.1", optional = true }
 uuid = { version = "0.5.1", optional = true }
 
 [dev-dependencies]
