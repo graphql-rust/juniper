@@ -1,9 +1,0 @@
-[tasks.build-verbose]
-description = "Runs the rust compiler with verbose output."
-command = "cargo"
-args = ["build", "--verbose", "--all-features"]
-
-[tasks.test-verbose]
-description = "Runs all available tests with verbose output."
-command = "cargo"
-args = ["test", "--verbose", "--all-features"]

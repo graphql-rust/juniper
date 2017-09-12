@@ -124,10 +124,10 @@ extern crate serde_json;
 
 extern crate ordermap;
 
-#[cfg(feature = "url")]
+#[cfg(any(test, feature = "url"))]
 extern crate url;
 
-#[cfg(feature = "uuid")]
+#[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
 
 use std::borrow::Cow;
