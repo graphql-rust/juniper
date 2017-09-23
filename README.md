@@ -1,5 +1,7 @@
 # Juniper
 
+![](https://github.com/graphql-rust/juniper/blob/master/assets/logo/juniper-dark-word.png)
+
 > GraphQL server library for Rust
 
 [![Build Status](https://travis-ci.org/graphql-rust/juniper.svg?branch=master)](https://travis-ci.org/graphql-rust/juniper)
