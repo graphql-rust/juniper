@@ -1,4 +1,5 @@
-![Juniper](https://github.com/graphql-rust/juniper/blob/master/assets/logo/juniper-dark-word.png)
+<img src="https://github.com/graphql-rust/juniper/blob/master/assets/logo/juniper-dark-word.png" alt="Juniper" width="500" />
+
 
 > GraphQL server library for Rust
 
