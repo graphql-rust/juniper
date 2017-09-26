@@ -76,6 +76,14 @@ impl Value {
         }
     }
 
+    /// View the underlying float value, if present.
+    pub fn as_float_value(&self) -> Option<&f64> {
+        match *self {
+            Value::Float(ref f) => Some(f),
+            _ => None,
+        }
+    }
+
     /// View the underlying object value, if present.
     pub fn as_object_value(&self) -> Option<&OrderMap<String, Value>> {
         match *self {
@@ -179,7 +187,7 @@ impl<T> From<Option<T>> for Value where Value: From<T> {
 /// passed in.
 /// ```rust
 /// #[macro_use] extern crate juniper;
-/// 
+///
 /// graphql_value!(1234);
 /// graphql_value!("test");
 /// graphql_value!([ 1234, "test", true ]);
