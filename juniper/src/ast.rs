@@ -338,6 +338,14 @@ impl InputValue {
         }
     }
 
+    /// View the underlying float value, if present.
+    pub fn as_float_value(&self) -> Option<f64> {
+        match *self {
+            InputValue::Float(f) => Some(f),
+            _ => None,
+        }
+    }
+
     /// View the underlying string value, if present.
     pub fn as_string_value(&self) -> Option<&str> {
         match *self {

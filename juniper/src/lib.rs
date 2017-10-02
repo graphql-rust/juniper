@@ -95,6 +95,10 @@ Adding per type, field, and argument documentation is possible directly from
 this macro. For more in-depth information on how to expose fields and types, see
 the [`graphql_object!`][3] macro.
 
+### Built-in object type integrations
+
+Juniper has [built-in integrations][object_integrations] for converting existing object types to
+GraphQL objects for popular crates.
 
 ## Integrating with web servers
 
@@ -108,6 +112,7 @@ To support this, Juniper offers additional crates that integrate with popular we
 [3]: macro.graphql_object!.html
 [Iron]: http://ironframework.io
 [Rocket]: https://rocket.rs
+[object_integrations]: integrations/index.html
 
 */
 #![cfg_attr(feature = "nightly", feature(test))]
@@ -124,6 +129,9 @@ extern crate serde_json;
 
 extern crate fnv;
 extern crate ordermap;
+
+#[cfg(any(test, feature = "chrono"))]
+extern crate chrono;
 
 #[cfg(any(test, feature = "url"))]
 extern crate url;
@@ -142,7 +150,9 @@ mod types;
 mod schema;
 mod validation;
 mod executor;
-mod integrations;
+// This needs to be public until docs have support for private modules:
+// https://github.com/rust-lang/cargo/issues/1520
+pub mod integrations;
 pub mod graphiql;
 pub mod http;
 #[macro_use]
