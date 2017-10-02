@@ -4,6 +4,8 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::RwLock;
 
+use fnv::FnvHashMap;
+
 use GraphQLError;
 use ast::{Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
           ToInputValue, Type};
@@ -24,7 +26,7 @@ use types::name::Name;
 /// into `Type` instances and automatically registers them.
 pub struct Registry<'r> {
     /// Currently registered types
-    pub types: HashMap<Name, MetaType<'r>>,
+    pub types: FnvHashMap<Name, MetaType<'r>>,
 }
 
 #[derive(Clone)]
@@ -519,7 +521,7 @@ where
 
 impl<'r> Registry<'r> {
     /// Construct a new registry
-    pub fn new(types: HashMap<Name, MetaType<'r>>) -> Registry<'r> {
+    pub fn new(types: FnvHashMap<Name, MetaType<'r>>) -> Registry<'r> {
         Registry { types: types }
     }
 
