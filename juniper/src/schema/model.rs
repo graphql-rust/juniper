@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::fmt;
+
+use fnv::FnvHashMap;
 
 use types::base::GraphQLType;
 use types::name::Name;
@@ -26,10 +27,10 @@ pub struct RootNode<'a, QueryT: GraphQLType, MutationT: GraphQLType> {
 
 /// Metadata for a schema
 pub struct SchemaType<'a> {
-    types: HashMap<Name, MetaType<'a>>,
+    types: FnvHashMap<Name, MetaType<'a>>,
     query_type_name: String,
     mutation_type_name: Option<String>,
-    directives: HashMap<String, DirectiveType<'a>>,
+    directives: FnvHashMap<String, DirectiveType<'a>>,
 }
 
 impl<'a> Context for SchemaType<'a> {}
@@ -104,11 +105,11 @@ impl<'a> SchemaType<'a> {
         QueryT: GraphQLType,
         MutationT: GraphQLType,
     {
-        let mut directives = HashMap::new();
+        let mut directives = FnvHashMap::default();
         let query_type_name: String;
         let mutation_type_name: String;
 
-        let mut registry = Registry::new(HashMap::new());
+        let mut registry = Registry::new(FnvHashMap::default());
         query_type_name = registry
             .get_type::<QueryT>(query_info)
             .innermost_name()

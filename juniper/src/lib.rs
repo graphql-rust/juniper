@@ -127,6 +127,7 @@ extern crate serde_derive;
 #[cfg(any(test, feature = "expose-test-schema"))]
 extern crate serde_json;
 
+extern crate fnv;
 extern crate ordermap;
 
 #[cfg(any(test, feature = "chrono"))]
