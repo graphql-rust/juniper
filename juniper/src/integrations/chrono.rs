@@ -85,142 +85,87 @@ mod test {
     use chrono::prelude::*;
     use super::RFC3339_PARSE_FORMAT;
 
-    #[test]
-    fn datetime_fixedoffset_from_input_value() {
-        let raw = "2014-11-28T21:00:09+09:00";
+    fn datetime_fixedoffset_test(raw: &'static str) {
         let input = ::InputValue::String(raw.to_string());
 
         let parsed: DateTime<FixedOffset> = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw).unwrap();
 
         assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn datetime_fixedoffset_from_input_value() {
+        datetime_fixedoffset_test("2014-11-28T21:00:09+09:00");
     }
 
     #[test]
     fn datetime_fixedoffset_from_input_value_with_z_timezone() {
-        let raw = "2014-11-28T21:00:09Z";
-        let input = ::InputValue::String(raw.to_string());
-
-        let parsed: DateTime<FixedOffset> = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = DateTime::parse_from_rfc3339(raw).unwrap();
-
-        assert_eq!(parsed, expected);
+        datetime_fixedoffset_test("2014-11-28T21:00:09Z");
     }
 
     #[test]
     fn datetime_fixedoffset_from_input_value_with_fractional_seconds() {
-        let raw = "2014-11-28T21:00:09.05+09:00";
+        datetime_fixedoffset_test("2014-11-28T21:00:09.05+09:00");
+    }
+
+    fn datetime_utc_test(raw: &'static str) {
         let input = ::InputValue::String(raw.to_string());
 
-        let parsed: DateTime<FixedOffset> = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = DateTime::parse_from_rfc3339(raw).unwrap();
+        let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
+        let expected = DateTime::parse_from_rfc3339(raw).unwrap().with_timezone(&Utc);
 
         assert_eq!(parsed, expected);
     }
 
     #[test]
     fn datetime_utc_from_input_value() {
-        let raw = "2014-11-28T21:00:09+09:00";
-        let input = ::InputValue::String(raw.to_string());
-
-        let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = DateTime::parse_from_rfc3339(raw).unwrap().with_timezone(
-            &Utc,
-        );
-
-        assert_eq!(parsed, expected);
+        datetime_utc_test("2014-11-28T21:00:09+09:00")
     }
 
     #[test]
     fn datetime_utc_from_input_value_with_z_timezone() {
-        let raw = "2014-11-28T21:00:09Z";
-        let input = ::InputValue::String(raw.to_string());
-
-        let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = DateTime::parse_from_rfc3339(raw).unwrap().with_timezone(
-            &Utc,
-        );
-
-        assert_eq!(parsed, expected);
+        datetime_utc_test("2014-11-28T21:00:09Z")
     }
 
     #[test]
     fn datetime_utc_from_input_value_with_fractional_seconds() {
-        let raw = "2014-11-28T21:00:09.005+09:00";
+        datetime_utc_test("2014-11-28T21:00:09.005+09:00");
+    }
+
+    fn naivedate_test(raw: &'static str, y: i32, m: u32, d: u32) {
         let input = ::InputValue::String(raw.to_string());
 
-        let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = DateTime::parse_from_rfc3339(raw).unwrap().with_timezone(
-            &Utc,
-        );
+        let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
+        let expected = NaiveDate::parse_from_str(raw, &RFC3339_PARSE_FORMAT).unwrap();
+        let expected_via_datetime = DateTime::parse_from_rfc3339(raw)
+            .unwrap()
+            .date()
+            .naive_utc();
+        let expected_via_ymd = NaiveDate::from_ymd(y, m, d);
 
         assert_eq!(parsed, expected);
+        assert_eq!(parsed, expected_via_datetime);
+        assert_eq!(parsed, expected_via_ymd);
+
+        assert_eq!(parsed.year(), y);
+        assert_eq!(parsed.month(), m);
+        assert_eq!(parsed.day(), d);
     }
 
     #[test]
     fn naivedate_from_input_value() {
-        let raw = "1996-12-19T16:39:57-08:00";
-        let input = ::InputValue::String(raw.to_string());
-
-        let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = NaiveDate::parse_from_str(raw, &RFC3339_PARSE_FORMAT).unwrap();
-        let expected_via_datetime = DateTime::parse_from_rfc3339(raw)
-            .unwrap()
-            .date()
-            .naive_utc();
-        let expected_via_ymd = NaiveDate::from_ymd(1996, 12, 19);
-
-        assert_eq!(parsed, expected);
-        assert_eq!(parsed, expected_via_datetime);
-        assert_eq!(parsed, expected_via_ymd);
-
-        assert_eq!(parsed.year(), 1996);
-        assert_eq!(parsed.month(), 12);
-        assert_eq!(parsed.day(), 19);
+        naivedate_test("1996-12-19T16:39:57-08:00", 1996, 12, 19);
     }
 
     #[test]
     fn naivedate_from_input_value_with_fractional_seconds() {
-        let raw = "1996-12-19T16:39:57.005-08:00";
-        let input = ::InputValue::String(raw.to_string());
-
-        let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = NaiveDate::parse_from_str(raw, &RFC3339_PARSE_FORMAT).unwrap();
-        let expected_via_datetime = DateTime::parse_from_rfc3339(raw)
-            .unwrap()
-            .date()
-            .naive_utc();
-        let expected_via_ymd = NaiveDate::from_ymd(1996, 12, 19);
-
-        assert_eq!(parsed, expected);
-        assert_eq!(parsed, expected_via_datetime);
-        assert_eq!(parsed, expected_via_ymd);
-
-        assert_eq!(parsed.year(), 1996);
-        assert_eq!(parsed.month(), 12);
-        assert_eq!(parsed.day(), 19);
+        naivedate_test("1996-12-19T16:39:57.005-08:00", 1996, 12, 19);
     }
 
     #[test]
     fn naivedate_from_input_value_with_z_timezone() {
-        let raw = "1996-12-19T16:39:57Z";
-        let input = ::InputValue::String(raw.to_string());
-
-        let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = NaiveDate::parse_from_str(raw, &RFC3339_PARSE_FORMAT).unwrap();
-        let expected_via_datetime = DateTime::parse_from_rfc3339(raw)
-            .unwrap()
-            .date()
-            .naive_utc();
-        let expected_via_ymd = NaiveDate::from_ymd(1996, 12, 19);
-
-        assert_eq!(parsed, expected);
-        assert_eq!(parsed, expected_via_datetime);
-        assert_eq!(parsed, expected_via_ymd);
-
-        assert_eq!(parsed.year(), 1996);
-        assert_eq!(parsed.month(), 12);
-        assert_eq!(parsed.day(), 19);
+        naivedate_test("1996-12-19T16:39:57Z", 1996, 12, 19);
     }
 
     #[test]
