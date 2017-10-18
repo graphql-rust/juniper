@@ -117,7 +117,7 @@ graphql_object!(Human: () |&self| {
 
 You can find the full example in [src/tests/schema.rs][test_schema_rs],
 including polymorphism with traits and interfaces. For an example of framework
-integration, see the [examples folder][examples].
+integration, see the [rocket][rocket_examples] and [iron][iron_examples] examples folders.
 
 ## Features
 
@@ -163,7 +163,8 @@ as well.
 [iron]: http://ironframework.io
 [swschema]: http://graphql.org/docs/typesystem/
 [graphql_spec]: http://facebook.github.io/graphql
-[test_schema_rs]: src/tests/schema.rs
+[test_schema_rs]: juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
-[examples]: juniper_rocket/examples/
+[rocket_examples]: https://github.com/graphql-rust/juniper_rocket/tree/master/examples
+[iron_examples]: https://github.com/graphql-rust/juniper_iron/tree/master/examples
 [Rocket]: https://rocket.rs
