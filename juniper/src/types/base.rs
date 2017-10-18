@@ -111,7 +111,7 @@ impl<'a> Arguments<'a> {
     {
         match self.args {
             Some(ref args) => match args.get(key) {
-                Some(v) => Some(v.convert().unwrap()),
+                Some(v) => v.convert(),
                 None => None,
             },
             None => None,
