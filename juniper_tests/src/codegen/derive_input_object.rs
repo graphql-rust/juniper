@@ -1,5 +1,5 @@
 #[cfg(test)]
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 #[cfg(test)]
 use juniper::{self, FromInputValue, GraphQLType, ToInputValue};
@@ -17,7 +17,7 @@ fn test_derived_input_object() {
     assert_eq!(Input::name(&()), Some("MyInput"));
 
     // Validate meta info.
-    let mut registry = juniper::Registry::new(HashMap::new());
+    let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = Input::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyInput"));
     assert_eq!(meta.description(), Some(&"input descr".to_string()));

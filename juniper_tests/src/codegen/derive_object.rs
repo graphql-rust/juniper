@@ -1,5 +1,5 @@
 #[cfg(test)]
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 #[cfg(test)]
 use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
@@ -28,7 +28,7 @@ fn test_derived_object() {
     assert_eq!(Obj::name(&()), Some("MyObj"));
 
     // Verify meta info.
-    let mut registry = juniper::Registry::new(HashMap::new());
+    let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = Obj::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("MyObj"));
