@@ -115,11 +115,8 @@ To support this, Juniper offers additional crates that integrate with popular we
 [object_integrations]: integrations/index.html
 
 */
-#![cfg_attr(feature = "nightly", feature(test))]
 #![warn(missing_docs)]
 
-#[cfg(feature = "nightly")]
-extern crate test;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
