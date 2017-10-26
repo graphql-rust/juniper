@@ -7,6 +7,9 @@ juniper = { path = "../juniper" }
 juniper_codegen = { path = "../juniper_codegen" }
 serde_json = { version = "^1.0.2" }
 
+[dev-dependencies]
+fnv = "1.0.3"
+
 [[test]]
 name = "integration_tests"
 path = "src/lib.rs"

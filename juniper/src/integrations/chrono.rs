@@ -21,7 +21,7 @@ use ::Value;
 pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
 static RFC3339_PARSE_FORMAT: &'static str = "%+";
 
-graphql_scalar!(DateTime<FixedOffset> {
+graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" {
     description: "DateTime"
 
     resolve(&self) -> Value {
@@ -34,7 +34,7 @@ graphql_scalar!(DateTime<FixedOffset> {
     }
 });
 
-graphql_scalar!(DateTime<Utc> {
+graphql_scalar!(DateTime<Utc> as "DateTimeUtc" {
     description: "DateTime"
 
     resolve(&self) -> Value {

@@ -1,5 +1,5 @@
 #[cfg(test)]
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 #[cfg(test)]
 use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
@@ -19,7 +19,7 @@ fn test_derived_enum() {
     assert_eq!(SomeEnum::name(&()), Some("Some"));
 
     // Ensure validity of meta info.
-    let mut registry = juniper::Registry::new(HashMap::new());
+    let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = SomeEnum::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("Some"));

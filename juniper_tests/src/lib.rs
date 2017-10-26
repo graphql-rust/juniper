@@ -4,4 +4,7 @@ extern crate juniper;
 extern crate juniper_codegen;
 extern crate serde_json;
 
+#[cfg(test)]
+extern crate fnv;
+
 mod codegen;
