@@ -14,7 +14,7 @@ use executor::ExecutionError;
 ///
 /// For GET, you will need to parse the query string and exctract "query",
 /// "operationName", and "variables" manually.
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Serialize)]
 pub struct GraphQLRequest {
     query: String,
     #[serde(rename = "operationName")]
