@@ -105,7 +105,6 @@ graphql_object!(CommasOnMeta: () |&self| {
 });
 
 struct InnerContext;
-const INNER_CONTEXT: InnerContext = InnerContext;
 impl Context for InnerContext {}
 
 struct InnerType;
@@ -113,14 +112,14 @@ graphql_object!(InnerType: InnerContext |&self| {
 });
 
 struct CtxSwitcher;
-graphql_object!(CtxSwitcher: () |&self| {
-    field ctx_switch_always() -> (&InnerContext, InnerType) { (&INNER_CONTEXT, InnerType) }
-    field ctx_switch_opt() -> Option<(&InnerContext, InnerType)> { Some((&INNER_CONTEXT, InnerType)) }
-    field ctx_switch_res() -> FieldResult<(&InnerContext, InnerType)> { Ok((&INNER_CONTEXT, InnerType)) }
-    field ctx_switch_res_opt() -> FieldResult<Option<(&InnerContext, InnerType)>> { Ok(Some((&INNER_CONTEXT, InnerType))) }
+graphql_object!(CtxSwitcher: InnerContext |&self| {
+    field ctx_switch_always(&executor) -> (&InnerContext, InnerType) { (executor.context(), InnerType) }
+    field ctx_switch_opt(&executor) -> Option<(&InnerContext, InnerType)> { Some((executor.context(), InnerType)) }
+    field ctx_switch_res(&executor) -> FieldResult<(&InnerContext, InnerType)> { Ok((executor.context(), InnerType)) }
+    field ctx_switch_res_opt(&executor) -> FieldResult<Option<(&InnerContext, InnerType)>> { Ok(Some((executor.context(), InnerType))) }
 });
 
-graphql_object!(<'a> Root: () as "Root" |&self| {
+graphql_object!(<'a> Root: InnerContext as "Root" |&self| {
     field custom_name() -> CustomName { CustomName {} }
 
     field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
@@ -164,13 +163,13 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root {}, EmptyMutation::<InnerContext>::new());
     let vars = vec![
         ("typeName".to_owned(), InputValue::string(type_name)),
     ].into_iter()
         .collect();
 
-    let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = ::execute(doc, None, &schema, &vars, &InnerContext).expect("Execution failed");
 
     assert_eq!(errs, []);
 
