@@ -5,6 +5,7 @@ use ast::InputValue;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use executor::{FieldResult, Context};
 
 /*
 
@@ -14,6 +15,7 @@ Syntax to validate:
 * Optional Generics/lifetimes
 * Custom name vs. default name
 * Optional commas between items
+* Nullable/fallible context switching
 
  */
 
@@ -102,6 +104,22 @@ graphql_object!(CommasOnMeta: () |&self| {
     field simple() -> i32 { 0 }
 });
 
+struct InnerContext;
+const INNER_CONTEXT: InnerContext = InnerContext;
+impl Context for InnerContext {}
+
+struct InnerType;
+graphql_object!(InnerType: InnerContext |&self| {
+});
+
+struct CtxSwitcher;
+graphql_object!(CtxSwitcher: () |&self| {
+    field ctx_switch_always() -> (&InnerContext, InnerType) { (&INNER_CONTEXT, InnerType) }
+    field ctx_switch_opt() -> Option<(&InnerContext, InnerType)> { Some((&INNER_CONTEXT, InnerType)) }
+    field ctx_switch_res() -> FieldResult<(&InnerContext, InnerType)> { Ok((&INNER_CONTEXT, InnerType)) }
+    field ctx_switch_res_opt() -> FieldResult<Option<(&InnerContext, InnerType)>> { Ok(Some((&INNER_CONTEXT, InnerType))) }
+});
+
 graphql_object!(<'a> Root: () as "Root" |&self| {
     field custom_name() -> CustomName { CustomName {} }
 
@@ -114,6 +132,8 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
 
     field commas_with_trailing() -> CommasWithTrailing { CommasWithTrailing {} }
     field commas_on_meta() -> CommasOnMeta { CommasOnMeta {} }
+
+    field ctx_switcher() -> CtxSwitcher { CtxSwitcher {} }
 });
 
 
@@ -128,6 +148,14 @@ where
             description
             fields(includeDeprecated: true) {
                 name
+                type {
+                    kind
+                    name
+                    ofType {
+                        kind
+                        name
+                    }
+                }
             }
             interfaces {
                 name
@@ -172,9 +200,10 @@ fn introspect_custom_name() {
         assert_eq!(object.get("description"), Some(&Value::null()));
         assert_eq!(object.get("interfaces"), Some(&Value::list(vec![])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -185,9 +214,10 @@ fn introspect_with_lifetime() {
         assert_eq!(object.get("description"), Some(&Value::null()));
         assert_eq!(object.get("interfaces"), Some(&Value::list(vec![])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -198,9 +228,10 @@ fn introspect_with_generics() {
         assert_eq!(object.get("description"), Some(&Value::null()));
         assert_eq!(object.get("interfaces"), Some(&Value::list(vec![])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -216,9 +247,10 @@ fn introspect_description_first() {
             ].into_iter().collect()),
         ])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -234,9 +266,10 @@ fn introspect_fields_first() {
             ].into_iter().collect()),
         ])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -252,9 +285,10 @@ fn introspect_interfaces_first() {
             ].into_iter().collect()),
         ])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -270,9 +304,10 @@ fn introspect_commas_with_trailing() {
             ].into_iter().collect()),
         ])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
     });
 }
 
@@ -288,8 +323,56 @@ fn introspect_commas_on_meta() {
             ].into_iter().collect()),
         ])));
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("simple")),
-        ].into_iter().collect())));
+        assert!(fields.contains(&graphql_value!({
+            "name": "simple", 
+            "type": { "kind": "NON_NULL", "name": None, "ofType": { "kind": "SCALAR", "name": "Int" } }
+        })));
+    });
+}
+
+#[test]
+fn introspect_ctx_switch() {
+    run_type_info_query("CtxSwitcher", |_, fields| {
+        assert!(fields.contains(&graphql_value!({
+            "name": "ctxSwitchAlways",
+            "type": {
+                "kind": "NON_NULL",
+                "name": None,
+                "ofType": {
+                    "kind": "OBJECT",
+                    "name": "InnerType",
+                }
+            }
+        })));
+
+        assert!(fields.contains(&graphql_value!({
+            "name": "ctxSwitchOpt",
+            "type": {
+                "kind": "OBJECT",
+                "name": "InnerType",
+                "ofType": None
+            }
+        })));
+
+        assert!(fields.contains(&graphql_value!({
+            "name": "ctxSwitchRes",
+            "type": {
+                "kind": "NON_NULL",
+                "name": None,
+                "ofType": {
+                    "kind": "OBJECT",
+                    "name": "InnerType",
+                }
+            }
+        })));
+
+        assert!(fields.contains(&graphql_value!({
+            "name": "ctxSwitchResOpt",
+            "type": {
+                "kind": "OBJECT",
+                "name": "InnerType",
+                "ofType": None
+            }
+        })));
     });
 }

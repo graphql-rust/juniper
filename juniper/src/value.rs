@@ -205,6 +205,7 @@ macro_rules! graphql_value {
             $( ($key, graphql_value!($val)), )*
         ].into_iter().collect())
     };
+    (None) => ($crate::Value::null());
     ($e:expr) => ($crate::Value::from($e))
 }
 
@@ -251,7 +252,7 @@ mod tests {
             Value::string("test")
         );
         assert_eq!(
-            graphql_value!((None as Option<String>)),
+            graphql_value!(None),
             Value::null()
         );
     }

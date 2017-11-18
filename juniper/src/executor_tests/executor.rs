@@ -297,11 +297,44 @@ mod dynamic_context_switching {
     }
 
     #[test]
-    fn test_res() {
+    fn test_res_success() {
         let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
         let doc = r"
           {
             first: itemRes(key: 0) { value }
+          }
+          ";
+
+        let vars = vec![].into_iter().collect();
+
+        let ctx = OuterContext {
+            items: vec![
+                (0, InnerContext { value: "First value".to_owned() }),
+                (1, InnerContext { value: "Second value".to_owned() }),
+            ].into_iter()
+                .collect(),
+        };
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+
+        assert_eq!(errs, vec![]);
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            Value::object(vec![
+                ("first", Value::object(vec![
+                    ("value", Value::string("First value")),
+                ].into_iter().collect())),
+            ].into_iter().collect()));
+    }
+
+    #[test]
+    fn test_res_fail() {
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let doc = r"
+          {
             missing: itemRes(key: 2) { value }
           }
           ";
@@ -320,7 +353,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, vec![
             ExecutionError::new(
-                SourcePosition::new(70, 3, 12),
+                SourcePosition::new(25, 2, 12),
                 &["missing"],
                 FieldError::new("Could not find key 2", Value::null()),
             ),
@@ -328,14 +361,7 @@ mod dynamic_context_switching {
 
         println!("Result: {:?}", result);
 
-        assert_eq!(
-            result,
-            Value::object(vec![
-                ("first", Value::object(vec![
-                    ("value", Value::string("First value")),
-                ].into_iter().collect())),
-                ("missing", Value::null()),
-            ].into_iter().collect()));
+        assert_eq!(result, Value::null());
     }
 
     #[test]
@@ -413,7 +439,7 @@ mod dynamic_context_switching {
     }
 }
 
-mod nulls_out_errors {
+mod propagates_errors_to_nullable_fields {
     use value::Value;
     use schema::model::RootNode;
     use executor::{ExecutionError, FieldError, FieldResult};
@@ -421,16 +447,23 @@ mod nulls_out_errors {
     use types::scalars::EmptyMutation;
 
     struct Schema;
+    struct Inner;
 
     graphql_object!(Schema: () |&self| {
-        field sync() -> FieldResult<&str> { Ok("sync") }
-        field sync_error() -> FieldResult<&str> { Err("Error for syncError")? }
+        field inner() -> Inner { Inner }
+    });
+
+    graphql_object!(Inner: () |&self| {
+        field nullable_field() -> Option<Inner> { Some(Inner) }
+        field non_nullable_field() -> Inner { Inner }
+        field nullable_error_field() -> FieldResult<Option<&str>> { Err("Error for nullableErrorField")? }
+        field non_nullable_error_field() -> FieldResult<&str> { Err("Error for nonNullableErrorField")? }
     });
 
     #[test]
-    fn test() {
+    fn nullable_first_level() {
         let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
-        let doc = r"{ sync, syncError }";
+        let doc = r"{ inner { nullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
 
@@ -440,18 +473,119 @@ mod nulls_out_errors {
 
         assert_eq!(
             result,
-            Value::object(vec![
-                ("sync", Value::string("sync")),
-                ("syncError", Value::null()),
-            ].into_iter().collect()));
+            graphql_value!({ "inner": { "nullableErrorField": None } }));
 
         assert_eq!(
             errs,
             vec![
                 ExecutionError::new(
-                    SourcePosition::new(8, 0, 8),
-                    &["syncError"],
-                    FieldError::new("Error for syncError", Value::null()),
+                    SourcePosition::new(10, 0, 10),
+                    &["inner", "nullableErrorField"],
+                    FieldError::new("Error for nullableErrorField", Value::null()),
+                ),
+            ]);
+    }
+
+    #[test]
+    fn non_nullable_first_level() {
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let doc = r"{ inner { nonNullableErrorField } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            graphql_value!(None));
+
+        assert_eq!(
+            errs,
+            vec![
+                ExecutionError::new(
+                    SourcePosition::new(10, 0, 10),
+                    &["inner", "nonNullableErrorField"],
+                    FieldError::new("Error for nonNullableErrorField", Value::null()),
+                ),
+            ]);
+    }
+
+    #[test]
+    fn nullable_nested_level() {
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let doc = r"{ inner { nullableField { nonNullableErrorField } } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            graphql_value!({ "inner": { "nullableField": None } }));
+
+        assert_eq!(
+            errs,
+            vec![
+                ExecutionError::new(
+                    SourcePosition::new(26, 0, 26),
+                    &["inner", "nullableField", "nonNullableErrorField"],
+                    FieldError::new("Error for nonNullableErrorField", Value::null()),
+                ),
+            ]);
+    }
+
+    #[test]
+    fn non_nullable_nested_level() {
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let doc = r"{ inner { nonNullableField { nonNullableErrorField } } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            graphql_value!(None));
+
+        assert_eq!(
+            errs,
+            vec![
+                ExecutionError::new(
+                    SourcePosition::new(29, 0, 29),
+                    &["inner", "nonNullableField", "nonNullableErrorField"],
+                    FieldError::new("Error for nonNullableErrorField", Value::null()),
+                ),
+            ]);
+    }
+
+    #[test]
+    fn nullable_innermost() {
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let doc = r"{ inner { nonNullableField { nullableErrorField } } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            graphql_value!({ "inner": { "nonNullableField": { "nullableErrorField": None } } }));
+
+        assert_eq!(
+            errs,
+            vec![
+                ExecutionError::new(
+                    SourcePosition::new(29, 0, 29),
+                    &["inner", "nonNullableField", "nullableErrorField"],
+                    FieldError::new("Error for nullableErrorField", Value::null()),
                 ),
             ]);
     }

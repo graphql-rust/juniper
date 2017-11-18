@@ -307,8 +307,11 @@ pub trait GraphQLType: Sized {
     ) -> Value {
         if let Some(selection_set) = selection_set {
             let mut result = OrderMap::new();
-            resolve_selection_set_into(self, info, selection_set, executor, &mut result);
-            Value::object(result)
+            if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
+                Value::object(result)
+            } else {
+                Value::null()
+            }
         } else {
             panic!("resolve() must be implemented by non-object output types");
         }
@@ -321,7 +324,7 @@ fn resolve_selection_set_into<T, CtxT>(
     selection_set: &[Selection],
     executor: &Executor<CtxT>,
     result: &mut OrderMap<String, Value>,
-) where
+) -> bool where
     T: GraphQLType<Context = CtxT>,
 {
     let meta_type = executor
@@ -388,9 +391,15 @@ fn resolve_selection_set_into<T, CtxT>(
                 );
 
                 match field_result {
+                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
                         sub_exec.push_error_at(e, start_pos.clone());
+
+                        if meta_field.field_type.is_non_null() {
+                            return false;
+                        }
+
                         result.insert((*response_name).to_owned(), Value::null());
                     }
                 }
@@ -406,13 +415,15 @@ fn resolve_selection_set_into<T, CtxT>(
                     .fragment_by_name(spread.name.item)
                     .expect("Fragment could not be found");
 
-                resolve_selection_set_into(
+                if !resolve_selection_set_into(
                     instance,
                     info,
                     &fragment.selection_set[..],
                     executor,
                     result,
-                );
+                ) {
+                    return false;
+                }
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
@@ -442,17 +453,21 @@ fn resolve_selection_set_into<T, CtxT>(
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    resolve_selection_set_into(
+                    if !resolve_selection_set_into(
                         instance,
                         info,
                         &fragment.selection_set[..],
                         &sub_exec,
                         result,
-                    );
+                    ) {
+                        return false;
+                    }
                 }
             }
         }
     }
+    
+    true
 }
 
 fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) -> bool {

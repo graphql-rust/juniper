@@ -139,10 +139,11 @@ extern crate uuid;
 use std::borrow::Cow;
 
 #[macro_use]
+mod value;
+#[macro_use]
 mod macros;
 mod ast;
 pub mod parser;
-mod value;
 mod types;
 mod schema;
 mod validation;
