@@ -451,6 +451,7 @@ mod propagates_errors_to_nullable_fields {
 
     graphql_object!(Schema: () |&self| {
         field inner() -> Inner { Inner }
+        field inners() -> Vec<Inner> { (0..5).map(|_| Inner).collect() }
     });
 
     graphql_object!(Inner: () |&self| {
@@ -586,6 +587,32 @@ mod propagates_errors_to_nullable_fields {
                     SourcePosition::new(29, 0, 29),
                     &["inner", "nonNullableField", "nullableErrorField"],
                     FieldError::new("Error for nullableErrorField", Value::null()),
+                ),
+            ]);
+    }
+
+    #[test]
+    fn non_null_list() {
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let doc = r"{ inners { nonNullableErrorField } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            graphql_value!(None));
+
+        assert_eq!(
+            errs,
+            vec![
+                ExecutionError::new(
+                    SourcePosition::new(10, 0, 10),
+                    &["inner", "nonNullableErrorField"],
+                    FieldError::new("Error for nonNullableErrorField", Value::null()),
                 ),
             ]);
     }
