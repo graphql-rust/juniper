@@ -367,8 +367,9 @@ fn resolve_selection_set_into<T, CtxT>(
 
                 let exec_vars = executor.variables();
 
-                let sub_exec = executor.sub_executor(
-                    Some(response_name),
+                let sub_exec = executor.field_sub_executor(
+                    response_name,
+                    &f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
@@ -434,8 +435,9 @@ fn resolve_selection_set_into<T, CtxT>(
                     continue;
                 }
 
-                let sub_exec = executor
-                    .sub_executor(None, start_pos.clone(), Some(&fragment.selection_set[..]));
+                let sub_exec = executor.type_sub_executor(
+                    fragment.type_condition.as_ref().map(|c| c.item),
+                    Some(&fragment.selection_set[..]));
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.resolve_into_type(

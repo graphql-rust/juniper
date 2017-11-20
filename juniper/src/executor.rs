@@ -14,7 +14,7 @@ use parser::SourcePosition;
 
 use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, ListMeta,
                    MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta};
-use schema::model::{RootNode, SchemaType};
+use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
 use types::name::Name;
@@ -46,6 +46,7 @@ where
     fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
     variables: &'a Variables,
     current_selection_set: Option<&'a [Selection<'a>]>,
+    current_type: TypeType<'a>,
     schema: &'a SchemaType<'a>,
     context: &'a CtxT,
     errors: &'a RwLock<Vec<ExecutionError>>,
@@ -305,6 +306,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             fragments: self.fragments,
             variables: self.variables,
             current_selection_set: self.current_selection_set,
+            current_type: self.current_type.clone(),
             schema: self.schema,
             context: ctx,
             errors: self.errors,
@@ -313,9 +315,10 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     #[doc(hidden)]
-    pub fn sub_executor(
+    pub fn field_sub_executor(
         &self,
-        field_name: Option<&'a str>,
+        field_alias: &'a str,
+        field_name: &'a str,
         location: SourcePosition,
         selection_set: Option<&'a [Selection]>,
     ) -> Executor<CtxT> {
@@ -323,13 +326,36 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             fragments: self.fragments,
             variables: self.variables,
             current_selection_set: selection_set,
+            current_type: self.schema.make_type(
+                &self.current_type
+                    .innermost_concrete()
+                    .field_by_name(field_name).expect("Field not found on inner type")
+                    .field_type),
             schema: self.schema,
             context: self.context,
             errors: self.errors,
-            field_path: match field_name {
-                Some(name) => FieldPath::Field(name, location, &self.field_path),
-                None => self.field_path.clone(),
+            field_path: FieldPath::Field(field_alias, location, &self.field_path),
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn type_sub_executor(
+        &self,
+        type_name: Option<&'a str>,
+        selection_set: Option<&'a [Selection]>,
+    ) -> Executor<CtxT> {
+        Executor {
+            fragments: self.fragments,
+            variables: self.variables,
+            current_selection_set: selection_set,
+            current_type: match type_name {
+                Some(type_name) => self.schema.type_by_name(type_name).expect("Type not found"),
+                None => self.current_type.clone(),
             },
+            schema: self.schema,
+            context: self.context,
+            errors: self.errors,
+            field_path: self.field_path.clone(),
         }
     }
 
@@ -344,6 +370,11 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     /// The currently executing schema
     pub fn schema(&self) -> &'a SchemaType {
         self.schema
+    }
+
+    #[doc(hidden)]
+    pub fn current_type(&self) -> &TypeType<'a> {
+        &self.current_type
     }
 
     #[doc(hidden)]
@@ -492,6 +523,11 @@ where
             final_vars = &all_vars;
         }
 
+        let root_type = match op.item.operation_type {
+            OperationType::Query => root_node.schema.query_type(),
+            OperationType::Mutation => root_node.schema.mutation_type().expect("No mutation type found")
+        };
+
         let executor = Executor {
             fragments: &fragments
                 .iter()
@@ -499,6 +535,7 @@ where
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
+            current_type: root_type,
             schema: &root_node.schema,
             context: context,
             errors: &errors,
