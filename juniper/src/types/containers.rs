@@ -81,11 +81,7 @@ where
         _: Option<&[Selection]>,
         executor: &Executor<CtxT>,
     ) -> Value {
-        Value::list(
-            self.iter()
-                .map(|e| executor.resolve_into_value(info, e))
-                .collect(),
-        )
+        resolve_into_list(executor, info, self.iter())
     }
 }
 
@@ -143,11 +139,7 @@ where
         _: Option<&[Selection]>,
         executor: &Executor<CtxT>,
     ) -> Value {
-        Value::list(
-            self.iter()
-                .map(|e| executor.resolve_into_value(info, e))
-                .collect(),
-        )
+        resolve_into_list(executor, info, self.iter())
     }
 }
 
@@ -158,4 +150,23 @@ where
     fn to_input_value(&self) -> InputValue {
         InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
     }
+}
+
+fn resolve_into_list<T: GraphQLType, I: Iterator<Item=T>>(executor: &Executor<T::Context>, info: &T::TypeInfo, iter: I) -> Value {
+    let stop_on_null = executor.current_type()
+        .list_contents().expect("Current type is not a list type")
+        .is_non_null();
+
+    let mut result = Vec::new();
+
+    for o in iter {
+        let value = executor.resolve_into_value(info, &o);
+        if stop_on_null && value.is_null() {
+            return value;
+        }
+
+        result.push(value);
+    }
+
+    Value::list(result)
 }

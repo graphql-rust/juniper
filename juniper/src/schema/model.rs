@@ -321,6 +321,28 @@ impl<'a> TypeType<'a> {
             _ => None,
         }
     }
+
+    pub fn innermost_concrete(&self) -> &'a MetaType {
+        match *self {
+            TypeType::Concrete(t) => t,
+            TypeType::NonNull(ref n) | TypeType::List(ref n) => n.innermost_concrete(),
+        }
+    }
+
+    pub fn list_contents(&self) -> Option<&TypeType<'a>> {
+        match *self {
+            TypeType::List(ref n) => Some(n),
+            TypeType::NonNull(ref n) => n.list_contents(),
+            _ => None,
+        }
+    }
+
+    pub fn is_non_null(&self) -> bool {
+        match *self {
+            TypeType::NonNull(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl<'a> DirectiveType<'a> {
