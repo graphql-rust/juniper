@@ -13,159 +13,87 @@
 ---
 
 [GraphQL][graphql] is a data query language developed by Facebook intended to
-serve mobile and web application frontends. Juniper makes it possible to write
-GraphQL servers in Rust that are type-safe and blazingly fast.
+serve mobile and web application frontends. 
+
+*Juniper* makes it possible to write GraphQL servers in Rust that are 
+type-safe and blazingly fast. We also try to make declaring and resolving 
+GraphQL schemas as convenient as possible as Rust will allow.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Iron][iron] and [Rocket] frameworks.
+pre-built integration for the [Iron][iron] and [Rocket] frameworks, including
+embedded [Graphiql][graphiql] for easy debugging.
 
 * [Cargo crate](https://crates.io/crates/juniper)
-* [API Documentation](https://docs.rs/juniper)
+* [API Reference][docsrs]
+* [Book][book]: Guides and Examples
 
-## Installation
 
-Add Juniper to your Cargo.toml:
+## Getting Started
 
-```toml
-[dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-```
+The best place to get started is the [Juniper Book][book], which contains 
+guides with plenty of examples, covering all features of Juniper.
 
-If you want Iron integration, you need to depend on the `juniper_iron` crate.
-feature flag:
+To get started quickly and get a feel for Juniper, check out the 
+[Quickstart][book_quickstart] section.
 
-```toml
-[dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-juniper_iron = { git = "https://github.com/graphql-rust/juniper_iron" }
+For specific information about macros, types and the Juniper api, the 
+[API Reference][docsrs] is the best place to look.
 
-```
+You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
+schema including polymorphism with traits and interfaces.  
+For an example of web framework integration, 
+see the [rocket][rocket_examples] and [iron][iron_examples] examples folders.
 
-If you want Rocket integration, you need to depend on the `juniper_rocket` crate.
-
-**Note**: Until 0.9 is released, you will need to use a Git dependency to the current master branch.
-
-```toml
-[dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-juniper_rocket = { git = "https://github.com/graphql-rust/juniper_rocket" }
-```
-
-## Building schemas
-
-GraphQL turns the REST paradigm as it's usually implemented on its head: instead
-of providing a fixed structure of all types and relations in the system, GraphQL
-defines a _schema_ which your users can query. The schema defines all types,
-fields, and relations available, while the query defines which fields and
-relations a user is interested in.
-
-Juniper expects you to already have the types you want to expose in GraphQL as
-Rust data types. Other than that, it doesn't make any assumptions whether they
-are stored in a database or just in memory. Exposing a type is a matter of
-implementing the `GraphQLType` for your type. To make things a bit easier,
-Juniper comes with a set of macros that help you do this, based on what kind of
-type you want to expose. Let's look at how one could expose parts of the [Star
-Wars Schema][swschema]:
-
-```rust
-#[macro_use] extern crate juniper;
-
-use juniper::FieldResult;
-
-enum Episode {
-    NewHope,
-    Empire,
-    Jedi,
-}
-
-struct Human {
-    id: String,
-    name: String,
-    appears_in: Vec<Episode>,
-    home_planet: String,
-}
-
-graphql_enum!(Episode {
-    Episode::NewHope => "NEW_HOPE",
-    Episode::Empire => "EMPIRE",
-    Episode::Jedi => "JEDI",
-});
-
-graphql_object!(Human: () |&self| {
-    description: "A humanoid creature in the Star Wars universe"
-
-    // Field resolver methods look almost like ordinary methods. The macro picks
-    // up arguments and return types for the introspection schema, and verifies
-    // it during compilation.
-    field id() -> FieldResult<&String> {
-        Ok(&self.id)
-    }
-
-    field name() -> FieldResult<&String> {
-        Ok(&self.name)
-    }
-
-    field appears_in() -> FieldResult<&Vec<Episode>> {
-        Ok(&self.appears_in)
-    }
-
-    field home_planet() -> FieldResult<&String> {
-        Ok(&self.home_planet)
-    }
-});
-```
-
-You can find the full example in [src/tests/schema.rs][test_schema_rs],
-including polymorphism with traits and interfaces. For an example of framework
-integration, see the [rocket][rocket_examples] and [iron][iron_examples] examples folders.
 
 ## Features
 
 Juniper supports the full GraphQL query language according to the
-[specification][graphql_spec], including the introspective schema and all
-validations. It does not, however, support the schema language.
+[specification][graphql_spec], including interfaces, unions, schema 
+introspection, and validations.  
+It does not, however, support the schema language.
 
 As an exception to other GraphQL libraries for other languages, Juniper builds
 non-null types by default. A field of type `Vec<Episode>` will be converted into
 `[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
 `Option<Vec<Option<Episode>>>`.
 
+## Integrations
+
+### Data types
+
+Juniper has automatic integration with some very common Rust crates to make
+building schemas a breeze. The types from these crates will be usable in
+your Schemas automatically.
+
+* [uuid][uuid]
+* [url][url]
+* [chrono][chrono]
+
+### Web Frameworks
+
+* [rocket][rocket]
+* [iron][iron]
+
+
 ## API Stability
 
 Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
-## 1.0 Roadmap
-
-> Version 0.8.1 probably be re-released as 1.0 to indicate API stability.
-
-The road to 1.0 _focuses_ on two aspects: making sure the API hasn't got any
-obvious dead-ends with respect to probable future features, and improving test
-coverage for general execution. There are some chores that need to be completed
-as well.
-
-* [X] Extensive execution testing
-    * [X] Sending input objects and partial input objects in variables
-    * [X] Sending enums in variables
-    * [X] General input value type checking and validation
-* [X] Improve helper macros
-    * [X] `graphql_union!` helper completely missing
-    * [X] `graphql_input_object!` helper completely missing
-    * [X] Add support for deprecating things
-    * [X] Custom enum values and descriptions
-    * [X] Improved syntax for fields that can't fail resolution - make
-      `FieldResult<T>` optional maybe?
-* [X] Investigate asynchronous execution - implementing it is not necessary, but
-  at least look at what API changes will be needed for us to hook into
-  [Tokio][tokio], for example.
-* [X] Larger examples to illustrate things like database access
-
 [graphql]: http://graphql.org
+[graphiql]: https://github.com/graphql/graphiql
 [iron]: http://ironframework.io
-[swschema]: http://graphql.org/docs/typesystem/
 [graphql_spec]: http://facebook.github.io/graphql
-[test_schema_rs]: juniper/src/tests/schema.rs
+[test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
-[rocket_examples]: https://github.com/graphql-rust/juniper_rocket/tree/master/examples
-[iron_examples]: https://github.com/graphql-rust/juniper_iron/tree/master/examples
+[rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
+[iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [Rocket]: https://rocket.rs
+[book]: https://graphql-rust.github.io/juniper-book
+[book_quickstart]: https://graphql-rust.github.io/juniper-book/quickstart.html
+[docsrs]: https://docs.rs/juniper
+
+[uuid]: https://crates.io/crates/uuid
+[url]: https://crates.io/crates/url
+[chrono]: https://crates.io/crates/chrono
+

@@ -8,18 +8,23 @@ documentation = "https://docs.rs/juniper_iron"
 repository = "https://github.com/graphql-rust/juniper_iron"
 
 [dependencies]
-serde = { version = "1.0.2" }
+serde = { version = "1.0.8" }
 serde_json = { version = "1.0.2" }
+juniper = { version = "0.9.0", path = "../juniper" }
+
 urlencoded = { version = "0.5.0" }
 iron = "0.5.1"
-juniper = { version = "0.8.1", git = "https://github.com/graphql-rust/juniper" }
 
 [dev-dependencies]
 iron-test = "^0.5.0"
 router = "^0.5.0"
 mount = "^0.3.0"
 logger = "^0.3.0"
-juniper = { version = "0.8.1", features = ["expose-test-schema", "serde_json"], git = "https://github.com/graphql-rust/juniper" }
+
+[dev-dependencies.juniper]
+version = "0.9.0"
+features = ["expose-test-schema", "serde_json"]
+path = "../juniper"
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper_iron" }

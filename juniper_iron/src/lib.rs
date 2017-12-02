@@ -1,9 +1,21 @@
 /*!
 
-[Juniper][1] handlers for the [Iron][2] framework.
+# juniper_iron
+
+This repository contains the [Iron][Iron] web framework integration for
+[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
+
+For documentation, including guides and examples, check out [Juniper][Juniper].
+
+A basic usage example can also be found in the [Api documentation][documentation].
+
+## Links
+
+* [Juniper][Juniper]
+* [Api Reference][documentation]
+* [Iron framework][Iron]
 
 ## Integrating with Iron
-
 
 
 For example, continuing from the schema created above and using Iron to expose
@@ -78,18 +90,14 @@ fn main() {
 
 ```
 
-See the [iron_server.rs][5]
-example for more information on how to use these handlers.
-
 See the the [`GraphQLHandler`][3] documentation for more information on what request methods are
 supported.
-There's also a built-in [GraphiQL][4] handler included.
 
-[1]: https://github.com/mhallin/Juniper
-[2]: http://ironframework.io
 [3]: ./struct.GraphQLHandler.html
-[4]: https://github.com/graphql/graphiql
-[5]: https://github.com/mhallin/juniper/blob/master/juniper_iron/examples/iron_server.rs
+[Iron]: https://github.com/iron/iron
+[Juniper]: https://github.com/graphql-rust/juniper
+[GraphQL]: http://graphql.org
+[documentation]: https://docs.rs/juniper_iron
 
 */
 

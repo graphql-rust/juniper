@@ -4,4 +4,5 @@ members = [
   "juniper_codegen",
   "juniper_tests",
   "juniper_iron",
+  "juniper_rocket",
 ]
