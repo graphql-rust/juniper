@@ -1,6 +1,6 @@
 [package]
 name = "juniper_codegen"
-version = "0.8.1"
+version = "0.9.0"
 authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 description = "Internal custom derive trait for Juniper GraphQL"
 license = "BSD-2-Clause"
