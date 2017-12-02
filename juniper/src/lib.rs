@@ -14,24 +14,22 @@ schema, as well as an optional integration into the [Iron framework][Iron] and
 [Rocket]. It tries to keep the number of dynamic operations to a minimum, and
 give you as the schema developer the control of the query execution path.
 
-Juniper only depends on `serde` and `serde_derive` by default, making it
-lightweight and easy to drop into any project.
-
 ## Exposing data types
 
 The `GraphQLType` trait is the primary interface towards application developers.
-By deriving this trait, you can expose your types as either objects, enums,
+By implementing this trait, you can expose your types as either objects, enums,
 interfaces, unions, or scalars.
 
-However, due to the dynamic nature of GraphQL's type system, deriving this trait
+However, due to the dynamic nature of GraphQL's type system, doing this
 manually is a bit tedious, especially in order to do it in a fully type safe
-manner. To help with this task, this library provides a couple of macros; the
-most common one being `graphql_object!`. Use this macro to expose your already
-existing object types as GraphQL objects:
+manner.
+
+The library provides two methods of mapping your Rust data types to GraphQL schemas: custom derive
+implementations and macros.
 
 ```rust
-#[macro_use] extern crate juniper;
 # use std::collections::HashMap;
+# #[macro_use] extern crate juniper;
 use juniper::{Context, FieldResult};
 
 struct User { id: String, name: String, friend_ids: Vec<String>  }
@@ -147,7 +145,6 @@ extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
 
-use std::borrow::Cow;
 
 #[macro_use]
 mod value;
@@ -158,6 +155,7 @@ pub mod parser;
 mod types;
 mod schema;
 mod validation;
+mod util;
 mod executor;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
@@ -174,6 +172,9 @@ pub mod tests;
 
 #[cfg(test)]
 mod executor_tests;
+
+// Needs to be public because macros use it.
+pub use util::to_camel_case;
 
 use parser::{parse_document_source, ParseError, Spanning};
 use validation::{validate_input_values, visit_all_rules, ValidatorContext};
@@ -243,40 +244,4 @@ impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
     }
 }
 
-#[doc(hidden)]
-pub fn to_camel_case<'a>(s: &'a str) -> Cow<'a, str> {
-    let mut dest = Cow::Borrowed(s);
 
-    for (i, part) in s.split('_').enumerate() {
-        if i > 0 && part.len() == 1 {
-            dest += Cow::Owned(part.to_uppercase());
-        } else if i > 0 && part.len() > 1 {
-            let first = part.chars()
-                .next()
-                .unwrap()
-                .to_uppercase()
-                .collect::<String>();
-            let second = &part[1..];
-
-            dest += Cow::Owned(first);
-            dest += second;
-        } else if i == 0 {
-            dest = Cow::Borrowed(part);
-        }
-    }
-
-    dest
-}
-
-#[test]
-fn test_to_camel_case() {
-    assert_eq!(&to_camel_case("test")[..], "test");
-    assert_eq!(&to_camel_case("_test")[..], "Test");
-    assert_eq!(&to_camel_case("first_second")[..], "firstSecond");
-    assert_eq!(&to_camel_case("first_")[..], "first");
-    assert_eq!(&to_camel_case("a_b_c")[..], "aBC");
-    assert_eq!(&to_camel_case("a_bc")[..], "aBc");
-    assert_eq!(&to_camel_case("a_b")[..], "aB");
-    assert_eq!(&to_camel_case("a")[..], "a");
-    assert_eq!(&to_camel_case("")[..], "");
-}
