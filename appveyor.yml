@@ -49,4 +49,4 @@ install:
 build: false
 
 test_script:
-  - cargo make ci-flow
+  - cargo make workspace-ci-flow --no-workspace
