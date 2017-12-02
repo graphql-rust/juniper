@@ -8,10 +8,8 @@ rust:
   - nightly
 
   # Prevent accidentally breaking older Rust versions
-  - 1.17.0
-  - 1.18.0
-  - 1.19.0
   - 1.20.0
+  - 1.21.0
 
 env:
   global:
