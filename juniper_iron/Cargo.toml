@@ -1,0 +1,26 @@
+[package]
+name = "juniper_iron"
+version = "0.1.0"
+authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+description = "Iron integration for juniper"
+license = "BSD-2-Clause"
+documentation = "https://docs.rs/juniper_iron"
+repository = "https://github.com/graphql-rust/juniper_iron"
+
+[dependencies]
+serde = { version = "1.0.2" }
+serde_json = { version = "1.0.2" }
+urlencoded = { version = "0.5.0" }
+iron = "0.5.1"
+juniper = { version = "0.8.1", git = "https://github.com/graphql-rust/juniper" }
+
+[dev-dependencies]
+iron-test = "^0.5.0"
+router = "^0.5.0"
+mount = "^0.3.0"
+logger = "^0.3.0"
+juniper = { version = "0.8.1", features = ["expose-test-schema", "serde_json"], git = "https://github.com/graphql-rust/juniper" }
+
+[badges]
+travis-ci = { repository = "graphql-rust/juniper_iron" }
+appveyor = { repository = "graphql-rust/juniper_iron" }
