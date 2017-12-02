@@ -1,4 +1,5 @@
 mod input_object;
+mod enums;
 
 // This asserts that the input objects defined public actually became public
 #[allow(unused_imports)]
@@ -8,8 +9,6 @@ use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-
-
 
 #[derive(GraphQLEnum)]
 #[graphql(name = "SampleEnum", _internal)]
