@@ -13,7 +13,9 @@ use parser::Spanning;
 ///
 /// The GraphQL specification defines a number of type kinds - the meta type
 /// of a type.
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(GraphQLEnum, Clone, Eq, PartialEq, Debug)]
+// Note: _internal flag needed to make derive work in juniper crate itself.
+#[graphql(name = "__TypeKind", _internal)]
 pub enum TypeKind {
     /// ## Scalar types
     ///
@@ -48,6 +50,7 @@ pub enum TypeKind {
     /// ## Input objects
     ///
     /// Represents complex values provided in queries _into_ the system.
+    #[graphql(name = "INPUT_OBJECT")]
     InputObject,
 
     /// ## List types
@@ -61,6 +64,7 @@ pub enum TypeKind {
     ///
     /// In GraphQL, nullable types are the default. By putting a `!` after a
     /// type, it becomes non-nullable.
+    #[graphql(name = "NON_NULL")]
     NonNull,
 }
 

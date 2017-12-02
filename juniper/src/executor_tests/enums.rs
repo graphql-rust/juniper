@@ -9,19 +9,14 @@ use validation::RuleError;
 use parser::SourcePosition;
 use types::scalars::EmptyMutation;
 
-#[derive(Debug)]
+#[derive(GraphQLEnum, Debug)]
+#[graphql(_internal)]
 enum Color {
     Red,
     Green,
     Blue,
 }
 struct TestType;
-
-graphql_enum!(Color {
-    Color::Red => "RED",
-    Color::Green => "GREEN",
-    Color::Blue => "BLUE",
-});
 
 graphql_object!(TestType: () |&self| {
     field to_string(color: Color) -> String {

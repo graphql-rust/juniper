@@ -232,17 +232,6 @@ graphql_object!(EnumValue: () as "__EnumValue" |&self| {
     }
 });
 
-graphql_enum!(TypeKind as "__TypeKind" {
-    TypeKind::Scalar => "SCALAR",
-    TypeKind::Object => "OBJECT",
-    TypeKind::Interface => "INTERFACE",
-    TypeKind::Union => "UNION",
-    TypeKind::Enum => "ENUM",
-    TypeKind::InputObject => "INPUT_OBJECT",
-    TypeKind::List => "LIST",
-    TypeKind::NonNull => "NON_NULL",
-});
-
 
 graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| {
     field name() -> &String {
@@ -282,11 +271,3 @@ graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| 
     }
 });
 
-graphql_enum!(DirectiveLocation as "__DirectiveLocation" {
-    DirectiveLocation::Query => "QUERY",
-    DirectiveLocation::Mutation => "MUTATION",
-    DirectiveLocation::Field => "FIELD",
-    DirectiveLocation::FragmentDefinition => "FRAGMENT_DEFINITION",
-    DirectiveLocation::FragmentSpread => "FRAGMENT_SPREAD",
-    DirectiveLocation::InlineFragment => "INLINE_FRAGMENT",
-});

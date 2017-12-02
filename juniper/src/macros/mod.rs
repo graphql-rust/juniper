@@ -1,6 +1,4 @@
 #[macro_use]
-mod enums;
-#[macro_use]
 mod object;
 #[macro_use]
 mod interface;

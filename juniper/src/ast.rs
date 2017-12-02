@@ -150,9 +150,9 @@ pub type Document<'a> = Vec<Definition<'a>>;
 /// Parse an unstructured input value into a Rust data type.
 ///
 /// The conversion _can_ fail, and must in that case return None. Implemented
-/// automatically by the convenience macros `graphql_enum!` and
-/// `graphql_scalar!`. Must be implemented manually when manually exposing new
-/// enums or scalars.
+/// automatically by the convenience macro `graphql_scalar!` or by deriving GraphQLEnum.
+///
+/// Must be implemented manually when manually exposing new enums or scalars.
 pub trait FromInputValue: Sized {
     /// Performs the conversion.
     fn from_input_value(v: &InputValue) -> Option<Self>;
