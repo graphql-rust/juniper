@@ -12,6 +12,11 @@ struct Obj {
     c: i32,
 }
 
+#[derive(GraphQLObject, Debug, PartialEq)]
+struct Nested {
+    obj: Obj,
+}
+
 struct Query;
 
 graphql_object!(Query: () |&self| {
@@ -20,6 +25,15 @@ graphql_object!(Query: () |&self| {
         regular_field: true,
         c: 22,
       }
+    }
+
+    field nested() -> Nested {
+        Nested{
+            obj: Obj{
+                regular_field: false,
+                c: 333,
+            }
+        }
     }
 });
 
@@ -53,4 +67,31 @@ fn test_derived_object() {
       ].into_iter().collect())),
     ].into_iter().collect()),
         vec![])));
+}
+
+#[test]
+fn test_derived_object_nested() {
+    let doc = r#"
+        {
+            nested {
+                obj {
+                    regularField
+                    renamedField
+                }
+            }
+        }"#;
+
+    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+
+    assert_eq!(
+        execute(doc, None, &schema, &Variables::new(), &()),
+        Ok((Value::object(vec![
+            ("nested", Value::object(vec![
+                ("obj", Value::object(vec![
+                    ("regularField", Value::boolean(false)),
+                    ("renamedField", Value::int(333)),
+                ].into_iter().collect())
+                )].into_iter().collect())),
+        ].into_iter().collect()),
+            vec![])));
 }
