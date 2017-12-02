@@ -124,7 +124,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         // Build value.
         let name = var_attrs
             .name
-            .unwrap_or(variant.ident.as_ref().to_uppercase());
+            .unwrap_or(::util::to_upper_snake_case(variant.ident.as_ref()));
         let descr = match var_attrs.description {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
