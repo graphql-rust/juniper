@@ -1,0 +1,18 @@
+[tasks.scoped-ci-flow]
+description = "CI task will run cargo build and cargo test with verbose output"
+dependencies = [
+    "pre-ci-flow",
+    "pre-build",
+    "build-verbose",
+    "post-build",
+    "pre-test",
+    "test-verbose",
+    "post-test",
+    "ci-coverage-flow",
+    "post-ci-flow"
+]
+
+[tasks.ci-flow]
+condition = { channels = ["nightly"] }
+run_task = "scoped-ci-flow"
+dependencies = []
