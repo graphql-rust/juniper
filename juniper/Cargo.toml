@@ -20,18 +20,16 @@ harness = false
 path = "benches/bench.rs"
 
 [features]
-codegen = ["juniper_codegen"]
 nightly = []
 expose-test-schema = []
 default = [
-    "codegen",
     "chrono",
     "url",
     "uuid"
 ]
 
 [dependencies]
-juniper_codegen = { version = "0.9.0", path = "../juniper_codegen" , optional = true}
+juniper_codegen = { version = "0.9.0", path = "../juniper_codegen"  }
 
 fnv = "1.0.3"
 ordermap = { version = "0.2.11", features = ["serde-1"] }

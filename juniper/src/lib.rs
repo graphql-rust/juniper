@@ -134,17 +134,13 @@ extern crate url;
 #[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
 
-// If the "codegen" feature is enabled, depend on juniper_codegen and re-export everything in it.
-// This allows users to just depend on juniper and get the derive funcationality automatically.
-#[cfg(feature = "codegen")]
+// Depend on juniper_codegen and re-export everything in it.
+// This allows users to just depend on juniper and get the derive functionality automatically.
 #[allow(unused_imports)]
 #[macro_use]
 extern crate juniper_codegen;
-
-#[cfg(feature = "codegen")]
 #[doc(hidden)]
 pub use juniper_codegen::*;
-
 
 #[macro_use]
 mod value;
