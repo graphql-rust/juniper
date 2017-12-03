@@ -23,13 +23,13 @@ script:
 
 before_deploy:
   - rm -rf target/package/
-  - cargo package --verbose
+  - cd juniper_codegen && cargo package --verbose && cd ..
+  - cd juniper && cargo package --verbose && cd ..
 
 deploy:
   provider: releases
   api_key:
     secure: "qsMOCWmD3+y30loMSqeEZrNvy2NQaIi4TixRtu7cZyOZwal4nzHJPhozDjbm3Po59s8lH7JaIuzpVJ62bfI/BHk+ZjXU+q93cHrVqiDtf6tScOMn6TYnVcF4Af36dYKNgjOXufT01cHQXWTBUW5oEYaL7z69d7UYFhYnFo54Dd5YA5Y1vTPFEC/nLD7wdnedG1y6V0vAkXQ0tgMauUx6JJ6iids4QVTT6wIFiZDV0vilHqRNjM9WkFTS9JQHsOwdLN71Ry1rxm4/PukUm4Ly/Ouup2i0buJa0FdZW/1Ym1Db4CitvrnulCjSahkNMPjRaQDiuYCuEq+PiVu0n6gucNS/WlC41qLl6TGjAWGlKKCQz2KnBweGYtghLuUujBPCLpkMEDf/XH+sDfiV6S5Fe6MbgcF/zGccqXwh4LFh1MIU389ZX6UDukF3Ovx5xsE8ha84RyNgzDfT1if/vAXJXaPODxk5/KKP/pvUpvQR2hGz6KhzMTGT/WPN49uW/WAHUEze2ZwuqVH7u8JubtHuGif1PReUnGzEK3o7CUb+Cd4/X9tnKd8cJxV2qU7MFORZbmZQ5qk7VcBQ4ur3uGpenQZQyAdTEgJaznLxjOW3brZ/JDe56QrAi6WzBGrfd26kgg2GmdQq7TACSryjAD4oH6hM4JAmYpPYLn8hXlzO4FE="
-  file: target/package/juniper-$TRAVIS_TAG.crate
   skip_cleanup: true
   on:
     tags: true
@@ -37,7 +37,8 @@ deploy:
     condition: "$TRAVIS_RUST_VERSION = stable"
 
 after_deploy:
-  - cargo publish --token "$CRATES_IO_TOKEN"
+  - cd juniper_codegen && cargo publish --token "$CRATES_IO_TOKEN" && cd ..
+  - cd juniper && cargo publish --token "$CRATES_IO_TOKEN" && cd ..
 
 before_cache:
   rm -rf target/debug/juniper*
