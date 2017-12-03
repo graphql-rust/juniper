@@ -12,7 +12,7 @@ for more detailed information.
 !FILENAME Cargo.toml
 ```toml
 [dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper = "0.9.0"
 ```
 
 ## Schema example
@@ -29,8 +29,8 @@ resolvers, which you will use for the `Query` and `Mutation` roots.
 
 !FILENAME main.rs
 ```rust
-extern crate juniper;
-#[macro_use] extern crate juniper_codegen;
+
+#[macro_use] extern crate juniper;
 
 use juniper::{FieldResult};
 # struct DatabasePool;

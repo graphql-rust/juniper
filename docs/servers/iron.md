@@ -10,9 +10,8 @@ Juniper's Iron integration is contained in the `juniper_iron` crate:
 !FILENAME Cargo.toml
 ```toml
 [dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-juniper_codegen = { git = "https://github.com/graphql-rust/juniper" }
-juniper_iron = { git = "https://github.com/graphql-rust/juniper_iron" }
+juniper = "0.9.0"
+juniper_iron = "0.1.0"
 ```
 
 Included in the source is a [small
