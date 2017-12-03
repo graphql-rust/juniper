@@ -49,4 +49,9 @@ install:
 build: false
 
 test_script:
-  - cargo make workspace-ci-flow --no-workspace
+   - cd juniper && cargo build --verbose && cargo test --verbose && cd ..
+   - cd juniper_codegen && cargo build --verbose && cargo test --verbose && cd ..
+   - cd juniper_tests && cargo build --verbose && cargo test --verbose && cd ..
+   - cd juniper_iron && cargo build --verbose && cargo test --verbose && cd ..
+   - IF NOT %TARGET% == %TARGET:msvc=% ( IF %CHANNEL% == "nightly" ( cd juniper_rocket && cargo test --verbose && cargo build --verbose && cd .. ) )
+
