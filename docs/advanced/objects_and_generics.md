@@ -14,7 +14,6 @@ chapter](non_struct_objects.md):
 
 ```rust
 #[macro_use] extern crate juniper;
-# #[macro_use] extern crate juniper_codegen;
 # #[derive(GraphQLObject)] struct User { name: String }
 # #[derive(GraphQLObject)] struct ForumPost { title: String }
 

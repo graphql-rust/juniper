@@ -3,51 +3,70 @@
 Juniper is a [GraphQL] server library for Rust. Build type-safe and fast API
 servers with minimal boilerplate and configuration.
 
-The library itself does not contain a web server - we currently have
-integrations with [Rocket] and [Iron] depending on your needs.
+[GraphQL][graphql] is a data query language developed by Facebook intended to
+serve mobile and web application frontends. 
 
-## Installation
+Juniper makes it possible to write GraphQL servers in Rust that are 
+type-safe and blazingly fast. We also try to make declaring and resolving 
+GraphQL schemas as convenient as possible as Rust will allow.
 
-Note: this manual covers the currently unreleased branch of Juniper. For now,
-you'll have to install it via Git references:
+Juniper does not include a web server - instead it provides building blocks to
+make integration with existing servers straightforward. It optionally provides a
+pre-built integration for the [Iron][iron] and [Rocket] frameworks, including
+embedded [Graphiql][graphiql] for easy debugging.
 
-!FILENAME Cargo.toml
-```toml
-[dependencies]
-juniper = { git = "https://github.com/graphql-rust/juniper" }
-juniper_codegen = { git = "https://github.com/graphql-rust/juniper" }
-```
+* [Github](https://github.com/graphql-rust/juniper)
+* [Cargo crate](https://crates.io/crates/juniper)
+* [API Reference][docsrs]
 
-## Schema example
 
-Exposing simple enums and structs as GraphQL is just a matter of adding a custom
-derive attribute to them. Juniper includes support for basic Rust types that
-naturally map to GraphQL features, such as `Option<T>`, `Vec<T>`, `Box<T>`,
-`String`, `f64`, and `i32`, references, and slices.
+## Features
 
-```rust
-extern crate juniper;
-#[macro_use] extern crate juniper_codegen;
+Juniper supports the full GraphQL query language according to the
+[specification][graphql_spec], including interfaces, unions, schema 
+introspection, and validations.  
+It does not, however, support the schema language.
 
-#[derive(GraphQLEnum)]
-enum Episode {
-    NewHope,
-    Empire,
-    Jedi,
-}
+As an exception to other GraphQL libraries for other languages, Juniper builds
+non-null types by default. A field of type `Vec<Episode>` will be converted into
+`[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
+`Option<Vec<Option<Episode>>>`.
 
-#[derive(GraphQLObject)]
-#[graphql(description="A humanoid creature in the Star Wars universe")]
-struct Human {
-    id: String,
-    name: String,
-    appears_in: Vec<Episode>,
-    home_planet: String,
-}
+## Integrations
 
-# fn main() { }
-```
+### Data types
 
-[GraphQL]: https://graphql.org
-[Iron]: http://ironframework.org
+Juniper has automatic integration with some very common Rust crates to make
+building schemas a breeze. The types from these crates will be usable in
+your Schemas automatically.
+
+* [uuid][uuid]
+* [url][url]
+* [chrono][chrono]
+
+### Web Frameworks
+
+* [rocket][rocket]
+* [iron][iron]
+
+
+## API Stability
+
+Juniper has not reached 1.0 yet, thus some API instability should be expected.
+
+[graphql]: http://graphql.org
+[graphiql]: https://github.com/graphql/graphiql
+[iron]: http://ironframework.io
+[graphql_spec]: http://facebook.github.io/graphql
+[test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/src/tests/schema.rs
+[tokio]: https://github.com/tokio-rs/tokio
+[rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
+[iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [Rocket]: https://rocket.rs
+[book]: https://graphql-rust.github.io/juniper-book
+[book_quickstart]: https://graphql-rust.github.io/juniper-book/quickstart.html
+[docsrs]: https://docs.rs/juniper
+
+[uuid]: https://crates.io/crates/uuid
+[url]: https://crates.io/crates/url
+[chrono]: https://crates.io/crates/chrono

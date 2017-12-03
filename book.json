@@ -1,4 +1,9 @@
 {
-    "plugins": ["codeblock-omit", "codeblock-rust", "sane-sidebar", "-sharing"],
+    "plugins": [
+        "codeblock-omit",
+        "codeblock-rust",
+        "sane-sidebar",
+        "-sharing"
+    ],
     "root": "./docs"
 }
