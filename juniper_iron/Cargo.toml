@@ -5,7 +5,7 @@ authors = ["Magnus Hallin <mhallin@fastmail.com>"]
 description = "Iron integration for juniper"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_iron"
-repository = "https://github.com/graphql-rust/juniper_iron"
+repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
 serde = { version = "1.0.8" }
