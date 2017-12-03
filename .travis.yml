@@ -12,7 +12,7 @@ before_install:
   - rustup update
 
 script:
-  - yarn test
+  # - yarn test
   - yarn build
   - touch _book/.nojekyll
 
