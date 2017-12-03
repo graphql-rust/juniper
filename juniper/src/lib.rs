@@ -2,117 +2,90 @@
 
 # GraphQL
 
-[GraphQL][1] is a data query language developed by Facebook intended to serve
-mobile and web application frontends. A server provides a schema, containing
-types and fields that applications can query. Queries are hierarchical,
-composable, and statically typed. Schemas are introspective, which lets clients
-statically verify their queries against a server without actually executing
-them.
+[GraphQL][graphql] is a data query language developed by Facebook intended to
+serve mobile and web application frontends.
 
-This library provides data types and traits to expose Rust types in a GraphQL
-schema, as well as an optional integration into the [Iron framework][Iron] and
-[Rocket]. It tries to keep the number of dynamic operations to a minimum, and
-give you as the schema developer the control of the query execution path.
+*Juniper* makes it possible to write GraphQL servers in Rust that are
+type-safe and blazingly fast. We also try to make declaring and resolving
+GraphQL schemas as convenient as possible as Rust will allow.
 
-Juniper only depends on `serde` and `serde_derive` by default, making it
-lightweight and easy to drop into any project.
+Juniper does not include a web server - instead it provides building blocks to
+make integration with existing servers straightforward. It optionally provides a
+pre-built integration for the [Iron][iron] and [Rocket] frameworks, including
+embedded [Graphiql][graphiql] for easy debugging.
 
-## Exposing data types
+* [Cargo crate](https://crates.io/crates/juniper)
+* [API Reference][docsrs]
+* [Book][book]: Guides and Examples
 
-The `GraphQLType` trait is the primary interface towards application developers.
-By deriving this trait, you can expose your types as either objects, enums,
-interfaces, unions, or scalars.
 
-However, due to the dynamic nature of GraphQL's type system, deriving this trait
-manually is a bit tedious, especially in order to do it in a fully type safe
-manner. To help with this task, this library provides a couple of macros; the
-most common one being `graphql_object!`. Use this macro to expose your already
-existing object types as GraphQL objects:
+## Getting Started
 
-```rust
-#[macro_use] extern crate juniper;
-# use std::collections::HashMap;
-use juniper::{Context, FieldResult};
+The best place to get started is the [Juniper Book][book], which contains
+guides with plenty of examples, covering all features of Juniper.
 
-struct User { id: String, name: String, friend_ids: Vec<String>  }
-struct QueryRoot;
-struct Database { users: HashMap<String, User> }
+To get started quickly and get a feel for Juniper, check out the
+[Quickstart][book_quickstart] section.
 
-impl Context for Database {}
+For specific information about macros, types and the Juniper api, the
+[API Reference][docsrs] is the best place to look.
 
-// GraphQL objects can access a "context object" during execution. Use this
-// object to provide e.g. database access to the field accessors. This object
-// must implement the `Context` trait. If you don't need a context, use the
-// empty tuple `()` to indicate this.
-//
-// In this example, we use the Database struct as our context.
-graphql_object!(User: Database |&self| {
+You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
+schema including polymorphism with traits and interfaces.
+For an example of web framework integration,
+see the [rocket][rocket_examples] and [iron][iron_examples] examples folders.
 
-    // Expose a simple field as a GraphQL string.
-    field id() -> &String {
-        &self.id
-    }
 
-    field name() -> &String {
-        &self.name
-    }
+## Features
 
-    // FieldResult<T> is an alias for Result<T, FieldError>, which can be
-    // converted to from anything that implements std::fmt::Display - simply
-    // return an error with a string using the ? operator from this method and
-    // it will be correctly inserted into the execution response.
-    field secret() -> FieldResult<&String> {
-        Err("Can't touch this".to_owned())?
-    }
+Juniper supports the full GraphQL query language according to the
+[specification][graphql_spec], including interfaces, unions, schema
+introspection, and validations.
+It does not, however, support the schema language.
 
-    // Field accessors can optionally take an "executor" as their first
-    // argument. This object can help guide query execution and provides
-    // access to the context instance.
-    //
-    // In this example, the context is used to convert the friend_ids array
-    // into actual User objects.
-    field friends(&executor) -> Vec<&User> {
-        self.friend_ids.iter()
-            .filter_map(|id| executor.context().users.get(id))
-            .collect()
-    }
-});
+As an exception to other GraphQL libraries for other languages, Juniper builds
+non-null types by default. A field of type `Vec<Episode>` will be converted into
+`[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
+`Option<Vec<Option<Episode>>>`.
 
-// The context object is passed down to all referenced types - all your exposed
-// types need to have the same context type.
-graphql_object!(QueryRoot: Database |&self| {
+## Integrations
 
-    // Arguments work just like they do on functions.
-    field user(&executor, id: String) -> Option<&User> {
-        executor.context().users.get(&id)
-    }
-});
+### Data types
 
-# fn main() { }
-```
+Juniper has automatic integration with some very common Rust crates to make
+building schemas a breeze. The types from these crates will be usable in
+your Schemas automatically.
 
-Adding per type, field, and argument documentation is possible directly from
-this macro. For more in-depth information on how to expose fields and types, see
-the [`graphql_object!`][3] macro.
+* [uuid][uuid]
+* [url][url]
+* [chrono][chrono]
 
-### Built-in object type integrations
+### Web Frameworks
 
-Juniper has [built-in integrations][object_integrations] for converting existing object types to
-GraphQL objects for popular crates.
+* [rocket][rocket]
+* [iron][iron]
 
-## Integrating with web servers
 
-The most obvious usecase is to expose the GraphQL schema over an HTTP endpoint.
-To support this, Juniper offers additional crates that integrate with popular web frameworks.
+## API Stability
 
-* [juniper_iron][juniper_iron]: Handlers for [Iron][Iron]
-* [juniper_rocket][juniper_rocket]: Handlers for [Rocket][Rocket]
+Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
-[1]: http://graphql.org
-[3]: macro.graphql_object!.html
-[Iron]: http://ironframework.io
+[graphql]: http://graphql.org
+[graphiql]: https://github.com/graphql/graphiql
+[iron]: http://ironframework.io
+[graphql_spec]: http://facebook.github.io/graphql
+[test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
+[tokio]: https://github.com/tokio-rs/tokio
+[rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
+[iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [Rocket]: https://rocket.rs
-[object_integrations]: integrations/index.html
+[book]: https://graphql-rust.github.io/
+[book_quickstart]: https://graphql-rust.github.io/quickstart.html
+[docsrs]: https://docs.rs/juniper
+
+[uuid]: https://crates.io/crates/uuid
+[url]: https://crates.io/crates/url
+[chrono]: https://crates.io/crates/chrono
 
 */
 #![warn(missing_docs)]
@@ -136,7 +109,13 @@ extern crate url;
 #[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
 
-use std::borrow::Cow;
+// Depend on juniper_codegen and re-export everything in it.
+// This allows users to just depend on juniper and get the derive functionality automatically.
+#[allow(unused_imports)]
+#[macro_use]
+extern crate juniper_codegen;
+#[doc(hidden)]
+pub use juniper_codegen::*;
 
 #[macro_use]
 mod value;
@@ -147,6 +126,7 @@ pub mod parser;
 mod types;
 mod schema;
 mod validation;
+mod util;
 mod executor;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
@@ -163,6 +143,9 @@ pub mod tests;
 
 #[cfg(test)]
 mod executor_tests;
+
+// Needs to be public because macros use it.
+pub use util::to_camel_case;
 
 use parser::{parse_document_source, ParseError, Spanning};
 use validation::{validate_input_values, visit_all_rules, ValidatorContext};
@@ -232,40 +215,4 @@ impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
     }
 }
 
-#[doc(hidden)]
-pub fn to_camel_case<'a>(s: &'a str) -> Cow<'a, str> {
-    let mut dest = Cow::Borrowed(s);
 
-    for (i, part) in s.split('_').enumerate() {
-        if i > 0 && part.len() == 1 {
-            dest += Cow::Owned(part.to_uppercase());
-        } else if i > 0 && part.len() > 1 {
-            let first = part.chars()
-                .next()
-                .unwrap()
-                .to_uppercase()
-                .collect::<String>();
-            let second = &part[1..];
-
-            dest += Cow::Owned(first);
-            dest += second;
-        } else if i == 0 {
-            dest = Cow::Borrowed(part);
-        }
-    }
-
-    dest
-}
-
-#[test]
-fn test_to_camel_case() {
-    assert_eq!(&to_camel_case("test")[..], "test");
-    assert_eq!(&to_camel_case("_test")[..], "Test");
-    assert_eq!(&to_camel_case("first_second")[..], "firstSecond");
-    assert_eq!(&to_camel_case("first_")[..], "first");
-    assert_eq!(&to_camel_case("a_b_c")[..], "aBC");
-    assert_eq!(&to_camel_case("a_bc")[..], "aBc");
-    assert_eq!(&to_camel_case("a_b")[..], "aB");
-    assert_eq!(&to_camel_case("a")[..], "a");
-    assert_eq!(&to_camel_case("")[..], "");
-}

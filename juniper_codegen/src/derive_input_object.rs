@@ -9,6 +9,7 @@ use util::*;
 struct ObjAttrs {
     name: Option<String>,
     description: Option<String>,
+    internal: bool,
 }
 
 impl ObjAttrs {
@@ -26,6 +27,15 @@ impl ObjAttrs {
                     res.description = Some(val);
                     continue;
                 }
+                match item {
+                    &NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) => {
+                        if ident == "_internal" {
+                            res.internal = true;
+                            continue;
+                        }
+                    },
+                    _ => {},
+                }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
                     item
@@ -40,7 +50,8 @@ impl ObjAttrs {
 struct ObjFieldAttrs {
     name: Option<String>,
     description: Option<String>,
-    default: Option<String>,
+    default: bool,
+    default_expr: Option<String>,
 }
 
 impl ObjFieldAttrs {
@@ -59,8 +70,17 @@ impl ObjFieldAttrs {
                     continue;
                 }
                 if let Some(val) = keyed_item_value(item, "default", true) {
-                    res.default = Some(val);
+                    res.default_expr = Some(val);
                     continue;
+                }
+                match item {
+                    &NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) => {
+                        if ident == "default" {
+                            res.default = true;
+                            continue;
+                        }
+                    }
+                    _ => {},
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
@@ -122,14 +142,20 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             None => quote!{ let field = field; },
         };
 
-        let default = match field_attrs.default {
-            Some(ref def) => match syn::parse_token_trees(def) {
-                Ok(t) => Some(quote!{ #(#t)* }),
-                Err(_) => {
-                    panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
+        let default = {
+            if field_attrs.default {
+                Some(quote! { Default::default() } )
+            } else {
+                match field_attrs.default_expr {
+                    Some(ref def) => match syn::parse_token_trees(def) {
+                        Ok(t) => Some(quote! { #(#t)* }),
+                        Err(_) => {
+                            panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
+                        }
+                    },
+                    None => None,
                 }
-            },
-            None => None,
+            }
         };
 
         let create_meta_field = match default {
@@ -158,7 +184,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         let from_input_default = match default {
             Some(ref def) => {
                 quote!{
-                    Some(&&::juniper::InputValue::Null) | None if true => #def,
+                    Some(&&_juniper::InputValue::Null) | None if true => #def,
                 }
             }
             None => quote!{},
@@ -169,8 +195,11 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
                     #from_input_default
-                    Some(v) => ::juniper::FromInputValue::from_input_value(v).unwrap(),
-                    _ => ::juniper::FromInputValue::from_input_value(&::juniper::InputValue::null()).unwrap()
+                    Some(v) => _juniper::FromInputValue::from_input_value(v).unwrap(),
+                    _ => {
+                        _juniper::FromInputValue::from_input_value(&_juniper::InputValue::null())
+                            .unwrap()
+                    },
                 }
             },
         };
@@ -183,8 +212,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         to_inputs.push(to_input);
     }
 
-    quote! {
-        impl ::juniper::GraphQLType for #ident {
+    let body = quote! {
+        impl _juniper::GraphQLType for #ident {
             type Context = ();
             type TypeInfo = ();
 
@@ -192,7 +221,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>) -> _juniper::meta::MetaType<'r> {
                 let fields = &[
                     #(#meta_fields)*
                 ];
@@ -202,8 +231,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             }
         }
 
-        impl ::juniper::FromInputValue for #ident {
-            fn from_input_value(value: &::juniper::InputValue) -> Option<#ident> {
+        impl _juniper::FromInputValue for #ident {
+            fn from_input_value(value: &_juniper::InputValue) -> Option<#ident> {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {
                         #(#from_inputs)*
@@ -216,12 +245,46 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             }
         }
 
-        impl ::juniper::ToInputValue for #ident {
-            fn to_input_value(&self) -> ::juniper::InputValue {
-                ::juniper::InputValue::object(vec![
+        impl _juniper::ToInputValue for #ident {
+            fn to_input_value(&self) -> _juniper::InputValue {
+                _juniper::InputValue::object(vec![
                     #(#to_inputs)*
                 ].into_iter().collect())
             }
         }
-    }
+    };
+
+    let dummy_const = Ident::new(format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident));
+
+    // This ugly hack makes it possible to use the derive inside juniper itself.
+    // FIXME: Figure out a better way to do this!
+    let crate_reference = if attrs.internal {
+        quote! {
+            #[doc(hidden)]
+            mod _juniper {
+                pub use ::{
+                    InputValue,
+                    FromInputValue,
+                    GraphQLType,
+                    Registry,
+                    meta,
+                    ToInputValue
+                };
+            }
+        }
+    } else {
+        quote! {
+            extern crate juniper as _juniper;
+        }
+    };
+    let generated = quote! {
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        #[doc(hidden)]
+        const #dummy_const : () = {
+            #crate_reference
+            #body
+        };
+    };
+
+    generated
 }

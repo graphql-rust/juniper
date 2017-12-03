@@ -49,13 +49,17 @@ pub struct DirectiveType<'a> {
     pub arguments: Vec<Argument<'a>>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(GraphQLEnum, Clone, PartialEq, Eq, Debug)]
+#[graphql(name = "__DirectiveLocation", _internal)]
 pub enum DirectiveLocation {
     Query,
     Mutation,
     Field,
+    #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
+    #[graphql(name = "FRAGMENT_SPREAD")]
     FragmentSpread,
+    #[graphql(name = "INLINE_SPREAD")]
     InlineFragment,
 }
 

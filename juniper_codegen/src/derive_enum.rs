@@ -9,11 +9,17 @@ use util::*;
 struct EnumAttrs {
     name: Option<String>,
     description: Option<String>,
+    internal: bool,
 }
 
 impl EnumAttrs {
     fn from_input(input: &DeriveInput) -> EnumAttrs {
-        let mut res = EnumAttrs::default();
+        let mut res = EnumAttrs{
+            name: None,
+            description: None,
+            /// Flag to specify whether the calling crate is the "juniper" crate itself.
+            internal: false,
+        };
 
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&input.attrs) {
@@ -25,6 +31,15 @@ impl EnumAttrs {
                 if let Some(val) = keyed_item_value(item, "description", true) {
                     res.description = Some(val);
                     continue;
+                }
+                match item {
+                    &NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) => {
+                        if ident == "_internal" {
+                            res.internal = true;
+                            continue;
+                        }
+                    },
+                    _ => {},
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
@@ -109,7 +124,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         // Build value.
         let name = var_attrs
             .name
-            .unwrap_or(variant.ident.as_ref().to_uppercase());
+            .unwrap_or(::util::to_upper_snake_case(variant.ident.as_ref()));
         let descr = match var_attrs.description {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
@@ -119,7 +134,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
             None => quote!{ None },
         };
         let value = quote!{
-            ::juniper::meta::EnumValue{
+            _juniper::meta::EnumValue{
                 name: #name.to_string(),
                 description: #descr,
                 deprecation_reason: #depr,
@@ -129,7 +144,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
 
         // Build resolve match clause.
         let resolve = quote!{
-            &#ident::#var_ident => ::juniper::Value::String(#name.to_string()),
+            &#ident::#var_ident => _juniper::Value::String(#name.to_string()),
         };
         resolves.push(resolve);
 
@@ -142,13 +157,13 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         // Buil to_input clause.
         let to_input = quote!{
             &#ident::#var_ident =>
-                ::juniper::InputValue::string(#name.to_string()),
+                _juniper::InputValue::string(#name.to_string()),
         };
         to_inputs.push(to_input);
     }
 
-    quote! {
-        impl ::juniper::GraphQLType for #ident {
+    let body = quote! {
+        impl _juniper::GraphQLType for #ident {
             type Context = ();
             type TypeInfo = ();
 
@@ -156,7 +171,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>) -> _juniper::meta::MetaType<'r> {
                 let meta = registry.build_enum_type::<#ident>(&(), &[
                     #(#values)*
                 ]);
@@ -164,15 +179,15 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
                 meta.into_meta()
             }
 
-            fn resolve(&self, _: &(), _: Option<&[::juniper::Selection]>, _: &::juniper::Executor<Self::Context>) -> ::juniper::Value {
+            fn resolve(&self, _: &(), _: Option<&[_juniper::Selection]>, _: &_juniper::Executor<Self::Context>) -> _juniper::Value {
                 match self {
                     #(#resolves)*
                 }
             }
         }
 
-        impl ::juniper::FromInputValue for #ident {
-            fn from_input_value(v: &::juniper::InputValue) -> Option<#ident> {
+        impl _juniper::FromInputValue for #ident {
+            fn from_input_value(v: &_juniper::InputValue) -> Option<#ident> {
                 match v.as_enum_value().or_else(|| v.as_string_value()) {
                     #(#from_inputs)*
                     _ => None,
@@ -180,12 +195,49 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
             }
         }
 
-        impl ::juniper::ToInputValue for #ident {
-            fn to_input_value(&self) -> ::juniper::InputValue {
+        impl _juniper::ToInputValue for #ident {
+            fn to_input_value(&self) -> _juniper::InputValue {
                 match self {
                     #(#to_inputs)*
                 }
             }
         }
-    }
+    };
+
+    let dummy_const = Ident::new(format!("_IMPL_GRAPHQLENUM_FOR_{}", ident));
+
+    // This ugly hack makes it possible to use the derive inside juniper itself.
+    // FIXME: Figure out a better way to do this!
+    let crate_reference = if attrs.internal {
+        quote! {
+            #[doc(hidden)]
+            mod _juniper {
+                pub use ::{
+                    InputValue,
+                    Value,
+                    ToInputValue,
+                    FromInputValue,
+                    Executor,
+                    Selection,
+                    Registry,
+                    GraphQLType,
+                    meta
+                };
+            }
+        }
+    } else {
+        quote! {
+            extern crate juniper as _juniper;
+        }
+    };
+    let generated = quote! {
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        #[doc(hidden)]
+        const #dummy_const : () = {
+            #crate_reference
+            #body
+        };
+    };
+
+    generated
 }

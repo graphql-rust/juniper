@@ -9,7 +9,7 @@ use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 enum SomeEnum {
     Regular,
 
-    #[graphql(name = "FULL", description = "field descr", deprecated = "depr")]
+    #[graphql(name = "full", description = "field descr", deprecated = "depr")]
     Full,
 }
 
@@ -33,9 +33,9 @@ fn test_derived_enum() {
     );
 
     // Test FULL variant.
-    assert_eq!(SomeEnum::Full.to_input_value(), InputValue::String("FULL".into()));
+    assert_eq!(SomeEnum::Full.to_input_value(), InputValue::String("full".into()));
     assert_eq!(
-        FromInputValue::from_input_value(&InputValue::String("FULL".into())),
+        FromInputValue::from_input_value(&InputValue::String("full".into())),
         Some(SomeEnum::Full)
     );
 }

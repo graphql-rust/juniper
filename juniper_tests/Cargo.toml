@@ -3,9 +3,8 @@ name = "juniper_tests"
 version = "0.1.0"
 
 [dependencies]
-juniper = { path = "../juniper" }
-juniper_codegen = { path = "../juniper_codegen" }
-serde_json = { version = "^1.0.2" }
+juniper = { version = "0.9.0", path = "../juniper" }
+serde_json = { version = "1" }
 
 [dev-dependencies]
 fnv = "1.0.3"

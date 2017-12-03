@@ -8,82 +8,81 @@ use types::scalars::EmptyMutation;
 
 struct Root;
 
-graphql_input_object!(
-    struct DefaultName {
-        field_one: String,
-        field_two: String,
-    }
-);
+#[derive(GraphQLInputObject)]
+#[graphql(_internal)]
+struct DefaultName {
+    field_one: String,
+    field_two: String,
+}
 
-graphql_input_object!(
-    struct NoTrailingComma {
-        field_one: String,
-        field_two: String
-    }
-);
+#[derive(GraphQLInputObject)]
+#[graphql(_internal)]
+struct NoTrailingComma {
+    field_one: String,
+    field_two: String
+}
 
-graphql_input_object!(
-    #[derive(Debug)]
-    struct Derive {
-        field_one: String,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct Derive {
+    field_one: String,
+}
 
-graphql_input_object!(
-    struct Named as "ANamedInputObject" {
-        field_one: String,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(name = "ANamedInputObject", _internal)]
+struct Named {
+    field_one: String,
+}
 
-graphql_input_object!(
-    description: "Description for the input object"
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(description = "Description for the input object", _internal)]
+struct Description {
+    field_one: String,
+}
 
-    struct Description {
-        field_one: String,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+pub struct Public {
+    field_one: String,
+}
 
-graphql_input_object!(
-    pub struct Public {
-        field_one: String,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(description = "Description for the input object", _internal)]
+pub struct PublicWithDescription {
+    field_one: String,
+}
 
-graphql_input_object!(
-    description: "Description for the input object"
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(name = "APublicNamedInputObjectWithDescription",
+          description = "Description for the input object",
+          _internal)]
+pub struct NamedPublicWithDescription {
+    field_one: String,
+}
 
-    pub struct PublicWithDescription {
-        field_one: String,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(name = "APublicNamedInputObject", _internal)]
+pub struct NamedPublic {
+    field_one: String,
+}
 
-graphql_input_object!(
-    description: "Description for the input object"
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct FieldDescription {
+    #[graphql(description = "The first field")]
+    field_one: String,
+    #[graphql(description = "The second field")]
+    field_two: String,
+}
 
-    pub struct NamedPublicWithDescription as "APublicNamedInputObjectWithDescription" {
-        field_one: String,
-    }
-);
-
-graphql_input_object!(
-    pub struct NamedPublic as "APublicNamedInputObject" {
-        field_one: String,
-    }
-);
-
-graphql_input_object!(
-    struct FieldDescription {
-        field_one: String as "The first field",
-        field_two: String as "The second field",
-    }
-);
-
-graphql_input_object!(
-    struct FieldWithDefaults {
-        field_one = 123: i32,
-        field_two = 456: i32 as "The second field",
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct FieldWithDefaults {
+    #[graphql(default = "123")]
+    field_one:  i32,
+    #[graphql(default = "456", description = "The second field")]
+    field_two: i32,
+}
 
 graphql_object!(Root: () |&self| {
     field test_field(

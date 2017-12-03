@@ -19,12 +19,11 @@ Syntax to validate:
 
 */
 
-graphql_input_object!(
-    #[derive(Debug)]
-    struct Point {
-        x: i32,
-    }
-);
+#[derive(GraphQLInputObject)]
+#[graphql(_internal)]
+struct Point {
+    x: i32,
+}
 
 graphql_object!(Root: () |&self| {
     field simple() -> i32 { 0 }

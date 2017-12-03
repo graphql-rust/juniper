@@ -1,8 +1,17 @@
+mod input_object;
+mod enums;
+
+// This asserts that the input objects defined public actually became public
+#[allow(unused_imports)]
+use self::input_object::{NamedPublic, NamedPublicWithDescription};
+
 use executor::Variables;
 use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 
+#[derive(GraphQLEnum)]
+#[graphql(name = "SampleEnum", _internal)]
 enum Sample {
     One,
     Two,
@@ -22,11 +31,6 @@ graphql_scalar!(Scalar as "SampleScalar" {
     from_input_value(v: &InputValue) -> Option<Scalar> {
         v.as_int_value().map(|i| Scalar(i))
     }
-});
-
-graphql_enum!(Sample as "SampleEnum" {
-    Sample::One => "ONE",
-    Sample::Two => "TWO",
 });
 
 graphql_interface!(Interface: () as "SampleInterface" |&self| {

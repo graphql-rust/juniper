@@ -3,12 +3,6 @@ use executor::Context;
 
 impl Context for Database {}
 
-graphql_enum!(Episode {
-    Episode::NewHope => "NEW_HOPE",
-    Episode::Empire => "EMPIRE",
-    Episode::Jedi => "JEDI",
-});
-
 graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     description: "A character in the Star Wars Trilogy"
 

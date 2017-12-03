@@ -1,6 +1,4 @@
 #[macro_use]
-mod enums;
-#[macro_use]
 mod object;
 #[macro_use]
 mod interface;
@@ -10,8 +8,6 @@ mod scalar;
 mod args;
 #[macro_use]
 mod field;
-#[macro_use]
-mod input_object;
 #[macro_use]
 mod union;
 

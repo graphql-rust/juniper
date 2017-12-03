@@ -30,39 +30,35 @@ graphql_scalar!(TestComplexScalar {
     }
 });
 
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct TestInputObject {
+    a: Option<String>,
+    b: Option<Vec<Option<String>>>,
+    c: String,
+    d: Option<TestComplexScalar>,
+}
 
-graphql_input_object!(
-    #[derive(Debug)]
-    struct TestInputObject {
-        a: Option<String>,
-        b: Option<Vec<Option<String>>>,
-        c: String,
-        d: Option<TestComplexScalar>,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct TestNestedInputObject {
+    na: TestInputObject,
+    nb: String,
+}
 
-graphql_input_object!(
-    #[derive(Debug)]
-    struct TestNestedInputObject {
-        na: TestInputObject,
-        nb: String,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct ExampleInputObject {
+    a: Option<String>,
+    b: i32,
+}
 
-graphql_input_object!(
-    #[derive(Debug)]
-    struct ExampleInputObject {
-        a: Option<String>,
-        b: i32,
-    }
-);
-
-graphql_input_object!(
-    #[derive(Debug)]
-    struct InputWithDefaults {
-        a = 123: i32,
-    }
-);
+#[derive(GraphQLInputObject, Debug)]
+#[graphql(_internal)]
+struct InputWithDefaults {
+    #[graphql(default = "123")]
+    a: i32,
+}
 
 graphql_object!(TestType: () |&self| {
     field field_with_object_input(input: Option<TestInputObject>) -> String {

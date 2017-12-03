@@ -5,34 +5,6 @@ use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 
-
-enum DefaultName {
-    Foo,
-    Bar,
-}
-enum Named {
-    Foo,
-    Bar,
-}
-enum NoTrailingComma {
-    Foo,
-    Bar,
-}
-enum EnumDescription {
-    Foo,
-    Bar,
-}
-enum EnumValueDescription {
-    Foo,
-    Bar,
-}
-enum EnumDeprecation {
-    Foo,
-    Bar,
-}
-
-struct Root;
-
 /*
 
 Syntax to validate:
@@ -45,37 +17,53 @@ Syntax to validate:
 
 */
 
-graphql_enum!(DefaultName {
-    DefaultName::Foo => "FOO",
-    DefaultName::Bar => "BAR",
-});
+#[derive(GraphQLEnum)]
+#[graphql(_internal)]
+enum DefaultName {
+    Foo,
+    Bar,
+}
 
-graphql_enum!(Named as "ANamedEnum" {
-    Named::Foo => "FOO",
-    Named::Bar => "BAR",
-});
+#[derive(GraphQLEnum)]
+#[graphql(name = "ANamedEnum", _internal)]
+enum Named {
+    Foo,
+    Bar,
+}
 
-graphql_enum!(NoTrailingComma {
-    NoTrailingComma::Foo => "FOO",
-    NoTrailingComma::Bar => "BAR"
-});
+#[derive(GraphQLEnum)]
+#[graphql(_internal)]
+enum NoTrailingComma {
+    Foo,
+    Bar,
+}
 
-graphql_enum!(EnumDescription {
-    description: "A description of the enum itself"
+#[derive(GraphQLEnum)]
+#[graphql(description = "A description of the enum itself", _internal)]
+enum EnumDescription {
+    Foo,
+    Bar,
+}
 
-    EnumDescription::Foo => "FOO",
-    EnumDescription::Bar => "BAR",
-});
+#[derive(GraphQLEnum)]
+#[graphql(_internal)]
+enum EnumValueDescription {
+    #[graphql(description = "The FOO value")]
+    Foo,
+    #[graphql(description = "The BAR value")]
+    Bar,
+}
 
-graphql_enum!(EnumValueDescription {
-    EnumValueDescription::Foo => "FOO" as "The FOO value",
-    EnumValueDescription::Bar => "BAR" as "The BAR value",
-});
+#[derive(GraphQLEnum)]
+#[graphql(_internal)]
+enum EnumDeprecation {
+    #[graphql(deprecated = "Please don't use FOO any more")]
+    Foo,
+    #[graphql(description = "The BAR value", deprecated = "Please don't use BAR any more")]
+    Bar,
+}
 
-graphql_enum!(EnumDeprecation {
-    EnumDeprecation::Foo => "FOO" deprecated "Please don't use FOO any more",
-    EnumDeprecation::Bar => "BAR" as "The BAR value" deprecated "Please don't use BAR any more",
-});
+struct Root;
 
 graphql_object!(Root: () |&self| {
     field default_name() -> DefaultName { DefaultName::Foo }

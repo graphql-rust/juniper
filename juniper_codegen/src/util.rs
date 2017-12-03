@@ -80,3 +80,38 @@ fn test_to_camel_case() {
     assert_eq!(&to_camel_case("a")[..], "a");
     assert_eq!(&to_camel_case("")[..], "");
 }
+
+pub(crate) fn to_upper_snake_case(s: &str) -> String {
+    let mut last_lower = false;
+    let mut upper = String::new();
+    for c in s.chars() {
+        if c == '_' {
+            last_lower = false;
+        }
+        else if c.is_lowercase() {
+            last_lower = true;
+        } else if c.is_uppercase() {
+            if last_lower {
+                upper.push('_');
+            }
+            last_lower = false;
+        }
+
+        for u in c.to_uppercase() {
+            upper.push(u);
+        }
+    }
+    upper
+}
+
+#[test]
+fn test_to_upper_snake_case() {
+    assert_eq!(to_upper_snake_case("abc"), "ABC");
+    assert_eq!(to_upper_snake_case("a_bc"), "A_BC");
+    assert_eq!(to_upper_snake_case("ABC"), "ABC");
+    assert_eq!(to_upper_snake_case("A_BC"), "A_BC");
+    assert_eq!(to_upper_snake_case("SomeInput"), "SOME_INPUT");
+    assert_eq!(to_upper_snake_case("someInput"), "SOME_INPUT");
+    assert_eq!(to_upper_snake_case("someINpuT"), "SOME_INPU_T");
+    assert_eq!(to_upper_snake_case("some_INpuT"), "SOME_INPU_T");
+}

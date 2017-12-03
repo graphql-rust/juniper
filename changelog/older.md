@@ -1,22 +1,6 @@
 Change log
 ==========
 
-## [Unreleased]
-
-The repository was restructured to a multi crate workspace to enable several new features like custom_derive and an extracted parser.
-
-### New features
-
-* New juniper_codegen crate which provides custom derives:
-  * `#[derive(GraphQLInputObject)]`
-  * `#[derive(GraphQLEnum)]`
-  * `#[derive(GraphQLObject)]`
-
-## Breaking changes
-
-* To better comply with the specification, order of requested fields is
-  now preserved.
-  ([#82](https://github.com/graphql-rust/juniper/issues/82)
 
 ## [0.8.1] – 2017-06-15
 
