@@ -133,8 +133,6 @@ mod executor;
 pub mod integrations;
 pub mod graphiql;
 pub mod http;
-#[macro_use]
-mod result_ext;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
@@ -159,7 +157,6 @@ pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldErro
 pub use validation::RuleError;
 pub use types::scalars::{EmptyMutation, ID};
 pub use schema::model::RootNode;
-pub use result_ext::ResultExt;
 
 pub use schema::meta;
 

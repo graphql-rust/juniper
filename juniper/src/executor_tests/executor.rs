@@ -216,7 +216,6 @@ mod dynamic_context_switching {
     use schema::model::RootNode;
     use parser::SourcePosition;
     use executor::{Context, ExecutionError, FieldError, FieldResult};
-    use result_ext::ResultExt;
 
     struct Schema;
 
@@ -239,19 +238,18 @@ mod dynamic_context_switching {
         }
 
         field item_res(&executor, key: i32) -> FieldResult<(&InnerContext, ItemRef)> {
-            executor.context().items.get(&key)
+            let res = executor.context().items.get(&key)
                 .ok_or(format!("Could not find key {}", key))
-                .map(|c| (c, ItemRef))
-                .to_field_result()
+                .map(|c| (c, ItemRef))?;
+            Ok(res)
         }
 
         field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
             if key > 100 {
-                Err(format!("Key too large: {}", key)).to_field_result()
-            } else {
-                Ok(executor.context().items.get(&key)
-                   .map(|c| (c, ItemRef)))
+                Err(format!("Key too large: {}", key))?;
             }
+            Ok(executor.context().items.get(&key)
+               .map(|c| (c, ItemRef)))
         }
 
         field item_always(&executor, key: i32) -> (&InnerContext, ItemRef) {
