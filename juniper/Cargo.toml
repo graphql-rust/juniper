@@ -1,7 +1,10 @@
 [package]
 name = "juniper"
-version = "0.9.0"
-authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+version = "0.9.1"
+authors = [
+    "Magnus Hallin <mhallin@fastmail.com>",
+    "Christoph Herzog <chris@theduke.at>",
+]
 description = "GraphQL server library"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper"
@@ -29,7 +32,7 @@ default = [
 ]
 
 [dependencies]
-juniper_codegen = { version = "0.9.0", path = "../juniper_codegen"  }
+juniper_codegen = { version = "0.9.1", path = "../juniper_codegen"  }
 
 fnv = "1.0.3"
 ordermap = { version = "0.2.11", features = ["serde-1"] }
