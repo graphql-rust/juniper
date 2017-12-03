@@ -33,12 +33,16 @@ resolvers, which you will use for the `Query` and `Mutation` roots.
 #[macro_use] extern crate juniper;
 
 use juniper::{FieldResult};
-# struct DatabasePool;
-# impl DatabasePool {
-#   fn get_connection(&self) -> FieldResult<DatabasePool> { DatabasePool }
-#   fn find_human(&self, id: &str) -> FieldResult<Human> { Err("")? }
-#   fn insert_human(&self, human: &Human) -> FieldResult<()> { Ok(()) }
-# }
+
+#struct DatabasePool;
+#impl DatabasePool {
+#       fn get_connection(&self) -> FieldResult<DatabasePool> { Ok(DatabasePool) }
+#       fn find_human(&self, id: &str) -> FieldResult<Human> { Err("")? }
+#       fn insert_human(&self, human: &NewHuman) -> FieldResult<Human> { Err("")? }
+#     }
+
+
+use juniper::{FieldResult};
 
 #[derive(GraphQLEnum)]
 enum Episode {
@@ -56,7 +60,7 @@ struct Human {
     home_planet: String,
 }
 
-// There is also a custom derive for mapping GraphQL input objects. 
+// There is also a custom derive for mapping GraphQL input objects.
 
 #[derive(GraphQLInputObject)]
 #[graphql(description="A humanoid creature in the Star Wars universe")]
@@ -66,7 +70,7 @@ struct NewHuman {
     home_planet: String,
 }
 
-// Now, we create our root Query and Mutation types with resolvers by using the 
+// Now, we create our root Query and Mutation types with resolvers by using the
 // graphql_object! macro.
 // Objects can have contexts that allow accessing shared state like a database
 // pool.
@@ -76,14 +80,17 @@ struct Context {
     pool: DatabasePool,
 }
 
+// To make our context usable by Juniper, we have to implement a marker trait.
+impl juniper::Context for Context {}
+
 struct Query;
 
 graphql_object!(Query: Context |&self| {
-    
+
     field apiVersion() -> &str {
-        "1.0" 
-    } 
-    
+        "1.0"
+    }
+
     // Arguments to resolvers can either be simple types or input objects.
     // The executor is a special (optional) argument that allows accessing the context.
     field human(&executor, id: String) -> FieldResult<Human> {
@@ -93,7 +100,7 @@ graphql_object!(Query: Context |&self| {
         let connection = context.pool.get_connection()?;
         // Execute a db query.
         // Note the use of `?` to propagate errors.
-        let human = context.db.find_human(&id)?;
+        let human = connection.find_human(&id)?;
         // Return the result.
         Ok(human)
     }
@@ -102,19 +109,22 @@ graphql_object!(Query: Context |&self| {
 struct Mutation;
 
 graphql_object!(Mutation: Context |&self| {
-    
+
     field createHuman(&executor, new_human: NewHuman) -> FieldResult<Human> {
-        let db = executor.context().get_connection()?;
-        let human: Human = context.db.insert_human(&new_human)?;
+        let db = executor.context().pool.get_connection()?;
+        let human: Human = db.insert_human(&new_human)?;
         Ok(human)
     }
 });
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
-type Schema = juniper::RootNode<Query, Mutation>;
+type Schema = juniper::RootNode<'static, Query, Mutation>;
 
-# fn main() { }
+fn main() {
+    println!("Hello, world!");
+}
+
 ```
 
 We now have a very simple but functional schema for a GraphQL server!
