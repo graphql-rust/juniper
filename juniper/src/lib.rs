@@ -79,8 +79,8 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
 [iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [Rocket]: https://rocket.rs
-[book]: https://graphql-rust.github.io/juniper-book
-[book_quickstart]: https://graphql-rust.github.io/juniper-book/quickstart.html
+[book]: https://graphql-rust.github.io/
+[book_quickstart]: https://graphql-rust.github.io/quickstart.html
 [docsrs]: https://docs.rs/juniper
 
 [uuid]: https://crates.io/crates/uuid
