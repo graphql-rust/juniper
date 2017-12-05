@@ -204,6 +204,7 @@ mod union {
         let doc = r"
           {
             pets {
+              __typename
               ... on Dog {
                 name
                 woofs
@@ -228,10 +229,12 @@ mod union {
             Value::object(vec![
                 ("pets", Value::list(vec![
                     Value::object(vec![
+                        ("__typename", Value::string("Dog")),
                         ("name", Value::string("Odie")),
                         ("woofs", Value::boolean(true)),
                     ].into_iter().collect()),
                     Value::object(vec![
+                        ("__typename", Value::string("Cat")),
                         ("name", Value::string("Garfield")),
                         ("meows", Value::boolean(false)),
                     ].into_iter().collect()),

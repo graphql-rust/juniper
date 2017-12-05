@@ -1,4 +1,5 @@
 use ast::Field;
+use schema::meta::MetaType;
 use validation::{ValidatorContext, Visitor};
 use parser::Spanning;
 
@@ -16,6 +17,19 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
                 let type_name = parent_type.name().unwrap_or("<unknown>");
 
                 if parent_type.field_by_name(field_name.item).is_none() {
+
+                    match *parent_type {
+                        MetaType::Union(..) => {
+                            // You can query for `__typename` on a union,
+                            // but it isn't a field on the union...it is
+                            // instead on the resulting object returned.
+                            if field_name.item == "__typename" {
+                                return;
+                            }
+                        }
+                        _ => {}
+                    }
+
                     context.report_error(
                         &error_message(field_name.item, type_name),
                         &[field_name.start.clone()],
@@ -315,6 +329,24 @@ mod tests {
                     &[SourcePosition::new(82, 2, 12)],
                 ),
             ],
+        );
+    }
+
+    #[test]
+    fn typename_on_union() {
+        expect_passes_rule(
+            factory,
+            r#"
+          fragment objectFieldSelection on Pet {
+            __typename
+            ... on Dog {
+              name
+            }
+            ... on Cat {
+              name
+            }
+          }
+        "#,
         );
     }
 
