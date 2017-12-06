@@ -1,4 +1,0 @@
-
-[tasks.init]
-condition = { channels = ["beta", "stable"] }
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "juniper_rocket;juniper_tests" }
