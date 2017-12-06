@@ -1,4 +1,7 @@
 
 [tasks.init]
 condition = { channels = ["beta", "stable"] }
-env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "juniper_rocket;juniper_tests" }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "juniper_rocket" }
+
+[tasks.init.windows]
+condition = { channels = ["beta", "stable"], env = { "TARGET" = "x86_64-pc-windows-gnu" } }
