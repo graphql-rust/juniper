@@ -16,8 +16,8 @@ serde_derive = {version="1.0.2" }
 serde_json = { version = "1.0.2" }
 juniper = { version = "0.9.1" , path = "../juniper"}
 
-rocket = { version = "0.3.0" }
-rocket_codegen = { version = "0.3.0" }
+rocket = { version = "0.3.4" }
+rocket_codegen = { version = "0.3.4" }
 
 [dev-dependencies.juniper]
 version = "0.9.1"
