@@ -12,9 +12,9 @@ use executor::ExecutionError;
 /// For POST, you can use Serde to deserialize the incoming JSON data directly
 /// into this struct - it derives Deserialize for exactly this reason.
 ///
-/// For GET, you will need to parse the query string and exctract "query",
+/// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
-#[derive(Deserialize, Clone, Serialize)]
+#[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
 pub struct GraphQLRequest {
     query: String,
     #[serde(rename = "operationName")]

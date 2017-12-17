@@ -65,6 +65,7 @@ use juniper::RootNode;
 /// See the `http` module for more information. This type can be constructed
 /// automatically from both GET and POST routes by implementing the `FromForm`
 /// and `FromData` traits.
+#[derive(Debug, PartialEq)]
 pub struct GraphQLRequest(http::GraphQLRequest);
 
 /// Simple wrapper around the result of executing a GraphQL query
@@ -107,30 +108,54 @@ impl<'f> FromForm<'f> for GraphQLRequest {
         let mut variables = None;
 
         for (key, value) in form_items {
+            // Note: we explicitly decode in the match arms to save work rather
+            // than decoding every form item blindly.
             match key.as_str() {
-                "query" => if query.is_some() {
-                    return Err("Query parameter must not occur more than once".to_owned());
-                } else {
-                    query = Some(value.as_str().to_string());
-                },
-                "operation_name" => if operation_name.is_some() {
-                    return Err(
-                        "Operation name parameter must not occur more than once".to_owned(),
-                    );
-                } else {
-                    operation_name = Some(value.as_str().to_string());
-                },
-                "variables" => if variables.is_some() {
-                    return Err(
-                        "Variables parameter must not occur more than once".to_owned(),
-                    );
-                } else {
-                    variables = Some(serde_json::from_str::<InputValue>(value.as_str())
-                        .map_err(|err| err.description().to_owned())?);
-                },
-                _ => if strict {
-                    return Err(format!("Prohibited extra field '{}'", key).to_owned());
-                },
+                "query" => {
+                    if query.is_some() {
+                        return Err("Query parameter must not occur more than once".to_owned());
+                    } else {
+                        match value.url_decode() {
+                            Ok(v) => query = Some(v),
+                            Err(e) => return Err(e.description().to_string()),
+                        }
+                    }
+                }
+                "operation_name" => {
+                    if operation_name.is_some() {
+                        return Err(
+                            "Operation name parameter must not occur more than once".to_owned(),
+                        );
+                    } else {
+                        match value.url_decode() {
+                            Ok(v) => operation_name = Some(v),
+                            Err(e) => return Err(e.description().to_string()),
+                        }
+                    }
+                }
+                "variables" => {
+                    if variables.is_some() {
+                        return Err(
+                            "Variables parameter must not occur more than once".to_owned(),
+                        );
+                    } else {
+                        let decoded;
+                        match value.url_decode() {
+                            Ok(v) => decoded = v,
+                            Err(e) => return Err(e.description().to_string()),
+                        }
+                        variables = Some(serde_json::from_str::<InputValue>(&decoded).map_err(
+                            |err| {
+                                err.description().to_owned()
+                            },
+                        )?);
+                    }
+                }
+                _ => {
+                    if strict {
+                        return Err(format!("Prohibited extra field '{}'", key).to_owned());
+                    }
+                }
             }
         }
 
@@ -179,12 +204,123 @@ impl<'r> Responder<'r> for GraphQLResponse {
 }
 
 #[cfg(test)]
+mod fromform_tests {
+    use super::*;
+    use std::str;
+    use juniper::InputValue;
+    use rocket::request::{FromForm, FormItems};
+
+    fn check_error(input: &str, error: &str, strict: bool) {
+        let mut items = FormItems::from(input);
+        let result = GraphQLRequest::from_form(&mut items, strict);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), error);
+    }
+
+    #[test]
+    fn test_empty_form() {
+        check_error("", "Query parameter missing", false);
+    }
+
+    #[test]
+    fn test_no_query() {
+        check_error("operation_name=foo&variables={}", "Query parameter missing", false);
+    }
+
+    #[test]
+    fn test_strict() {
+        check_error(
+            "query=test&foo=bar",
+            "Prohibited extra field \'foo\'",
+            true,
+        );
+    }
+
+    #[test]
+    fn test_duplicate_query() {
+        check_error(
+            "query=foo&query=bar",
+            "Query parameter must not occur more than once",
+            false,
+        );
+    }
+
+    #[test]
+    fn test_duplicate_operation_name() {
+        check_error(
+            "query=test&operation_name=op1&operation_name=op2",
+            "Operation name parameter must not occur more than once",
+            false,
+        );
+    }
+
+    #[test]
+    fn test_duplicate_variables() {
+        check_error(
+            "query=test&variables={}&variables={}",
+            "Variables parameter must not occur more than once",
+            false,
+        );
+    }
+
+    #[test]
+    fn test_variables_invalid_json() {
+        check_error("query=test&variables=NOT_JSON", "JSON error", false);
+    }
+
+    #[test]
+    fn test_variables_valid_json() {
+        let form_string = r#"query=test&variables={"foo":"bar"}"#;
+        let mut items = FormItems::from(form_string);
+        let result = GraphQLRequest::from_form(&mut items, false);
+        assert!(result.is_ok());
+        let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
+        let expected = GraphQLRequest(http::GraphQLRequest::new(
+            "test".to_string(),
+            None,
+            Some(variables),
+        ));
+        assert_eq!(result.unwrap(), expected);
+    }
+
+    #[test]
+    fn test_variables_encoded_json() {
+        let form_string = r#"query=test&variables={"foo": "x%20y%26%3F+z"}"#;
+        let mut items = FormItems::from(form_string);
+        let result = GraphQLRequest::from_form(&mut items, false);
+        assert!(result.is_ok());
+        let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
+        let expected = GraphQLRequest(http::GraphQLRequest::new(
+            "test".to_string(),
+            None,
+            Some(variables),
+        ));
+        assert_eq!(result.unwrap(), expected);
+    }
+
+    #[test]
+    fn test_url_decode() {
+        let form_string = "query=%25foo%20bar+baz%26%3F&operation_name=test";
+        let mut items = FormItems::from(form_string);
+        let result = GraphQLRequest::from_form(&mut items, false);
+        assert!(result.is_ok());
+        let expected = GraphQLRequest(http::GraphQLRequest::new(
+            "%foo bar baz&?".to_string(),
+            Some("test".to_string()),
+            None,
+        ));
+        assert_eq!(result.unwrap(), expected);
+    }
+}
+
+#[cfg(test)]
 mod tests {
 
     use rocket;
     use rocket::Rocket;
-    use rocket::http::{ContentType, Method};
+    use rocket::http::ContentType;
     use rocket::State;
+    use rocket::local::{Client, LocalRequest};
 
     use juniper::RootNode;
     use juniper::tests::model::Database;
@@ -192,7 +328,6 @@ mod tests {
     use juniper::EmptyMutation;
 
     type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
-
 
     #[get("/?<request>")]
     fn get_graphql_handler(
@@ -213,34 +348,26 @@ mod tests {
     }
 
     struct TestRocketIntegration {
-        rocket: Rocket,
+        client: Client,
     }
 
-    /*
-
-    impl http_tests::HTTPIntegration for TestRocketIntegration
-    {
+    impl http_tests::HTTPIntegration for TestRocketIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            make_test_response(&self.rocket, MockRequest::new(
-                Method::Get,
-                url))
+            let req = &self.client.get(url);
+            make_test_response(req)
         }
 
         fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            make_test_response(
-                &self.rocket,
-                MockRequest::new(
-                    Method::Post,
-                    url,
-                ).header(ContentType::JSON).body(body))
+            let req = &self.client.post(url).header(ContentType::JSON).body(body);
+            make_test_response(req)
         }
     }
 
     #[test]
     fn test_rocket_integration() {
-        let integration = TestRocketIntegration {
-            rocket: make_rocket(),
-        };
+        let rocket = make_rocket();
+        let client = Client::new(rocket).expect("valid rocket");
+        let integration = TestRocketIntegration { client };
 
         http_tests::run_http_test_suite(&integration);
     }
@@ -248,16 +375,24 @@ mod tests {
     fn make_rocket() -> Rocket {
         rocket::ignite()
             .manage(Database::new())
-            .manage(Schema::new(Database::new(), EmptyMutation::<Database>::new()))
+            .manage(Schema::new(
+                Database::new(),
+                EmptyMutation::<Database>::new(),
+            ))
             .mount("/", routes![post_graphql_handler, get_graphql_handler])
     }
 
-    fn make_test_response<'r>(rocket: &'r Rocket, mut request: MockRequest<'r>) -> http_tests::TestResponse {
-        let mut response = request.dispatch_with(&rocket);
+    fn make_test_response<'r>(request: &LocalRequest<'r>) -> http_tests::TestResponse {
+        let mut response = request.cloned_dispatch();
         let status_code = response.status().code as i32;
-        let content_type = response.header_values("content-type").collect::<Vec<_>>().into_iter().next()
-            .expect("No content type header from handler").to_owned();
-        let body = response.body().expect("No body returned from GraphQL handler").into_string();
+        let content_type = response
+            .content_type()
+            .expect("No content type header from handler")
+            .to_string();
+        let body = response
+            .body()
+            .expect("No body returned from GraphQL handler")
+            .into_string();
 
         http_tests::TestResponse {
             status_code: status_code,
@@ -265,6 +400,4 @@ mod tests {
             content_type: content_type,
         }
     }
-
-    */
 }
