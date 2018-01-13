@@ -123,21 +123,27 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
 }
 
 #[cfg(any(test, feature = "expose-test-schema"))]
+#[allow(missing_docs)]
 pub mod tests {
     use serde_json::Value as Json;
     use serde_json;
 
+    /// Normalized response content we expect to get back from
+    /// the http framework integration we are testing.
     pub struct TestResponse {
         pub status_code: i32,
         pub body: Option<String>,
         pub content_type: String,
     }
 
+    /// Normalized way to make requests to the http framework
+    /// integration we are testing.
     pub trait HTTPIntegration {
         fn get(&self, url: &str) -> TestResponse;
         fn post(&self, url: &str, body: &str) -> TestResponse;
     }
 
+    #[allow(missing_docs)]
     pub fn run_http_test_suite<T: HTTPIntegration>(integration: &T) {
         println!("Running HTTP Test suite for integration");
 
