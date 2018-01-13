@@ -22,26 +22,29 @@ fn visit_definitions<'a, V: Visitor<'a>>(
     for def in d {
         let def_type = match *def {
             Definition::Fragment(Spanning {
-                item: Fragment {
-                    type_condition: Spanning { item: name, .. },
-                    ..
-                },
+                item:
+                    Fragment {
+                        type_condition: Spanning { item: name, .. },
+                        ..
+                    },
                 ..
             }) => Some(Type::NonNullNamed(Cow::Borrowed(name))),
             Definition::Operation(Spanning {
-                item: Operation {
-                    operation_type: OperationType::Query,
-                    ..
-                },
+                item:
+                    Operation {
+                        operation_type: OperationType::Query,
+                        ..
+                    },
                 ..
             }) => Some(Type::NonNullNamed(Cow::Borrowed(
                 ctx.schema.concrete_query_type().name().unwrap(),
             ))),
             Definition::Operation(Spanning {
-                item: Operation {
-                    operation_type: OperationType::Mutation,
-                    ..
-                },
+                item:
+                    Operation {
+                        operation_type: OperationType::Mutation,
+                        ..
+                    },
                 ..
             }) => ctx.schema
                 .concrete_mutation_type()
@@ -284,8 +287,10 @@ fn visit_input_value<'a, V: Visitor<'a>>(
                 _ => None,
             });
 
-            ctx.with_pushed_input_type(inner_type.as_ref(), |ctx| for value in ls {
-                visit_input_value(v, ctx, value);
+            ctx.with_pushed_input_type(inner_type.as_ref(), |ctx| {
+                for value in ls {
+                    visit_input_value(v, ctx, value);
+                }
             })
         }
         _ => (),

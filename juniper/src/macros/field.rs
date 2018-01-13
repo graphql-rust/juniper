@@ -5,7 +5,12 @@ macro_rules! __graphql__build_field_matches {
     (
         $resolveargs:tt,
         ( $( $acc:tt )* ),
-        field deprecated $_reason:tt $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+        field deprecated $_reason:tt
+            $name:ident
+            $args:tt -> $t:ty
+            as $desc:tt
+            $body:block
+            $( $rest:tt )*
     ) => {
         __graphql__build_field_matches!(
             $resolveargs,
@@ -28,7 +33,12 @@ macro_rules! __graphql__build_field_matches {
     // field <name>(...) -> <type> as <description> { ... }
     (
         $resolveargs:tt,
-        ( $( $acc:tt )* ), field $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+        ( $( $acc:tt )* ),
+        field $name:ident
+        $args:tt -> $t:ty
+        as $desc:tt
+        $body:block
+        $( $rest:tt )*
     ) => {
         __graphql__build_field_matches!(
             $resolveargs,
@@ -55,7 +65,10 @@ macro_rules! __graphql__build_field_matches {
         __graphql__build_field_matches!($resolveargs, $acc, $( $rest )*);
     };
 
-    ( $resolveargs:tt, $acc:tt, instance_resolvers : | $execvar:pat | $resolvers:tt $( $rest:tt )*) => {
+    ( $resolveargs:tt,
+      $acc:tt,
+      instance_resolvers : | $execvar:pat | $resolvers:tt $( $rest:tt )*
+    ) => {
         __graphql__build_field_matches!($resolveargs, $acc, $( $rest )*);
     };
 
@@ -79,7 +92,8 @@ macro_rules! __graphql__build_field_matches {
 
                 return ($crate::IntoResolvable::into(result, $executorvar.context())).and_then(
                     |res| match res {
-                        Some((ctx, r)) => $executorvar.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                        Some((ctx, r)) =>
+                            $executorvar.replaced_context(ctx).resolve_with_ctx(&(), &r),
                         None => Ok($crate::Value::null()),
                     })
             }

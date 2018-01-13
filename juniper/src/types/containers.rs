@@ -152,9 +152,15 @@ where
     }
 }
 
-fn resolve_into_list<T: GraphQLType, I: Iterator<Item=T>>(executor: &Executor<T::Context>, info: &T::TypeInfo, iter: I) -> Value {
-    let stop_on_null = executor.current_type()
-        .list_contents().expect("Current type is not a list type")
+fn resolve_into_list<T: GraphQLType, I: Iterator<Item = T>>(
+    executor: &Executor<T::Context>,
+    info: &T::TypeInfo,
+    iter: I,
+) -> Value {
+    let stop_on_null = executor
+        .current_type()
+        .list_contents()
+        .expect("Current type is not a list type")
         .is_non_null();
 
     let mut result = Vec::new();

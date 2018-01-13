@@ -132,8 +132,7 @@ fn unknown_error_message(directive_name: &str) -> String {
 fn misplaced_error_message(directive_name: &str, location: &DirectiveLocation) -> String {
     format!(
         r#"Directive "{}" may not be used on {}"#,
-        directive_name,
-        location
+        directive_name, location
     )
 }
 

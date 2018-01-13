@@ -4,7 +4,6 @@ use quote::Tokens;
 
 use util::*;
 
-
 #[derive(Default, Debug)]
 struct ObjAttrs {
     name: Option<String>,
@@ -33,8 +32,8 @@ impl ObjAttrs {
                             res.internal = true;
                             continue;
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
@@ -80,7 +79,7 @@ impl ObjFieldAttrs {
                             continue;
                         }
                     }
-                    _ => {},
+                    _ => {}
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
@@ -144,7 +143,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
 
         let default = {
             if field_attrs.default {
-                Some(quote! { Default::default() } )
+                Some(quote! { Default::default() })
             } else {
                 match field_attrs.default_expr {
                     Some(ref def) => match syn::parse_token_trees(def) {
@@ -221,7 +220,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>) -> _juniper::meta::MetaType<'r> {
+            fn meta<'r>(
+                _: &(),
+                registry: &mut _juniper::Registry<'r>
+            ) -> _juniper::meta::MetaType<'r> {
                 let fields = &[
                     #(#meta_fields)*
                 ];

@@ -171,10 +171,12 @@ impl<'a> Parser<'a> {
             Spanning {
                 item: Token::Name(_),
                 ..
-            } => Ok(self.next()?.map(|token| if let Token::Name(name) = token {
-                name
-            } else {
-                panic!("Internal parse error in `expect_name`");
+            } => Ok(self.next()?.map(|token| {
+                if let Token::Name(name) = token {
+                    name
+                } else {
+                    panic!("Internal parse error in `expect_name`");
+                }
             })),
             Spanning {
                 item: Token::EndOfFile,

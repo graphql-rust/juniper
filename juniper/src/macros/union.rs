@@ -40,7 +40,8 @@ macro_rules! graphql_union {
     (
         @ gather_meta,
         ($reg:expr, $acc:expr, $descr:expr),
-        instance_resolvers: | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
+        instance_resolvers: | $ctxtvar:pat
+                            | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
         $acc = vec![
             $(
@@ -56,7 +57,8 @@ macro_rules! graphql_union {
     (
         @ concrete_type_name,
         ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
-        instance_resolvers: | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
+        instance_resolvers: | $ctxtvar:pat
+                            | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
         let $ctxtvar = &$ctxtarg;
 
@@ -74,7 +76,8 @@ macro_rules! graphql_union {
     (
         @ resolve_into_type,
         ($outname:tt, $typenamearg:ident, $execarg:ident, $ctxttype:ty),
-        instance_resolvers: | $ctxtvar:pat | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
+        instance_resolvers: | $ctxtvar:pat
+                            | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
         let $ctxtvar = &$execarg.context();
 

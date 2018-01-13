@@ -87,8 +87,7 @@ pub(crate) fn to_upper_snake_case(s: &str) -> String {
     for c in s.chars() {
         if c == '_' {
             last_lower = false;
-        }
-        else if c.is_lowercase() {
+        } else if c.is_lowercase() {
             last_lower = true;
         } else if c.is_uppercase() {
             if last_lower {

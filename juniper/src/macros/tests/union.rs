@@ -109,7 +109,6 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
     }
 });
 
-
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
     F: Fn(&OrderMap<String, Value>, &Vec<Value>) -> (),
@@ -126,9 +125,8 @@ where
     }
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
-    let vars = vec![
-        ("typeName".to_owned(), InputValue::string(type_name)),
-    ].into_iter()
+    let vars = vec![("typeName".to_owned(), InputValue::string(type_name))]
+        .into_iter()
         .collect();
 
     let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
@@ -154,16 +152,19 @@ where
     f(type_info, possible_types);
 }
 
-
 #[test]
 fn introspect_custom_name() {
     run_type_info_query("ACustomNamedUnion", |union, possible_types| {
         assert_eq!(union.get("name"), Some(&Value::string("ACustomNamedUnion")));
         assert_eq!(union.get("description"), Some(&Value::null()));
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -173,9 +174,13 @@ fn introspect_with_lifetime() {
         assert_eq!(union.get("name"), Some(&Value::string("WithLifetime")));
         assert_eq!(union.get("description"), Some(&Value::null()));
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -185,9 +190,13 @@ fn introspect_with_generics() {
         assert_eq!(union.get("name"), Some(&Value::string("WithGenerics")));
         assert_eq!(union.get("description"), Some(&Value::null()));
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -195,11 +204,18 @@ fn introspect_with_generics() {
 fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |union, possible_types| {
         assert_eq!(union.get("name"), Some(&Value::string("DescriptionFirst")));
-        assert_eq!(union.get("description"), Some(&Value::string("A description")));
+        assert_eq!(
+            union.get("description"),
+            Some(&Value::string("A description"))
+        );
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -207,34 +223,61 @@ fn introspect_description_first() {
 fn introspect_resolvers_first() {
     run_type_info_query("ResolversFirst", |union, possible_types| {
         assert_eq!(union.get("name"), Some(&Value::string("ResolversFirst")));
-        assert_eq!(union.get("description"), Some(&Value::string("A description")));
+        assert_eq!(
+            union.get("description"),
+            Some(&Value::string("A description"))
+        );
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
 #[test]
 fn introspect_commas_with_trailing() {
     run_type_info_query("CommasWithTrailing", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("CommasWithTrailing")));
-        assert_eq!(union.get("description"), Some(&Value::string("A description")));
+        assert_eq!(
+            union.get("name"),
+            Some(&Value::string("CommasWithTrailing"))
+        );
+        assert_eq!(
+            union.get("description"),
+            Some(&Value::string("A description"))
+        );
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
 #[test]
 fn introspect_resolvers_with_trailing_comma() {
     run_type_info_query("ResolversWithTrailingComma", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("ResolversWithTrailingComma")));
-        assert_eq!(union.get("description"), Some(&Value::string("A description")));
+        assert_eq!(
+            union.get("name"),
+            Some(&Value::string("ResolversWithTrailingComma"))
+        );
+        assert_eq!(
+            union.get("description"),
+            Some(&Value::string("A description"))
+        );
 
-        assert!(possible_types.contains(&Value::object(vec![
-            ("name", Value::string("Concrete")),
-        ].into_iter().collect())));
+        assert!(
+            possible_types.contains(&Value::object(
+                vec![("name", Value::string("Concrete"))]
+                    .into_iter()
+                    .collect()
+            ))
+        );
     });
 }

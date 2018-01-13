@@ -31,26 +31,29 @@ pub fn is_valid_literal_value(
 
             match *arg_value {
                 InputValue::Null | InputValue::Variable(_) => true,
-                ref v @ InputValue::Int(_) |
-                ref v @ InputValue::Float(_) |
-                ref v @ InputValue::String(_) |
-                ref v @ InputValue::Boolean(_) |
-                ref v @ InputValue::Enum(_) => if let Some(parse_fn) = t.input_value_parse_fn() {
+                ref v @ InputValue::Int(_)
+                | ref v @ InputValue::Float(_)
+                | ref v @ InputValue::String(_)
+                | ref v @ InputValue::Boolean(_)
+                | ref v @ InputValue::Enum(_) => if let Some(parse_fn) = t.input_value_parse_fn() {
                     parse_fn(v)
                 } else {
                     false
                 },
                 InputValue::List(_) => false,
                 InputValue::Object(ref obj) => if let MetaType::InputObject(InputObjectMeta {
-                    ref input_fields, ..
+                    ref input_fields,
+                    ..
                 }) = *t
                 {
                     let mut remaining_required_fields = input_fields
                         .iter()
-                        .filter_map(|f| if f.arg_type.is_non_null() {
-                            Some(&f.name)
-                        } else {
-                            None
+                        .filter_map(|f| {
+                            if f.arg_type.is_non_null() {
+                                Some(&f.name)
+                            } else {
+                                None
+                            }
                         })
                         .collect::<HashSet<_>>();
 

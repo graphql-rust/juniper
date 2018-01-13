@@ -19,7 +19,7 @@ struct DefaultName {
 #[graphql(_internal)]
 struct NoTrailingComma {
     field_one: String,
-    field_two: String
+    field_two: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
@@ -54,8 +54,7 @@ pub struct PublicWithDescription {
 
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(name = "APublicNamedInputObjectWithDescription",
-          description = "Description for the input object",
-          _internal)]
+          description = "Description for the input object", _internal)]
 pub struct NamedPublicWithDescription {
     field_one: String,
 }
@@ -69,19 +68,15 @@ pub struct NamedPublic {
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct FieldDescription {
-    #[graphql(description = "The first field")]
-    field_one: String,
-    #[graphql(description = "The second field")]
-    field_two: String,
+    #[graphql(description = "The first field")] field_one: String,
+    #[graphql(description = "The second field")] field_two: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct FieldWithDefaults {
-    #[graphql(default = "123")]
-    field_one:  i32,
-    #[graphql(default = "456", description = "The second field")]
-    field_two: i32,
+    #[graphql(default = "123")] field_one: i32,
+    #[graphql(default = "456", description = "The second field")] field_two: i32,
 }
 
 graphql_object!(Root: () |&self| {
@@ -159,27 +154,59 @@ fn default_name_introspection() {
 
         assert_eq!(fields.len(), 2);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldTwo")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldTwo")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -187,9 +214,9 @@ fn default_name_introspection() {
 fn default_name_input_value() {
     let iv = InputValue::object(
         vec![
-        ("fieldOne", InputValue::string("number one")),
-        ("fieldTwo", InputValue::string("number two")),
-    ].into_iter()
+            ("fieldOne", InputValue::string("number one")),
+            ("fieldTwo", InputValue::string("number two")),
+        ].into_iter()
             .collect(),
     );
 
@@ -225,32 +252,67 @@ fn no_trailing_comma_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("NoTrailingComma")));
+        assert_eq!(
+            type_info.get("name"),
+            Some(&Value::string("NoTrailingComma"))
+        );
         assert_eq!(type_info.get("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 2);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldTwo")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldTwo")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -281,23 +343,44 @@ fn derive_introspection() {
 
         assert_eq!(fields.len(), 1);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
 #[test]
 fn derive_derived() {
     assert_eq!(
-        format!("{:?}", Derive { field_one: "test".to_owned() }),
+        format!(
+            "{:?}",
+            Derive {
+                field_one: "test".to_owned(),
+            }
+        ),
         "Derive { field_one: \"test\" }"
     );
 }
@@ -324,21 +407,40 @@ fn named_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("ANamedInputObject")));
+        assert_eq!(
+            type_info.get("name"),
+            Some(&Value::string("ANamedInputObject"))
+        );
         assert_eq!(type_info.get("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 1);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -365,20 +467,39 @@ fn description_introspection() {
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(type_info.get("name"), Some(&Value::string("Description")));
-        assert_eq!(type_info.get("description"), Some(&Value::string("Description for the input object")));
+        assert_eq!(
+            type_info.get("description"),
+            Some(&Value::string("Description for the input object"))
+        );
 
         assert_eq!(fields.len(), 1);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("description", Value::null()),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    ("description", Value::null()),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -404,32 +525,67 @@ fn field_description_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("FieldDescription")));
+        assert_eq!(
+            type_info.get("name"),
+            Some(&Value::string("FieldDescription"))
+        );
         assert_eq!(type_info.get("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 2);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("description", Value::string("The first field")),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    ("description", Value::string("The first field")),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldTwo")),
-            ("description", Value::string("The second field")),
-            ("type", Value::object(vec![
-                ("ofType", Value::object(vec![
-                    ("name", Value::string("String")),
-                ].into_iter().collect())),
-            ].into_iter().collect())),
-            ("defaultValue", Value::null()),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldTwo")),
+                    ("description", Value::string("The second field")),
+                    (
+                        "type",
+                        Value::object(
+                            vec![
+                                (
+                                    "ofType",
+                                    Value::object(
+                                        vec![("name", Value::string("String"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("defaultValue", Value::null()),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }
 
@@ -451,24 +607,39 @@ fn field_with_defaults_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("FieldWithDefaults")));
+        assert_eq!(
+            type_info.get("name"),
+            Some(&Value::string("FieldWithDefaults"))
+        );
 
         assert_eq!(fields.len(), 2);
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldOne")),
-            ("type", Value::object(vec![
-                ("name", Value::string("Int")),
-            ].into_iter().collect())),
-            ("defaultValue", Value::string("123")),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldOne")),
+                    (
+                        "type",
+                        Value::object(vec![("name", Value::string("Int"))].into_iter().collect()),
+                    ),
+                    ("defaultValue", Value::string("123")),
+                ].into_iter()
+                    .collect()
+            ))
+        );
 
-        assert!(fields.contains(&Value::object(vec![
-            ("name", Value::string("fieldTwo")),
-            ("type", Value::object(vec![
-                ("name", Value::string("Int")),
-            ].into_iter().collect())),
-            ("defaultValue", Value::string("456")),
-        ].into_iter().collect())));
+        assert!(
+            fields.contains(&Value::object(
+                vec![
+                    ("name", Value::string("fieldTwo")),
+                    (
+                        "type",
+                        Value::object(vec![("name", Value::string("Int"))].into_iter().collect()),
+                    ),
+                    ("defaultValue", Value::string("456")),
+                ].into_iter()
+                    .collect()
+            ))
+        );
     });
 }

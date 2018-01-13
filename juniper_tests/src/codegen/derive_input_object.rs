@@ -8,11 +8,9 @@ use juniper::{self, FromInputValue, GraphQLType, InputValue};
 #[graphql(name = "MyInput", description = "input descr")]
 struct Input {
     regular_field: String,
-    #[graphql(name = "haha", default = "33", description = "haha descr")]
-    c: i32,
+    #[graphql(name = "haha", default = "33", description = "haha descr")] c: i32,
 
-    #[graphql(default)]
-    other: Option<bool>,
+    #[graphql(default)] other: Option<bool>,
 }
 
 #[test]
@@ -32,11 +30,14 @@ fn test_derived_input_object() {
     })).unwrap();
 
     let output_no_defaults: Input = FromInputValue::from_input_value(&input_no_defaults).unwrap();
-    assert_eq!(output_no_defaults, Input{
-        regular_field: "a".into(),
-        c: 33,
-        other: None,
-    });
+    assert_eq!(
+        output_no_defaults,
+        Input {
+            regular_field: "a".into(),
+            c: 33,
+            other: None,
+        }
+    );
 
     // Test with all values supplied.
 
@@ -47,9 +48,12 @@ fn test_derived_input_object() {
     })).unwrap();
 
     let output: Input = FromInputValue::from_input_value(&input).unwrap();
-    assert_eq!(output, Input{
-        regular_field: "a".into(),
-        c: 55,
-        other: Some(true),
-    });
+    assert_eq!(
+        output,
+        Input {
+            regular_field: "a".into(),
+            c: 55,
+            other: Some(true),
+        }
+    );
 }

@@ -40,8 +40,8 @@ Check the LICENSE file for details.
 #![plugin(rocket_codegen)]
 
 extern crate juniper;
-extern crate serde_json;
 extern crate rocket;
+extern crate serde_json;
 
 use std::io::{Cursor, Read};
 use std::error::Error;
@@ -123,9 +123,8 @@ impl<'f> FromForm<'f> for GraphQLRequest {
                 }
                 "operation_name" => {
                     if operation_name.is_some() {
-                        return Err(
-                            "Operation name parameter must not occur more than once".to_owned(),
-                        );
+                        return Err("Operation name parameter must not occur more than once"
+                            .to_owned());
                     } else {
                         match value.url_decode() {
                             Ok(v) => operation_name = Some(v),
@@ -135,20 +134,15 @@ impl<'f> FromForm<'f> for GraphQLRequest {
                 }
                 "variables" => {
                     if variables.is_some() {
-                        return Err(
-                            "Variables parameter must not occur more than once".to_owned(),
-                        );
+                        return Err("Variables parameter must not occur more than once".to_owned());
                     } else {
                         let decoded;
                         match value.url_decode() {
                             Ok(v) => decoded = v,
                             Err(e) => return Err(e.description().to_string()),
                         }
-                        variables = Some(serde_json::from_str::<InputValue>(&decoded).map_err(
-                            |err| {
-                                err.description().to_owned()
-                            },
-                        )?);
+                        variables = Some(serde_json::from_str::<InputValue>(&decoded)
+                            .map_err(|err| err.description().to_owned())?);
                     }
                 }
                 _ => {
@@ -160,9 +154,11 @@ impl<'f> FromForm<'f> for GraphQLRequest {
         }
 
         if let Some(query) = query {
-            Ok(GraphQLRequest(
-                http::GraphQLRequest::new(query, operation_name, variables),
-            ))
+            Ok(GraphQLRequest(http::GraphQLRequest::new(
+                query,
+                operation_name,
+                variables,
+            )))
         } else {
             Err("Query parameter missing".to_owned())
         }
@@ -193,13 +189,11 @@ impl<'r> Responder<'r> for GraphQLResponse {
     fn respond_to(self, _: &Request) -> Result<Response<'r>, Status> {
         let GraphQLResponse(status, body) = self;
 
-        Ok(
-            Response::build()
-                .header(ContentType::new("application", "json"))
-                .status(status)
-                .sized_body(Cursor::new(body))
-                .finalize(),
-        )
+        Ok(Response::build()
+            .header(ContentType::new("application", "json"))
+            .status(status)
+            .sized_body(Cursor::new(body))
+            .finalize())
     }
 }
 
@@ -208,7 +202,7 @@ mod fromform_tests {
     use super::*;
     use std::str;
     use juniper::InputValue;
-    use rocket::request::{FromForm, FormItems};
+    use rocket::request::{FormItems, FromForm};
 
     fn check_error(input: &str, error: &str, strict: bool) {
         let mut items = FormItems::from(input);
@@ -224,16 +218,16 @@ mod fromform_tests {
 
     #[test]
     fn test_no_query() {
-        check_error("operation_name=foo&variables={}", "Query parameter missing", false);
+        check_error(
+            "operation_name=foo&variables={}",
+            "Query parameter missing",
+            false,
+        );
     }
 
     #[test]
     fn test_strict() {
-        check_error(
-            "query=test&foo=bar",
-            "Prohibited extra field \'foo\'",
-            true,
-        );
+        check_error("query=test&foo=bar", "Prohibited extra field \'foo\'", true);
     }
 
     #[test]

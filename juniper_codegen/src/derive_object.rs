@@ -135,7 +135,6 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
 
         // Build from_input clause.
 
-
         let resolver = quote!{
             #name => executor.resolve_with_ctx(&(), &self.#field_ident),
         };
@@ -155,7 +154,10 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
                 #name.to_string()
             }
 
-            fn meta<'r>(_: &(), registry: &mut ::juniper::Registry<'r>) -> ::juniper::meta::MetaType<'r> {
+            fn meta<'r>(
+                _: &(),
+                registry: &mut ::juniper::Registry<'r>
+            ) -> ::juniper::meta::MetaType<'r> {
                 let fields = &[
                     #(#meta_fields)*
                 ];
@@ -164,8 +166,13 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
                 builder.into_meta()
             }
 
-            fn resolve_field(&self, _: &(), field_name: &str, _: &::juniper::Arguments, executor: &::juniper::Executor<Self::Context>)
-                -> ::juniper::ExecutionResult
+            fn resolve_field(
+                &self,
+                _: &(),
+                field_name: &str,
+                _: &::juniper::Arguments,
+                executor: &::juniper::Executor<Self::Context>
+            ) -> ::juniper::ExecutionResult
             {
 
                 match field_name {

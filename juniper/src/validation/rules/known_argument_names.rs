@@ -23,14 +23,14 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         ctx: &mut ValidatorContext<'a>,
         directive: &'a Spanning<Directive>,
     ) {
-        self.current_args = ctx.schema.directive_by_name(directive.item.name.item).map(
-            |d| {
+        self.current_args = ctx.schema
+            .directive_by_name(directive.item.name.item)
+            .map(|d| {
                 (
                     ArgumentPosition::Directive(directive.item.name.item),
                     &d.arguments,
                 )
-            },
-        );
+            });
     }
 
     fn exit_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {
@@ -84,17 +84,14 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
 fn field_error_message(arg_name: &str, field_name: &str, type_name: &str) -> String {
     format!(
         r#"Unknown argument "{}" on field "{}" of type "{}""#,
-        arg_name,
-        field_name,
-        type_name
+        arg_name, field_name, type_name
     )
 }
 
 fn directive_error_message(arg_name: &str, directive_name: &str) -> String {
     format!(
         r#"Unknown argument "{}" on directive "{}""#,
-        arg_name,
-        directive_name
+        arg_name, directive_name
     )
 }
 

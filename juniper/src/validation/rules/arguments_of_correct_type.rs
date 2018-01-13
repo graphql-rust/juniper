@@ -60,11 +60,9 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
 fn error_message(arg_name: &str, type_name: &str) -> String {
     format!(
         "Invalid value for argument \"{}\", expected type \"{}\"",
-        arg_name,
-        type_name
+        arg_name, type_name
     )
 }
-
 
 #[cfg(test)]
 mod tests {

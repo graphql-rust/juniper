@@ -1,9 +1,9 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
-extern crate rocket;
 extern crate juniper;
 extern crate juniper_rocket;
+extern crate rocket;
 
 use rocket::response::content;
 use rocket::State;

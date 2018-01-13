@@ -127,9 +127,8 @@ impl<'a> Lexer<'a> {
 
         let start_pos = self.position.clone();
 
-        self.next_char().expect(
-            "Internal error in GraphQL lexer: emit_single_char reached EOF",
-        );
+        self.next_char()
+            .expect("Internal error in GraphQL lexer: emit_single_char reached EOF");
 
         Spanning::single_width(&start_pos, t)
     }
@@ -345,12 +344,12 @@ impl<'a> Lexer<'a> {
             ));
         }
 
-        let code_point = try!(u32::from_str_radix(escape, 16).map_err(|_| {
-            Spanning::zero_width(
+        let code_point = try!(
+            u32::from_str_radix(escape, 16).map_err(|_| Spanning::zero_width(
                 start_pos,
                 LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
-            )
-        }));
+            ))
+        );
 
         char::from_u32(code_point).ok_or_else(|| {
             Spanning::zero_width(
@@ -392,10 +391,12 @@ impl<'a> Lexer<'a> {
 
         let mantissa = frac_part
             .map(|f| f as f64)
-            .map(|frac| if frac > 0f64 {
-                frac / 10f64.powf(frac.log10().floor() + 1f64)
-            } else {
-                0f64
+            .map(|frac| {
+                if frac > 0f64 {
+                    frac / 10f64.powf(frac.log10().floor() + 1f64)
+                } else {
+                    0f64
+                }
             })
             .map(|m| if int_part < 0 { -m } else { m });
 
@@ -472,9 +473,8 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        i32::from_str_radix(&self.source[start_idx..end_idx + 1], 10).map_err(|_| {
-            Spanning::zero_width(&start_pos, LexerError::InvalidNumber)
-        })
+        i32::from_str_radix(&self.source[start_idx..end_idx + 1], 10)
+            .map_err(|_| Spanning::zero_width(&start_pos, LexerError::InvalidNumber))
     }
 }
 

@@ -212,5 +212,3 @@ impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {
         GraphQLError::ParseError(f)
     }
 }
-
-

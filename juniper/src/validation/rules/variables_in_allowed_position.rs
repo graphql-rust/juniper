@@ -148,9 +148,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
 fn error_message(var_name: &str, type_name: &str, expected_type_name: &str) -> String {
     format!(
         "Variable \"{}\" of type \"{}\" used in position expecting type \"{}\"",
-        var_name,
-        type_name,
-        expected_type_name
+        var_name, type_name, expected_type_name
     )
 }
 

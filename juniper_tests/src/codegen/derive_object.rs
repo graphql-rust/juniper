@@ -8,8 +8,7 @@ use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variab
 #[graphql(name = "MyObj", description = "obj descr")]
 struct Obj {
     regular_field: bool,
-    #[graphql(name = "renamedField", description = "descr", deprecation = "field descr")]
-    c: i32,
+    #[graphql(name = "renamedField", description = "descr", deprecation = "field descr")] c: i32,
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -59,14 +58,26 @@ fn test_derived_object() {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     assert_eq!(
-    execute(doc, None, &schema, &Variables::new(), &()),
-    Ok((Value::object(vec![
-      ("obj", Value::object(vec![
-        ("regularField", Value::boolean(true)),
-        ("renamedField", Value::int(22)),
-      ].into_iter().collect())),
-    ].into_iter().collect()),
-        vec![])));
+        execute(doc, None, &schema, &Variables::new(), &()),
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "obj",
+                        Value::object(
+                            vec![
+                                ("regularField", Value::boolean(true)),
+                                ("renamedField", Value::int(22)),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }
 
 #[test]
@@ -85,13 +96,31 @@ fn test_derived_object_nested() {
 
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()),
-        Ok((Value::object(vec![
-            ("nested", Value::object(vec![
-                ("obj", Value::object(vec![
-                    ("regularField", Value::boolean(false)),
-                    ("renamedField", Value::int(333)),
-                ].into_iter().collect())
-                )].into_iter().collect())),
-        ].into_iter().collect()),
-            vec![])));
+        Ok((
+            Value::object(
+                vec![
+                    (
+                        "nested",
+                        Value::object(
+                            vec![
+                                (
+                                    "obj",
+                                    Value::object(
+                                        vec![
+                                            ("regularField", Value::boolean(false)),
+                                            ("renamedField", Value::int(333)),
+                                        ].into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                ].into_iter()
+                    .collect()
+            ),
+            vec![]
+        ))
+    );
 }

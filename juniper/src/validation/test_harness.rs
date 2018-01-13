@@ -236,10 +236,7 @@ impl GraphQLType for Cat {
 
         registry
             .build_object_type::<Self>(i, fields)
-            .interfaces(&[
-                registry.get_type::<Being>(i),
-                registry.get_type::<Pet>(i),
-            ])
+            .interfaces(&[registry.get_type::<Being>(i), registry.get_type::<Pet>(i)])
             .into_meta()
     }
 }
@@ -434,9 +431,7 @@ impl GraphQLType for ComplicatedArgs {
                 .argument(registry.arg::<Option<ID>>("idArg", i)),
             registry
                 .field::<Option<String>>("stringListArgField", i)
-                .argument(
-                    registry.arg::<Option<Vec<Option<String>>>>("stringListArg", i),
-                ),
+                .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg", i)),
             registry
                 .field::<Option<String>>("complexArgField", i)
                 .argument(registry.arg::<Option<ComplexInput>>("complexArg", i)),

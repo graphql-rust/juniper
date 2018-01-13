@@ -32,9 +32,9 @@ fn parse_definition<'a>(parser: &mut Parser<'a>) -> UnlocatedParseResult<'a, Def
         Token::CurlyOpen | Token::Name("query") | Token::Name("mutation") => Ok(
             Definition::Operation(try!(parse_operation_definition(parser))),
         ),
-        Token::Name("fragment") => Ok(Definition::Fragment(
-            try!(parse_fragment_definition(parser)),
-        )),
+        Token::Name("fragment") => Ok(Definition::Fragment(try!(parse_fragment_definition(
+            parser
+        )))),
         _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
@@ -237,13 +237,12 @@ fn parse_arguments<'a>(parser: &mut Parser<'a>) -> OptionParseResult<'a, Argumen
         Ok(None)
     } else {
         Ok(Some(
-            try!(
-                parser
-                    .delimited_nonempty_list(&Token::ParenOpen, parse_argument, &Token::ParenClose)
-            ).map(|args| {
-                Arguments {
-                    items: args.into_iter().map(|s| s.item).collect(),
-                }
+            try!(parser.delimited_nonempty_list(
+                &Token::ParenOpen,
+                parse_argument,
+                &Token::ParenClose
+            )).map(|args| Arguments {
+                items: args.into_iter().map(|s| s.item).collect(),
             }),
         ))
     }
@@ -282,10 +281,8 @@ fn parse_variable_definitions<'a>(
                 &Token::ParenOpen,
                 parse_variable_definition,
                 &Token::ParenClose
-            )).map(|defs| {
-                VariableDefinitions {
-                    items: defs.into_iter().map(|s| s.item).collect(),
-                }
+            )).map(|defs| VariableDefinitions {
+                items: defs.into_iter().map(|s| s.item).collect(),
             }),
         ))
     }

@@ -4,7 +4,6 @@ use quote::Tokens;
 
 use util::*;
 
-
 #[derive(Default, Debug)]
 struct EnumAttrs {
     name: Option<String>,
@@ -14,7 +13,7 @@ struct EnumAttrs {
 
 impl EnumAttrs {
     fn from_input(input: &DeriveInput) -> EnumAttrs {
-        let mut res = EnumAttrs{
+        let mut res = EnumAttrs {
             name: None,
             description: None,
             /// Flag to specify whether the calling crate is the "juniper" crate itself.
@@ -38,8 +37,8 @@ impl EnumAttrs {
                             res.internal = true;
                             continue;
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
@@ -86,7 +85,6 @@ impl EnumVariantAttrs {
         res
     }
 }
-
 
 pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
     let variants = match ast.body {
@@ -171,7 +169,9 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>) -> _juniper::meta::MetaType<'r> {
+            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>)
+                -> _juniper::meta::MetaType<'r>
+            {
                 let meta = registry.build_enum_type::<#ident>(&(), &[
                     #(#values)*
                 ]);
@@ -179,7 +179,12 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
                 meta.into_meta()
             }
 
-            fn resolve(&self, _: &(), _: Option<&[_juniper::Selection]>, _: &_juniper::Executor<Self::Context>) -> _juniper::Value {
+            fn resolve(
+                &self,
+                _: &(),
+                _: Option<&[_juniper::Selection]>,
+                _: &_juniper::Executor<Self::Context>
+            ) -> _juniper::Value {
                 match self {
                     #(#resolves)*
                 }

@@ -73,46 +73,49 @@ fn scalar_skip_true() {
     });
 }
 
-
-
-
 #[test]
 fn fragment_spread_include_true() {
-    run_query("{ a, ...Frag @include(if: true) } fragment Frag on TestType { b }",
-              |result| {
-        assert_eq!(result.get("a"), Some(&Value::string("a")));
-        assert_eq!(result.get("b"), Some(&Value::string("b")));
-    });
+    run_query(
+        "{ a, ...Frag @include(if: true) } fragment Frag on TestType { b }",
+        |result| {
+            assert_eq!(result.get("a"), Some(&Value::string("a")));
+            assert_eq!(result.get("b"), Some(&Value::string("b")));
+        },
+    );
 }
 
 #[test]
 fn fragment_spread_include_false() {
-    run_query("{ a, ...Frag @include(if: false) } fragment Frag on TestType { b }",
-              |result| {
-        assert_eq!(result.get("a"), Some(&Value::string("a")));
-        assert_eq!(result.get("b"), None);
-    });
+    run_query(
+        "{ a, ...Frag @include(if: false) } fragment Frag on TestType { b }",
+        |result| {
+            assert_eq!(result.get("a"), Some(&Value::string("a")));
+            assert_eq!(result.get("b"), None);
+        },
+    );
 }
 
 #[test]
 fn fragment_spread_skip_false() {
-    run_query("{ a, ...Frag @skip(if: false) } fragment Frag on TestType { b }",
-              |result| {
-        assert_eq!(result.get("a"), Some(&Value::string("a")));
-        assert_eq!(result.get("b"), Some(&Value::string("b")));
-    });
+    run_query(
+        "{ a, ...Frag @skip(if: false) } fragment Frag on TestType { b }",
+        |result| {
+            assert_eq!(result.get("a"), Some(&Value::string("a")));
+            assert_eq!(result.get("b"), Some(&Value::string("b")));
+        },
+    );
 }
 
 #[test]
 fn fragment_spread_skip_true() {
-    run_query("{ a, ...Frag @skip(if: true) } fragment Frag on TestType { b }",
-              |result| {
-        assert_eq!(result.get("a"), Some(&Value::string("a")));
-        assert_eq!(result.get("b"), None);
-    });
+    run_query(
+        "{ a, ...Frag @skip(if: true) } fragment Frag on TestType { b }",
+        |result| {
+            assert_eq!(result.get("a"), Some(&Value::string("a")));
+            assert_eq!(result.get("b"), None);
+        },
+    );
 }
-
-
 
 #[test]
 fn inline_fragment_include_true() {
@@ -152,9 +155,6 @@ fn inline_fragment_skip_true() {
     });
 }
 
-
-
-
 #[test]
 fn anonymous_inline_fragment_include_true() {
     run_query("{ a, ... @include(if: true) { b } }", |result| {
@@ -186,9 +186,6 @@ fn anonymous_inline_fragment_skip_true() {
         assert_eq!(result.get("b"), None);
     });
 }
-
-
-
 
 #[test]
 fn scalar_include_true_skip_true() {

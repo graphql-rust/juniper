@@ -4,7 +4,6 @@ use ast::InputValue;
 use parser::{Lexer, Parser, SourcePosition, Spanning};
 use parser::value::parse_value_literal;
 
-
 fn parse_value(s: &str) -> Spanning<InputValue> {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));

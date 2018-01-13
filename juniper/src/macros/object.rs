@@ -246,7 +246,13 @@ macro_rules! graphql_object {
     (
         @gather_object_meta,
         $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        field deprecated $reason:tt $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
+        field deprecated
+            $reason:tt
+            $name:ident
+            $args:tt -> $t:ty
+            as $desc:tt
+            $body:block
+            $( $rest:tt )*
     ) => {
         $acc.push(__graphql__args!(
             @apply_args,
@@ -376,7 +382,10 @@ macro_rules! graphql_object {
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta<'r>(info: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+            fn meta<'r>(
+                info: &(),
+                registry: &mut $crate::Registry<'r>
+            ) -> $crate::meta::MetaType<'r> {
                 let mut fields = Vec::new();
                 let mut description = None;
                 let mut interfaces: Option<Vec<$crate::Type>> = None;

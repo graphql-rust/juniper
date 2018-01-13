@@ -30,8 +30,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames {
 fn error_message(var_name: &str, type_name: &str) -> String {
     format!(
         "Variable \"{}\" cannot be of non-input type \"{}\"",
-        var_name,
-        type_name
+        var_name, type_name
     )
 }
 

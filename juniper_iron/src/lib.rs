@@ -101,13 +101,13 @@ supported.
 
 */
 
-extern crate serde_json;
-extern crate juniper;
-extern crate urlencoded;
 #[macro_use]
 extern crate iron;
 #[cfg(test)]
 extern crate iron_test;
+extern crate juniper;
+extern crate serde_json;
+extern crate urlencoded;
 
 use iron::prelude::*;
 use iron::middleware::Handler;
@@ -151,14 +151,11 @@ pub struct GraphiQLHandler {
     graphql_url: String,
 }
 
-
 fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
     if values.len() == 1 {
         Ok(values.remove(0))
     } else {
-        Err(
-            GraphQLIronError::InvalidData("Duplicate URL query parameter").into(),
-        )
+        Err(GraphQLIronError::InvalidData("Duplicate URL query parameter").into())
     }
 }
 
@@ -172,22 +169,22 @@ fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
 
 fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputValue>> {
     if let Some(values) = params {
-        Ok(serde_json::from_str::<InputValue>(
-            get_single_value(values)?.as_ref(),
-        ).map(Some)
-            .map_err(GraphQLIronError::Serde)?)
+        Ok(
+            serde_json::from_str::<InputValue>(get_single_value(values)?.as_ref())
+                .map(Some)
+                .map_err(GraphQLIronError::Serde)?,
+        )
     } else {
         Ok(None)
     }
 }
 
-
 impl<'a, CtxFactory, Query, Mutation, CtxT> GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
 where
     CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
     CtxT: 'static,
-    Query: GraphQLType<Context = CtxT, TypeInfo=()> + Send + Sync + 'static,
-    Mutation: GraphQLType<Context = CtxT, TypeInfo=()> + Send + Sync + 'static,
+    Query: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
@@ -201,7 +198,6 @@ where
             root_node: RootNode::new(query, mutation),
         }
     }
-
 
     fn handle_get(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let url_query_string = req.get_mut::<UrlEncodedQuery>()
@@ -223,9 +219,10 @@ where
         let mut request_payload = String::new();
         itry!(req.body.read_to_string(&mut request_payload));
 
-        Ok(serde_json::from_str::<http::GraphQLRequest>(
-            request_payload.as_str(),
-        ).map_err(|err| GraphQLIronError::Serde(err))?)
+        Ok(
+            serde_json::from_str::<http::GraphQLRequest>(request_payload.as_str())
+                .map_err(|err| GraphQLIronError::Serde(err))?,
+        )
     }
 
     fn execute(&self, context: &CtxT, request: http::GraphQLRequest) -> IronResult<Response> {
@@ -258,8 +255,8 @@ impl<'a, CtxFactory, Query, Mutation, CtxT> Handler
 where
     CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
     CtxT: 'static,
-    Query: GraphQLType<Context = CtxT, TypeInfo=()> + Send + Sync + 'static,
-    Mutation: GraphQLType<Context = CtxT, TypeInfo=()> + Send + Sync + 'static,
+    Query: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {

@@ -1,6 +1,6 @@
 use url::Url;
 
-use ::Value;
+use Value;
 
 graphql_scalar!(Url {
     description: "Url"

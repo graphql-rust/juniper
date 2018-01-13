@@ -7,9 +7,9 @@
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
-extern crate syn;
 #[macro_use]
 extern crate quote;
+extern crate syn;
 
 mod util;
 mod derive_enum;

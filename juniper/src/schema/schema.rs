@@ -142,11 +142,15 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
                     .filter_map(|tn| schema.type_by_name(tn))
                     .collect())
             }
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { name: ref iface_name, .. })) => {
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta{name: ref iface_name, .. })) => {
                 Some(schema.concrete_type_list()
                     .iter()
                     .filter_map(|&ct|
-                        if let MetaType::Object(ObjectMeta { ref name, ref interface_names, .. }) = *ct {
+                        if let MetaType::Object(ObjectMeta{
+                            ref name,
+                            ref interface_names,
+                            ..
+                        }) = *ct {
                             if interface_names.contains(&iface_name.to_string()) {
                                 schema.type_by_name(name)
                             } else { None }
@@ -232,7 +236,6 @@ graphql_object!(EnumValue: () as "__EnumValue" |&self| {
     }
 });
 
-
 graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| {
     field name() -> &String {
         &self.name
@@ -270,4 +273,3 @@ graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| 
         self.locations.contains(&DirectiveLocation::Field)
     }
 });
-

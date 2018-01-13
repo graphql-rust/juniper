@@ -5,8 +5,7 @@ use std::collections::HashMap;
 #[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug)]
 #[graphql(_internal)]
 pub enum Episode {
-    #[graphql(name = "NEW_HOPE")]
-    NewHope,
+    #[graphql(name = "NEW_HOPE")] NewHope,
     Empire,
     Jedi,
 }

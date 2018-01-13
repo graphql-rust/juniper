@@ -83,7 +83,6 @@ graphql_object!(<'a> &'a Droid: Database as "Droid" |&self| {
     }
 });
 
-
 graphql_object!(Database: Database as "Query" |&self| {
     description: "The root query object of the schema"
 

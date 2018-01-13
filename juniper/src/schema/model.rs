@@ -13,16 +13,11 @@ use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMet
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
 pub struct RootNode<'a, QueryT: GraphQLType, MutationT: GraphQLType> {
-    #[doc(hidden)]
-    pub query_type: QueryT,
-    #[doc(hidden)]
-    pub query_info: QueryT::TypeInfo,
-    #[doc(hidden)]
-    pub mutation_type: MutationT,
-    #[doc(hidden)]
-    pub mutation_info: MutationT::TypeInfo,
-    #[doc(hidden)]
-    pub schema: SchemaType<'a>,
+    #[doc(hidden)] pub query_type: QueryT,
+    #[doc(hidden)] pub query_info: QueryT::TypeInfo,
+    #[doc(hidden)] pub mutation_type: MutationT,
+    #[doc(hidden)] pub mutation_info: MutationT::TypeInfo,
+    #[doc(hidden)] pub schema: SchemaType<'a>,
 }
 
 /// Metadata for a schema
@@ -55,12 +50,9 @@ pub enum DirectiveLocation {
     Query,
     Mutation,
     Field,
-    #[graphql(name = "FRAGMENT_DEFINITION")]
-    FragmentDefinition,
-    #[graphql(name = "FRAGMENT_SPREAD")]
-    FragmentSpread,
-    #[graphql(name = "INLINE_SPREAD")]
-    InlineFragment,
+    #[graphql(name = "FRAGMENT_DEFINITION")] FragmentDefinition,
+    #[graphql(name = "FRAGMENT_SPREAD")] FragmentSpread,
+    #[graphql(name = "INLINE_SPREAD")] InlineFragment,
 }
 
 impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>
@@ -277,9 +269,9 @@ impl<'a> SchemaType<'a> {
     }
 
     pub fn is_possible_type(&self, abstract_type: &MetaType, possible_type: &MetaType) -> bool {
-        self.possible_types(abstract_type).into_iter().any(|t| {
-            (t as *const MetaType) == (possible_type as *const MetaType)
-        })
+        self.possible_types(abstract_type)
+            .into_iter()
+            .any(|t| (t as *const MetaType) == (possible_type as *const MetaType))
     }
 
     pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
@@ -290,14 +282,14 @@ impl<'a> SchemaType<'a> {
         }
 
         match (super_type, sub_type) {
-            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name)) |
-            (&Named(ref super_name), &Named(ref sub_name)) |
-            (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
+            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name))
+            | (&Named(ref super_name), &Named(ref sub_name))
+            | (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
                 self.is_named_subtype(sub_name, super_name)
             }
-            (&NonNullList(ref super_inner), &NonNullList(ref sub_inner)) |
-            (&List(ref super_inner), &List(ref sub_inner)) |
-            (&List(ref super_inner), &NonNullList(ref sub_inner)) => {
+            (&NonNullList(ref super_inner), &NonNullList(ref sub_inner))
+            | (&List(ref super_inner), &List(ref sub_inner))
+            | (&List(ref super_inner), &NonNullList(ref sub_inner)) => {
                 self.is_subtype(sub_inner, super_inner)
             }
             _ => false,

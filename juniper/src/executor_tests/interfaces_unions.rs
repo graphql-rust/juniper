@@ -80,8 +80,14 @@ mod interface {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
-                    Box::new(Dog { name: "Odie".to_owned(), woofs: true }),
-                    Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
+                    Box::new(Dog {
+                        name: "Odie".to_owned(),
+                        woofs: true,
+                    }),
+                    Box::new(Cat {
+                        name: "Garfield".to_owned(),
+                        meows: false,
+                    }),
                 ],
             },
             EmptyMutation::<()>::new(),
@@ -109,23 +115,33 @@ mod interface {
 
         assert_eq!(
             result,
-            Value::object(vec![
-                ("pets", Value::list(vec![
-                    Value::object(vec![
-                        ("name", Value::string("Odie")),
-                        ("woofs", Value::boolean(true)),
-                    ].into_iter().collect()),
-                    Value::object(vec![
-                        ("name", Value::string("Garfield")),
-                        ("meows", Value::boolean(false)),
-                    ].into_iter().collect()),
-                ])),
-            ].into_iter().collect()));
+            Value::object(
+                vec![
+                    (
+                        "pets",
+                        Value::list(vec![
+                            Value::object(
+                                vec![
+                                    ("name", Value::string("Odie")),
+                                    ("woofs", Value::boolean(true)),
+                                ].into_iter()
+                                    .collect(),
+                            ),
+                            Value::object(
+                                vec![
+                                    ("name", Value::string("Garfield")),
+                                    ("meows", Value::boolean(false)),
+                                ].into_iter()
+                                    .collect(),
+                            ),
+                        ]),
+                    ),
+                ].into_iter()
+                    .collect()
+            )
+        );
     }
 }
-
-
-
 
 mod union {
     use value::Value;
@@ -195,8 +211,14 @@ mod union {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
-                    Box::new(Dog { name: "Odie".to_owned(), woofs: true }),
-                    Box::new(Cat { name: "Garfield".to_owned(), meows: false }),
+                    Box::new(Dog {
+                        name: "Odie".to_owned(),
+                        woofs: true,
+                    }),
+                    Box::new(Cat {
+                        name: "Garfield".to_owned(),
+                        meows: false,
+                    }),
                 ],
             },
             EmptyMutation::<()>::new(),
@@ -226,19 +248,32 @@ mod union {
 
         assert_eq!(
             result,
-            Value::object(vec![
-                ("pets", Value::list(vec![
-                    Value::object(vec![
-                        ("__typename", Value::string("Dog")),
-                        ("name", Value::string("Odie")),
-                        ("woofs", Value::boolean(true)),
-                    ].into_iter().collect()),
-                    Value::object(vec![
-                        ("__typename", Value::string("Cat")),
-                        ("name", Value::string("Garfield")),
-                        ("meows", Value::boolean(false)),
-                    ].into_iter().collect()),
-                ])),
-            ].into_iter().collect()));
+            Value::object(
+                vec![
+                    (
+                        "pets",
+                        Value::list(vec![
+                            Value::object(
+                                vec![
+                                    ("__typename", Value::string("Dog")),
+                                    ("name", Value::string("Odie")),
+                                    ("woofs", Value::boolean(true)),
+                                ].into_iter()
+                                    .collect(),
+                            ),
+                            Value::object(
+                                vec![
+                                    ("__typename", Value::string("Cat")),
+                                    ("name", Value::string("Garfield")),
+                                    ("meows", Value::boolean(false)),
+                                ].into_iter()
+                                    .collect(),
+                            ),
+                        ]),
+                    ),
+                ].into_iter()
+                    .collect()
+            )
+        );
     }
 }

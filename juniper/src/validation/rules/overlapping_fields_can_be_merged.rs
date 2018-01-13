@@ -204,18 +204,21 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         };
 
         {
-            if self.compared_fragments
-                .borrow()
-                .contains(fragment_name1, fragment_name2, mutually_exclusive)
-            {
+            if self.compared_fragments.borrow().contains(
+                fragment_name1,
+                fragment_name2,
+                mutually_exclusive,
+            ) {
                 return;
             }
         }
 
         {
-            self.compared_fragments
-                .borrow_mut()
-                .insert(fragment_name1, fragment_name2, mutually_exclusive);
+            self.compared_fragments.borrow_mut().insert(
+                fragment_name1,
+                fragment_name2,
+                mutually_exclusive,
+            );
         }
 
         let (field_map1, fragment_names1) =
@@ -338,9 +341,9 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         let AstAndDef(ref parent_type1, ast1, ref def1) = *field1;
         let AstAndDef(ref parent_type2, ast2, ref def2) = *field2;
 
-        let mutually_exclusive = parents_mutually_exclusive ||
-            (parent_type1 != parent_type2 && self.is_object_type(ctx, *parent_type1) &&
-                self.is_object_type(ctx, *parent_type2));
+        let mutually_exclusive = parents_mutually_exclusive
+            || (parent_type1 != parent_type2 && self.is_object_type(ctx, *parent_type1)
+                && self.is_object_type(ctx, *parent_type2));
 
         if !mutually_exclusive {
             let name1 = &ast1.item.name.item;
@@ -350,9 +353,10 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                 return Some(Conflict(
                     ConflictReason(
                         response_name.to_owned(),
-                        ConflictReasonMessage::Message(
-                            format!("{} and {} are different fields", name1, name2),
-                        ),
+                        ConflictReasonMessage::Message(format!(
+                            "{} and {} are different fields",
+                            name1, name2
+                        )),
                     ),
                     vec![ast1.start.clone()],
                     vec![ast2.start.clone()],
@@ -379,9 +383,10 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                 return Some(Conflict(
                     ConflictReason(
                         response_name.to_owned(),
-                        ConflictReasonMessage::Message(
-                            format!("they return conflicting types {} and {}", t1, t2),
-                        ),
+                        ConflictReasonMessage::Message(format!(
+                            "they return conflicting types {} and {}",
+                            t1, t2
+                        )),
                     ),
                     vec![ast1.start.clone()],
                     vec![ast2.start.clone()],
@@ -389,8 +394,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
             }
         }
 
-        if let (&Some(ref s1), &Some(ref s2)) =
-            (&ast1.item.selection_set, &ast2.item.selection_set)
+        if let (&Some(ref s1), &Some(ref s2)) = (&ast1.item.selection_set, &ast2.item.selection_set)
         {
             let conflicts = self.find_conflicts_between_sub_selection_sets(
                 mutually_exclusive,
@@ -506,17 +510,17 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
 
     fn is_type_conflict(&self, ctx: &ValidatorContext<'a>, t1: &Type, t2: &Type) -> bool {
         match (t1, t2) {
-            (&Type::List(ref inner1), &Type::List(ref inner2)) |
-            (&Type::NonNullList(ref inner1), &Type::NonNullList(ref inner2)) => {
+            (&Type::List(ref inner1), &Type::List(ref inner2))
+            | (&Type::NonNullList(ref inner1), &Type::NonNullList(ref inner2)) => {
                 self.is_type_conflict(ctx, inner1, inner2)
             }
-            (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2)) |
-            (&Type::Named(ref n1), &Type::Named(ref n2)) => {
+            (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2))
+            | (&Type::Named(ref n1), &Type::Named(ref n2)) => {
                 let ct1 = ctx.schema.concrete_type_by_name(n1);
                 let ct2 = ctx.schema.concrete_type_by_name(n2);
 
-                if ct1.map(|ct| ct.is_leaf()).unwrap_or(false) ||
-                    ct2.map(|ct| ct.is_leaf()).unwrap_or(false)
+                if ct1.map(|ct| ct.is_leaf()).unwrap_or(false)
+                    || ct2.map(|ct| ct.is_leaf()).unwrap_or(false)
                 {
                     n1 != n2
                 } else {
@@ -1755,9 +1759,7 @@ mod tests {
                 RuleError::new(
                     &error_message(
                         "scalar",
-                        &Message(
-                            "they return conflicting types String! and String".to_owned(),
-                        ),
+                        &Message("they return conflicting types String! and String".to_owned()),
                     ),
                     &[
                         SourcePosition::new(100, 4, 18),

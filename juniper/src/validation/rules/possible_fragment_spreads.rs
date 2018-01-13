@@ -78,16 +78,13 @@ fn error_message(frag_name: Option<&str>, parent_type_name: &str, frag_type: &st
         format!(
             "Fragment \"{}\" cannot be spread here as objects of type \
              \"{}\" can never be of type \"{}\"",
-            frag_name,
-            parent_type_name,
-            frag_type
+            frag_name, parent_type_name, frag_type
         )
     } else {
         format!(
             "Fragment cannot be spread here as objects of type \"{}\" \
              can never be of type \"{}\"",
-            parent_type_name,
-            frag_type
+            parent_type_name, frag_type
         )
     }
 }

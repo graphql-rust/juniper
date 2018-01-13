@@ -157,7 +157,13 @@ fn scalar_description_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("ScalarDescription")));
-        assert_eq!(type_info.get("description"), Some(&Value::string("A sample scalar, represented as an integer")));
+        assert_eq!(
+            type_info.get("name"),
+            Some(&Value::string("ScalarDescription"))
+        );
+        assert_eq!(
+            type_info.get("description"),
+            Some(&Value::string("A sample scalar, represented as an integer"))
+        );
     });
 }

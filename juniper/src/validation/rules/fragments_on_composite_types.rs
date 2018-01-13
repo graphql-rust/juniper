@@ -55,8 +55,7 @@ fn error_message(fragment_name: Option<&str>, on_type: &str) -> String {
     if let Some(name) = fragment_name {
         format!(
             r#"Fragment "{}" cannot condition non composite type "{}"#,
-            name,
-            on_type
+            name, on_type
         )
     } else {
         format!(

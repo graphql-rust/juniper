@@ -47,9 +47,8 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
             GraphQLError::NoOperationProvided => {
                 serializer.serialize_str("Must provide an operation")
             }
-            GraphQLError::MultipleOperationsProvided => serializer.serialize_str(
-                "Must provide operation name if query contains multiple operations",
-            ),
+            GraphQLError::MultipleOperationsProvided => serializer
+                .serialize_str("Must provide operation name if query contains multiple operations"),
             GraphQLError::UnknownOperationName => serializer.serialize_str("Unknown operation"),
         }
     }

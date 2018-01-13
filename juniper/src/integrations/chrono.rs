@@ -15,7 +15,7 @@
 */
 use chrono::prelude::*;
 
-use ::Value;
+use Value;
 
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
@@ -113,7 +113,9 @@ mod test {
         let input = ::InputValue::String(raw.to_string());
 
         let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = DateTime::parse_from_rfc3339(raw).unwrap().with_timezone(&Utc);
+        let expected = DateTime::parse_from_rfc3339(raw)
+            .unwrap()
+            .with_timezone(&Utc);
 
         assert_eq!(parsed, expected);
     }

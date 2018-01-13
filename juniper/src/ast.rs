@@ -402,9 +402,9 @@ impl InputValue {
             (&Null, &Null) => true,
             (&Int(i1), &Int(i2)) => i1 == i2,
             (&Float(f1), &Float(f2)) => f1 == f2,
-            (&String(ref s1), &String(ref s2)) |
-            (&Enum(ref s1), &Enum(ref s2)) |
-            (&Variable(ref s1), &Variable(ref s2)) => s1 == s2,
+            (&String(ref s1), &String(ref s2))
+            | (&Enum(ref s1), &Enum(ref s2))
+            | (&Variable(ref s1), &Variable(ref s2)) => s1 == s2,
             (&Boolean(b1), &Boolean(b2)) => b1 == b2,
             (&List(ref l1), &List(ref l2)) => l1.iter()
                 .zip(l2.iter())

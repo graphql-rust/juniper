@@ -55,18 +55,14 @@ where
 #[test]
 fn accepts_enum_literal() {
     run_query("{ toString(color: RED) }", |result| {
-        assert_eq!(
-                result.get("toString"),
-                Some(&Value::string("Color::Red")));
+        assert_eq!(result.get("toString"), Some(&Value::string("Color::Red")));
     });
 }
 
 #[test]
 fn serializes_as_output() {
     run_query("{ aColor }", |result| {
-        assert_eq!(
-                result.get("aColor"),
-                Some(&Value::string("RED")));
+        assert_eq!(result.get("aColor"), Some(&Value::string("RED")));
     });
 }
 
@@ -79,26 +75,26 @@ fn does_not_accept_string_literals() {
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
-    assert_eq!(error, ValidationError(vec![
-        RuleError::new(
-            r#"Invalid value for argument "color", expected type "Color!""#,
-            &[SourcePosition::new(18, 0, 18)],
-        ),
-    ]));
+    assert_eq!(
+        error,
+        ValidationError(vec![
+            RuleError::new(
+                r#"Invalid value for argument "color", expected type "Color!""#,
+                &[SourcePosition::new(18, 0, 18)],
+            ),
+        ])
+    );
 }
 
 #[test]
 fn accepts_strings_in_variables() {
     run_variable_query(
         "query q($color: Color!) { toString(color: $color) }",
-        vec![
-            ("color".to_owned(), InputValue::string("RED")),
-        ].into_iter()
+        vec![("color".to_owned(), InputValue::string("RED"))]
+            .into_iter()
             .collect(),
         |result| {
-            assert_eq!(
-                result.get("toString"),
-                Some(&Value::string("Color::Red")));
+            assert_eq!(result.get("toString"), Some(&Value::string("Color::Red")));
         },
     );
 }
@@ -108,19 +104,21 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![
-        ("color".to_owned(), InputValue::string("BLURPLE")),
-    ].into_iter()
+    let vars = vec![("color".to_owned(), InputValue::string("BLURPLE"))]
+        .into_iter()
         .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
-    assert_eq!(error, ValidationError(vec![
-        RuleError::new(
-            r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
-            &[SourcePosition::new(8, 0, 8)],
-        ),
-    ]));
+    assert_eq!(
+        error,
+        ValidationError(vec![
+            RuleError::new(
+                r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
+                &[SourcePosition::new(8, 0, 8)],
+            ),
+        ])
+    );
 }
 
 #[test]
@@ -128,17 +126,19 @@ fn does_not_accept_incorrect_type_in_variables() {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![
-        ("color".to_owned(), InputValue::int(123)),
-    ].into_iter()
+    let vars = vec![("color".to_owned(), InputValue::int(123))]
+        .into_iter()
         .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
-    assert_eq!(error, ValidationError(vec![
+    assert_eq!(
+        error,
+        ValidationError(vec![
         RuleError::new(
             r#"Variable "$color" got invalid value. Expected "Color", found not a string or enum."#,
             &[SourcePosition::new(8, 0, 8)],
         ),
-    ]));
+    ])
+    );
 }

@@ -125,13 +125,18 @@ impl ToInputValue for Value {
             Value::Float(f) => InputValue::Float(f),
             Value::String(ref s) => InputValue::String(s.clone()),
             Value::Boolean(b) => InputValue::Boolean(b),
-            Value::List(ref l) => {
-                InputValue::List(l.iter().map(|x| Spanning::unlocated(x.to_input_value())).collect())
-            }
+            Value::List(ref l) => InputValue::List(
+                l.iter()
+                    .map(|x| Spanning::unlocated(x.to_input_value()))
+                    .collect(),
+            ),
             Value::Object(ref o) => InputValue::Object(
                 o.iter()
                     .map(|(k, v)| {
-                        (Spanning::unlocated(k.clone()), Spanning::unlocated(v.to_input_value()))
+                        (
+                            Spanning::unlocated(k.clone()),
+                            Spanning::unlocated(v.to_input_value()),
+                        )
                     })
                     .collect(),
             ),
@@ -169,11 +174,14 @@ impl From<f64> for Value {
     }
 }
 
-impl<T> From<Option<T>> for Value where Value: From<T> {
+impl<T> From<Option<T>> for Value
+where
+    Value: From<T>,
+{
     fn from(v: Option<T>) -> Value {
         match v {
             Some(v) => Value::from(v),
-            None => Value::null()
+            None => Value::null(),
         }
     }
 }
@@ -215,52 +223,34 @@ mod tests {
 
     #[test]
     fn value_macro_string() {
-        assert_eq!(
-            graphql_value!("test"),
-            Value::string("test")
-        );
+        assert_eq!(graphql_value!("test"), Value::string("test"));
     }
 
     #[test]
     fn value_macro_int() {
-        assert_eq!(
-            graphql_value!(123),
-            Value::int(123)
-        );
+        assert_eq!(graphql_value!(123), Value::int(123));
     }
 
     #[test]
     fn value_macro_float() {
-        assert_eq!(
-            graphql_value!(123.5),
-            Value::float(123.5)
-        );
+        assert_eq!(graphql_value!(123.5), Value::float(123.5));
     }
 
     #[test]
     fn value_macro_boolean() {
-        assert_eq!(
-            graphql_value!(false),
-            Value::boolean(false)
-        );
+        assert_eq!(graphql_value!(false), Value::boolean(false));
     }
 
     #[test]
     fn value_macro_option() {
-        assert_eq!(
-            graphql_value!(Some("test")),
-            Value::string("test")
-        );
-        assert_eq!(
-            graphql_value!(None),
-            Value::null()
-        );
+        assert_eq!(graphql_value!(Some("test")), Value::string("test"));
+        assert_eq!(graphql_value!(None), Value::null());
     }
 
     #[test]
     fn value_macro_list() {
         assert_eq!(
-            graphql_value!([ 123, "Test", false ]),
+            graphql_value!([123, "Test", false]),
             Value::list(vec![
                 Value::int(123),
                 Value::string("Test"),
@@ -268,10 +258,10 @@ mod tests {
             ])
         );
         assert_eq!(
-            graphql_value!([ 123, [ 456 ], 789 ]),
+            graphql_value!([123, [456], 789]),
             Value::list(vec![
                 Value::int(123),
-                Value::list(vec![ Value::int(456) ]),
+                Value::list(vec![Value::int(456)]),
                 Value::int(789),
             ])
         );
@@ -281,10 +271,11 @@ mod tests {
     fn value_macro_object() {
         assert_eq!(
             graphql_value!({ "key": 123, "next": true }),
-            Value::object(vec![
-                ("key", Value::int(123)),
-                ("next", Value::boolean(true)),
-            ].into_iter().collect())
+            Value::object(
+                vec![("key", Value::int(123)), ("next", Value::boolean(true))]
+                    .into_iter()
+                    .collect()
+            )
         );
     }
 }

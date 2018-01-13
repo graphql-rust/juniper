@@ -19,8 +19,7 @@ use executor::ExecutionError;
 #[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
 pub struct GraphQLRequest {
     query: String,
-    #[serde(rename = "operationName")]
-    operation_name: Option<String>,
+    #[serde(rename = "operationName")] operation_name: Option<String>,
     variables: Option<InputValue>,
 }
 

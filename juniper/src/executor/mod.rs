@@ -68,15 +68,21 @@ impl Eq for ExecutionError {}
 
 impl PartialOrd for ExecutionError {
     fn partial_cmp(&self, other: &ExecutionError) -> Option<Ordering> {
-        (&self.location, &self.path, &self.error.message)
-            .partial_cmp(&(&other.location, &other.path, &other.error.message))
+        (&self.location, &self.path, &self.error.message).partial_cmp(&(
+            &other.location,
+            &other.path,
+            &other.error.message,
+        ))
     }
 }
 
 impl Ord for ExecutionError {
     fn cmp(&self, other: &ExecutionError) -> Ordering {
-        (&self.location, &self.path, &self.error.message)
-            .cmp(&(&other.location, &other.path, &other.error.message))
+        (&self.location, &self.path, &self.error.message).cmp(&(
+            &other.location,
+            &other.path,
+            &other.error.message,
+        ))
     }
 }
 
@@ -213,7 +219,8 @@ impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<(&'a T::Con
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C> for FieldResult<Option<(&'a T::Context, T)>> {
+impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C>
+    for FieldResult<Option<(&'a T::Context, T)>> {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -329,8 +336,10 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             current_type: self.schema.make_type(
                 &self.current_type
                     .innermost_concrete()
-                    .field_by_name(field_name).expect("Field not found on inner type")
-                    .field_type),
+                    .field_by_name(field_name)
+                    .expect("Field not found on inner type")
+                    .field_type,
+            ),
             schema: self.schema,
             context: self.context,
             errors: self.errors,
@@ -478,8 +487,8 @@ where
                     return Err(GraphQLError::MultipleOperationsProvided);
                 }
 
-                let move_op = operation_name.is_none() ||
-                    op.item.name.as_ref().map(|s| s.item.as_ref()) == operation_name;
+                let move_op = operation_name.is_none()
+                    || op.item.name.as_ref().map(|s| s.item.as_ref()) == operation_name;
 
                 if move_op {
                     operation = Some(op);
@@ -525,7 +534,10 @@ where
 
         let root_type = match op.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
-            OperationType::Mutation => root_node.schema.mutation_type().expect("No mutation type found")
+            OperationType::Mutation => root_node
+                .schema
+                .mutation_type()
+                .expect("No mutation type found"),
         };
 
         let executor = Executor {

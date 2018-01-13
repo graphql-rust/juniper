@@ -33,10 +33,12 @@ pub fn parse_value_literal<'a>(
         Spanning {
             item: Token::String(_),
             ..
-        } => Ok(parser.next()?.map(|t| if let Token::String(s) = t {
-            InputValue::string(s)
-        } else {
-            panic!("Internal parser error");
+        } => Ok(parser.next()?.map(|t| {
+            if let Token::String(s) = t {
+                InputValue::string(s)
+            } else {
+                panic!("Internal parser error");
+            }
         })),
         Spanning {
             item: Token::Name("true"),
@@ -53,38 +55,30 @@ pub fn parse_value_literal<'a>(
         Spanning {
             item: Token::Name(name),
             ..
-        } => Ok(
-            parser
-                .next()?
-                .map(|_| InputValue::enum_value(name.to_owned())),
-        ),
+        } => Ok(parser
+            .next()?
+            .map(|_| InputValue::enum_value(name.to_owned()))),
         _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
 
 fn parse_list_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> ParseResult<'a, InputValue> {
-    Ok(
-        try!(parser.delimited_list(
-            &Token::BracketOpen,
-            |p| parse_value_literal(p, is_const),
-            &Token::BracketClose
-        )).map(InputValue::parsed_list),
-    )
+    Ok(try!(parser.delimited_list(
+        &Token::BracketOpen,
+        |p| parse_value_literal(p, is_const),
+        &Token::BracketClose
+    )).map(InputValue::parsed_list))
 }
 
 fn parse_object_literal<'a>(
     parser: &mut Parser<'a>,
     is_const: bool,
 ) -> ParseResult<'a, InputValue> {
-    Ok(
-        try!(parser.delimited_list(
-            &Token::CurlyOpen,
-            |p| parse_object_field(p, is_const),
-            &Token::CurlyClose
-        )).map(|items| {
-            InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())
-        }),
-    )
+    Ok(try!(parser.delimited_list(
+        &Token::CurlyOpen,
+        |p| parse_object_field(p, is_const),
+        &Token::CurlyClose
+    )).map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
 fn parse_object_field<'a>(

@@ -328,7 +328,8 @@ fn resolve_selection_set_into<T, CtxT>(
     selection_set: &[Selection],
     executor: &Executor<CtxT>,
     result: &mut OrderMap<String, Value>,
-) -> bool where
+) -> bool
+where
     T: GraphQLType<Context = CtxT>,
 {
     let meta_type = executor
@@ -441,7 +442,8 @@ fn resolve_selection_set_into<T, CtxT>(
 
                 let sub_exec = executor.type_sub_executor(
                     fragment.type_condition.as_ref().map(|c| c.item),
-                    Some(&fragment.selection_set[..]));
+                    Some(&fragment.selection_set[..]),
+                );
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.resolve_into_type(
@@ -472,7 +474,7 @@ fn resolve_selection_set_into<T, CtxT>(
             }
         }
     }
-    
+
     true
 }
 
@@ -491,8 +493,8 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
                 .next()
                 .unwrap();
 
-            if (directive.name.item == "skip" && condition) ||
-                (directive.name.item == "include" && !condition)
+            if (directive.name.item == "skip" && condition)
+                || (directive.name.item == "include" && !condition)
             {
                 return true;
             }

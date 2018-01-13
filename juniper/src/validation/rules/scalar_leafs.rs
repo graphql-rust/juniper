@@ -39,8 +39,7 @@ impl<'a> Visitor<'a> for ScalarLeafs {
 fn no_allowed_error_message(field_name: &str, type_name: &str) -> String {
     format!(
         r#"Field "{}" must not have a selection since type {} has no subfields"#,
-        field_name,
-        type_name
+        field_name, type_name
     )
 }
 

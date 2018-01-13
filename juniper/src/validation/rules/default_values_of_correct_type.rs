@@ -43,16 +43,14 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
 fn type_error_message(arg_name: &str, type_name: &str) -> String {
     format!(
         "Invalid default value for argument \"{}\", expected type \"{}\"",
-        arg_name,
-        type_name
+        arg_name, type_name
     )
 }
 
 fn non_null_error_message(arg_name: &str, type_name: &str) -> String {
     format!(
         "Argument \"{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
-        arg_name,
-        type_name
+        arg_name, type_name
     )
 }
 

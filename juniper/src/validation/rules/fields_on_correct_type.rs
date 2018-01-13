@@ -17,7 +17,6 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
                 let type_name = parent_type.name().unwrap_or("<unknown>");
 
                 if parent_type.field_by_name(field_name.item).is_none() {
-
                     match *parent_type {
                         MetaType::Union(..) => {
                             // You can query for `__typename` on a union,

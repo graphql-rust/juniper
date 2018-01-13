@@ -3,7 +3,6 @@ use ast::{Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, 
 use parser::Spanning;
 use validation::ValidatorContext;
 
-
 #[doc(hidden)]
 pub trait Visitor<'a> {
     fn enter_document(&mut self, _: &mut ValidatorContext<'a>, _: &'a Document) {}

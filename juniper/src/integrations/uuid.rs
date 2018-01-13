@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use ::Value;
+use Value;
 
 graphql_scalar!(Uuid {
     description: "Uuid"

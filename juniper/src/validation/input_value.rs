@@ -277,9 +277,7 @@ fn push_unification_error<'a>(
     errors.push(RuleError::new(
         &format!(
             r#"Variable "${}" got invalid value. {}{}."#,
-            var_name,
-            path,
-            message,
+            var_name, path, message,
         ),
         &[var_pos.clone()],
     ));
