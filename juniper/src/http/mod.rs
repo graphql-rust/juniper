@@ -1,5 +1,7 @@
 //! Utilities for building HTTP endpoints in a library-agnostic manner
 
+pub mod graphiql;
+
 use serde::ser;
 use serde::ser::SerializeMap;
 
