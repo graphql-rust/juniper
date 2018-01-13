@@ -131,8 +131,9 @@ mod executor;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod integrations;
-pub mod graphiql;
 pub mod http;
+// TODO: remove this alias export in 0.10. (breaking change)
+pub use http::graphiql;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
