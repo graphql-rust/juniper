@@ -131,6 +131,10 @@ impl GraphQLType for () {
     fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
         registry.build_scalar_type::<Self>(&()).into_meta()
     }
+    
+    fn resolve(&self, _: &(), _: Option<&[Selection]>, _: &Executor<Self::Context>) -> Value {
+        Value::null()
+    }
 }
 
 impl FromInputValue for () {
