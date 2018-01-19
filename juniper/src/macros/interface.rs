@@ -281,7 +281,7 @@ macro_rules! graphql_interface {
                     $($items)*);
             }
 
-            fn concrete_type_name(&$mainself, context: &Self::Context) -> String {
+            fn concrete_type_name(&$mainself, context: &Self::Context, _info: &()) -> String {
                 graphql_interface!(
                     @ concrete_type_name,
                     ($outname, context, $ctxt),

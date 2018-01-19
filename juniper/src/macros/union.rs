@@ -131,7 +131,7 @@ macro_rules! graphql_union {
                 mt.into_meta()
             }
 
-            fn concrete_type_name(&$mainself, context: &Self::Context) -> String {
+            fn concrete_type_name(&$mainself, context: &Self::Context, _: &()) -> String {
                 graphql_union!(
                     @ concrete_type_name,
                     ($outname, context, $ctxt),
