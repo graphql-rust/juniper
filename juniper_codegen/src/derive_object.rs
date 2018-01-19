@@ -150,7 +150,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
                 Some(#name)
             }
 
-            fn concrete_type_name(&self, _: &Self::Context) -> String {
+            fn concrete_type_name(&self, _: &Self::Context, _: &()) -> String {
                 #name.to_string()
             }
 

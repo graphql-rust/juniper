@@ -289,7 +289,7 @@ pub trait GraphQLType: Sized {
     ///
     /// The default implementation panics.
     #[allow(unused_variables)]
-    fn concrete_type_name(&self, context: &Self::Context) -> String {
+    fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
         panic!("concrete_type_name must be implemented by unions and interfaces");
     }
 
@@ -357,7 +357,7 @@ where
                 if f.name.item == "__typename" {
                     result.insert(
                         (*response_name).to_owned(),
-                        Value::string(instance.concrete_type_name(executor.context())),
+                        Value::string(instance.concrete_type_name(executor.context(), info)),
                     );
                     continue;
                 }

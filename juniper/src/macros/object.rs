@@ -406,7 +406,7 @@ macro_rules! graphql_object {
                 mt.into_meta()
             }
 
-            fn concrete_type_name(&self, _: &Self::Context) -> String {
+            fn concrete_type_name(&self, _: &Self::Context, _: &()) -> String {
                 $outname.to_owned()
             }
 
