@@ -56,7 +56,8 @@ struct ExampleInputObject {
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct InputWithDefaults {
-    #[graphql(default = "123")] a: i32,
+    #[graphql(default = "123")]
+    a: i32,
 }
 
 graphql_object!(TestType: () |&self| {

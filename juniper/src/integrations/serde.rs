@@ -15,21 +15,21 @@ impl ser::Serialize for ExecutionError {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(4)));
+        let mut map = serializer.serialize_map(Some(4))?;
 
-        try!(map.serialize_key("message"));
-        try!(map.serialize_value(self.error().message()));
+        map.serialize_key("message")?;
+        map.serialize_value(self.error().message())?;
 
         let locations = vec![self.location()];
-        try!(map.serialize_key("locations"));
-        try!(map.serialize_value(&locations));
+        map.serialize_key("locations")?;
+        map.serialize_value(&locations)?;
 
-        try!(map.serialize_key("path"));
-        try!(map.serialize_value(self.path()));
+        map.serialize_key("path")?;
+        map.serialize_value(self.path())?;
 
         if !self.error().data().is_null() {
-            try!(map.serialize_key("data"));
-            try!(map.serialize_value(self.error().data()));
+            map.serialize_key("data")?;
+            map.serialize_value(self.error().data())?;
         }
 
         map.end()
@@ -123,7 +123,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             {
                 let mut values = Vec::new();
 
-                while let Some(el) = try!(visitor.next_element()) {
+                while let Some(el) = visitor.next_element()? {
                     values.push(el);
                 }
 
@@ -136,7 +136,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             {
                 let mut values: IndexMap<String, InputValue> = IndexMap::new();
 
-                while let Some((key, value)) = try!(visitor.next_entry()) {
+                while let Some((key, value)) = visitor.next_entry()? {
                     values.insert(key, value);
                 }
 
@@ -176,13 +176,13 @@ impl ser::Serialize for RuleError {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(2)));
+        let mut map = serializer.serialize_map(Some(2))?;
 
-        try!(map.serialize_key("message"));
-        try!(map.serialize_value(self.message()));
+        map.serialize_key("message")?;
+        map.serialize_value(self.message())?;
 
-        try!(map.serialize_key("locations"));
-        try!(map.serialize_value(self.locations()));
+        map.serialize_key("locations")?;
+        map.serialize_value(self.locations())?;
 
         map.end()
     }
@@ -193,15 +193,15 @@ impl ser::Serialize for SourcePosition {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(2)));
+        let mut map = serializer.serialize_map(Some(2))?;
 
         let line = self.line() + 1;
-        try!(map.serialize_key("line"));
-        try!(map.serialize_value(&line));
+        map.serialize_key("line")?;
+        map.serialize_value(&line)?;
 
         let column = self.column() + 1;
-        try!(map.serialize_key("column"));
-        try!(map.serialize_value(&column));
+        map.serialize_key("column")?;
+        map.serialize_value(&column)?;
 
         map.end()
     }
@@ -212,11 +212,11 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(2)));
+        let mut map = serializer.serialize_map(Some(2))?;
 
         let message = format!("{}", self.item);
-        try!(map.serialize_key("message"));
-        try!(map.serialize_value(&message));
+        map.serialize_key("message")?;
+        map.serialize_value(&message)?;
 
         let mut location = IndexMap::new();
         location.insert("line".to_owned(), self.start.line() + 1);
@@ -224,8 +224,8 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
 
         let locations = vec![location];
 
-        try!(map.serialize_key("locations"));
-        try!(map.serialize_value(&locations));
+        map.serialize_key("locations")?;
+        map.serialize_value(&locations)?;
 
         map.end()
     }

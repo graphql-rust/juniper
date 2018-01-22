@@ -68,15 +68,19 @@ pub struct NamedPublic {
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct FieldDescription {
-    #[graphql(description = "The first field")] field_one: String,
-    #[graphql(description = "The second field")] field_two: String,
+    #[graphql(description = "The first field")]
+    field_one: String,
+    #[graphql(description = "The second field")]
+    field_two: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct FieldWithDefaults {
-    #[graphql(default = "123")] field_one: i32,
-    #[graphql(default = "456", description = "The second field")] field_two: i32,
+    #[graphql(default = "123")]
+    field_one: i32,
+    #[graphql(default = "456", description = "The second field")]
+    field_two: i32,
 }
 
 graphql_object!(Root: () |&self| {

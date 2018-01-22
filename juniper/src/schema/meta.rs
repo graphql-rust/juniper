@@ -8,62 +8,85 @@ use types::base::TypeKind;
 
 /// Scalar type metadata
 pub struct ScalarMeta<'a> {
-    #[doc(hidden)] pub name: Cow<'a, str>,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
+    #[doc(hidden)]
+    pub name: Cow<'a, str>,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
 }
 
 /// List type metadata
 #[derive(Debug)]
 pub struct ListMeta<'a> {
-    #[doc(hidden)] pub of_type: Type<'a>,
+    #[doc(hidden)]
+    pub of_type: Type<'a>,
 }
 
 /// Nullable type metadata
 #[derive(Debug)]
 pub struct NullableMeta<'a> {
-    #[doc(hidden)] pub of_type: Type<'a>,
+    #[doc(hidden)]
+    pub of_type: Type<'a>,
 }
 
 /// Object type metadata
 #[derive(Debug)]
 pub struct ObjectMeta<'a> {
-    #[doc(hidden)] pub name: Cow<'a, str>,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub fields: Vec<Field<'a>>,
-    #[doc(hidden)] pub interface_names: Vec<String>,
+    #[doc(hidden)]
+    pub name: Cow<'a, str>,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub fields: Vec<Field<'a>>,
+    #[doc(hidden)]
+    pub interface_names: Vec<String>,
 }
 
 /// Enum type metadata
 pub struct EnumMeta<'a> {
-    #[doc(hidden)] pub name: Cow<'a, str>,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub values: Vec<EnumValue>,
-    #[doc(hidden)] pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
+    #[doc(hidden)]
+    pub name: Cow<'a, str>,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub values: Vec<EnumValue>,
+    #[doc(hidden)]
+    pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
 }
 
 /// Interface type metadata
 #[derive(Debug)]
 pub struct InterfaceMeta<'a> {
-    #[doc(hidden)] pub name: Cow<'a, str>,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub fields: Vec<Field<'a>>,
+    #[doc(hidden)]
+    pub name: Cow<'a, str>,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub fields: Vec<Field<'a>>,
 }
 
 /// Union type metadata
 #[derive(Debug)]
 pub struct UnionMeta<'a> {
-    #[doc(hidden)] pub name: Cow<'a, str>,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub of_type_names: Vec<String>,
+    #[doc(hidden)]
+    pub name: Cow<'a, str>,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub of_type_names: Vec<String>,
 }
 
 /// Input object metadata
 pub struct InputObjectMeta<'a> {
-    #[doc(hidden)] pub name: Cow<'a, str>,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub input_fields: Vec<Argument<'a>>,
-    #[doc(hidden)] pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
+    #[doc(hidden)]
+    pub name: Cow<'a, str>,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub input_fields: Vec<Argument<'a>>,
+    #[doc(hidden)]
+    pub try_parse_fn: Box<Fn(&InputValue) -> bool + Send + Sync>,
 }
 
 /// A placeholder for not-yet-registered types
@@ -72,7 +95,8 @@ pub struct InputObjectMeta<'a> {
 /// is inserted into a registry to indicate existence.
 #[derive(Debug)]
 pub struct PlaceholderMeta<'a> {
-    #[doc(hidden)] pub of_type: Type<'a>,
+    #[doc(hidden)]
+    pub of_type: Type<'a>,
 }
 
 /// Generic type metadata
@@ -92,20 +116,29 @@ pub enum MetaType<'a> {
 /// Metadata for a field
 #[derive(Debug, Clone)]
 pub struct Field<'a> {
-    #[doc(hidden)] pub name: String,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub arguments: Option<Vec<Argument<'a>>>,
-    #[doc(hidden)] pub field_type: Type<'a>,
-    #[doc(hidden)] pub deprecation_reason: Option<String>,
+    #[doc(hidden)]
+    pub name: String,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub arguments: Option<Vec<Argument<'a>>>,
+    #[doc(hidden)]
+    pub field_type: Type<'a>,
+    #[doc(hidden)]
+    pub deprecation_reason: Option<String>,
 }
 
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
 pub struct Argument<'a> {
-    #[doc(hidden)] pub name: String,
-    #[doc(hidden)] pub description: Option<String>,
-    #[doc(hidden)] pub arg_type: Type<'a>,
-    #[doc(hidden)] pub default_value: Option<InputValue>,
+    #[doc(hidden)]
+    pub name: String,
+    #[doc(hidden)]
+    pub description: Option<String>,
+    #[doc(hidden)]
+    pub arg_type: Type<'a>,
+    #[doc(hidden)]
+    pub default_value: Option<InputValue>,
 }
 
 /// Metadata for a single value in an enum

@@ -220,7 +220,8 @@ impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<(&'a T::Con
 }
 
 impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C>
-    for FieldResult<Option<(&'a T::Context, T)>> {
+    for FieldResult<Option<(&'a T::Context, T)>>
+{
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
     }
