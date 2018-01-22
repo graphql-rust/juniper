@@ -103,15 +103,15 @@ impl<'a> Parser<'a> {
     {
         let Spanning {
             start: start_pos, ..
-        } = try!(self.expect(opening));
+        } = self.expect(opening)?;
         let mut items = Vec::new();
 
         loop {
-            if let Some(Spanning { end: end_pos, .. }) = try!(self.skip(closing)) {
+            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
                 return Ok(Spanning::start_end(&start_pos, &end_pos, items));
             }
 
-            items.push(try!(parser(self)));
+            items.push(parser(self)?);
         }
     }
 
@@ -128,13 +128,13 @@ impl<'a> Parser<'a> {
     {
         let Spanning {
             start: start_pos, ..
-        } = try!(self.expect(opening));
+        } = self.expect(opening)?;
         let mut items = Vec::new();
 
         loop {
-            items.push(try!(parser(self)));
+            items.push(parser(self)?);
 
-            if let Some(Spanning { end: end_pos, .. }) = try!(self.skip(closing)) {
+            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
                 return Ok(Spanning::start_end(&start_pos, &end_pos, items));
             }
         }
@@ -153,13 +153,13 @@ impl<'a> Parser<'a> {
     {
         let Spanning {
             start: start_pos, ..
-        } = try!(self.expect(opening));
+        } = self.expect(opening)?;
         let mut items = Vec::new();
 
         loop {
-            items.push(try!(parser(self)));
+            items.push(parser(self)?);
 
-            if let Some(Spanning { end: end_pos, .. }) = try!(self.skip(closing)) {
+            if let Some(Spanning { end: end_pos, .. }) = self.skip(closing)? {
                 return Ok(Spanning::start_end(&start_pos, &end_pos, items));
             }
         }

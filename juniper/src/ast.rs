@@ -432,25 +432,25 @@ impl fmt::Display for InputValue {
             InputValue::Enum(ref v) => write!(f, "{}", v),
             InputValue::Variable(ref v) => write!(f, "${}", v),
             InputValue::List(ref v) => {
-                try!(write!(f, "["));
+                write!(f, "[")?;
 
                 for (i, spanning) in v.iter().enumerate() {
-                    try!(spanning.item.fmt(f));
+                    spanning.item.fmt(f)?;
                     if i < v.len() - 1 {
-                        try!(write!(f, ", "));
+                        write!(f, ", ")?;
                     }
                 }
 
                 write!(f, "]")
             }
             InputValue::Object(ref o) => {
-                try!(write!(f, "{{"));
+                write!(f, "{{")?;
 
                 for (i, &(ref k, ref v)) in o.iter().enumerate() {
-                    try!(write!(f, "{}: ", k.item));
-                    try!(v.item.fmt(f));
+                    write!(f, "{}: ", k.item)?;
+                    v.item.fmt(f)?;
                     if i < o.len() - 1 {
-                        try!(write!(f, ", "));
+                        write!(f, ", ")?;
                     }
                 }
 

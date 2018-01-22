@@ -160,10 +160,10 @@ impl<'a> Lexer<'a> {
         let start_pos = self.position.clone();
 
         for _ in 0..3 {
-            let (_, ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+            let (_, ch) = self.next_char().ok_or(Spanning::zero_width(
                 &self.position,
-                LexerError::UnexpectedEndOfFile
-            )));
+                LexerError::UnexpectedEndOfFile,
+            ))?;
             if ch != '.' {
                 return Err(Spanning::zero_width(
                     &start_pos,
@@ -181,10 +181,10 @@ impl<'a> Lexer<'a> {
 
     fn scan_name(&mut self) -> LexerResult<'a> {
         let start_pos = self.position.clone();
-        let (start_idx, start_ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+        let (start_idx, start_ch) = self.next_char().ok_or(Spanning::zero_width(
             &self.position,
-            LexerError::UnexpectedEndOfFile
-        )));
+            LexerError::UnexpectedEndOfFile,
+        ))?;
         assert!(is_name_start(start_ch));
 
         let mut end_idx = start_idx;
@@ -207,10 +207,10 @@ impl<'a> Lexer<'a> {
 
     fn scan_string(&mut self) -> LexerResult<'a> {
         let start_pos = self.position.clone();
-        let (_, start_ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+        let (_, start_ch) = self.next_char().ok_or(Spanning::zero_width(
             &self.position,
-            LexerError::UnexpectedEndOfFile
-        )));
+            LexerError::UnexpectedEndOfFile,
+        ))?;
         assert!(start_ch == '"');
 
         let mut acc = String::new();
@@ -262,7 +262,7 @@ impl<'a> Lexer<'a> {
                     Some((_, 'u')) => {
                         let start_pos = self.position.clone();
                         self.next_char();
-                        acc.push(try!(self.scan_escaped_unicode(&start_pos)));
+                        acc.push(self.scan_escaped_unicode(&start_pos)?);
                     }
                     Some((_, ch)) => {
                         let mut s = String::from("\\");
@@ -314,18 +314,18 @@ impl<'a> Lexer<'a> {
         &mut self,
         start_pos: &SourcePosition,
     ) -> Result<char, Spanning<LexerError>> {
-        let (start_idx, _) = try!(self.peek_char().ok_or(Spanning::zero_width(
+        let (start_idx, _) = self.peek_char().ok_or(Spanning::zero_width(
             &self.position,
-            LexerError::UnterminatedString
-        )));
+            LexerError::UnterminatedString,
+        ))?;
         let mut end_idx = start_idx;
         let mut len = 0;
 
         for _ in 0..4 {
-            let (idx, ch) = try!(self.next_char().ok_or(Spanning::zero_width(
+            let (idx, ch) = self.next_char().ok_or(Spanning::zero_width(
                 &self.position,
-                LexerError::UnterminatedString
-            )));
+                LexerError::UnterminatedString,
+            ))?;
 
             if !ch.is_alphanumeric() {
                 break;
@@ -344,12 +344,12 @@ impl<'a> Lexer<'a> {
             ));
         }
 
-        let code_point = try!(
-            u32::from_str_radix(escape, 16).map_err(|_| Spanning::zero_width(
+        let code_point = u32::from_str_radix(escape, 16).map_err(|_| {
+            Spanning::zero_width(
                 start_pos,
                 LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
-            ))
-        );
+            )
+        })?;
 
         char::from_u32(code_point).ok_or_else(|| {
             Spanning::zero_width(
@@ -361,14 +361,14 @@ impl<'a> Lexer<'a> {
 
     fn scan_number(&mut self) -> LexerResult<'a> {
         let start_pos = self.position.clone();
-        let int_part = try!(self.scan_integer_part());
+        let int_part = self.scan_integer_part()?;
         let mut frac_part = None;
         let mut exp_part = None;
 
         if let Some((_, '.')) = self.peek_char() {
             self.next_char();
 
-            frac_part = Some(try!(self.scan_digits()));
+            frac_part = Some(self.scan_digits()?);
         }
 
         if let Some((_, ch)) = self.peek_char() {
@@ -385,7 +385,7 @@ impl<'a> Lexer<'a> {
                         self.next_char();
                     }
                 }
-                exp_part = Some(if is_negative { -1 } else { 1 } * try!(self.scan_digits()));
+                exp_part = Some(if is_negative { -1 } else { 1 } * self.scan_digits()?);
             }
         }
 
@@ -416,10 +416,10 @@ impl<'a> Lexer<'a> {
 
     fn scan_integer_part(&mut self) -> Result<i32, Spanning<LexerError>> {
         let is_negative = {
-            let (_, init_ch) = try!(self.peek_char().ok_or(Spanning::zero_width(
+            let (_, init_ch) = self.peek_char().ok_or(Spanning::zero_width(
                 &self.position,
-                LexerError::UnexpectedEndOfFile
-            )));
+                LexerError::UnexpectedEndOfFile,
+            ))?;
 
             if init_ch == '-' {
                 self.next_char();
@@ -429,10 +429,10 @@ impl<'a> Lexer<'a> {
             }
         };
 
-        let (_, ch) = try!(self.peek_char().ok_or(Spanning::zero_width(
+        let (_, ch) = self.peek_char().ok_or(Spanning::zero_width(
             &self.position,
-            LexerError::UnexpectedEndOfFile
-        )));
+            LexerError::UnexpectedEndOfFile,
+        ))?;
 
         if ch == '0' {
             self.next_char();
@@ -445,16 +445,16 @@ impl<'a> Lexer<'a> {
                 _ => Ok(0),
             }
         } else {
-            Ok(try!(self.scan_digits()) * if is_negative { -1 } else { 1 })
+            Ok(self.scan_digits()? * if is_negative { -1 } else { 1 })
         }
     }
 
     fn scan_digits(&mut self) -> Result<i32, Spanning<LexerError>> {
         let start_pos = self.position.clone();
-        let (start_idx, ch) = try!(self.peek_char().ok_or(Spanning::zero_width(
+        let (start_idx, ch) = self.peek_char().ok_or(Spanning::zero_width(
             &self.position,
-            LexerError::UnexpectedEndOfFile
-        )));
+            LexerError::UnexpectedEndOfFile,
+        ))?;
         let mut end_idx = start_idx;
 
         if !ch.is_digit(10) {

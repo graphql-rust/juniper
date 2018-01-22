@@ -184,7 +184,7 @@ where
     QueryT: GraphQLType<Context = CtxT>,
     MutationT: GraphQLType<Context = CtxT>,
 {
-    let document = try!(parse_document_source(document_source));
+    let document = parse_document_source(document_source)?;
 
     {
         let errors = validate_input_values(variables, &document, &root_node.schema);

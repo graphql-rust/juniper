@@ -13,11 +13,16 @@ use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMet
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
 pub struct RootNode<'a, QueryT: GraphQLType, MutationT: GraphQLType> {
-    #[doc(hidden)] pub query_type: QueryT,
-    #[doc(hidden)] pub query_info: QueryT::TypeInfo,
-    #[doc(hidden)] pub mutation_type: MutationT,
-    #[doc(hidden)] pub mutation_info: MutationT::TypeInfo,
-    #[doc(hidden)] pub schema: SchemaType<'a>,
+    #[doc(hidden)]
+    pub query_type: QueryT,
+    #[doc(hidden)]
+    pub query_info: QueryT::TypeInfo,
+    #[doc(hidden)]
+    pub mutation_type: MutationT,
+    #[doc(hidden)]
+    pub mutation_info: MutationT::TypeInfo,
+    #[doc(hidden)]
+    pub schema: SchemaType<'a>,
 }
 
 /// Metadata for a schema
