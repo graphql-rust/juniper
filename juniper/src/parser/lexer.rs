@@ -390,7 +390,7 @@ impl<'a> Lexer<'a> {
         }
 
         let mantissa = frac_part
-            .map(|f| f as f64)
+            .map(|f| f64::from(f))
             .map(|frac| {
                 if frac > 0f64 {
                     frac / 10f64.powf(frac.log10().floor() + 1f64)
@@ -400,16 +400,18 @@ impl<'a> Lexer<'a> {
             })
             .map(|m| if int_part < 0 { -m } else { m });
 
-        let exp = exp_part.map(|e| e as f64).map(|e| 10f64.powf(e));
+        let exp = exp_part.map(|e| f64::from(e)).map(|e| 10f64.powf(e));
 
         Ok(Spanning::start_end(
             &start_pos,
             &self.position,
             match (mantissa, exp) {
                 (None, None) => Token::Int(int_part),
-                (None, Some(exp)) => Token::Float((int_part as f64) * exp),
-                (Some(mantissa), None) => Token::Float((int_part as f64) + mantissa),
-                (Some(mantissa), Some(exp)) => Token::Float(((int_part as f64) + mantissa) * exp),
+                (None, Some(exp)) => Token::Float((f64::from(int_part)) * exp),
+                (Some(mantissa), None) => Token::Float((f64::from(int_part)) + mantissa),
+                (Some(mantissa), Some(exp)) => {
+                    Token::Float(((f64::from(int_part)) + mantissa) * exp)
+                }
             },
         ))
     }

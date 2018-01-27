@@ -230,20 +230,20 @@ impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C>
 /// Conversion trait for context types
 ///
 /// Used to support different context types for different parts of an
-/// application. By making each GraphQL type only aware of as much
+/// application. By making each `GraphQL` type only aware of as much
 /// context as it needs to, isolation and robustness can be
 /// improved. Implement this trait if you have contexts that can
 /// generally be converted between each other.
 ///
 /// The empty tuple `()` can be converted into from any context type,
-/// making it suitable for GraphQL that don't need _any_ context to
+/// making it suitable for `GraphQL` that don't need _any_ context to
 /// work, e.g. scalars or enums.
 pub trait FromContext<T> {
     /// Perform the conversion
     fn from(value: &T) -> &Self;
 }
 
-/// Marker trait for types that can act as context objects for GraphQL types.
+/// Marker trait for types that can act as context objects for `GraphQL` types.
 pub trait Context {}
 
 impl<'a, C: Context> Context for &'a C {}

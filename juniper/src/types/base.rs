@@ -374,7 +374,7 @@ where
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    &f.name.item,
+                    f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
