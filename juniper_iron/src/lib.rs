@@ -125,7 +125,7 @@ use serde_json::error::Error as SerdeError;
 use juniper::{GraphQLType, InputValue, RootNode};
 use juniper::http;
 
-/// Handler that executes GraphQL queries in the given schema
+/// Handler that executes `GraphQL` queries in the given schema
 ///
 /// The handler responds to GET requests and POST requests only. In GET
 /// requests, the query should be supplied in the `query` URL parameter, e.g.
@@ -146,7 +146,7 @@ where
     root_node: RootNode<'a, Query, Mutation>,
 }
 
-/// Handler that renders GraphiQL - a graphical query editor interface
+/// Handler that renders `GraphiQL` - a graphical query editor interface
 pub struct GraphiQLHandler {
     graphql_url: String,
 }
@@ -201,7 +201,7 @@ where
 
     fn handle_get(&self, req: &mut Request) -> IronResult<http::GraphQLRequest> {
         let url_query_string = req.get_mut::<UrlEncodedQuery>()
-            .map_err(|e| GraphQLIronError::Url(e))?;
+            .map_err(GraphQLIronError::Url)?;
 
         let input_query = parse_url_param(url_query_string.remove("query"))?
             .ok_or_else(|| GraphQLIronError::InvalidData("No query provided"))?;
@@ -221,7 +221,7 @@ where
 
         Ok(
             serde_json::from_str::<http::GraphQLRequest>(request_payload.as_str())
-                .map_err(|err| GraphQLIronError::Serde(err))?,
+                .map_err(GraphQLIronError::Serde)?,
         )
     }
 
@@ -296,7 +296,7 @@ impl fmt::Display for GraphQLIronError {
         match *self {
             GraphQLIronError::Serde(ref err) => fmt::Display::fmt(err, &mut f),
             GraphQLIronError::Url(ref err) => fmt::Display::fmt(err, &mut f),
-            GraphQLIronError::InvalidData(ref err) => fmt::Display::fmt(err, &mut f),
+            GraphQLIronError::InvalidData(err) => fmt::Display::fmt(err, &mut f),
         }
     }
 }
@@ -306,7 +306,7 @@ impl Error for GraphQLIronError {
         match *self {
             GraphQLIronError::Serde(ref err) => err.description(),
             GraphQLIronError::Url(ref err) => err.description(),
-            GraphQLIronError::InvalidData(ref err) => err,
+            GraphQLIronError::InvalidData(err) => err,
         }
     }
 

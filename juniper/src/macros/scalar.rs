@@ -151,6 +151,6 @@ macro_rules! graphql_scalar {
     // Entry point
     // RustName { ... }
     ( $name:ty { $( $items:tt )* }) => {
-        graphql_scalar!( @parse, ( $name, (stringify!($name)), None ), ( None, None ), $($items)* );
+        graphql_scalar!( @parse, ( $name, stringify!($name), None ), ( None, None ), $($items)* );
     };
 }

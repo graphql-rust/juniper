@@ -1,4 +1,4 @@
-//! Types used to describe a GraphQL schema
+//! Types used to describe a `GraphQL` schema
 
 use std::borrow::Cow;
 use std::fmt;
