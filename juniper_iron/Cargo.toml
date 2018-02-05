@@ -1,6 +1,6 @@
 [package]
 name = "juniper_iron"
-version = "0.1.1"
+version = "0.2.0"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -15,14 +15,14 @@ serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 juniper = { version = "0.9.2", path = "../juniper" }
 
-urlencoded = { version = "0.5.0" }
-iron = "0.5.1"
+urlencoded = { version = ">= 0.5, < 0.7" }
+iron = ">= 0.5, < 0.7"
 
 [dev-dependencies]
-iron-test = "^0.5.0"
-router = "^0.5.0"
-mount = "^0.3.0"
-logger = "^0.3.0"
+iron-test = "0.6"
+router = "0.6"
+mount = "0.4"
+logger = "0.4"
 
 [dev-dependencies.juniper]
 version = "0.9.2"
