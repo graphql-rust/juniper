@@ -93,7 +93,7 @@ impl GraphQLRequest {
         } else {
             Status::BadRequest
         };
-        let json = serde_json::to_string_pretty(&response).unwrap();
+        let json = serde_json::to_string(&response).unwrap();
 
         GraphQLResponse(status, json)
     }
