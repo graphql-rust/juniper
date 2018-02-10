@@ -1,5 +1,6 @@
-## [0.2.0] - 2018-02-08
+## [0.1.2] - 2018-02-10
 
 ### Changed
 
-* Changed dependency of iron
+* Extend iron support to 0.6
+
