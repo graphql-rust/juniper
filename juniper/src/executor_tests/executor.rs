@@ -197,6 +197,81 @@ mod merge_parallel_fragments {
     }
 }
 
+mod merge_parallel_inline_fragments {
+    use value::Value;
+    use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
+
+    struct Type;
+
+    graphql_object!(Type: () |&self| {
+        field a() -> &str { "Apple" }
+        field b() -> &str { "Banana" }
+        field c() -> &str { "Cherry" }
+        field deep() -> Type { Type }
+    });
+
+    #[test]
+    fn test() {
+        let schema = RootNode::new(Type, EmptyMutation::<()>::new());
+        let doc = r"
+          { a, ...FragOne }
+          fragment FragOne on Type {
+            b
+            deep { 
+                b
+                deeper: deep { b }
+
+                ... on Type {
+                    c
+                    deeper: deep { c }
+                }
+            }
+            c
+          }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        assert_eq!(errs, []);
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(
+            result,
+            Value::object(
+                vec![
+                    ("a", Value::string("Apple")),
+                    ("b", Value::string("Banana")),
+                    (
+                        "deep",
+                        Value::object(
+                            vec![
+                                ("b", Value::string("Banana")),
+                                (
+                                    "deeper",
+                                    Value::object(
+                                        vec![
+                                            ("b", Value::string("Banana")),
+                                            ("c", Value::string("Cherry")),
+                                        ].into_iter()
+                                            .collect(),
+                                    ),
+                                ),
+                                ("c", Value::string("Cherry")),
+                            ].into_iter()
+                                .collect(),
+                        ),
+                    ),
+                    ("c", Value::string("Cherry")),
+                ].into_iter()
+                    .collect()
+            )
+        );
+    }
+}
+
 mod threads_context_correctly {
     use value::Value;
     use types::scalars::EmptyMutation;
