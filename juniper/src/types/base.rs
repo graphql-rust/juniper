@@ -455,7 +455,7 @@ where
 
                     if let Ok(Value::Object(mut hash_map)) = sub_result {
                         for (k, v) in hash_map.drain(..) {
-                            result.insert(k, v);
+                            merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
