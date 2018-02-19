@@ -203,12 +203,22 @@ mod merge_parallel_inline_fragments {
     use types::scalars::EmptyMutation;
 
     struct Type;
+    struct Other;
 
     graphql_object!(Type: () |&self| {
         field a() -> &str { "Apple" }
         field b() -> &str { "Banana" }
         field c() -> &str { "Cherry" }
         field deep() -> Type { Type }
+        field other() -> Vec<Other> { vec![Other, Other] }
+    });
+
+    graphql_object!(Other: () |&self| {
+        field a() -> &str { "Apple" }
+        field b() -> &str { "Banana" }
+        field c() -> &str { "Cherry" }
+        field deep() -> Type { Type }
+        field other() -> Vec<Other> { vec![Other, Other] }
     });
 
     #[test]
@@ -218,15 +228,24 @@ mod merge_parallel_inline_fragments {
           { a, ...FragOne }
           fragment FragOne on Type {
             b
-            deep { 
+            deep: deep { 
                 b
-                deeper: deep { b }
+                deeper: other {
+                    deepest: deep {
+                        b
+                    }
+                }
 
                 ... on Type {
                     c
-                    deeper: deep { c }
+                    deeper: other {
+                        deepest: deep {
+                            c
+                        }
+                    }
                 }
             }
+
             c
           }";
 
@@ -251,12 +270,37 @@ mod merge_parallel_inline_fragments {
                                 ("b", Value::string("Banana")),
                                 (
                                     "deeper",
-                                    Value::object(
+                                    Value::list(
                                         vec![
-                                            ("b", Value::string("Banana")),
-                                            ("c", Value::string("Cherry")),
-                                        ].into_iter()
-                                            .collect(),
+                                            Value::object(
+                                                vec![
+                                                    (
+                                                        "deepest",
+                                                        Value::object(
+                                                            vec![
+                                                                ("b", Value::string("Banana")),
+                                                                ("c", Value::string("Cherry")),
+                                                            ].into_iter()
+                                                                .collect(),
+                                                        ),
+                                                    ),
+                                                ].into_iter().collect()
+                                            ),
+                                            Value::object(
+                                                vec![
+                                                    (
+                                                        "deepest",
+                                                        Value::object(
+                                                            vec![
+                                                                ("b", Value::string("Banana")),
+                                                                ("c", Value::string("Cherry")),
+                                                            ].into_iter()
+                                                                .collect(),
+                                                        ),
+                                                    ),
+                                                ].into_iter().collect()
+                                            ),
+                                        ]
                                     ),
                                 ),
                                 ("c", Value::string("Cherry")),
