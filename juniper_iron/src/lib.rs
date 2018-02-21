@@ -265,7 +265,7 @@ where
         let graphql_request = match req.method {
             method::Get => self.handle_get(&mut req)?,
             method::Post => self.handle_post(&mut req)?,
-            _ => return Ok(Response::with((status::MethodNotAllowed))),
+            _ => return Ok(Response::with(status::MethodNotAllowed)),
         };
 
         self.execute(&context, graphql_request)
