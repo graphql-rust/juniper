@@ -196,10 +196,12 @@ where
 /// ```rust
 /// #[macro_use] extern crate juniper;
 ///
+/// # fn main() {
 /// graphql_value!(1234);
 /// graphql_value!("test");
 /// graphql_value!([ 1234, "test", true ]);
 /// graphql_value!({ "key": "value", "foo": 1234 });
+/// # }
 /// ```
 #[macro_export]
 macro_rules! graphql_value {
