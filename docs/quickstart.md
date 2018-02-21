@@ -34,12 +34,12 @@ resolvers, which you will use for the `Query` and `Mutation` roots.
 
 use juniper::{FieldResult};
 
-#struct DatabasePool;
-#impl DatabasePool {
-#       fn get_connection(&self) -> FieldResult<DatabasePool> { Ok(DatabasePool) }
-#       fn find_human(&self, id: &str) -> FieldResult<Human> { Err("")? }
-#       fn insert_human(&self, human: &NewHuman) -> FieldResult<Human> { Err("")? }
-#     }
+# struct DatabasePool;
+# impl DatabasePool {
+#     fn get_connection(&self) -> FieldResult<DatabasePool> { Ok(DatabasePool) }
+#     fn find_human(&self, id: &str) -> FieldResult<Human> { Err("")? }
+#     fn insert_human(&self, human: &NewHuman) -> FieldResult<Human> { Err("")? }
+# }
 
 
 use juniper::{FieldResult};
