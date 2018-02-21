@@ -57,7 +57,7 @@ macro_rules! graphql_scalar {
     // and body for the from() method on FromInputValue.
     (
         @generate,
-        ( $name:ty, $outname:tt, $descr:tt ),
+        ( $name:ty, $outname:expr, $descr:tt ),
         (
             ( $resolve_selfvar:ident, $resolve_body:block ),
             ( $fiv_arg:ident, $fiv_result:ty, $fiv_body:block )
@@ -135,7 +135,7 @@ macro_rules! graphql_scalar {
     // description: <description>
     (
         @parse,
-        ( $name:ty, $outname:tt, $_ignored:tt ),
+        ( $name:ty, $outname:expr, $_ignored:tt ),
         $acc:tt,
         description: $descr:tt $($rest:tt)*
     ) => {
