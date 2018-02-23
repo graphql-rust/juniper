@@ -56,12 +56,12 @@ graphql_scalar!(NaiveDate {
     description: "NaiveDate"
 
     resolve(&self) -> Value {
-        Value::string(self.format(RFC3339_FORMAT).to_string())
+        Value::string(self.format("%Y-%m-%d").to_string())
     }
 
     from_input_value(v: &InputValue) -> Option<NaiveDate> {
         v.as_string_value()
-         .and_then(|s| NaiveDate::parse_from_str(s, RFC3339_PARSE_FORMAT).ok())
+         .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
     }
 });
 
@@ -82,8 +82,9 @@ graphql_scalar!(NaiveDateTime {
 
 #[cfg(test)]
 mod test {
-    use chrono::prelude::*;
     use super::RFC3339_PARSE_FORMAT;
+    use chrono::prelude::*;
+    use Value;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
         let input = ::InputValue::String(raw.to_string());
@@ -139,16 +140,9 @@ mod test {
         let input = ::InputValue::String(raw.to_string());
 
         let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = NaiveDate::parse_from_str(raw, &RFC3339_PARSE_FORMAT).unwrap();
-        let expected_via_datetime = DateTime::parse_from_rfc3339(raw)
-            .unwrap()
-            .date()
-            .naive_utc();
-        let expected_via_ymd = NaiveDate::from_ymd(y, m, d);
+        let expected = NaiveDate::from_ymd(y, m, d);
 
         assert_eq!(parsed, expected);
-        assert_eq!(parsed, expected_via_datetime);
-        assert_eq!(parsed, expected_via_ymd);
 
         assert_eq!(parsed.year(), y);
         assert_eq!(parsed.month(), m);
@@ -157,17 +151,17 @@ mod test {
 
     #[test]
     fn naivedate_from_input_value() {
-        naivedate_test("1996-12-19T16:39:57-08:00", 1996, 12, 19);
+        naivedate_test("1996-12-19", 1996, 12, 19);
     }
 
     #[test]
-    fn naivedate_from_input_value_with_fractional_seconds() {
-        naivedate_test("1996-12-19T16:39:57.005-08:00", 1996, 12, 19);
-    }
+    fn naivedate_serialization() {
+        use types::base::GraphQLType;
 
-    #[test]
-    fn naivedate_from_input_value_with_z_timezone() {
-        naivedate_test("1996-12-19T16:39:57Z", 1996, 12, 19);
+        let date = NaiveDate::from_ymd(2000, 1, 2);
+        let value = date.resolve(&(), None, &executor::Executor);
+        let expected = Value::string("2000-01-02".to_string());
+        assert_eq!(value, expected);
     }
 
     #[test]
