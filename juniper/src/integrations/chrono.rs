@@ -6,7 +6,7 @@
 |-------------------------|------------------------|-------------------------------------------|
 | `DateTime<FixedOffset>` | RFC3339 string         |                                           |
 | `DateTime<Utc>`         | RFC3339 string         |                                           |
-| `NaiveDate`             | RFC3339 string         |                                           |
+| `NaiveDate`             | YYYY-MM-DD             |                                           |
 | `NaiveDateTime`         | float (unix timestamp) | JSON numbers (i.e. IEEE doubles) are not  |
 |                         |                        | precise enough for nanoseconds.           |
 |                         |                        | Values will be truncated to microsecond   |
