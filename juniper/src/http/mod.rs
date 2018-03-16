@@ -7,7 +7,7 @@ use serde::ser::SerializeMap;
 
 use ast::InputValue;
 use executor::ExecutionError;
-use {GraphQLError, GraphQLType, RootNode, Value, Variables};
+use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -86,6 +86,11 @@ impl GraphQLRequest {
 pub struct GraphQLResponse<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
 
 impl<'a> GraphQLResponse<'a> {
+    /// Constructs an error response outside of the normal execution flow
+    pub fn error(error: FieldError) -> Self {
+        GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
+    }
+
     /// Was the request successful or not?
     ///
     /// Note that there still might be errors in the response even though it's
