@@ -58,6 +58,7 @@ use juniper::InputValue;
 use juniper::http;
 
 use juniper::GraphQLType;
+use juniper::FieldError;
 use juniper::RootNode;
 
 /// Simple wrapper around an incoming GraphQL request
@@ -95,6 +96,25 @@ impl GraphQLRequest {
         };
         let json = serde_json::to_string(&response).unwrap();
 
+        GraphQLResponse(status, json)
+    }
+}
+
+impl GraphQLResponse {
+    /// Constructs an error response outside of the normal execution flow
+    pub fn error(error: FieldError) -> Self {
+        let response = http::GraphQLResponse::error(error);
+        let json = serde_json::to_string(&response).unwrap();
+        GraphQLResponse(Status::BadRequest, json)
+    }
+
+    /// Constructs a custom response outside of the normal execution flow
+    ///
+    /// This is intended for highly customized integrations and should only
+    /// be used as a last resort. For normal juniper use, use the response
+    /// from GraphQLRequest::execute(..).
+    pub fn custom(status: Status, response: serde_json::Value) -> Self {
+        let json = serde_json::to_string(&response).unwrap();
         GraphQLResponse(status, json)
     }
 }
