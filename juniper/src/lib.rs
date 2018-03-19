@@ -98,7 +98,7 @@ extern crate serde_derive;
 extern crate serde_json;
 
 extern crate fnv;
-extern crate ordermap;
+extern crate indexmap;
 
 #[cfg(any(test, feature = "chrono"))]
 extern crate chrono;

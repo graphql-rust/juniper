@@ -1,4 +1,4 @@
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 use serde::{de, ser};
 use serde::ser::SerializeMap;
 
@@ -134,7 +134,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             where
                 V: de::MapAccess<'de>,
             {
-                let mut values: OrderMap<String, InputValue> = OrderMap::new();
+                let mut values: IndexMap<String, InputValue> = IndexMap::new();
 
                 while let Some((key, value)) = try!(visitor.next_entry()) {
                     values.insert(key, value);
@@ -165,7 +165,7 @@ impl ser::Serialize for InputValue {
                 .serialize(serializer),
             InputValue::Object(ref v) => v.iter()
                 .map(|&(ref k, ref v)| (k.item.clone(), v.item.clone()))
-                .collect::<OrderMap<_, _>>()
+                .collect::<IndexMap<_, _>>()
                 .serialize(serializer),
         }
     }
@@ -218,7 +218,7 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
         try!(map.serialize_key("message"));
         try!(map.serialize_value(&message));
 
-        let mut location = OrderMap::new();
+        let mut location = IndexMap::new();
         location.insert("line".to_owned(), self.start.line() + 1);
         location.insert("column".to_owned(), self.start.column() + 1);
 

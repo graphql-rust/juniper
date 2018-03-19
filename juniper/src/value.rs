@@ -1,4 +1,4 @@
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 use std::hash::Hash;
 
 use parser::Spanning;
@@ -22,7 +22,7 @@ pub enum Value {
     String(String),
     Boolean(bool),
     List(Vec<Value>),
-    Object(OrderMap<String, Value>),
+    Object(IndexMap<String, Value>),
 }
 
 impl Value {
@@ -59,7 +59,7 @@ impl Value {
     }
 
     /// Construct an object value.
-    pub fn object<K>(o: OrderMap<K, Value>) -> Value
+    pub fn object<K>(o: IndexMap<K, Value>) -> Value
     where
         K: Into<String> + Eq + Hash,
     {
@@ -85,7 +85,7 @@ impl Value {
     }
 
     /// View the underlying object value, if present.
-    pub fn as_object_value(&self) -> Option<&OrderMap<String, Value>> {
+    pub fn as_object_value(&self) -> Option<&IndexMap<String, Value>> {
         match *self {
             Value::Object(ref o) => Some(o),
             _ => None,
@@ -93,7 +93,7 @@ impl Value {
     }
 
     /// Mutable view into the underlying object value, if present.
-    pub fn as_mut_object_value(&mut self) -> Option<&mut OrderMap<String, Value>> {
+    pub fn as_mut_object_value(&mut self) -> Option<&mut IndexMap<String, Value>> {
         match *self {
             Value::Object(ref mut o) => Some(o),
             _ => None,

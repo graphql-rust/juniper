@@ -1,4 +1,4 @@
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 
 use value::Value;
 use ast::InputValue;
@@ -115,7 +115,7 @@ graphql_object!(TestType: () |&self| {
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 where
-    F: Fn(&OrderMap<String, Value>) -> (),
+    F: Fn(&IndexMap<String, Value>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -132,7 +132,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&OrderMap<String, Value>) -> (),
+    F: Fn(&IndexMap<String, Value>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }

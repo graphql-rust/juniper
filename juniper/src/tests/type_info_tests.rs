@@ -1,4 +1,4 @@
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 
 use executor::{ExecutionResult, Executor, Registry, Variables};
 use value::Value;
@@ -13,7 +13,7 @@ pub struct NodeTypeInfo {
 }
 
 pub struct Node {
-    attributes: OrderMap<String, String>,
+    attributes: IndexMap<String, String>,
 }
 
 impl GraphQLType for Node {
@@ -59,7 +59,7 @@ fn test_node() {
         attribute_names: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
     };
     let mut node = Node {
-        attributes: OrderMap::new(),
+        attributes: IndexMap::new(),
     };
     node.attributes.insert("foo".to_string(), "1".to_string());
     node.attributes.insert("bar".to_string(), "2".to_string());

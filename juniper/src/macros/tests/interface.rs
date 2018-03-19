@@ -1,4 +1,4 @@
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 use std::marker::PhantomData;
 
 use ast::InputValue;
@@ -130,7 +130,7 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&OrderMap<String, Value>, &Vec<Value>) -> (),
+    F: Fn(&IndexMap<String, Value>, &Vec<Value>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
