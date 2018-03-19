@@ -4,7 +4,7 @@ use std::hash::Hash;
 use std::vec;
 use std::slice;
 
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 
 use executor::Variables;
 use parser::Spanning;
@@ -259,7 +259,7 @@ impl InputValue {
     ///
     /// Similar to `InputValue::list`, it makes each key and value in the given
     /// hash map not contain any location information.
-    pub fn object<K>(o: OrderMap<K, InputValue>) -> InputValue
+    pub fn object<K>(o: IndexMap<K, InputValue>) -> InputValue
     where
         K: AsRef<str> + Eq + Hash,
     {
@@ -356,9 +356,9 @@ impl InputValue {
 
     /// Convert the input value to an unlocated object value.
     ///
-    /// This constructs a new OrderMap that contain references to the keys
+    /// This constructs a new IndexMap that contain references to the keys
     /// and values in `self`.
-    pub fn to_object_value(&self) -> Option<OrderMap<&str, &InputValue>> {
+    pub fn to_object_value(&self) -> Option<IndexMap<&str, &InputValue>> {
         match *self {
             InputValue::Object(ref o) => Some(
                 o.iter()

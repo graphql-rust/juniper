@@ -1,4 +1,4 @@
-use ordermap::OrderMap;
+use indexmap::IndexMap;
 
 use ast::InputValue;
 use parser::{Lexer, Parser, SourcePosition, Spanning};
@@ -112,7 +112,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            InputValue::object(OrderMap::<String, InputValue>::new())
+            InputValue::object(IndexMap::<String, InputValue>::new())
         )
     );
     assert_eq!(

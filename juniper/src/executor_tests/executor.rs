@@ -367,7 +367,7 @@ mod threads_context_correctly {
 }
 
 mod dynamic_context_switching {
-    use ordermap::OrderMap;
+    use indexmap::IndexMap;
 
     use value::Value;
     use types::scalars::EmptyMutation;
@@ -382,7 +382,7 @@ mod dynamic_context_switching {
     }
 
     struct OuterContext {
-        items: OrderMap<i32, InnerContext>,
+        items: IndexMap<i32, InnerContext>,
     }
 
     impl Context for OuterContext {}

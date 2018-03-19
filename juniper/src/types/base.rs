@@ -1,5 +1,5 @@
-use ordermap::OrderMap;
-use ordermap::Entry;
+use indexmap::IndexMap;
+use indexmap::map::Entry;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
@@ -70,17 +70,17 @@ pub enum TypeKind {
 
 /// Field argument container
 pub struct Arguments<'a> {
-    args: Option<OrderMap<&'a str, InputValue>>,
+    args: Option<IndexMap<&'a str, InputValue>>,
 }
 
 impl<'a> Arguments<'a> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<OrderMap<&'a str, InputValue>>,
+        mut args: Option<IndexMap<&'a str, InputValue>>,
         meta_args: &'a Option<Vec<Argument>>,
     ) -> Arguments<'a> {
         if meta_args.is_some() && args.is_none() {
-            args = Some(OrderMap::new());
+            args = Some(IndexMap::new());
         }
 
         if let (&mut Some(ref mut args), &Some(ref meta_args)) = (&mut args, meta_args) {
@@ -310,7 +310,7 @@ pub trait GraphQLType: Sized {
         executor: &Executor<Self::Context>,
     ) -> Value {
         if let Some(selection_set) = selection_set {
-            let mut result = OrderMap::new();
+            let mut result = IndexMap::new();
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
                 Value::object(result)
             } else {
@@ -327,7 +327,7 @@ fn resolve_selection_set_into<T, CtxT>(
     info: &T::TypeInfo,
     selection_set: &[Selection],
     executor: &Executor<CtxT>,
-    result: &mut OrderMap<String, Value>,
+    result: &mut IndexMap<String, Value>,
 ) -> bool
 where
     T: GraphQLType<Context = CtxT>,
@@ -503,7 +503,7 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
     false
 }
 
-fn merge_key_into(result: &mut OrderMap<String, Value>, response_name: &str, value: Value) {
+fn merge_key_into(result: &mut IndexMap<String, Value>, response_name: &str, value: Value) {
     match result.entry(response_name.to_owned()) {
         Entry::Occupied(mut e) => {
             match e.get_mut() {
@@ -535,7 +535,7 @@ fn merge_key_into(result: &mut OrderMap<String, Value>, response_name: &str, val
     }
 }
 
-fn merge_maps(dest: &mut OrderMap<String, Value>, src: OrderMap<String, Value>) {
+fn merge_maps(dest: &mut IndexMap<String, Value>, src: IndexMap<String, Value>) {
     for (key, value) in src {
         if dest.contains_key(&key) {
             merge_key_into(dest, &key, value);
