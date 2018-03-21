@@ -6,7 +6,7 @@
 |-------------------------|------------------------|-------------------------------------------|
 | `DateTime<FixedOffset>` | RFC3339 string         |                                           |
 | `DateTime<Utc>`         | RFC3339 string         |                                           |
-| `NaiveDate`             | RFC3339 string         |                                           |
+| `NaiveDate`             | YYYY-MM-DD             |                                           |
 | `NaiveDateTime`         | float (unix timestamp) | JSON numbers (i.e. IEEE doubles) are not  |
 |                         |                        | precise enough for nanoseconds.           |
 |                         |                        | Values will be truncated to microsecond   |
@@ -19,7 +19,6 @@ use Value;
 
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
-static RFC3339_PARSE_FORMAT: &'static str = "%+";
 
 graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" {
     description: "DateTime"
@@ -56,12 +55,12 @@ graphql_scalar!(NaiveDate {
     description: "NaiveDate"
 
     resolve(&self) -> Value {
-        Value::string(self.format(RFC3339_FORMAT).to_string())
+        Value::string(self.format("%Y-%m-%d").to_string())
     }
 
     from_input_value(v: &InputValue) -> Option<NaiveDate> {
         v.as_string_value()
-         .and_then(|s| NaiveDate::parse_from_str(s, RFC3339_PARSE_FORMAT).ok())
+         .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
     }
 });
 
@@ -83,7 +82,6 @@ graphql_scalar!(NaiveDateTime {
 #[cfg(test)]
 mod test {
     use chrono::prelude::*;
-    use super::RFC3339_PARSE_FORMAT;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
         let input = ::InputValue::String(raw.to_string());
@@ -135,39 +133,21 @@ mod test {
         datetime_utc_test("2014-11-28T21:00:09.005+09:00");
     }
 
-    fn naivedate_test(raw: &'static str, y: i32, m: u32, d: u32) {
-        let input = ::InputValue::String(raw.to_string());
+    #[test]
+    fn naivedate_from_input_value() {
+        let input = ::InputValue::String("1996-12-19".to_string());
+        let y = 1996;
+        let m = 12;
+        let d = 19;
 
         let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
-        let expected = NaiveDate::parse_from_str(raw, &RFC3339_PARSE_FORMAT).unwrap();
-        let expected_via_datetime = DateTime::parse_from_rfc3339(raw)
-            .unwrap()
-            .date()
-            .naive_utc();
-        let expected_via_ymd = NaiveDate::from_ymd(y, m, d);
+        let expected = NaiveDate::from_ymd(y, m, d);
 
         assert_eq!(parsed, expected);
-        assert_eq!(parsed, expected_via_datetime);
-        assert_eq!(parsed, expected_via_ymd);
 
         assert_eq!(parsed.year(), y);
         assert_eq!(parsed.month(), m);
         assert_eq!(parsed.day(), d);
-    }
-
-    #[test]
-    fn naivedate_from_input_value() {
-        naivedate_test("1996-12-19T16:39:57-08:00", 1996, 12, 19);
-    }
-
-    #[test]
-    fn naivedate_from_input_value_with_fractional_seconds() {
-        naivedate_test("1996-12-19T16:39:57.005-08:00", 1996, 12, 19);
-    }
-
-    #[test]
-    fn naivedate_from_input_value_with_z_timezone() {
-        naivedate_test("1996-12-19T16:39:57Z", 1996, 12, 19);
     }
 
     #[test]
@@ -180,5 +160,70 @@ mod test {
 
         assert_eq!(parsed, expected);
         assert_eq!(raw, expected.timestamp() as f64);
+    }
+}
+
+#[cfg(test)]
+mod integration_test {
+    use chrono::prelude::*;
+    use chrono::Utc;
+
+    use executor::Variables;
+    use value::Value;
+    use schema::model::RootNode;
+    use types::scalars::EmptyMutation;
+
+    #[test]
+    fn test_serialization() {
+        struct Root {}
+        graphql_object!(Root: () |&self| {
+            field exampleNaiveDate() -> NaiveDate {
+                NaiveDate::from_ymd(2015, 3, 14)
+            }
+            field exampleNaiveDateTime() -> NaiveDateTime {
+                NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)
+            }
+            field exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
+              DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
+            }
+            field exampleDateTimeUtc() -> DateTime<Utc> {
+              Utc.timestamp(61, 0)
+            }
+        });
+
+        let doc = r#"
+        {
+            exampleNaiveDate,
+            exampleNaiveDateTime,
+            exampleDateTimeFixedOffset,
+            exampleDateTimeUtc,
+        }
+        "#;
+
+        let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+
+        let (result, errs) =
+            ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+
+        assert_eq!(errs, []);
+
+        assert_eq!(
+            result,
+            Value::object(
+                vec![
+                    ("exampleNaiveDate", Value::string("2015-03-14")),
+                    ("exampleNaiveDateTime", Value::float(1467969011.0)),
+                    (
+                        "exampleDateTimeFixedOffset",
+                        Value::string("1996-12-19T16:39:57-08:00"),
+                    ),
+                    (
+                        "exampleDateTimeUtc",
+                        Value::string("1970-01-01T00:01:01+00:00"),
+                    ),
+                ].into_iter()
+                    .collect()
+            )
+        );
     }
 }
