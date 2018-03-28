@@ -130,7 +130,61 @@ fn main() {
 We now have a very simple but functional schema for a GraphQL server!
 
 To actually serve the schema, see the guides for our [Rocket][rocket_guide] or 
-[Iron][iron_guide] integrations.
+[Iron][iron_guide] integrations. Or you can invoke the executor directly:
+
+## Executor
+
+You can invoke `juniper::execute` directly to run a GraphQL query:
+
+!FILENAME main.rs
+```
+#[macro_use] extern crate juniper;
+
+use juniper::{FieldResult, Variables, EmptyMutation};
+
+#[derive(GraphQLEnum, Clone, Copy)]
+enum Episode {
+    NewHope,
+    Empire,
+    Jedi,
+}
+
+struct Query;
+
+graphql_object!(Query: Ctx |&self| {
+    field favoriteEpisode(&executor) -> FieldResult<Episode> {
+        // Use the special &executor argument to fetch our fav episode.
+        Ok(executor.context().0)
+    }
+});
+
+// Arbitrary context data.
+struct Ctx(Episode);
+
+// A root schema consists of a query and a mutation.
+// Request queries can be executed against a RootNode.
+type Schema = juniper::RootNode<'static, Query, EmptyMutation<Ctx>>;
+
+fn main() {
+    // Create a context object.
+    let ctx = Ctx(Episode::NewHope);
+
+    // Run the executor.
+    let (res, _errors) = juniper::execute(
+        "query { favoriteEpisode }",
+        None,
+        &Schema::new(Query, EmptyMutation::new()),
+        &Variables::new(),
+        &ctx,
+    ).unwrap();
+
+    // Ensure the value matches.
+    assert_eq!(
+        res.as_object_value().unwrap()["favoriteEpisode"].as_string_value().unwrap(),
+        "NEW_HOPE",
+    );
+}
+```
 
 [tutorial]: ./tutorial.html
 [jp_obj_macro]: https://docs.rs/juniper/0.9.0/juniper/macro.graphql_object.html
