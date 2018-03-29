@@ -21,6 +21,7 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(params)
             }).then(function (response) {
                 return response.text();
