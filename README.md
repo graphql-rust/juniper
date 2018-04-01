@@ -74,7 +74,7 @@ your Schemas automatically.
 
 * [rocket][rocket]
 * [iron][iron]
-
+* [actix-web][actix-web]
 
 ## API Stability
 
@@ -82,6 +82,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
+[actix-web]: https://github.com/actix/actix-web
 [iron]: http://ironframework.io
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
