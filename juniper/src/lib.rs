@@ -100,6 +100,8 @@ extern crate serde_json;
 extern crate fnv;
 extern crate ordermap;
 
+extern crate bigdecimal;
+
 #[cfg(any(test, feature = "chrono"))]
 extern crate chrono;
 
