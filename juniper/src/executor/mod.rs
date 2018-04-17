@@ -64,6 +64,17 @@ pub struct ExecutionError {
     error: FieldError,
 }
 
+impl ExecutionError {
+    /// Construct a new execution error occuring at the beginning of the query
+    pub fn at_origin(error: FieldError) -> ExecutionError {
+        ExecutionError {
+            location: SourcePosition::new_origin(),
+            path: Vec::new(),
+            error: error,
+        }
+    }
+}
+
 impl Eq for ExecutionError {}
 
 impl PartialOrd for ExecutionError {
@@ -107,6 +118,7 @@ pub struct FieldError {
     data: Value,
 }
 
+/*
 impl<T: Display> From<T> for FieldError {
     fn from(e: T) -> FieldError {
         FieldError {
@@ -115,6 +127,7 @@ impl<T: Display> From<T> for FieldError {
         }
     }
 }
+*/
 
 impl FieldError {
     /// Construct a new error with additional data
@@ -165,6 +178,21 @@ impl FieldError {
     #[doc(hidden)]
     pub fn data(&self) -> &Value {
         &self.data
+    }
+}
+
+pub trait FieldResultExt<T, E> {
+    fn fmt_err(self) -> Result<T, FieldError>;
+}
+
+impl<T, E> FieldResultExt<T, E> for Result<T, E>
+    where E: Display
+{
+    fn fmt_err(self) -> Result<T, FieldError> {
+        self.map_err(|e| FieldError {
+            message: format!("{}", e),
+            data: Value::null(),
+        })
     }
 }
 

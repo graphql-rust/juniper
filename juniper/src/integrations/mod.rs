@@ -2,6 +2,10 @@
 #[doc(hidden)]
 pub mod serde;
 
+#[cfg(feature = "bigdecimal")]
+/// GraphQL support for [bigdecimal](https://github.com/akubera/bigdecimal-rs) types.
+pub mod bigdecimal;
+
 #[cfg(feature = "chrono")]
 /// GraphQL support for [chrono](https://github.com/chronotope/chrono) types.
 pub mod chrono;
