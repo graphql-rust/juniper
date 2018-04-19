@@ -60,7 +60,6 @@ where
     context: &'a CtxT,
     errors: &'a RwLock<Vec<ExecutionError>>,
     field_path: FieldPath<'a>,
-    type_name: &'a str,
 }
 
 /// Error type for errors that occur during query execution
@@ -330,7 +329,6 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             context: ctx,
             errors: self.errors,
             field_path: self.field_path.clone(),
-            type_name: self.type_name,
         }
     }
 
@@ -358,7 +356,6 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             context: self.context,
             errors: self.errors,
             field_path: FieldPath::Field(field_alias, location, &self.field_path),
-            type_name: self.type_name,
         }
     }
 
@@ -381,7 +378,6 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             context: self.context,
             errors: self.errors,
             field_path: self.field_path.clone(),
-            type_name: type_name.unwrap(),
         }
     }
 
@@ -590,7 +586,6 @@ where
             context: context,
             errors: &errors,
             field_path: FieldPath::Root(op.start),
-            type_name: &op.item.name.map(|n| n.item).unwrap_or(""),
         };
 
         value = match op.item.operation_type {
