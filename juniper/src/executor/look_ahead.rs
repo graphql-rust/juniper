@@ -5,20 +5,28 @@ use std::collections::HashMap;
 
 use super::Variables;
 
+/// An enum that describes if a field is available in all types of the interface
+/// or only in a certain subtype
 #[derive(Debug, Clone, PartialEq)]
 pub enum Applies<'a> {
+    /// The field is available independent from the type
     All,
+    /// The field is only available for a given typename
     OnlyType(&'a str),
 }
 
+/// A JSON-like value that can is used as argument in the query execution
+///
+/// In contrast to `InputValue` these values do only contain constants,
+/// meaning that variables are already resolved.
 #[derive(Debug, Clone, PartialEq)]
+#[allow(missing_docs)]
 pub enum LookAheadValue<'a> {
     Null,
     Int(i32),
     Float(f64),
     String(&'a str),
     Boolean(bool),
-    // TODO: improve
     Enum(&'a str),
     List(Vec<LookAheadValue<'a>>),
     Object(Vec<(&'a str, LookAheadValue<'a>)>),
@@ -54,6 +62,7 @@ impl<'a> LookAheadValue<'a> {
     }
 }
 
+/// An argument passed into the query
 #[derive(Debug, Clone, PartialEq)]
 pub struct LookAheadArgument<'a> {
     name: &'a str,
@@ -70,6 +79,7 @@ impl<'a> LookAheadArgument<'a> {
         }
     }
 
+    /// The value of the argument
     pub fn value(&'a self) -> &LookAheadValue<'a> {
         &self.value
     }
@@ -81,6 +91,7 @@ pub struct ChildSelection<'a> {
     pub(super) applies_for: Applies<'a>,
 }
 
+/// A selection performed by a query
 #[derive(Debug, Clone, PartialEq)]
 pub struct LookAheadSelection<'a> {
     pub(super) name: &'a str,
@@ -235,6 +246,7 @@ impl<'a> LookAheadSelection<'a> {
         }
     }
 
+    /// Convert a eventually type independent selection into one for a concrete type
     pub fn for_explicit_type(&self, type_name: &str) -> ConcreteLookAheadSelection<'a> {
         ConcreteLookAheadSelection {
             childs: self.childs
@@ -252,16 +264,9 @@ impl<'a> LookAheadSelection<'a> {
             arguments: self.arguments.clone(),
         }
     }
-
-    pub fn arguments(&self) -> &[LookAheadArgument] {
-        &self.arguments
-    }
-
-    pub fn argument(&self, name: &str) -> Option<&LookAheadArgument> {
-        self.arguments.iter().find(|a| a.name == name)
-    }
 }
 
+/// A selection performed by a query on a concrete type
 #[derive(Debug, PartialEq)]
 pub struct ConcreteLookAheadSelection<'a> {
     name: &'a str,
@@ -270,13 +275,25 @@ pub struct ConcreteLookAheadSelection<'a> {
     childs: Vec<ConcreteLookAheadSelection<'a>>,
 }
 
+/// A set of common methods for `ConcreteLookAheadSelection` and `LookAheadSelection`
 pub trait LookAheadMethods {
+    /// Get the name of the field represented by the current selection
     fn field_name(&self) -> &str;
 
+    /// Get the the child selection for a given field
     fn select_child(&self, name: &str) -> Option<&Self>;
 
+    /// Check if a given field exists
     fn has_child(&self, name: &str) -> bool {
         self.select_child(name).is_some()
+    }
+
+    /// Get the top level arguments for the current selection
+    fn arguments(&self) -> &[LookAheadArgument];
+
+    /// Get the top level argument with a given name from the current selection
+    fn argument(&self, name: &str) -> Option<&LookAheadArgument> {
+        self.arguments().iter().find(|a| a.name == name)
     }
 }
 
@@ -287,6 +304,10 @@ impl<'a> LookAheadMethods for ConcreteLookAheadSelection<'a> {
 
     fn select_child(&self, name: &str) -> Option<&Self> {
         self.childs.iter().find(|c| c.name == name)
+    }
+
+    fn arguments(&self) -> &[LookAheadArgument] {
+        &self.arguments
     }
 }
 
@@ -300,6 +321,10 @@ impl<'a> LookAheadMethods for LookAheadSelection<'a> {
             .iter()
             .find(|c| c.inner.name == name)
             .map(|s| &s.inner)
+    }
+
+    fn arguments(&self) -> &[LookAheadArgument] {
+        &self.arguments
     }
 }
 
