@@ -97,7 +97,7 @@ pub struct LookAheadSelection<'a> {
     pub(super) name: &'a str,
     pub(super) alias: Option<&'a str>,
     pub(super) arguments: Vec<LookAheadArgument<'a>>,
-    pub(super) childs: Vec<ChildSelection<'a>>,
+    pub(super) children: Vec<ChildSelection<'a>>,
 }
 
 impl<'a> LookAheadSelection<'a> {
@@ -181,7 +181,7 @@ impl<'a> LookAheadSelection<'a> {
                     name,
                     alias,
                     arguments,
-                    childs: Vec::new(),
+                    children: Vec::new(),
                 };
                 for c in field
                         .selection_set
@@ -196,7 +196,7 @@ impl<'a> LookAheadSelection<'a> {
                     assert!(s.is_none());
                 }
                 if let Some(p) = parent {
-                    p.childs
+                    p.children
                         .push(ChildSelection {
                                   inner: ret,
                                   applies_for: Applies::All,
@@ -235,7 +235,7 @@ impl<'a> LookAheadSelection<'a> {
                                                                                  fragments);
                     assert!(s.is_none());
                     if let Some(ref c) = inline.item.type_condition.as_ref().map(|t| t.item) {
-                        if let Some(p) = parent.childs.last_mut() {
+                        if let Some(p) = parent.children.last_mut() {
                             p.applies_for = Applies::OnlyType(c);
                         }
                     }
@@ -249,7 +249,7 @@ impl<'a> LookAheadSelection<'a> {
     /// Convert a eventually type independent selection into one for a concrete type
     pub fn for_explicit_type(&self, type_name: &str) -> ConcreteLookAheadSelection<'a> {
         ConcreteLookAheadSelection {
-            childs: self.childs
+            children: self.children
                 .iter()
                 .filter_map(|c| match c.applies_for {
                                 Applies::OnlyType(ref t) if *t == type_name => {
@@ -272,7 +272,7 @@ pub struct ConcreteLookAheadSelection<'a> {
     name: &'a str,
     alias: Option<&'a str>,
     arguments: Vec<LookAheadArgument<'a>>,
-    childs: Vec<ConcreteLookAheadSelection<'a>>,
+    children: Vec<ConcreteLookAheadSelection<'a>>,
 }
 
 /// A set of common methods for `ConcreteLookAheadSelection` and `LookAheadSelection`
@@ -303,7 +303,7 @@ impl<'a> LookAheadMethods for ConcreteLookAheadSelection<'a> {
     }
 
     fn select_child(&self, name: &str) -> Option<&Self> {
-        self.childs.iter().find(|c| c.name == name)
+        self.children.iter().find(|c| c.name == name)
     }
 
     fn arguments(&self) -> &[LookAheadArgument] {
@@ -317,7 +317,7 @@ impl<'a> LookAheadMethods for LookAheadSelection<'a> {
     }
 
     fn select_child(&self, name: &str) -> Option<&Self> {
-        self.childs
+        self.children
             .iter()
             .find(|c| c.inner.name == name)
             .map(|s| &s.inner)
@@ -367,12 +367,12 @@ query Hero {
                 name: "hero",
                 alias: None,
                 arguments: Vec::new(),
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -381,7 +381,7 @@ query Hero {
                                      name: "name",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              }],
@@ -414,12 +414,12 @@ query Hero {
                 name: "hero",
                 alias: Some("custom_hero"),
                 arguments: Vec::new(),
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -428,7 +428,7 @@ query Hero {
                                      name: "name",
                                      alias: Some("my_name"),
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              }],
@@ -465,12 +465,12 @@ query Hero {
                 name: "hero",
                 alias: None,
                 arguments: Vec::new(),
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -479,7 +479,7 @@ query Hero {
                                      name: "name",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -488,12 +488,12 @@ query Hero {
                                      name: "friends",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: vec![ChildSelection {
+                                     children: vec![ChildSelection {
                                                       inner: LookAheadSelection {
                                                           name: "name",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::All,
                                                   },
@@ -502,7 +502,7 @@ query Hero {
                                                           name: "id",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::All,
                                                   }],
@@ -541,12 +541,12 @@ query Hero {
                                     name: "episode",
                                     value: LookAheadValue::Enum("EMPIRE"),
                                 }],
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -558,7 +558,7 @@ query Hero {
                                                          name: "uppercase",
                                                          value: LookAheadValue::Boolean(true),
                                                      }],
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              }],
@@ -595,12 +595,12 @@ query Hero($episode: Episode) {
                                     name: "episode",
                                     value: LookAheadValue::Enum("JEDI"),
                                 }],
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -609,7 +609,7 @@ query Hero($episode: Episode) {
                                      name: "name",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              }],
@@ -647,12 +647,12 @@ fragment commonFields on Character {
                 name: "hero",
                 alias: None,
                 arguments: Vec::new(),
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -661,7 +661,7 @@ fragment commonFields on Character {
                                      name: "name",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -670,7 +670,7 @@ fragment commonFields on Character {
                                      name: "appearsIn",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              }],
@@ -704,12 +704,12 @@ query Hero {
                 name: "hero",
                 alias: None,
                 arguments: Vec::new(),
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -718,7 +718,7 @@ query Hero {
                                      name: "height",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              }],
@@ -755,12 +755,12 @@ query Hero {
                 name: "hero",
                 alias: None,
                 arguments: Vec::new(),
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "name",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -769,7 +769,7 @@ query Hero {
                                      name: "primaryFunction",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::OnlyType("Droid"),
                              },
@@ -778,7 +778,7 @@ query Hero {
                                      name: "height",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::OnlyType("Human"),
                              }],
@@ -828,12 +828,12 @@ fragment comparisonFields on Character {
                                     name: "id",
                                     value: LookAheadValue::Int(42),
                                 }],
-                childs: vec![ChildSelection {
+                children: vec![ChildSelection {
                                  inner: LookAheadSelection {
                                      name: "id",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -842,7 +842,7 @@ fragment comparisonFields on Character {
                                      name: "__typename",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -851,7 +851,7 @@ fragment comparisonFields on Character {
                                      name: "name",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -860,7 +860,7 @@ fragment comparisonFields on Character {
                                      name: "appearsIn",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::All,
                              },
@@ -869,7 +869,7 @@ fragment comparisonFields on Character {
                                      name: "primaryFunction",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::OnlyType("Droid"),
                              },
@@ -878,7 +878,7 @@ fragment comparisonFields on Character {
                                      name: "height",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: Vec::new(),
+                                     children: Vec::new(),
                                  },
                                  applies_for: Applies::OnlyType("Human"),
                              },
@@ -887,12 +887,12 @@ fragment comparisonFields on Character {
                                      name: "friends",
                                      alias: None,
                                      arguments: Vec::new(),
-                                     childs: vec![ChildSelection {
+                                     children: vec![ChildSelection {
                                                       inner: LookAheadSelection {
                                                           name: "__typename",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::All,
                                                   },
@@ -901,7 +901,7 @@ fragment comparisonFields on Character {
                                                           name: "name",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::All,
                                                   },
@@ -910,7 +910,7 @@ fragment comparisonFields on Character {
                                                           name: "appearsIn",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::All,
                                                   },
@@ -919,7 +919,7 @@ fragment comparisonFields on Character {
                                                           name: "primaryFunction",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::OnlyType("Droid"),
                                                   },
@@ -928,7 +928,7 @@ fragment comparisonFields on Character {
                                                           name: "height",
                                                           alias: None,
                                                           arguments: Vec::new(),
-                                                          childs: Vec::new(),
+                                                          children: Vec::new(),
                                                       },
                                                       applies_for: Applies::OnlyType("Human"),
                                                   }],
@@ -969,17 +969,17 @@ query Hero {
                 name: "hero",
                 alias: None,
                 arguments: Vec::new(),
-                childs: vec![ConcreteLookAheadSelection {
+                children: vec![ConcreteLookAheadSelection {
                                  name: "name",
                                  alias: None,
                                  arguments: Vec::new(),
-                                 childs: Vec::new(),
+                                 children: Vec::new(),
                              },
                              ConcreteLookAheadSelection {
                                  name: "height",
                                  alias: None,
                                  arguments: Vec::new(),
-                                 childs: Vec::new(),
+                                 children: Vec::new(),
                              }],
             };
             assert_eq!(look_ahead, expected);
@@ -994,12 +994,12 @@ query Hero {
             name: "hero",
             alias: None,
             arguments: Vec::new(),
-            childs: vec![ChildSelection {
+            children: vec![ChildSelection {
                              inner: LookAheadSelection {
                                  name: "id",
                                  alias: None,
                                  arguments: Vec::new(),
-                                 childs: Vec::new(),
+                                 children: Vec::new(),
                              },
                              applies_for: Applies::All,
                          },
@@ -1008,12 +1008,12 @@ query Hero {
                                  name: "friends",
                                  alias: None,
                                  arguments: Vec::new(),
-                                 childs: vec![ChildSelection {
+                                 children: vec![ChildSelection {
                                                   inner: LookAheadSelection {
                                                       name: "id",
                                                       alias: None,
                                                       arguments: Vec::new(),
-                                                      childs: Vec::new(),
+                                                      children: Vec::new(),
                                                   },
                                                   applies_for: Applies::All,
                                               },
@@ -1022,7 +1022,7 @@ query Hero {
                                                       name: "name",
                                                       alias: None,
                                                       arguments: Vec::new(),
-                                                      childs: Vec::new(),
+                                                      children: Vec::new(),
                                                   },
                                                   applies_for: Applies::All,
                                               }],
@@ -1038,7 +1038,7 @@ query Hero {
             name: "id",
             alias: None,
             arguments: Vec::new(),
-            childs: Vec::new(),
+            children: Vec::new(),
         };
         assert_eq!(id, Some(&expected));
         assert_eq!(concrete_id,
@@ -1050,12 +1050,12 @@ query Hero {
             name: "friends",
             alias: None,
             arguments: Vec::new(),
-            childs: vec![ChildSelection {
+            children: vec![ChildSelection {
                              inner: LookAheadSelection {
                                  name: "id",
                                  alias: None,
                                  arguments: Vec::new(),
-                                 childs: Vec::new(),
+                                 children: Vec::new(),
                              },
                              applies_for: Applies::All,
                          },
@@ -1064,7 +1064,7 @@ query Hero {
                                  name: "name",
                                  alias: None,
                                  arguments: Vec::new(),
-                                 childs: Vec::new(),
+                                 children: Vec::new(),
                              },
                              applies_for: Applies::All,
                          }],

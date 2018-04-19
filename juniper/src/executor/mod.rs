@@ -450,7 +450,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
                 name: self.current_type.innermost_concrete().name().unwrap_or(""),
                 alias: None,
                 arguments: Vec::new(),
-                childs: self.current_selection_set.map(|s| s.iter().map(|s| ChildSelection {
+                children: self.current_selection_set.map(|s| s.iter().map(|s| ChildSelection {
                     inner: LookAheadSelection::build_from_selection(s, self.variables, self.fragments),
                     applies_for: Applies::All
                 }).collect()).unwrap_or_else(Vec::new)
