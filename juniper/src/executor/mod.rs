@@ -25,7 +25,7 @@ use types::name::Name;
 
 mod look_ahead;
 
-pub use self::look_ahead::{Applies, LookAheadArgument, LookAheadSelection, LookAheadValue, LookAheadMethods, ChildSelection};
+pub use self::look_ahead::{Applies, LookAheadArgument, LookAheadSelection, LookAheadValue, LookAheadMethods, ChildSelection, ConcreteLookAheadSelection};
 
 /// A type registry used to build schemas
 ///
@@ -438,6 +438,10 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         });
     }
 
+    /// Construct a lookahead selection for the current selection
+    ///
+    /// This allows to see the whole selection and preform operations
+    /// affecting the childs
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a> {
         self.parent_selection_set.map(|p| {
             LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
