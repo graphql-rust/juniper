@@ -1,4 +1,5 @@
 use syn::*;
+use regex::Regex;
 
 pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<&Vec<NestedMetaItem>> {
     for attr in attrs {
@@ -66,6 +67,69 @@ pub fn to_camel_case(s: &str) -> String {
     }
 
     dest
+}
+
+
+#[doc(hidden)]
+pub fn is_camel_case(field_name: &str) -> bool {
+    lazy_static!{
+        static ref CAMELCASE: Regex = Regex::new("^[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)*$").unwrap();
+    }
+    CAMELCASE.is_match(field_name)
+}
+
+#[test]
+fn test_is_camel_case(){
+    assert_eq!(is_camel_case("yesItIs"), true);
+    assert_eq!(is_camel_case("NoitIsnt"), false); 
+    assert_eq!(is_camel_case("iso6301"), true); 
+    assert_eq!(is_camel_case("thisIsATest"), true); 
+    assert_eq!(is_camel_case("i6Op"), true);
+    assert_eq!(is_camel_case("i!"), false);
+    assert_eq!(is_camel_case(""), false);   
+    assert_eq!(is_camel_case("aTest"), true);
+}
+
+#[doc(hidden)]
+pub fn is_pascal_case(obj_name: &str) -> bool {
+    lazy_static!{
+        static ref PASCALCASE: Regex = Regex::new("^_{0,2}[A-Z][a-z0-9]*(?:[A-Z][a-z0-9]*)*$").unwrap();
+    }
+    PASCALCASE.is_match(obj_name)
+}
+
+#[test]
+fn test_is_pascal_case(){
+    assert_eq!(is_pascal_case("YesItIs"), true);
+    assert_eq!(is_pascal_case("NoitIsnt"), true); 
+    assert_eq!(is_pascal_case("Iso6301"), true); 
+    assert_eq!(is_pascal_case("ThisIsATest"), true); 
+    assert_eq!(is_pascal_case("i6Op"), false);
+    assert_eq!(is_pascal_case("i!"), false);
+    assert_eq!(is_pascal_case(""), false); 
+    assert_eq!(is_pascal_case("aTest"), false);
+    assert_eq!(is_pascal_case("Test_Test"), false);
+}
+
+#[doc(hidden)]
+pub fn is_upper_snakecase(enum_field: &str) -> bool {
+    lazy_static!{
+        static ref UPPERCASE: Regex = Regex::new("^[A-Z](?:[A-Z0-9]+_?)*$").unwrap();
+    }
+    UPPERCASE.is_match(enum_field)
+}
+
+#[test]
+fn test_is_upper_snakecase(){
+    assert_eq!(is_upper_snakecase("YESITIS"), true);
+    assert_eq!(is_upper_snakecase("no_It_Isnt"), false); 
+    assert_eq!(is_upper_snakecase("ISO6301"), true); 
+    assert_eq!(is_upper_snakecase("This"), false); 
+    assert_eq!(is_upper_snakecase("i6Op"), false);
+    assert_eq!(is_upper_snakecase("i!"), false);
+    assert_eq!(is_upper_snakecase(""), false); 
+    assert_eq!(is_upper_snakecase("TEST_TEST"), true);
+    assert_eq!(is_upper_snakecase("Test_Test"), false);
 }
 
 #[test]
