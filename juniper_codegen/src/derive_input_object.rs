@@ -19,8 +19,12 @@ impl ObjAttrs {
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
                 if let Some(val) = keyed_item_value(item, "name", true) {
-                    res.name = Some(val);
-                    continue;
+                    if is_pascal_case(&*val) {
+                        res.name = Some(val);
+                        continue;
+                    } else {
+                        panic!("Invalid object name {} was found must be PascalCase.", &*val);
+                    }
                 }
                 if let Some(val) = keyed_item_value(item, "description", true) {
                     res.description = Some(val);
