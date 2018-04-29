@@ -75,6 +75,10 @@ your Schemas automatically.
 * [rocket][rocket]
 * [iron][iron]
 
+## Guides & Examples
+
+* [Juniper + actix-web example](https://github.com/actix/examples/tree/master/juniper)
+
 
 ## API Stability
 
