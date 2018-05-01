@@ -55,7 +55,7 @@ use rocket::Data;
 use rocket::Outcome::{Failure, Forward, Success};
 
 use juniper::InputValue;
-use juniper::http;
+use juniper::http::{self, Executable, ExecutionResponse};
 
 use juniper::GraphQLType;
 use juniper::RootNode;
@@ -66,7 +66,7 @@ use juniper::RootNode;
 /// automatically from both GET and POST routes by implementing the `FromForm`
 /// and `FromData` traits.
 #[derive(Debug, PartialEq)]
-pub struct GraphQLRequest(http::GraphQLRequest);
+pub struct GraphQLRequest(http::GraphQLBatchRequest);
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(Status, String);
@@ -154,11 +154,11 @@ impl<'f> FromForm<'f> for GraphQLRequest {
         }
 
         if let Some(query) = query {
-            Ok(GraphQLRequest(http::GraphQLRequest::new(
+            Ok(GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest::new(
                 query,
                 operation_name,
                 variables,
-            )))
+            ))))
         } else {
             Err("Query parameter missing".to_owned())
         }
@@ -269,11 +269,11 @@ mod fromform_tests {
         let result = GraphQLRequest::from_form(&mut items, false);
         assert!(result.is_ok());
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
-        let expected = GraphQLRequest(http::GraphQLRequest::new(
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "test".to_string(),
             None,
             Some(variables),
-        ));
+        )));
         assert_eq!(result.unwrap(), expected);
     }
 
@@ -284,11 +284,11 @@ mod fromform_tests {
         let result = GraphQLRequest::from_form(&mut items, false);
         assert!(result.is_ok());
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
-        let expected = GraphQLRequest(http::GraphQLRequest::new(
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "test".to_string(),
             None,
             Some(variables),
-        ));
+        )));
         assert_eq!(result.unwrap(), expected);
     }
 
@@ -298,11 +298,11 @@ mod fromform_tests {
         let mut items = FormItems::from(form_string);
         let result = GraphQLRequest::from_form(&mut items, false);
         assert!(result.is_ok());
-        let expected = GraphQLRequest(http::GraphQLRequest::new(
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "%foo bar baz&?".to_string(),
             Some("test".to_string()),
             None,
-        ));
+        )));
         assert_eq!(result.unwrap(), expected);
     }
 }
