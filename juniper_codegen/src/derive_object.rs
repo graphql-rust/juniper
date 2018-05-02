@@ -1,5 +1,10 @@
 use syn;
-use syn::*;
+use syn::{
+    DeriveInput,
+    Data,
+    Fields,
+    Field,
+};
 use quote::Tokens;
 
 use util::*;
@@ -17,11 +22,11 @@ impl ObjAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(item, "name", true) {
+                if let Some(val) = keyed_item_value(&item, "name", true) {
                     res.name = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "description", true) {
+                if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
                     continue;
                 }
@@ -49,15 +54,15 @@ impl ObjFieldAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&variant.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(item, "name", true) {
+                if let Some(val) = keyed_item_value(&item, "name", true) {
                     res.name = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "description", true) {
+                if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "deprecation", true) {
+                if let Some(val) = keyed_item_value(&item, "deprecation", true) {
                     res.deprecation = Some(val);
                     continue;
                 }
@@ -72,14 +77,14 @@ impl ObjFieldAttrs {
 }
 
 pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
-    let fields = match ast.body {
-        Body::Struct(ref data) => match data {
-            &VariantData::Struct(ref fields) => fields,
+    let fields = match ast.data {
+        Data::Struct(ref data) => match data.fields {
+            Fields::Named(ref fields) => fields.named.iter().collect::<Vec<_>>(),
             _ => {
                 panic!("#[derive(GraphQLObject)] may only be used on regular structs with fields");
             }
         },
-        Body::Enum(_) => {
+        _ => {
             panic!("#[derive(GraphlQLObject)] may only be applied to structs, not to enums");
         }
     };
