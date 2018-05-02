@@ -1,5 +1,13 @@
 use syn;
-use syn::*;
+use syn::{
+    DeriveInput,
+    Meta,
+    NestedMeta,
+    Data,
+    Fields,
+    Ident,
+    Variant,
+};
 use quote::Tokens;
 
 use util::*;
@@ -23,16 +31,16 @@ impl EnumAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(item, "name", true) {
+                if let Some(val) = keyed_item_value(&item, "name", true) {
                     res.name = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "description", true) {
+                if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
                     continue;
                 }
                 match item {
-                    &NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) => {
+                    NestedMeta::Meta(Meta::Word(ref ident)) => {
                         if ident == "_internal" {
                             res.internal = true;
                             continue;
@@ -64,15 +72,15 @@ impl EnumVariantAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&variant.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(item, "name", true) {
+                if let Some(val) = keyed_item_value(&item, "name", true) {
                     res.name = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "description", true) {
+                if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "deprecated", true) {
+                if let Some(val) = keyed_item_value(&item, "deprecated", true) {
                     res.deprecation = Some(val);
                     continue;
                 }
@@ -87,9 +95,9 @@ impl EnumVariantAttrs {
 }
 
 pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
-    let variants = match ast.body {
-        Body::Enum(ref var) => var,
-        Body::Struct(_) => {
+    let variants = match ast.data {
+        Data::Enum(ref enum_data) => enum_data.variants.iter().collect::<Vec<_>>(),
+        _ => {
             panic!("#[derive(GraphlQLEnum)] may only be applied to enums, not to structs");
         }
     };
@@ -110,12 +118,16 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
     let mut to_inputs = Vec::<Tokens>::new();
 
     for variant in variants {
-        if variant.data != VariantData::Unit {
-            panic!(format!(
-                "Invalid enum variant {}.\nGraphQL enums may only contain unit variants.",
-                variant.ident
-            ));
-        }
+        match variant.fields {
+            Fields::Unit => {},
+            _ => {
+                panic!(format!(
+                    "Invalid enum variant {}.\nGraphQL enums may only contain unit variants.",
+                    variant.ident
+                ));
+            }
+        } ;
+
         let var_attrs = EnumVariantAttrs::from_input(variant);
         let var_ident = &variant.ident;
 
@@ -209,7 +221,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         }
     };
 
-    let dummy_const = Ident::new(format!("_IMPL_GRAPHQLENUM_FOR_{}", ident));
+    let dummy_const = Ident::from(format!("_IMPL_GRAPHQLENUM_FOR_{}", ident).as_str());
 
     // This ugly hack makes it possible to use the derive inside juniper itself.
     // FIXME: Figure out a better way to do this!
