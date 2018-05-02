@@ -109,6 +109,9 @@ extern crate url;
 #[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
 
+#[cfg(any(test, feature = "humantime"))]
+extern crate humantime;
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive functionality automatically.
 #[allow(unused_imports)]

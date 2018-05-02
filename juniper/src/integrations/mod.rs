@@ -13,3 +13,7 @@ pub mod url;
 #[cfg(feature = "uuid")]
 /// GraphQL support for [uuid](https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html) types.
 pub mod uuid;
+
+#[cfg(feature = "humantime")]
+/// GraphQL support for stdlib timestamps via [humantime](https://crates.io/crates/humantime) types.
+pub mod humantime;
