@@ -1,16 +1,16 @@
-use std::cmp::Ordering;
-use std::fmt::Display;
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::sync::RwLock;
 
 use fnv::FnvHashMap;
 
-use GraphQLError;
 use ast::{Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
           ToInputValue, Type};
-use value::Value;
 use parser::SourcePosition;
+use value::Value;
+use GraphQLError;
 
 use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, ListMeta,
                    MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta};

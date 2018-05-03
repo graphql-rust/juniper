@@ -1,5 +1,5 @@
-use types::base::{Arguments, GraphQLType, TypeKind};
 use executor::{ExecutionResult, Executor, Registry};
+use types::base::{Arguments, GraphQLType, TypeKind};
 
 use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType,
                    ObjectMeta, UnionMeta};

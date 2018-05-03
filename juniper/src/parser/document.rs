@@ -4,9 +4,9 @@ use ast::{Arguments, Definition, Directive, Document, Field, Fragment, FragmentS
           InlineFragment, InputValue, Operation, OperationType, Selection, Type,
           VariableDefinition, VariableDefinitions};
 
+use parser::value::parse_value_literal;
 use parser::{Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
              UnlocatedParseResult};
-use parser::value::parse_value_literal;
 
 #[doc(hidden)]
 pub fn parse_document_source(s: &str) -> UnlocatedParseResult<Document> {

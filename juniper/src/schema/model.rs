@@ -2,11 +2,11 @@ use std::fmt;
 
 use fnv::FnvHashMap;
 
+use ast::Type;
+use executor::{Context, Registry};
+use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 use types::base::GraphQLType;
 use types::name::Name;
-use executor::{Context, Registry};
-use ast::Type;
-use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 
 /// Root query node of a schema
 ///
@@ -55,9 +55,12 @@ pub enum DirectiveLocation {
     Query,
     Mutation,
     Field,
-    #[graphql(name = "FRAGMENT_DEFINITION")] FragmentDefinition,
-    #[graphql(name = "FRAGMENT_SPREAD")] FragmentSpread,
-    #[graphql(name = "INLINE_SPREAD")] InlineFragment,
+    #[graphql(name = "FRAGMENT_DEFINITION")]
+    FragmentDefinition,
+    #[graphql(name = "FRAGMENT_SPREAD")]
+    FragmentSpread,
+    #[graphql(name = "INLINE_SPREAD")]
+    InlineFragment,
 }
 
 impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>

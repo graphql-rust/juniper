@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use ast::{Definition, Document, FragmentSpread, InlineFragment};
-use validation::{ValidatorContext, Visitor};
 use parser::Spanning;
 use schema::meta::MetaType;
+use std::collections::HashMap;
+use validation::{ValidatorContext, Visitor};
 
 pub struct PossibleFragmentSpreads<'a> {
     fragment_types: HashMap<&'a str, &'a MetaType<'a>>,
@@ -223,12 +223,10 @@ mod tests {
           fragment invalidObjectWithinObject on Cat { ...dogFragment }
           fragment dogFragment on Dog { barkVolume }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("dogFragment"), "Cat", "Dog"),
-                    &[SourcePosition::new(55, 1, 54)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("dogFragment"), "Cat", "Dog"),
+                &[SourcePosition::new(55, 1, 54)],
+            )],
         );
     }
 
@@ -241,12 +239,10 @@ mod tests {
             ... on Dog { barkVolume }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(None, "Cat", "Dog"),
-                    &[SourcePosition::new(71, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(None, "Cat", "Dog"),
+                &[SourcePosition::new(71, 2, 12)],
+            )],
         );
     }
 
@@ -258,12 +254,10 @@ mod tests {
           fragment invalidObjectWithinInterface on Pet { ...humanFragment }
           fragment humanFragment on Human { pets { name } }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("humanFragment"), "Pet", "Human"),
-                    &[SourcePosition::new(58, 1, 57)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("humanFragment"), "Pet", "Human"),
+                &[SourcePosition::new(58, 1, 57)],
+            )],
         );
     }
 
@@ -275,12 +269,10 @@ mod tests {
           fragment invalidObjectWithinUnion on CatOrDog { ...humanFragment }
           fragment humanFragment on Human { pets { name } }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("humanFragment"), "CatOrDog", "Human"),
-                    &[SourcePosition::new(59, 1, 58)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("humanFragment"), "CatOrDog", "Human"),
+                &[SourcePosition::new(59, 1, 58)],
+            )],
         );
     }
 
@@ -292,12 +284,10 @@ mod tests {
           fragment invalidUnionWithinObject on Human { ...catOrDogFragment }
           fragment catOrDogFragment on CatOrDog { __typename }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("catOrDogFragment"), "Human", "CatOrDog"),
-                    &[SourcePosition::new(56, 1, 55)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("catOrDogFragment"), "Human", "CatOrDog"),
+                &[SourcePosition::new(56, 1, 55)],
+            )],
         );
     }
 
@@ -309,12 +299,10 @@ mod tests {
           fragment invalidUnionWithinInterface on Pet { ...humanOrAlienFragment }
           fragment humanOrAlienFragment on HumanOrAlien { __typename }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("humanOrAlienFragment"), "Pet", "HumanOrAlien"),
-                    &[SourcePosition::new(57, 1, 56)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("humanOrAlienFragment"), "Pet", "HumanOrAlien"),
+                &[SourcePosition::new(57, 1, 56)],
+            )],
         );
     }
 
@@ -326,12 +314,10 @@ mod tests {
           fragment invalidUnionWithinUnion on CatOrDog { ...humanOrAlienFragment }
           fragment humanOrAlienFragment on HumanOrAlien { __typename }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("humanOrAlienFragment"), "CatOrDog", "HumanOrAlien"),
-                    &[SourcePosition::new(58, 1, 57)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("humanOrAlienFragment"), "CatOrDog", "HumanOrAlien"),
+                &[SourcePosition::new(58, 1, 57)],
+            )],
         );
     }
 
@@ -343,12 +329,10 @@ mod tests {
           fragment invalidInterfaceWithinObject on Cat { ...intelligentFragment }
           fragment intelligentFragment on Intelligent { iq }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("intelligentFragment"), "Cat", "Intelligent"),
-                    &[SourcePosition::new(58, 1, 57)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("intelligentFragment"), "Cat", "Intelligent"),
+                &[SourcePosition::new(58, 1, 57)],
+            )],
         );
     }
 
@@ -362,12 +346,10 @@ mod tests {
           }
           fragment intelligentFragment on Intelligent { iq }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("intelligentFragment"), "Pet", "Intelligent"),
-                    &[SourcePosition::new(73, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("intelligentFragment"), "Pet", "Intelligent"),
+                &[SourcePosition::new(73, 2, 12)],
+            )],
         );
     }
 
@@ -380,12 +362,10 @@ mod tests {
             ...on Intelligent { iq }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(None, "Pet", "Intelligent"),
-                    &[SourcePosition::new(77, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(None, "Pet", "Intelligent"),
+                &[SourcePosition::new(77, 2, 12)],
+            )],
         );
     }
 
@@ -397,12 +377,10 @@ mod tests {
           fragment invalidInterfaceWithinUnion on HumanOrAlien { ...petFragment }
           fragment petFragment on Pet { name }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("petFragment"), "HumanOrAlien", "Pet"),
-                    &[SourcePosition::new(66, 1, 65)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("petFragment"), "HumanOrAlien", "Pet"),
+                &[SourcePosition::new(66, 1, 65)],
+            )],
         );
     }
 

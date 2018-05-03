@@ -122,16 +122,16 @@ mod value;
 #[macro_use]
 mod macros;
 mod ast;
-pub mod parser;
-mod types;
-mod schema;
-mod validation;
-mod util;
 mod executor;
+pub mod parser;
+mod schema;
+mod types;
+mod util;
+mod validation;
 // This needs to be public until docs have support for private modules:
 // https://github.com/rust-lang/cargo/issues/1520
-pub mod integrations;
 pub mod http;
+pub mod integrations;
 // TODO: remove this alias export in 0.10. (breaking change)
 pub use http::graphiql;
 
@@ -146,18 +146,18 @@ mod executor_tests;
 // Needs to be public because macros use it.
 pub use util::to_camel_case;
 
+use executor::execute_validated_query;
 use parser::{parse_document_source, ParseError, Spanning};
 use validation::{validate_input_values, visit_all_rules, ValidatorContext};
-use executor::execute_validated_query;
 
 pub use ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
-pub use value::Value;
-pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
                    FromContext, IntoResolvable, Registry, Variables};
-pub use validation::RuleError;
-pub use types::scalars::{EmptyMutation, ID};
 pub use schema::model::RootNode;
+pub use types::base::{Arguments, GraphQLType, TypeKind};
+pub use types::scalars::{EmptyMutation, ID};
+pub use validation::RuleError;
+pub use value::Value;
 
 pub use schema::meta;
 

@@ -102,15 +102,24 @@ pub struct PlaceholderMeta<'a> {
 /// Generic type metadata
 #[derive(Debug)]
 pub enum MetaType<'a> {
-    #[doc(hidden)] Scalar(ScalarMeta<'a>),
-    #[doc(hidden)] List(ListMeta<'a>),
-    #[doc(hidden)] Nullable(NullableMeta<'a>),
-    #[doc(hidden)] Object(ObjectMeta<'a>),
-    #[doc(hidden)] Enum(EnumMeta<'a>),
-    #[doc(hidden)] Interface(InterfaceMeta<'a>),
-    #[doc(hidden)] Union(UnionMeta<'a>),
-    #[doc(hidden)] InputObject(InputObjectMeta<'a>),
-    #[doc(hidden)] Placeholder(PlaceholderMeta<'a>),
+    #[doc(hidden)]
+    Scalar(ScalarMeta<'a>),
+    #[doc(hidden)]
+    List(ListMeta<'a>),
+    #[doc(hidden)]
+    Nullable(NullableMeta<'a>),
+    #[doc(hidden)]
+    Object(ObjectMeta<'a>),
+    #[doc(hidden)]
+    Enum(EnumMeta<'a>),
+    #[doc(hidden)]
+    Interface(InterfaceMeta<'a>),
+    #[doc(hidden)]
+    Union(UnionMeta<'a>),
+    #[doc(hidden)]
+    InputObject(InputObjectMeta<'a>),
+    #[doc(hidden)]
+    Placeholder(PlaceholderMeta<'a>),
 }
 
 /// Metadata for a field

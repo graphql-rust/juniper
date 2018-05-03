@@ -1,11 +1,11 @@
 use indexmap::IndexMap;
 
 use executor::{ExecutionResult, Executor, Registry, Variables};
-use value::Value;
 use schema::meta::MetaType;
 use schema::model::RootNode;
 use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
+use value::Value;
 
 pub struct NodeTypeInfo {
     name: String,

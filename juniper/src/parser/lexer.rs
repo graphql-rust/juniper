@@ -1,8 +1,8 @@
 use std::char;
-use std::str::CharIndices;
+use std::fmt;
 use std::iter::{Iterator, Peekable};
 use std::result::Result;
-use std::fmt;
+use std::str::CharIndices;
 
 use parser::{SourcePosition, Spanning};
 

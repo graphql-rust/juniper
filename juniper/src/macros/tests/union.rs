@@ -2,9 +2,9 @@ use indexmap::IndexMap;
 use std::marker::PhantomData;
 
 use ast::InputValue;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 /*
 
@@ -162,7 +162,7 @@ fn introspect_custom_name() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -178,7 +178,7 @@ fn introspect_with_lifetime() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -194,7 +194,7 @@ fn introspect_with_generics() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -213,7 +213,7 @@ fn introspect_description_first() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -232,7 +232,7 @@ fn introspect_resolvers_first() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -254,7 +254,7 @@ fn introspect_commas_with_trailing() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -276,7 +276,7 @@ fn introspect_resolvers_with_trailing_comma() {
             possible_types.contains(&Value::object(
                 vec![("name", Value::string("Concrete"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });

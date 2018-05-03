@@ -145,12 +145,10 @@ mod tests {
             bad
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("scalarFragment"), "Boolean"),
-                    &[SourcePosition::new(38, 1, 37)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("scalarFragment"), "Boolean"),
+                &[SourcePosition::new(38, 1, 37)],
+            )],
         );
     }
 
@@ -163,12 +161,10 @@ mod tests {
             bad
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("scalarFragment"), "FurColor"),
-                    &[SourcePosition::new(38, 1, 37)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("scalarFragment"), "FurColor"),
+                &[SourcePosition::new(38, 1, 37)],
+            )],
         );
     }
 
@@ -181,12 +177,10 @@ mod tests {
             stringField
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(Some("inputFragment"), "ComplexInput"),
-                    &[SourcePosition::new(37, 1, 36)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(Some("inputFragment"), "ComplexInput"),
+                &[SourcePosition::new(37, 1, 36)],
+            )],
         );
     }
 
@@ -201,12 +195,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(None, "String"),
-                    &[SourcePosition::new(64, 2, 19)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message(None, "String"),
+                &[SourcePosition::new(64, 2, 19)],
+            )],
         );
     }
 }

@@ -1,8 +1,8 @@
 use ast::{Directive, Field};
-use validation::{ValidatorContext, Visitor};
 use parser::Spanning;
 use schema::meta::Field as FieldType;
 use schema::model::DirectiveType;
+use validation::{ValidatorContext, Visitor};
 
 pub struct ProvidedNonNullArguments {}
 
@@ -262,12 +262,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &field_error_message("multipleReqs", "req1", "Int!"),
-                    &[SourcePosition::new(63, 3, 16)],
-                ),
-            ],
+            &[RuleError::new(
+                &field_error_message("multipleReqs", "req1", "Int!"),
+                &[SourcePosition::new(63, 3, 16)],
+            )],
         );
     }
 
@@ -306,12 +304,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &field_error_message("multipleReqs", "req2", "Int!"),
-                    &[SourcePosition::new(63, 3, 16)],
-                ),
-            ],
+            &[RuleError::new(
+                &field_error_message("multipleReqs", "req2", "Int!"),
+                &[SourcePosition::new(63, 3, 16)],
+            )],
         );
     }
 
