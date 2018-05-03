@@ -1,9 +1,9 @@
 use indexmap::IndexMap;
 
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 /*
 
@@ -48,15 +48,19 @@ enum EnumDescription {
 #[derive(GraphQLEnum)]
 #[graphql(_internal)]
 enum EnumValueDescription {
-    #[graphql(description = "The FOO value")] Foo,
-    #[graphql(description = "The BAR value")] Bar,
+    #[graphql(description = "The FOO value")]
+    Foo,
+    #[graphql(description = "The BAR value")]
+    Bar,
 }
 
 #[derive(GraphQLEnum)]
 #[graphql(_internal)]
 enum EnumDeprecation {
-    #[graphql(deprecated = "Please don't use FOO any more")] Foo,
-    #[graphql(description = "The BAR value", deprecated = "Please don't use BAR any more")] Bar,
+    #[graphql(deprecated = "Please don't use FOO any more")]
+    Foo,
+    #[graphql(description = "The BAR value", deprecated = "Please don't use BAR any more")]
+    Bar,
 }
 
 struct Root;
@@ -131,7 +135,7 @@ fn default_name_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -143,7 +147,7 @@ fn default_name_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -180,7 +184,7 @@ fn named_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -192,7 +196,7 @@ fn named_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -232,7 +236,7 @@ fn no_trailing_comma_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -244,7 +248,7 @@ fn no_trailing_comma_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -287,7 +291,7 @@ fn enum_description_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -299,7 +303,7 @@ fn enum_description_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -339,7 +343,7 @@ fn enum_value_description_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -351,7 +355,7 @@ fn enum_value_description_introspection() {
                     ("isDeprecated", Value::boolean(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -394,7 +398,7 @@ fn enum_deprecation_introspection() {
                         Value::string("Please don't use FOO any more"),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -409,7 +413,7 @@ fn enum_deprecation_introspection() {
                         Value::string("Please don't use BAR any more"),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });

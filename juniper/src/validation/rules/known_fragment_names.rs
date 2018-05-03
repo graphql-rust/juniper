@@ -1,6 +1,6 @@
 use ast::FragmentSpread;
-use validation::{ValidatorContext, Visitor};
 use parser::Spanning;
+use validation::{ValidatorContext, Visitor};
 
 pub struct KnownFragmentNames {}
 

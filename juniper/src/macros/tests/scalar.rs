@@ -1,9 +1,9 @@
 use indexmap::IndexMap;
 
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 struct DefaultName(i32);
 struct OtherOrder(i32);

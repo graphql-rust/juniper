@@ -1,14 +1,14 @@
 use indexmap::IndexMap;
-use serde::{de, ser};
 use serde::ser::SerializeMap;
+use serde::{de, ser};
 
 use std::fmt;
 
-use {GraphQLError, Value};
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
+use {GraphQLError, Value};
 
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

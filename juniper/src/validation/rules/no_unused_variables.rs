@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
 use ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition};
-use validation::{RuleError, ValidatorContext, Visitor};
 use parser::Spanning;
+use std::collections::{HashMap, HashSet};
+use validation::{RuleError, ValidatorContext, Visitor};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -274,9 +274,10 @@ mod tests {
             field(a: $a, b: $b)
           }
         "#,
-            &[
-                RuleError::new(&error_message("c", None), &[SourcePosition::new(42, 1, 41)]),
-            ],
+            &[RuleError::new(
+                &error_message("c", None),
+                &[SourcePosition::new(42, 1, 41)],
+            )],
         );
     }
 
@@ -324,12 +325,10 @@ mod tests {
             field
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("c", Some("Foo")),
-                    &[SourcePosition::new(45, 1, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("c", Some("Foo")),
+                &[SourcePosition::new(45, 1, 44)],
+            )],
         );
     }
 
@@ -383,12 +382,10 @@ mod tests {
             field(b: $b)
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("b", Some("Foo")),
-                    &[SourcePosition::new(21, 1, 20)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("b", Some("Foo")),
+                &[SourcePosition::new(21, 1, 20)],
+            )],
         );
     }
 

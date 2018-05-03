@@ -5,9 +5,9 @@ pub mod graphiql;
 use serde::ser;
 use serde::ser::SerializeMap;
 
-use {GraphQLError, GraphQLType, RootNode, Value, Variables};
 use ast::InputValue;
 use executor::ExecutionError;
+use {GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -127,8 +127,8 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {
-    use serde_json::Value as Json;
     use serde_json;
+    use serde_json::Value as Json;
 
     /// Normalized response content we expect to get back from
     /// the http framework integration we are testing.

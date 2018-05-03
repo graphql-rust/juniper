@@ -1,13 +1,13 @@
 use indexmap::IndexMap;
 
-use value::Value;
 use ast::InputValue;
 use executor::Variables;
-use schema::model::RootNode;
-use GraphQLError::ValidationError;
-use validation::RuleError;
 use parser::SourcePosition;
+use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use validation::RuleError;
+use value::Value;
+use GraphQLError::ValidationError;
 
 #[derive(GraphQLEnum, Debug)]
 #[graphql(_internal)]
@@ -77,12 +77,10 @@ fn does_not_accept_string_literals() {
 
     assert_eq!(
         error,
-        ValidationError(vec![
-            RuleError::new(
-                r#"Invalid value for argument "color", expected type "Color!""#,
-                &[SourcePosition::new(18, 0, 18)],
-            ),
-        ])
+        ValidationError(vec![RuleError::new(
+            r#"Invalid value for argument "color", expected type "Color!""#,
+            &[SourcePosition::new(18, 0, 18)],
+        )])
     );
 }
 
@@ -112,12 +110,10 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
 
     assert_eq!(
         error,
-        ValidationError(vec![
-            RuleError::new(
-                r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
-                &[SourcePosition::new(8, 0, 8)],
-            ),
-        ])
+        ValidationError(vec![RuleError::new(
+            r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
+            &[SourcePosition::new(8, 0, 8)],
+        )])
     );
 }
 
@@ -134,11 +130,9 @@ fn does_not_accept_incorrect_type_in_variables() {
 
     assert_eq!(
         error,
-        ValidationError(vec![
-        RuleError::new(
+        ValidationError(vec![RuleError::new(
             r#"Variable "$color" got invalid value. Expected "Color", found not a string or enum."#,
             &[SourcePosition::new(8, 0, 8)],
-        ),
-    ])
+        )])
     );
 }

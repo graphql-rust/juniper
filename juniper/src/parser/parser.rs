@@ -1,5 +1,5 @@
-use std::result::Result;
 use std::fmt;
+use std::result::Result;
 
 use parser::{Lexer, LexerError, Spanning, Token};
 

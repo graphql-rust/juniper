@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use ast::InputValue;
-use schema::model::{SchemaType, TypeType};
 use schema::meta::{EnumMeta, InputObjectMeta, MetaType};
+use schema::model::{SchemaType, TypeType};
+use std::collections::HashSet;
 
 pub fn is_valid_literal_value(
     schema: &SchemaType,

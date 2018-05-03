@@ -1,8 +1,8 @@
-use std::fmt;
 use std::borrow::Cow;
+use std::fmt;
 use std::hash::Hash;
-use std::vec;
 use std::slice;
+use std::vec;
 
 use indexmap::IndexMap;
 

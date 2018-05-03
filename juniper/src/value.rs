@@ -1,8 +1,8 @@
 use indexmap::IndexMap;
 use std::hash::Hash;
 
-use parser::Spanning;
 use ast::{InputValue, ToInputValue};
+use parser::Spanning;
 
 /// Serializable value returned from query and field execution.
 ///
@@ -276,7 +276,7 @@ mod tests {
             Value::object(
                 vec![("key", Value::int(123)), ("next", Value::boolean(true))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             )
         );
     }
