@@ -79,7 +79,12 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
                     Ok(InputValue::int(value as i32))
                 } else {
-                    Err(E::custom("integer out of range"))
+                    // Browser's JSON.stringify serialize all numbers having no
+                    // fractional part as integers (no decimal point), so we
+                    // must parse large integers as floating point otherwise
+                    // we would error on transferring large floating point
+                    // numbers.
+                    Ok(InputValue::float(value as f64))
                 }
             }
 
@@ -90,7 +95,12 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 if value <= i32::max_value() as u64 {
                     self.visit_i64(value as i64)
                 } else {
-                    Err(E::custom("integer out of range"))
+                    // Browser's JSON.stringify serialize all numbers having no
+                    // fractional part as integers (no decimal point), so we
+                    // must parse large integers as floating point otherwise
+                    // we would error on transferring large floating point
+                    // numbers.
+                    Ok(InputValue::float(value as f64))
                 }
             }
 
@@ -245,5 +255,26 @@ impl ser::Serialize for Value {
             Value::List(ref v) => v.serialize(serializer),
             Value::Object(ref v) => v.serialize(serializer),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::from_str;
+    use ast::InputValue;
+
+    #[test]
+    fn int() {
+        assert_eq!(from_str::<InputValue>("1235").unwrap(),
+                   InputValue::int(1235));
+    }
+
+    #[test]
+    fn float() {
+        assert_eq!(from_str::<InputValue>("2.0").unwrap(),
+                   InputValue::float(2.0));
+        // large value without a decimal part is also float
+        assert_eq!(from_str::<InputValue>("123567890123").unwrap(),
+                   InputValue::float(123567890123.0));
     }
 }
