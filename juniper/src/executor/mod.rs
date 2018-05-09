@@ -8,13 +8,9 @@ use fnv::FnvHashMap;
 
 use ast::{Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
           ToInputValue, Type};
-use parser::SourcePosition;
-use value::Value;
 use GraphQLError;
-use ast::{Definition, Document, Fragment, FromInputValue, InputValue, OperationType,
-          Selection, ToInputValue, Type};
-use value::Value;
 use parser::SourcePosition;
+use value::Value;
 
 use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, ListMeta,
                    MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta};
