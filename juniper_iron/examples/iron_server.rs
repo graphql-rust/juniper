@@ -14,8 +14,8 @@ use juniper::EmptyMutation;
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use juniper::tests::model::Database;
 
-fn context_factory(_: &mut Request) -> Database {
-    Database::new()
+fn context_factory(_: &mut Request) -> IronResult<Database> {
+    Ok(Database::new())
 }
 
 fn main() {

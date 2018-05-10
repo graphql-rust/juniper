@@ -62,8 +62,8 @@ use juniper::{Context, EmptyMutation};
 // This function is executed for every request. Here, we would realistically
 // provide a database connection or similar. For this example, we'll be
 // creating the database from scratch.
-fn context_factory(_: &mut Request) -> Database {
-    Database {
+fn context_factory(_: &mut Request) -> IronResult<Database> {
+    Ok(Database {
         users: vec![
             ( "1000".to_owned(), User {
                 id: "1000".to_owned(), name: "Robin".to_owned(),
@@ -72,7 +72,7 @@ fn context_factory(_: &mut Request) -> Database {
                 id: "1001".to_owned(), name: "Max".to_owned(),
                 friend_ids: vec!["1000".to_owned()] } ),
         ].into_iter().collect()
-    }
+    })
 }
 
 impl Context for Database {}
@@ -137,7 +137,7 @@ use juniper::http;
 /// mapping.
 pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
 where
-    CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
+    CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<Context = CtxT> + Send + Sync + 'static,
     Mutation: GraphQLType<Context = CtxT> + Send + Sync + 'static,
@@ -181,7 +181,7 @@ fn parse_variable_param(params: Option<Vec<String>>) -> IronResult<Option<InputV
 
 impl<'a, CtxFactory, Query, Mutation, CtxT> GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
 where
-    CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
+    CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
@@ -253,14 +253,14 @@ impl GraphiQLHandler {
 impl<'a, CtxFactory, Query, Mutation, CtxT> Handler
     for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT>
 where
-    CtxFactory: Fn(&mut Request) -> CtxT + Send + Sync + 'static,
+    CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
-        let context = (self.context_factory)(req);
+        let context = (self.context_factory)(req)?;
 
         let graphql_request = match req.method {
             method::Get => self.handle_get(&mut req)?,
@@ -366,8 +366,8 @@ mod tests {
         http_tests::run_http_test_suite(&integration);
     }
 
-    fn context_factory(_: &mut Request) -> Database {
-        Database::new()
+    fn context_factory(_: &mut Request) -> IronResult<Database> {
+        Ok(Database::new())
     }
 
     fn make_test_response(response: IronResult<Response>) -> http_tests::TestResponse {
