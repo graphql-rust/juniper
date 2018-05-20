@@ -69,69 +69,6 @@ pub fn to_camel_case(s: &str) -> String {
     dest
 }
 
-
-#[doc(hidden)]
-pub fn is_camel_case(field_name: &str) -> bool {
-    lazy_static!{
-        static ref CAMELCASE: Regex = Regex::new("^[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)*$").unwrap();
-    }
-    CAMELCASE.is_match(field_name)
-}
-
-#[test]
-fn test_is_camel_case(){
-    assert_eq!(is_camel_case("yesItIs"), true);
-    assert_eq!(is_camel_case("NoitIsnt"), false); 
-    assert_eq!(is_camel_case("iso6301"), true); 
-    assert_eq!(is_camel_case("thisIsATest"), true); 
-    assert_eq!(is_camel_case("i6Op"), true);
-    assert_eq!(is_camel_case("i!"), false);
-    assert_eq!(is_camel_case(""), false);   
-    assert_eq!(is_camel_case("aTest"), true);
-}
-
-#[doc(hidden)]
-pub fn is_pascal_case(obj_name: &str) -> bool {
-    lazy_static!{
-        static ref PASCALCASE: Regex = Regex::new("^_{0,2}[A-Z][a-z0-9]*(?:[A-Z][a-z0-9]*)*$").unwrap();
-    }
-    PASCALCASE.is_match(obj_name)
-}
-
-#[test]
-fn test_is_pascal_case(){
-    assert_eq!(is_pascal_case("YesItIs"), true);
-    assert_eq!(is_pascal_case("NoitIsnt"), true); 
-    assert_eq!(is_pascal_case("Iso6301"), true); 
-    assert_eq!(is_pascal_case("ThisIsATest"), true); 
-    assert_eq!(is_pascal_case("i6Op"), false);
-    assert_eq!(is_pascal_case("i!"), false);
-    assert_eq!(is_pascal_case(""), false); 
-    assert_eq!(is_pascal_case("aTest"), false);
-    assert_eq!(is_pascal_case("Test_Test"), false);
-}
-
-#[doc(hidden)]
-pub fn is_upper_snakecase(enum_field: &str) -> bool {
-    lazy_static!{
-        static ref UPPERCASE: Regex = Regex::new("^[A-Z](?:[A-Z0-9]+_?)*$").unwrap();
-    }
-    UPPERCASE.is_match(enum_field)
-}
-
-#[test]
-fn test_is_upper_snakecase(){
-    assert_eq!(is_upper_snakecase("YESITIS"), true);
-    assert_eq!(is_upper_snakecase("no_It_Isnt"), false); 
-    assert_eq!(is_upper_snakecase("ISO6301"), true); 
-    assert_eq!(is_upper_snakecase("This"), false); 
-    assert_eq!(is_upper_snakecase("i6Op"), false);
-    assert_eq!(is_upper_snakecase("i!"), false);
-    assert_eq!(is_upper_snakecase(""), false); 
-    assert_eq!(is_upper_snakecase("TEST_TEST"), true);
-    assert_eq!(is_upper_snakecase("Test_Test"), false);
-}
-
 #[test]
 fn test_to_camel_case() {
     assert_eq!(&to_camel_case("test")[..], "test");
@@ -177,4 +114,25 @@ fn test_to_upper_snake_case() {
     assert_eq!(to_upper_snake_case("someInput"), "SOME_INPUT");
     assert_eq!(to_upper_snake_case("someINpuT"), "SOME_INPU_T");
     assert_eq!(to_upper_snake_case("some_INpuT"), "SOME_INPU_T");
+}
+
+#[doc(hidden)]
+pub fn is_valid_name(field_name: &str) -> bool {
+    lazy_static!{
+        static ref CAMELCASE: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
+    }
+    CAMELCASE.is_match(field_name)
+}
+
+#[test]
+fn test_is_valid_name(){
+    assert_eq!(is_valid_name("yesItIs"), true);
+    assert_eq!(is_valid_name("NoitIsnt"), true); 
+    assert_eq!(is_valid_name("iso6301"), true); 
+    assert_eq!(is_valid_name("thisIsATest"), true); 
+    assert_eq!(is_valid_name("i6Op"), true);
+    assert_eq!(is_valid_name("i!"), false);
+    assert_eq!(is_valid_name(""), false);   
+    assert_eq!(is_valid_name("aTest"), true);
+    assert_eq!(is_valid_name("__Atest90"), true);
 }

@@ -24,11 +24,12 @@ impl EnumAttrs {
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
                 if let Some(val) = keyed_item_value(item, "name", true) {
-                    if is_pascal_case(&*val) {
+                    if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
                     } else {
-                        panic!("Invalid name found for enum {} must be PascalCase", &*val);
+                        panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                               &*val);
                     }
                 }
                 if let Some(val) = keyed_item_value(item, "description", true) {
@@ -69,11 +70,12 @@ impl EnumVariantAttrs {
         if let Some(items) = get_graphl_attr(&variant.attrs) {
             for item in items {
                 if let Some(val) = keyed_item_value(item, "name", true) {
-                    if is_upper_snakecase(&*val) {
+                    if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
                     } else {
-                        panic!("Invalid enum field name {} was found should be all upper case letters.", &*val);
+                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                                 &*val);
                     }
                 }
                 if let Some(val) = keyed_item_value(item, "description", true) {
