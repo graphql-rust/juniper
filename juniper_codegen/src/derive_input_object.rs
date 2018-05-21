@@ -148,7 +148,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         };
         let field_description = match field_attrs.description {
             Some(s) => quote!{ let field = field.description(#s); },
-            None => quote!{ let field = field; },
+            None => quote!{},
         };
 
         let default = {
@@ -197,7 +197,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         };
         meta_fields.push(meta_field);
 
-        // Buil from_input clause.
+        // Build from_input clause.
 
         let from_input_default = match default {
             Some(ref def) => {
