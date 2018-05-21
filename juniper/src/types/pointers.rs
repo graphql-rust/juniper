@@ -1,8 +1,8 @@
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use value::Value;
 
-use schema::meta::MetaType;
 use executor::{ExecutionResult, Executor, Registry};
+use schema::meta::MetaType;
 use types::base::{Arguments, GraphQLType};
 
 impl<T, CtxT> GraphQLType for Box<T>

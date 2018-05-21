@@ -1,8 +1,8 @@
 use indexmap::IndexMap;
 
 use ast::InputValue;
-use parser::{Lexer, Parser, SourcePosition, Spanning};
 use parser::value::parse_value_literal;
+use parser::{Lexer, Parser, SourcePosition, Spanning};
 
 fn parse_value(s: &str) -> Spanning<InputValue> {
     let mut lexer = Lexer::new(s);
@@ -142,20 +142,18 @@ fn input_value_literals() {
                     Spanning::start_end(
                         &SourcePosition::new(18, 0, 18),
                         &SourcePosition::new(30, 0, 30),
-                        InputValue::parsed_object(vec![
-                            (
-                                Spanning::start_end(
-                                    &SourcePosition::new(19, 0, 19),
-                                    &SourcePosition::new(22, 0, 22),
-                                    "foo".to_owned(),
-                                ),
-                                Spanning::start_end(
-                                    &SourcePosition::new(24, 0, 24),
-                                    &SourcePosition::new(29, 0, 29),
-                                    InputValue::string("bar"),
-                                ),
+                        InputValue::parsed_object(vec![(
+                            Spanning::start_end(
+                                &SourcePosition::new(19, 0, 19),
+                                &SourcePosition::new(22, 0, 22),
+                                "foo".to_owned(),
                             ),
-                        ]),
+                            Spanning::start_end(
+                                &SourcePosition::new(24, 0, 24),
+                                &SourcePosition::new(29, 0, 29),
+                                InputValue::string("bar"),
+                            ),
+                        )]),
                     ),
                 ),
             ])

@@ -1,7 +1,7 @@
 use ast::{Directive, Field, InputValue};
+use parser::Spanning;
 use schema::meta::Argument;
 use types::utilities::is_valid_literal_value;
-use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
 
 pub struct ArgumentsOfCorrectType<'a> {
@@ -96,12 +96,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("nonNullIntArg", "Int!"),
-                    &[SourcePosition::new(97, 3, 50)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("nonNullIntArg", "Int!"),
+                &[SourcePosition::new(97, 3, 50)],
+            )],
         );
     }
 
@@ -228,12 +226,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("stringArg", "String"),
-                    &[SourcePosition::new(89, 3, 42)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("stringArg", "String"),
+                &[SourcePosition::new(89, 3, 42)],
+            )],
         );
     }
 
@@ -248,12 +244,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("stringArg", "String"),
-                    &[SourcePosition::new(89, 3, 42)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("stringArg", "String"),
+                &[SourcePosition::new(89, 3, 42)],
+            )],
         );
     }
 
@@ -268,12 +262,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("stringArg", "String"),
-                    &[SourcePosition::new(89, 3, 42)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("stringArg", "String"),
+                &[SourcePosition::new(89, 3, 42)],
+            )],
         );
     }
 
@@ -288,12 +280,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("stringArg", "String"),
-                    &[SourcePosition::new(89, 3, 42)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("stringArg", "String"),
+                &[SourcePosition::new(89, 3, 42)],
+            )],
         );
     }
 
@@ -308,12 +298,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("intArg", "Int"),
-                    &[SourcePosition::new(83, 3, 36)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("intArg", "Int"),
+                &[SourcePosition::new(83, 3, 36)],
+            )],
         );
     }
 
@@ -328,12 +316,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("intArg", "Int"),
-                    &[SourcePosition::new(83, 3, 36)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("intArg", "Int"),
+                &[SourcePosition::new(83, 3, 36)],
+            )],
         );
     }
 
@@ -348,12 +334,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("intArg", "Int"),
-                    &[SourcePosition::new(83, 3, 36)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("intArg", "Int"),
+                &[SourcePosition::new(83, 3, 36)],
+            )],
         );
     }
 
@@ -368,12 +352,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("intArg", "Int"),
-                    &[SourcePosition::new(83, 3, 36)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("intArg", "Int"),
+                &[SourcePosition::new(83, 3, 36)],
+            )],
         );
     }
 
@@ -388,12 +370,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("floatArg", "Float"),
-                    &[SourcePosition::new(87, 3, 40)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("floatArg", "Float"),
+                &[SourcePosition::new(87, 3, 40)],
+            )],
         );
     }
 
@@ -408,12 +388,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("floatArg", "Float"),
-                    &[SourcePosition::new(87, 3, 40)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("floatArg", "Float"),
+                &[SourcePosition::new(87, 3, 40)],
+            )],
         );
     }
 
@@ -428,12 +406,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("floatArg", "Float"),
-                    &[SourcePosition::new(87, 3, 40)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("floatArg", "Float"),
+                &[SourcePosition::new(87, 3, 40)],
+            )],
         );
     }
 
@@ -448,12 +424,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("booleanArg", "Boolean"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("booleanArg", "Boolean"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 
@@ -468,12 +442,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("booleanArg", "Boolean"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("booleanArg", "Boolean"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 
@@ -488,12 +460,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("booleanArg", "Boolean"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("booleanArg", "Boolean"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 
@@ -508,12 +478,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("booleanArg", "Boolean"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("booleanArg", "Boolean"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 
@@ -528,12 +496,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("idArg", "ID"),
-                    &[SourcePosition::new(81, 3, 34)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("idArg", "ID"),
+                &[SourcePosition::new(81, 3, 34)],
+            )],
         );
     }
 
@@ -548,12 +514,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("idArg", "ID"),
-                    &[SourcePosition::new(81, 3, 34)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("idArg", "ID"),
+                &[SourcePosition::new(81, 3, 34)],
+            )],
         );
     }
 
@@ -568,12 +532,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("idArg", "ID"),
-                    &[SourcePosition::new(81, 3, 34)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("idArg", "ID"),
+                &[SourcePosition::new(81, 3, 34)],
+            )],
         );
     }
 
@@ -588,12 +550,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("dogCommand", "DogCommand"),
-                    &[SourcePosition::new(79, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("dogCommand", "DogCommand"),
+                &[SourcePosition::new(79, 3, 44)],
+            )],
         );
     }
 
@@ -608,12 +568,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("dogCommand", "DogCommand"),
-                    &[SourcePosition::new(79, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("dogCommand", "DogCommand"),
+                &[SourcePosition::new(79, 3, 44)],
+            )],
         );
     }
 
@@ -628,12 +586,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("dogCommand", "DogCommand"),
-                    &[SourcePosition::new(79, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("dogCommand", "DogCommand"),
+                &[SourcePosition::new(79, 3, 44)],
+            )],
         );
     }
 
@@ -648,12 +604,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("dogCommand", "DogCommand"),
-                    &[SourcePosition::new(79, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("dogCommand", "DogCommand"),
+                &[SourcePosition::new(79, 3, 44)],
+            )],
         );
     }
 
@@ -668,12 +622,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("dogCommand", "DogCommand"),
-                    &[SourcePosition::new(79, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("dogCommand", "DogCommand"),
+                &[SourcePosition::new(79, 3, 44)],
+            )],
         );
     }
 
@@ -688,12 +640,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("dogCommand", "DogCommand"),
-                    &[SourcePosition::new(79, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("dogCommand", "DogCommand"),
+                &[SourcePosition::new(79, 3, 44)],
+            )],
         );
     }
 
@@ -750,12 +700,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("stringListArg", "[String]"),
-                    &[SourcePosition::new(97, 3, 50)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("stringListArg", "[String]"),
+                &[SourcePosition::new(97, 3, 50)],
+            )],
         );
     }
 
@@ -770,12 +718,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("stringListArg", "[String]"),
-                    &[SourcePosition::new(97, 3, 50)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("stringListArg", "[String]"),
+                &[SourcePosition::new(97, 3, 50)],
+            )],
         );
     }
 
@@ -954,12 +900,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("req1", "Int!"),
-                    &[SourcePosition::new(82, 3, 35)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("req1", "Int!"),
+                &[SourcePosition::new(82, 3, 35)],
+            )],
         );
     }
 
@@ -1070,12 +1014,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("complexArg", "ComplexInput"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("complexArg", "ComplexInput"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 
@@ -1093,12 +1035,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("complexArg", "ComplexInput"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("complexArg", "ComplexInput"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 
@@ -1116,12 +1056,10 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("complexArg", "ComplexInput"),
-                    &[SourcePosition::new(91, 3, 44)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("complexArg", "ComplexInput"),
+                &[SourcePosition::new(91, 3, 44)],
+            )],
         );
     }
 

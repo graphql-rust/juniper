@@ -2,9 +2,9 @@ use indexmap::IndexMap;
 
 use ast::{FromInputValue, InputValue};
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 struct Root;
 
@@ -53,8 +53,11 @@ pub struct PublicWithDescription {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(name = "APublicNamedInputObjectWithDescription",
-          description = "Description for the input object", _internal)]
+#[graphql(
+    name = "APublicNamedInputObjectWithDescription",
+    description = "Description for the input object",
+    _internal
+)]
 pub struct NamedPublicWithDescription {
     field_one: String,
 }
@@ -68,15 +71,19 @@ pub struct NamedPublic {
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct FieldDescription {
-    #[graphql(description = "The first field")] field_one: String,
-    #[graphql(description = "The second field")] field_two: String,
+    #[graphql(description = "The first field")]
+    field_one: String,
+    #[graphql(description = "The second field")]
+    field_two: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(_internal)]
 struct FieldWithDefaults {
-    #[graphql(default = "123")] field_one: i32,
-    #[graphql(default = "456", description = "The second field")] field_two: i32,
+    #[graphql(default = "123")]
+    field_one: i32,
+    #[graphql(default = "456", description = "The second field")]
+    field_two: i32,
 }
 
 graphql_object!(Root: () |&self| {
@@ -162,22 +169,20 @@ fn default_name_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -189,22 +194,20 @@ fn default_name_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -268,22 +271,20 @@ fn no_trailing_comma_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -295,22 +296,20 @@ fn no_trailing_comma_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -351,22 +350,20 @@ fn derive_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -423,22 +420,20 @@ fn named_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -482,22 +477,20 @@ fn description_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -541,22 +534,20 @@ fn field_description_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -568,22 +559,20 @@ fn field_description_introspection() {
                     (
                         "type",
                         Value::object(
-                            vec![
-                                (
-                                    "ofType",
-                                    Value::object(
-                                        vec![("name", Value::string("String"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
+                            vec![(
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::string("String"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
+                            )].into_iter()
                                 .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -624,7 +613,7 @@ fn field_with_defaults_introspection() {
                     ),
                     ("defaultValue", Value::string("123")),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -638,7 +627,7 @@ fn field_with_defaults_introspection() {
                     ),
                     ("defaultValue", Value::string("456")),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });

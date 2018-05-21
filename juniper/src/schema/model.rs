@@ -2,22 +2,27 @@ use std::fmt;
 
 use fnv::FnvHashMap;
 
+use ast::Type;
+use executor::{Context, Registry};
+use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 use types::base::GraphQLType;
 use types::name::Name;
-use executor::{Context, Registry};
-use ast::Type;
-use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 
 /// Root query node of a schema
 ///
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
 pub struct RootNode<'a, QueryT: GraphQLType, MutationT: GraphQLType> {
-    #[doc(hidden)] pub query_type: QueryT,
-    #[doc(hidden)] pub query_info: QueryT::TypeInfo,
-    #[doc(hidden)] pub mutation_type: MutationT,
-    #[doc(hidden)] pub mutation_info: MutationT::TypeInfo,
-    #[doc(hidden)] pub schema: SchemaType<'a>,
+    #[doc(hidden)]
+    pub query_type: QueryT,
+    #[doc(hidden)]
+    pub query_info: QueryT::TypeInfo,
+    #[doc(hidden)]
+    pub mutation_type: MutationT,
+    #[doc(hidden)]
+    pub mutation_info: MutationT::TypeInfo,
+    #[doc(hidden)]
+    pub schema: SchemaType<'a>,
 }
 
 /// Metadata for a schema
@@ -50,9 +55,12 @@ pub enum DirectiveLocation {
     Query,
     Mutation,
     Field,
-    #[graphql(name = "FRAGMENT_DEFINITION")] FragmentDefinition,
-    #[graphql(name = "FRAGMENT_SPREAD")] FragmentSpread,
-    #[graphql(name = "INLINE_SPREAD")] InlineFragment,
+    #[graphql(name = "FRAGMENT_DEFINITION")]
+    FragmentDefinition,
+    #[graphql(name = "FRAGMENT_SPREAD")]
+    FragmentSpread,
+    #[graphql(name = "INLINE_SPREAD")]
+    InlineFragment,
 }
 
 impl<'a, QueryT, MutationT> RootNode<'a, QueryT, MutationT>

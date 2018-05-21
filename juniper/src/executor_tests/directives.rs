@@ -1,9 +1,9 @@
 use indexmap::IndexMap;
 
-use value::Value;
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 struct TestType;
 

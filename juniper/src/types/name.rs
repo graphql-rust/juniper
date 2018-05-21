@@ -30,7 +30,7 @@ impl Name {
                 }
             }
         }
-        return input.len() > 0;
+        return !input.is_empty();
     }
 }
 

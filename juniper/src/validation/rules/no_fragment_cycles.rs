@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use ast::{Document, Fragment, FragmentSpread};
-use validation::{RuleError, ValidatorContext, Visitor};
 use parser::Spanning;
+use validation::{RuleError, ValidatorContext, Visitor};
 
 pub struct NoFragmentCycles<'a> {
     current_fragment: Option<&'a str>,
@@ -203,9 +203,10 @@ mod tests {
             r#"
           fragment fragA on Human { relatives { ...fragA } },
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[SourcePosition::new(49, 1, 48)]),
-            ],
+            &[RuleError::new(
+                &error_message("fragA"),
+                &[SourcePosition::new(49, 1, 48)],
+            )],
         );
     }
 
@@ -216,9 +217,10 @@ mod tests {
             r#"
           fragment fragA on Dog { ...fragA }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[SourcePosition::new(35, 1, 34)]),
-            ],
+            &[RuleError::new(
+                &error_message("fragA"),
+                &[SourcePosition::new(35, 1, 34)],
+            )],
         );
     }
 
@@ -233,9 +235,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[SourcePosition::new(74, 3, 14)]),
-            ],
+            &[RuleError::new(
+                &error_message("fragA"),
+                &[SourcePosition::new(74, 3, 14)],
+            )],
         );
     }
 
@@ -247,9 +250,10 @@ mod tests {
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { ...fragA }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[SourcePosition::new(35, 1, 34)]),
-            ],
+            &[RuleError::new(
+                &error_message("fragA"),
+                &[SourcePosition::new(35, 1, 34)],
+            )],
         );
     }
 
@@ -261,9 +265,10 @@ mod tests {
           fragment fragB on Dog { ...fragA }
           fragment fragA on Dog { ...fragB }
         "#,
-            &[
-                RuleError::new(&error_message("fragB"), &[SourcePosition::new(35, 1, 34)]),
-            ],
+            &[RuleError::new(
+                &error_message("fragB"),
+                &[SourcePosition::new(35, 1, 34)],
+            )],
         );
     }
 
@@ -283,9 +288,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(&error_message("fragA"), &[SourcePosition::new(74, 3, 14)]),
-            ],
+            &[RuleError::new(
+                &error_message("fragA"),
+                &[SourcePosition::new(74, 3, 14)],
+            )],
         );
     }
 

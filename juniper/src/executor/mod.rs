@@ -1,16 +1,16 @@
-use std::cmp::Ordering;
-use std::fmt::Display;
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::sync::RwLock;
 
 use fnv::FnvHashMap;
 
-use GraphQLError;
 use ast::{Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
           ToInputValue, Type};
-use value::Value;
+use GraphQLError;
 use parser::SourcePosition;
+use value::Value;
 
 use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, ListMeta,
                    MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta};
@@ -18,6 +18,10 @@ use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
 use types::name::Name;
+
+mod look_ahead;
+
+pub use self::look_ahead::{Applies, LookAheadArgument, LookAheadSelection, LookAheadValue, LookAheadMethods, ChildSelection, ConcreteLookAheadSelection};
 
 /// A type registry used to build schemas
 ///
@@ -46,6 +50,7 @@ where
     fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
     variables: &'a Variables,
     current_selection_set: Option<&'a [Selection<'a>]>,
+    parent_selection_set: Option<&'a [Selection<'a>]>,
     current_type: TypeType<'a>,
     schema: &'a SchemaType<'a>,
     context: &'a CtxT,
@@ -220,7 +225,8 @@ impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<(&'a T::Con
 }
 
 impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C>
-    for FieldResult<Option<(&'a T::Context, T)>> {
+    for FieldResult<Option<(&'a T::Context, T)>>
+{
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -229,20 +235,20 @@ impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C>
 /// Conversion trait for context types
 ///
 /// Used to support different context types for different parts of an
-/// application. By making each GraphQL type only aware of as much
+/// application. By making each `GraphQL` type only aware of as much
 /// context as it needs to, isolation and robustness can be
 /// improved. Implement this trait if you have contexts that can
 /// generally be converted between each other.
 ///
 /// The empty tuple `()` can be converted into from any context type,
-/// making it suitable for GraphQL that don't need _any_ context to
+/// making it suitable for `GraphQL` that don't need _any_ context to
 /// work, e.g. scalars or enums.
 pub trait FromContext<T> {
     /// Perform the conversion
     fn from(value: &T) -> &Self;
 }
 
-/// Marker trait for types that can act as context objects for GraphQL types.
+/// Marker trait for types that can act as context objects for `GraphQL` types.
 pub trait Context {}
 
 impl<'a, C: Context> Context for &'a C {}
@@ -313,6 +319,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             fragments: self.fragments,
             variables: self.variables,
             current_selection_set: self.current_selection_set,
+            parent_selection_set: self.parent_selection_set,
             current_type: self.current_type.clone(),
             schema: self.schema,
             context: ctx,
@@ -333,6 +340,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             fragments: self.fragments,
             variables: self.variables,
             current_selection_set: selection_set,
+            parent_selection_set: self.current_selection_set,
             current_type: self.schema.make_type(
                 &self.current_type
                     .innermost_concrete()
@@ -357,6 +365,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             fragments: self.fragments,
             variables: self.variables,
             current_selection_set: selection_set,
+            parent_selection_set: self.current_selection_set,
             current_type: match type_name {
                 Some(type_name) => self.schema.type_by_name(type_name).expect("Type not found"),
                 None => self.current_type.clone(),
@@ -419,6 +428,26 @@ impl<'a, CtxT> Executor<'a, CtxT> {
             path: path,
             error: error,
         });
+    }
+
+    /// Construct a lookahead selection for the current selection
+    ///
+    /// This allows to see the whole selection and preform operations
+    /// affecting the childs
+    pub fn look_ahead(&'a self) -> LookAheadSelection<'a> {
+        self.parent_selection_set.map(|p| {
+            LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
+        }).unwrap_or_else(||{
+            LookAheadSelection{
+                name: self.current_type.innermost_concrete().name().unwrap_or(""),
+                alias: None,
+                arguments: Vec::new(),
+                children: self.current_selection_set.map(|s| s.iter().map(|s| ChildSelection {
+                    inner: LookAheadSelection::build_from_selection(s, self.variables, self.fragments),
+                    applies_for: Applies::All
+                }).collect()).unwrap_or_else(Vec::new)
+            }
+        })
     }
 }
 
@@ -547,6 +576,7 @@ where
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
+            parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
             context: context,

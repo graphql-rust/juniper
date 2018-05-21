@@ -1,7 +1,7 @@
 use ast::Field;
+use parser::Spanning;
 use schema::meta::MetaType;
 use validation::{ValidatorContext, Visitor};
-use parser::Spanning;
 
 pub struct FieldsOnCorrectType {}
 
@@ -160,12 +160,10 @@ mod tests {
             meowVolume
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("meowVolume", "Dog"),
-                    &[SourcePosition::new(57, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("meowVolume", "Dog"),
+                &[SourcePosition::new(57, 2, 12)],
+            )],
         );
     }
 
@@ -180,12 +178,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("unknown_field", "Dog"),
-                    &[SourcePosition::new(61, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("unknown_field", "Dog"),
+                &[SourcePosition::new(61, 2, 12)],
+            )],
         );
     }
 
@@ -200,12 +196,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("unknown_field", "Pet"),
-                    &[SourcePosition::new(83, 3, 14)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("unknown_field", "Pet"),
+                &[SourcePosition::new(83, 3, 14)],
+            )],
         );
     }
 
@@ -220,12 +214,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("meowVolume", "Dog"),
-                    &[SourcePosition::new(84, 3, 14)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("meowVolume", "Dog"),
+                &[SourcePosition::new(84, 3, 14)],
+            )],
         );
     }
 
@@ -238,12 +230,10 @@ mod tests {
             volume : mooVolume
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("mooVolume", "Dog"),
-                    &[SourcePosition::new(79, 2, 21)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("mooVolume", "Dog"),
+                &[SourcePosition::new(79, 2, 21)],
+            )],
         );
     }
 
@@ -256,12 +246,10 @@ mod tests {
             barkVolume : kawVolume
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("kawVolume", "Dog"),
-                    &[SourcePosition::new(88, 2, 25)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("kawVolume", "Dog"),
+                &[SourcePosition::new(88, 2, 25)],
+            )],
         );
     }
 
@@ -274,12 +262,10 @@ mod tests {
             tailLength
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("tailLength", "Pet"),
-                    &[SourcePosition::new(63, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("tailLength", "Pet"),
+                &[SourcePosition::new(63, 2, 12)],
+            )],
         );
     }
 
@@ -292,12 +278,10 @@ mod tests {
             nickname
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("nickname", "Pet"),
-                    &[SourcePosition::new(78, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("nickname", "Pet"),
+                &[SourcePosition::new(78, 2, 12)],
+            )],
         );
     }
 
@@ -322,12 +306,10 @@ mod tests {
             name
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("name", "CatOrDog"),
-                    &[SourcePosition::new(82, 2, 12)],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("name", "CatOrDog"),
+                &[SourcePosition::new(82, 2, 12)],
+            )],
         );
     }
 

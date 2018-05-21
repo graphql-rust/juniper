@@ -5,9 +5,9 @@ pub mod graphiql;
 use serde::ser;
 use serde::ser::SerializeMap;
 
-use {GraphQLError, GraphQLType, RootNode, Value, Variables};
 use ast::InputValue;
 use executor::ExecutionError;
+use {GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -19,7 +19,8 @@ use executor::ExecutionError;
 #[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
 pub struct GraphQLRequest {
     query: String,
-    #[serde(rename = "operationName")] operation_name: Option<String>,
+    #[serde(rename = "operationName")]
+    operation_name: Option<String>,
     variables: Option<InputValue>,
 }
 
@@ -101,22 +102,22 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
     {
         match self.0 {
             Ok((ref res, ref err)) => {
-                let mut map = try!(serializer.serialize_map(None));
+                let mut map = serializer.serialize_map(None)?;
 
-                try!(map.serialize_key("data"));
-                try!(map.serialize_value(res));
+                map.serialize_key("data")?;
+                map.serialize_value(res)?;
 
                 if !err.is_empty() {
-                    try!(map.serialize_key("errors"));
-                    try!(map.serialize_value(err));
+                    map.serialize_key("errors")?;
+                    map.serialize_value(err)?;
                 }
 
                 map.end()
             }
             Err(ref err) => {
-                let mut map = try!(serializer.serialize_map(Some(1)));
-                try!(map.serialize_key("errors"));
-                try!(map.serialize_value(err));
+                let mut map = serializer.serialize_map(Some(1))?;
+                map.serialize_key("errors")?;
+                map.serialize_value(err)?;
                 map.end()
             }
         }
@@ -126,8 +127,8 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {
-    use serde_json::Value as Json;
     use serde_json;
+    use serde_json::Value as Json;
 
     /// Normalized response content we expect to get back from
     /// the http framework integration we are testing.

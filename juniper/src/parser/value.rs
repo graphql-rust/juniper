@@ -63,33 +63,37 @@ pub fn parse_value_literal<'a>(
 }
 
 fn parse_list_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> ParseResult<'a, InputValue> {
-    Ok(try!(parser.delimited_list(
-        &Token::BracketOpen,
-        |p| parse_value_literal(p, is_const),
-        &Token::BracketClose
-    )).map(InputValue::parsed_list))
+    Ok(parser
+        .delimited_list(
+            &Token::BracketOpen,
+            |p| parse_value_literal(p, is_const),
+            &Token::BracketClose,
+        )?
+        .map(InputValue::parsed_list))
 }
 
 fn parse_object_literal<'a>(
     parser: &mut Parser<'a>,
     is_const: bool,
 ) -> ParseResult<'a, InputValue> {
-    Ok(try!(parser.delimited_list(
-        &Token::CurlyOpen,
-        |p| parse_object_field(p, is_const),
-        &Token::CurlyClose
-    )).map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
+    Ok(parser
+        .delimited_list(
+            &Token::CurlyOpen,
+            |p| parse_object_field(p, is_const),
+            &Token::CurlyClose,
+        )?
+        .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
 fn parse_object_field<'a>(
     parser: &mut Parser<'a>,
     is_const: bool,
 ) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue>)> {
-    let key = try!(parser.expect_name());
+    let key = parser.expect_name()?;
 
-    try!(parser.expect(&Token::Colon));
+    parser.expect(&Token::Colon)?;
 
-    let value = try!(parse_value_literal(parser, is_const));
+    let value = parse_value_literal(parser, is_const)?;
 
     Ok(Spanning::start_end(
         &key.start.clone(),
@@ -101,12 +105,12 @@ fn parse_object_field<'a>(
 fn parse_variable_literal<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue> {
     let Spanning {
         start: start_pos, ..
-    } = try!(parser.expect(&Token::Dollar));
+    } = parser.expect(&Token::Dollar)?;
     let Spanning {
         item: name,
         end: end_pos,
         ..
-    } = try!(parser.expect_name());
+    } = parser.expect_name()?;
 
     Ok(Spanning::start_end(
         &start_pos,

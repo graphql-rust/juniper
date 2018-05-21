@@ -1,6 +1,6 @@
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
-use value::Value;
 use schema::meta::MetaType;
+use value::Value;
 
 use executor::{Executor, Registry};
 use types::base::GraphQLType;

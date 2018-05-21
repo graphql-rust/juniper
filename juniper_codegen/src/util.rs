@@ -1,11 +1,17 @@
-use syn::*;
+use syn::{
+    Attribute,
+    Meta,
+    NestedMeta,
+    Lit,
+};
 use regex::Regex;
 
-pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<&Vec<NestedMetaItem>> {
+// Get the nested items of a a #[graphql(...)] attribute.
+pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
     for attr in attrs {
-        match attr.value {
-            MetaItem::List(ref attr_name, ref items) => if attr_name == "graphql" {
-                return Some(items);
+        match attr.interpret_meta() {
+            Some(Meta::List(ref list)) if list.ident == "graphql" => {
+                return Some(list.nested.iter().map(|x| x.clone()).collect());
             },
             _ => {}
         }
@@ -13,33 +19,24 @@ pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<&Vec<NestedMetaItem>> {
     None
 }
 
-pub fn keyed_item_value(item: &NestedMetaItem, name: &str, must_be_string: bool) -> Option<String> {
-    let item = match item {
-        &NestedMetaItem::MetaItem(ref item) => item,
-        _ => {
-            return None;
-        }
-    };
-    let lit = match item {
-        &MetaItem::NameValue(ref ident, ref lit) => if ident == name {
-            lit
-        } else {
-            return None;
+pub fn keyed_item_value(item: &NestedMeta, name: &str, must_be_string: bool) -> Option<String> {
+    match item {
+        &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.ident == name => {
+            match &nameval.lit {
+                &Lit::Str(ref strlit) => {
+                    Some(strlit.value())
+                },
+                _ => if must_be_string {
+                    panic!(format!(
+                        "Invalid format for attribute \"{:?}\": expected a string",
+                        item
+                    ));
+                } else {
+                    None
+                },
+            }
         },
-        _ => {
-            return None;
-        }
-    };
-    match lit {
-        &Lit::Str(ref val, _) => Some(val.clone()),
-        _ => if must_be_string {
-            panic!(format!(
-                "Invalid format for attribute \"{:?}\": expected a string",
-                item
-            ));
-        } else {
-            None
-        },
+        _ => None,
     }
 }
 
