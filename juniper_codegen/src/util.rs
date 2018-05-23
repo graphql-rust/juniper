@@ -116,9 +116,9 @@ fn test_to_upper_snake_case() {
 #[doc(hidden)]
 pub fn is_valid_name(field_name: &str) -> bool {
     lazy_static!{
-        static ref CAMELCASE: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
+        static ref GRAPHQL_NAME_SPEC: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
     }
-    CAMELCASE.is_match(field_name)
+    GRAPHQL_NAME_SPEC.is_match(field_name)
 }
 
 #[test]
