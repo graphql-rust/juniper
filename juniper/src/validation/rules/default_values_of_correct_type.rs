@@ -1,6 +1,6 @@
 use ast::VariableDefinition;
-use types::utilities::is_valid_literal_value;
 use parser::Spanning;
+use types::utilities::is_valid_literal_value;
 use validation::{ValidatorContext, Visitor};
 
 pub struct DefaultValuesOfCorrectType {}
@@ -162,12 +162,10 @@ mod tests {
             dog { name }
           }
         "#,
-            &[
-                RuleError::new(
-                    &type_error_message("a", "ComplexInput"),
-                    &[SourcePosition::new(57, 1, 56)],
-                ),
-            ],
+            &[RuleError::new(
+                &type_error_message("a", "ComplexInput"),
+                &[SourcePosition::new(57, 1, 56)],
+            )],
         );
     }
 
@@ -180,12 +178,10 @@ mod tests {
             dog { name }
           }
         "#,
-            &[
-                RuleError::new(
-                    &type_error_message("a", "[String]"),
-                    &[SourcePosition::new(44, 1, 43)],
-                ),
-            ],
+            &[RuleError::new(
+                &type_error_message("a", "[String]"),
+                &[SourcePosition::new(44, 1, 43)],
+            )],
         );
     }
 

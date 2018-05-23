@@ -169,9 +169,9 @@ mod integration_test {
     use chrono::Utc;
 
     use executor::Variables;
-    use value::Value;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
+    use value::Value;
 
     #[test]
     fn test_serialization() {

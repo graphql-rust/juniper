@@ -143,15 +143,13 @@ mod tests {
             fieldB
           }
         "#,
-            &[
-                RuleError::new(
-                    &duplicate_message("fragA"),
-                    &[
-                        SourcePosition::new(65, 4, 19),
-                        SourcePosition::new(131, 7, 19),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &duplicate_message("fragA"),
+                &[
+                    SourcePosition::new(65, 4, 19),
+                    SourcePosition::new(131, 7, 19),
+                ],
+            )],
         );
     }
 
@@ -167,15 +165,13 @@ mod tests {
             fieldB
           }
         "#,
-            &[
-                RuleError::new(
-                    &duplicate_message("fragA"),
-                    &[
-                        SourcePosition::new(20, 1, 19),
-                        SourcePosition::new(86, 4, 19),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &duplicate_message("fragA"),
+                &[
+                    SourcePosition::new(20, 1, 19),
+                    SourcePosition::new(86, 4, 19),
+                ],
+            )],
         );
     }
 }

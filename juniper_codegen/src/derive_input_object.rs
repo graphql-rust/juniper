@@ -1,6 +1,16 @@
-use syn;
-use syn::*;
-use quote::Tokens;
+use std::str::FromStr;
+
+use syn::{
+    self,
+    DeriveInput,
+    NestedMeta,
+    Meta,
+    Field,
+    Fields,
+    Data,
+    Ident,
+};
+use quote::{Tokens, ToTokens};
 
 use util::*;
 
@@ -18,16 +28,21 @@ impl ObjAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(item, "name", true) {
-                    res.name = Some(val);
-                    continue;
+                if let Some(val) = keyed_item_value(&item, "name", true) {
+                    if is_valid_name(&*val) {
+                        res.name = Some(val);
+                        continue;
+                    } else {
+                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                                 &*val);
+                    }
                 }
-                if let Some(val) = keyed_item_value(item, "description", true) {
+                if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
                     continue;
                 }
                 match item {
-                    &NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) => {
+                    NestedMeta::Meta(Meta::Word(ref ident)) => {
                         if ident == "_internal" {
                             res.internal = true;
                             continue;
@@ -60,20 +75,25 @@ impl ObjFieldAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&variant.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(item, "name", true) {
-                    res.name = Some(val);
-                    continue;
+                if let Some(val) = keyed_item_value(&item, "name", true) {
+                    if is_valid_name(&*val) {
+                        res.name = Some(val);
+                        continue;
+                    } else {
+                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                                 &*val);
+                    }
                 }
-                if let Some(val) = keyed_item_value(item, "description", true) {
+                if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(item, "default", true) {
+                if let Some(val) = keyed_item_value(&item, "default", true) {
                     res.default_expr = Some(val);
                     continue;
                 }
                 match item {
-                    &NestedMetaItem::MetaItem(MetaItem::Word(ref ident)) => {
+                    NestedMeta::Meta(Meta::Word(ref ident)) => {
                         if ident == "default" {
                             res.default = true;
                             continue;
@@ -92,16 +112,16 @@ impl ObjFieldAttrs {
 }
 
 pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
-    let fields = match ast.body {
-        Body::Struct(ref data) => match data {
-            &VariantData::Struct(ref fields) => fields,
+    let fields = match ast.data {
+        Data::Struct(ref data) => match data.fields {
+            Fields::Named(ref named) => named.named.iter().collect::<Vec<_>>(),
             _ => {
                 panic!(
                     "#[derive(GraphQLInputObject)] may only be used on regular structs with fields"
                 );
             }
         },
-        Body::Enum(_) => {
+        _ => {
             panic!("#[derive(GraphlQLInputObject)] may only be applied to structs, not to enums");
         }
     };
@@ -146,8 +166,17 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 Some(quote! { Default::default() })
             } else {
                 match field_attrs.default_expr {
-                    Some(ref def) => match syn::parse_token_trees(def) {
-                        Ok(t) => Some(quote! { #(#t)* }),
+                    Some(ref def) => match ::proc_macro::TokenStream::from_str(def) {
+                        Ok(t) => {
+                            match syn::parse::<syn::Expr>(t) {
+                                Ok(e) => {
+                                    Some(e.into_tokens())
+                                },
+                                Err(_) => {
+                                    panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
+                                },
+                            }
+                        },
                         Err(_) => {
                             panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
                         }
@@ -256,7 +285,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         }
     };
 
-    let dummy_const = Ident::new(format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident));
+    let dummy_const = Ident::from(format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident).as_str());
 
     // This ugly hack makes it possible to use the derive inside juniper itself.
     // FIXME: Figure out a better way to do this!

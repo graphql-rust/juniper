@@ -142,15 +142,13 @@ mod tests {
             fieldB
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("Foo"),
-                    &[
-                        SourcePosition::new(11, 1, 10),
-                        SourcePosition::new(64, 4, 10),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("Foo"),
+                &[
+                    SourcePosition::new(11, 1, 10),
+                    SourcePosition::new(64, 4, 10),
+                ],
+            )],
         );
     }
 
@@ -166,15 +164,13 @@ mod tests {
             fieldB
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("Foo"),
-                    &[
-                        SourcePosition::new(11, 1, 10),
-                        SourcePosition::new(64, 4, 10),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("Foo"),
+                &[
+                    SourcePosition::new(11, 1, 10),
+                    SourcePosition::new(64, 4, 10),
+                ],
+            )],
         );
     }
 }

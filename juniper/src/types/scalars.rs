@@ -113,7 +113,7 @@ graphql_scalar!(f64 as "Float" {
 
     from_input_value(v: &InputValue) -> Option<f64> {
         match *v {
-            InputValue::Int(i) => Some(i as f64),
+            InputValue::Int(i) => Some(f64::from(i)),
             InputValue::Float(f) => Some(f),
             _ => None,
         }

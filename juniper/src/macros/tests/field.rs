@@ -1,10 +1,10 @@
 use indexmap::IndexMap;
 
-use value::Value;
 use ast::InputValue;
-use schema::model::RootNode;
 use executor::FieldResult;
+use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 struct Interface;
 struct Root;

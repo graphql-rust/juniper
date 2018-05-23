@@ -1,5 +1,5 @@
-use tests::model::{Character, Database, Droid, Episode, Human};
 use executor::Context;
+use tests::model::{Character, Database, Droid, Episode, Human};
 
 impl Context for Database {}
 

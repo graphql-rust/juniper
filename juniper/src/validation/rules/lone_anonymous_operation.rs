@@ -1,6 +1,6 @@
 use ast::{Definition, Document, Operation};
-use validation::{ValidatorContext, Visitor};
 use parser::Spanning;
+use validation::{ValidatorContext, Visitor};
 
 pub struct LoneAnonymousOperation {
     operation_count: Option<usize>,
@@ -134,9 +134,10 @@ mod tests {
             fieldB
           }
         "#,
-            &[
-                RuleError::new(error_message(), &[SourcePosition::new(11, 1, 10)]),
-            ],
+            &[RuleError::new(
+                error_message(),
+                &[SourcePosition::new(11, 1, 10)],
+            )],
         );
     }
 }

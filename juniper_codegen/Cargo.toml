@@ -14,8 +14,10 @@ repository = "https://github.com/graphql-rust/juniper"
 proc-macro = true
 
 [dependencies]
-syn = "0.11"
-quote = "0.3"
+syn = { version = "0.13.*", features = ["full", "extra-traits"] }
+quote = "0.5.*"
+regex = "0.2.10"
+lazy_static = "1.0.0"
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper" }

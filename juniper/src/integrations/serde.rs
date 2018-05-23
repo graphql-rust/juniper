@@ -1,35 +1,35 @@
 use indexmap::IndexMap;
-use serde::{de, ser};
 use serde::ser::SerializeMap;
+use serde::{de, ser};
 
 use std::fmt;
 
-use {GraphQLError, Value};
 use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
+use {GraphQLError, Value};
 
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(4)));
+        let mut map = serializer.serialize_map(Some(4))?;
 
-        try!(map.serialize_key("message"));
-        try!(map.serialize_value(self.error().message()));
+        map.serialize_key("message")?;
+        map.serialize_value(self.error().message())?;
 
         let locations = vec![self.location()];
-        try!(map.serialize_key("locations"));
-        try!(map.serialize_value(&locations));
+        map.serialize_key("locations")?;
+        map.serialize_value(&locations)?;
 
-        try!(map.serialize_key("path"));
-        try!(map.serialize_value(self.path()));
+        map.serialize_key("path")?;
+        map.serialize_value(self.path())?;
 
         if !self.error().data().is_null() {
-            try!(map.serialize_key("data"));
-            try!(map.serialize_value(self.error().data()));
+            map.serialize_key("data")?;
+            map.serialize_value(self.error().data())?;
         }
 
         map.end()
@@ -76,10 +76,15 @@ impl<'de> de::Deserialize<'de> for InputValue {
             where
                 E: de::Error,
             {
-                if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
+                if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
                     Ok(InputValue::int(value as i32))
                 } else {
-                    Err(E::custom(format!("integer out of range")))
+                    // Browser's JSON.stringify serialize all numbers having no
+                    // fractional part as integers (no decimal point), so we
+                    // must parse large integers as floating point otherwise
+                    // we would error on transferring large floating point
+                    // numbers.
+                    Ok(InputValue::float(value as f64))
                 }
             }
 
@@ -90,7 +95,12 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 if value <= i32::max_value() as u64 {
                     self.visit_i64(value as i64)
                 } else {
-                    Err(E::custom(format!("integer out of range")))
+                    // Browser's JSON.stringify serialize all numbers having no
+                    // fractional part as integers (no decimal point), so we
+                    // must parse large integers as floating point otherwise
+                    // we would error on transferring large floating point
+                    // numbers.
+                    Ok(InputValue::float(value as f64))
                 }
             }
 
@@ -123,7 +133,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             {
                 let mut values = Vec::new();
 
-                while let Some(el) = try!(visitor.next_element()) {
+                while let Some(el) = visitor.next_element()? {
                     values.push(el);
                 }
 
@@ -136,7 +146,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
             {
                 let mut values: IndexMap<String, InputValue> = IndexMap::new();
 
-                while let Some((key, value)) = try!(visitor.next_entry()) {
+                while let Some((key, value)) = visitor.next_entry()? {
                     values.insert(key, value);
                 }
 
@@ -155,7 +165,7 @@ impl ser::Serialize for InputValue {
     {
         match *self {
             InputValue::Null | InputValue::Variable(_) => serializer.serialize_unit(),
-            InputValue::Int(v) => serializer.serialize_i64(v as i64),
+            InputValue::Int(v) => serializer.serialize_i64(i64::from(v)),
             InputValue::Float(v) => serializer.serialize_f64(v),
             InputValue::String(ref v) | InputValue::Enum(ref v) => serializer.serialize_str(v),
             InputValue::Boolean(v) => serializer.serialize_bool(v),
@@ -176,13 +186,13 @@ impl ser::Serialize for RuleError {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(2)));
+        let mut map = serializer.serialize_map(Some(2))?;
 
-        try!(map.serialize_key("message"));
-        try!(map.serialize_value(self.message()));
+        map.serialize_key("message")?;
+        map.serialize_value(self.message())?;
 
-        try!(map.serialize_key("locations"));
-        try!(map.serialize_value(self.locations()));
+        map.serialize_key("locations")?;
+        map.serialize_value(self.locations())?;
 
         map.end()
     }
@@ -193,15 +203,15 @@ impl ser::Serialize for SourcePosition {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(2)));
+        let mut map = serializer.serialize_map(Some(2))?;
 
         let line = self.line() + 1;
-        try!(map.serialize_key("line"));
-        try!(map.serialize_value(&line));
+        map.serialize_key("line")?;
+        map.serialize_value(&line)?;
 
         let column = self.column() + 1;
-        try!(map.serialize_key("column"));
-        try!(map.serialize_value(&column));
+        map.serialize_key("column")?;
+        map.serialize_value(&column)?;
 
         map.end()
     }
@@ -212,11 +222,11 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
     where
         S: ser::Serializer,
     {
-        let mut map = try!(serializer.serialize_map(Some(2)));
+        let mut map = serializer.serialize_map(Some(2))?;
 
         let message = format!("{}", self.item);
-        try!(map.serialize_key("message"));
-        try!(map.serialize_value(&message));
+        map.serialize_key("message")?;
+        map.serialize_value(&message)?;
 
         let mut location = IndexMap::new();
         location.insert("line".to_owned(), self.start.line() + 1);
@@ -224,8 +234,8 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
 
         let locations = vec![location];
 
-        try!(map.serialize_key("locations"));
-        try!(map.serialize_value(&locations));
+        map.serialize_key("locations")?;
+        map.serialize_value(&locations)?;
 
         map.end()
     }
@@ -238,12 +248,33 @@ impl ser::Serialize for Value {
     {
         match *self {
             Value::Null => serializer.serialize_unit(),
-            Value::Int(v) => serializer.serialize_i64(v as i64),
+            Value::Int(v) => serializer.serialize_i64(i64::from(v)),
             Value::Float(v) => serializer.serialize_f64(v),
             Value::String(ref v) => serializer.serialize_str(v),
             Value::Boolean(v) => serializer.serialize_bool(v),
             Value::List(ref v) => v.serialize(serializer),
             Value::Object(ref v) => v.serialize(serializer),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::from_str;
+    use ast::InputValue;
+
+    #[test]
+    fn int() {
+        assert_eq!(from_str::<InputValue>("1235").unwrap(),
+                   InputValue::int(1235));
+    }
+
+    #[test]
+    fn float() {
+        assert_eq!(from_str::<InputValue>("2.0").unwrap(),
+                   InputValue::float(2.0));
+        // large value without a decimal part is also float
+        assert_eq!(from_str::<InputValue>("123567890123").unwrap(),
+                   InputValue::float(123567890123.0));
     }
 }

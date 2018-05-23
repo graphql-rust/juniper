@@ -1,8 +1,8 @@
 use std::collections::hash_map::{Entry, HashMap};
 
 use ast::InputValue;
-use validation::{ValidatorContext, Visitor};
 use parser::{SourcePosition, Spanning};
+use validation::{ValidatorContext, Visitor};
 
 pub struct UniqueInputFieldNames<'a> {
     known_name_stack: Vec<HashMap<&'a str, SourcePosition>>,
@@ -128,15 +128,13 @@ mod tests {
             field(arg: { f1: "value", f1: "value" })
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("f1"),
-                    &[
-                        SourcePosition::new(38, 2, 25),
-                        SourcePosition::new(51, 2, 38),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("f1"),
+                &[
+                    SourcePosition::new(38, 2, 25),
+                    SourcePosition::new(51, 2, 38),
+                ],
+            )],
         );
     }
 

@@ -1,10 +1,10 @@
 //! Library tests and fixtures
 
-pub mod model;
-mod schema;
-#[cfg(test)]
-mod query_tests;
 #[cfg(test)]
 mod introspection_tests;
+pub mod model;
+#[cfg(test)]
+mod query_tests;
+mod schema;
 #[cfg(test)]
 mod type_info_tests;
