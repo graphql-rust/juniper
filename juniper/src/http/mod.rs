@@ -9,28 +9,6 @@ use ast::InputValue;
 use executor::ExecutionError;
 use {GraphQLError, GraphQLType, RootNode, Value, Variables};
 
-/// The result of executing a query
-pub trait ExecutionResponse: ser::Serialize {
-    /// Was the request successful or not?
-    fn is_ok(&self) -> bool;
-}
-
-/// A request that can be executed
-pub trait Executable {
-    /// The response that is produced by executing this request
-    type Response: ExecutionResponse;
-
-    /// Executes this request against the provided schema
-    fn execute<CtxT, QueryT, MutationT>(
-        self,
-        root_node: &RootNode<QueryT, MutationT>,
-        context: &CtxT,
-    ) -> Self::Response
-    where
-        QueryT: GraphQLType<Context = CtxT>,
-        MutationT: GraphQLType<Context = CtxT>;
-}
-
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
 /// For POST, you can use Serde to deserialize the incoming JSON data directly
@@ -76,20 +54,16 @@ impl GraphQLRequest {
             variables: variables,
         }
     }
-}
-
-impl<'a> Executable for &'a GraphQLRequest {
-    type Response = GraphQLResponse<'a>;
 
     /// Execute a GraphQL request using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    fn execute<CtxT, QueryT, MutationT>(
-        self,
+    pub fn execute<'a, CtxT, QueryT, MutationT>(
+        &'a self,
         root_node: &RootNode<QueryT, MutationT>,
         context: &CtxT,
-    ) -> Self::Response
+    ) -> GraphQLResponse<'a>
     where
         QueryT: GraphQLType<Context = CtxT>,
         MutationT: GraphQLType<Context = CtxT>,
@@ -104,45 +78,6 @@ impl<'a> Executable for &'a GraphQLRequest {
     }
 }
 
-/// Wraps the GraphQLRequest allowing for an array of requests to be handled in one request.
-#[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
-#[serde(untagged)]
-pub enum GraphQLBatchRequest {
-    /// A single GraphQLRequest
-    Single(GraphQLRequest),
-    /// Multiple GraphQLRequests to be handled at once
-    Batch(Vec<GraphQLRequest>),
-}
-
-impl<'a> Executable for &'a GraphQLBatchRequest {
-    type Response = GraphQLBatchResponse<'a>;
-
-    /// Execute all contained GraphQLRequests
-    fn execute<CtxT, QueryT, MutationT>(
-        self,
-        root_node: &RootNode<QueryT, MutationT>,
-        context: &CtxT,
-    ) -> Self::Response
-    where
-        QueryT: GraphQLType<Context = CtxT>,
-        MutationT: GraphQLType<Context = CtxT>,
-    {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) =>
-                GraphQLBatchResponse::Single(
-                    request.execute(root_node, context)
-                ),
-            &GraphQLBatchRequest::Batch(ref requests) =>
-                GraphQLBatchResponse::Batch(
-                    requests
-                        .into_iter()
-                        .map(|req| req.execute(root_node, context))
-                        .collect()
-                ),
-        }
-    }
-}
-
 /// Simple wrapper around the result from executing a GraphQL query
 ///
 /// This struct implements Serialize, so you can simply serialize this
@@ -150,12 +85,12 @@ impl<'a> Executable for &'a GraphQLBatchRequest {
 /// whether to send a 200 or 400 HTTP status code.
 pub struct GraphQLResponse<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
 
-impl<'a> ExecutionResponse for GraphQLResponse<'a> {
+impl<'a> GraphQLResponse<'a> {
     /// Was the request successful or not?
     ///
     /// Note that there still might be errors in the response even though it's
     /// considered OK. This is by design in GraphQL.
-    fn is_ok(&self) -> bool {
+    pub fn is_ok(&self) -> bool {
         self.0.is_ok()
     }
 }
@@ -185,38 +120,6 @@ impl<'a> ser::Serialize for GraphQLResponse<'a> {
                 map.serialize_value(err)?;
                 map.end()
             }
-        }
-    }
-}
-
-/// Wraps the GraphQLResponse so that multiple responses can be returned for a batched request.
-pub enum GraphQLBatchResponse<'a> {
-    /// A single GraphQLResponse
-    Single(GraphQLResponse<'a>),
-    /// Multiple GraphQLResponses that were handled at once
-    Batch(Vec<GraphQLResponse<'a>>),
-}
-
-impl<'a> ExecutionResponse for GraphQLBatchResponse<'a> {
-    /// Was the request successful or not?
-    ///
-    /// Requires that all the batched responses are ok.
-    fn is_ok(&self) -> bool {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref batch) => batch.iter().fold(true, |ok, res| ok && res.is_ok()),
-        }
-    }
-}
-
-impl<'a> ser::Serialize for GraphQLBatchResponse<'a> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.serialize(serializer),
-            &GraphQLBatchResponse::Batch(ref batch) => batch.serialize(serializer),
         }
     }
 }
@@ -257,9 +160,6 @@ pub mod tests {
 
         println!("  - test_simple_post");
         test_simple_post(integration);
-
-        println!("  - test_batched_post");
-        test_batched_post(integration);
     }
 
     fn unwrap_json_response(response: &TestResponse) -> Json {
@@ -349,19 +249,6 @@ pub mod tests {
         assert_eq!(
             unwrap_json_response(&response),
             serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
-                .expect("Invalid JSON constant in test")
-        );
-    }
-
-    fn test_batched_post<T: HTTPIntegration>(integration: &T) {
-        let response = integration.post("/", r#"[{"query": "{hero{name}}"}, {"query": "{hero{name}}"}]"#);
-
-        assert_eq!(response.status_code, 200);
-        assert_eq!(response.content_type, "application/json");
-
-        assert_eq!(
-            unwrap_json_response(&response),
-            serde_json::from_str::<Json>(r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#)
                 .expect("Invalid JSON constant in test")
         );
     }

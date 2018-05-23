@@ -107,6 +107,8 @@ extern crate iron;
 extern crate iron_test;
 extern crate juniper;
 extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 extern crate urlencoded;
 
 use iron::prelude::*;
@@ -123,7 +125,49 @@ use std::fmt;
 use serde_json::error::Error as SerdeError;
 
 use juniper::{GraphQLType, InputValue, RootNode};
-use juniper::http::{self, ExecutionResponse, Executable};
+use juniper::http;
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum GraphQLBatchRequest {
+    Single(http::GraphQLRequest),
+    Batch(Vec<http::GraphQLRequest>),
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum GraphQLBatchResponse<'a> {
+    Single(http::GraphQLResponse<'a>),
+    Batch(Vec<http::GraphQLResponse<'a>>),
+}
+
+impl GraphQLBatchRequest {
+    pub fn execute<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &RootNode<QueryT, MutationT>,
+        context: &CtxT,
+    ) -> GraphQLBatchResponse<'a>
+    where
+        QueryT: GraphQLType<Context = CtxT>,
+        MutationT: GraphQLType<Context = CtxT>,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) =>
+                GraphQLBatchResponse::Single(request.execute(root_node, context)),
+            &GraphQLBatchRequest::Batch(ref requests) =>
+                GraphQLBatchResponse::Batch(requests.iter().map(|request| request.execute(root_node, context)).collect()),
+        }
+    }
+}
+
+impl<'a> GraphQLBatchResponse<'a> {
+    fn is_ok(&self) -> bool {
+        match self {
+            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
+            &GraphQLBatchResponse::Batch(ref responses) => responses.iter().fold(true, |ok, response| ok && response.is_ok()),
+        }
+    }
+}
 
 /// Handler that executes `GraphQL` queries in the given schema
 ///
@@ -199,7 +243,7 @@ where
         }
     }
 
-    fn handle_get(&self, req: &mut Request) -> IronResult<http::GraphQLBatchRequest> {
+    fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
         let url_query_string = req.get_mut::<UrlEncodedQuery>()
             .map_err(GraphQLIronError::Url)?;
 
@@ -208,24 +252,24 @@ where
         let operation_name = parse_url_param(url_query_string.remove("operationName"))?;
         let variables = parse_variable_param(url_query_string.remove("variables"))?;
 
-        Ok(http::GraphQLBatchRequest::Single(http::GraphQLRequest::new(
+        Ok(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             input_query,
             operation_name,
             variables,
         )))
     }
 
-    fn handle_post(&self, req: &mut Request) -> IronResult<http::GraphQLBatchRequest> {
+    fn handle_post(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
         let mut request_payload = String::new();
         itry!(req.body.read_to_string(&mut request_payload));
 
         Ok(
-            serde_json::from_str::<http::GraphQLRequest>(request_payload.as_str())
+            serde_json::from_str::<GraphQLBatchRequest>(request_payload.as_str())
                 .map_err(GraphQLIronError::Serde)?,
         )
     }
 
-    fn execute(&self, context: &CtxT, request: http::GraphQLBatchRequest) -> IronResult<Response> {
+    fn execute(&self, context: &CtxT, request: GraphQLBatchRequest) -> IronResult<Response> {
         let response = request.execute(&self.root_node, context);
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();
