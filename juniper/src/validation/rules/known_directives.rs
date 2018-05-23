@@ -1,7 +1,7 @@
 use ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType};
-use validation::{ValidatorContext, Visitor};
-use schema::model::DirectiveLocation;
 use parser::Spanning;
+use schema::model::DirectiveLocation;
+use validation::{ValidatorContext, Visitor};
 
 pub struct KnownDirectives {
     location_stack: Vec<DirectiveLocation>,
@@ -141,8 +141,8 @@ mod tests {
     use super::{factory, misplaced_error_message, unknown_error_message};
 
     use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
     use schema::model::DirectiveLocation;
+    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
 
     #[test]
     fn with_no_directives() {
@@ -189,12 +189,10 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &unknown_error_message("unknown"),
-                    &[SourcePosition::new(29, 2, 16)],
-                ),
-            ],
+            &[RuleError::new(
+                &unknown_error_message("unknown"),
+                &[SourcePosition::new(29, 2, 16)],
+            )],
         );
     }
 

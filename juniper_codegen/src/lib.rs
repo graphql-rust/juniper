@@ -10,6 +10,9 @@ extern crate proc_macro;
 #[macro_use]
 extern crate quote;
 extern crate syn;
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
 
 mod util;
 mod derive_enum;
@@ -20,24 +23,21 @@ use proc_macro::TokenStream;
 
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
-    let s = input.to_string();
-    let ast = syn::parse_derive_input(&s).unwrap();
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_enum::impl_enum(&ast);
-    gen.parse().unwrap()
+    gen.into()
 }
 
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
-    let s = input.to_string();
-    let ast = syn::parse_derive_input(&s).unwrap();
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_input_object::impl_input_object(&ast);
-    gen.parse().unwrap()
+    gen.into()
 }
 
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
-    let s = input.to_string();
-    let ast = syn::parse_derive_input(&s).unwrap();
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::impl_object(&ast);
-    gen.parse().unwrap()
+    gen.into()
 }

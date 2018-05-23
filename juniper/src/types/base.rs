@@ -1,13 +1,13 @@
-use indexmap::IndexMap;
 use indexmap::map::Entry;
+use indexmap::IndexMap;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
 use value::Value;
 
-use schema::meta::{Argument, MetaType};
 use executor::{ExecutionResult, Executor, Registry};
 use parser::Spanning;
+use schema::meta::{Argument, MetaType};
 
 /// GraphQL type kind
 ///
@@ -374,7 +374,7 @@ where
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    &f.name.item,
+                    f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
@@ -505,29 +505,28 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
 
 fn merge_key_into(result: &mut IndexMap<String, Value>, response_name: &str, value: Value) {
     match result.entry(response_name.to_owned()) {
-        Entry::Occupied(mut e) => {
-            match e.get_mut() {
-                &mut Value::Object(ref mut dest_obj) => {
-                    if let Value::Object(src_obj) = value {
-                        merge_maps(dest_obj, src_obj);
-                    }
-                },
-                &mut Value::List(ref mut dest_list) => {
-                    if let Value::List(src_list) = value {
-                        dest_list.iter_mut().zip(src_list.into_iter()).for_each(|(d, s)| {
-                            match d {
-                                &mut Value::Object(ref mut d_obj) => {
-                                    if let Value::Object(s_obj) = s {
-                                        merge_maps(d_obj, s_obj);
-                                    }
-                                },
-                                _ => {},
-                            }
-                        });
-                    }
-                },
-                _ => {}
+        Entry::Occupied(mut e) => match e.get_mut() {
+            &mut Value::Object(ref mut dest_obj) => {
+                if let Value::Object(src_obj) = value {
+                    merge_maps(dest_obj, src_obj);
+                }
             }
+            &mut Value::List(ref mut dest_list) => {
+                if let Value::List(src_list) = value {
+                    dest_list
+                        .iter_mut()
+                        .zip(src_list.into_iter())
+                        .for_each(|(d, s)| match d {
+                            &mut Value::Object(ref mut d_obj) => {
+                                if let Value::Object(s_obj) = s {
+                                    merge_maps(d_obj, s_obj);
+                                }
+                            }
+                            _ => {}
+                        });
+                }
+            }
+            _ => {}
         },
         Entry::Vacant(e) => {
             e.insert(value);

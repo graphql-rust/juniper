@@ -2,9 +2,9 @@ use indexmap::IndexMap;
 use std::marker::PhantomData;
 
 use ast::InputValue;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 /*
 
@@ -184,7 +184,7 @@ fn introspect_custom_name() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -200,7 +200,7 @@ fn introspect_with_lifetime() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -216,7 +216,7 @@ fn introspect_with_generics() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -235,7 +235,7 @@ fn introspect_description_first() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -254,7 +254,7 @@ fn introspect_fields_first() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -273,7 +273,7 @@ fn introspect_interfaces_first() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -295,7 +295,7 @@ fn introspect_commas_with_trailing() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -314,7 +314,7 @@ fn introspect_commas_on_meta() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -336,7 +336,7 @@ fn introspect_resolvers_with_trailing_comma() {
             fields.contains(&Value::object(
                 vec![("name", Value::string("simple"))]
                     .into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });

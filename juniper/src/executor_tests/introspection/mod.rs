@@ -1,14 +1,14 @@
-mod input_object;
 mod enums;
+mod input_object;
 
 // This asserts that the input objects defined public actually became public
 #[allow(unused_imports)]
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 #[derive(GraphQLEnum)]
 #[graphql(name = "SampleEnum", _internal)]
@@ -155,7 +155,7 @@ fn enum_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect()
+                .collect(),
         ))
     );
 
@@ -167,7 +167,7 @@ fn enum_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect()
+                .collect(),
         ))
     );
 }
@@ -290,7 +290,7 @@ fn interface_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect()
+                .collect(),
         ))
     );
 }
@@ -366,13 +366,11 @@ fn object_introspection() {
     );
     assert_eq!(
         type_info.get("interfaces"),
-        Some(&Value::list(vec![
-            Value::object(
-                vec![("name", Value::string("SampleInterface"))]
-                    .into_iter()
-                    .collect(),
-            ),
-        ]))
+        Some(&Value::list(vec![Value::object(
+            vec![("name", Value::string("SampleInterface"))]
+                .into_iter()
+                .collect(),
+        )]))
     );
     assert_eq!(type_info.get("enumValues"), Some(&Value::null()));
     assert_eq!(type_info.get("inputFields"), Some(&Value::null()));
@@ -418,7 +416,7 @@ fn object_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect()
+                .collect(),
         ))
     );
 
@@ -506,7 +504,7 @@ fn object_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect()
+                .collect(),
         ))
     );
 }

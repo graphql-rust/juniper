@@ -1,7 +1,7 @@
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 struct Root;
 
@@ -192,7 +192,7 @@ fn introspect_field_exec_arg_and_more() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -225,7 +225,7 @@ fn introspect_field_single_arg() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -258,7 +258,7 @@ fn introspect_field_multi_args() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -284,7 +284,7 @@ fn introspect_field_multi_args() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -317,7 +317,7 @@ fn introspect_field_multi_args_trailing_comma() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -343,7 +343,7 @@ fn introspect_field_multi_args_trailing_comma() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -376,7 +376,7 @@ fn introspect_field_single_arg_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -409,7 +409,7 @@ fn introspect_field_multi_args_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -435,7 +435,7 @@ fn introspect_field_multi_args_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -468,7 +468,7 @@ fn introspect_field_multi_args_descr_trailing_comma() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -494,7 +494,7 @@ fn introspect_field_multi_args_descr_trailing_comma() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -520,7 +520,7 @@ fn introspect_field_arg_with_default() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -546,7 +546,7 @@ fn introspect_field_multi_args_with_default() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -565,7 +565,7 @@ fn introspect_field_multi_args_with_default() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -591,7 +591,7 @@ fn introspect_field_multi_args_with_default_trailing_comma() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -610,7 +610,7 @@ fn introspect_field_multi_args_with_default_trailing_comma() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -636,7 +636,7 @@ fn introspect_field_arg_with_default_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -662,7 +662,7 @@ fn introspect_field_multi_args_with_default_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -681,7 +681,7 @@ fn introspect_field_multi_args_with_default_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -707,7 +707,7 @@ fn introspect_field_multi_args_with_default_trailing_comma_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -726,7 +726,7 @@ fn introspect_field_multi_args_with_default_trailing_comma_descr() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });
@@ -752,7 +752,7 @@ fn introspect_field_args_with_complex_default() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
 
@@ -774,7 +774,7 @@ fn introspect_field_args_with_complex_default() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                    .collect(),
             ))
         );
     });

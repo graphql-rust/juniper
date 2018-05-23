@@ -1,6 +1,6 @@
-mod scalar;
 mod args;
 mod field;
-mod object;
 mod interface;
+mod object;
+mod scalar;
 mod union;

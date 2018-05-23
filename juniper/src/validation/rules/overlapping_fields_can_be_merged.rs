@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::cell::RefCell;
-use std::hash::Hash;
-use std::borrow::Borrow;
 use ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type};
-use validation::{ValidatorContext, Visitor};
 use parser::{SourcePosition, Spanning};
 use schema::meta::{Field as FieldType, MetaType};
+use std::borrow::Borrow;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::hash::Hash;
+use validation::{ValidatorContext, Visitor};
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
@@ -708,13 +708,13 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{error_message, factory, ConflictReason};
     use super::ConflictReasonMessage::*;
+    use super::{error_message, factory, ConflictReason};
 
-    use types::base::GraphQLType;
     use executor::Registry;
-    use types::scalars::ID;
     use schema::meta::MetaType;
+    use types::base::GraphQLType;
+    use types::scalars::ID;
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
@@ -821,18 +821,16 @@ mod tests {
             fido: nickname
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "fido",
-                        &Message("name and nickname are different fields".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(78, 2, 12),
-                        SourcePosition::new(101, 3, 12),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "fido",
+                    &Message("name and nickname are different fields".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(78, 2, 12),
+                    SourcePosition::new(101, 3, 12),
+                ],
+            )],
         );
     }
 
@@ -863,18 +861,16 @@ mod tests {
             name
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "name",
-                        &Message("nickname and name are different fields".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(71, 2, 12),
-                        SourcePosition::new(98, 3, 12),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "name",
+                    &Message("nickname and name are different fields".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(71, 2, 12),
+                    SourcePosition::new(98, 3, 12),
+                ],
+            )],
         );
     }
 
@@ -888,18 +884,16 @@ mod tests {
             doesKnowCommand(dogCommand: HEEL)
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "doesKnowCommand",
-                        &Message("they have differing arguments".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(57, 2, 12),
-                        SourcePosition::new(85, 3, 12),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "doesKnowCommand",
+                    &Message("they have differing arguments".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(57, 2, 12),
+                    SourcePosition::new(85, 3, 12),
+                ],
+            )],
         );
     }
 
@@ -913,18 +907,16 @@ mod tests {
             doesKnowCommand
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "doesKnowCommand",
-                        &Message("they have differing arguments".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(57, 2, 12),
-                        SourcePosition::new(102, 3, 12),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "doesKnowCommand",
+                    &Message("they have differing arguments".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(57, 2, 12),
+                    SourcePosition::new(102, 3, 12),
+                ],
+            )],
         );
     }
 
@@ -938,18 +930,16 @@ mod tests {
             doesKnowCommand(dogCommand: HEEL)
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "doesKnowCommand",
-                        &Message("they have differing arguments".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(57, 2, 12),
-                        SourcePosition::new(102, 3, 12),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "doesKnowCommand",
+                    &Message("they have differing arguments".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(57, 2, 12),
+                    SourcePosition::new(102, 3, 12),
+                ],
+            )],
         );
     }
 
@@ -986,15 +976,13 @@ mod tests {
             x: b
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("x", &Message("a and b are different fields".to_owned())),
-                    &[
-                        SourcePosition::new(102, 6, 12),
-                        SourcePosition::new(162, 9, 12),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("x", &Message("a and b are different fields".to_owned())),
+                &[
+                    SourcePosition::new(102, 6, 12),
+                    SourcePosition::new(162, 9, 12),
+                ],
+            )],
         );
     }
 
@@ -1065,25 +1053,21 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "field",
-                        &Nested(vec![
-                            ConflictReason(
-                                "x".to_owned(),
-                                Message("a and b are different fields".to_owned()),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(25, 2, 12),
-                        SourcePosition::new(47, 3, 14),
-                        SourcePosition::new(79, 5, 12),
-                        SourcePosition::new(101, 6, 14),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "field",
+                    &Nested(vec![ConflictReason(
+                        "x".to_owned(),
+                        Message("a and b are different fields".to_owned()),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(25, 2, 12),
+                    SourcePosition::new(47, 3, 14),
+                    SourcePosition::new(79, 5, 12),
+                    SourcePosition::new(101, 6, 14),
+                ],
+            )],
         );
     }
 
@@ -1103,31 +1087,29 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "field",
-                        &Nested(vec![
-                            ConflictReason(
-                                "x".to_owned(),
-                                Message("a and b are different fields".to_owned()),
-                            ),
-                            ConflictReason(
-                                "y".to_owned(),
-                                Message("c and d are different fields".to_owned()),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(25, 2, 12),
-                        SourcePosition::new(47, 3, 14),
-                        SourcePosition::new(66, 4, 14),
-                        SourcePosition::new(98, 6, 12),
-                        SourcePosition::new(120, 7, 14),
-                        SourcePosition::new(139, 8, 14),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "field",
+                    &Nested(vec![
+                        ConflictReason(
+                            "x".to_owned(),
+                            Message("a and b are different fields".to_owned()),
+                        ),
+                        ConflictReason(
+                            "y".to_owned(),
+                            Message("c and d are different fields".to_owned()),
+                        ),
+                    ]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(25, 2, 12),
+                    SourcePosition::new(47, 3, 14),
+                    SourcePosition::new(66, 4, 14),
+                    SourcePosition::new(98, 6, 12),
+                    SourcePosition::new(120, 7, 14),
+                    SourcePosition::new(139, 8, 14),
+                ],
+            )],
         );
     }
 
@@ -1149,32 +1131,26 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "field",
-                        &Nested(vec![
-                            ConflictReason(
-                                "deepField".to_owned(),
-                                Nested(vec![
-                                    ConflictReason(
-                                        "x".to_owned(),
-                                        Message("a and b are different fields".to_owned()),
-                                    ),
-                                ]),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(25, 2, 12),
-                        SourcePosition::new(47, 3, 14),
-                        SourcePosition::new(75, 4, 16),
-                        SourcePosition::new(123, 7, 12),
-                        SourcePosition::new(145, 8, 14),
-                        SourcePosition::new(173, 9, 16),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "field",
+                    &Nested(vec![ConflictReason(
+                        "deepField".to_owned(),
+                        Nested(vec![ConflictReason(
+                            "x".to_owned(),
+                            Message("a and b are different fields".to_owned()),
+                        )]),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(25, 2, 12),
+                    SourcePosition::new(47, 3, 14),
+                    SourcePosition::new(75, 4, 16),
+                    SourcePosition::new(123, 7, 12),
+                    SourcePosition::new(145, 8, 14),
+                    SourcePosition::new(173, 9, 16),
+                ],
+            )],
         );
     }
 
@@ -1199,25 +1175,21 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "deepField",
-                        &Nested(vec![
-                            ConflictReason(
-                                "x".to_owned(),
-                                Message("a and b are different fields".to_owned()),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(47, 3, 14),
-                        SourcePosition::new(75, 4, 16),
-                        SourcePosition::new(110, 6, 14),
-                        SourcePosition::new(138, 7, 16),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "deepField",
+                    &Nested(vec![ConflictReason(
+                        "x".to_owned(),
+                        Message("a and b are different fields".to_owned()),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(47, 3, 14),
+                    SourcePosition::new(75, 4, 16),
+                    SourcePosition::new(110, 6, 14),
+                    SourcePosition::new(138, 7, 16),
+                ],
+            )],
         );
     }
 
@@ -1250,25 +1222,21 @@ mod tests {
             }
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "deeperField",
-                        &Nested(vec![
-                            ConflictReason(
-                                "x".to_owned(),
-                                Message("a and b are different fields".to_owned()),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(197, 11, 14),
-                        SourcePosition::new(227, 12, 16),
-                        SourcePosition::new(262, 14, 14),
-                        SourcePosition::new(292, 15, 16),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "deeperField",
+                    &Nested(vec![ConflictReason(
+                        "x".to_owned(),
+                        Message("a and b are different fields".to_owned()),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(197, 11, 14),
+                    SourcePosition::new(227, 12, 16),
+                    SourcePosition::new(262, 14, 14),
+                    SourcePosition::new(292, 15, 16),
+                ],
+            )],
         );
     }
 
@@ -1300,31 +1268,29 @@ mod tests {
             x: b
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "field",
-                        &Nested(vec![
-                            ConflictReason(
-                                "x".to_owned(),
-                                Message("a and b are different fields".to_owned()),
-                            ),
-                            ConflictReason(
-                                "y".to_owned(),
-                                Message("c and d are different fields".to_owned()),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(25, 2, 12),
-                        SourcePosition::new(171, 10, 12),
-                        SourcePosition::new(245, 14, 12),
-                        SourcePosition::new(78, 5, 12),
-                        SourcePosition::new(376, 21, 12),
-                        SourcePosition::new(302, 17, 12),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "field",
+                    &Nested(vec![
+                        ConflictReason(
+                            "x".to_owned(),
+                            Message("a and b are different fields".to_owned()),
+                        ),
+                        ConflictReason(
+                            "y".to_owned(),
+                            Message("c and d are different fields".to_owned()),
+                        ),
+                    ]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(25, 2, 12),
+                    SourcePosition::new(171, 10, 12),
+                    SourcePosition::new(245, 14, 12),
+                    SourcePosition::new(78, 5, 12),
+                    SourcePosition::new(376, 21, 12),
+                    SourcePosition::new(302, 17, 12),
+                ],
+            )],
         );
     }
 
@@ -1594,18 +1560,16 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "scalar",
-                        &Message("they return conflicting types Int and String!".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(88, 4, 18),
-                        SourcePosition::new(173, 7, 18),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "scalar",
+                    &Message("they return conflicting types Int and String!".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(88, 4, 18),
+                    SourcePosition::new(173, 7, 18),
+                ],
+            )],
         );
     }
 
@@ -1650,18 +1614,16 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "scalar",
-                        &Message("they return conflicting types Int and String".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(89, 4, 18),
-                        SourcePosition::new(167, 7, 18),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "scalar",
+                    &Message("they return conflicting types Int and String".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(89, 4, 18),
+                    SourcePosition::new(167, 7, 18),
+                ],
+            )],
         );
     }
 
@@ -1714,27 +1676,21 @@ mod tests {
               scalar: unrelatedField
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "other",
-                        &Nested(vec![
-                            ConflictReason(
-                                "scalar".to_owned(),
-                                Message(
-                                    "scalar and unrelatedField are different fields".to_owned(),
-                                ),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(703, 30, 14),
-                        SourcePosition::new(889, 38, 14),
-                        SourcePosition::new(771, 33, 14),
-                        SourcePosition::new(960, 41, 14),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "other",
+                    &Nested(vec![ConflictReason(
+                        "scalar".to_owned(),
+                        Message("scalar and unrelatedField are different fields".to_owned()),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(703, 30, 14),
+                    SourcePosition::new(889, 38, 14),
+                    SourcePosition::new(771, 33, 14),
+                    SourcePosition::new(960, 41, 14),
+                ],
+            )],
         );
     }
 
@@ -1755,18 +1711,16 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "scalar",
-                        &Message("they return conflicting types String! and String".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(100, 4, 18),
-                        SourcePosition::new(178, 7, 18),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "scalar",
+                    &Message("they return conflicting types String! and String".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(100, 4, 18),
+                    SourcePosition::new(178, 7, 18),
+                ],
+            )],
         );
     }
 
@@ -1791,20 +1745,16 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "box",
-                        &Message(
-                            "they return conflicting types [StringBox] and StringBox".to_owned(),
-                        ),
-                    ),
-                    &[
-                        SourcePosition::new(89, 4, 18),
-                        SourcePosition::new(228, 9, 18),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "box",
+                    &Message("they return conflicting types [StringBox] and StringBox".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(89, 4, 18),
+                    SourcePosition::new(228, 9, 18),
+                ],
+            )],
         );
 
         expect_fails_rule_with_schema(
@@ -1826,20 +1776,16 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "box",
-                        &Message(
-                            "they return conflicting types StringBox and [StringBox]".to_owned(),
-                        ),
-                    ),
-                    &[
-                        SourcePosition::new(89, 4, 18),
-                        SourcePosition::new(224, 9, 18),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "box",
+                    &Message("they return conflicting types StringBox and [StringBox]".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(89, 4, 18),
+                    SourcePosition::new(224, 9, 18),
+                ],
+            )],
         );
     }
 
@@ -1865,18 +1811,16 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "val",
-                        &Message("scalar and unrelatedField are different fields".to_owned()),
-                    ),
-                    &[
-                        SourcePosition::new(126, 5, 20),
-                        SourcePosition::new(158, 6, 20),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "val",
+                    &Message("scalar and unrelatedField are different fields".to_owned()),
                 ),
-            ],
+                &[
+                    SourcePosition::new(126, 5, 20),
+                    SourcePosition::new(158, 6, 20),
+                ],
+            )],
         );
     }
 
@@ -1901,25 +1845,21 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "box",
-                        &Nested(vec![
-                            ConflictReason(
-                                "scalar".to_owned(),
-                                Message("they return conflicting types String and Int".to_owned()),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(89, 4, 18),
-                        SourcePosition::new(126, 5, 20),
-                        SourcePosition::new(224, 9, 18),
-                        SourcePosition::new(258, 10, 20),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "box",
+                    &Nested(vec![ConflictReason(
+                        "scalar".to_owned(),
+                        Message("they return conflicting types String and Int".to_owned()),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(89, 4, 18),
+                    SourcePosition::new(126, 5, 20),
+                    SourcePosition::new(224, 9, 18),
+                    SourcePosition::new(258, 10, 20),
+                ],
+            )],
         );
     }
 
@@ -2004,32 +1944,26 @@ mod tests {
               }
             }
         "#,
-            &[
-                RuleError::new(
-                    &error_message(
-                        "edges",
-                        &Nested(vec![
-                            ConflictReason(
-                                "node".to_owned(),
-                                Nested(vec![
-                                    ConflictReason(
-                                        "id".to_owned(),
-                                        Message("name and id are different fields".to_owned()),
-                                    ),
-                                ]),
-                            ),
-                        ]),
-                    ),
-                    &[
-                        SourcePosition::new(84, 4, 16),
-                        SourcePosition::new(110, 5, 18),
-                        SourcePosition::new(137, 6, 20),
-                        SourcePosition::new(273, 13, 14),
-                        SourcePosition::new(297, 14, 16),
-                        SourcePosition::new(322, 15, 18),
-                    ],
+            &[RuleError::new(
+                &error_message(
+                    "edges",
+                    &Nested(vec![ConflictReason(
+                        "node".to_owned(),
+                        Nested(vec![ConflictReason(
+                            "id".to_owned(),
+                            Message("name and id are different fields".to_owned()),
+                        )]),
+                    )]),
                 ),
-            ],
+                &[
+                    SourcePosition::new(84, 4, 16),
+                    SourcePosition::new(110, 5, 18),
+                    SourcePosition::new(137, 6, 20),
+                    SourcePosition::new(273, 13, 14),
+                    SourcePosition::new(297, 14, 16),
+                    SourcePosition::new(322, 15, 18),
+                ],
+            )],
         );
     }
 

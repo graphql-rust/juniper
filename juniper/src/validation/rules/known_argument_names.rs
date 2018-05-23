@@ -1,6 +1,6 @@
 use ast::{Directive, Field, InputValue};
-use schema::meta::Argument;
 use parser::Spanning;
+use schema::meta::Argument;
 use validation::{ValidatorContext, Visitor};
 
 #[derive(Debug)]
@@ -204,12 +204,10 @@ mod tests {
             dog @skip(unless: true)
           }
         "#,
-            &[
-                RuleError::new(
-                    &directive_error_message("unless", "skip"),
-                    &[SourcePosition::new(35, 2, 22)],
-                ),
-            ],
+            &[RuleError::new(
+                &directive_error_message("unless", "skip"),
+                &[SourcePosition::new(35, 2, 22)],
+            )],
         );
     }
 
@@ -222,12 +220,10 @@ mod tests {
             doesKnowCommand(unknown: true)
           }
         "#,
-            &[
-                RuleError::new(
-                    &field_error_message("unknown", "doesKnowCommand", "Dog"),
-                    &[SourcePosition::new(72, 2, 28)],
-                ),
-            ],
+            &[RuleError::new(
+                &field_error_message("unknown", "doesKnowCommand", "Dog"),
+                &[SourcePosition::new(72, 2, 28)],
+            )],
         );
     }
 

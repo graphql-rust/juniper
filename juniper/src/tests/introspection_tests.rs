@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
 use tests::model::Database;
 use types::scalars::EmptyMutation;
+use value::Value;
 
 #[test]
 fn test_query_type_name() {
@@ -23,24 +23,18 @@ fn test_query_type_name() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "__schema",
-                        Value::object(
-                            vec![
-                                (
-                                    "queryType",
-                                    Value::object(
-                                        vec![("name", Value::string("Query"))]
-                                            .into_iter()
-                                            .collect(),
-                                    ),
-                                ),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "__schema",
+                    Value::object(
+                        vec![(
+                            "queryType",
+                            Value::object(
+                                vec![("name", Value::string("Query"))].into_iter().collect(),
+                            ),
+                        )].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -63,12 +57,10 @@ fn test_specific_type_name() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "__type",
-                        Value::object(vec![("name", Value::string("Droid"))].into_iter().collect()),
-                    ),
-                ].into_iter()
+                vec![(
+                    "__type",
+                    Value::object(vec![("name", Value::string("Droid"))].into_iter().collect()),
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -93,18 +85,16 @@ fn test_specific_object_type_name_and_kind() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "__type",
-                        Value::object(
-                            vec![
-                                ("name", Value::string("Droid")),
-                                ("kind", Value::string("OBJECT")),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "__type",
+                    Value::object(
+                        vec![
+                            ("name", Value::string("Droid")),
+                            ("kind", Value::string("OBJECT")),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -129,18 +119,16 @@ fn test_specific_interface_type_name_and_kind() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "__type",
-                        Value::object(
-                            vec![
-                                ("name", Value::string("Character")),
-                                ("kind", Value::string("INTERFACE")),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "__type",
+                    Value::object(
+                        vec![
+                            ("name", Value::string("Character")),
+                            ("kind", Value::string("INTERFACE")),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -165,23 +153,19 @@ fn test_documentation() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "__type",
-                        Value::object(
-                            vec![
-                                ("name", Value::string("Droid")),
-                                (
-                                    "description",
-                                    Value::string(
-                                        "A mechanical creature in the Star Wars universe.",
-                                    ),
-                                ),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "__type",
+                    Value::object(
+                        vec![
+                            ("name", Value::string("Droid")),
+                            (
+                                "description",
+                                Value::string("A mechanical creature in the Star Wars universe."),
+                            ),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]

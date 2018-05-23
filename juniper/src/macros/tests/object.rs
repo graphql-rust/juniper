@@ -2,10 +2,10 @@ use indexmap::IndexMap;
 use std::marker::PhantomData;
 
 use ast::InputValue;
-use value::Value;
+use executor::{Context, FieldResult};
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use executor::{Context, FieldResult};
+use value::Value;
 
 /*
 
@@ -250,15 +250,13 @@ fn introspect_description_first() {
         );
         assert_eq!(
             object.get("interfaces"),
-            Some(&Value::list(vec![
-                Value::object(
-                    vec![
-                        ("name", Value::string("Interface")),
-                        ("kind", Value::string("INTERFACE")),
-                    ].into_iter()
-                        .collect(),
-                ),
-            ]))
+            Some(&Value::list(vec![Value::object(
+                vec![
+                    ("name", Value::string("Interface")),
+                    ("kind", Value::string("INTERFACE")),
+                ].into_iter()
+                    .collect(),
+            )]))
         );
 
         assert!(fields.contains(&graphql_value!({
@@ -278,15 +276,13 @@ fn introspect_fields_first() {
         );
         assert_eq!(
             object.get("interfaces"),
-            Some(&Value::list(vec![
-                Value::object(
-                    vec![
-                        ("name", Value::string("Interface")),
-                        ("kind", Value::string("INTERFACE")),
-                    ].into_iter()
-                        .collect(),
-                ),
-            ]))
+            Some(&Value::list(vec![Value::object(
+                vec![
+                    ("name", Value::string("Interface")),
+                    ("kind", Value::string("INTERFACE")),
+                ].into_iter()
+                    .collect(),
+            )]))
         );
 
         assert!(fields.contains(&graphql_value!({
@@ -306,15 +302,13 @@ fn introspect_interfaces_first() {
         );
         assert_eq!(
             object.get("interfaces"),
-            Some(&Value::list(vec![
-                Value::object(
-                    vec![
-                        ("name", Value::string("Interface")),
-                        ("kind", Value::string("INTERFACE")),
-                    ].into_iter()
-                        .collect(),
-                ),
-            ]))
+            Some(&Value::list(vec![Value::object(
+                vec![
+                    ("name", Value::string("Interface")),
+                    ("kind", Value::string("INTERFACE")),
+                ].into_iter()
+                    .collect(),
+            )]))
         );
 
         assert!(fields.contains(&graphql_value!({
@@ -337,15 +331,13 @@ fn introspect_commas_with_trailing() {
         );
         assert_eq!(
             object.get("interfaces"),
-            Some(&Value::list(vec![
-                Value::object(
-                    vec![
-                        ("name", Value::string("Interface")),
-                        ("kind", Value::string("INTERFACE")),
-                    ].into_iter()
-                        .collect(),
-                ),
-            ]))
+            Some(&Value::list(vec![Value::object(
+                vec![
+                    ("name", Value::string("Interface")),
+                    ("kind", Value::string("INTERFACE")),
+                ].into_iter()
+                    .collect(),
+            )]))
         );
 
         assert!(fields.contains(&graphql_value!({
@@ -365,15 +357,13 @@ fn introspect_commas_on_meta() {
         );
         assert_eq!(
             object.get("interfaces"),
-            Some(&Value::list(vec![
-                Value::object(
-                    vec![
-                        ("name", Value::string("Interface")),
-                        ("kind", Value::string("INTERFACE")),
-                    ].into_iter()
-                        .collect(),
-                ),
-            ]))
+            Some(&Value::list(vec![Value::object(
+                vec![
+                    ("name", Value::string("Interface")),
+                    ("kind", Value::string("INTERFACE")),
+                ].into_iter()
+                    .collect(),
+            )]))
         );
 
         assert!(fields.contains(&graphql_value!({

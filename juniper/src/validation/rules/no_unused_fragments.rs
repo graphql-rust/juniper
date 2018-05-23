@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use ast::{Definition, Document, Fragment, FragmentSpread, Operation};
-use validation::{ValidatorContext, Visitor};
 use parser::Spanning;
+use validation::{ValidatorContext, Visitor};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -270,9 +270,10 @@ mod tests {
             name
           }
         "#,
-            &[
-                RuleError::new(&error_message("foo"), &[SourcePosition::new(107, 6, 10)]),
-            ],
+            &[RuleError::new(
+                &error_message("foo"),
+                &[SourcePosition::new(107, 6, 10)],
+            )],
         );
     }
 }

@@ -1,6 +1,6 @@
 use ast::{Fragment, InlineFragment, VariableDefinition};
-use validation::{ValidatorContext, Visitor};
 use parser::{SourcePosition, Spanning};
+use validation::{ValidatorContext, Visitor};
 
 pub struct KnownTypeNames {}
 

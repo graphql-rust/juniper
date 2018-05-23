@@ -1,8 +1,8 @@
 use std::collections::hash_map::{Entry, HashMap};
 
 use ast::{Directive, Field, InputValue};
-use validation::{ValidatorContext, Visitor};
 use parser::{SourcePosition, Spanning};
+use validation::{ValidatorContext, Visitor};
 
 pub struct UniqueArgumentNames<'a> {
     known_names: HashMap<&'a str, SourcePosition>,
@@ -171,15 +171,13 @@ mod tests {
             field(arg1: "value", arg1: "value")
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("arg1"),
-                    &[
-                        SourcePosition::new(31, 2, 18),
-                        SourcePosition::new(46, 2, 33),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("arg1"),
+                &[
+                    SourcePosition::new(31, 2, 18),
+                    SourcePosition::new(46, 2, 33),
+                ],
+            )],
         );
     }
 
@@ -220,15 +218,13 @@ mod tests {
             field @directive(arg1: "value", arg1: "value")
           }
         "#,
-            &[
-                RuleError::new(
-                    &error_message("arg1"),
-                    &[
-                        SourcePosition::new(42, 2, 29),
-                        SourcePosition::new(57, 2, 44),
-                    ],
-                ),
-            ],
+            &[RuleError::new(
+                &error_message("arg1"),
+                &[
+                    SourcePosition::new(42, 2, 29),
+                    SourcePosition::new(57, 2, 44),
+                ],
+            )],
         );
     }
 

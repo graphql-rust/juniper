@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 use std::fmt;
 
-use parser::SourcePosition;
 use ast::{Definition, Document, InputValue, VariableDefinitions};
 use executor::Variables;
-use validation::RuleError;
-use schema::model::{SchemaType, TypeType};
+use parser::SourcePosition;
 use schema::meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta};
+use schema::model::{SchemaType, TypeType};
+use validation::RuleError;
 
 #[derive(Debug)]
 enum Path<'a> {

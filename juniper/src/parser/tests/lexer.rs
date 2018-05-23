@@ -50,9 +50,10 @@ fn tokenize_error(s: &str) -> Spanning<LexerError> {
 fn empty_source() {
     assert_eq!(
         tokenize_to_vec(""),
-        vec![
-            Spanning::zero_width(&SourcePosition::new_origin(), Token::EndOfFile),
-        ]
+        vec![Spanning::zero_width(
+            &SourcePosition::new_origin(),
+            Token::EndOfFile,
+        )]
     );
 }
 

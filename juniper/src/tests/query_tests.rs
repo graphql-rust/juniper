@@ -1,9 +1,9 @@
 use ast::InputValue;
 use executor::Variables;
-use value::Value;
 use schema::model::RootNode;
-use types::scalars::EmptyMutation;
 use tests::model::Database;
+use types::scalars::EmptyMutation;
+use value::Value;
 
 #[test]
 fn test_hero_name() {
@@ -20,12 +20,10 @@ fn test_hero_name() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(vec![("name", Value::string("R2-D2"))].into_iter().collect()),
-                    ),
-                ].into_iter()
+                vec![(
+                    "hero",
+                    Value::object(vec![("name", Value::string("R2-D2"))].into_iter().collect()),
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -49,18 +47,16 @@ fn test_hero_field_order() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(
-                            vec![
-                                ("id", Value::string("2001")),
-                                ("name", Value::string("R2-D2")),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "hero",
+                    Value::object(
+                        vec![
+                            ("id", Value::string("2001")),
+                            ("name", Value::string("R2-D2")),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -78,18 +74,16 @@ fn test_hero_field_order() {
         ::execute(doc_reversed, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(
-                            vec![
-                                ("name", Value::string("R2-D2")),
-                                ("id", Value::string("2001")),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "hero",
+                    Value::object(
+                        vec![
+                            ("name", Value::string("R2-D2")),
+                            ("id", Value::string("2001")),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -116,38 +110,36 @@ fn test_hero_name_and_friends() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(
-                            vec![
-                                ("id", Value::string("2001")),
-                                ("name", Value::string("R2-D2")),
-                                (
-                                    "friends",
-                                    Value::list(vec![
-                                        Value::object(
-                                            vec![("name", Value::string("Luke Skywalker"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![("name", Value::string("Han Solo"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![("name", Value::string("Leia Organa"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                    ]),
-                                ),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "hero",
+                    Value::object(
+                        vec![
+                            ("id", Value::string("2001")),
+                            ("name", Value::string("R2-D2")),
+                            (
+                                "friends",
+                                Value::list(vec![
+                                    Value::object(
+                                        vec![("name", Value::string("Luke Skywalker"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                    Value::object(
+                                        vec![("name", Value::string("Han Solo"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                    Value::object(
+                                        vec![("name", Value::string("Leia Organa"))]
+                                            .into_iter()
+                                            .collect(),
+                                    ),
+                                ]),
+                            ),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -178,153 +170,141 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(
-                            vec![
-                                ("id", Value::string("2001")),
-                                ("name", Value::string("R2-D2")),
-                                (
-                                    "friends",
-                                    Value::list(vec![
-                                        Value::object(
-                                            vec![
-                                                ("name", Value::string("Luke Skywalker")),
-                                                (
-                                                    "appearsIn",
-                                                    Value::list(vec![
-                                                        Value::string("NEW_HOPE"),
-                                                        Value::string("EMPIRE"),
-                                                        Value::string("JEDI"),
-                                                    ]),
-                                                ),
-                                                (
-                                                    "friends",
-                                                    Value::list(vec![
-                                                        Value::object(
-                                                            vec![
-                                                                ("name", Value::string("Han Solo")),
-                                                            ].into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![
-                                                                (
-                                                                    "name",
-                                                                    Value::string("Leia Organa"),
-                                                                ),
-                                                            ].into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![("name", Value::string("C-3PO"))]
-                                                                .into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![("name", Value::string("R2-D2"))]
-                                                                .into_iter()
-                                                                .collect(),
-                                                        ),
-                                                    ]),
-                                                ),
-                                            ].into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![
-                                                ("name", Value::string("Han Solo")),
-                                                (
-                                                    "appearsIn",
-                                                    Value::list(vec![
-                                                        Value::string("NEW_HOPE"),
-                                                        Value::string("EMPIRE"),
-                                                        Value::string("JEDI"),
-                                                    ]),
-                                                ),
-                                                (
-                                                    "friends",
-                                                    Value::list(vec![
-                                                        Value::object(
-                                                            vec![
-                                                                (
-                                                                    "name",
-                                                                    Value::string("Luke Skywalker"),
-                                                                ),
-                                                            ].into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![
-                                                                (
-                                                                    "name",
-                                                                    Value::string("Leia Organa"),
-                                                                ),
-                                                            ].into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![("name", Value::string("R2-D2"))]
-                                                                .into_iter()
-                                                                .collect(),
-                                                        ),
-                                                    ]),
-                                                ),
-                                            ].into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![
-                                                ("name", Value::string("Leia Organa")),
-                                                (
-                                                    "appearsIn",
-                                                    Value::list(vec![
-                                                        Value::string("NEW_HOPE"),
-                                                        Value::string("EMPIRE"),
-                                                        Value::string("JEDI"),
-                                                    ]),
-                                                ),
-                                                (
-                                                    "friends",
-                                                    Value::list(vec![
-                                                        Value::object(
-                                                            vec![
-                                                                (
-                                                                    "name",
-                                                                    Value::string("Luke Skywalker"),
-                                                                ),
-                                                            ].into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![
-                                                                ("name", Value::string("Han Solo")),
-                                                            ].into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![("name", Value::string("C-3PO"))]
-                                                                .into_iter()
-                                                                .collect(),
-                                                        ),
-                                                        Value::object(
-                                                            vec![("name", Value::string("R2-D2"))]
-                                                                .into_iter()
-                                                                .collect(),
-                                                        ),
-                                                    ]),
-                                                ),
-                                            ].into_iter()
-                                                .collect(),
-                                        ),
-                                    ]),
-                                ),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "hero",
+                    Value::object(
+                        vec![
+                            ("id", Value::string("2001")),
+                            ("name", Value::string("R2-D2")),
+                            (
+                                "friends",
+                                Value::list(vec![
+                                    Value::object(
+                                        vec![
+                                            ("name", Value::string("Luke Skywalker")),
+                                            (
+                                                "appearsIn",
+                                                Value::list(vec![
+                                                    Value::string("NEW_HOPE"),
+                                                    Value::string("EMPIRE"),
+                                                    Value::string("JEDI"),
+                                                ]),
+                                            ),
+                                            (
+                                                "friends",
+                                                Value::list(vec![
+                                                    Value::object(
+                                                        vec![("name", Value::string("Han Solo"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![(
+                                                            "name",
+                                                            Value::string("Leia Organa"),
+                                                        )].into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![("name", Value::string("C-3PO"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![("name", Value::string("R2-D2"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                ]),
+                                            ),
+                                        ].into_iter()
+                                            .collect(),
+                                    ),
+                                    Value::object(
+                                        vec![
+                                            ("name", Value::string("Han Solo")),
+                                            (
+                                                "appearsIn",
+                                                Value::list(vec![
+                                                    Value::string("NEW_HOPE"),
+                                                    Value::string("EMPIRE"),
+                                                    Value::string("JEDI"),
+                                                ]),
+                                            ),
+                                            (
+                                                "friends",
+                                                Value::list(vec![
+                                                    Value::object(
+                                                        vec![(
+                                                            "name",
+                                                            Value::string("Luke Skywalker"),
+                                                        )].into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![(
+                                                            "name",
+                                                            Value::string("Leia Organa"),
+                                                        )].into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![("name", Value::string("R2-D2"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                ]),
+                                            ),
+                                        ].into_iter()
+                                            .collect(),
+                                    ),
+                                    Value::object(
+                                        vec![
+                                            ("name", Value::string("Leia Organa")),
+                                            (
+                                                "appearsIn",
+                                                Value::list(vec![
+                                                    Value::string("NEW_HOPE"),
+                                                    Value::string("EMPIRE"),
+                                                    Value::string("JEDI"),
+                                                ]),
+                                            ),
+                                            (
+                                                "friends",
+                                                Value::list(vec![
+                                                    Value::object(
+                                                        vec![(
+                                                            "name",
+                                                            Value::string("Luke Skywalker"),
+                                                        )].into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![("name", Value::string("Han Solo"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![("name", Value::string("C-3PO"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                    Value::object(
+                                                        vec![("name", Value::string("R2-D2"))]
+                                                            .into_iter()
+                                                            .collect(),
+                                                    ),
+                                                ]),
+                                            ),
+                                        ].into_iter()
+                                            .collect(),
+                                    ),
+                                ]),
+                            ),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -342,16 +322,14 @@ fn test_query_name() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "human",
-                        Value::object(
-                            vec![("name", Value::string("Luke Skywalker"))]
-                                .into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "human",
+                    Value::object(
+                        vec![("name", Value::string("Luke Skywalker"))]
+                            .into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -369,16 +347,14 @@ fn test_query_alias_single() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "luke",
-                        Value::object(
-                            vec![("name", Value::string("Luke Skywalker"))]
-                                .into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "luke",
+                    Value::object(
+                        vec![("name", Value::string("Luke Skywalker"))]
+                            .into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -487,16 +463,14 @@ fn test_query_name_variable() {
         ::execute(doc, None, &schema, &vars, &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "human",
-                        Value::object(
-                            vec![("name", Value::string("Luke Skywalker"))]
-                                .into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "human",
+                    Value::object(
+                        vec![("name", Value::string("Luke Skywalker"))]
+                            .into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -533,41 +507,33 @@ fn test_query_friends_names() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "human",
-                        Value::object(
-                            vec![
-                                (
-                                    "friends",
-                                    Value::list(vec![
-                                        Value::object(
-                                            vec![("name", Value::string("Han Solo"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![("name", Value::string("Leia Organa"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![("name", Value::string("C-3PO"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                        Value::object(
-                                            vec![("name", Value::string("R2-D2"))]
-                                                .into_iter()
-                                                .collect(),
-                                        ),
-                                    ]),
+                vec![(
+                    "human",
+                    Value::object(
+                        vec![(
+                            "friends",
+                            Value::list(vec![
+                                Value::object(
+                                    vec![("name", Value::string("Han Solo"))]
+                                        .into_iter()
+                                        .collect(),
                                 ),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                                Value::object(
+                                    vec![("name", Value::string("Leia Organa"))]
+                                        .into_iter()
+                                        .collect(),
+                                ),
+                                Value::object(
+                                    vec![("name", Value::string("C-3PO"))].into_iter().collect(),
+                                ),
+                                Value::object(
+                                    vec![("name", Value::string("R2-D2"))].into_iter().collect(),
+                                ),
+                            ]),
+                        )].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -596,19 +562,17 @@ fn test_query_inline_fragments_droid() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(
-                            vec![
-                                ("name", Value::string("R2-D2")),
-                                ("__typename", Value::string("Droid")),
-                                ("primaryFunction", Value::string("Astromech")),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "hero",
+                    Value::object(
+                        vec![
+                            ("name", Value::string("R2-D2")),
+                            ("__typename", Value::string("Droid")),
+                            ("primaryFunction", Value::string("Astromech")),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -633,18 +597,16 @@ fn test_query_inline_fragments_human() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "hero",
-                        Value::object(
-                            vec![
-                                ("name", Value::string("Luke Skywalker")),
-                                ("__typename", Value::string("Human")),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "hero",
+                    Value::object(
+                        vec![
+                            ("name", Value::string("Luke Skywalker")),
+                            ("__typename", Value::string("Human")),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -667,16 +629,14 @@ fn test_object_typename() {
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "human",
-                        Value::object(
-                            vec![("__typename", Value::string("Human"))]
-                                .into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "human",
+                    Value::object(
+                        vec![("__typename", Value::string("Human"))]
+                            .into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
