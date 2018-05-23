@@ -4,6 +4,7 @@ use syn::{
     NestedMeta,
     Lit,
 };
+use regex::Regex;
 
 // Get the nested items of a a #[graphql(...)] attribute.
 pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
@@ -110,4 +111,25 @@ fn test_to_upper_snake_case() {
     assert_eq!(to_upper_snake_case("someInput"), "SOME_INPUT");
     assert_eq!(to_upper_snake_case("someINpuT"), "SOME_INPU_T");
     assert_eq!(to_upper_snake_case("some_INpuT"), "SOME_INPU_T");
+}
+
+#[doc(hidden)]
+pub fn is_valid_name(field_name: &str) -> bool {
+    lazy_static!{
+        static ref CAMELCASE: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
+    }
+    CAMELCASE.is_match(field_name)
+}
+
+#[test]
+fn test_is_valid_name(){
+    assert_eq!(is_valid_name("yesItIs"), true);
+    assert_eq!(is_valid_name("NoitIsnt"), true); 
+    assert_eq!(is_valid_name("iso6301"), true); 
+    assert_eq!(is_valid_name("thisIsATest"), true); 
+    assert_eq!(is_valid_name("i6Op"), true);
+    assert_eq!(is_valid_name("i!"), false);
+    assert_eq!(is_valid_name(""), false);   
+    assert_eq!(is_valid_name("aTest"), true);
+    assert_eq!(is_valid_name("__Atest90"), true);
 }

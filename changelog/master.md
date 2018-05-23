@@ -7,6 +7,11 @@
 
   [#151](https://github.com/graphql-rust/juniper/pull/151)
 
+* The `GraphQLObject`, `GraphQLInputObject`, and `GraphQLEnum` custom derives will reject
+  invalid [names](http://facebook.github.io/graphql/October2016/#Name) at compile time. 
+
+  [#170](https://github.com/graphql-rust/juniper/pull/170)
+
 * Large integers (> signed 32bit) are now deserialized as floats. Previously,
   they produced the "integer out of range" error. For languages that do not
   have distinction between integer and floating point types (including
@@ -15,4 +20,3 @@
   a decimal part `.0`).
 
   [#179](https://github.com/graphql-rust/juniper/pull/179)
-

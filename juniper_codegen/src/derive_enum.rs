@@ -32,8 +32,13 @@ impl EnumAttrs {
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
                 if let Some(val) = keyed_item_value(&item, "name", true) {
-                    res.name = Some(val);
-                    continue;
+                    if is_valid_name(&*val) {
+                        res.name = Some(val);
+                        continue;
+                    } else {
+                        panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                               &*val);
+                    }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
@@ -73,8 +78,13 @@ impl EnumVariantAttrs {
         if let Some(items) = get_graphl_attr(&variant.attrs) {
             for item in items {
                 if let Some(val) = keyed_item_value(&item, "name", true) {
-                    res.name = Some(val);
-                    continue;
+                    if is_valid_name(&*val) {
+                        res.name = Some(val);
+                        continue;
+                    } else {
+                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                                 &*val);
+                    }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
                     res.description = Some(val);
