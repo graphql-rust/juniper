@@ -102,6 +102,38 @@ impl GraphQLRequest {
 
 impl GraphQLResponse {
     /// Constructs an error response outside of the normal execution flow
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #![feature(plugin)]
+    /// # #![plugin(rocket_codegen)]
+    /// #
+    /// # extern crate juniper;
+    /// # extern crate juniper_rocket;
+    /// # extern crate rocket;
+    /// #
+    /// # use rocket::response::content;
+    /// # use rocket::State;
+    /// #
+    /// # use juniper::tests::model::Database;
+    /// # use juniper::{EmptyMutation, FieldError, RootNode, Value};
+    /// #
+    /// #[get("/graphql?<request>")]
+    /// fn get_graphql_handler(
+    ///     cookies: Cookies,
+    ///     context: State<Database>,
+    ///     request: juniper_rocket::GraphQLRequest,
+    ///     schema: State<Schema>,
+    /// ) -> juniper_rocket::GraphQLResponse {
+    ///     if cookies.get_private("user_id").is_none() {
+    ///         let err = FieldError::new("User is not logged in", Value::null());
+    ///         return juniper_rocket::GraphQLResponse::error(err);
+    ///     }
+    ///
+    ///     request.execute(&schema, &context)
+    /// }
+    /// ```
     pub fn error(error: FieldError) -> Self {
         let response = http::GraphQLResponse::error(error);
         let json = serde_json::to_string(&response).unwrap();
