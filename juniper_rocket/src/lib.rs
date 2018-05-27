@@ -113,15 +113,18 @@ impl GraphQLResponse {
     /// # extern crate juniper_rocket;
     /// # extern crate rocket;
     /// #
+    /// # use rocket::http::Cookies;
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
     /// # use juniper::tests::model::Database;
     /// # use juniper::{EmptyMutation, FieldError, RootNode, Value};
     /// #
+    /// # type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
+    /// #
     /// #[get("/graphql?<request>")]
     /// fn get_graphql_handler(
-    ///     cookies: Cookies,
+    ///     mut cookies: Cookies,
     ///     context: State<Database>,
     ///     request: juniper_rocket::GraphQLRequest,
     ///     schema: State<Schema>,
