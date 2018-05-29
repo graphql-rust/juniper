@@ -131,7 +131,6 @@ use juniper::http;
 #[serde(untagged)]
 enum GraphQLBatchRequest {
     Single(http::GraphQLRequest),
-    #[cfg(feature = "apollo-extensions")]
     Batch(Vec<http::GraphQLRequest>),
 }
 
@@ -139,7 +138,6 @@ enum GraphQLBatchRequest {
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a> {
     Single(http::GraphQLResponse<'a>),
-    #[cfg(feature = "apollo-extensions")]
     Batch(Vec<http::GraphQLResponse<'a>>),
 }
 
@@ -156,7 +154,6 @@ impl GraphQLBatchRequest {
         match self {
             &GraphQLBatchRequest::Single(ref request) =>
                 GraphQLBatchResponse::Single(request.execute(root_node, context)),
-            #[cfg(feature = "apollo-extensions")]
             &GraphQLBatchRequest::Batch(ref requests) =>
                 GraphQLBatchResponse::Batch(requests.iter().map(|request| request.execute(root_node, context)).collect()),
         }
@@ -167,7 +164,6 @@ impl<'a> GraphQLBatchResponse<'a> {
     fn is_ok(&self) -> bool {
         match self {
             &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            #[cfg(feature = "apollo-extensions")]
             &GraphQLBatchResponse::Batch(ref responses) => responses.iter().fold(true, |ok, response| ok && response.is_ok()),
         }
     }
