@@ -30,7 +30,6 @@ install:
   - cargo -V
   - cargo install --debug cargo-make
 
-
 # 'cargo test' takes care of building for us, so disable Appveyor's build stage. This prevents
 # the "directory does not contain a project or solution file" error.
 # source: https://github.com/starkat99/appveyor-rust/blob/master/appveyor.yml#L113
@@ -38,4 +37,3 @@ build: false
 
 test_script:
    - cargo make workspace-ci-flow --no-workspace
-
