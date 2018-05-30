@@ -69,6 +69,17 @@ pub struct ExecutionError {
     error: FieldError,
 }
 
+impl ExecutionError {
+    /// Construct a new execution error occuring at the beginning of the query
+    pub fn at_origin(error: FieldError) -> ExecutionError {
+        ExecutionError {
+            location: SourcePosition::new_origin(),
+            path: Vec::new(),
+            error: error,
+        }
+    }
+}
+
 impl Eq for ExecutionError {}
 
 impl PartialOrd for ExecutionError {
