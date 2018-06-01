@@ -20,7 +20,7 @@ env:
 script:
   - wget -O ~/.cargo/bin/cargo-make https://bintray.com/sagiegurari/cargo-make/download_file?file_path=cargo-make_v0.7.0
   - chmod 777 ~/.cargo/bin/cargo-make
-  - ~/.cargo/bin/cargo-make make workspace-ci-flow --no-workspace
+  - cargo make workspace-ci-flow --no-workspace
 
 before_deploy:
   - rm -rf target/package/
