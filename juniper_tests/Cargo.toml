@@ -8,6 +8,7 @@ serde_json = { version = "1" }
 
 [dev-dependencies]
 fnv = "1.0.3"
+indexmap = "1.0"
 
 [[test]]
 name = "integration_tests"

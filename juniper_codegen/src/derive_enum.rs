@@ -28,6 +28,9 @@ impl EnumAttrs {
             internal: false,
         };
 
+        // Check doc comments for description.
+        res.description = get_doc_comment(&input.attrs);
+
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
@@ -73,6 +76,9 @@ struct EnumVariantAttrs {
 impl EnumVariantAttrs {
     fn from_input(variant: &Variant) -> EnumVariantAttrs {
         let mut res = EnumVariantAttrs::default();
+
+        // Check doc comments for description.
+        res.description = get_doc_comment(&variant.attrs);
 
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&variant.attrs) {
