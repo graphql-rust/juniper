@@ -13,6 +13,33 @@ struct Input {
     #[graphql(default)] other: Option<bool>,
 }
 
+/// Object comment.
+#[derive(GraphQLInputObject, Debug, PartialEq)]
+struct DocComment {
+    /// Field comment.
+    regular_field: bool,
+}
+
+/// Doc 1.
+/// Doc 2.
+///
+/// Doc 4.
+#[derive(GraphQLInputObject, Debug, PartialEq)]
+struct MultiDocComment {
+    /// Field 1.
+    /// Field 2.
+    regular_field: bool,
+}
+
+/// This is not used as the description.
+#[derive(GraphQLInputObject, Debug, PartialEq)]
+#[graphql(description = "obj override")]
+struct OverrideDocComment {
+    /// This is not used as the description.
+    #[graphql(description = "field override")]
+    regular_field: bool,
+}
+
 #[test]
 fn test_derived_input_object() {
     assert_eq!(Input::name(&()), Some("MyInput"));
@@ -56,4 +83,25 @@ fn test_derived_input_object() {
             other: Some(true),
         }
     );
+}
+
+#[test]
+fn test_doc_comment() {
+    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let meta = DocComment::meta(&(), &mut registry);
+    assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
+}
+
+#[test]
+fn test_multi_doc_comment() {
+    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let meta = MultiDocComment::meta(&(), &mut registry);
+    assert_eq!(meta.description(), Some(&"Doc 1. Doc 2.\nDoc 4.".to_string()));
+}
+
+#[test]
+fn test_doc_comment_override() {
+    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let meta = OverrideDocComment::meta(&(), &mut registry);
+    assert_eq!(meta.description(), Some(&"obj override".to_string()));
 }

@@ -1,10 +1,66 @@
 use syn::{
     Attribute,
     Meta,
+    MetaNameValue,
     NestedMeta,
     Lit,
 };
 use regex::Regex;
+
+// Gets doc comment.
+pub fn get_doc_comment(attrs: &Vec<Attribute>) -> Option<String> {
+    if let Some(items) = get_doc_attr(attrs) {
+        if let Some(doc_strings) = get_doc_strings(&items) {
+            return Some(join_doc_strings(&doc_strings));
+        }
+    }
+    None
+}
+
+// Concatenates doc strings into one string.
+fn join_doc_strings(docs: &Vec<String>) -> String {
+    let s: String = docs.iter()
+        // Convert empty comments to newlines.
+        .map(|x| if x == "" { "\n".to_string() } else { x.clone() })
+        .collect::<Vec<String>>()
+        .join(" ");
+    // Clean up spacing on empty lines.
+    s.replace(" \n ", "\n")
+}
+
+// Gets doc strings from doc comment attributes.
+fn get_doc_strings(items: &Vec<MetaNameValue>) -> Option<Vec<String>> {
+    let mut docs = Vec::new();
+    for item in items {
+        match item.lit {
+            Lit::Str(ref strlit) => {
+                docs.push(strlit.value().trim().to_string());
+            },
+            _ => panic!("doc attributes only have string literal"),
+        }
+    }
+    if !docs.is_empty() {
+        return Some(docs);
+    }
+    None
+}
+
+// Gets doc comment attributes.
+fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
+    let mut docs = Vec::new();
+    for attr in attrs {
+        match attr.interpret_meta() {
+            Some(Meta::NameValue(ref nv)) if nv.ident == "doc" => {
+                docs.push(nv.clone())
+            }
+            _ => {}
+        }
+    }
+    if !docs.is_empty() {
+        return Some(docs);
+    }
+    None
+}
 
 // Get the nested items of a a #[graphql(...)] attribute.
 pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
@@ -124,12 +180,12 @@ pub fn is_valid_name(field_name: &str) -> bool {
 #[test]
 fn test_is_valid_name(){
     assert_eq!(is_valid_name("yesItIs"), true);
-    assert_eq!(is_valid_name("NoitIsnt"), true); 
-    assert_eq!(is_valid_name("iso6301"), true); 
-    assert_eq!(is_valid_name("thisIsATest"), true); 
+    assert_eq!(is_valid_name("NoitIsnt"), true);
+    assert_eq!(is_valid_name("iso6301"), true);
+    assert_eq!(is_valid_name("thisIsATest"), true);
     assert_eq!(is_valid_name("i6Op"), true);
     assert_eq!(is_valid_name("i!"), false);
-    assert_eq!(is_valid_name(""), false);   
+    assert_eq!(is_valid_name(""), false);
     assert_eq!(is_valid_name("aTest"), true);
     assert_eq!(is_valid_name("__Atest90"), true);
 }

@@ -19,6 +19,9 @@ impl ObjAttrs {
     fn from_input(input: &DeriveInput) -> ObjAttrs {
         let mut res = ObjAttrs::default();
 
+        // Check doc comments for description.
+        res.description = get_doc_comment(&input.attrs);
+
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&input.attrs) {
             for item in items {
@@ -55,6 +58,9 @@ struct ObjFieldAttrs {
 impl ObjFieldAttrs {
     fn from_input(variant: &Field) -> ObjFieldAttrs {
         let mut res = ObjFieldAttrs::default();
+
+        // Check doc comments for description.
+        res.description = get_doc_comment(&variant.attrs);
 
         // Check attributes for name and description.
         if let Some(items) = get_graphl_attr(&variant.attrs) {
