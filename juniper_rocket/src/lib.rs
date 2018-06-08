@@ -42,6 +42,8 @@ Check the LICENSE file for details.
 extern crate juniper;
 extern crate rocket;
 extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 use std::io::{Cursor, Read};
 use std::error::Error;
@@ -61,13 +63,55 @@ use juniper::GraphQLType;
 use juniper::FieldError;
 use juniper::RootNode;
 
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+enum GraphQLBatchRequest {
+    Single(http::GraphQLRequest),
+    Batch(Vec<http::GraphQLRequest>),
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum GraphQLBatchResponse<'a> {
+    Single(http::GraphQLResponse<'a>),
+    Batch(Vec<http::GraphQLResponse<'a>>),
+}
+
+impl GraphQLBatchRequest {
+    pub fn execute<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &RootNode<QueryT, MutationT>,
+        context: &CtxT,
+    ) -> GraphQLBatchResponse<'a>
+    where
+        QueryT: GraphQLType<Context = CtxT>,
+        MutationT: GraphQLType<Context = CtxT>,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) =>
+                GraphQLBatchResponse::Single(request.execute(root_node, context)),
+            &GraphQLBatchRequest::Batch(ref requests) =>
+                GraphQLBatchResponse::Batch(requests.iter().map(|request| request.execute(root_node, context)).collect()),
+        }
+    }
+}
+
+impl<'a> GraphQLBatchResponse<'a> {
+    fn is_ok(&self) -> bool {
+        match self {
+            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
+            &GraphQLBatchResponse::Batch(ref responses) => responses.iter().fold(true, |ok, response| ok && response.is_ok()),
+        }
+    }
+}
+
 /// Simple wrapper around an incoming GraphQL request
 ///
 /// See the `http` module for more information. This type can be constructed
 /// automatically from both GET and POST routes by implementing the `FromForm`
 /// and `FromData` traits.
 #[derive(Debug, PartialEq)]
-pub struct GraphQLRequest(http::GraphQLRequest);
+pub struct GraphQLRequest(GraphQLBatchRequest);
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(Status, String);
@@ -209,11 +253,11 @@ impl<'f> FromForm<'f> for GraphQLRequest {
         }
 
         if let Some(query) = query {
-            Ok(GraphQLRequest(http::GraphQLRequest::new(
+            Ok(GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
                 query,
                 operation_name,
                 variables,
-            )))
+            ))))
         } else {
             Err("Query parameter missing".to_owned())
         }
@@ -324,11 +368,11 @@ mod fromform_tests {
         let result = GraphQLRequest::from_form(&mut items, false);
         assert!(result.is_ok());
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
-        let expected = GraphQLRequest(http::GraphQLRequest::new(
+        let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "test".to_string(),
             None,
             Some(variables),
-        ));
+        )));
         assert_eq!(result.unwrap(), expected);
     }
 
@@ -339,11 +383,11 @@ mod fromform_tests {
         let result = GraphQLRequest::from_form(&mut items, false);
         assert!(result.is_ok());
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
-        let expected = GraphQLRequest(http::GraphQLRequest::new(
+        let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "test".to_string(),
             None,
             Some(variables),
-        ));
+        )));
         assert_eq!(result.unwrap(), expected);
     }
 
@@ -353,11 +397,11 @@ mod fromform_tests {
         let mut items = FormItems::from(form_string);
         let result = GraphQLRequest::from_form(&mut items, false);
         assert!(result.is_ok());
-        let expected = GraphQLRequest(http::GraphQLRequest::new(
+        let expected = GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
             "%foo bar baz&?".to_string(),
             Some("test".to_string()),
             None,
-        ));
+        )));
         assert_eq!(result.unwrap(), expected);
     }
 }
