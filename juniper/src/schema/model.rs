@@ -319,6 +319,7 @@ impl<'a> SchemaType<'a> {
 }
 
 impl<'a> TypeType<'a> {
+    #[inline]
     pub fn to_concrete(&self) -> Option<&'a MetaType> {
         match *self {
             TypeType::Concrete(t) => Some(t),
@@ -326,6 +327,7 @@ impl<'a> TypeType<'a> {
         }
     }
 
+    #[inline]
     pub fn innermost_concrete(&self) -> &'a MetaType {
         match *self {
             TypeType::Concrete(t) => t,
@@ -333,6 +335,7 @@ impl<'a> TypeType<'a> {
         }
     }
 
+    #[inline]
     pub fn list_contents(&self) -> Option<&TypeType<'a>> {
         match *self {
             TypeType::List(ref n) => Some(n),
@@ -341,6 +344,7 @@ impl<'a> TypeType<'a> {
         }
     }
 
+    #[inline]
     pub fn is_non_null(&self) -> bool {
         match *self {
             TypeType::NonNull(_) => true,

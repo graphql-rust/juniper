@@ -1,9 +1,8 @@
-use indexmap::map::Entry;
 use indexmap::IndexMap;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
-use value::Value;
+use value::{Object, Value};
 
 use executor::{ExecutionResult, Executor, Registry};
 use parser::Spanning;
@@ -310,9 +309,9 @@ pub trait GraphQLType: Sized {
         executor: &Executor<Self::Context>,
     ) -> Value {
         if let Some(selection_set) = selection_set {
-            let mut result = IndexMap::new();
+            let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
-                Value::object(result)
+                Value::Object(result)
             } else {
                 Value::null()
             }
@@ -322,12 +321,12 @@ pub trait GraphQLType: Sized {
     }
 }
 
-fn resolve_selection_set_into<T, CtxT>(
+pub(crate) fn resolve_selection_set_into<T, CtxT>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection],
     executor: &Executor<CtxT>,
-    result: &mut IndexMap<String, Value>,
+    result: &mut Object,
 ) -> bool
 where
     T: GraphQLType<Context = CtxT>,
@@ -352,11 +351,11 @@ where
                     continue;
                 }
 
-                let response_name = &f.alias.as_ref().unwrap_or(&f.name).item;
+                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    result.insert(
-                        (*response_name).to_owned(),
+                    result.add_field(
+                        response_name,
                         Value::string(instance.concrete_type_name(executor.context(), info)),
                     );
                     continue;
@@ -406,7 +405,7 @@ where
                             return false;
                         }
 
-                        result.insert((*response_name).to_owned(), Value::null());
+                        result.add_field(response_name, Value::null());
                     }
                 }
             }
@@ -453,8 +452,8 @@ where
                         &sub_exec,
                     );
 
-                    if let Ok(Value::Object(mut hash_map)) = sub_result {
-                        for (k, v) in hash_map.drain(..) {
+                    if let Ok(Value::Object(object)) = sub_result {
+                        for (k, v) in object {
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
@@ -503,15 +502,16 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
     false
 }
 
-fn merge_key_into(result: &mut IndexMap<String, Value>, response_name: &str, value: Value) {
-    match result.entry(response_name.to_owned()) {
-        Entry::Occupied(mut e) => match e.get_mut() {
-            &mut Value::Object(ref mut dest_obj) => {
+fn merge_key_into(result: &mut Object, response_name: &str, value: Value) {
+    if let Some(&mut (_, ref mut e)) = result.iter_mut().find(|&(ref key, _)| key == response_name)
+    {
+        match *e {
+            Value::Object(ref mut dest_obj) => {
                 if let Value::Object(src_obj) = value {
                     merge_maps(dest_obj, src_obj);
                 }
             }
-            &mut Value::List(ref mut dest_list) => {
+            Value::List(ref mut dest_list) => {
                 if let Value::List(src_list) = value {
                     dest_list
                         .iter_mut()
@@ -527,19 +527,18 @@ fn merge_key_into(result: &mut IndexMap<String, Value>, response_name: &str, val
                 }
             }
             _ => {}
-        },
-        Entry::Vacant(e) => {
-            e.insert(value);
         }
+        return;
     }
+    result.add_field(response_name, value);
 }
 
-fn merge_maps(dest: &mut IndexMap<String, Value>, src: IndexMap<String, Value>) {
+fn merge_maps(dest: &mut Object, src: Object) {
     for (key, value) in src {
-        if dest.contains_key(&key) {
+        if dest.contains_field(&key) {
             merge_key_into(dest, &key, value);
         } else {
-            dest.insert(key, value);
+            dest.add_field(key, value);
         }
     }
 }

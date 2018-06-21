@@ -8,7 +8,7 @@ use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
-use {GraphQLError, Value};
+use {GraphQLError, Object, Value};
 
 #[derive(Serialize)]
 struct SerializeHelper {
@@ -245,6 +245,22 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
 
         map.serialize_key("locations")?;
         map.serialize_value(&locations)?;
+
+        map.end()
+    }
+}
+
+impl ser::Serialize for Object {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.field_count()))?;
+
+        for &(ref f, ref v) in self.iter() {
+            map.serialize_key(f)?;
+            map.serialize_value(v)?;
+        }
 
         map.end()
     }

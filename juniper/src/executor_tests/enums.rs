@@ -1,12 +1,10 @@
-use indexmap::IndexMap;
-
 use ast::InputValue;
 use executor::Variables;
 use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::Value;
+use value::{Value, Object};
 use GraphQLError::ValidationError;
 
 #[derive(GraphQLEnum, Debug)]
@@ -30,7 +28,7 @@ graphql_object!(TestType: () |&self| {
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 where
-    F: Fn(&IndexMap<String, Value>) -> (),
+    F: Fn(&Object) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -47,7 +45,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&IndexMap<String, Value>) -> (),
+    F: Fn(&Object) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -55,14 +53,14 @@ where
 #[test]
 fn accepts_enum_literal() {
     run_query("{ toString(color: RED) }", |result| {
-        assert_eq!(result.get("toString"), Some(&Value::string("Color::Red")));
+        assert_eq!(result.get_field_value("toString"), Some(&Value::string("Color::Red")));
     });
 }
 
 #[test]
 fn serializes_as_output() {
     run_query("{ aColor }", |result| {
-        assert_eq!(result.get("aColor"), Some(&Value::string("RED")));
+        assert_eq!(result.get_field_value("aColor"), Some(&Value::string("RED")));
     });
 }
 
@@ -92,7 +90,7 @@ fn accepts_strings_in_variables() {
             .into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get("toString"), Some(&Value::string("Color::Red")));
+            assert_eq!(result.get_field_value("toString"), Some(&Value::string("Color::Red")));
         },
     );
 }

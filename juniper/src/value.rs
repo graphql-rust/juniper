@@ -1,8 +1,7 @@
-use indexmap::IndexMap;
-use std::hash::Hash;
-
 use ast::{InputValue, ToInputValue};
 use parser::Spanning;
+use std::iter::FromIterator;
+use std::vec::IntoIter;
 
 /// Serializable value returned from query and field execution.
 ///
@@ -22,7 +21,115 @@ pub enum Value {
     String(String),
     Boolean(bool),
     List(Vec<Value>),
-    Object(IndexMap<String, Value>),
+    Object(Object),
+}
+
+/// A Object value
+#[derive(Debug, PartialEq, Clone)]
+pub struct Object {
+    key_value_list: Vec<(String, Value)>,
+}
+
+impl Object {
+    /// Create a new Object value with a fixed number of
+    /// preallocated slots for field-value pairs
+    pub fn with_capacity(size: usize) -> Self {
+        Object {
+            key_value_list: Vec::with_capacity(size),
+        }
+    }
+
+    /// Add a new field with a value
+    ///
+    /// If there is already a field with the same name the old value
+    /// is returned
+    pub fn add_field<K>(&mut self, k: K, value: Value) -> Option<Value>
+    where
+        K: Into<String>,
+        for<'a> &'a str: PartialEq<K>,
+    {
+        if let Some(item) = self.key_value_list
+            .iter_mut()
+            .find(|(key, _)| (key as &str) == k)
+        {
+            return Some(::std::mem::replace(&mut item.1, value));
+        }
+        self.key_value_list.push((k.into(), value));
+        None
+    }
+
+    /// Check if the object already contains a field with the given name
+    pub fn contains_field<K>(&self, f: K) -> bool
+    where
+        for<'a> &'a str: PartialEq<K>,
+    {
+        self.key_value_list
+            .iter()
+            .any(|(key, _)| (key as &str) == f)
+    }
+
+
+    /// Get a iterator over all field value pairs
+    pub fn iter(&self) -> impl Iterator<Item = &(String, Value)> {
+        self.key_value_list.iter()
+    }
+
+
+    /// Get a iterator over all mutable field value pairs
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, Value)> {
+        self.key_value_list.iter_mut()
+    }
+
+    /// Get the current number of fields
+    pub fn field_count(&self) -> usize {
+        self.key_value_list.len()
+    }
+
+    /// Get the value for a given field
+    pub fn get_field_value<K>(&self, key: K) -> Option<&Value>
+    where
+        for<'a> &'a str: PartialEq<K>,
+    {
+        self.key_value_list
+            .iter()
+            .find(|(k, _)| (k as &str) == key)
+            .map(|&(_, ref value)| value)
+    }
+}
+
+impl IntoIterator for Object {
+    type Item = (String, Value);
+    type IntoIter = IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.key_value_list.into_iter()
+    }
+}
+
+impl From<Object> for Value {
+    fn from(o: Object) -> Self {
+        Value::Object(o)
+    }
+}
+
+impl<K> FromIterator<(K, Value)> for Object
+where
+    K: Into<String>,
+    for<'a> &'a str: PartialEq<K>,
+{
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = (K, Value)>,
+    {
+        let iter = iter.into_iter();
+        let mut ret = Self {
+            key_value_list: Vec::with_capacity(iter.size_hint().0),
+        };
+        for (k, v) in iter {
+            ret.add_field(k, v);
+        }
+        ret
+    }
 }
 
 impl Value {
@@ -59,11 +166,8 @@ impl Value {
     }
 
     /// Construct an object value.
-    pub fn object<K>(o: IndexMap<K, Value>) -> Value
-    where
-        K: Into<String> + Eq + Hash,
-    {
-        Value::Object(o.into_iter().map(|(k, v)| (k.into(), v)).collect())
+    pub fn object(o: Object) -> Value {
+        Value::Object(o)
     }
 
     // DISCRIMINATORS
@@ -85,7 +189,7 @@ impl Value {
     }
 
     /// View the underlying object value, if present.
-    pub fn as_object_value(&self) -> Option<&IndexMap<String, Value>> {
+    pub fn as_object_value(&self) -> Option<&Object> {
         match *self {
             Value::Object(ref o) => Some(o),
             _ => None,
@@ -93,7 +197,7 @@ impl Value {
     }
 
     /// Mutable view into the underlying object value, if present.
-    pub fn as_mut_object_value(&mut self) -> Option<&mut IndexMap<String, Value>> {
+    pub fn as_mut_object_value(&mut self) -> Option<&mut Object> {
         match *self {
             Value::Object(ref mut o) => Some(o),
             _ => None,

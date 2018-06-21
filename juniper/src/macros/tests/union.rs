@@ -1,10 +1,9 @@
-use indexmap::IndexMap;
 use std::marker::PhantomData;
 
 use ast::InputValue;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{Value, Object};
 
 /*
 
@@ -111,7 +110,7 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&IndexMap<String, Value>, &Vec<Value>) -> (),
+    F: Fn(&Object, &Vec<Value>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
@@ -138,13 +137,13 @@ where
     let type_info = result
         .as_object_value()
         .expect("Result is not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("__type field missing")
         .as_object_value()
         .expect("__type field not an object value");
 
     let possible_types = type_info
-        .get("possibleTypes")
+        .get_field_value("possibleTypes")
         .expect("possibleTypes field missing")
         .as_list_value()
         .expect("possibleTypes field not a list value");
@@ -155,8 +154,8 @@ where
 #[test]
 fn introspect_custom_name() {
     run_type_info_query("ACustomNamedUnion", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("ACustomNamedUnion")));
-        assert_eq!(union.get("description"), Some(&Value::null()));
+        assert_eq!(union.get_field_value("name"), Some(&Value::string("ACustomNamedUnion")));
+        assert_eq!(union.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             possible_types.contains(&Value::object(
@@ -171,8 +170,8 @@ fn introspect_custom_name() {
 #[test]
 fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("WithLifetime")));
-        assert_eq!(union.get("description"), Some(&Value::null()));
+        assert_eq!(union.get_field_value("name"), Some(&Value::string("WithLifetime")));
+        assert_eq!(union.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             possible_types.contains(&Value::object(
@@ -187,8 +186,8 @@ fn introspect_with_lifetime() {
 #[test]
 fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("WithGenerics")));
-        assert_eq!(union.get("description"), Some(&Value::null()));
+        assert_eq!(union.get_field_value("name"), Some(&Value::string("WithGenerics")));
+        assert_eq!(union.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             possible_types.contains(&Value::object(
@@ -203,9 +202,9 @@ fn introspect_with_generics() {
 #[test]
 fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("DescriptionFirst")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::string("DescriptionFirst")));
         assert_eq!(
-            union.get("description"),
+            union.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -222,9 +221,9 @@ fn introspect_description_first() {
 #[test]
 fn introspect_resolvers_first() {
     run_type_info_query("ResolversFirst", |union, possible_types| {
-        assert_eq!(union.get("name"), Some(&Value::string("ResolversFirst")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::string("ResolversFirst")));
         assert_eq!(
-            union.get("description"),
+            union.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -242,11 +241,11 @@ fn introspect_resolvers_first() {
 fn introspect_commas_with_trailing() {
     run_type_info_query("CommasWithTrailing", |union, possible_types| {
         assert_eq!(
-            union.get("name"),
+            union.get_field_value("name"),
             Some(&Value::string("CommasWithTrailing"))
         );
         assert_eq!(
-            union.get("description"),
+            union.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -264,11 +263,11 @@ fn introspect_commas_with_trailing() {
 fn introspect_resolvers_with_trailing_comma() {
     run_type_info_query("ResolversWithTrailingComma", |union, possible_types| {
         assert_eq!(
-            union.get("name"),
+            union.get_field_value("name"),
             Some(&Value::string("ResolversWithTrailingComma"))
         );
         assert_eq!(
-            union.get("description"),
+            union.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 

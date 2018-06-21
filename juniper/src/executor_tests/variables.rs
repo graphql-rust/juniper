@@ -1,12 +1,10 @@
-use indexmap::IndexMap;
-
 use ast::InputValue;
 use executor::Variables;
 use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::Value;
+use value::{Value, Object};
 use GraphQLError::ValidationError;
 
 #[derive(Debug)]
@@ -116,7 +114,7 @@ graphql_object!(TestType: () |&self| {
 
 fn run_variable_query<F>(query: &str, vars: Variables, f: F)
 where
-    F: Fn(&IndexMap<String, Value>) -> (),
+    F: Fn(&Object) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -133,7 +131,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&IndexMap<String, Value>) -> (),
+    F: Fn(&Object) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -144,7 +142,7 @@ fn inline_complex_input() {
         r#"{ fieldWithObjectInput(input: {a: "foo", b: ["bar"], c: "baz"}) }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithObjectInput"),
+                result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
@@ -156,7 +154,7 @@ fn inline_parse_single_value_to_list() {
         r#"{ fieldWithObjectInput(input: {a: "foo", b: "bar", c: "baz"}) }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithObjectInput"),
+                result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
@@ -168,7 +166,7 @@ fn inline_runs_from_input_value_on_scalar() {
         r#"{ fieldWithObjectInput(input: {c: "baz", d: "SerializedValue"}) }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithObjectInput"),
+                result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
         },
     );
@@ -192,7 +190,7 @@ fn variable_complex_input() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithObjectInput"),
+                result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
@@ -216,7 +214,7 @@ fn variable_parse_single_value_to_list() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithObjectInput"),
+                result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
@@ -239,7 +237,7 @@ fn variable_runs_from_input_value_on_scalar() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithObjectInput"),
+                result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
         },
     );
@@ -387,7 +385,7 @@ fn variable_error_on_additional_field() {
 fn allow_nullable_inputs_to_be_omitted() {
     run_query(r#"{ fieldWithNullableStringInput }"#, |result| {
         assert_eq!(
-            result.get("fieldWithNullableStringInput"),
+            result.get_field_value("fieldWithNullableStringInput"),
             Some(&Value::string(r#"None"#))
         );
     });
@@ -399,7 +397,7 @@ fn allow_nullable_inputs_to_be_omitted_in_variable() {
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithNullableStringInput"),
+                result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#))
             );
         },
@@ -412,7 +410,7 @@ fn allow_nullable_inputs_to_be_explicitly_null() {
         r#"{ fieldWithNullableStringInput(input: null) }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithNullableStringInput"),
+                result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#))
             );
         },
@@ -428,7 +426,7 @@ fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithNullableStringInput"),
+                result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#))
             );
         },
@@ -444,7 +442,7 @@ fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithNullableStringInput"),
+                result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"Some("a")"#))
             );
         },
@@ -457,7 +455,7 @@ fn allow_nullable_inputs_to_be_set_to_value_directly() {
         r#"{ fieldWithNullableStringInput(input: "a") }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithNullableStringInput"),
+                result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"Some("a")"#))
             );
         },
@@ -511,7 +509,7 @@ fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithNonNullableStringInput"),
+                result.get_field_value("fieldWithNonNullableStringInput"),
                 Some(&Value::string(r#""a""#))
             );
         },
@@ -524,7 +522,7 @@ fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
         r#"{ fieldWithNonNullableStringInput(input: "a") }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithNonNullableStringInput"),
+                result.get_field_value("fieldWithNonNullableStringInput"),
                 Some(&Value::string(r#""a""#))
             );
         },
@@ -539,7 +537,7 @@ fn allow_lists_to_be_null() {
             .into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get("list"), Some(&Value::string(r#"None"#)));
+            assert_eq!(result.get_field_value("list"), Some(&Value::string(r#"None"#)));
         },
     );
 }
@@ -555,7 +553,7 @@ fn allow_lists_to_contain_values() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("list"),
+                result.get_field_value("list"),
                 Some(&Value::string(r#"Some([Some("A")])"#))
             );
         },
@@ -577,7 +575,7 @@ fn allow_lists_to_contain_null() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("list"),
+                result.get_field_value("list"),
                 Some(&Value::string(r#"Some([Some("A"), None, Some("B")])"#))
             );
         },
@@ -614,7 +612,7 @@ fn allow_non_null_lists_to_contain_values() {
         )].into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get("nnList"), Some(&Value::string(r#"[Some("A")]"#)));
+            assert_eq!(result.get_field_value("nnList"), Some(&Value::string(r#"[Some("A")]"#)));
         },
     );
 }
@@ -633,7 +631,7 @@ fn allow_non_null_lists_to_contain_null() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("nnList"),
+                result.get_field_value("nnList"),
                 Some(&Value::string(r#"[Some("A"), None, Some("B")]"#))
             );
         },
@@ -648,7 +646,7 @@ fn allow_lists_of_non_null_to_be_null() {
             .into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get("listNn"), Some(&Value::string(r#"None"#)));
+            assert_eq!(result.get_field_value("listNn"), Some(&Value::string(r#"None"#)));
         },
     );
 }
@@ -663,7 +661,7 @@ fn allow_lists_of_non_null_to_contain_values() {
         )].into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get("listNn"), Some(&Value::string(r#"Some(["A"])"#)));
+            assert_eq!(result.get_field_value("listNn"), Some(&Value::string(r#"Some(["A"])"#)));
         },
     );
 }
@@ -748,7 +746,7 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
         )].into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get("nnListNn"), Some(&Value::string(r#"["A"]"#)));
+            assert_eq!(result.get_field_value("nnListNn"), Some(&Value::string(r#"["A"]"#)));
         },
     );
 }
@@ -799,7 +797,7 @@ fn does_not_allow_unknown_types_to_be_used_as_values() {
 fn default_argument_when_not_provided() {
     run_query(r#"{ fieldWithDefaultArgumentValue }"#, |result| {
         assert_eq!(
-            result.get("fieldWithDefaultArgumentValue"),
+            result.get_field_value("fieldWithDefaultArgumentValue"),
             Some(&Value::string(r#""Hello World""#))
         );
     });
@@ -811,7 +809,7 @@ fn default_argument_when_nullable_variable_not_provided() {
         r#"query q($input: String) { fieldWithDefaultArgumentValue(input: $input) }"#,
         |result| {
             assert_eq!(
-                result.get("fieldWithDefaultArgumentValue"),
+                result.get_field_value("fieldWithDefaultArgumentValue"),
                 Some(&Value::string(r#""Hello World""#))
             );
         },
@@ -827,7 +825,7 @@ fn default_argument_when_nullable_variable_set_to_null() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("fieldWithDefaultArgumentValue"),
+                result.get_field_value("fieldWithDefaultArgumentValue"),
                 Some(&Value::string(r#""Hello World""#))
             );
         },
@@ -838,14 +836,14 @@ fn default_argument_when_nullable_variable_set_to_null() {
 fn nullable_input_object_arguments_successful_without_variables() {
     run_query(r#"{ exampleInput(arg: {a: "abc", b: 123}) }"#, |result| {
         assert_eq!(
-            result.get("exampleInput"),
+            result.get_field_value("exampleInput"),
             Some(&Value::string(r#"a: Some("abc"), b: 123"#))
         );
     });
 
     run_query(r#"{ exampleInput(arg: {a: null, b: 1}) }"#, |result| {
         assert_eq!(
-            result.get("exampleInput"),
+            result.get_field_value("exampleInput"),
             Some(&Value::string(r#"a: None, b: 1"#))
         );
     });
@@ -860,7 +858,7 @@ fn nullable_input_object_arguments_successful_with_variables() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("exampleInput"),
+                result.get_field_value("exampleInput"),
                 Some(&Value::string(r#"a: None, b: 123"#))
             );
         },
@@ -873,7 +871,7 @@ fn nullable_input_object_arguments_successful_with_variables() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("exampleInput"),
+                result.get_field_value("exampleInput"),
                 Some(&Value::string(r#"a: None, b: 1"#))
             );
         },
@@ -884,7 +882,7 @@ fn nullable_input_object_arguments_successful_with_variables() {
         vec![].into_iter().collect(),
         |result| {
             assert_eq!(
-                result.get("exampleInput"),
+                result.get_field_value("exampleInput"),
                 Some(&Value::string(r#"a: None, b: 1"#))
             );
         },
@@ -969,7 +967,7 @@ fn does_not_allow_null_variable_for_required_field() {
 fn input_object_with_default_values() {
     run_query(r#"{ inputWithDefaults(arg: {a: 1}) }"#, |result| {
         assert_eq!(
-            result.get("inputWithDefaults"),
+            result.get_field_value("inputWithDefaults"),
             Some(&Value::string(r#"a: 1"#))
         );
     });
@@ -981,7 +979,7 @@ fn input_object_with_default_values() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("inputWithDefaults"),
+                result.get_field_value("inputWithDefaults"),
                 Some(&Value::string(r#"a: 1"#))
             );
         },
@@ -992,7 +990,7 @@ fn input_object_with_default_values() {
         vec![].into_iter().collect(),
         |result| {
             assert_eq!(
-                result.get("inputWithDefaults"),
+                result.get_field_value("inputWithDefaults"),
                 Some(&Value::string(r#"a: 1"#))
             );
         },
@@ -1005,7 +1003,7 @@ fn input_object_with_default_values() {
             .collect(),
         |result| {
             assert_eq!(
-                result.get("inputWithDefaults"),
+                result.get_field_value("inputWithDefaults"),
                 Some(&Value::string(r#"a: 2"#))
             );
         },
@@ -1024,7 +1022,7 @@ mod integers {
                 .collect(),
             |result| {
                 assert_eq!(
-                    result.get("integerInput"),
+                    result.get_field_value("integerInput"),
                     Some(&Value::string(r#"value: 1"#))
                 );
             },
@@ -1037,7 +1035,7 @@ mod integers {
                 .collect(),
             |result| {
                 assert_eq!(
-                    result.get("integerInput"),
+                    result.get_field_value("integerInput"),
                     Some(&Value::string(r#"value: -1"#))
                 );
             },
@@ -1097,7 +1095,7 @@ mod floats {
                 .collect(),
             |result| {
                 assert_eq!(
-                    result.get("floatInput"),
+                    result.get_field_value("floatInput"),
                     Some(&Value::string(r#"value: 10"#))
                 );
             },
@@ -1113,7 +1111,7 @@ mod floats {
                 .collect(),
             |result| {
                 assert_eq!(
-                    result.get("floatInput"),
+                    result.get_field_value("floatInput"),
                     Some(&Value::string(r#"value: -1"#))
                 );
             },

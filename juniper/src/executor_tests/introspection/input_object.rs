@@ -1,10 +1,8 @@
-use indexmap::IndexMap;
-
 use ast::{FromInputValue, InputValue};
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{Value, Object};
 
 struct Root;
 
@@ -106,7 +104,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&IndexMap<String, Value>, &Vec<Value>) -> (),
+    F: Fn(&Object, &Vec<Value>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
@@ -120,13 +118,13 @@ where
     let type_info = result
         .as_object_value()
         .expect("Result is not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("__type field missing")
         .as_object_value()
         .expect("__type field not an object value");
 
     let fields = type_info
-        .get("inputFields")
+        .get_field_value("inputFields")
         .expect("inputFields field missing")
         .as_list_value()
         .expect("inputFields not a list");
@@ -156,8 +154,8 @@ fn default_name_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("DefaultName")));
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("DefaultName")));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 2);
 
@@ -256,10 +254,10 @@ fn no_trailing_comma_introspection() {
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
-            type_info.get("name"),
+            type_info.get_field_value("name"),
             Some(&Value::string("NoTrailingComma"))
         );
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 2);
 
@@ -337,8 +335,8 @@ fn derive_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("Derive")));
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("Derive")));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 1);
 
@@ -405,10 +403,10 @@ fn named_introspection() {
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
-            type_info.get("name"),
+            type_info.get_field_value("name"),
             Some(&Value::string("ANamedInputObject"))
         );
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 1);
 
@@ -461,9 +459,9 @@ fn description_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("Description")));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("Description")));
         assert_eq!(
-            type_info.get("description"),
+            type_info.get_field_value("description"),
             Some(&Value::string("Description for the input object"))
         );
 
@@ -519,10 +517,10 @@ fn field_description_introspection() {
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
-            type_info.get("name"),
+            type_info.get_field_value("name"),
             Some(&Value::string("FieldDescription"))
         );
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(fields.len(), 2);
 
@@ -597,7 +595,7 @@ fn field_with_defaults_introspection() {
 
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
-            type_info.get("name"),
+            type_info.get_field_value("name"),
             Some(&Value::string("FieldWithDefaults"))
         );
 

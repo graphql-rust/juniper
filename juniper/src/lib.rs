@@ -162,7 +162,7 @@ pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
 pub use validation::RuleError;
-pub use value::Value;
+pub use value::{Value, Object};
 
 pub use schema::meta;
 
