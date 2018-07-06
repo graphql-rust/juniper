@@ -93,6 +93,24 @@ graphql_scalar!(bool as "Boolean" {
     }
 });
 
+graphql_scalar!(i16 as "Int" {
+    resolve(&self) -> Value {
+        Value::int(*self as i32)
+    }
+
+    from_input_value(v: &InputValue) -> Option<i16> {
+        if let InputValue::Int(i) = *v {
+            if ::std::i16::MIN as i32 >= i && ::std::i16::MAX as i32 <= i {
+                Some(i as i16)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+});
+
 graphql_scalar!(i32 as "Int" {
     resolve(&self) -> Value {
         Value::int(*self)
