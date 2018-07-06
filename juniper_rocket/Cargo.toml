@@ -14,7 +14,7 @@ repository = "https://github.com/graphql-rust/juniper"
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { version = "0.9.2" , path = "../juniper"}
+juniper = { version = "0.9.2" , default-features = false, path = "../juniper"}
 
 rocket = { version = "0.3.9" }
 rocket_codegen = { version = "0.3.9" }
