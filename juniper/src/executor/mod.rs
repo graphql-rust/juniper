@@ -223,12 +223,13 @@ where
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<T>
+impl<'a, T: GraphQLType, C, E: IntoFieldError> IntoResolvable<'a, T, C> for Result<T, E>
 where
     T::Context: FromContext<C>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
         self.map(|v| Some((FromContext::from(ctx), v)))
+            .map_err(|e| e.into_field_error())
     }
 }
 
