@@ -10,6 +10,11 @@ use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
 use {GraphQLError, Value};
 
+#[derive(Serialize)]
+struct SerializeHelper {
+    message: &'static str,
+}
+
 impl ser::Serialize for ExecutionError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -45,11 +50,21 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
             GraphQLError::ParseError(ref err) => vec![err].serialize(serializer),
             GraphQLError::ValidationError(ref errs) => errs.serialize(serializer),
             GraphQLError::NoOperationProvided => {
-                serializer.serialize_str("Must provide an operation")
+                [
+                    SerializeHelper { message: "Must provide an operation" }
+                ].serialize(serializer)
             }
-            GraphQLError::MultipleOperationsProvided => serializer
-                .serialize_str("Must provide operation name if query contains multiple operations"),
-            GraphQLError::UnknownOperationName => serializer.serialize_str("Unknown operation"),
+            GraphQLError::MultipleOperationsProvided => {
+                [SerializeHelper {
+                    message: "Must provide operation name \
+                    if query contains multiple operations",
+                }].serialize(serializer)
+            }
+            GraphQLError::UnknownOperationName => {
+                [
+                    SerializeHelper { message: "Unknown operation" }
+                ].serialize(serializer)
+            }
         }
     }
 }
@@ -261,7 +276,9 @@ impl ser::Serialize for Value {
 #[cfg(test)]
 mod tests {
     use serde_json::from_str;
+    use serde_json::to_string;
     use ast::InputValue;
+    use super::GraphQLError;
 
     #[test]
     fn int() {
@@ -276,5 +293,11 @@ mod tests {
         // large value without a decimal part is also float
         assert_eq!(from_str::<InputValue>("123567890123").unwrap(),
                    InputValue::float(123567890123.0));
+    }
+
+    #[test]
+    fn errors() {
+        assert_eq!(to_string(&GraphQLError::UnknownOperationName).unwrap(),
+                   r#"[{"message":"Unknown operation"}]"#);
     }
 }
