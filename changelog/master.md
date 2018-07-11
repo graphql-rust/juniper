@@ -28,3 +28,9 @@
   `#[graphql(description = "my description")]`.
 
   [#194](https://github.com/graphql-rust/juniper/issues/194)
+
+* Introduced `IntoFieldError` trait to allow custom error handling
+  i.e. custom result type. The error type must implement this trait resolving
+  the errors into `FieldError`.
+
+  [#40](https://github.com/graphql-rust/juniper/issues/40)
