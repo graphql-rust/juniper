@@ -193,6 +193,21 @@ pub type ExecutionResult = Result<Value, FieldError>;
 /// The map of variables used for substitution during query execution
 pub type Variables = HashMap<String, InputValue>;
 
+/// Custom error handling trait to enable Error types other than `FieldError` to be specified
+/// as return value.
+///
+/// Any custom error type should implement this trait to convert it to `FieldError`.
+pub trait IntoFieldError {
+    #[doc(hidden)]
+    fn into_field_error(self) -> FieldError;
+}
+
+impl IntoFieldError for FieldError {
+    fn into_field_error(self) -> FieldError {
+        self
+    }
+}
+
 #[doc(hidden)]
 pub trait IntoResolvable<'a, T: GraphQLType, C>: Sized {
     #[doc(hidden)]
@@ -208,12 +223,13 @@ where
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<T>
+impl<'a, T: GraphQLType, C, E: IntoFieldError> IntoResolvable<'a, T, C> for Result<T, E>
 where
     T::Context: FromContext<C>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
         self.map(|v| Some((FromContext::from(ctx), v)))
+            .map_err(|e| e.into_field_error())
     }
 }
 

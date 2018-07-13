@@ -676,7 +676,7 @@ mod dynamic_context_switching {
 }
 
 mod propagates_errors_to_nullable_fields {
-    use executor::{ExecutionError, FieldError, FieldResult};
+    use executor::{ExecutionError, FieldError, FieldResult, IntoFieldError};
     use parser::SourcePosition;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
@@ -684,6 +684,23 @@ mod propagates_errors_to_nullable_fields {
 
     struct Schema;
     struct Inner;
+
+    enum CustomError {
+        NotFound
+    }
+
+    impl IntoFieldError for CustomError {
+        fn into_field_error(self) -> FieldError {
+            match self {
+                CustomError::NotFound => FieldError::new(
+                    "Not Found",
+                    graphql_value!({
+                        "type": "NOT_FOUND"
+                    })
+                )
+            }
+        }
+    }
 
     graphql_object!(Schema: () |&self| {
         field inner() -> Inner { Inner }
@@ -696,6 +713,7 @@ mod propagates_errors_to_nullable_fields {
         field non_nullable_field() -> Inner { Inner }
         field nullable_error_field() -> FieldResult<Option<&str>> { Err("Error for nullableErrorField")? }
         field non_nullable_error_field() -> FieldResult<&str> { Err("Error for nonNullableErrorField")? }
+        field custom_error_field() -> Result<&str, CustomError> { Err(CustomError::NotFound) }
     });
 
     #[test]
@@ -743,6 +761,29 @@ mod propagates_errors_to_nullable_fields {
                 SourcePosition::new(10, 0, 10),
                 &["inner", "nonNullableErrorField"],
                 FieldError::new("Error for nonNullableErrorField", Value::null()),
+            )]
+        );
+    }
+
+    #[test]
+    fn custom_error_first_level() {
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let doc = r"{ inner { customErrorField } }";
+
+        let vars = vec![].into_iter().collect();
+
+        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+
+        println!("Result: {:?}", result);
+
+        assert_eq!(result, graphql_value!(None));
+
+        assert_eq!(
+            errs,
+            vec![ExecutionError::new(
+                SourcePosition::new(10, 0, 10),
+                &["inner", "customErrorField"],
+                FieldError::new("Not Found", graphql_value!({ "type": "NOT_FOUND" })),
             )]
         );
     }

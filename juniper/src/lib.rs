@@ -152,7 +152,7 @@ use validation::{validate_input_values, visit_all_rules, ValidatorContext};
 
 pub use ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
 pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
-                   FromContext, IntoResolvable, Registry, Variables};
+                   FromContext, IntoResolvable, Registry, Variables, IntoFieldError};
 pub use executor::{Applies, LookAheadArgument, LookAheadSelection, LookAheadValue, LookAheadMethods};
 pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
