@@ -123,6 +123,7 @@ pub struct FieldError {
     data: Value,
 }
 
+/*
 impl<T: Display> From<T> for FieldError {
     fn from(e: T) -> FieldError {
         FieldError {
@@ -131,6 +132,7 @@ impl<T: Display> From<T> for FieldError {
         }
     }
 }
+*/
 
 impl FieldError {
     /// Construct a new error with additional data
@@ -181,6 +183,21 @@ impl FieldError {
     #[doc(hidden)]
     pub fn data(&self) -> &Value {
         &self.data
+    }
+}
+
+pub trait FieldResultExt<T, E> {
+    fn fmt_err(self) -> Result<T, FieldError>;
+}
+
+impl<T, E> FieldResultExt<T, E> for Result<T, E>
+    where E: Display
+{
+    fn fmt_err(self) -> Result<T, FieldError> {
+        self.map_err(|e| FieldError {
+            message: format!("{}", e),
+            data: Value::null(),
+        })
     }
 }
 
