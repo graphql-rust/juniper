@@ -109,23 +109,25 @@ extern crate juniper;
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
+#[cfg(test)]
+extern crate url;
 extern crate urlencoded;
 
-use iron::prelude::*;
+use iron::method;
 use iron::middleware::Handler;
 use iron::mime::Mime;
+use iron::prelude::*;
 use iron::status;
-use iron::method;
 use urlencoded::{UrlDecodingError, UrlEncodedQuery};
 
-use std::io::Read;
 use std::error::Error;
 use std::fmt;
+use std::io::Read;
 
 use serde_json::error::Error as SerdeError;
 
-use juniper::{GraphQLType, InputValue, RootNode};
 use juniper::http;
+use juniper::{GraphQLType, InputValue, RootNode};
 
 #[derive(Deserialize)]
 #[serde(untagged)]
@@ -152,10 +154,15 @@ impl GraphQLBatchRequest {
         MutationT: GraphQLType<Context = CtxT>,
     {
         match self {
-            &GraphQLBatchRequest::Single(ref request) =>
-                GraphQLBatchResponse::Single(request.execute(root_node, context)),
-            &GraphQLBatchRequest::Batch(ref requests) =>
-                GraphQLBatchResponse::Batch(requests.iter().map(|request| request.execute(root_node, context)).collect()),
+            &GraphQLBatchRequest::Single(ref request) => {
+                GraphQLBatchResponse::Single(request.execute(root_node, context))
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+                requests
+                    .iter()
+                    .map(|request| request.execute(root_node, context))
+                    .collect(),
+            ),
         }
     }
 }
@@ -164,7 +171,9 @@ impl<'a> GraphQLBatchResponse<'a> {
     fn is_ok(&self) -> bool {
         match self {
             &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses.iter().fold(true, |ok, response| ok && response.is_ok()),
+            &GraphQLBatchResponse::Batch(ref responses) => responses
+                .iter()
+                .fold(true, |ok, response| ok && response.is_ok()),
         }
     }
 }
@@ -244,7 +253,8 @@ where
     }
 
     fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
-        let url_query_string = req.get_mut::<UrlEncodedQuery>()
+        let url_query_string = req
+            .get_mut::<UrlEncodedQuery>()
             .map_err(GraphQLIronError::Url)?;
 
         let input_query = parse_url_param(url_query_string.remove("query"))?
@@ -373,21 +383,40 @@ impl From<GraphQLIronError> for IronError {
 #[cfg(test)]
 mod tests {
     use iron::prelude::*;
-    use iron_test::{request, response};
+    use iron::Url;
     use iron::{Handler, Headers};
+    use iron_test::{request, response};
+    use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 
-    use juniper::tests::model::Database;
     use juniper::http::tests as http_tests;
+    use juniper::tests::model::Database;
     use juniper::EmptyMutation;
 
     use super::GraphQLHandler;
+
+    // This is ugly but it works. `iron_test` just dumps the path/url in headers
+    // and newer `hyper` doesn't allow unescaped "{" or "}".
+    fn fixup_url(url: &str) -> String {
+        let url = Url::parse(&format!("http://localhost:3000{}", url)).expect("url to parse");
+        let path: String = url
+            .path()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join("/");
+        format!(
+            "http://localhost:3000{}?{}",
+            path,
+            utf8_percent_encode(url.query().unwrap_or(""), DEFAULT_ENCODE_SET)
+        )
+    }
 
     struct TestIronIntegration;
 
     impl http_tests::HTTPIntegration for TestIronIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             make_test_response(request::get(
-                &("http://localhost:3000".to_owned() + url),
+                &fixup_url(url),
                 Headers::new(),
                 &make_handler(),
             ))
@@ -395,7 +424,7 @@ mod tests {
 
         fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
             make_test_response(request::post(
-                &("http://localhost:3000".to_owned() + url),
+                &fixup_url(url),
                 Headers::new(),
                 body,
                 &make_handler(),
