@@ -262,15 +262,19 @@ pub mod tests {
     }
 
     fn test_batched_post<T: HTTPIntegration>(integration: &T) {
-        let response = integration.post("/", r#"[{"query": "{hero{name}}"}, {"query": "{hero{name}}"}]"#);
+        let response = integration.post(
+            "/",
+            r#"[{"query": "{hero{name}}"}, {"query": "{hero{name}}"}]"#,
+        );
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
 
         assert_eq!(
             unwrap_json_response(&response),
-            serde_json::from_str::<Json>(r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#)
-                .expect("Invalid JSON constant in test")
+            serde_json::from_str::<Json>(
+                r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#
+            ).expect("Invalid JSON constant in test")
         );
     }
 }

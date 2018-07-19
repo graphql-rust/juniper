@@ -8,9 +8,11 @@ use juniper::{self, FromInputValue, GraphQLType, InputValue};
 #[graphql(name = "MyInput", description = "input descr")]
 struct Input {
     regular_field: String,
-    #[graphql(name = "haha", default = "33", description = "haha descr")] c: i32,
+    #[graphql(name = "haha", default = "33", description = "haha descr")]
+    c: i32,
 
-    #[graphql(default)] other: Option<bool>,
+    #[graphql(default)]
+    other: Option<bool>,
 }
 
 /// Object comment.
@@ -96,7 +98,10 @@ fn test_doc_comment() {
 fn test_multi_doc_comment() {
     let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"Doc 1. Doc 2.\nDoc 4.".to_string()));
+    assert_eq!(
+        meta.description(),
+        Some(&"Doc 1. Doc 2.\nDoc 4.".to_string())
+    );
 }
 
 #[test]

@@ -49,22 +49,16 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
         match *self {
             GraphQLError::ParseError(ref err) => vec![err].serialize(serializer),
             GraphQLError::ValidationError(ref errs) => errs.serialize(serializer),
-            GraphQLError::NoOperationProvided => {
-                [
-                    SerializeHelper { message: "Must provide an operation" }
-                ].serialize(serializer)
-            }
-            GraphQLError::MultipleOperationsProvided => {
-                [SerializeHelper {
-                    message: "Must provide operation name \
-                    if query contains multiple operations",
-                }].serialize(serializer)
-            }
-            GraphQLError::UnknownOperationName => {
-                [
-                    SerializeHelper { message: "Unknown operation" }
-                ].serialize(serializer)
-            }
+            GraphQLError::NoOperationProvided => [SerializeHelper {
+                message: "Must provide an operation",
+            }].serialize(serializer),
+            GraphQLError::MultipleOperationsProvided => [SerializeHelper {
+                message: "Must provide operation name \
+                          if query contains multiple operations",
+            }].serialize(serializer),
+            GraphQLError::UnknownOperationName => [SerializeHelper {
+                message: "Unknown operation",
+            }].serialize(serializer),
         }
     }
 }
@@ -275,29 +269,37 @@ impl ser::Serialize for Value {
 
 #[cfg(test)]
 mod tests {
+    use super::GraphQLError;
+    use ast::InputValue;
     use serde_json::from_str;
     use serde_json::to_string;
-    use ast::InputValue;
-    use super::GraphQLError;
 
     #[test]
     fn int() {
-        assert_eq!(from_str::<InputValue>("1235").unwrap(),
-                   InputValue::int(1235));
+        assert_eq!(
+            from_str::<InputValue>("1235").unwrap(),
+            InputValue::int(1235)
+        );
     }
 
     #[test]
     fn float() {
-        assert_eq!(from_str::<InputValue>("2.0").unwrap(),
-                   InputValue::float(2.0));
+        assert_eq!(
+            from_str::<InputValue>("2.0").unwrap(),
+            InputValue::float(2.0)
+        );
         // large value without a decimal part is also float
-        assert_eq!(from_str::<InputValue>("123567890123").unwrap(),
-                   InputValue::float(123567890123.0));
+        assert_eq!(
+            from_str::<InputValue>("123567890123").unwrap(),
+            InputValue::float(123567890123.0)
+        );
     }
 
     #[test]
     fn errors() {
-        assert_eq!(to_string(&GraphQLError::UnknownOperationName).unwrap(),
-                   r#"[{"message":"Unknown operation"}]"#);
+        assert_eq!(
+            to_string(&GraphQLError::UnknownOperationName).unwrap(),
+            r#"[{"message":"Unknown operation"}]"#
+        );
     }
 }

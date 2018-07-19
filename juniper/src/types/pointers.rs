@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
+use std::sync::Arc;
 use value::Value;
 
 use executor::{ExecutionResult, Executor, Registry};

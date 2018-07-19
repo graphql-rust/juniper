@@ -8,7 +8,8 @@ use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 #[graphql(name = "Some", description = "enum descr")]
 enum SomeEnum {
     Regular,
-    #[graphql(name = "FULL", description = "field descr", deprecated = "depr")] Full,
+    #[graphql(name = "FULL", description = "field descr", deprecated = "depr")]
+    Full,
 }
 
 /// Enum doc.
@@ -82,7 +83,10 @@ fn test_doc_comment() {
 fn test_multi_doc_comment() {
     let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocEnum::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"Doc 1. Doc 2.\nDoc 4.".to_string()));
+    assert_eq!(
+        meta.description(),
+        Some(&"Doc 1. Doc 2.\nDoc 4.".to_string())
+    );
 }
 
 #[test]
@@ -90,5 +94,4 @@ fn test_doc_comment_override() {
     let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = OverrideDocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"enum override".to_string()));
-
 }

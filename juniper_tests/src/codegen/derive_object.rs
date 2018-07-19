@@ -10,7 +10,8 @@ use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variab
 #[graphql(name = "MyObj", description = "obj descr")]
 struct Obj {
     regular_field: bool,
-    #[graphql(name = "renamedField", description = "descr", deprecation = "field descr")] c: i32,
+    #[graphql(name = "renamedField", description = "descr", deprecation = "field descr")]
+    c: i32,
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -101,7 +102,10 @@ fn test_doc_comment() {
 fn test_multi_doc_comment() {
     let mut registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
-    assert_eq!(meta.description(), Some(&"Doc 1. Doc 2.\nDoc 4.".to_string()));
+    assert_eq!(
+        meta.description(),
+        Some(&"Doc 1. Doc 2.\nDoc 4.".to_string())
+    );
 
     check_descriptions(
         "MultiDocComment",
@@ -150,18 +154,16 @@ fn test_derived_object() {
         execute(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "obj",
-                        Value::object(
-                            vec![
-                                ("regularField", Value::boolean(true)),
-                                ("renamedField", Value::int(22)),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "obj",
+                    Value::object(
+                        vec![
+                            ("regularField", Value::boolean(true)),
+                            ("renamedField", Value::int(22)),
+                        ].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -187,26 +189,22 @@ fn test_derived_object_nested() {
         execute(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
-                vec![
-                    (
-                        "nested",
-                        Value::object(
-                            vec![
-                                (
-                                    "obj",
-                                    Value::object(
-                                        vec![
-                                            ("regularField", Value::boolean(false)),
-                                            ("renamedField", Value::int(333)),
-                                        ].into_iter()
-                                            .collect(),
-                                    ),
-                                ),
-                            ].into_iter()
-                                .collect(),
-                        ),
+                vec![(
+                    "nested",
+                    Value::object(
+                        vec![(
+                            "obj",
+                            Value::object(
+                                vec![
+                                    ("regularField", Value::boolean(false)),
+                                    ("renamedField", Value::int(333)),
+                                ].into_iter()
+                                    .collect(),
+                            ),
+                        )].into_iter()
+                            .collect(),
                     ),
-                ].into_iter()
+                )].into_iter()
                     .collect()
             ),
             vec![]
@@ -215,8 +213,14 @@ fn test_derived_object_nested() {
 }
 
 #[cfg(test)]
-fn check_descriptions(object_name: &str, object_description: &Value, field_name: &str, field_value: &Value ) {
-    let doc = format!(r#"
+fn check_descriptions(
+    object_name: &str,
+    object_description: &Value,
+    field_name: &str,
+    field_value: &Value,
+) {
+    let doc = format!(
+        r#"
     {{
         __type(name: "{}") {{
             name,
@@ -227,7 +231,9 @@ fn check_descriptions(object_name: &str, object_description: &Value, field_name:
             }}
         }}
     }}
-    "#, object_name);
+    "#,
+        object_name
+    );
     run_type_info_query(&doc, |(type_info, values)| {
         assert_eq!(type_info.get("name"), Some(&Value::string(object_name)));
         assert_eq!(type_info.get("description"), Some(object_description));

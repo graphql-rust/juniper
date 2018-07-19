@@ -6,14 +6,18 @@ use std::sync::RwLock;
 
 use fnv::FnvHashMap;
 
-use ast::{Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
-          ToInputValue, Type};
-use GraphQLError;
+use ast::{
+    Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
+    ToInputValue, Type,
+};
 use parser::SourcePosition;
 use value::Value;
+use GraphQLError;
 
-use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, ListMeta,
-                   MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta};
+use schema::meta::{
+    Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, ListMeta, MetaType,
+    NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
+};
 use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
@@ -21,7 +25,10 @@ use types::name::Name;
 
 mod look_ahead;
 
-pub use self::look_ahead::{Applies, LookAheadArgument, LookAheadSelection, LookAheadValue, LookAheadMethods, ChildSelection, ConcreteLookAheadSelection};
+pub use self::look_ahead::{
+    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+    LookAheadSelection, LookAheadValue,
+};
 
 /// A type registry used to build schemas
 ///
@@ -462,19 +469,29 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     /// This allows to see the whole selection and preform operations
     /// affecting the childs
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a> {
-        self.parent_selection_set.map(|p| {
-            LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
-        }).unwrap_or_else(||{
-            LookAheadSelection{
+        self.parent_selection_set
+            .map(|p| {
+                LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
+            })
+            .unwrap_or_else(|| LookAheadSelection {
                 name: self.current_type.innermost_concrete().name().unwrap_or(""),
                 alias: None,
                 arguments: Vec::new(),
-                children: self.current_selection_set.map(|s| s.iter().map(|s| ChildSelection {
-                    inner: LookAheadSelection::build_from_selection(s, self.variables, self.fragments),
-                    applies_for: Applies::All
-                }).collect()).unwrap_or_else(Vec::new)
-            }
-        })
+                children: self.current_selection_set
+                    .map(|s| {
+                        s.iter()
+                            .map(|s| ChildSelection {
+                                inner: LookAheadSelection::build_from_selection(
+                                    s,
+                                    self.variables,
+                                    self.fragments,
+                                ),
+                                applies_for: Applies::All,
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_else(Vec::new),
+            })
     }
 }
 

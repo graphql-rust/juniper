@@ -1,11 +1,6 @@
-use syn;
-use syn::{
-    DeriveInput,
-    Data,
-    Fields,
-    Field,
-};
 use quote::Tokens;
+use syn;
+use syn::{Data, DeriveInput, Field, Fields};
 
 use util::*;
 
@@ -30,8 +25,10 @@ impl ObjAttrs {
                         res.name = Some(val);
                         continue;
                     } else {
-                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                                 &*val);
+                        panic!(
+                            "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                            &*val
+                        );
                     }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
@@ -70,8 +67,10 @@ impl ObjFieldAttrs {
                         res.name = Some(val);
                         continue;
                     } else {
-                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                                 &*val);
+                        panic!(
+                            "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                            &*val
+                        );
                     }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {

@@ -1,8 +1,10 @@
 use executor::{ExecutionResult, Executor, Registry};
 use types::base::{Arguments, GraphQLType, TypeKind};
 
-use schema::meta::{Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType,
-                   ObjectMeta, UnionMeta};
+use schema::meta::{
+    Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType, ObjectMeta,
+    UnionMeta,
+};
 use schema::model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType};
 
 impl<'a, CtxT, QueryT, MutationT> GraphQLType for RootNode<'a, QueryT, MutationT>

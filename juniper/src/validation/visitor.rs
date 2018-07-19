@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 
-use ast::{Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
-          InlineFragment, InputValue, Operation, OperationType, Selection, Type,
-          VariableDefinitions};
+use ast::{
+    Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread, InlineFragment,
+    InputValue, Operation, OperationType, Selection, Type, VariableDefinitions,
+};
 use parser::Spanning;
 use schema::meta::Argument;
 use validation::{ValidatorContext, Visitor};

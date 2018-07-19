@@ -7,12 +7,12 @@ extern crate serde;
 
 use std::env;
 
-use mount::Mount;
-use logger::Logger;
 use iron::prelude::*;
+use juniper::tests::model::Database;
 use juniper::EmptyMutation;
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
-use juniper::tests::model::Database;
+use logger::Logger;
+use mount::Mount;
 
 fn context_factory(_: &mut Request) -> IronResult<Database> {
     Ok(Database::new())

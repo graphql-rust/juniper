@@ -1,4 +1,6 @@
-use ast::{Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection};
+use ast::{
+    Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
+};
 use parser::document::parse_document_source;
 use parser::{ParseError, SourcePosition, Spanning, Token};
 

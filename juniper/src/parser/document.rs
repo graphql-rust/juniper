@@ -1,12 +1,15 @@
 use std::borrow::Cow;
 
-use ast::{Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
-          InlineFragment, InputValue, Operation, OperationType, Selection, Type,
-          VariableDefinition, VariableDefinitions};
+use ast::{
+    Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread, InlineFragment,
+    InputValue, Operation, OperationType, Selection, Type, VariableDefinition, VariableDefinitions,
+};
 
 use parser::value::parse_value_literal;
-use parser::{Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
-             UnlocatedParseResult};
+use parser::{
+    Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
+    UnlocatedParseResult,
+};
 
 #[doc(hidden)]
 pub fn parse_document_source(s: &str) -> UnlocatedParseResult<Document> {
