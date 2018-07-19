@@ -34,3 +34,7 @@
   the errors into `FieldError`.
 
   [#40](https://github.com/graphql-rust/juniper/issues/40)
+  
+* `GraphQLType` and `ToInputValue` are now implemented for Arc<T>
+
+  [#212](https://github.com/graphql-rust/juniper/pull/212)
