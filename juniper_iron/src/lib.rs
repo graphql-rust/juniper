@@ -253,8 +253,7 @@ where
     }
 
     fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest> {
-        let url_query_string = req
-            .get_mut::<UrlEncodedQuery>()
+        let url_query_string = req.get_mut::<UrlEncodedQuery>()
             .map_err(GraphQLIronError::Url)?;
 
         let input_query = parse_url_param(url_query_string.remove("query"))?
@@ -398,8 +397,7 @@ mod tests {
     // and newer `hyper` doesn't allow unescaped "{" or "}".
     fn fixup_url(url: &str) -> String {
         let url = Url::parse(&format!("http://localhost:3000{}", url)).expect("url to parse");
-        let path: String = url
-            .path()
+        let path: String = url.path()
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<String>>()

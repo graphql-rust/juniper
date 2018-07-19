@@ -18,5 +18,7 @@ pub use self::traits::Visitor;
 pub use self::visitor::visit;
 
 #[cfg(test)]
-pub use self::test_harness::{expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
-                             expect_passes_rule_with_schema};
+pub use self::test_harness::{
+    expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+    expect_passes_rule_with_schema,
+};

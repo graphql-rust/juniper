@@ -342,7 +342,8 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         let AstAndDef(ref parent_type2, ast2, ref def2) = *field2;
 
         let mutually_exclusive = parents_mutually_exclusive
-            || (parent_type1 != parent_type2 && self.is_object_type(ctx, *parent_type1)
+            || (parent_type1 != parent_type2
+                && self.is_object_type(ctx, *parent_type1)
                 && self.is_object_type(ctx, *parent_type2));
 
         if !mutually_exclusive {
@@ -717,8 +718,10 @@ mod tests {
     use types::scalars::ID;
 
     use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
-                     expect_passes_rule_with_schema, RuleError};
+    use validation::{
+        expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+        expect_passes_rule_with_schema, RuleError,
+    };
 
     #[test]
     fn unique_fields() {

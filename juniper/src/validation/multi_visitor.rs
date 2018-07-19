@@ -1,5 +1,7 @@
-use ast::{Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
-          Operation, Selection, VariableDefinition};
+use ast::{
+    Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue, Operation,
+    Selection, VariableDefinition,
+};
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
 

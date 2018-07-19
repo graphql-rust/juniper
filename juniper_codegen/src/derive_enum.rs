@@ -1,14 +1,6 @@
-use syn;
-use syn::{
-    DeriveInput,
-    Meta,
-    NestedMeta,
-    Data,
-    Fields,
-    Ident,
-    Variant,
-};
 use quote::Tokens;
+use syn;
+use syn::{Data, DeriveInput, Fields, Ident, Meta, NestedMeta, Variant};
 
 use util::*;
 
@@ -39,8 +31,10 @@ impl EnumAttrs {
                         res.name = Some(val);
                         continue;
                     } else {
-                        panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                               &*val);
+                        panic!(
+                            "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                            &*val
+                        );
                     }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
@@ -88,8 +82,10 @@ impl EnumVariantAttrs {
                         res.name = Some(val);
                         continue;
                     } else {
-                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                                 &*val);
+                        panic!(
+                            "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                            &*val
+                        );
                     }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
@@ -135,14 +131,14 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
 
     for variant in variants {
         match variant.fields {
-            Fields::Unit => {},
+            Fields::Unit => {}
             _ => {
                 panic!(format!(
                     "Invalid enum variant {}.\nGraphQL enums may only contain unit variants.",
                     variant.ident
                 ));
             }
-        } ;
+        };
 
         let var_attrs = EnumVariantAttrs::from_input(variant);
         let var_ident = &variant.ident;

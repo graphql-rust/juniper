@@ -1,16 +1,7 @@
 use std::str::FromStr;
 
-use syn::{
-    self,
-    DeriveInput,
-    NestedMeta,
-    Meta,
-    Field,
-    Fields,
-    Data,
-    Ident,
-};
-use quote::{Tokens, ToTokens};
+use quote::{ToTokens, Tokens};
+use syn::{self, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta};
 
 use util::*;
 
@@ -36,8 +27,10 @@ impl ObjAttrs {
                         res.name = Some(val);
                         continue;
                     } else {
-                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                                 &*val);
+                        panic!(
+                            "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                            &*val
+                        );
                     }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
@@ -86,8 +79,10 @@ impl ObjFieldAttrs {
                         res.name = Some(val);
                         continue;
                     } else {
-                         panic!("Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
-                                 &*val);
+                        panic!(
+                            "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{}\" does not",
+                            &*val
+                        );
                     }
                 }
                 if let Some(val) = keyed_item_value(&item, "description", true) {
@@ -173,14 +168,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             } else {
                 match field_attrs.default_expr {
                     Some(ref def) => match ::proc_macro::TokenStream::from_str(def) {
-                        Ok(t) => {
-                            match syn::parse::<syn::Expr>(t) {
-                                Ok(e) => {
-                                    Some(e.into_tokens())
-                                },
-                                Err(_) => {
-                                    panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
-                                },
+                        Ok(t) => match syn::parse::<syn::Expr>(t) {
+                            Ok(e) => Some(e.into_tokens()),
+                            Err(_) => {
+                                panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
                             }
                         },
                         Err(_) => {

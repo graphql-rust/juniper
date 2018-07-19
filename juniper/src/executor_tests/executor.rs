@@ -686,7 +686,7 @@ mod propagates_errors_to_nullable_fields {
     struct Inner;
 
     enum CustomError {
-        NotFound
+        NotFound,
     }
 
     impl IntoFieldError for CustomError {
@@ -696,8 +696,8 @@ mod propagates_errors_to_nullable_fields {
                     "Not Found",
                     graphql_value!({
                         "type": "NOT_FOUND"
-                    })
-                )
+                    }),
+                ),
             }
         }
     }

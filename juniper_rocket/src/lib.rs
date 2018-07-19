@@ -45,22 +45,22 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
-use std::io::{Cursor, Read};
 use std::error::Error;
+use std::io::{Cursor, Read};
 
-use rocket::Request;
-use rocket::request::{FormItems, FromForm};
 use rocket::data::{FromData, Outcome as FromDataOutcome};
-use rocket::response::{content, Responder, Response};
 use rocket::http::{ContentType, Status};
+use rocket::request::{FormItems, FromForm};
+use rocket::response::{content, Responder, Response};
 use rocket::Data;
 use rocket::Outcome::{Failure, Forward, Success};
+use rocket::Request;
 
-use juniper::InputValue;
 use juniper::http;
+use juniper::InputValue;
 
-use juniper::GraphQLType;
 use juniper::FieldError;
+use juniper::GraphQLType;
 use juniper::RootNode;
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -88,10 +88,15 @@ impl GraphQLBatchRequest {
         MutationT: GraphQLType<Context = CtxT>,
     {
         match self {
-            &GraphQLBatchRequest::Single(ref request) =>
-                GraphQLBatchResponse::Single(request.execute(root_node, context)),
-            &GraphQLBatchRequest::Batch(ref requests) =>
-                GraphQLBatchResponse::Batch(requests.iter().map(|request| request.execute(root_node, context)).collect()),
+            &GraphQLBatchRequest::Single(ref request) => {
+                GraphQLBatchResponse::Single(request.execute(root_node, context))
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+                requests
+                    .iter()
+                    .map(|request| request.execute(root_node, context))
+                    .collect(),
+            ),
         }
     }
 }
@@ -100,7 +105,9 @@ impl<'a> GraphQLBatchResponse<'a> {
     fn is_ok(&self) -> bool {
         match self {
             &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses.iter().fold(true, |ok, response| ok && response.is_ok()),
+            &GraphQLBatchResponse::Batch(ref responses) => responses
+                .iter()
+                .fold(true, |ok, response| ok && response.is_ok()),
         }
     }
 }
@@ -222,8 +229,9 @@ impl<'f> FromForm<'f> for GraphQLRequest {
                 }
                 "operation_name" => {
                     if operation_name.is_some() {
-                        return Err("Operation name parameter must not occur more than once"
-                            .to_owned());
+                        return Err(
+                            "Operation name parameter must not occur more than once".to_owned()
+                        );
                     } else {
                         match value.url_decode() {
                             Ok(v) => operation_name = Some(v),
@@ -253,11 +261,9 @@ impl<'f> FromForm<'f> for GraphQLRequest {
         }
 
         if let Some(query) = query {
-            Ok(GraphQLRequest(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-                query,
-                operation_name,
-                variables,
-            ))))
+            Ok(GraphQLRequest(GraphQLBatchRequest::Single(
+                http::GraphQLRequest::new(query, operation_name, variables),
+            )))
         } else {
             Err("Query parameter missing".to_owned())
         }
@@ -299,9 +305,9 @@ impl<'r> Responder<'r> for GraphQLResponse {
 #[cfg(test)]
 mod fromform_tests {
     use super::*;
-    use std::str;
     use juniper::InputValue;
     use rocket::request::{FormItems, FromForm};
+    use std::str;
 
     fn check_error(input: &str, error: &str, strict: bool) {
         let mut items = FormItems::from(input);
@@ -410,15 +416,15 @@ mod fromform_tests {
 mod tests {
 
     use rocket;
-    use rocket::Rocket;
     use rocket::http::ContentType;
-    use rocket::State;
     use rocket::local::{Client, LocalRequest};
+    use rocket::Rocket;
+    use rocket::State;
 
-    use juniper::RootNode;
-    use juniper::tests::model::Database;
     use juniper::http::tests as http_tests;
+    use juniper::tests::model::Database;
     use juniper::EmptyMutation;
+    use juniper::RootNode;
 
     type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
 

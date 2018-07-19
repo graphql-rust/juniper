@@ -99,8 +99,7 @@ pub fn to_camel_case(s: &str) -> String {
         if i > 0 && part.len() == 1 {
             dest.push_str(&part.to_uppercase());
         } else if i > 0 && part.len() > 1 {
-            let first = part
-                .chars()
+            let first = part.chars()
                 .next()
                 .unwrap()
                 .to_uppercase()

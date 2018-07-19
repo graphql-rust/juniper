@@ -151,9 +151,13 @@ use parser::{parse_document_source, ParseError, Spanning};
 use validation::{validate_input_values, visit_all_rules, ValidatorContext};
 
 pub use ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
-pub use executor::{Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
-                   FromContext, IntoResolvable, Registry, Variables, IntoFieldError};
-pub use executor::{Applies, LookAheadArgument, LookAheadSelection, LookAheadValue, LookAheadMethods};
+pub use executor::{
+    Applies, LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue,
+};
+pub use executor::{
+    Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult, FromContext,
+    IntoFieldError, IntoResolvable, Registry, Variables,
+};
 pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
