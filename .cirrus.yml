@@ -1,0 +1,17 @@
+
+linux_task:
+  matrix:
+    - container:
+        image: rust:latest
+    - container:
+        image: rustlang/rust:nightly
+    - container:
+        image: rust:1.26
+    - container:
+        image: rust:1.25
+        
+  cargo_cache:
+    folder: $CARGO_HOME/registry
+    fingerprint_script: cat Cargo.toml
+  install_cargo_make_script: cargo make -h || cargo install --debug cargo-make
+  cargo_make_script: cargo make workspace-ci-flow --no-workspace
