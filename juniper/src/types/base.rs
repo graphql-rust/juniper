@@ -503,7 +503,7 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
 }
 
 fn merge_key_into(result: &mut Object, response_name: &str, value: Value) {
-    if let Some(&mut (_, ref mut e)) = result.iter_mut().find(|&(ref key, _)| key == response_name)
+    if let Some(&mut (_, ref mut e)) = result.iter_mut().find(|&&mut (ref key, _)| key == response_name)
     {
         match *e {
             Value::Object(ref mut dest_obj) => {

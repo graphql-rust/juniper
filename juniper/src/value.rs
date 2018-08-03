@@ -51,7 +51,7 @@ impl Object {
         if let Some(item) = self
             .key_value_list
             .iter_mut()
-            .find(|(key, _)| (key as &str) == k)
+            .find(|&&mut (ref key, _)| (key as &str) == k)
         {
             return Some(::std::mem::replace(&mut item.1, value));
         }
@@ -66,7 +66,7 @@ impl Object {
     {
         self.key_value_list
             .iter()
-            .any(|(key, _)| (key as &str) == f)
+            .any(|&(ref key, _)| (key as &str) == f)
     }
 
     /// Get a iterator over all field value pairs
@@ -103,7 +103,7 @@ impl Object {
     {
         self.key_value_list
             .iter()
-            .find(|(k, _)| (k as &str) == key)
+            .find(|&&(ref k, _)| (k as &str) == key)
             .map(|&(_, ref value)| value)
     }
 }
@@ -143,7 +143,6 @@ where
     }
 }
 
-
 #[doc(hidden)]
 pub struct FieldIter<'a> {
     inner: ::std::slice::Iter<'a, (String, Value)>,
@@ -169,7 +168,6 @@ impl<'a> Iterator for FieldIterMut<'a> {
         self.inner.next()
     }
 }
-
 
 impl Value {
     // CONSTRUCTORS
@@ -275,7 +273,7 @@ impl ToInputValue for Value {
             ),
             Value::Object(ref o) => InputValue::Object(
                 o.iter()
-                    .map(|(k, v)| {
+                    .map(|&(ref k, ref v)| {
                         (
                             Spanning::unlocated(k.clone()),
                             Spanning::unlocated(v.to_input_value()),
