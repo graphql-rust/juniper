@@ -48,7 +48,8 @@ impl Object {
         K: Into<String>,
         for<'a> &'a str: PartialEq<K>,
     {
-        if let Some(item) = self.key_value_list
+        if let Some(item) = self
+            .key_value_list
             .iter_mut()
             .find(|(key, _)| (key as &str) == k)
         {
@@ -68,16 +69,26 @@ impl Object {
             .any(|(key, _)| (key as &str) == f)
     }
 
-
     /// Get a iterator over all field value pairs
-    pub fn iter(&self) -> impl Iterator<Item = &(String, Value)> {
-        self.key_value_list.iter()
+    ///
+    /// This method returns a iterator over `&'a (String, Value)`
+    // TODO: change this to `-> impl Iterator<Item = &(String, Value)>`
+    // as soon as juniper bumps the minimal supported rust verion to 1.26
+    pub fn iter(&self) -> FieldIter {
+        FieldIter {
+            inner: self.key_value_list.iter(),
+        }
     }
 
-
     /// Get a iterator over all mutable field value pairs
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, Value)> {
-        self.key_value_list.iter_mut()
+    ///
+    /// This method returns a iterator over `&mut 'a (String, Value)`
+    // TODO: change this to `-> impl Iterator<Item = &mut (String, Value)>`
+    // as soon as juniper bumps the minimal supported rust verion to 1.26
+    pub fn iter_mut(&mut self) -> FieldIterMut {
+        FieldIterMut {
+            inner: self.key_value_list.iter_mut(),
+        }
     }
 
     /// Get the current number of fields
@@ -131,6 +142,34 @@ where
         ret
     }
 }
+
+
+#[doc(hidden)]
+pub struct FieldIter<'a> {
+    inner: ::std::slice::Iter<'a, (String, Value)>,
+}
+
+impl<'a> Iterator for FieldIter<'a> {
+    type Item = &'a (String, Value);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+#[doc(hidden)]
+pub struct FieldIterMut<'a> {
+    inner: ::std::slice::IterMut<'a, (String, Value)>,
+}
+
+impl<'a> Iterator for FieldIterMut<'a> {
+    type Item = &'a mut (String, Value);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
 
 impl Value {
     // CONSTRUCTORS
