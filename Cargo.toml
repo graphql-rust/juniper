@@ -6,4 +6,6 @@ members = [
   "juniper_hyper",
   "juniper_iron",
   "juniper_rocket",
+  "juniper_warp",
+  "juniper_warp/examples/warp_server",
 ]
