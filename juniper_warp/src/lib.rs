@@ -36,6 +36,8 @@ Check the LICENSE file for details.
 
 */
 
+#![deny(missing_docs)]
+
 extern crate juniper;
 extern crate serde_json;
 extern crate warp;
