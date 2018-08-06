@@ -173,9 +173,46 @@ fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response
 #[cfg(test)]
 mod tests {
     use super::*;
+    use warp::http;
+    use warp::test::request;
 
     #[test]
     fn graphiql_response_does_not_panic() {
         graphiql_response("/abcd");
+    }
+
+    #[test]
+    fn graphiql_endpoint_matches() {
+        let filter = warp::get(warp::path("graphiql").and(graphiql_handler("/graphql")));
+        let result = request()
+            .method("GET")
+            .path("/graphiql")
+            .header("accept", "text/html")
+            .filter(&filter);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn graphiql_endpoint_returns_graphiql_source() {
+        let filter = warp::get(
+            warp::path("dogs-api")
+                .and(warp::path("graphiql"))
+                .and(graphiql_handler("/dogs-api/graphql")),
+        );
+        let response = request()
+            .method("GET")
+            .path("/dogs-api/graphiql")
+            .header("accept", "text/html")
+            .reply(&filter);
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html;charset=utf-8"
+        );
+        let body = String::from_utf8(response.body().to_vec()).unwrap();
+
+        assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
     }
 }
