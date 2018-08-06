@@ -106,7 +106,6 @@ pub fn make_graphql_filter<Query, Mutation, Context>(
 ) -> BoxedFilter<(impl warp::Reply,)>
 where
     Context: Send + Sync + 'static,
-    // CtxRef: AsRef<Context> + Send + 'static,
     Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
@@ -214,5 +213,36 @@ mod tests {
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
         assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
+    }
+
+    #[test]
+    fn graphql_handler_works_json_post() {
+        use juniper::tests::model::Database;
+        use juniper::{EmptyMutation, RootNode};
+
+        type Schema = juniper::RootNode<'static, Database, EmptyMutation<Database>>;
+
+        let schema: Schema = RootNode::new(Database::new(), EmptyMutation::<Database>::new());
+
+        let state = warp::any().map(move || Database::new());
+        let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+
+        let response = request()
+            .method("POST")
+            .path("/graphql2")
+            .header("accept", "application/json")
+            .header("content-type", "application/json")
+            .body(r##"{ "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" }"##)
+            .reply(&filter);
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json",
+        );
+        assert_eq!(
+            String::from_utf8(response.body().to_vec()).unwrap(),
+            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
+        );
     }
 }

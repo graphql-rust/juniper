@@ -9,3 +9,6 @@ juniper = "0.9.2"
 serde = "1.0.70"
 serde_json = "1.0.24"
 serde_derive = "1.0.70"
+
+[dev-dependencies]
+juniper = { version = "0.9.2", features = ["expose-test-schema", "serde_json"] }
