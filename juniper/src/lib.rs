@@ -98,6 +98,8 @@ extern crate serde_derive;
 extern crate serde_json;
 
 extern crate fnv;
+
+#[cfg_attr(test, macro_use)]
 extern crate indexmap;
 
 #[cfg(any(test, feature = "chrono"))]

@@ -32,9 +32,9 @@ impl ser::Serialize for ExecutionError {
         map.serialize_key("path")?;
         map.serialize_value(self.path())?;
 
-        if !self.error().data().is_null() {
-            map.serialize_key("data")?;
-            map.serialize_value(self.error().data())?;
+        if !self.error().extensions().is_null() {
+            map.serialize_key("extensions")?;
+            map.serialize_value(self.error().extensions())?;
         }
 
         map.end()
@@ -269,10 +269,11 @@ impl ser::Serialize for Value {
 
 #[cfg(test)]
 mod tests {
-    use super::GraphQLError;
+    use super::{ExecutionError, GraphQLError};
     use ast::InputValue;
     use serde_json::from_str;
     use serde_json::to_string;
+    use {FieldError, Value};
 
     #[test]
     fn int() {
@@ -300,6 +301,17 @@ mod tests {
         assert_eq!(
             to_string(&GraphQLError::UnknownOperationName).unwrap(),
             r#"[{"message":"Unknown operation"}]"#
+        );
+    }
+
+    #[test]
+    fn error_extensions() {
+        assert_eq!(
+            to_string(&ExecutionError::at_origin(FieldError::new(
+                "foo error",
+                Value::Object(indexmap!{"foo".to_string() => Value::String("bar".to_string())}),
+            ))).unwrap(),
+            r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#
         );
     }
 }
