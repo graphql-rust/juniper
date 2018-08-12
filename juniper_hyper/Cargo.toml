@@ -8,19 +8,20 @@ documentation = "https://docs.rs/juniper_hyper"
 repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
-serde = { version = "1.0.2" }
-serde_json = { version = "1.0.2" }
-serde_derive = { version = "1.0.2" }
-juniper = { version = "0.9.2" , default-features = false, path = "../juniper"}
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+url = "1.7"
+juniper = { version = "0.9" , default-features = false, path = "../juniper"}
 
-futures = { version = "0.1" }
-futures-cpupool = { version = "0.1" }
-hyper = { version = "0.12" }
+futures = "0.1"
+futures-cpupool = "0.1"
+hyper = "0.12"
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
 
 [dev-dependencies.juniper]
-version = "0.9.2"
+version = "0.9"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"
