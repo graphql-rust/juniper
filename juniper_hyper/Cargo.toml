@@ -1,0 +1,26 @@
+[package]
+name = "juniper_hyper"
+version = "0.1.0"
+authors = ["Damir Vandic <info@dvic.io>"]
+description = "Juniper GraphQL integration with Hyper"
+license = "BSD-2-Clause"
+documentation = "https://docs.rs/juniper_hyper"
+repository = "https://github.com/graphql-rust/juniper"
+
+[dependencies]
+serde = { version = "1.0.2" }
+serde_json = { version = "1.0.2" }
+serde_derive = { version = "1.0.2" }
+juniper = { version = "0.9.2" , default-features = false, path = "../juniper"}
+
+futures = { version = "0.1" }
+futures-cpupool = { version = "0.1" }
+hyper = { version = "0.12" }
+
+[dev-dependencies]
+pretty_env_logger = "0.2"
+
+[dev-dependencies.juniper]
+version = "0.9.2"
+features = ["expose-test-schema", "serde_json"]
+path = "../juniper"
