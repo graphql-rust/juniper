@@ -290,6 +290,7 @@ mod tests {
     use serde_json::from_str;
     use serde_json::to_string;
     use {FieldError, Value};
+    use ::value::Object;
 
     #[test]
     fn int() {
@@ -322,10 +323,12 @@ mod tests {
 
     #[test]
     fn error_extensions() {
+        let mut obj = Object::with_capacity(1);
+        obj.add_field("foo".to_string(), Value::String("bar".to_string()));
         assert_eq!(
             to_string(&ExecutionError::at_origin(FieldError::new(
                 "foo error",
-                Value::Object(indexmap!{"foo".to_string() => Value::String("bar".to_string())}),
+                Value::Object(obj),
             ))).unwrap(),
             r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#
         );
