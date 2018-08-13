@@ -1,5 +1,7 @@
 use executor::{ExecutionResult, Executor, Registry};
 use types::base::{Arguments, GraphQLType, TypeKind};
+use value::Value;
+use ast::Selection;
 
 use schema::meta::{
     Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType, ObjectMeta,
@@ -41,6 +43,26 @@ where
                     .resolve(&(), &self.schema.type_by_name(&type_name))
             }
             _ => self.query_type.resolve_field(info, field, args, executor),
+        }
+    }
+
+    fn resolve(
+        &self,
+        info: &Self::TypeInfo,
+        selection_set: Option<&[Selection]>,
+        executor: &Executor<Self::Context>,
+    ) -> Value {
+        use value::Object;
+        use types::base::resolve_selection_set_into;
+        if let Some(selection_set) = selection_set {
+            let mut result = Object::with_capacity(selection_set.len());
+            if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
+                Value::Object(result)
+            } else {
+                Value::null()
+            }
+        } else {
+            panic!("resolve() must be implemented by non-object output types");
         }
     }
 }

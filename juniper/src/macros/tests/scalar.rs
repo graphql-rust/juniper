@@ -1,9 +1,7 @@
-use indexmap::IndexMap;
-
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{Value, Object};
 
 struct DefaultName(i32);
 struct OtherOrder(i32);
@@ -72,7 +70,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&IndexMap<String, Value>) -> (),
+    F: Fn(&Object) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
@@ -86,7 +84,7 @@ where
     let type_info = result
         .as_object_value()
         .expect("Result is not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("__type field missing")
         .as_object_value()
         .expect("__type field not an object value");
@@ -106,8 +104,8 @@ fn default_name_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("DefaultName")));
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("DefaultName")));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
     });
 }
 
@@ -123,8 +121,8 @@ fn other_order_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("OtherOrder")));
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("OtherOrder")));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
     });
 }
 
@@ -140,8 +138,8 @@ fn named_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get("name"), Some(&Value::string("ANamedScalar")));
-        assert_eq!(type_info.get("description"), Some(&Value::null()));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("ANamedScalar")));
+        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
     });
 }
 
@@ -158,11 +156,11 @@ fn scalar_description_introspection() {
 
     run_type_info_query(doc, |type_info| {
         assert_eq!(
-            type_info.get("name"),
+            type_info.get_field_value("name"),
             Some(&Value::string("ScalarDescription"))
         );
         assert_eq!(
-            type_info.get("description"),
+            type_info.get_field_value("description"),
             Some(&Value::string("A sample scalar, represented as an integer"))
         );
     });

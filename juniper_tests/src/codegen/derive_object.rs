@@ -1,7 +1,7 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
 #[cfg(test)]
-use indexmap::IndexMap;
+use juniper::Object;
 
 #[cfg(test)]
 use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
@@ -235,8 +235,8 @@ fn check_descriptions(
         object_name
     );
     run_type_info_query(&doc, |(type_info, values)| {
-        assert_eq!(type_info.get("name"), Some(&Value::string(object_name)));
-        assert_eq!(type_info.get("description"), Some(object_description));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::string(object_name)));
+        assert_eq!(type_info.get_field_value("description"), Some(object_description));
         assert!(
             values.contains(&Value::object(
                 vec![
@@ -252,7 +252,7 @@ fn check_descriptions(
 #[cfg(test)]
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn((&IndexMap<String, Value>, &Vec<Value>)) -> (),
+    F: Fn((&Object, &Vec<Value>)) -> (),
 {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
@@ -266,13 +266,13 @@ where
     let type_info = result
         .as_object_value()
         .expect("Result is not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("__type field missing")
         .as_object_value()
         .expect("__type field not an object value");
 
     let fields = type_info
-        .get("fields")
+        .get_field_value("fields")
         .expect("fields field missing")
         .as_list_value()
         .expect("fields not a list");

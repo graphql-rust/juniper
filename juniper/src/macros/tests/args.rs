@@ -112,13 +112,13 @@ where
     let type_info = result
         .as_object_value()
         .expect("Result is not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("__type field missing")
         .as_object_value()
         .expect("__type field not an object value");
 
     let fields = type_info
-        .get("fields")
+        .get_field_value("fields")
         .expect("fields field missing")
         .as_list_value()
         .expect("fields not a list");
@@ -128,7 +128,7 @@ where
         .filter(|f| {
             f.as_object_value()
                 .expect("Field not an object")
-                .get("name")
+                .get_field_value("name")
                 .expect("name field missing from field")
                 .as_string_value()
                 .expect("name is not a string") == field_name
@@ -141,7 +141,7 @@ where
     println!("Field: {:?}", field);
 
     let args = field
-        .get("args")
+        .get_field_value("args")
         .expect("args missing from field")
         .as_list_value()
         .expect("args is not a list");

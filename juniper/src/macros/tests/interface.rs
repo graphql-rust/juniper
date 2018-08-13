@@ -1,10 +1,9 @@
-use indexmap::IndexMap;
 use std::marker::PhantomData;
 
 use ast::InputValue;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{Value, Object};
 
 /*
 
@@ -130,7 +129,7 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&IndexMap<String, Value>, &Vec<Value>) -> (),
+    F: Fn(&Object, &Vec<Value>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
@@ -157,13 +156,13 @@ where
     let type_info = result
         .as_object_value()
         .expect("Result is not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("__type field missing")
         .as_object_value()
         .expect("__type field not an object value");
 
     let fields = type_info
-        .get("fields")
+        .get_field_value("fields")
         .expect("fields field missing")
         .as_list_value()
         .expect("fields field not a list value");
@@ -175,10 +174,10 @@ where
 fn introspect_custom_name() {
     run_type_info_query("ACustomNamedInterface", |object, fields| {
         assert_eq!(
-            object.get("name"),
+            object.get_field_value("name"),
             Some(&Value::string("ACustomNamedInterface"))
         );
-        assert_eq!(object.get("description"), Some(&Value::null()));
+        assert_eq!(object.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             fields.contains(&Value::object(
@@ -193,8 +192,8 @@ fn introspect_custom_name() {
 #[test]
 fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("WithLifetime")));
-        assert_eq!(object.get("description"), Some(&Value::null()));
+        assert_eq!(object.get_field_value("name"), Some(&Value::string("WithLifetime")));
+        assert_eq!(object.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             fields.contains(&Value::object(
@@ -209,8 +208,8 @@ fn introspect_with_lifetime() {
 #[test]
 fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("WithGenerics")));
-        assert_eq!(object.get("description"), Some(&Value::null()));
+        assert_eq!(object.get_field_value("name"), Some(&Value::string("WithGenerics")));
+        assert_eq!(object.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             fields.contains(&Value::object(
@@ -225,9 +224,9 @@ fn introspect_with_generics() {
 #[test]
 fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("DescriptionFirst")));
+        assert_eq!(object.get_field_value("name"), Some(&Value::string("DescriptionFirst")));
         assert_eq!(
-            object.get("description"),
+            object.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -244,9 +243,9 @@ fn introspect_description_first() {
 #[test]
 fn introspect_fields_first() {
     run_type_info_query("FieldsFirst", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("FieldsFirst")));
+        assert_eq!(object.get_field_value("name"), Some(&Value::string("FieldsFirst")));
         assert_eq!(
-            object.get("description"),
+            object.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -263,9 +262,9 @@ fn introspect_fields_first() {
 #[test]
 fn introspect_interfaces_first() {
     run_type_info_query("InterfacesFirst", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("InterfacesFirst")));
+        assert_eq!(object.get_field_value("name"), Some(&Value::string("InterfacesFirst")));
         assert_eq!(
-            object.get("description"),
+            object.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -283,11 +282,11 @@ fn introspect_interfaces_first() {
 fn introspect_commas_with_trailing() {
     run_type_info_query("CommasWithTrailing", |object, fields| {
         assert_eq!(
-            object.get("name"),
+            object.get_field_value("name"),
             Some(&Value::string("CommasWithTrailing"))
         );
         assert_eq!(
-            object.get("description"),
+            object.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -304,9 +303,9 @@ fn introspect_commas_with_trailing() {
 #[test]
 fn introspect_commas_on_meta() {
     run_type_info_query("CommasOnMeta", |object, fields| {
-        assert_eq!(object.get("name"), Some(&Value::string("CommasOnMeta")));
+        assert_eq!(object.get_field_value("name"), Some(&Value::string("CommasOnMeta")));
         assert_eq!(
-            object.get("description"),
+            object.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 
@@ -324,11 +323,11 @@ fn introspect_commas_on_meta() {
 fn introspect_resolvers_with_trailing_comma() {
     run_type_info_query("ResolversWithTrailingComma", |object, fields| {
         assert_eq!(
-            object.get("name"),
+            object.get_field_value("name"),
             Some(&Value::string("ResolversWithTrailingComma"))
         );
         assert_eq!(
-            object.get("description"),
+            object.get_field_value("description"),
             Some(&Value::string("A description"))
         );
 

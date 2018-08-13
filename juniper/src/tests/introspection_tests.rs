@@ -198,11 +198,11 @@ fn test_possible_types() {
     let possible_types = result
         .as_object_value()
         .expect("execution result not an object")
-        .get("__type")
+        .get_field_value("__type")
         .expect("'__type' not present in result")
         .as_object_value()
         .expect("'__type' not an object")
-        .get("possibleTypes")
+        .get_field_value("possibleTypes")
         .expect("'possibleTypes' not present in '__type'")
         .as_list_value()
         .expect("'possibleTypes' not a list")
@@ -210,7 +210,7 @@ fn test_possible_types() {
         .map(|t| {
             t.as_object_value()
                 .expect("possible type not an object")
-                .get("name")
+                .get_field_value("name")
                 .expect("'name' not present in type")
                 .as_string_value()
                 .expect("'name' not a string")
