@@ -127,14 +127,14 @@ impl Ord for ExecutionError {
 #[derive(Debug, PartialEq)]
 pub struct FieldError {
     message: String,
-    data: Value,
+    extensions: Value,
 }
 
 impl<T: Display> From<T> for FieldError {
     fn from(e: T) -> FieldError {
         FieldError {
             message: format!("{}", e),
-            data: Value::null(),
+            extensions: Value::null(),
         }
     }
 }
@@ -157,7 +157,7 @@ impl FieldError {
     /// # fn main() { }
     /// ```
     ///
-    /// The `data` parameter will be added to the `"data"` field of the error
+    /// The `extensions` parameter will be added to the `"extensions"` field of the error
     /// object in the JSON response:
     ///
     /// ```json
@@ -165,7 +165,7 @@ impl FieldError {
     ///   "errors": [
     ///     "message": "Could not open connection to the database",
     ///     "locations": [{"line": 2, "column": 4}],
-    ///     "data": {
+    ///     "extensions": {
     ///       "internal_error": "Connection refused"
     ///     }
     ///   ]
@@ -173,10 +173,10 @@ impl FieldError {
     /// ```
     ///
     /// If the argument is `Value::null()`, no extra data will be included.
-    pub fn new<T: Display>(e: T, data: Value) -> FieldError {
+    pub fn new<T: Display>(e: T, extensions: Value) -> FieldError {
         FieldError {
             message: format!("{}", e),
-            data: data,
+            extensions,
         }
     }
 
@@ -186,8 +186,8 @@ impl FieldError {
     }
 
     #[doc(hidden)]
-    pub fn data(&self) -> &Value {
-        &self.data
+    pub fn extensions(&self) -> &Value {
+        &self.extensions
     }
 }
 
