@@ -48,6 +48,13 @@ struct OverrideDocComment {
     regular_field: bool,
 }
 
+#[derive(GraphQLObject, Debug, PartialEq)]
+struct SkippedFieldObj {
+    regular_field: bool,
+    #[graphql(skip)]
+    skipped: i32,
+}
+
 graphql_object!(Query: () |&self| {
     field obj() -> Obj {
       Obj{
@@ -81,6 +88,13 @@ graphql_object!(Query: () |&self| {
       OverrideDocComment{
         regular_field: true,
       }
+    }
+
+    field skipped_field_obj() -> SkippedFieldObj {
+        SkippedFieldObj{
+            regular_field: false,
+            skipped: 42,
+        }
     }
 });
 
@@ -169,6 +183,31 @@ fn test_derived_object() {
             vec![]
         ))
     );
+}
+
+#[test]
+#[should_panic]
+fn test_cannot_query_skipped_field() {
+    let doc = r#"
+        {
+            skippedFieldObj {
+                skippedField
+            }
+        }"#;
+    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    execute(doc, None, &schema, &Variables::new(), &()).unwrap();
+}
+
+#[test]
+fn test_skipped_field_siblings_unaffected() {
+    let doc = r#"
+        {
+            skippedFieldObj {
+                regularField
+            }
+        }"#;
+    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    execute(doc, None, &schema, &Variables::new(), &()).unwrap();
 }
 
 #[test]

@@ -24,9 +24,9 @@ impl EnumAttrs {
         res.description = get_doc_comment(&input.attrs);
 
         // Check attributes for name and description.
-        if let Some(items) = get_graphl_attr(&input.attrs) {
+        if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(&item, "name", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -37,7 +37,7 @@ impl EnumAttrs {
                         );
                     }
                 }
-                if let Some(val) = keyed_item_value(&item, "description", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
                 }
@@ -75,9 +75,9 @@ impl EnumVariantAttrs {
         res.description = get_doc_comment(&variant.attrs);
 
         // Check attributes for name and description.
-        if let Some(items) = get_graphl_attr(&variant.attrs) {
+        if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(&item, "name", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -88,11 +88,11 @@ impl EnumVariantAttrs {
                         );
                     }
                 }
-                if let Some(val) = keyed_item_value(&item, "description", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(&item, "deprecated", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "deprecated", AttributeValidation::String)  {
                     res.deprecation = Some(val);
                     continue;
                 }
