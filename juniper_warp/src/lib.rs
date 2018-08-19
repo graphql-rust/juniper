@@ -103,7 +103,7 @@ use warp::{filters::BoxedFilter, Filter};
 pub fn make_graphql_filter<Query, Mutation, Context>(
     schema: juniper::RootNode<'static, Query, Mutation>,
     context_extractor: BoxedFilter<(Context,)>,
-) -> BoxedFilter<(impl warp::Reply,)>
+) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     Context: Send + Sync + 'static,
     Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
@@ -111,19 +111,23 @@ where
 {
     let schema = Arc::new(schema);
 
-    let handle_request = move |context: Context,
-                               request: juniper::http::GraphQLRequest|
+    let handle_request = move |request: juniper::http::GraphQLRequest,
+                               context: Context|
           -> Result<Vec<u8>, serde_json::Error> {
         serde_json::to_vec(&request.execute(&schema, &context))
     };
 
-    warp::post(
-        warp::any()
-            .and(context_extractor)
-            .and(warp::body::json())
-            .map(handle_request)
-            .map(build_response),
-    ).boxed()
+    let post_filter = warp::post2().and(warp::body::json());
+
+    let get_filter = warp::post2().and(warp::filters::query::query());
+
+    post_filter
+        .or(get_filter)
+        .unify()
+        .and(context_extractor)
+        .map(handle_request)
+        .map(build_response)
+        .boxed()
 }
 
 fn build_response(response: Result<Vec<u8>, serde_json::Error>) -> warp::http::Response<Vec<u8>> {
@@ -244,5 +248,77 @@ mod tests {
             String::from_utf8(response.body().to_vec()).unwrap(),
             r#"{"data":{"hero":{"name":"R2-D2"}}}"#
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_http_harness {
+    use super::*;
+    use juniper::http::tests::{run_http_test_suite, HTTPIntegration, TestResponse};
+    use juniper::tests::model::Database;
+    use juniper::EmptyMutation;
+    use juniper::RootNode;
+    use warp;
+    use warp::Filter;
+
+    type Schema = juniper::RootNode<'static, Database, EmptyMutation<Database>>;
+
+    fn warp_server() -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
+        let schema: Schema = RootNode::new(Database::new(), EmptyMutation::<Database>::new());
+
+        let state = warp::any().map(move || Database::new());
+        let filter = warp::filters::path::index().and(make_graphql_filter(schema, state.boxed()));
+
+        filter.boxed()
+    }
+
+    struct TestWarpIntegration {
+        filter: warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)>,
+    }
+
+    // This can't be implemented with the From trait since TestResponse is not defined in this crate.
+    fn test_response_from_http_response(response: warp::http::Response<Vec<u8>>) -> TestResponse {
+        TestResponse {
+            status_code: response.status().as_u16() as i32,
+            body: Some(String::from_utf8(response.body().to_owned()).unwrap()),
+            content_type: response
+                .headers()
+                .get("content-type")
+                .expect("missing content-type header in warp response")
+                .to_str()
+                .expect("invalid content-type string")
+                .to_owned(),
+        }
+    }
+
+    impl HTTPIntegration for TestWarpIntegration {
+        fn get(&self, url: &str) -> TestResponse {
+            let response = warp::test::request()
+                .method("get")
+                .path(url)
+                .filter(&self.filter)
+                .expect("warp filter failed");
+            test_response_from_http_response(response)
+        }
+
+        fn post(&self, url: &str, body: &str) -> TestResponse {
+            let response = warp::test::request()
+                .method("post")
+                .header("content-type", "application/json")
+                .path(url)
+                .body(body)
+                .filter(&self.filter)
+                .expect("warp filter failed");
+            test_response_from_http_response(response)
+        }
+    }
+
+    #[test]
+    fn test_warp_integration() {
+        let integration = TestWarpIntegration {
+            filter: warp_server(),
+        };
+
+        run_http_test_suite(&integration);
     }
 }
