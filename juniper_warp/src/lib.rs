@@ -38,6 +38,8 @@ Check the LICENSE file for details.
 
 #![deny(missing_docs)]
 
+#[macro_use]
+extern crate failure;
 extern crate juniper;
 extern crate serde_json;
 extern crate warp;
@@ -113,27 +115,49 @@ where
     Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
+    let post_schema = schema.clone();
 
-    let handle_request = move |request: juniper::http::GraphQLRequest,
-                               context: Context|
-          -> Result<Vec<u8>, serde_json::Error> {
-        serde_json::to_vec(&request.execute(&schema, &context))
+    let handle_post_request = move |context: Context,
+                                    request: juniper::http::GraphQLRequest|
+          -> Result<Vec<u8>, failure::Error> {
+        Ok(serde_json::to_vec(
+            &request.execute(&post_schema, &context),
+        )?)
     };
 
-    let post_filter = warp::post2().and(warp::body::json());
+    let post_filter = warp::post2()
+        .and(context_extractor.clone())
+        .and(warp::body::json())
+        .map(handle_post_request)
+        .map(build_response);
 
-    let get_filter = warp::get2().and(warp::filters::query::query());
+    let handle_get_request = move |context: Context,
+                                   mut request: std::collections::HashMap<String, String>|
+          -> Result<Vec<u8>, failure::Error> {
+        let graphql_request = juniper::http::GraphQLRequest::new(
+            request
+                .remove("query")
+                .ok_or_else(|| format_err!("Missing GraphQL query string in query parameters"))?,
+            request.get("operation_name").map(|s| s.to_owned()),
+            request
+                .remove("variables")
+                .and_then(|vs| serde_json::from_str(&vs).ok()),
+        );
+        Ok(serde_json::to_vec(
+            &graphql_request.execute(&schema.clone(), &context),
+        )?)
+    };
 
-    get_filter
-        .or(post_filter)
-        .unify()
-        .and(context_extractor)
-        .map(handle_request)
-        .map(build_response)
-        .boxed()
+    let get_filter = warp::get2()
+        .and(context_extractor.clone())
+        .and(warp::filters::query::query())
+        .map(handle_get_request)
+        .map(build_response);
+
+    get_filter.or(post_filter).unify().boxed()
 }
 
-fn build_response(response: Result<Vec<u8>, serde_json::Error>) -> warp::http::Response<Vec<u8>> {
+fn build_response(response: Result<Vec<u8>, failure::Error>) -> warp::http::Response<Vec<u8>> {
     match response {
         Ok(body) => warp::http::Response::builder()
             .header("content-type", "application/json")

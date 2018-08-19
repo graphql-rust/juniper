@@ -4,11 +4,12 @@ version = "0.1.0"
 authors = ["Tom Houlé <tom@tomhoule.com>"]
 
 [dependencies]
-warp = "0.1.0"
+warp = "0.1.2"
 juniper = "0.9.2"
 serde = "1.0.70"
 serde_json = "1.0.24"
 serde_derive = "1.0.70"
+failure = "0.1.2"
 
 [dev-dependencies]
 juniper = { version = "0.9.2", features = ["expose-test-schema", "serde_json"] }
