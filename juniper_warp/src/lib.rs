@@ -42,6 +42,9 @@ extern crate juniper;
 extern crate serde_json;
 extern crate warp;
 
+#[cfg(test)]
+extern crate percent_encoding;
+
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
@@ -119,10 +122,10 @@ where
 
     let post_filter = warp::post2().and(warp::body::json());
 
-    let get_filter = warp::post2().and(warp::filters::query::query());
+    let get_filter = warp::get2().and(warp::filters::query::query());
 
-    post_filter
-        .or(get_filter)
+    get_filter
+        .or(post_filter)
         .unify()
         .and(context_extractor)
         .map(handle_request)
@@ -186,7 +189,9 @@ mod tests {
 
     #[test]
     fn graphiql_endpoint_matches() {
-        let filter = warp::get(warp::path("graphiql").and(graphiql_handler("/graphql")));
+        let filter = warp::get2()
+            .and(warp::path("graphiql"))
+            .and(graphiql_handler("/graphql"));
         let result = request()
             .method("GET")
             .path("/graphiql")
@@ -198,11 +203,10 @@ mod tests {
 
     #[test]
     fn graphiql_endpoint_returns_graphiql_source() {
-        let filter = warp::get(
-            warp::path("dogs-api")
-                .and(warp::path("graphiql"))
-                .and(graphiql_handler("/dogs-api/graphql")),
-        );
+        let filter = warp::get2()
+            .and(warp::path("dogs-api"))
+            .and(warp::path("graphiql"))
+            .and(graphiql_handler("/dogs-api/graphql"));
         let response = request()
             .method("GET")
             .path("/dogs-api/graphiql")
@@ -293,9 +297,19 @@ mod tests_http_harness {
 
     impl HTTPIntegration for TestWarpIntegration {
         fn get(&self, url: &str) -> TestResponse {
+            use percent_encoding::{percent_encode, DEFAULT_ENCODE_SET};
+            let url: String = percent_encode(url.replace("/?", "").as_bytes(), DEFAULT_ENCODE_SET)
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join("");
+
+            // if url.len() > 200 {
+            //     panic!("{:?}", url);
+            // }
+
             let response = warp::test::request()
-                .method("get")
-                .path(url)
+                .method("GET")
+                .path(&format!("/?{}", url))
                 .filter(&self.filter)
                 .expect("warp filter failed");
             test_response_from_http_response(response)
@@ -303,7 +317,7 @@ mod tests_http_harness {
 
         fn post(&self, url: &str, body: &str) -> TestResponse {
             let response = warp::test::request()
-                .method("post")
+                .method("POST")
                 .header("content-type", "application/json")
                 .path(url)
                 .body(body)
