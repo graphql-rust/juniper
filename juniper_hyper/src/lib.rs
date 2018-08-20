@@ -1,3 +1,5 @@
+#![feature(extern_prelude)]
+
 extern crate futures;
 extern crate futures_cpupool;
 extern crate hyper;
@@ -5,19 +7,20 @@ extern crate juniper;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+#[cfg(test)]
+extern crate tokio;
 extern crate url;
 
 use futures::future;
 use futures::{Future, Stream};
 use futures_cpupool::CpuPool;
 use hyper::header::HeaderValue;
-use hyper::{header, Body, Method, Request, Response, Server, StatusCode};
+use hyper::{header, Body, Method, Request, Response, StatusCode};
 use juniper::http::{
     GraphQLRequest as JuniperGraphQLRequest, GraphQLResponse as JuniperGraphQLResponse,
 };
 use juniper::{GraphQLType, InputValue, RootNode};
 use serde_json::error::Error as SerdeError;
-use std::error::Error as StdError;
 use std::error::Error;
 use std::fmt;
 use std::string::FromUtf8Error;
@@ -71,12 +74,18 @@ where
     }
 }
 
+pub fn graphiql(
+    graphql_endpoint: &str,
+) -> Box<Future<Item = Response<Body>, Error = hyper::Error> + Send> {
+    let mut resp = new_html_response(StatusCode::OK);
+    *resp.body_mut() = Body::from(juniper::graphiql::graphiql_source(graphql_endpoint));
+    Box::new(future::ok(resp))
+}
+
 pub fn playground(
     graphql_endpoint: &str,
 ) -> Box<Future<Item = Response<Body>, Error = hyper::Error> + Send> {
-    let mut resp = new_response(StatusCode::OK);
-    resp.headers_mut()
-        .insert(header::CONTENT_TYPE, HeaderValue::from_static("text/html"));
+    let mut resp = new_html_response(StatusCode::OK);
     *resp.body_mut() = Body::from(format!(r#"<!DOCTYPE html>
 <html>
 <head>
@@ -115,7 +124,7 @@ pub fn playground(
 
 fn render_error(err: GraphQLRequestError) -> Response<Body> {
     let message = format!("{}", err);
-    let mut resp = new_response(StatusCode::UNPROCESSABLE_ENTITY);
+    let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = Body::from(message);
     resp
 }
@@ -137,7 +146,12 @@ where
     pool.spawn_fn(move || {
         future::lazy(move || {
             let res = request.execute(&root_node, &context);
-            let mut resp = new_response(StatusCode::OK);
+            let code = if res.is_ok() {
+                StatusCode::OK
+            } else {
+                StatusCode::UNPROCESSABLE_ENTITY
+            };
+            let mut resp = new_response(code);
             resp.headers_mut().insert(
                 header::CONTENT_TYPE,
                 HeaderValue::from_static("application/json"),
@@ -150,7 +164,7 @@ where
 
 fn gql_request_from_get(input: &str) -> Result<JuniperGraphQLRequest, GraphQLRequestError> {
     let mut query = None;
-    let mut operation_name = None;
+    let operation_name = None;
     let mut variables = None;
     for (key, value) in form_urlencoded::parse(input.as_bytes()).into_owned() {
         match key.as_ref() {
@@ -198,6 +212,15 @@ fn new_response(code: StatusCode) -> Response<Body> {
     let mut r = Response::new(Body::empty());
     *r.status_mut() = code;
     r
+}
+
+fn new_html_response(code: StatusCode) -> Response<Body> {
+    let mut resp = new_response(code);
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/html; charset=utf-8"),
+    );
+    resp
 }
 
 #[derive(Deserialize)]
@@ -294,8 +317,127 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
+    use futures::future;
+    use futures::{Future, Stream};
+    use futures_cpupool::Builder;
+    use hyper::service::service_fn;
+    use hyper::Client;
+    use hyper::Method;
+    use hyper::{header, Body, Request, Response, Server, StatusCode};
+    use juniper::http::tests as http_tests;
+    use juniper::tests::model::Database;
+    use juniper::EmptyMutation;
+    use juniper::RootNode;
+    use std::sync::Arc;
+    use tokio::runtime::Runtime;
+
+    use std::thread;
+    use std::time;
+
+    struct TestHyperIntegration;
+
+    impl http_tests::HTTPIntegration for TestHyperIntegration {
+        fn get(&self, url: &str) -> http_tests::TestResponse {
+            let client = Client::new();
+            let url = format!("http://localhost:3000/graphql{}", url);
+            let uri: hyper::Uri = url.parse().expect(&format!("url {} is invalid", url));
+            let resp = make_test_response(
+                client
+                    .get(uri.clone())
+                    .wait()
+                    .expect(&format!("failed GET {}", uri)),
+            );
+            resp
+        }
+
+        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let url = format!("http://localhost:3000/graphql{}", url);
+            let client = Client::new();
+            let uri: hyper::Uri = url.parse().unwrap();
+            let mut req = Request::new(Body::from(body.to_string()));
+            *req.method_mut() = Method::POST;
+            *req.uri_mut() = uri.clone();
+            make_test_response(
+                client
+                    .request(req)
+                    .wait()
+                    .expect(&format!("failed POST {}", url)),
+            )
+        }
+    }
+
+    fn make_test_response(response: Response<Body>) -> http_tests::TestResponse {
+        let status_code = response.status().as_u16() as i32;
+
+        let content_type = String::from_utf8(
+            response
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .map(|h| h.clone().as_ref().to_vec())
+                .unwrap_or(vec![]),
+        ).expect("Content-type header invalid UTF-8");
+
+        let body = response
+            .into_body()
+            .concat2()
+            .map(|chunk| {
+                String::from_utf8(chunk.iter().cloned().collect::<Vec<u8>>())
+                    .expect("body is not valid utf-8")
+            }).wait()
+            .unwrap();
+
+        http_tests::TestResponse {
+            status_code,
+            body: Some(body),
+            content_type,
+        }
+    }
+
     #[test]
-    fn parse_query_as_graphql_request() {
-        assert_eq!(2 + 2, 4);
+    fn test_hyper_integration() {
+        let addr = ([127, 0, 0, 1], 3000).into();
+
+        let pool = Builder::new().create();
+        let db = Arc::new(Database::new());
+        let root_node = Arc::new(RootNode::new(db.clone(), EmptyMutation::<Database>::new()));
+
+        let new_service = move || {
+            let pool = pool.clone();
+            let root_node = root_node.clone();
+            let ctx = db.clone();
+            service_fn(move |req| {
+                let pool = pool.clone();
+                let root_node = root_node.clone();
+                let ctx = ctx.clone();
+                let matches = {
+                    let path = req.uri().path();
+                    match req.method() {
+                        &Method::POST | &Method::GET => path == "/graphql" || path == "/graphql/",
+                        _ => false,
+                    }
+                };
+                if matches {
+                    super::graphql(pool, root_node, ctx, req)
+                } else {
+                    let mut response = Response::new(Body::empty());
+                    *response.status_mut() = StatusCode::NOT_FOUND;
+                    Box::new(future::ok(response))
+                }
+            })
+        };
+        let server = Server::bind(&addr)
+            .serve(new_service)
+            .map_err(|e| eprintln!("server error: {}", e));
+
+        let mut runtime = Runtime::new().unwrap();
+        runtime.spawn(server);
+        thread::sleep(time::Duration::from_millis(10)); // wait 10ms for server to bind
+
+        let _ = runtime.block_on::<_, _, ()>(future::lazy(|| {
+            let integration = TestHyperIntegration;
+            future::ok(http_tests::run_http_test_suite(&integration))
+        }));
+
+        runtime.shutdown_now().wait().unwrap();
     }
 }
