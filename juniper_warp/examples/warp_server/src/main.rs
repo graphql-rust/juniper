@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate env_logger;
 #[macro_use]
 extern crate log as irrelevant_log;
@@ -21,7 +23,7 @@ fn main() {
 
     let log = log("warp_server");
 
-    let homepage = warp::any().map(|| {
+    let homepage = warp::index().map(|| {
         Response::builder()
             .header("content-type", "text/html")
             .body(format!(
@@ -35,11 +37,11 @@ fn main() {
     let graphql_filter = juniper_warp::make_graphql_filter(schema(), state.boxed());
 
     warp::serve(
-        warp::get(
-            warp::path("graphiql")
-                .and(juniper_warp::graphiql_handler("/graphql"))
-                .or(homepage),
-        ).or(warp::path("graphql").and(graphql_filter))
-        .with(log),
+        warp::get2()
+            .and(warp::path("graphiql"))
+            .and(juniper_warp::graphiql_handler("/graphql"))
+            .or(homepage)
+            .or(warp::path("graphql").and(graphql_filter))
+            .with(log),
     ).run(([127, 0, 0, 1], 8080));
 }

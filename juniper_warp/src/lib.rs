@@ -37,6 +37,7 @@ Check the LICENSE file for details.
 */
 
 #![deny(missing_docs)]
+#![deny(warnings)]
 
 #[macro_use]
 extern crate failure;
