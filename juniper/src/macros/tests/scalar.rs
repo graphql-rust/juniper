@@ -93,6 +93,20 @@ where
 }
 
 #[test]
+fn path_in_resolve_return_type() {
+    struct ResolvePath(i32);
+    graphql_scalar!(ResolvePath {
+        resolve(&self) -> self::Value {
+            Value::int(self.0)
+        }
+
+        from_input_value(v: &InputValue) -> Option<ResolvePath> {
+            v.as_int_value().map(|i| ResolvePath(i))
+        }
+    });
+}
+
+#[test]
 fn default_name_introspection() {
     let doc = r#"
     {
