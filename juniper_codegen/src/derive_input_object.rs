@@ -131,6 +131,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
     let ident = &ast.ident;
     let attrs = ObjAttrs::from_input(ast);
     let name = attrs.name.unwrap_or(ast.ident.to_string());
+    let generics = &ast.generics;
 
     let meta_description = match attrs.description {
         Some(descr) => quote!{ let meta = meta.description(#descr); },
@@ -238,7 +239,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
     }
 
     let body = quote! {
-        impl _juniper::GraphQLType for #ident {
+        impl #generics _juniper::GraphQLType for #ident #generics {
             type Context = ();
             type TypeInfo = ();
 
@@ -259,8 +260,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             }
         }
 
-        impl _juniper::FromInputValue for #ident {
-            fn from_input_value(value: &_juniper::InputValue) -> Option<#ident> {
+        impl #generics _juniper::FromInputValue for #ident #generics {
+            fn from_input_value(value: &_juniper::InputValue) -> Option<#ident #generics> {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {
                         #(#from_inputs)*
@@ -273,7 +274,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             }
         }
 
-        impl _juniper::ToInputValue for #ident {
+        impl #generics _juniper::ToInputValue for #ident #generics {
             fn to_input_value(&self) -> _juniper::InputValue {
                 _juniper::InputValue::object(vec![
                     #(#to_inputs)*

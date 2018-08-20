@@ -1,8 +1,7 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
 
-#[cfg(test)]
-use juniper::{self, FromInputValue, GraphQLType, InputValue};
+use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
 #[graphql(name = "MyInput", description = "input descr")]
@@ -40,6 +39,46 @@ struct OverrideDocComment {
     /// This is not used as the description.
     #[graphql(description = "field override")]
     regular_field: bool,
+}
+
+#[derive(Debug, PartialEq)]
+struct Fake;
+
+impl<'a> FromInputValue for &'a Fake {
+    fn from_input_value(_v: &InputValue) -> Option<&'a Fake> {
+        None
+    }
+}
+
+impl<'a> ToInputValue for &'a Fake {
+    fn to_input_value(&self) -> InputValue {
+        InputValue::string("this is fake".to_string())
+    }
+}
+
+impl<'a> GraphQLType for &'a Fake {
+    type Context = ();
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&'static str> {
+        None
+    }
+    fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r> {
+        let meta = registry.build_enum_type::<&'a Fake>(
+            &(),
+            &[juniper::meta::EnumValue {
+                name: "fake".to_string(),
+                description: None,
+                deprecation_reason: None,
+            }],
+        );
+        meta.into_meta()
+    }
+}
+
+#[derive(GraphQLInputObject, Debug, PartialEq)]
+struct WithLifetime<'a> {
+    regular_field: &'a Fake,
 }
 
 #[test]

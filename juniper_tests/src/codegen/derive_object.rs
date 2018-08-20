@@ -48,6 +48,11 @@ struct OverrideDocComment {
     regular_field: bool,
 }
 
+#[derive(GraphQLObject, Debug, PartialEq)]
+struct WithLifetime<'a> {
+    regular_field: &'a i32,
+}
+
 graphql_object!(Query: () |&self| {
     field obj() -> Obj {
       Obj{

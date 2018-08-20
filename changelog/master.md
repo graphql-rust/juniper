@@ -44,3 +44,8 @@
   **Note:** while this is a breaking change, it is a necessary one to better align with the latest [GraphQL June 2018](https://facebook.github.io/graphql/June2018/#sec-Errors) specification, which defines the reserved *extensions* field for error details.  
 
   [#219](https://github.com/graphql-rust/juniper/pull/219)
+
+* The `GraphQLObject` and `GraphQLInputObject` custom derives
+  now support lifetime annotations.
+
+  [#225](https://github.com/graphql-rust/juniper/issues/225)
