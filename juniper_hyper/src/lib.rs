@@ -339,7 +339,7 @@ mod tests {
     impl http_tests::HTTPIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             let client = Client::new();
-            let url = format!("http://localhost:3000/graphql{}", url);
+            let url = format!("http://localhost:3001/graphql{}", url);
             let uri: hyper::Uri = url.parse().expect(&format!("url {} is invalid", url));
             let resp = make_test_response(
                 client
@@ -351,7 +351,7 @@ mod tests {
         }
 
         fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://localhost:3000/graphql{}", url);
+            let url = format!("http://localhost:3001/graphql{}", url);
             let client = Client::new();
             let uri: hyper::Uri = url.parse().unwrap();
             let mut req = Request::new(Body::from(body.to_string()));
@@ -395,7 +395,7 @@ mod tests {
 
     #[test]
     fn test_hyper_integration() {
-        let addr = ([127, 0, 0, 1], 3000).into();
+        let addr = ([127, 0, 0, 1], 3001).into();
 
         let pool = Builder::new().create();
         let db = Arc::new(Database::new());
