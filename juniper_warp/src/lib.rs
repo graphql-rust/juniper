@@ -41,6 +41,8 @@ Check the LICENSE file for details.
 
 #[macro_use]
 extern crate failure;
+extern crate futures;
+extern crate futures_cpupool;
 extern crate juniper;
 extern crate serde_json;
 extern crate warp;
@@ -48,6 +50,8 @@ extern crate warp;
 #[cfg(test)]
 extern crate percent_encoding;
 
+use futures::Future;
+use futures_cpupool::CpuPool;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
@@ -116,45 +120,75 @@ where
     Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
+    let pool = CpuPool::new_num_cpus();
+    make_graphql_filter_with_thread_pool(schema, context_extractor, pool)
+}
+
+type Response =
+    Box<Future<Item = warp::http::Response<Vec<u8>>, Error = warp::reject::Rejection> + Send>;
+
+/// Same as [make_graphql_filter], but use the provided [CpuPool] instead.
+pub fn make_graphql_filter_with_thread_pool<Query, Mutation, Context>(
+    schema: juniper::RootNode<'static, Query, Mutation>,
+    context_extractor: BoxedFilter<(Context,)>,
+    thread_pool: futures_cpupool::CpuPool,
+) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
+where
+    Context: Send + Sync + 'static,
+    Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
+{
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
+    let pool_filter = warp::any().map(move || thread_pool.clone());
 
     let handle_post_request = move |context: Context,
-                                    request: juniper::http::GraphQLRequest|
-          -> Result<Vec<u8>, failure::Error> {
-        Ok(serde_json::to_vec(
-            &request.execute(&post_schema, &context),
-        )?)
+                                    request: juniper::http::GraphQLRequest,
+                                    pool: CpuPool|
+          -> Response {
+        let schema = post_schema.clone();
+        Box::new(
+            pool.spawn_fn(move || Ok(serde_json::to_vec(&request.execute(&schema, &context))?))
+                .then(|result| ::futures::future::done(Ok(build_response(result))))
+                .map_err(|_: failure::Error| warp::reject::server_error()),
+        )
     };
 
     let post_filter = warp::post2()
         .and(context_extractor.clone())
         .and(warp::body::json())
-        .map(handle_post_request)
-        .map(build_response);
+        .and(pool_filter.clone())
+        .and_then(handle_post_request);
 
     let handle_get_request = move |context: Context,
-                                   mut request: std::collections::HashMap<String, String>|
-          -> Result<Vec<u8>, failure::Error> {
-        let graphql_request = juniper::http::GraphQLRequest::new(
-            request
-                .remove("query")
-                .ok_or_else(|| format_err!("Missing GraphQL query string in query parameters"))?,
-            request.get("operation_name").map(|s| s.to_owned()),
-            request
-                .remove("variables")
-                .and_then(|vs| serde_json::from_str(&vs).ok()),
-        );
-        Ok(serde_json::to_vec(
-            &graphql_request.execute(&schema.clone(), &context),
-        )?)
+                                   mut request: std::collections::HashMap<String, String>,
+                                   pool: CpuPool|
+          -> Response {
+        let schema = schema.clone();
+        Box::new(
+            pool.spawn_fn(move || {
+                let graphql_request = juniper::http::GraphQLRequest::new(
+                    request.remove("query").ok_or_else(|| {
+                        format_err!("Missing GraphQL query string in query parameters")
+                    })?,
+                    request.get("operation_name").map(|s| s.to_owned()),
+                    request
+                        .remove("variables")
+                        .and_then(|vs| serde_json::from_str(&vs).ok()),
+                );
+                Ok(serde_json::to_vec(
+                    &graphql_request.execute(&schema, &context),
+                )?)
+            }).then(|result| ::futures::future::done(Ok(build_response(result))))
+                .map_err(|_: failure::Error| warp::reject::server_error()),
+        )
     };
 
     let get_filter = warp::get2()
         .and(context_extractor.clone())
         .and(warp::filters::query::query())
-        .map(handle_get_request)
-        .map(build_response);
+        .and(pool_filter)
+        .and_then(handle_get_request);
 
     get_filter.or(post_filter).unify().boxed()
 }
