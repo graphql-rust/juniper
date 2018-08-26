@@ -1,0 +1,17 @@
+[tasks.build-verbose]
+condition = { channels = ["nightly", "beta", "stable"] }
+
+[tasks.build-verbose.windows]
+condition = { channels = ["nightly", "beta", "stable"] }
+
+[tasks.test-verbose]
+condition = { channels = ["nightly", "beta", "stable"] }
+
+[tasks.test-verbose.windows]
+condition = { channels = ["nightly", "beta", "stable"] }
+
+[tasks.ci-coverage-flow]
+condition = { channels = ["nightly", "beta", "stable"] }
+
+[tasks.ci-coverage-flow.windows]
+disabled = true

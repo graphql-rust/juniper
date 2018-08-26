@@ -103,7 +103,8 @@ use warp::{filters::BoxedFilter, Filter};
 /// let graphql_filter = make_graphql_filter(schema, context_extractor);
 ///
 /// let graphql_endpoint = warp::path("graphql")
-///     .and(warp::post(graphql_filter));
+///     .and(warp::post2())
+///     .and(graphql_filter);
 /// # }
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Context>(
@@ -327,10 +328,6 @@ mod tests_http_harness {
                 .into_iter()
                 .collect::<Vec<_>>()
                 .join("");
-
-            // if url.len() > 200 {
-            //     panic!("{:?}", url);
-            // }
 
             let response = warp::test::request()
                 .method("GET")
