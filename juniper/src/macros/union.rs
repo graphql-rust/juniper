@@ -17,7 +17,7 @@ resolvers.
 [1]: macro.graphql_object!.html
 [2]: macro.graphql_interface!.html
 */
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! graphql_union {
     ( @as_item, $i:item) => { $i };
     ( @as_expr, $e:expr) => { $e };
@@ -43,7 +43,7 @@ macro_rules! graphql_union {
         instance_resolvers: | $ctxtvar:pat
                             | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
     ) => {
-        $acc = vec![
+        $acc = __graphql__vec![
             $(
                 $reg.get_type::<$srctype>(&())
             ),*
@@ -68,7 +68,7 @@ macro_rules! graphql_union {
             }
         )*
 
-            panic!("Concrete type not handled by instance resolvers on {}", $outname);
+            __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
     };
 
     // To generate the "resolve into type" resolver, syntax case:
@@ -87,7 +87,7 @@ macro_rules! graphql_union {
             }
         )*
 
-            panic!("Concrete type not handled by instance resolvers on {}", $outname);
+           __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
     };
 
     // eat commas
@@ -177,6 +177,6 @@ macro_rules! graphql_union {
             $( $items:tt )*
         }
     ) => {
-        graphql_union!(() $name : $ctxt as (stringify!($name)) | &$mainself | { $( $items )* });
+        graphql_union!(() $name : $ctxt as (__graphql__stringify!($name)) | &$mainself | { $( $items )* });
     };
 }

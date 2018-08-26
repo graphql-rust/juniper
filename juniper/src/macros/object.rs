@@ -237,7 +237,7 @@ arg_name = ("default".to_owned()): String
 [1]: struct.Executor.html
 
 */
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! graphql_object {
     ( @as_item, $i:item) => { $i };
     ( @as_expr, $e:expr) => { $e };
@@ -258,7 +258,7 @@ macro_rules! graphql_object {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info)
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
                 .description($desc)
                 .deprecated($reason),
             $info,
@@ -277,7 +277,7 @@ macro_rules! graphql_object {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info)
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
                 .deprecated($reason),
             $info,
             $args));
@@ -295,7 +295,7 @@ macro_rules! graphql_object {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info)
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
                 .description($desc),
             $info,
             $args));
@@ -313,7 +313,7 @@ macro_rules! graphql_object {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info),
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info),
             $info,
             $args));
 
@@ -357,13 +357,13 @@ macro_rules! graphql_object {
     ) => {};
 
     ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty,)* ] ) => {
-        $tgt = Some(vec![
+        $tgt = Some(__graphql__vec![
             $($reg.get_type::<$t>(&())),*
         ]);
     };
 
     ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty),* ] ) => {
-        $tgt = Some(vec![
+        $tgt = Some(__graphql__vec![
             $($reg.get_type::<$t>(&())),*
         ]);
     };
@@ -453,6 +453,6 @@ macro_rules! graphql_object {
         }
     ) => {
         graphql_object!(
-            ( ); $name; $ctxt; (stringify!($name)); $mainself; $( $items )*);
+            ( ); $name; $ctxt; (__graphql__stringify!($name)); $mainself; $( $items )*);
     };
 }

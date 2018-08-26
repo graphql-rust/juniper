@@ -1,5 +1,5 @@
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! __graphql__build_field_matches {
     // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
     (
@@ -81,7 +81,7 @@ macro_rules! __graphql__build_field_matches {
         ( $( ( $name:ident; ( $($args:tt)* ); $t:ty; $body:block ) )* ),
     ) => {
         $(
-            if $fieldvar == &$crate::to_camel_case(stringify!($name)) {
+            if $fieldvar == &$crate::to_camel_case(__graphql__stringify!($name)) {
                 let result: $t = (||{
                     __graphql__args!(
                         @assign_arg_vars,
@@ -98,6 +98,6 @@ macro_rules! __graphql__build_field_matches {
                     })
             }
         )*
-        panic!("Field {} not found on type {}", $fieldvar, $outname);
+        __graphql__panic!("Field {} not found on type {}", $fieldvar, $outname);
     };
 }
