@@ -120,7 +120,7 @@ pub fn make_graphql_filter<Query, Mutation, Context>(
     context_extractor: BoxedFilter<(Context,)>,
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
-    Context: Send + Sync + 'static,
+    Context: Send + 'static,
     Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
@@ -138,7 +138,7 @@ pub fn make_graphql_filter_with_thread_pool<Query, Mutation, Context>(
     thread_pool: futures_cpupool::CpuPool,
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
-    Context: Send + Sync + 'static,
+    Context: Send + 'static,
     Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
