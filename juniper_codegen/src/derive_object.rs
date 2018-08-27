@@ -111,6 +111,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
 
     // Parse attributes.
     let ident = &ast.ident;
+    let generics = &ast.generics;
     let ident_name = ident.to_string();
     let attrs = ObjAttrs::from_input(ast);
     let name = attrs.name.unwrap_or(ast.ident.to_string());
@@ -170,7 +171,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
     }
 
     let toks = quote! {
-        impl ::juniper::GraphQLType for #ident {
+        impl #generics ::juniper::GraphQLType for #ident #generics {
             type Context = ();
             type TypeInfo = ();
 

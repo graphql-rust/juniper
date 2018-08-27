@@ -49,6 +49,11 @@ struct OverrideDocComment {
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
+struct WithLifetime<'a> {
+    regular_field: &'a i32,
+}
+
+#[derive(GraphQLObject, Debug, PartialEq)]
 struct SkippedFieldObj {
     regular_field: bool,
     #[graphql(skip)]
