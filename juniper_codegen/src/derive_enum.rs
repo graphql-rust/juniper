@@ -156,33 +156,29 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
         };
-        let value = quote!{
+        values.extend(quote!{
             _juniper::meta::EnumValue{
                 name: #name.to_string(),
                 description: #descr,
                 deprecation_reason: #depr,
             },
-        };
-        values.extend(value);
+        });
 
         // Build resolve match clause.
-        let resolve = quote!{
+        resolves.extend(quote!{
             &#ident::#var_ident => _juniper::Value::String(#name.to_string()),
-        };
-        resolves.extend(resolve);
+        });
 
         // Buil from_input clause.
-        let from_input = quote!{
+        from_inputs.extend(quote!{
             Some(#name) => Some(#ident::#var_ident),
-        };
-        from_inputs.extend(from_input);
+        });
 
         // Buil to_input clause.
-        let to_input = quote!{
+        to_inputs.extend(quote!{
             &#ident::#var_ident =>
                 _juniper::InputValue::string(#name.to_string()),
-        };
-        to_inputs.extend(to_input);
+        });
     }
 
     let body = quote! {

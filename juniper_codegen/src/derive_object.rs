@@ -143,22 +143,20 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             None => quote!{ field },
         };
 
-        let meta_field = quote!{
+        meta_fields.extend(quote!{
             {
                 let field = registry.field::<#field_ty>(#name, &());
                 let field = #build_description;
                 let field = #build_deprecation;
                 field
             },
-        };
-        meta_fields.extend(meta_field);
+        });
 
         // Build from_input clause.
 
-        let resolver = quote!{
+        resolvers.extend(quote!{
             #name => executor.resolve_with_ctx(&(), &self.#field_ident),
-        };
-        resolvers.extend(resolver);
+        });
     }
 
     let toks = quote! {

@@ -200,14 +200,13 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                 }
             }
         };
-        let meta_field = quote!{
+        meta_fields.extend(quote!{
             {
                 #create_meta_field
                 #field_description
                 field
             },
-        };
-        meta_fields.extend(meta_field);
+        });
 
         // Build from_input clause.
 
@@ -220,7 +219,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
             None => quote!{},
         };
 
-        let from_input = quote!{
+        from_inputs.extend(quote!{
             #field_ident: {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
@@ -232,14 +231,12 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                     },
                 }
             },
-        };
-        from_inputs.extend(from_input);
+        });
 
         // Build to_input clause.
-        let to_input = quote!{
+        to_inputs.extend(quote!{
             (#name, self.#field_ident.to_input_value()),
-        };
-        to_inputs.extend(to_input);
+        });
     }
 
     let body = quote! {
