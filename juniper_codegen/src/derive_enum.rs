@@ -169,12 +169,12 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             &#ident::#var_ident => _juniper::Value::String(#name.to_string()),
         });
 
-        // Buil from_input clause.
+        // Build from_input clause.
         from_inputs.extend(quote!{
             Some(#name) => Some(#ident::#var_ident),
         });
 
-        // Buil to_input clause.
+        // Build to_input clause.
         to_inputs.extend(quote!{
             &#ident::#var_ident =>
                 _juniper::InputValue::string(#name.to_string()),
