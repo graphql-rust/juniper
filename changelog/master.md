@@ -45,6 +45,10 @@
 
   [#219](https://github.com/graphql-rust/juniper/pull/219)
 
+* When using the `GraphQLObject` custom derive, fields now be omitted by annotating the field with `#[graphql(skip)]`.
+
+  [#220](https://github.com/graphql-rust/juniper/issues/220)
+
 * Due to newer dependencies, the oldest Rust version supported is now 1.22.0
 
   [#231](https://github.com/graphql-rust/juniper/pull/231)

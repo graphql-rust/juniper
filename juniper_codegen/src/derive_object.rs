@@ -18,9 +18,9 @@ impl ObjAttrs {
         res.description = get_doc_comment(&input.attrs);
 
         // Check attributes for name and description.
-        if let Some(items) = get_graphl_attr(&input.attrs) {
+        if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(&item, "name", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -31,12 +31,12 @@ impl ObjAttrs {
                         );
                     }
                 }
-                if let Some(val) = keyed_item_value(&item, "description", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
                 }
                 panic!(format!(
-                    "Unknown attribute for #[derive(GraphQLObject)]: {:?}",
+                    "Unknown object attribute for #[derive(GraphQLObject)]: {:?}",
                     item
                 ));
             }
@@ -50,6 +50,7 @@ struct ObjFieldAttrs {
     name: Option<String>,
     description: Option<String>,
     deprecation: Option<String>,
+    skip: bool,
 }
 
 impl ObjFieldAttrs {
@@ -59,10 +60,10 @@ impl ObjFieldAttrs {
         // Check doc comments for description.
         res.description = get_doc_comment(&variant.attrs);
 
-        // Check attributes for name and description.
-        if let Some(items) = get_graphl_attr(&variant.attrs) {
+        // Check attributes.
+        if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(&item, "name", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -73,16 +74,20 @@ impl ObjFieldAttrs {
                         );
                     }
                 }
-                if let Some(val) = keyed_item_value(&item, "description", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(&item, "deprecation", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "deprecation", AttributeValidation::String) {
                     res.deprecation = Some(val);
                     continue;
                 }
+                if let Some(_) = keyed_item_value(&item, "skip", AttributeValidation::Bare) {
+                    res.skip = true;
+                    continue;
+                }
                 panic!(format!(
-                    "Unknown attribute for #[derive(GraphQLObject)]: {:?}",
+                    "Unknown field attribute for #[derive(GraphQLObject)]: {:?}",
                     item
                 ));
             }
@@ -121,6 +126,11 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         let field_ty = &field.ty;
         let field_attrs = ObjFieldAttrs::from_input(field);
         let field_ident = field.ident.as_ref().unwrap();
+
+        // Check if we should skip this field.
+        if field_attrs.skip {
+            continue;
+        }
 
         // Build value.
         let name = match field_attrs.name {
