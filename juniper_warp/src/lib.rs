@@ -227,16 +227,16 @@ fn build_response(response: Result<Vec<u8>, failure::Error>) -> warp::http::Resp
 /// ```
 pub fn graphiql_handler(
     graphql_endpoint_url: &'static str,
-) -> warp::filters::BoxedFilter<(warp::http::Response<String>,)> {
+) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
     warp::any()
         .map(move || graphiql_response(graphql_endpoint_url))
         .boxed()
 }
 
-fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response<String> {
+fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response<Vec<u8>> {
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
-        .body(juniper::graphiql::graphiql_source(graphql_endpoint_url))
+        .body(juniper::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
         .expect("response is valid")
 }
 
