@@ -61,9 +61,9 @@ use warp::{filters::BoxedFilter, Filter};
 ///
 /// The `context_extractor` argument should be a filter that provides the GraphQL context required by the schema.
 ///
-/// In order to avoid blocking, this helper will create a [futures_cpupool::CpuPool] to resolve GraphQL requests.
+/// In order to avoid blocking, this helper will create a [CpuPool](../futures_cpupool/struct.CpuPool.html) to resolve GraphQL requests.
 ///
-/// If you want to pass your own threadpool, use [make_graphql_filter_with_thread_pool] instead.
+/// If you want to pass your own threadpool, use [make_graphql_filter_with_thread_pool](fn.make_graphql_filter_with_thread_pool.html) instead.
 ///
 /// Example:
 ///
@@ -131,7 +131,7 @@ where
 type Response =
     Box<Future<Item = warp::http::Response<Vec<u8>>, Error = warp::reject::Rejection> + Send>;
 
-/// Same as [make_graphql_filter], but use the provided [CpuPool] instead.
+/// Same as [make_graphql_filter](./fn.make_graphql_filter.html), but use the provided [CpuPool](../futures_cpupool/struct.CpuPool.html) instead.
 pub fn make_graphql_filter_with_thread_pool<Query, Mutation, Context>(
     schema: juniper::RootNode<'static, Query, Mutation>,
     context_extractor: BoxedFilter<(Context,)>,
