@@ -1,4 +1,4 @@
-use quote::Tokens;
+use proc_macro2::TokenStream;
 use syn;
 use syn::{Data, DeriveInput, Field, Fields};
 
@@ -91,7 +91,7 @@ impl ObjFieldAttrs {
     }
 }
 
-pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
+pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
     let fields = match ast.data {
         Data::Struct(ref data) => match data.fields {
             Fields::Named(ref fields) => fields.named.iter().collect::<Vec<_>>(),
@@ -114,8 +114,8 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
         None => quote!{ builder },
     };
 
-    let mut meta_fields = Vec::<Tokens>::new();
-    let mut resolvers = Vec::<Tokens>::new();
+    let mut meta_fields = TokenStream::new();
+    let mut resolvers = TokenStream::new();
 
     for field in fields {
         let field_ty = &field.ty;
@@ -130,7 +130,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
             }
             None => {
                 // Note: auto camel casing when no custom name specified.
-                ::util::to_camel_case(field_ident.as_ref())
+                ::util::to_camel_case(&field_ident.to_string())
             }
         };
         let build_description = match field_attrs.description {
@@ -143,22 +143,20 @@ pub fn impl_object(ast: &syn::DeriveInput) -> Tokens {
             None => quote!{ field },
         };
 
-        let meta_field = quote!{
+        meta_fields.extend(quote!{
             {
                 let field = registry.field::<#field_ty>(#name, &());
                 let field = #build_description;
                 let field = #build_deprecation;
                 field
             },
-        };
-        meta_fields.push(meta_field);
+        });
 
         // Build from_input clause.
 
-        let resolver = quote!{
+        resolvers.extend(quote!{
             #name => executor.resolve_with_ctx(&(), &self.#field_ident),
-        };
-        resolvers.push(resolver);
+        });
     }
 
     let toks = quote! {

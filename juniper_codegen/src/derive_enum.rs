@@ -1,4 +1,5 @@
-use quote::Tokens;
+use proc_macro2::{Span, TokenStream};
+
 use syn;
 use syn::{Data, DeriveInput, Fields, Ident, Meta, NestedMeta, Variant};
 
@@ -106,7 +107,7 @@ impl EnumVariantAttrs {
     }
 }
 
-pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
+pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
     let variants = match ast.data {
         Data::Enum(ref enum_data) => enum_data.variants.iter().collect::<Vec<_>>(),
         _ => {
@@ -124,10 +125,10 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         None => quote!{ let meta = meta; },
     };
 
-    let mut values = Vec::<Tokens>::new();
-    let mut resolves = Vec::<Tokens>::new();
-    let mut from_inputs = Vec::<Tokens>::new();
-    let mut to_inputs = Vec::<Tokens>::new();
+    let mut values = TokenStream::new();
+    let mut resolves = TokenStream::new();
+    let mut from_inputs = TokenStream::new();
+    let mut to_inputs = TokenStream::new();
 
     for variant in variants {
         match variant.fields {
@@ -146,7 +147,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         // Build value.
         let name = var_attrs
             .name
-            .unwrap_or(::util::to_upper_snake_case(variant.ident.as_ref()));
+            .unwrap_or(::util::to_upper_snake_case(&variant.ident.to_string()));
         let descr = match var_attrs.description {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
@@ -155,33 +156,29 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
             Some(s) => quote!{ Some(#s.to_string())  },
             None => quote!{ None },
         };
-        let value = quote!{
+        values.extend(quote!{
             _juniper::meta::EnumValue{
                 name: #name.to_string(),
                 description: #descr,
                 deprecation_reason: #depr,
             },
-        };
-        values.push(value);
+        });
 
         // Build resolve match clause.
-        let resolve = quote!{
+        resolves.extend(quote!{
             &#ident::#var_ident => _juniper::Value::String(#name.to_string()),
-        };
-        resolves.push(resolve);
+        });
 
-        // Buil from_input clause.
-        let from_input = quote!{
+        // Build from_input clause.
+        from_inputs.extend(quote!{
             Some(#name) => Some(#ident::#var_ident),
-        };
-        from_inputs.push(from_input);
+        });
 
-        // Buil to_input clause.
-        let to_input = quote!{
+        // Build to_input clause.
+        to_inputs.extend(quote!{
             &#ident::#var_ident =>
                 _juniper::InputValue::string(#name.to_string()),
-        };
-        to_inputs.push(to_input);
+        });
     }
 
     let body = quote! {
@@ -233,7 +230,10 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> Tokens {
         }
     };
 
-    let dummy_const = Ident::from(format!("_IMPL_GRAPHQLENUM_FOR_{}", ident).as_str());
+    let dummy_const = Ident::new(
+        &format!("_IMPL_GRAPHQLENUM_FOR_{}", ident),
+        Span::call_site(),
+    );
 
     // This ugly hack makes it possible to use the derive inside juniper itself.
     // FIXME: Figure out a better way to do this!
