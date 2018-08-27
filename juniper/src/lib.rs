@@ -125,7 +125,7 @@ mod macros;
 mod ast;
 mod executor;
 pub mod parser;
-mod schema;
+pub(crate) mod schema;
 mod types;
 mod util;
 mod validation;
@@ -133,7 +133,7 @@ mod validation;
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;
 pub mod integrations;
-// TODO: remove this alias export in 0.10. (breaking change)
+// // TODO: remove this alias export in 0.10. (breaking change)
 pub use http::graphiql;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
@@ -144,7 +144,7 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
-// Needs to be public because macros use it.
+// // Needs to be public because macros use it.
 pub use util::to_camel_case;
 
 use executor::execute_validated_query;
@@ -159,13 +159,12 @@ pub use executor::{
     Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult, FromContext,
     IntoFieldError, IntoResolvable, Registry, Variables,
 };
+pub use schema::meta;
 pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
 pub use validation::RuleError;
-pub use value::{Value, Object};
-
-pub use schema::meta;
+pub use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value, ParseScalarValue};
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -179,36 +178,38 @@ pub enum GraphQLError<'a> {
 }
 
 /// Execute a query in a provided schema
-pub fn execute<'a, CtxT, QueryT, MutationT>(
+pub fn execute<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT>,
-    variables: &Variables,
+    root_node: &'a RootNode<S, QueryT, MutationT>,
+    variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    QueryT: GraphQLType<Context = CtxT>,
-    MutationT: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source)?;
 
-    {
-        let errors = validate_input_values(variables, &document, &root_node.schema);
+        {
+            let errors = validate_input_values(variables, &document, &root_node.schema);
 
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            if !errors.is_empty() {
+                return Err(GraphQLError::ValidationError(errors));
+            }
         }
-    }
 
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
+        {
+            let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+            visit_all_rules(&mut ctx, &document);
 
-        let errors = ctx.into_errors();
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let errors = ctx.into_errors();
+            if !errors.is_empty() {
+                return Err(GraphQLError::ValidationError(errors));
+            }
         }
-    }
 
     execute_validated_query(document, operation_name, root_node, variables, context)
 }

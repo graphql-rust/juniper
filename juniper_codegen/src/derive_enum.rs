@@ -182,7 +182,10 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
     }
 
     let body = quote! {
-        impl _juniper::GraphQLType for #ident {
+        impl<__S> _juniper::GraphQLType<__S> for #ident
+        where __S: _juniper::ScalarValue,
+            for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+        {
             type Context = ();
             type TypeInfo = ();
 
@@ -190,8 +193,9 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>)
-                -> _juniper::meta::MetaType<'r>
+            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r, __S>)
+                        -> _juniper::meta::MetaType<'r, __S>
+            where __S: 'r,
             {
                 let meta = registry.build_enum_type::<#ident>(&(), &[
                     #(#values)*
@@ -203,17 +207,19 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             fn resolve(
                 &self,
                 _: &(),
-                _: Option<&[_juniper::Selection]>,
-                _: &_juniper::Executor<Self::Context>
-            ) -> _juniper::Value {
+                _: Option<&[_juniper::Selection<__S>]>,
+                _: &_juniper::Executor<__S, Self::Context>
+            ) -> _juniper::Value<__S> {
                 match self {
                     #(#resolves)*
                 }
             }
         }
 
-        impl _juniper::FromInputValue for #ident {
-            fn from_input_value(v: &_juniper::InputValue) -> Option<#ident> {
+        impl<__S: _juniper::ScalarValue> _juniper::FromInputValue<__S> for #ident {
+            fn from_input_value(v: &_juniper::InputValue<__S>) -> Option<#ident>
+                where for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+            {
                 match v.as_enum_value().or_else(|| v.as_string_value()) {
                     #(#from_inputs)*
                     _ => None,
@@ -221,8 +227,8 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl _juniper::ToInputValue for #ident {
-            fn to_input_value(&self) -> _juniper::InputValue {
+        impl<__S: _juniper::ScalarValue> _juniper::ToInputValue<__S> for #ident {
+            fn to_input_value(&self) -> _juniper::InputValue<__S> {
                 match self {
                     #(#to_inputs)*
                 }
@@ -235,35 +241,13 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
         Span::call_site(),
     );
 
-    // This ugly hack makes it possible to use the derive inside juniper itself.
-    // FIXME: Figure out a better way to do this!
-    let crate_reference = if attrs.internal {
-        quote! {
-            #[doc(hidden)]
-            mod _juniper {
-                pub use ::{
-                    InputValue,
-                    Value,
-                    ToInputValue,
-                    FromInputValue,
-                    Executor,
-                    Selection,
-                    Registry,
-                    GraphQLType,
-                    meta
-                };
-            }
-        }
-    } else {
-        quote! {
-            extern crate juniper as _juniper;
-        }
-    };
     let generated = quote! {
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
         #[doc(hidden)]
         const #dummy_const : () = {
-            #crate_reference
+            mod _juniper {
+                __juniper_use_everything!();
+            }
             #body
         };
     };

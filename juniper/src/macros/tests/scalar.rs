@@ -1,7 +1,8 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object};
+use value::{Value, Object, DefaultScalarValue, ParseScalarValue};
+use parser::ParseError;
 
 struct DefaultName(i32);
 struct OtherOrder(i32);
@@ -19,7 +20,7 @@ Syntax to validate:
 
 */
 
-graphql_scalar!(DefaultName {
+graphql_scalar!(DefaultName where Scalar = <S> {
     resolve(&self) -> Value {
         Value::int(self.0)
     }
@@ -27,19 +28,26 @@ graphql_scalar!(DefaultName {
     from_input_value(v: &InputValue) -> Option<DefaultName> {
         v.as_int_value().map(|i| DefaultName(i))
     }
-});
 
-graphql_scalar!(OtherOrder {
-    from_input_value(v: &InputValue) -> Option<OtherOrder> {
-        v.as_int_value().map(|i| OtherOrder(i))
+    from_str(value: &str) -> Result<S, ParseError> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
     }
-
+});
+graphql_scalar!(OtherOrder where Scalar = <S> {
     resolve(&self) -> Value {
         Value::int(self.0)
     }
-});
 
-graphql_scalar!(Named as "ANamedScalar" {
+        from_input_value(v: &InputValue) -> Option<OtherOrder> {
+        v.as_int_value().map(|i| OtherOrder(i))
+    }
+
+
+    from_str(value: &str) -> Result<S, ParseError> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
+    }
+});
+graphql_scalar!(Named as "ANamedScalar" where Scalar = <S> {
     resolve(&self) -> Value {
         Value::int(self.0)
     }
@@ -47,9 +55,13 @@ graphql_scalar!(Named as "ANamedScalar" {
     from_input_value(v: &InputValue) -> Option<Named> {
         v.as_int_value().map(|i| Named(i))
     }
+
+    from_str(value: &str) -> Result<S, ParseError> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
+    }
 });
 
-graphql_scalar!(ScalarDescription {
+graphql_scalar!(ScalarDescription where Scalar = <S> {
     description: "A sample scalar, represented as an integer"
 
     resolve(&self) -> Value {
@@ -58,6 +70,10 @@ graphql_scalar!(ScalarDescription {
 
     from_input_value(v: &InputValue) -> Option<ScalarDescription> {
         v.as_int_value().map(|i| ScalarDescription(i))
+    }
+
+    from_str(value: &str) -> Result<S, ParseError> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });
 
@@ -70,7 +86,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&Object) -> (),
+    F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 

@@ -1,7 +1,7 @@
 mod interface {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{DefaultScalarValue, Value};
 
     trait Pet {
         fn name(&self) -> &str;
@@ -77,7 +77,7 @@ mod interface {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(
+        let schema: RootNode<DefaultScalarValue, _, _> = RootNode::new(
             Schema {
                 pets: vec![
                     Box::new(Dog {
@@ -124,18 +124,18 @@ mod interface {
                                 ("name", Value::string("Odie")),
                                 ("woofs", Value::boolean(true)),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                         Value::object(
                             vec![
                                 ("name", Value::string("Garfield")),
                                 ("meows", Value::boolean(false)),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ]),
                 )].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -144,7 +144,7 @@ mod interface {
 mod union {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{Value, DefaultScalarValue};
 
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {
@@ -206,7 +206,7 @@ mod union {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(
+        let schema: RootNode<DefaultScalarValue, _, _> = RootNode::new(
             Schema {
                 pets: vec![
                     Box::new(Dog {
@@ -256,7 +256,7 @@ mod union {
                                 ("name", Value::string("Odie")),
                                 ("woofs", Value::boolean(true)),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                         Value::object(
                             vec![
@@ -264,11 +264,11 @@ mod union {
                                 ("name", Value::string("Garfield")),
                                 ("meows", Value::boolean(false)),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ]),
                 )].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }

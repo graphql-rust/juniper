@@ -3,7 +3,7 @@ use executor::Variables;
 use schema::model::RootNode;
 use tests::model::Database;
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{DefaultScalarValue, Value};
 
 #[test]
 fn test_hero_name() {
@@ -14,7 +14,8 @@ fn test_hero_name() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -24,7 +25,7 @@ fn test_hero_name() {
                     "hero",
                     Value::object(vec![("name", Value::string("R2-D2"))].into_iter().collect()),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -34,7 +35,8 @@ fn test_hero_name() {
 #[test]
 fn test_hero_field_order() {
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let doc = r#"
         {
@@ -54,10 +56,10 @@ fn test_hero_field_order() {
                             ("id", Value::string("2001")),
                             ("name", Value::string("R2-D2")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -81,10 +83,10 @@ fn test_hero_field_order() {
                             ("name", Value::string("R2-D2")),
                             ("id", Value::string("2001")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -104,7 +106,8 @@ fn test_hero_name_and_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -137,10 +140,10 @@ fn test_hero_name_and_friends() {
                                 ]),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -164,7 +167,8 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -203,7 +207,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                             "name",
                                                             Value::string("Leia Organa"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
                                                         vec![("name", Value::string("C-3PO"))]
@@ -218,7 +222,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                 ]),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                     Value::object(
                                         vec![
@@ -239,14 +243,14 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                             "name",
                                                             Value::string("Luke Skywalker"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
                                                         vec![(
                                                             "name",
                                                             Value::string("Leia Organa"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
                                                         vec![("name", Value::string("R2-D2"))]
@@ -256,7 +260,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                 ]),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                     Value::object(
                                         vec![
@@ -277,7 +281,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                             "name",
                                                             Value::string("Luke Skywalker"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
                                                         vec![("name", Value::string("Han Solo"))]
@@ -297,15 +301,15 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                 ]),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                 ]),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -316,7 +320,8 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
 fn test_query_name() {
     let doc = r#"{ human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -330,7 +335,7 @@ fn test_query_name() {
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -341,7 +346,8 @@ fn test_query_name() {
 fn test_query_alias_single() {
     let doc = r#"{ luke: human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -355,7 +361,7 @@ fn test_query_alias_single() {
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -370,7 +376,8 @@ fn test_query_alias_multiple() {
             leia: human(id: "1003") { name }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -394,7 +401,7 @@ fn test_query_alias_multiple() {
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -414,7 +421,8 @@ fn test_query_alias_multiple_with_fragment() {
             homePlanet
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -428,7 +436,7 @@ fn test_query_alias_multiple_with_fragment() {
                                 ("name", Value::string("Luke Skywalker")),
                                 ("homePlanet", Value::string("Tatooine")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     (
@@ -438,11 +446,11 @@ fn test_query_alias_multiple_with_fragment() {
                                 ("name", Value::string("Leia Organa")),
                                 ("homePlanet", Value::string("Alderaan")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -453,7 +461,8 @@ fn test_query_alias_multiple_with_fragment() {
 fn test_query_name_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let vars = vec![("someId".to_owned(), InputValue::string("1000"))]
         .into_iter()
@@ -471,7 +480,7 @@ fn test_query_name_variable() {
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -482,7 +491,8 @@ fn test_query_name_variable() {
 fn test_query_name_invalid_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let vars = vec![("someId".to_owned(), InputValue::string("some invalid id"))]
         .into_iter()
@@ -501,7 +511,8 @@ fn test_query_name_invalid_variable() {
 fn test_query_friends_names() {
     let doc = r#"{ human(id: "1000") { friends { name } } }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -531,10 +542,10 @@ fn test_query_friends_names() {
                                 ),
                             ]),
                         )].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -556,7 +567,8 @@ fn test_query_inline_fragments_droid() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -570,10 +582,10 @@ fn test_query_inline_fragments_droid() {
                             ("__typename", Value::string("Droid")),
                             ("primaryFunction", Value::string("Astromech")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -591,7 +603,8 @@ fn test_query_inline_fragments_human() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -604,10 +617,10 @@ fn test_query_inline_fragments_human() {
                             ("name", Value::string("Luke Skywalker")),
                             ("__typename", Value::string("Human")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -623,7 +636,8 @@ fn test_object_typename() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -637,7 +651,7 @@ fn test_object_typename() {
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))

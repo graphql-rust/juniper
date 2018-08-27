@@ -1,5 +1,4 @@
 use std::fmt;
-use std::hash::{Hash, Hasher};
 
 /// A reference to a line and column in an input source file
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Copy)]
@@ -14,8 +13,8 @@ pub struct SourcePosition {
 /// A "span" is a range of characters in the input source, starting at the
 /// character pointed by the `start` field and ending just before the `end`
 /// marker.
-#[derive(Debug)]
-pub struct Spanning<T: fmt::Debug> {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+pub struct Spanning<T> {
     /// The wrapped item
     pub item: T,
 
@@ -28,7 +27,7 @@ pub struct Spanning<T: fmt::Debug> {
     pub end: SourcePosition,
 }
 
-impl<T: fmt::Debug> Spanning<T> {
+impl<T> Spanning<T> {
     #[doc(hidden)]
     pub fn zero_width(pos: &SourcePosition, item: T) -> Spanning<T> {
         Spanning {
@@ -91,45 +90,6 @@ impl<T: fmt::Debug> Spanning<T> {
             start: self.start.clone(),
             end: self.end.clone(),
         }
-    }
-}
-
-impl<T> Clone for Spanning<T>
-where
-    T: Clone + fmt::Debug,
-{
-    fn clone(&self) -> Self {
-        Spanning {
-            start: self.start.clone(),
-            end: self.end.clone(),
-            item: self.item.clone(),
-        }
-    }
-}
-
-impl<T> PartialEq for Spanning<T>
-where
-    T: PartialEq + fmt::Debug,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.start == other.start && self.end == other.end && self.item == other.item
-    }
-}
-
-impl<T> Eq for Spanning<T>
-where
-    T: Eq + fmt::Debug,
-{
-}
-
-impl<T> Hash for Spanning<T>
-where
-    T: Hash + fmt::Debug,
-{
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.start.hash(state);
-        self.end.hash(state);
-        self.item.hash(state);
     }
 }
 

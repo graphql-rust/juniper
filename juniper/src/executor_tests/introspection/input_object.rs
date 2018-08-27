@@ -2,50 +2,46 @@ use ast::{FromInputValue, InputValue};
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object};
+use value::{DefaultScalarValue, Object, Value};
 
 struct Root;
 
 #[derive(GraphQLInputObject)]
-#[graphql(_internal)]
 struct DefaultName {
     field_one: String,
     field_two: String,
 }
 
 #[derive(GraphQLInputObject)]
-#[graphql(_internal)]
 struct NoTrailingComma {
     field_one: String,
     field_two: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct Derive {
     field_one: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(name = "ANamedInputObject", _internal)]
+#[graphql(name = "ANamedInputObject")]
 struct Named {
     field_one: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(description = "Description for the input object", _internal)]
+#[graphql(description = "Description for the input object")]
 struct Description {
     field_one: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 pub struct Public {
     field_one: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(description = "Description for the input object", _internal)]
+#[graphql(description = "Description for the input object")]
 pub struct PublicWithDescription {
     field_one: String,
 }
@@ -54,20 +50,18 @@ pub struct PublicWithDescription {
 #[graphql(
     name = "APublicNamedInputObjectWithDescription",
     description = "Description for the input object",
-    _internal
 )]
 pub struct NamedPublicWithDescription {
     field_one: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(name = "APublicNamedInputObject", _internal)]
+#[graphql(name = "APublicNamedInputObject")]
 pub struct NamedPublic {
     field_one: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct FieldDescription {
     #[graphql(description = "The first field")]
     field_one: String,
@@ -76,7 +70,6 @@ struct FieldDescription {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct FieldWithDefaults {
     #[graphql(default = "123")]
     field_one: i32,
@@ -104,7 +97,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&Object, &Vec<Value>) -> (),
+    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
@@ -154,8 +147,14 @@ fn default_name_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("DefaultName")));
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::string("DefaultName"))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
 
         assert_eq!(fields.len(), 2);
 
@@ -175,12 +174,12 @@ fn default_name_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
 
@@ -200,12 +199,12 @@ fn default_name_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -213,12 +212,12 @@ fn default_name_introspection() {
 
 #[test]
 fn default_name_input_value() {
-    let iv = InputValue::object(
+    let iv: InputValue<DefaultScalarValue> = InputValue::object(
         vec![
             ("fieldOne", InputValue::string("number one")),
             ("fieldTwo", InputValue::string("number two")),
         ].into_iter()
-            .collect(),
+        .collect(),
     );
 
     let dv: Option<DefaultName> = FromInputValue::from_input_value(&iv);
@@ -257,7 +256,10 @@ fn no_trailing_comma_introspection() {
             type_info.get_field_value("name"),
             Some(&Value::string("NoTrailingComma"))
         );
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
 
         assert_eq!(fields.len(), 2);
 
@@ -277,12 +279,12 @@ fn no_trailing_comma_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
 
@@ -302,12 +304,12 @@ fn no_trailing_comma_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -335,8 +337,14 @@ fn derive_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("Derive")));
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::string("Derive"))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
 
         assert_eq!(fields.len(), 1);
 
@@ -356,12 +364,12 @@ fn derive_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -406,7 +414,10 @@ fn named_introspection() {
             type_info.get_field_value("name"),
             Some(&Value::string("ANamedInputObject"))
         );
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
 
         assert_eq!(fields.len(), 1);
 
@@ -426,12 +437,12 @@ fn named_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -459,7 +470,10 @@ fn description_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info, fields| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("Description")));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::string("Description"))
+        );
         assert_eq!(
             type_info.get_field_value("description"),
             Some(&Value::string("Description for the input object"))
@@ -483,12 +497,12 @@ fn description_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -520,7 +534,10 @@ fn field_description_introspection() {
             type_info.get_field_value("name"),
             Some(&Value::string("FieldDescription"))
         );
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
 
         assert_eq!(fields.len(), 2);
 
@@ -540,12 +557,12 @@ fn field_description_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
 
@@ -565,12 +582,12 @@ fn field_description_introspection() {
                                         .collect(),
                                 ),
                             )].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("defaultValue", Value::null()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -611,7 +628,7 @@ fn field_with_defaults_introspection() {
                     ),
                     ("defaultValue", Value::string("123")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
 
@@ -625,7 +642,7 @@ fn field_with_defaults_introspection() {
                     ),
                     ("defaultValue", Value::string("456")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });

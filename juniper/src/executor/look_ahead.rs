@@ -1,5 +1,6 @@
 use ast::{Directive, Fragment, InputValue, Selection};
 use parser::Spanning;
+use value::ScalarValue;
 
 use std::collections::HashMap;
 
@@ -21,25 +22,22 @@ pub enum Applies<'a> {
 /// meaning that variables are already resolved.
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
-pub enum LookAheadValue<'a> {
+pub enum LookAheadValue<'a, S: 'a> {
     Null,
-    Int(i32),
-    Float(f64),
-    String(&'a str),
-    Boolean(bool),
+    Scalar(&'a S),
     Enum(&'a str),
-    List(Vec<LookAheadValue<'a>>),
-    Object(Vec<(&'a str, LookAheadValue<'a>)>),
+    List(Vec<LookAheadValue<'a, S>>),
+    Object(Vec<(&'a str, LookAheadValue<'a, S>)>),
 }
 
-impl<'a> LookAheadValue<'a> {
-    fn from_input_value(input_value: &'a InputValue, vars: &'a Variables) -> Self {
+impl<'a, S> LookAheadValue<'a, S>
+where
+    S: ScalarValue,
+{
+    fn from_input_value(input_value: &'a InputValue<S>, vars: &'a Variables<S>) -> Self {
         match *input_value {
             InputValue::Null => LookAheadValue::Null,
-            InputValue::Int(i) => LookAheadValue::Int(i),
-            InputValue::Float(f) => LookAheadValue::Float(f),
-            InputValue::String(ref s) => LookAheadValue::String(s),
-            InputValue::Boolean(b) => LookAheadValue::Boolean(b),
+            InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
             InputValue::Enum(ref e) => LookAheadValue::Enum(e),
             InputValue::Variable(ref v) => Self::from_input_value(vars.get(v).unwrap(), vars),
             InputValue::List(ref l) => LookAheadValue::List(
@@ -54,8 +52,7 @@ impl<'a> LookAheadValue<'a> {
                             &n.item as &str,
                             LookAheadValue::from_input_value(&i.item, vars),
                         )
-                    })
-                    .collect(),
+                    }).collect(),
             ),
         }
     }
@@ -63,15 +60,18 @@ impl<'a> LookAheadValue<'a> {
 
 /// An argument passed into the query
 #[derive(Debug, Clone, PartialEq)]
-pub struct LookAheadArgument<'a> {
+pub struct LookAheadArgument<'a, S: 'a> {
     name: &'a str,
-    value: LookAheadValue<'a>,
+    value: LookAheadValue<'a, S>,
 }
 
-impl<'a> LookAheadArgument<'a> {
+impl<'a, S> LookAheadArgument<'a, S>
+where
+    S: ScalarValue,
+{
     pub(super) fn new(
-        &(ref name, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>),
-        vars: &'a Variables,
+        &(ref name, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
+        vars: &'a Variables<S>,
     ) -> Self {
         LookAheadArgument {
             name: name.item,
@@ -80,86 +80,96 @@ impl<'a> LookAheadArgument<'a> {
     }
 
     /// The value of the argument
-    pub fn value(&'a self) -> &LookAheadValue<'a> {
+    pub fn value(&'a self) -> &LookAheadValue<'a, S> {
         &self.value
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ChildSelection<'a> {
-    pub(super) inner: LookAheadSelection<'a>,
+pub struct ChildSelection<'a, S: 'a> {
+    pub(super) inner: LookAheadSelection<'a, S>,
     pub(super) applies_for: Applies<'a>,
 }
 
 /// A selection performed by a query
 #[derive(Debug, Clone, PartialEq)]
-pub struct LookAheadSelection<'a> {
+pub struct LookAheadSelection<'a, S: 'a> {
     pub(super) name: &'a str,
     pub(super) alias: Option<&'a str>,
-    pub(super) arguments: Vec<LookAheadArgument<'a>>,
-    pub(super) children: Vec<ChildSelection<'a>>,
+    pub(super) arguments: Vec<LookAheadArgument<'a, S>>,
+    pub(super) children: Vec<ChildSelection<'a, S>>,
 }
 
-impl<'a> LookAheadSelection<'a> {
-    fn should_include(directives: Option<&Vec<Spanning<Directive>>>, vars: &Variables) -> bool {
+impl<'a, S> LookAheadSelection<'a, S>
+where
+    S: ScalarValue,
+    &'a S: Into<Option<bool>>,
+{
+    fn should_include<'b, 'c>(
+        directives: Option<&'b Vec<Spanning<Directive<S>>>>,
+        vars: &'c Variables<S>,
+    ) -> bool
+    where
+        'b: 'a,
+        'c: 'a,
+    {
         directives
             .map(|d| {
                 d.iter().all(|d| {
                     let d = &d.item;
                     let arguments = &d.arguments;
                     match (d.name.item, arguments) {
-                        ("include", &Some(ref a)) => a.item
+                        ("include", &Some(ref a)) => a
+                            .item
                             .items
                             .iter()
                             .find(|item| item.0.item == "if")
                             .map(|&(_, ref v)| {
-                                if let LookAheadValue::Boolean(b) =
+                                if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    b
+                                    s.into().unwrap_or(false)
                                 } else {
                                     false
                                 }
-                            })
-                            .unwrap_or(false),
-                        ("skip", &Some(ref a)) => a.item
+                            }).unwrap_or(false),
+                        ("skip", &Some(ref a)) => a
+                            .item
                             .items
                             .iter()
                             .find(|item| item.0.item == "if")
                             .map(|&(_, ref v)| {
-                                if let LookAheadValue::Boolean(b) =
+                                if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    !b
+                                    b.into().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
                                     false
                                 }
-                            })
-                            .unwrap_or(false),
+                            }).unwrap_or(false),
                         ("skip", &None) => false,
                         ("include", &None) => true,
                         (_, _) => unreachable!(),
                     }
                 })
-            })
-            .unwrap_or(true)
+            }).unwrap_or(true)
     }
 
     pub(super) fn build_from_selection(
-        s: &'a Selection<'a>,
-        vars: &'a Variables,
-        fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
-    ) -> LookAheadSelection<'a> {
+        s: &'a Selection<'a, S>,
+        vars: &'a Variables<S>,
+        fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+    ) -> LookAheadSelection<'a, S> {
         Self::build_from_selection_with_parent(s, None, vars, fragments).unwrap()
     }
 
     fn build_from_selection_with_parent(
-        s: &'a Selection<'a>,
+        s: &'a Selection<'a, S>,
         parent: Option<&mut Self>,
-        vars: &'a Variables,
-        fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
-    ) -> Option<LookAheadSelection<'a>> {
-        let empty: &[Selection] = &[];
+        vars: &'a Variables<S>,
+        fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+    ) -> Option<LookAheadSelection<'a, S>> {
+        let empty: &[Selection<S>] = &[];
         match *s {
             Selection::Field(ref field) => {
                 let field = &field.item;
@@ -178,8 +188,7 @@ impl<'a> LookAheadSelection<'a> {
                             .iter()
                             .map(|p| LookAheadArgument::new(p, vars))
                             .collect()
-                    })
-                    .unwrap_or_else(Vec::new);
+                    }).unwrap_or_else(Vec::new);
                 let mut ret = LookAheadSelection {
                     name,
                     alias,
@@ -256,9 +265,10 @@ impl<'a> LookAheadSelection<'a> {
     }
 
     /// Convert a eventually type independent selection into one for a concrete type
-    pub fn for_explicit_type(&self, type_name: &str) -> ConcreteLookAheadSelection<'a> {
+    pub fn for_explicit_type(&self, type_name: &str) -> ConcreteLookAheadSelection<'a, S> {
         ConcreteLookAheadSelection {
-            children: self.children
+            children: self
+                .children
                 .iter()
                 .filter_map(|c| match c.applies_for {
                     Applies::OnlyType(ref t) if *t == type_name => {
@@ -266,8 +276,7 @@ impl<'a> LookAheadSelection<'a> {
                     }
                     Applies::All => Some(c.inner.for_explicit_type(type_name)),
                     Applies::OnlyType(_) => None,
-                })
-                .collect(),
+                }).collect(),
             name: self.name,
             alias: self.alias,
             arguments: self.arguments.clone(),
@@ -277,15 +286,15 @@ impl<'a> LookAheadSelection<'a> {
 
 /// A selection performed by a query on a concrete type
 #[derive(Debug, PartialEq)]
-pub struct ConcreteLookAheadSelection<'a> {
+pub struct ConcreteLookAheadSelection<'a, S: 'a> {
     name: &'a str,
     alias: Option<&'a str>,
-    arguments: Vec<LookAheadArgument<'a>>,
-    children: Vec<ConcreteLookAheadSelection<'a>>,
+    arguments: Vec<LookAheadArgument<'a, S>>,
+    children: Vec<ConcreteLookAheadSelection<'a, S>>,
 }
 
 /// A set of common methods for `ConcreteLookAheadSelection` and `LookAheadSelection`
-pub trait LookAheadMethods {
+pub trait LookAheadMethods<S> {
     /// Get the name of the field represented by the current selection
     fn field_name(&self) -> &str;
 
@@ -298,15 +307,15 @@ pub trait LookAheadMethods {
     }
 
     /// Get the top level arguments for the current selection
-    fn arguments(&self) -> &[LookAheadArgument];
+    fn arguments(&self) -> &[LookAheadArgument<S>];
 
     /// Get the top level argument with a given name from the current selection
-    fn argument(&self, name: &str) -> Option<&LookAheadArgument> {
+    fn argument(&self, name: &str) -> Option<&LookAheadArgument<S>> {
         self.arguments().iter().find(|a| a.name == name)
     }
 }
 
-impl<'a> LookAheadMethods for ConcreteLookAheadSelection<'a> {
+impl<'a, S> LookAheadMethods<S> for ConcreteLookAheadSelection<'a, S> {
     fn field_name(&self) -> &str {
         self.alias.unwrap_or(self.name)
     }
@@ -315,12 +324,12 @@ impl<'a> LookAheadMethods for ConcreteLookAheadSelection<'a> {
         self.children.iter().find(|c| c.name == name)
     }
 
-    fn arguments(&self) -> &[LookAheadArgument] {
+    fn arguments(&self) -> &[LookAheadArgument<S>] {
         &self.arguments
     }
 }
 
-impl<'a> LookAheadMethods for LookAheadSelection<'a> {
+impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
     fn field_name(&self) -> &str {
         self.alias.unwrap_or(self.name)
     }
@@ -332,7 +341,7 @@ impl<'a> LookAheadMethods for LookAheadSelection<'a> {
             .map(|s| &s.inner)
     }
 
-    fn arguments(&self) -> &[LookAheadArgument] {
+    fn arguments(&self) -> &[LookAheadArgument<S>] {
         &self.arguments
     }
 }

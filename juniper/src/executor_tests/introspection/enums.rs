@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object};
+use value::{Value, Object, DefaultScalarValue};
 
 /*
 
@@ -16,35 +16,32 @@ Syntax to validate:
 */
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum DefaultName {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(name = "ANamedEnum", _internal)]
+#[graphql(name = "ANamedEnum")]
 enum Named {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum NoTrailingComma {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(description = "A description of the enum itself", _internal)]
+#[graphql(description = "A description of the enum itself")]
 enum EnumDescription {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum EnumValueDescription {
     #[graphql(description = "The FOO value")]
     Foo,
@@ -53,7 +50,6 @@ enum EnumValueDescription {
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum EnumDeprecation {
     #[graphql(deprecated = "Please don't use FOO any more")]
     Foo,
@@ -74,7 +70,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn((&Object, &Vec<Value>)) -> (),
+    F: Fn((&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>)) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use ast::InputValue;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object};
+use value::{Value, Object, DefaultScalarValue};
 
 /*
 
@@ -110,7 +110,7 @@ graphql_object!(<'a> Root: () as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&Object, &Vec<Value>) -> (),
+    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {

@@ -1,10 +1,11 @@
-use ast::{FromInputValue, InputValue};
+use ast::InputValue;
 use executor::Variables;
+use parser::ParseError;
 use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::{Object, Value};
+use value::{DefaultScalarValue, Object, ParseScalarValue, Value};
 use GraphQLError::ValidationError;
 
 #[derive(Debug)]
@@ -12,7 +13,7 @@ struct TestComplexScalar;
 
 struct TestType;
 
-graphql_scalar!(TestComplexScalar {
+graphql_scalar!(TestComplexScalar where Scalar = <S> {
     resolve(&self) -> Value {
         Value::string("SerializedValue")
     }
@@ -26,10 +27,13 @@ graphql_scalar!(TestComplexScalar {
 
         None
     }
+
+    from_str(value: &str) -> Result<S, ParseError> {
+        <String as ParseScalarValue<S>>::from_str(value)
+    }
 });
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct TestInputObject {
     a: Option<String>,
     b: Option<Vec<Option<String>>>,
@@ -38,65 +42,21 @@ struct TestInputObject {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct ExampleInputObject {
     a: Option<String>,
     b: i32,
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(_internal)]
 struct InputWithDefaults {
     #[graphql(default = "123")]
     a: i32,
-}
-
-#[derive(Debug)]
-enum CustomInput {
-    A(String),
-    B(String),
-}
-
-impl FromInputValue for CustomInput {
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        let obj = v.to_object_value()?;
-        match (obj.get("variant"), obj.get("value")) {
-            (Some(&&InputValue::String(ref variant)), Some(&&InputValue::String(ref value))) => {
-                match variant.as_str() {
-                    "A" => Some(CustomInput::A(value.to_owned())),
-                    "B" => Some(CustomInput::B(value.to_owned())),
-                    _ => None,
-                }
-            }
-            _ => None,
-        }
-    }
-}
-
-impl ::GraphQLType for CustomInput {
-    type Context = ();
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
-        Some("CustomInput")
-    }
-
-    fn meta<'r>(_: &(), registry: &mut ::Registry<'r>) -> ::meta::MetaType<'r> {
-        let fields = &[
-            registry.arg::<String>("variant", &()),
-            registry.arg::<String>("value", &()),
-        ];
-        registry
-            .build_input_object_type::<CustomInput>(&(), fields)
-            .into_meta()
-    }
 }
 
 graphql_object!(TestType: () |&self| {
@@ -144,10 +104,6 @@ graphql_object!(TestType: () |&self| {
         format!("a: {:?}", arg.a)
     }
 
-    field input_with_custom(input: CustomInput) -> String {
-        format!("{:?}", input)
-    }
-
     field integer_input(value: i32) -> String {
         format!("value: {}", value)
     }
@@ -157,9 +113,9 @@ graphql_object!(TestType: () |&self| {
     }
 });
 
-fn run_variable_query<F>(query: &str, vars: Variables, f: F)
+fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where
-    F: Fn(&Object) -> (),
+    F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -167,7 +123,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:#?}", result);
+    println!("Result: {:?}", result);
 
     let obj = result.as_object_value().expect("Result is not an object");
 
@@ -176,7 +132,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object) -> (),
+    F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -185,7 +141,7 @@ where
 fn inline_complex_input() {
     run_query(
         r#"{ fieldWithObjectInput(input: {a: "foo", b: ["bar"], c: "baz"}) }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -197,7 +153,7 @@ fn inline_complex_input() {
 fn inline_parse_single_value_to_list() {
     run_query(
         r#"{ fieldWithObjectInput(input: {a: "foo", b: "bar", c: "baz"}) }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -209,64 +165,11 @@ fn inline_parse_single_value_to_list() {
 fn inline_runs_from_input_value_on_scalar() {
     run_query(
         r#"{ fieldWithObjectInput(input: {c: "baz", d: "SerializedValue"}) }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
         },
-    );
-}
-
-#[test]
-fn variable_valid_custom_input() {
-    run_variable_query(
-        r#"query q($input: CustomInput!) { inputWithCustom(input: $input) }"#,
-        vec![(
-            "input".to_owned(),
-            InputValue::object(
-                vec![
-                    ("variant", InputValue::string("B")),
-                    ("value", InputValue::string("whatever")),
-                ].into_iter()
-                .collect(),
-            ),
-        )].into_iter()
-        .collect(),
-        |result| {
-            assert_eq!(
-                result.get_field_value("inputWithCustom"),
-                Some(&Value::string(r#"B("whatever")"#))
-            );
-        },
-    );
-}
-
-#[test]
-fn variable_invalid_custom_input() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
-
-    let query = r#"query q($input: CustomInput!) { inputWithCustom(input: $input) }"#;
-
-    let vars = vec![(
-        "input".to_owned(),
-        InputValue::object(
-            vec![
-                ("variant", InputValue::string("C")),
-                ("value", InputValue::string("whatever")),
-            ].into_iter()
-            .collect(),
-        ),
-    )].into_iter()
-    .collect();
-
-    let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
-
-    assert_eq!(
-        error,
-        ValidationError(vec![RuleError::new(
-            r#"Variable "$input" got invalid value. Expected input of type "CustomInput". Got: "{variant: "C", value: "whatever"}"."#,
-            &[SourcePosition::new(8, 0, 8)],
-        )])
     );
 }
 
@@ -282,11 +185,11 @@ fn variable_complex_input() {
                     ("b", InputValue::list(vec![InputValue::string("bar")])),
                     ("c", InputValue::string("baz")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ),
         )].into_iter()
-            .collect(),
-        |result| {
+        .collect(),
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -306,11 +209,11 @@ fn variable_parse_single_value_to_list() {
                     ("b", InputValue::string("bar")),
                     ("c", InputValue::string("baz")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ),
         )].into_iter()
-            .collect(),
-        |result| {
+        .collect(),
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -329,11 +232,11 @@ fn variable_runs_from_input_value_on_scalar() {
                     ("c", InputValue::string("baz")),
                     ("d", InputValue::string("SerializedValue")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ),
         )].into_iter()
-            .collect(),
-        |result| {
+        .collect(),
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
@@ -343,7 +246,8 @@ fn variable_runs_from_input_value_on_scalar() {
 
 #[test]
 fn variable_error_on_nested_non_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -354,10 +258,10 @@ fn variable_error_on_nested_non_null() {
                 ("b", InputValue::string("bar")),
                 ("c", InputValue::null()),
             ].into_iter()
-                .collect(),
+            .collect(),
         ),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -372,7 +276,8 @@ fn variable_error_on_nested_non_null() {
 
 #[test]
 fn variable_error_on_incorrect_type() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![("input".to_owned(), InputValue::string("foo bar"))]
@@ -391,7 +296,8 @@ fn variable_error_on_incorrect_type() {
 
 #[test]
 fn variable_error_on_omit_non_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -401,10 +307,10 @@ fn variable_error_on_omit_non_null() {
                 ("a", InputValue::string("foo")),
                 ("b", InputValue::string("bar")),
             ].into_iter()
-                .collect(),
+            .collect(),
         ),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -419,7 +325,8 @@ fn variable_error_on_omit_non_null() {
 
 #[test]
 fn variable_multiple_errors_with_nesting() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query =
         r#"query q($input: TestNestedInputObject) { fieldWithNestedObjectInput(input: $input) }"#;
@@ -430,10 +337,10 @@ fn variable_multiple_errors_with_nesting() {
                 "na",
                 InputValue::object(vec![("a", InputValue::string("foo"))].into_iter().collect()),
             )].into_iter()
-                .collect(),
+            .collect(),
         ),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -451,7 +358,8 @@ fn variable_multiple_errors_with_nesting() {
 
 #[test]
 fn variable_error_on_additional_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -463,10 +371,10 @@ fn variable_error_on_additional_field() {
                 ("c", InputValue::string("baz")),
                 ("extra", InputValue::string("dog")),
             ].into_iter()
-                .collect(),
+            .collect(),
         ),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -481,19 +389,22 @@ fn variable_error_on_additional_field() {
 
 #[test]
 fn allow_nullable_inputs_to_be_omitted() {
-    run_query(r#"{ fieldWithNullableStringInput }"#, |result| {
-        assert_eq!(
-            result.get_field_value("fieldWithNullableStringInput"),
-            Some(&Value::string(r#"None"#))
-        );
-    });
+    run_query(
+        r#"{ fieldWithNullableStringInput }"#,
+        |result: &Object<DefaultScalarValue>| {
+            assert_eq!(
+                result.get_field_value("fieldWithNullableStringInput"),
+                Some(&Value::string(r#"None"#))
+            );
+        },
+    );
 }
 
 #[test]
 fn allow_nullable_inputs_to_be_omitted_in_variable() {
     run_query(
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#))
@@ -506,7 +417,7 @@ fn allow_nullable_inputs_to_be_omitted_in_variable() {
 fn allow_nullable_inputs_to_be_explicitly_null() {
     run_query(
         r#"{ fieldWithNullableStringInput(input: null) }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#))
@@ -522,7 +433,7 @@ fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
         vec![("value".to_owned(), InputValue::null())]
             .into_iter()
             .collect(),
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"None"#))
@@ -538,7 +449,7 @@ fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
         vec![("value".to_owned(), InputValue::string("a"))]
             .into_iter()
             .collect(),
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"Some("a")"#))
@@ -551,7 +462,7 @@ fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
 fn allow_nullable_inputs_to_be_set_to_value_directly() {
     run_query(
         r#"{ fieldWithNullableStringInput(input: "a") }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::string(r#"Some("a")"#))
@@ -562,7 +473,8 @@ fn allow_nullable_inputs_to_be_set_to_value_directly() {
 
 #[test]
 fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![].into_iter().collect();
@@ -580,7 +492,8 @@ fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
 
 #[test]
 fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![("value".to_owned(), InputValue::null())]
@@ -618,7 +531,7 @@ fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
 fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
     run_query(
         r#"{ fieldWithNonNullableStringInput(input: "a") }"#,
-        |result| {
+        |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNonNullableStringInput"),
                 Some(&Value::string(r#""a""#))
@@ -634,8 +547,11 @@ fn allow_lists_to_be_null() {
         vec![("input".to_owned(), InputValue::null())]
             .into_iter()
             .collect(),
-        |result| {
-            assert_eq!(result.get_field_value("list"), Some(&Value::string(r#"None"#)));
+        |result: &Object<DefaultScalarValue>| {
+            assert_eq!(
+                result.get_field_value("list"),
+                Some(&Value::string(r#"None"#))
+            );
         },
     );
 }
@@ -648,7 +564,7 @@ fn allow_lists_to_contain_values() {
             "input".to_owned(),
             InputValue::list(vec![InputValue::string("A")]),
         )].into_iter()
-            .collect(),
+        .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
@@ -670,7 +586,7 @@ fn allow_lists_to_contain_null() {
                 InputValue::string("B"),
             ]),
         )].into_iter()
-            .collect(),
+        .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
@@ -682,7 +598,8 @@ fn allow_lists_to_contain_null() {
 
 #[test]
 fn does_not_allow_non_null_lists_to_be_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String]!) { nnList(input: $input) }"#;
     let vars = vec![("input".to_owned(), InputValue::null())]
@@ -708,9 +625,12 @@ fn allow_non_null_lists_to_contain_values() {
             "input".to_owned(),
             InputValue::list(vec![InputValue::string("A")]),
         )].into_iter()
-            .collect(),
+        .collect(),
         |result| {
-            assert_eq!(result.get_field_value("nnList"), Some(&Value::string(r#"[Some("A")]"#)));
+            assert_eq!(
+                result.get_field_value("nnList"),
+                Some(&Value::string(r#"[Some("A")]"#))
+            );
         },
     );
 }
@@ -726,7 +646,7 @@ fn allow_non_null_lists_to_contain_null() {
                 InputValue::string("B"),
             ]),
         )].into_iter()
-            .collect(),
+        .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
@@ -744,7 +664,10 @@ fn allow_lists_of_non_null_to_be_null() {
             .into_iter()
             .collect(),
         |result| {
-            assert_eq!(result.get_field_value("listNn"), Some(&Value::string(r#"None"#)));
+            assert_eq!(
+                result.get_field_value("listNn"),
+                Some(&Value::string(r#"None"#))
+            );
         },
     );
 }
@@ -757,16 +680,20 @@ fn allow_lists_of_non_null_to_contain_values() {
             "input".to_owned(),
             InputValue::list(vec![InputValue::string("A")]),
         )].into_iter()
-            .collect(),
+        .collect(),
         |result| {
-            assert_eq!(result.get_field_value("listNn"), Some(&Value::string(r#"Some(["A"])"#)));
+            assert_eq!(
+                result.get_field_value("listNn"),
+                Some(&Value::string(r#"Some(["A"])"#))
+            );
         },
     );
 }
 
 #[test]
 fn does_not_allow_lists_of_non_null_to_contain_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String!]) { listNn(input: $input) }"#;
     let vars = vec![(
@@ -777,7 +704,7 @@ fn does_not_allow_lists_of_non_null_to_contain_null() {
             InputValue::string("B"),
         ]),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -791,7 +718,8 @@ fn does_not_allow_lists_of_non_null_to_contain_null() {
 
 #[test]
 fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![(
@@ -802,7 +730,7 @@ fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
             InputValue::string("B"),
         ]),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -816,7 +744,8 @@ fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
 
 #[test]
 fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![("value".to_owned(), InputValue::null())]
@@ -842,23 +771,27 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
             "input".to_owned(),
             InputValue::list(vec![InputValue::string("A")]),
         )].into_iter()
-            .collect(),
+        .collect(),
         |result| {
-            assert_eq!(result.get_field_value("nnListNn"), Some(&Value::string(r#"["A"]"#)));
+            assert_eq!(
+                result.get_field_value("nnListNn"),
+                Some(&Value::string(r#"["A"]"#))
+            );
         },
     );
 }
 
 #[test]
 fn does_not_allow_invalid_types_to_be_used_as_values() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestType!) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "value".to_owned(),
         InputValue::list(vec![InputValue::string("A"), InputValue::string("B")]),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -872,14 +805,15 @@ fn does_not_allow_invalid_types_to_be_used_as_values() {
 
 #[test]
 fn does_not_allow_unknown_types_to_be_used_as_values() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: UnknownType!) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "value".to_owned(),
         InputValue::list(vec![InputValue::string("A"), InputValue::string("B")]),
     )].into_iter()
-        .collect();
+    .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
 
@@ -989,7 +923,8 @@ fn nullable_input_object_arguments_successful_with_variables() {
 
 #[test]
 fn does_not_allow_missing_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"{ exampleInput(arg: {a: "abc"}) }"#;
     let vars = vec![].into_iter().collect();
@@ -1007,7 +942,8 @@ fn does_not_allow_missing_required_field() {
 
 #[test]
 fn does_not_allow_null_in_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"{ exampleInput(arg: {a: "abc", b: null}) }"#;
     let vars = vec![].into_iter().collect();
@@ -1025,7 +961,8 @@ fn does_not_allow_null_in_required_field() {
 
 #[test]
 fn does_not_allow_missing_variable_for_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![].into_iter().collect();
@@ -1043,7 +980,8 @@ fn does_not_allow_missing_variable_for_required_field() {
 
 #[test]
 fn does_not_allow_null_variable_for_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![("var".to_owned(), InputValue::null())]
@@ -1142,7 +1080,8 @@ mod integers {
 
     #[test]
     fn does_not_coerce_from_float() {
-        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::float(10.0))]
@@ -1162,7 +1101,8 @@ mod integers {
 
     #[test]
     fn does_not_coerce_from_string() {
-        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::string("10"))]
@@ -1218,7 +1158,8 @@ mod floats {
 
     #[test]
     fn does_not_coerce_from_string() {
-        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::string("10"))]

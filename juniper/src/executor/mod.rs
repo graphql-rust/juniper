@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::sync::RwLock;
 
 use fnv::FnvHashMap;
@@ -22,6 +22,7 @@ use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
 use types::name::Name;
+use value::{ParseScalarValue, ScalarRefValue, ScalarValue};
 
 mod look_ahead;
 
@@ -35,9 +36,9 @@ pub use self::look_ahead::{
 /// The registry gathers metadata for all types in a schema. It provides
 /// convenience methods to convert types implementing the `GraphQLType` trait
 /// into `Type` instances and automatically registers them.
-pub struct Registry<'r> {
+pub struct Registry<'r, S: Debug> {
     /// Currently registered types
-    pub types: FnvHashMap<Name, MetaType<'r>>,
+    pub types: FnvHashMap<Name, MetaType<'r, S>>,
 }
 
 #[derive(Clone)]
@@ -50,18 +51,19 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-pub struct Executor<'a, CtxT>
+pub struct Executor<'a, S, CtxT>
 where
     CtxT: 'a,
+    S: Debug + 'a,
 {
-    fragments: &'a HashMap<&'a str, &'a Fragment<'a>>,
-    variables: &'a Variables,
-    current_selection_set: Option<&'a [Selection<'a>]>,
-    parent_selection_set: Option<&'a [Selection<'a>]>,
-    current_type: TypeType<'a>,
-    schema: &'a SchemaType<'a>,
+    fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+    variables: &'a Variables<S>,
+    current_selection_set: Option<&'a [Selection<'a, S>]>,
+    parent_selection_set: Option<&'a [Selection<'a, S>]>,
+    current_type: TypeType<'a, S>,
+    schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
-    errors: &'a RwLock<Vec<ExecutionError>>,
+    errors: &'a RwLock<Vec<ExecutionError<S>>>,
     field_path: FieldPath<'a>,
 }
 
@@ -70,15 +72,17 @@ where
 /// All execution errors contain the source position in the query of the field
 /// that failed to resolve. It also contains the field stack.
 #[derive(Debug, PartialEq)]
-pub struct ExecutionError {
+pub struct ExecutionError<S> {
     location: SourcePosition,
     path: Vec<String>,
-    error: FieldError,
+    error: FieldError<S>,
 }
 
-impl ExecutionError {
+impl<S> Eq for ExecutionError<S> where Self: PartialEq {}
+
+impl<S> ExecutionError<S> {
     /// Construct a new execution error occuring at the beginning of the query
-    pub fn at_origin(error: FieldError) -> ExecutionError {
+    pub fn at_origin(error: FieldError<S>) -> ExecutionError<S> {
         ExecutionError {
             location: SourcePosition::new_origin(),
             path: Vec::new(),
@@ -87,10 +91,11 @@ impl ExecutionError {
     }
 }
 
-impl Eq for ExecutionError {}
-
-impl PartialOrd for ExecutionError {
-    fn partial_cmp(&self, other: &ExecutionError) -> Option<Ordering> {
+impl<S> PartialOrd for ExecutionError<S>
+where
+    Self: PartialEq,
+{
+    fn partial_cmp(&self, other: &ExecutionError<S>) -> Option<Ordering> {
         (&self.location, &self.path, &self.error.message).partial_cmp(&(
             &other.location,
             &other.path,
@@ -99,8 +104,11 @@ impl PartialOrd for ExecutionError {
     }
 }
 
-impl Ord for ExecutionError {
-    fn cmp(&self, other: &ExecutionError) -> Ordering {
+impl<S> Ord for ExecutionError<S>
+where
+    Self: Eq,
+{
+    fn cmp(&self, other: &ExecutionError<S>) -> Ordering {
         (&self.location, &self.path, &self.error.message).cmp(&(
             &other.location,
             &other.path,
@@ -118,20 +126,25 @@ impl Ord for ExecutionError {
 /// which makes error chaining with the `?` operator a breeze:
 ///
 /// ```rust
-/// # use juniper::FieldError;
-/// fn get_string(data: Vec<u8>) -> Result<String, FieldError> {
+/// # use juniper::{FieldError, ScalarValue};
+/// fn get_string<S>(data: Vec<u8>) -> Result<String, FieldError<S>>
+/// where S: ScalarValue
+/// {
 ///     let s = String::from_utf8(data)?;
 ///     Ok(s)
 /// }
 /// ```
 #[derive(Debug, PartialEq)]
-pub struct FieldError {
+pub struct FieldError<S> {
     message: String,
-    extensions: Value,
+    extensions: Value<S>,
 }
 
-impl<T: Display> From<T> for FieldError {
-    fn from(e: T) -> FieldError {
+impl<T: Display, S> From<T> for FieldError<S>
+where
+    S: ::value::ScalarValue,
+{
+    fn from(e: T) -> FieldError<S> {
         FieldError {
             message: format!("{}", e),
             extensions: Value::null(),
@@ -139,7 +152,7 @@ impl<T: Display> From<T> for FieldError {
     }
 }
 
-impl FieldError {
+impl<S> FieldError<S> {
     /// Construct a new error with additional data
     ///
     /// You can use the `graphql_value!` macro to construct an error:
@@ -147,8 +160,10 @@ impl FieldError {
     /// ```rust
     /// # #[macro_use] extern crate juniper;
     /// use juniper::FieldError;
+    /// # use juniper::DefaultScalarValue;
     ///
     /// # fn sample() {
+    /// # let _: FieldError<DefaultScalarValue> =
     /// FieldError::new(
     ///     "Could not open connection to the database",
     ///     graphql_value!({ "internal_error": "Connection refused" })
@@ -173,7 +188,7 @@ impl FieldError {
     /// ```
     ///
     /// If the argument is `Value::null()`, no extra data will be included.
-    pub fn new<T: Display>(e: T, extensions: Value) -> FieldError {
+    pub fn new<T: Display>(e: T, extensions: Value<S>) -> FieldError<S> {
         FieldError {
             message: format!("{}", e),
             extensions,
@@ -186,82 +201,111 @@ impl FieldError {
     }
 
     #[doc(hidden)]
-    pub fn extensions(&self) -> &Value {
+    pub fn extensions(&self) -> &Value<S> {
         &self.extensions
     }
 }
 
 /// The result of resolving the value of a field of type `T`
-pub type FieldResult<T> = Result<T, FieldError>;
+pub type FieldResult<T, S> = Result<T, FieldError<S>>;
 
 /// The result of resolving an unspecified field
-pub type ExecutionResult = Result<Value, FieldError>;
+pub type ExecutionResult<S> = Result<Value<S>, FieldError<S>>;
 
 /// The map of variables used for substitution during query execution
-pub type Variables = HashMap<String, InputValue>;
+pub type Variables<S> = HashMap<String, InputValue<S>>;
 
 /// Custom error handling trait to enable Error types other than `FieldError` to be specified
 /// as return value.
 ///
 /// Any custom error type should implement this trait to convert it to `FieldError`.
-pub trait IntoFieldError {
+pub trait IntoFieldError<S> {
     #[doc(hidden)]
-    fn into_field_error(self) -> FieldError;
+    fn into_field_error(self) -> FieldError<S>;
 }
 
-impl IntoFieldError for FieldError {
-    fn into_field_error(self) -> FieldError {
+impl<S> IntoFieldError<S> for FieldError<S> {
+    fn into_field_error(self) -> FieldError<S> {
         self
     }
 }
 
 #[doc(hidden)]
-pub trait IntoResolvable<'a, T: GraphQLType, C>: Sized {
+pub trait IntoResolvable<'a, S, T: GraphQLType<S>, C>: Sized
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     #[doc(hidden)]
-    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>>;
+    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for T
+impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for T
 where
+    T: GraphQLType<S>,
+    S: ScalarValue,
     T::Context: FromContext<C>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some((FromContext::from(ctx), self)))
     }
 }
 
-impl<'a, T: GraphQLType, C, E: IntoFieldError> IntoResolvable<'a, T, C> for Result<T, E>
+impl<'a, S, T, C, E: IntoFieldError<S>> IntoResolvable<'a, S, T, C> for Result<T, E>
 where
+    S: ScalarValue,
+    T: GraphQLType<S>,
     T::Context: FromContext<C>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+    fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v| Some((FromContext::from(ctx), v)))
             .map_err(|e| e.into_field_error())
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for (&'a T::Context, T) {
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for (&'a T::Context, T)
+where
+    S: ScalarValue,
+    T: GraphQLType<S>,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some(self))
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C> for Option<(&'a T::Context, T)> {
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>> {
+impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C> for Option<(&'a T::Context, T)>
+where
+    S: ScalarValue,
+    T: GraphQLType<S>,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, T, C> for FieldResult<(&'a T::Context, T)> {
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>> {
+impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T), S>
+where
+    S: ScalarValue,
+    T: GraphQLType<S>,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(Some)
     }
 }
 
-impl<'a, T: GraphQLType, C> IntoResolvable<'a, Option<T>, C>
-    for FieldResult<Option<(&'a T::Context, T)>>
+impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
+    for FieldResult<Option<(&'a T::Context, T)>, S>
+where
+    S: ScalarValue,
+    T: GraphQLType<S>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>> {
+    fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
     }
 }
@@ -304,37 +348,48 @@ where
     }
 }
 
-impl<'a, CtxT> Executor<'a, CtxT> {
+impl<'a, CtxT, S> Executor<'a, S, CtxT>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     /// Resolve a single arbitrary value, mapping the context to a new type
-    pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<Context = NewCtxT>>(
+    pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<S, Context = NewCtxT>>(
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> ExecutionResult
+    ) -> ExecutionResult<S>
     where
         NewCtxT: FromContext<CtxT>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .resolve(info, value)
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    pub fn resolve<T: GraphQLType<Context = CtxT>>(
+    pub fn resolve<T: GraphQLType<S, Context = CtxT>>(
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> ExecutionResult {
+    ) -> ExecutionResult<S>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_value<T: GraphQLType<Context = CtxT>>(
+    pub fn resolve_into_value<T: GraphQLType<S, Context = CtxT>>(
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> Value {
+    ) -> Value<S>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         match self.resolve(info, value) {
             Ok(v) => v,
             Err(e) => {
@@ -348,7 +403,7 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     ///
     /// This can be used to connect different types, e.g. from different Rust
     /// libraries, that require different context types.
-    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, NewCtxT> {
+    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, S, NewCtxT> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -368,15 +423,16 @@ impl<'a, CtxT> Executor<'a, CtxT> {
         field_alias: &'a str,
         field_name: &'a str,
         location: SourcePosition,
-        selection_set: Option<&'a [Selection]>,
-    ) -> Executor<CtxT> {
+        selection_set: Option<&'a [Selection<S>]>,
+    ) -> Executor<S, CtxT> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set,
             current_type: self.schema.make_type(
-                &self.current_type
+                &self
+                    .current_type
                     .innermost_concrete()
                     .field_by_name(field_name)
                     .expect("Field not found on inner type")
@@ -393,8 +449,8 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     pub fn type_sub_executor(
         &self,
         type_name: Option<&'a str>,
-        selection_set: Option<&'a [Selection]>,
-    ) -> Executor<CtxT> {
+        selection_set: Option<&'a [Selection<S>]>,
+    ) -> Executor<S, CtxT> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -420,22 +476,22 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     /// The currently executing schema
-    pub fn schema(&self) -> &'a SchemaType {
+    pub fn schema(&self) -> &'a SchemaType<S> {
         self.schema
     }
 
     #[doc(hidden)]
-    pub fn current_type(&self) -> &TypeType<'a> {
+    pub fn current_type(&self) -> &TypeType<'a, S> {
         &self.current_type
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> &'a Variables {
+    pub fn variables(&self) -> &'a Variables<S> {
         self.variables
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name(&self, name: &str) -> Option<&'a Fragment> {
+    pub fn fragment_by_name(&self, name: &str) -> Option<&'a Fragment<S>> {
         self.fragments.get(name).map(|f| *f)
     }
 
@@ -445,13 +501,13 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     }
 
     /// Add an error to the execution engine at the current executor location
-    pub fn push_error(&self, error: FieldError) {
+    pub fn push_error(&self, error: FieldError<S>) {
         let location = self.location().clone();
         self.push_error_at(error, location);
     }
 
     /// Add an error to the execution engine at a specific location
-    pub fn push_error_at(&self, error: FieldError, location: SourcePosition) {
+    pub fn push_error_at(&self, error: FieldError<S>, location: SourcePosition) {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
 
@@ -468,16 +524,16 @@ impl<'a, CtxT> Executor<'a, CtxT> {
     ///
     /// This allows to see the whole selection and preform operations
     /// affecting the childs
-    pub fn look_ahead(&'a self) -> LookAheadSelection<'a> {
+    pub fn look_ahead(&'a self) -> LookAheadSelection<'a, S> {
         self.parent_selection_set
             .map(|p| {
                 LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
-            })
-            .unwrap_or_else(|| LookAheadSelection {
+            }).unwrap_or_else(|| LookAheadSelection {
                 name: self.current_type.innermost_concrete().name().unwrap_or(""),
                 alias: None,
                 arguments: Vec::new(),
-                children: self.current_selection_set
+                children: self
+                    .current_selection_set
                     .map(|s| {
                         s.iter()
                             .map(|s| ChildSelection {
@@ -487,10 +543,8 @@ impl<'a, CtxT> Executor<'a, CtxT> {
                                     self.fragments,
                                 ),
                                 applies_for: Applies::All,
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_else(Vec::new),
+                            }).collect()
+                    }).unwrap_or_else(Vec::new),
             })
     }
 }
@@ -513,9 +567,9 @@ impl<'a> FieldPath<'a> {
     }
 }
 
-impl ExecutionError {
+impl<S> ExecutionError<S> {
     #[doc(hidden)]
-    pub fn new(location: SourcePosition, path: &[&str], error: FieldError) -> ExecutionError {
+    pub fn new(location: SourcePosition, path: &[&str], error: FieldError<S>) -> ExecutionError<S> {
         ExecutionError {
             location: location,
             path: path.iter().map(|s| (*s).to_owned()).collect(),
@@ -524,7 +578,7 @@ impl ExecutionError {
     }
 
     /// The error message
-    pub fn error(&self) -> &FieldError {
+    pub fn error(&self) -> &FieldError<S> {
         &self.error
     }
 
@@ -539,16 +593,18 @@ impl ExecutionError {
     }
 }
 
-pub fn execute_validated_query<'a, QueryT, MutationT, CtxT>(
-    document: Document,
+pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
+    document: Document<S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT>,
-    variables: &Variables,
+    root_node: &RootNode<S, QueryT, MutationT>,
+    variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    QueryT: GraphQLType<Context = CtxT>,
-    MutationT: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -584,8 +640,7 @@ where
                 def.default_value
                     .as_ref()
                     .map(|i| (name.item.to_owned(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue>>()
+            }).collect::<HashMap<String, InputValue<S>>>()
     });
 
     let errors = RwLock::new(Vec::new());
@@ -642,9 +697,12 @@ where
     Ok((value, errors))
 }
 
-impl<'r> Registry<'r> {
+impl<'r, S> Registry<'r, S>
+where
+    S: ScalarValue + 'r,
+{
     /// Construct a new registry
-    pub fn new(types: FnvHashMap<Name, MetaType<'r>>) -> Registry<'r> {
+    pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Registry<'r, S> {
         Registry { types: types }
     }
 
@@ -654,7 +712,8 @@ impl<'r> Registry<'r> {
     /// construct its metadata and store it.
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
-        T: GraphQLType,
+        T: GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
@@ -673,9 +732,10 @@ impl<'r> Registry<'r> {
     }
 
     /// Create a field with the provided name
-    pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r>
+    pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
-        T: GraphQLType,
+        T: GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Field {
             name: name.to_owned(),
@@ -687,13 +747,14 @@ impl<'r> Registry<'r> {
     }
 
     #[doc(hidden)]
-    pub fn field_convert<'a, T: IntoResolvable<'a, I, C>, I, C>(
+    pub fn field_convert<'a, T: IntoResolvable<'a, S, I, C>, I, C>(
         &mut self,
         name: &str,
         info: &I::TypeInfo,
-    ) -> Field<'r>
+    ) -> Field<'r, S>
     where
-        I: GraphQLType,
+        I: GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Field {
             name: name.to_owned(),
@@ -705,9 +766,10 @@ impl<'r> Registry<'r> {
     }
 
     /// Create an argument with the provided name
-    pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r>
+    pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
-        T: GraphQLType + FromInputValue,
+        T: GraphQLType<S> + FromInputValue<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
@@ -716,9 +778,15 @@ impl<'r> Registry<'r> {
     ///
     /// When called with type `T`, the actual argument will be given the type
     /// `Option<T>`.
-    pub fn arg_with_default<T>(&mut self, name: &str, value: &T, info: &T::TypeInfo) -> Argument<'r>
+    pub fn arg_with_default<T>(
+        &mut self,
+        name: &str,
+        value: &T,
+        info: &T::TypeInfo,
+    ) -> Argument<'r, S>
     where
-        T: GraphQLType + ToInputValue + FromInputValue,
+        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
@@ -735,22 +803,29 @@ impl<'r> Registry<'r> {
     /// Create a scalar meta type
     ///
     /// This expects the type to implement `FromInputValue`.
-    pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r>
+    pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: FromInputValue + GraphQLType,
+        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement name()");
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType>(&mut self, info: &T::TypeInfo) -> ListMeta<'r> {
+    pub fn build_list_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> ListMeta<'r>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         let of_type = self.get_type::<T>(info);
         ListMeta::new(of_type)
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r> {
+    pub fn build_nullable_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
     }
@@ -762,10 +837,11 @@ impl<'r> Registry<'r> {
     pub fn build_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
-        fields: &[Field<'r>],
-    ) -> ObjectMeta<'r>
+        fields: &[Field<'r, S>],
+    ) -> ObjectMeta<'r, S>
     where
-        T: GraphQLType,
+        T: GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
@@ -775,9 +851,14 @@ impl<'r> Registry<'r> {
     }
 
     /// Create an enum meta type
-    pub fn build_enum_type<T>(&mut self, info: &T::TypeInfo, values: &[EnumValue]) -> EnumMeta<'r>
+    pub fn build_enum_type<T>(
+        &mut self,
+        info: &T::TypeInfo,
+        values: &[EnumValue],
+    ) -> EnumMeta<'r, S>
     where
-        T: FromInputValue + GraphQLType,
+        T: FromInputValue<S> + GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Enum types must be named. Implement name()");
 
@@ -789,10 +870,11 @@ impl<'r> Registry<'r> {
     pub fn build_interface_type<T>(
         &mut self,
         info: &T::TypeInfo,
-        fields: &[Field<'r>],
-    ) -> InterfaceMeta<'r>
+        fields: &[Field<'r, S>],
+    ) -> InterfaceMeta<'r, S>
     where
-        T: GraphQLType,
+        T: GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
@@ -804,7 +886,8 @@ impl<'r> Registry<'r> {
     /// Create a union meta type builder
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
-        T: GraphQLType,
+        T: GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
@@ -815,10 +898,11 @@ impl<'r> Registry<'r> {
     pub fn build_input_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
-        args: &[Argument<'r>],
-    ) -> InputObjectMeta<'r>
+        args: &[Argument<'r, S>],
+    ) -> InputObjectMeta<'r, S>
     where
-        T: FromInputValue + GraphQLType,
+        T: FromInputValue<S> + GraphQLType<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 

@@ -8,10 +8,11 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::Value;
+use parser::ParseError;
+use value::{DefaultScalarValue, Value, ParseScalarValue};
 
 #[derive(GraphQLEnum)]
-#[graphql(name = "SampleEnum", _internal)]
+#[graphql(name = "SampleEnum")]
 enum Sample {
     One,
     Two,
@@ -23,13 +24,17 @@ struct Interface {}
 
 struct Root {}
 
-graphql_scalar!(Scalar as "SampleScalar" {
+graphql_scalar!(Scalar as "SampleScalar" where Scalar = <S> {
     resolve(&self) -> Value {
         Value::int(self.0)
     }
 
     from_input_value(v: &InputValue) -> Option<Scalar> {
         v.as_int_value().map(|i| Scalar(i))
+    }
+
+    from_str(value: &str) -> Result<S, ParseError> {
+        <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });
 
@@ -71,7 +76,8 @@ fn test_execution() {
         second: sampleScalar(first: 10 second: 20)
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -88,7 +94,7 @@ fn test_execution() {
                 ("first", Value::int(123)),
                 ("second", Value::int(30)),
             ].into_iter()
-                .collect()
+            .collect()
         )
     );
 }
@@ -114,7 +120,8 @@ fn enum_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -173,7 +180,7 @@ fn enum_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect(),
+            .collect(),
         ))
     );
 
@@ -185,7 +192,7 @@ fn enum_introspection() {
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect(),
+            .collect(),
         ))
     );
 }
@@ -225,7 +232,8 @@ fn interface_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -310,17 +318,17 @@ fn interface_introspection() {
                                         ("name", Value::string("SampleEnum")),
                                         ("kind", Value::string("ENUM")),
                                     ].into_iter()
-                                        .collect(),
+                                    .collect(),
                                 ),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 ),
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect(),
+            .collect(),
         ))
     );
 }
@@ -371,7 +379,8 @@ fn object_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -451,17 +460,17 @@ fn object_introspection() {
                                         ("name", Value::string("SampleEnum")),
                                         ("kind", Value::string("ENUM")),
                                     ].into_iter()
-                                        .collect(),
+                                    .collect(),
                                 ),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 ),
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect(),
+            .collect(),
         ))
     );
 
@@ -494,16 +503,16 @@ fn object_introspection() {
                                                         ("kind", Value::string("SCALAR")),
                                                         ("ofType", Value::null()),
                                                     ].into_iter()
-                                                        .collect(),
+                                                    .collect(),
                                                 ),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                 ),
                                 ("defaultValue", Value::null()),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                         Value::object(
                             vec![
@@ -517,12 +526,12 @@ fn object_introspection() {
                                             ("kind", Value::string("SCALAR")),
                                             ("ofType", Value::null()),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                 ),
                                 ("defaultValue", Value::string("123")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ]),
                 ),
@@ -539,17 +548,17 @@ fn object_introspection() {
                                         ("name", Value::string("SampleScalar")),
                                         ("kind", Value::string("SCALAR")),
                                     ].into_iter()
-                                        .collect(),
+                                    .collect(),
                                 ),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 ),
                 ("isDeprecated", Value::boolean(false)),
                 ("deprecationReason", Value::null()),
             ].into_iter()
-                .collect(),
+            .collect(),
         ))
     );
 }
@@ -571,7 +580,8 @@ fn scalar_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema: RootNode<DefaultScalarValue, _, _> =
+        RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -600,7 +610,7 @@ fn scalar_introspection() {
                 ("inputFields", Value::null()),
                 ("ofType", Value::null()),
             ].into_iter()
-                .collect()
+            .collect()
         )
     );
 }

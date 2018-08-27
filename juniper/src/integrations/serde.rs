@@ -8,14 +8,17 @@ use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
-use {GraphQLError, Object, Value};
+use {GraphQLError, Object, ScalarValue, Value};
 
 #[derive(Serialize)]
 struct SerializeHelper {
     message: &'static str,
 }
 
-impl ser::Serialize for ExecutionError {
+impl<T> ser::Serialize for ExecutionError<T>
+where
+    T: ScalarValue,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -51,37 +54,52 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
             GraphQLError::ValidationError(ref errs) => errs.serialize(serializer),
             GraphQLError::NoOperationProvided => [SerializeHelper {
                 message: "Must provide an operation",
-            }].serialize(serializer),
+            }]
+                .serialize(serializer),
             GraphQLError::MultipleOperationsProvided => [SerializeHelper {
                 message: "Must provide operation name \
                           if query contains multiple operations",
-            }].serialize(serializer),
+            }]
+                .serialize(serializer),
             GraphQLError::UnknownOperationName => [SerializeHelper {
                 message: "Unknown operation",
-            }].serialize(serializer),
+            }]
+                .serialize(serializer),
         }
     }
 }
 
-impl<'de> de::Deserialize<'de> for InputValue {
-    fn deserialize<D>(deserializer: D) -> Result<InputValue, D::Error>
+impl<'de, S> de::Deserialize<'de> for InputValue<S>
+where
+    S: de::Deserialize<'de> + ScalarValue,
+{
+    fn deserialize<D>(deserializer: D) -> Result<InputValue<S>, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        struct InputValueVisitor;
+        struct InputValueVisitor<S>(::std::marker::PhantomData<S>);
 
-        impl<'de> de::Visitor<'de> for InputValueVisitor {
-            type Value = InputValue;
+        impl<S> Default for InputValueVisitor<S> {
+            fn default() -> Self {
+                InputValueVisitor(Default::default())
+            }
+        }
+
+        impl<'de, S> de::Visitor<'de> for InputValueVisitor<S>
+        where
+            S: ScalarValue + de::Deserialize<'de>,
+        {
+            type Value = InputValue<S>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a valid input value")
             }
 
-            fn visit_bool<E>(self, value: bool) -> Result<InputValue, E> {
+            fn visit_bool<E>(self, value: bool) -> Result<InputValue<S>, E> {
                 Ok(InputValue::boolean(value))
             }
 
-            fn visit_i64<E>(self, value: i64) -> Result<InputValue, E>
+            fn visit_i64<E>(self, value: i64) -> Result<InputValue<S>, E>
             where
                 E: de::Error,
             {
@@ -97,7 +115,7 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 }
             }
 
-            fn visit_u64<E>(self, value: u64) -> Result<InputValue, E>
+            fn visit_u64<E>(self, value: u64) -> Result<InputValue<S>, E>
             where
                 E: de::Error,
             {
@@ -113,30 +131,30 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 }
             }
 
-            fn visit_f64<E>(self, value: f64) -> Result<InputValue, E> {
+            fn visit_f64<E>(self, value: f64) -> Result<InputValue<S>, E> {
                 Ok(InputValue::float(value))
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<InputValue, E>
+            fn visit_str<E>(self, value: &str) -> Result<InputValue<S>, E>
             where
                 E: de::Error,
             {
                 self.visit_string(value.into())
             }
 
-            fn visit_string<E>(self, value: String) -> Result<InputValue, E> {
+            fn visit_string<E>(self, value: String) -> Result<InputValue<S>, E> {
                 Ok(InputValue::string(value))
             }
 
-            fn visit_none<E>(self) -> Result<InputValue, E> {
+            fn visit_none<E>(self) -> Result<InputValue<S>, E> {
                 Ok(InputValue::null())
             }
 
-            fn visit_unit<E>(self) -> Result<InputValue, E> {
+            fn visit_unit<E>(self) -> Result<InputValue<S>, E> {
                 Ok(InputValue::null())
             }
 
-            fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
+            fn visit_seq<V>(self, mut visitor: V) -> Result<InputValue<S>, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
@@ -149,40 +167,45 @@ impl<'de> de::Deserialize<'de> for InputValue {
                 Ok(InputValue::list(values))
             }
 
-            fn visit_map<V>(self, mut visitor: V) -> Result<InputValue, V::Error>
+            fn visit_map<V>(self, mut visitor: V) -> Result<InputValue<S>, V::Error>
             where
                 V: de::MapAccess<'de>,
             {
-                let mut values: IndexMap<String, InputValue> = IndexMap::new();
+                let mut object = IndexMap::<String, InputValue<S>>::with_capacity(
+                    visitor.size_hint().unwrap_or(0),
+                );
 
                 while let Some((key, value)) = visitor.next_entry()? {
-                    values.insert(key, value);
+                    object.insert(key, value);
                 }
 
-                Ok(InputValue::object(values))
+                Ok(InputValue::object(object))
             }
         }
 
-        deserializer.deserialize_any(InputValueVisitor)
+        deserializer.deserialize_any(InputValueVisitor::default())
     }
 }
 
-impl ser::Serialize for InputValue {
+impl<T> ser::Serialize for InputValue<T>
+where
+    T: ScalarValue,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
         match *self {
             InputValue::Null | InputValue::Variable(_) => serializer.serialize_unit(),
-            InputValue::Int(v) => serializer.serialize_i64(i64::from(v)),
-            InputValue::Float(v) => serializer.serialize_f64(v),
-            InputValue::String(ref v) | InputValue::Enum(ref v) => serializer.serialize_str(v),
-            InputValue::Boolean(v) => serializer.serialize_bool(v),
-            InputValue::List(ref v) => v.iter()
+            InputValue::Scalar(ref s) => s.serialize(serializer),
+            InputValue::Enum(ref v) => serializer.serialize_str(v),
+            InputValue::List(ref v) => v
+                .iter()
                 .map(|x| x.item.clone())
                 .collect::<Vec<_>>()
                 .serialize(serializer),
-            InputValue::Object(ref v) => v.iter()
+            InputValue::Object(ref v) => v
+                .iter()
                 .map(|&(ref k, ref v)| (k.item.clone(), v.item.clone()))
                 .collect::<IndexMap<_, _>>()
                 .serialize(serializer),
@@ -250,7 +273,10 @@ impl<'a> ser::Serialize for Spanning<ParseError<'a>> {
     }
 }
 
-impl ser::Serialize for Object {
+impl<T> ser::Serialize for Object<T>
+where
+    T: ser::Serialize,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -266,17 +292,17 @@ impl ser::Serialize for Object {
     }
 }
 
-impl ser::Serialize for Value {
+impl<T> ser::Serialize for Value<T>
+where
+    T: ser::Serialize,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
         match *self {
             Value::Null => serializer.serialize_unit(),
-            Value::Int(v) => serializer.serialize_i64(i64::from(v)),
-            Value::Float(v) => serializer.serialize_f64(v),
-            Value::String(ref v) => serializer.serialize_str(v),
-            Value::Boolean(v) => serializer.serialize_bool(v),
+            Value::Scalar(ref s) => s.serialize(serializer),
             Value::List(ref v) => v.serialize(serializer),
             Value::Object(ref v) => v.serialize(serializer),
         }
@@ -290,12 +316,12 @@ mod tests {
     use serde_json::from_str;
     use serde_json::to_string;
     use {FieldError, Value};
-    use ::value::Object;
+    use value::{DefaultScalarValue, Object};
 
     #[test]
     fn int() {
         assert_eq!(
-            from_str::<InputValue>("1235").unwrap(),
+            from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
             InputValue::int(1235)
         );
     }
@@ -303,12 +329,12 @@ mod tests {
     #[test]
     fn float() {
         assert_eq!(
-            from_str::<InputValue>("2.0").unwrap(),
+            from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
             InputValue::float(2.0)
         );
         // large value without a decimal part is also float
         assert_eq!(
-            from_str::<InputValue>("123567890123").unwrap(),
+            from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
             InputValue::float(123567890123.0)
         );
     }

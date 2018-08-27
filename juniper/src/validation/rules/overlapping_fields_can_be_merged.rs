@@ -4,8 +4,10 @@ use schema::meta::{Field as FieldType, MetaType};
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::hash::Hash;
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
@@ -14,13 +16,13 @@ struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
 struct ConflictReason(String, ConflictReasonMessage);
 
 #[derive(Debug)]
-struct AstAndDef<'a>(
+struct AstAndDef<'a, S: Debug + 'a>(
     Option<&'a str>,
-    &'a Spanning<Field<'a>>,
-    Option<&'a FieldType<'a>>,
+    &'a Spanning<Field<'a, S>>,
+    Option<&'a FieldType<'a, S>>,
 );
 
-type AstAndDefCollection<'a> = OrderedMap<&'a str, Vec<AstAndDef<'a>>>;
+type AstAndDefCollection<'a, S> = OrderedMap<&'a str, Vec<AstAndDef<'a, S>>>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum ConflictReasonMessage {
@@ -132,25 +134,28 @@ impl<'a> PairSet<'a> {
     }
 }
 
-pub struct OverlappingFieldsCanBeMerged<'a> {
-    named_fragments: HashMap<&'a str, &'a Fragment<'a>>,
+pub struct OverlappingFieldsCanBeMerged<'a, S: Debug + 'a> {
+    named_fragments: HashMap<&'a str, &'a Fragment<'a, S>>,
     compared_fragments: RefCell<PairSet<'a>>,
 }
 
-pub fn factory<'a>() -> OverlappingFieldsCanBeMerged<'a> {
+pub fn factory<'a, S: Debug>() -> OverlappingFieldsCanBeMerged<'a, S> {
     OverlappingFieldsCanBeMerged {
         named_fragments: HashMap::new(),
         compared_fragments: RefCell::new(PairSet::new()),
     }
 }
 
-impl<'a> OverlappingFieldsCanBeMerged<'a> {
+impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     fn find_conflicts_within_selection_set(
         &self,
-        parent_type: Option<&'a MetaType>,
-        selection_set: &'a [Selection],
-        ctx: &ValidatorContext<'a>,
-    ) -> Vec<Conflict> {
+        parent_type: Option<&'a MetaType<S>>,
+        selection_set: &'a [Selection<S>],
+        ctx: &ValidatorContext<'a, S>,
+    ) -> Vec<Conflict>
+    where
+        S: ScalarValue,
+    {
         let mut conflicts = Vec::new();
 
         let (field_map, fragment_names) =
@@ -187,8 +192,10 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         fragment_name1: &'a str,
         fragment_name2: &'a str,
         mutually_exclusive: bool,
-        ctx: &ValidatorContext<'a>,
-    ) {
+        ctx: &ValidatorContext<'a, S>,
+    ) where
+        S: ScalarValue,
+    {
         if fragment_name1 == fragment_name2 {
             return;
         }
@@ -258,11 +265,13 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
     fn collect_conflicts_between_fields_and_fragment(
         &self,
         conflicts: &mut Vec<Conflict>,
-        field_map: &AstAndDefCollection<'a>,
+        field_map: &AstAndDefCollection<'a, S>,
         fragment_name: &str,
         mutually_exclusive: bool,
-        ctx: &ValidatorContext<'a>,
-    ) {
+        ctx: &ValidatorContext<'a, S>,
+    ) where
+        S: ScalarValue,
+    {
         let fragment = match self.named_fragments.get(fragment_name) {
             Some(f) => f,
             None => return,
@@ -288,10 +297,12 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         &self,
         conflicts: &mut Vec<Conflict>,
         mutually_exclusive: bool,
-        field_map1: &AstAndDefCollection<'a>,
-        field_map2: &AstAndDefCollection<'a>,
-        ctx: &ValidatorContext<'a>,
-    ) {
+        field_map1: &AstAndDefCollection<'a, S>,
+        field_map2: &AstAndDefCollection<'a, S>,
+        ctx: &ValidatorContext<'a, S>,
+    ) where
+        S: ScalarValue,
+    {
         for (response_name, fields1) in field_map1.iter() {
             if let Some(fields2) = field_map2.get(response_name) {
                 for field1 in fields1 {
@@ -314,9 +325,11 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
     fn collect_conflicts_within(
         &self,
         conflicts: &mut Vec<Conflict>,
-        field_map: &AstAndDefCollection<'a>,
-        ctx: &ValidatorContext<'a>,
-    ) {
+        field_map: &AstAndDefCollection<'a, S>,
+        ctx: &ValidatorContext<'a, S>,
+    ) where
+        S: ScalarValue,
+    {
         for (response_name, fields) in field_map.iter() {
             for (i, field1) in fields.iter().enumerate() {
                 for field2 in &fields[i + 1..] {
@@ -333,11 +346,14 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
     fn find_conflict(
         &self,
         response_name: &str,
-        field1: &AstAndDef<'a>,
-        field2: &AstAndDef<'a>,
+        field1: &AstAndDef<'a, S>,
+        field2: &AstAndDef<'a, S>,
         parents_mutually_exclusive: bool,
-        ctx: &ValidatorContext<'a>,
-    ) -> Option<Conflict> {
+        ctx: &ValidatorContext<'a, S>,
+    ) -> Option<Conflict>
+    where
+        S: ScalarValue,
+    {
         let AstAndDef(ref parent_type1, ast1, ref def1) = *field1;
         let AstAndDef(ref parent_type2, ast2, ref def2) = *field2;
 
@@ -416,11 +432,14 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         &self,
         mutually_exclusive: bool,
         parent_type1: Option<&str>,
-        selection_set1: &'a [Selection],
+        selection_set1: &'a [Selection<S>],
         parent_type2: Option<&str>,
-        selection_set2: &'a [Selection],
-        ctx: &ValidatorContext<'a>,
-    ) -> Vec<Conflict> {
+        selection_set2: &'a [Selection<S>],
+        ctx: &ValidatorContext<'a, S>,
+    ) -> Vec<Conflict>
+    where
+        S: ScalarValue,
+    {
         let mut conflicts = Vec::new();
 
         let parent_type1 = parent_type1.and_then(|t| ctx.schema.concrete_type_by_name(t));
@@ -496,20 +515,18 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
                     conflicts
                         .iter()
                         .flat_map(|&Conflict(_, ref fs1, _)| fs1.clone()),
-                )
-                .collect(),
+                ).collect(),
             vec![pos2.clone()]
                 .into_iter()
                 .chain(
                     conflicts
                         .iter()
                         .flat_map(|&Conflict(_, _, ref fs2)| fs2.clone()),
-                )
-                .collect(),
+                ).collect(),
         ))
     }
 
-    fn is_type_conflict(&self, ctx: &ValidatorContext<'a>, t1: &Type, t2: &Type) -> bool {
+    fn is_type_conflict(&self, ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
         match (t1, t2) {
             (&Type::List(ref inner1), &Type::List(ref inner2))
             | (&Type::NonNullList(ref inner1), &Type::NonNullList(ref inner2)) => {
@@ -534,9 +551,12 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
 
     fn is_same_arguments(
         &self,
-        args1: &Option<Spanning<Arguments>>,
-        args2: &Option<Spanning<Arguments>>,
-    ) -> bool {
+        args1: &Option<Spanning<Arguments<S>>>,
+        args2: &Option<Spanning<Arguments<S>>>,
+    ) -> bool
+    where
+        S: ScalarValue,
+    {
         match (args1, args2) {
             (&None, &None) => true,
             (
@@ -565,7 +585,7 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
         }
     }
 
-    fn is_object_type(&self, ctx: &ValidatorContext<'a>, type_name: Option<&str>) -> bool {
+    fn is_object_type(&self, ctx: &ValidatorContext<'a, S>, type_name: Option<&str>) -> bool {
         match type_name.and_then(|n| ctx.schema.concrete_type_by_name(n)) {
             Some(&MetaType::Object(_)) => true,
             _ => false,
@@ -574,10 +594,11 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
 
     fn get_referenced_fields_and_fragment_names(
         &self,
-        fragment: &'a Fragment,
-        ctx: &ValidatorContext<'a>,
-    ) -> (AstAndDefCollection<'a>, Vec<&'a str>) {
-        let fragment_type = ctx.schema
+        fragment: &'a Fragment<S>,
+        ctx: &ValidatorContext<'a, S>,
+    ) -> (AstAndDefCollection<'a, S>, Vec<&'a str>) {
+        let fragment_type = ctx
+            .schema
             .concrete_type_by_name(fragment.type_condition.item);
 
         self.get_fields_and_fragment_names(fragment_type, &fragment.selection_set, ctx)
@@ -585,10 +606,10 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
 
     fn get_fields_and_fragment_names(
         &self,
-        parent_type: Option<&'a MetaType>,
-        selection_set: &'a [Selection],
-        ctx: &ValidatorContext<'a>,
-    ) -> (AstAndDefCollection<'a>, Vec<&'a str>) {
+        parent_type: Option<&'a MetaType<S>>,
+        selection_set: &'a [Selection<S>],
+        ctx: &ValidatorContext<'a, S>,
+    ) -> (AstAndDefCollection<'a, S>, Vec<&'a str>) {
         let mut ast_and_defs = OrderedMap::new();
         let mut fragment_names = Vec::new();
 
@@ -605,10 +626,10 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
 
     fn collect_fields_and_fragment_names(
         &self,
-        parent_type: Option<&'a MetaType>,
-        selection_set: &'a [Selection],
-        ctx: &ValidatorContext<'a>,
-        ast_and_defs: &mut AstAndDefCollection<'a>,
+        parent_type: Option<&'a MetaType<S>>,
+        selection_set: &'a [Selection<S>],
+        ctx: &ValidatorContext<'a, S>,
+        ast_and_defs: &mut AstAndDefCollection<'a, S>,
         fragment_names: &mut Vec<&'a str>,
     ) {
         for selection in selection_set {
@@ -657,8 +678,11 @@ impl<'a> OverlappingFieldsCanBeMerged<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged<'a> {
-    fn enter_document(&mut self, _: &mut ValidatorContext<'a>, defs: &'a Document) {
+impl<'a, S> Visitor<'a, S> for OverlappingFieldsCanBeMerged<'a, S>
+where
+    S: ScalarValue,
+{
+    fn enter_document(&mut self, _: &mut ValidatorContext<'a, S>, defs: &'a Document<S>) {
         for def in defs {
             if let Definition::Fragment(Spanning { ref item, .. }) = *def {
                 self.named_fragments.insert(item.name.item, item);
@@ -668,8 +692,8 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged<'a> {
 
     fn enter_selection_set(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        selection_set: &'a Vec<Selection>,
+        ctx: &mut ValidatorContext<'a, S>,
+        selection_set: &'a Vec<Selection<S>>,
     ) {
         for Conflict(ConflictReason(reason_name, reason_msg), mut p1, mut p2) in
             self.find_conflicts_within_selection_set(ctx.parent_type(), selection_set, ctx)
@@ -701,8 +725,7 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
                     name,
                     format_reason(subreason)
                 )
-            })
-            .collect::<Vec<_>>()
+            }).collect::<Vec<_>>()
             .join(" and "),
     }
 }
@@ -715,17 +738,18 @@ mod tests {
     use executor::Registry;
     use schema::meta::MetaType;
     use types::base::GraphQLType;
-    use types::scalars::ID;
+    use types::scalars::{EmptyMutation, ID};
 
     use parser::SourcePosition;
     use validation::{
         expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
         expect_passes_rule_with_schema, RuleError,
     };
+    use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
     #[test]
     fn unique_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment uniqueFields on Dog {
@@ -738,7 +762,7 @@ mod tests {
 
     #[test]
     fn identical_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment mergeIdenticalFields on Dog {
@@ -751,7 +775,7 @@ mod tests {
 
     #[test]
     fn identical_fields_with_identical_args() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
@@ -764,7 +788,7 @@ mod tests {
 
     #[test]
     fn identical_fields_with_identical_directives() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment mergeSameFieldsWithSameDirectives on Dog {
@@ -777,7 +801,7 @@ mod tests {
 
     #[test]
     fn different_args_with_different_aliases() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment differentArgsWithDifferentAliases on Dog {
@@ -790,7 +814,7 @@ mod tests {
 
     #[test]
     fn different_directives_with_different_aliases() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment differentDirectivesWithDifferentAliases on Dog {
@@ -803,7 +827,7 @@ mod tests {
 
     #[test]
     fn different_skip_include_directives_accepted() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment differentDirectivesWithDifferentAliases on Dog {
@@ -816,7 +840,7 @@ mod tests {
 
     #[test]
     fn same_aliases_with_different_field_targets() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment sameAliasesWithDifferentFieldTargets on Dog {
@@ -839,7 +863,7 @@ mod tests {
 
     #[test]
     fn same_aliases_allowed_on_nonoverlapping_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment sameAliasesWithDifferentFieldTargets on Pet {
@@ -856,7 +880,7 @@ mod tests {
 
     #[test]
     fn alias_masking_direct_field_access() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment aliasMaskingDirectFieldAccess on Dog {
@@ -879,7 +903,7 @@ mod tests {
 
     #[test]
     fn different_args_second_adds_an_argument() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Dog {
@@ -902,7 +926,7 @@ mod tests {
 
     #[test]
     fn different_args_second_missing_an_argument() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Dog {
@@ -925,7 +949,7 @@ mod tests {
 
     #[test]
     fn conflicting_args() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Dog {
@@ -948,7 +972,7 @@ mod tests {
 
     #[test]
     fn allows_different_args_where_no_conflict_is_possible() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Pet {
@@ -965,7 +989,7 @@ mod tests {
 
     #[test]
     fn encounters_conflict_in_fragments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -991,7 +1015,7 @@ mod tests {
 
     #[test]
     fn reports_each_conflict_once() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1044,7 +1068,7 @@ mod tests {
 
     #[test]
     fn deep_conflict() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1076,7 +1100,7 @@ mod tests {
 
     #[test]
     fn deep_conflict_with_multiple_issues() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1118,7 +1142,7 @@ mod tests {
 
     #[test]
     fn very_deep_conflict() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1159,7 +1183,7 @@ mod tests {
 
     #[test]
     fn reports_deep_conflict_to_nearest_common_ancestor() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1198,7 +1222,7 @@ mod tests {
 
     #[test]
     fn reports_deep_conflict_to_nearest_common_ancestor_in_fragments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1245,7 +1269,7 @@ mod tests {
 
     #[test]
     fn reports_deep_conflict_in_nested_fragments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -1299,7 +1323,7 @@ mod tests {
 
     #[test]
     fn ignores_unknown_fragments() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
         {
@@ -1328,7 +1352,11 @@ mod tests {
     struct Node;
     struct QueryRoot;
 
-    impl GraphQLType for SomeBox {
+    impl<S> GraphQLType<S> for SomeBox
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1336,7 +1364,10 @@ mod tests {
             Some("SomeBox")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[
                 registry.field::<Option<SomeBox>>("deepBox", i),
                 registry.field::<Option<String>>("unrelatedField", i),
@@ -1346,7 +1377,11 @@ mod tests {
         }
     }
 
-    impl GraphQLType for StringBox {
+    impl<S> GraphQLType<S> for StringBox
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1354,7 +1389,10 @@ mod tests {
             Some("StringBox")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[
                 registry.field::<Option<String>>("scalar", i),
                 registry.field::<Option<StringBox>>("deepBox", i),
@@ -1371,7 +1409,11 @@ mod tests {
         }
     }
 
-    impl GraphQLType for IntBox {
+    impl<S> GraphQLType<S> for IntBox
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1379,7 +1421,10 @@ mod tests {
             Some("IntBox")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[
                 registry.field::<Option<i32>>("scalar", i),
                 registry.field::<Option<IntBox>>("deepBox", i),
@@ -1396,7 +1441,11 @@ mod tests {
         }
     }
 
-    impl GraphQLType for NonNullStringBox1 {
+    impl<S> GraphQLType<S> for NonNullStringBox1
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1404,14 +1453,21 @@ mod tests {
             Some("NonNullStringBox1")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[registry.field::<String>("scalar", i)];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
         }
     }
 
-    impl GraphQLType for NonNullStringBox1Impl {
+    impl<S> GraphQLType<S> for NonNullStringBox1Impl
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1419,7 +1475,10 @@ mod tests {
             Some("NonNullStringBox1Impl")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[
                 registry.field::<String>("scalar", i),
                 registry.field::<Option<SomeBox>>("deepBox", i),
@@ -1431,12 +1490,15 @@ mod tests {
                 .interfaces(&[
                     registry.get_type::<NonNullStringBox1>(i),
                     registry.get_type::<SomeBox>(i),
-                ])
-                .into_meta()
+                ]).into_meta()
         }
     }
 
-    impl GraphQLType for NonNullStringBox2 {
+    impl<S> GraphQLType<S> for NonNullStringBox2
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1444,14 +1506,21 @@ mod tests {
             Some("NonNullStringBox2")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[registry.field::<String>("scalar", i)];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
         }
     }
 
-    impl GraphQLType for NonNullStringBox2Impl {
+    impl<S> GraphQLType<S> for NonNullStringBox2Impl
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1459,7 +1528,10 @@ mod tests {
             Some("NonNullStringBox2Impl")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[
                 registry.field::<String>("scalar", i),
                 registry.field::<Option<SomeBox>>("deepBox", i),
@@ -1471,12 +1543,15 @@ mod tests {
                 .interfaces(&[
                     registry.get_type::<NonNullStringBox2>(i),
                     registry.get_type::<SomeBox>(i),
-                ])
-                .into_meta()
+                ]).into_meta()
         }
     }
 
-    impl GraphQLType for Node {
+    impl<S> GraphQLType<S> for Node
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1484,7 +1559,10 @@ mod tests {
             Some("Node")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[
                 registry.field::<Option<ID>>("id", i),
                 registry.field::<Option<String>>("name", i),
@@ -1494,7 +1572,11 @@ mod tests {
         }
     }
 
-    impl GraphQLType for Edge {
+    impl<S> GraphQLType<S> for Edge
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1502,14 +1584,21 @@ mod tests {
             Some("Edge")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[registry.field::<Option<Node>>("node", i)];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
     }
 
-    impl GraphQLType for Connection {
+    impl<S> GraphQLType<S> for Connection
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1517,14 +1606,21 @@ mod tests {
             Some("Connection")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             let fields = &[registry.field::<Option<Vec<Option<Edge>>>>("edges", i)];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
     }
 
-    impl GraphQLType for QueryRoot {
+    impl<S> GraphQLType<S> for QueryRoot
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         type Context = ();
         type TypeInfo = ();
 
@@ -1532,7 +1628,10 @@ mod tests {
             Some("QueryRoot")
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+        {
             registry.get_type::<IntBox>(i);
             registry.get_type::<StringBox>(i);
             registry.get_type::<NonNullStringBox1Impl>(i);
@@ -1548,8 +1647,9 @@ mod tests {
 
     #[test]
     fn conflicting_return_types_which_potentially_overlap() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1578,8 +1678,9 @@ mod tests {
 
     #[test]
     fn compatible_return_shapes_on_different_return_types() {
-        expect_passes_rule_with_schema(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
           {
@@ -1602,8 +1703,9 @@ mod tests {
 
     #[test]
     fn disallows_differing_return_types_despite_no_overlap() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1632,8 +1734,9 @@ mod tests {
 
     #[test]
     fn reports_correctly_when_a_non_exclusive_follows_an_exclusive() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1699,8 +1802,9 @@ mod tests {
 
     #[test]
     fn disallows_differing_return_type_nullability_despite_no_overlap() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1729,8 +1833,9 @@ mod tests {
 
     #[test]
     fn disallows_differing_return_type_list_despite_no_overlap() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1760,8 +1865,9 @@ mod tests {
             )],
         );
 
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1794,8 +1900,9 @@ mod tests {
 
     #[test]
     fn disallows_differing_subfields() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1829,8 +1936,9 @@ mod tests {
 
     #[test]
     fn disallows_differing_deep_return_types_despite_no_overlap() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1868,8 +1976,9 @@ mod tests {
 
     #[test]
     fn allows_non_conflicting_overlapping_types() {
-        expect_passes_rule_with_schema(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1888,8 +1997,9 @@ mod tests {
 
     #[test]
     fn same_wrapped_scalar_return_types() {
-        expect_passes_rule_with_schema(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1908,8 +2018,9 @@ mod tests {
 
     #[test]
     fn allows_inline_typeless_fragments() {
-        expect_passes_rule_with_schema(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1924,8 +2035,9 @@ mod tests {
 
     #[test]
     fn compares_deep_types_including_list() {
-        expect_fails_rule_with_schema(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {
@@ -1972,8 +2084,9 @@ mod tests {
 
     #[test]
     fn ignores_unknown_types() {
-        expect_passes_rule_with_schema(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
             QueryRoot,
+            EmptyMutation::new(),
             factory,
             r#"
             {

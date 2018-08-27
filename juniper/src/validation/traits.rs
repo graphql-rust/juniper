@@ -4,156 +4,151 @@ use ast::{
 };
 use parser::Spanning;
 use validation::ValidatorContext;
+use value::ScalarValue;
 
 #[doc(hidden)]
-pub trait Visitor<'a> {
-    fn enter_document(&mut self, _: &mut ValidatorContext<'a>, _: &'a Document) {}
-    fn exit_document(&mut self, _: &mut ValidatorContext<'a>, _: &'a Document) {}
+pub trait Visitor<'a, S>
+where
+    S: ScalarValue,
+{
+    fn enter_document(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {}
+    fn exit_document(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {}
 
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Operation<S>>,
     ) {
     }
     fn exit_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Operation<S>>,
     ) {
     }
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Fragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Fragment<S>>,
     ) {
     }
     fn exit_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Fragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Fragment<S>>,
     ) {
     }
 
     fn enter_variable_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a (Spanning<&'a str>, VariableDefinition),
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
     }
     fn exit_variable_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a (Spanning<&'a str>, VariableDefinition),
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
     }
 
-    fn enter_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {}
-    fn exit_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {}
+    fn enter_directive(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Directive<S>>) {}
+    fn exit_directive(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Directive<S>>) {}
 
     fn enter_argument(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a (Spanning<&'a str>, Spanning<InputValue>),
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
     }
     fn exit_argument(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a (Spanning<&'a str>, Spanning<InputValue>),
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
     }
 
-    fn enter_selection_set(&mut self, _: &mut ValidatorContext<'a>, _: &'a Vec<Selection>) {}
-    fn exit_selection_set(&mut self, _: &mut ValidatorContext<'a>, _: &'a Vec<Selection>) {}
+    fn enter_selection_set(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Vec<Selection<S>>) {}
+    fn exit_selection_set(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Vec<Selection<S>>) {}
 
-    fn enter_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {}
-    fn exit_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {}
+    fn enter_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {}
+    fn exit_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {}
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<FragmentSpread>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<FragmentSpread<S>>,
     ) {
     }
     fn exit_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<FragmentSpread>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<FragmentSpread<S>>,
     ) {
     }
 
     fn enter_inline_fragment(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<InlineFragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<InlineFragment<S>>,
     ) {
     }
     fn exit_inline_fragment(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<InlineFragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<InlineFragment<S>>,
     ) {
     }
 
-    fn enter_null_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<()>) {}
-    fn exit_null_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<()>) {}
+    fn enter_null_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<()>) {}
+    fn exit_null_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<()>) {}
 
-    fn enter_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i32>) {}
-    fn exit_int_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<i32>) {}
+    fn enter_scalar_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a S>) {}
+    fn exit_scalar_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a S>) {}
 
-    fn enter_float_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<f64>) {}
-    fn exit_float_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<f64>) {}
+    fn enter_enum_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
+    fn exit_enum_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
 
-    fn enter_string_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<&'a String>) {}
-    fn exit_string_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<&'a String>) {}
-
-    fn enter_boolean_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<bool>) {}
-    fn exit_boolean_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<bool>) {}
-
-    fn enter_enum_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<&'a String>) {}
-    fn exit_enum_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<&'a String>) {}
-
-    fn enter_variable_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<&'a String>) {}
-    fn exit_variable_value(&mut self, _: &mut ValidatorContext<'a>, _: Spanning<&'a String>) {}
+    fn enter_variable_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
+    fn exit_variable_value(&mut self, _: &mut ValidatorContext<'a, S>, _: Spanning<&'a String>) {}
 
     fn enter_list_value(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: Spanning<&'a Vec<Spanning<InputValue>>>,
+        _: &mut ValidatorContext<'a, S>,
+        _: Spanning<&'a Vec<Spanning<InputValue<S>>>>,
     ) {
     }
     fn exit_list_value(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: Spanning<&'a Vec<Spanning<InputValue>>>,
+        _: &mut ValidatorContext<'a, S>,
+        _: Spanning<&'a Vec<Spanning<InputValue<S>>>>,
     ) {
     }
 
     fn enter_object_value(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>,
+        _: &mut ValidatorContext<'a, S>,
+        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
     ) {
     }
     fn exit_object_value(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>,
+        _: &mut ValidatorContext<'a, S>,
+        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
     ) {
     }
 
     fn enter_object_field(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a (Spanning<String>, Spanning<InputValue>),
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<String>, Spanning<InputValue<S>>),
     ) {
     }
     fn exit_object_field(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a (Spanning<String>, Spanning<InputValue>),
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a (Spanning<String>, Spanning<InputValue<S>>),
     ) {
     }
 }

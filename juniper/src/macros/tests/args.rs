@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{Value, DefaultScalarValue};
 
 struct Root;
 
@@ -20,7 +20,6 @@ Syntax to validate:
 */
 
 #[derive(GraphQLInputObject)]
-#[graphql(_internal)]
 struct Point {
     x: i32,
 }
@@ -78,7 +77,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_args_info_query<F>(field_name: &str, f: F)
 where
-    F: Fn(&Vec<Value>) -> (),
+    F: Fn(&Vec<Value<DefaultScalarValue>>) -> (),
 {
     let doc = r#"
     {

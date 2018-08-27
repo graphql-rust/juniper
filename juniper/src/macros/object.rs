@@ -120,7 +120,7 @@ even have to be backed by a trait!
 
 ## Emitting errors
 
-`FieldResult<T>` is a type alias for `Result<T, FieldError>`, where
+`FieldResult<T, S>` is a type alias for `Result<T, FieldError<S>>`, where
 `FieldResult` is a tuple that contains an error message and optionally a
 JSON-like data structure. In the end, errors that fields emit are serialized
 into strings in the response. However, the execution system will keep track of
@@ -137,11 +137,11 @@ automatically via the `?` operator, or you can construct them yourself using
 struct User { id: String }
 
 graphql_object!(User: () |&self| {
-    field id() -> FieldResult<&String> {
+    field id() -> FieldResult<&String, __S> {
         Ok(&self.id)
     }
 
-    field name() -> FieldResult<&String> {
+    field name() -> FieldResult<&String, __S> {
         Err("Does not have a name".to_owned())?
     }
 });
@@ -372,7 +372,10 @@ macro_rules! graphql_object {
         ( $($lifetime:tt)* );
         $name:ty; $ctxt:ty; $outname:expr; $mainself:ident; $($items:tt)*
     ) => {
-        graphql_object!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
+        graphql_object!(@as_item, impl<$($lifetime,)* __S> $crate::GraphQLType<__S> for $name
+            where __S: $crate::ScalarValue,
+                 for<'__b> &'__b __S: $crate::ScalarRefValue<'__b>,
+         {
             type Context = $ctxt;
             type TypeInfo = ();
 
@@ -384,8 +387,10 @@ macro_rules! graphql_object {
             #[allow(unused_mut)]
             fn meta<'r>(
                 info: &(),
-                registry: &mut $crate::Registry<'r>
-            ) -> $crate::meta::MetaType<'r> {
+                registry: &mut $crate::Registry<'r, __S>
+            ) -> $crate::meta::MetaType<'r, __S>
+             where __S: 'r
+             {
                 let mut fields = Vec::new();
                 let mut description = None;
                 let mut interfaces: Option<Vec<$crate::Type>> = None;
@@ -416,10 +421,10 @@ macro_rules! graphql_object {
                 &$mainself,
                 info: &(),
                 field: &str,
-                args: &$crate::Arguments,
-                executor: &$crate::Executor<Self::Context>
+                args: &$crate::Arguments<__S>,
+                executor: &$crate::Executor<__S, Self::Context>
             )
-                -> $crate::ExecutionResult
+                -> $crate::ExecutionResult<__S>
             {
                 __graphql__build_field_matches!(
                     ($outname, $mainself, field, args, executor),

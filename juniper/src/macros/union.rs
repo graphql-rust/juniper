@@ -64,7 +64,7 @@ macro_rules! graphql_union {
 
         $(
             if let Some(_) = $resolver as Option<$srctype> {
-                return (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned();
+                return (<$srctype as $crate::GraphQLType<__S>>::name(&())).unwrap().to_owned();
             }
         )*
 
@@ -82,7 +82,7 @@ macro_rules! graphql_union {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned() {
+            if $typenamearg == (<$srctype as $crate::GraphQLType<__S>>::name(&())).unwrap().to_owned() {
                 return $execarg.resolve(&(), &$resolver);
             }
         )*
@@ -108,7 +108,10 @@ macro_rules! graphql_union {
             $( $items:tt )*
         }
     ) => {
-        graphql_union!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
+        graphql_union!(@as_item, impl<$($lifetime, )* __S> $crate::GraphQLType<__S> for $name
+            where __S: $crate::value::ScalarValue,
+                  for<'__b> &'__b __S: $crate::value::ScalarRefValue<'__b>
+            {
             type Context = $ctxt;
             type TypeInfo = ();
 
@@ -118,7 +121,9 @@ macro_rules! graphql_union {
 
             #[allow(unused_assignments)]
             #[allow(unused_mut)]
-            fn meta<'r>(_: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
+                fn meta<'r>(_: &(), registry: &mut $crate::Registry<'r, __S>) -> $crate::meta::MetaType<'r, __S>
+                    where __S: 'r
+                {
                 let mut types;
                 let mut description = None;
                 graphql_union!(@ gather_meta, (registry, types, description), $($items)*);
@@ -142,10 +147,10 @@ macro_rules! graphql_union {
                 &$mainself,
                 _: &(),
                 type_name: &str,
-                _: Option<&[$crate::Selection]>,
-                executor: &$crate::Executor<Self::Context>,
+                _: Option<&[$crate::Selection<__S>]>,
+                executor: &$crate::Executor<__S, Self::Context>,
             )
-                -> $crate::ExecutionResult
+                -> $crate::ExecutionResult<__S>
             {
                 graphql_union!(
                     @ resolve_into_type,

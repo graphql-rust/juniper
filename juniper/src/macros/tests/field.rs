@@ -2,9 +2,10 @@ use ast::InputValue;
 use executor::FieldResult;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Object, Value};
+use value::{DefaultScalarValue, Object, Value};
 
 struct Interface;
+#[derive(Debug)]
 struct Root;
 
 /*
@@ -30,11 +31,11 @@ graphql_object!(Root: () |&self| {
     field deprecated "Deprecation reason"
         deprecated_descr() -> i32 as "Field description" { 0 }
 
-    field with_field_result() -> FieldResult<i32> { Ok(0) }
+    field with_field_result() -> FieldResult<i32, __S> { Ok(0) }
 
     field with_return() -> i32 { return 0; }
 
-    field with_return_field_result() -> FieldResult<i32> { return Ok(0); }
+    field with_return_field_result() -> FieldResult<i32, __S> { return Ok(0); }
 
     interfaces: [Interface]
 });
@@ -57,7 +58,7 @@ graphql_interface!(Interface: () |&self| {
 
 fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
 where
-    F: Fn(&Object) -> (),
+    F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
@@ -104,9 +105,9 @@ where
                 .get_field_value("name")
                 .expect("name field missing from field")
                 .as_string_value()
-                .expect("name is not a string") == field_name
-        })
-        .next()
+                .expect("name is not a string")
+                == field_name
+        }).next()
         .expect("Field not found")
         .as_object_value()
         .expect("Field is not an object");
@@ -165,30 +166,51 @@ fn introspect_object_field_description() {
             field.get_field_value("description"),
             Some(&Value::string("Field description"))
         );
-        assert_eq!(field.get_field_value("isDeprecated"), Some(&Value::boolean(false)));
-        assert_eq!(field.get_field_value("deprecationReason"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::boolean(false))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
     });
 }
 
 #[test]
 fn introspect_interface_field_description() {
     run_field_info_query("Interface", "description", |field| {
-        assert_eq!(field.get_field_value("name"), Some(&Value::string("description")));
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::string("description"))
+        );
         assert_eq!(
             field.get_field_value("description"),
             Some(&Value::string("Field description"))
         );
-        assert_eq!(field.get_field_value("isDeprecated"), Some(&Value::boolean(false)));
-        assert_eq!(field.get_field_value("deprecationReason"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::boolean(false))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
     });
 }
 
 #[test]
 fn introspect_object_field_deprecated() {
     run_field_info_query("Root", "deprecated", |field| {
-        assert_eq!(field.get_field_value("name"), Some(&Value::string("deprecated")));
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::string("deprecated"))
+        );
         assert_eq!(field.get_field_value("description"), Some(&Value::null()));
-        assert_eq!(field.get_field_value("isDeprecated"), Some(&Value::boolean(true)));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::boolean(true))
+        );
         assert_eq!(
             field.get_field_value("deprecationReason"),
             Some(&Value::string("Deprecation reason"))
@@ -199,9 +221,15 @@ fn introspect_object_field_deprecated() {
 #[test]
 fn introspect_interface_field_deprecated() {
     run_field_info_query("Interface", "deprecated", |field| {
-        assert_eq!(field.get_field_value("name"), Some(&Value::string("deprecated")));
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::string("deprecated"))
+        );
         assert_eq!(field.get_field_value("description"), Some(&Value::null()));
-        assert_eq!(field.get_field_value("isDeprecated"), Some(&Value::boolean(true)));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::boolean(true))
+        );
         assert_eq!(
             field.get_field_value("deprecationReason"),
             Some(&Value::string("Deprecation reason"))
@@ -212,12 +240,18 @@ fn introspect_interface_field_deprecated() {
 #[test]
 fn introspect_object_field_deprecated_descr() {
     run_field_info_query("Root", "deprecatedDescr", |field| {
-        assert_eq!(field.get_field_value("name"), Some(&Value::string("deprecatedDescr")));
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::string("deprecatedDescr"))
+        );
         assert_eq!(
             field.get_field_value("description"),
             Some(&Value::string("Field description"))
         );
-        assert_eq!(field.get_field_value("isDeprecated"), Some(&Value::boolean(true)));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::boolean(true))
+        );
         assert_eq!(
             field.get_field_value("deprecationReason"),
             Some(&Value::string("Deprecation reason"))
@@ -228,12 +262,18 @@ fn introspect_object_field_deprecated_descr() {
 #[test]
 fn introspect_interface_field_deprecated_descr() {
     run_field_info_query("Interface", "deprecatedDescr", |field| {
-        assert_eq!(field.get_field_value("name"), Some(&Value::string("deprecatedDescr")));
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::string("deprecatedDescr"))
+        );
         assert_eq!(
             field.get_field_value("description"),
             Some(&Value::string("Field description"))
         );
-        assert_eq!(field.get_field_value("isDeprecated"), Some(&Value::boolean(true)));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::boolean(true))
+        );
         assert_eq!(
             field.get_field_value("deprecationReason"),
             Some(&Value::string("Deprecation reason"))

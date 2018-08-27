@@ -1,9 +1,11 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 
 use ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition};
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -11,14 +13,14 @@ pub enum Scope<'a> {
     Fragment(&'a str),
 }
 
-pub struct VariableInAllowedPosition<'a> {
+pub struct VariableInAllowedPosition<'a, S: Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
     variable_usages: HashMap<Scope<'a>, Vec<(Spanning<&'a String>, Type<'a>)>>,
-    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a>)>>,
+    variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
 }
 
-pub fn factory<'a>() -> VariableInAllowedPosition<'a> {
+pub fn factory<'a, S: Debug>() -> VariableInAllowedPosition<'a, S> {
     VariableInAllowedPosition {
         spreads: HashMap::new(),
         variable_usages: HashMap::new(),
@@ -27,12 +29,12 @@ pub fn factory<'a>() -> VariableInAllowedPosition<'a> {
     }
 }
 
-impl<'a> VariableInAllowedPosition<'a> {
+impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
     fn collect_incorrect_usages(
         &self,
         from: &Scope<'a>,
-        var_defs: &Vec<&'a (Spanning<&'a str>, VariableDefinition)>,
-        ctx: &mut ValidatorContext<'a>,
+        var_defs: &Vec<&'a (Spanning<&'a str>, VariableDefinition<S>)>,
+        ctx: &mut ValidatorContext<'a, S>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
         if visited.contains(from) {
@@ -77,8 +79,11 @@ impl<'a> VariableInAllowedPosition<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, _: &'a Document) {
+impl<'a, S> Visitor<'a, S> for VariableInAllowedPosition<'a, S>
+where
+    S: ScalarValue,
+{
+    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
         for (op_scope, var_defs) in &self.variable_defs {
             self.collect_incorrect_usages(op_scope, var_defs, ctx, &mut HashSet::new());
         }
@@ -86,24 +91,24 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        fragment: &'a Spanning<Fragment>,
+        _: &mut ValidatorContext<'a, S>,
+        fragment: &'a Spanning<Fragment<S>>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment.item.name.item));
     }
 
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        op: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        op: &'a Spanning<Operation<S>>,
     ) {
         self.current_scope = Some(Scope::Operation(op.item.name.as_ref().map(|s| s.item)));
     }
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        spread: &'a Spanning<FragmentSpread>,
+        _: &mut ValidatorContext<'a, S>,
+        spread: &'a Spanning<FragmentSpread<S>>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
@@ -115,8 +120,8 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
 
     fn enter_variable_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        def: &'a (Spanning<&'a str>, VariableDefinition),
+        _: &mut ValidatorContext<'a, S>,
+        def: &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
@@ -128,7 +133,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
 
     fn enter_variable_value(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut ValidatorContext<'a, S>,
         var_name: Spanning<&'a String>,
     ) {
         if let (&Some(ref scope), Some(input_type)) =
@@ -158,10 +163,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn boolean_into_boolean() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($booleanArg: Boolean)
@@ -176,7 +182,7 @@ mod tests {
 
     #[test]
     fn boolean_into_boolean_within_fragment() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment booleanArgFrag on ComplicatedArgs {
@@ -191,7 +197,7 @@ mod tests {
         "#,
         );
 
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($booleanArg: Boolean)
@@ -209,7 +215,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($nonNullBooleanArg: Boolean!)
@@ -224,7 +230,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean_within_fragment() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment booleanArgFrag on ComplicatedArgs {
@@ -243,7 +249,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_with_default() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($intArg: Int = 1)
@@ -258,7 +264,7 @@ mod tests {
 
     #[test]
     fn string_list_into_string_list() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringListVar: [String])
@@ -273,7 +279,7 @@ mod tests {
 
     #[test]
     fn non_null_string_list_into_string_list() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringListVar: [String!])
@@ -288,7 +294,7 @@ mod tests {
 
     #[test]
     fn string_into_string_list_in_item_position() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringVar: String)
@@ -303,7 +309,7 @@ mod tests {
 
     #[test]
     fn non_null_string_into_string_list_in_item_position() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringVar: String!)
@@ -318,7 +324,7 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($complexVar: ComplexInput)
@@ -333,7 +339,7 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input_in_field_position() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean = false)
@@ -348,7 +354,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_non_null_boolean_in_directive() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean!)
@@ -361,7 +367,7 @@ mod tests {
 
     #[test]
     fn boolean_in_non_null_in_directive_with_default() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean = false)
@@ -374,7 +380,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($intArg: Int) {
@@ -395,7 +401,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_within_fragment() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment nonNullIntArgFieldFrag on ComplicatedArgs {
@@ -420,7 +426,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_within_nested_fragment() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment outerFrag on ComplicatedArgs {
@@ -449,7 +455,7 @@ mod tests {
 
     #[test]
     fn string_over_boolean() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringVar: String) {
@@ -470,7 +476,7 @@ mod tests {
 
     #[test]
     fn string_into_string_list() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringVar: String) {
@@ -491,7 +497,7 @@ mod tests {
 
     #[test]
     fn boolean_into_non_null_boolean_in_directive() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean) {
@@ -510,7 +516,7 @@ mod tests {
 
     #[test]
     fn string_into_non_null_boolean_in_directive() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Query($stringVar: String) {

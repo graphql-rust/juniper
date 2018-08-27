@@ -225,8 +225,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
                     #from_input_default
-                    Some(v) => _juniper::FromInputValue::from_input_value(v).unwrap(),
-                    _ => {
+                    Some(ref v) => _juniper::FromInputValue::from_input_value(v).unwrap(),
+                    None => {
                         _juniper::FromInputValue::from_input_value(&_juniper::InputValue::null())
                             .unwrap()
                     },
@@ -241,81 +241,78 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
     }
 
     let body = quote! {
-        impl #generics _juniper::GraphQLType for #ident #generics {
-            type Context = ();
-            type TypeInfo = ();
+            impl<S> _juniper::GraphQLType<S> for #ident
+            where S: _juniper::ScalarValue,
+                  for<'b> &'b S: _juniper::ScalarRefValue<'b>
+            {
+                type Context = ();
+                type TypeInfo = ();
 
-            fn name(_: &()) -> Option<&'static str> {
-                Some(#name)
-            }
-
-            fn meta<'r>(
-                _: &(),
-                registry: &mut _juniper::Registry<'r>
-            ) -> _juniper::meta::MetaType<'r> {
-                let fields = &[
-                    #(#meta_fields)*
-                ];
-                let meta = registry.build_input_object_type::<#ident>(&(), fields);
-                #meta_description
-                meta.into_meta()
-            }
-        }
-
-        impl #generics _juniper::FromInputValue for #ident #generics {
-            fn from_input_value(value: &_juniper::InputValue) -> Option<#ident #generics> {
-                if let Some(obj) = value.to_object_value() {
-                    let item = #ident {
-                        #(#from_inputs)*
-                    };
-                    Some(item)
+                fn name(_: &()) -> Option<&'static str> {
+                    Some(#name)
                 }
-                else {
-                    None
+
+                fn meta<'r>(
+                    _: &(),
+                    registry: &mut _juniper::Registry<'r, S>
+                ) -> _juniper::meta::MetaType<'r, S>
+                    where S: 'r
+                {
+                    let fields = &[
+                        #(#meta_fields)*
+                    ];
+                    let meta = registry.build_input_object_type::<#ident>(&(), fields);
+                    #meta_description
+                    meta.into_meta()
                 }
             }
-        }
 
-        impl #generics _juniper::ToInputValue for #ident #generics {
-            fn to_input_value(&self) -> _juniper::InputValue {
-                _juniper::InputValue::object(vec![
-                    #(#to_inputs)*
-                ].into_iter().collect())
+            impl<S> _juniper::FromInputValue<S> for #ident
+            where S: _juniper::ScalarValue,
+                for<'__b> &'__b S: _juniper::ScalarRefValue<'__b>
+            {
+                fn from_input_value(value: &_juniper::InputValue<S>) -> Option<#ident>
+                where
+                    for<'b> &'b S: _juniper::ScalarRefValue<'b>
+    //                S: 'a,
+    //                &'a S: _juniper::ScalarRefValue<'a>,
+                {
+                    if let Some(obj) = value.to_object_value() {
+                        let item = #ident {
+                            #(#from_inputs)*
+                        };
+                        Some(item)
+                    }
+                    else {
+                        None
+                    }
+                }
             }
-        }
-    };
+
+            impl<S> _juniper::ToInputValue<S> for #ident
+            where S: _juniper::ScalarValue,
+                for<'__b> &'__b S: _juniper::ScalarRefValue<'__b>
+            {
+                fn to_input_value(&self) -> _juniper::InputValue<S> {
+                    _juniper::InputValue::object(vec![
+                        #(#to_inputs)*
+                    ].into_iter().collect())
+                }
+            }
+        };
 
     let dummy_const = Ident::new(
         &format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident),
         Span::call_site(),
     );
 
-    // This ugly hack makes it possible to use the derive inside juniper itself.
-    // FIXME: Figure out a better way to do this!
-    let crate_reference = if attrs.internal {
-        quote! {
-            #[doc(hidden)]
-            mod _juniper {
-                pub use ::{
-                    InputValue,
-                    FromInputValue,
-                    GraphQLType,
-                    Registry,
-                    meta,
-                    ToInputValue
-                };
-            }
-        }
-    } else {
-        quote! {
-            extern crate juniper as _juniper;
-        }
-    };
     let generated = quote! {
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
         #[doc(hidden)]
         const #dummy_const : () = {
-            #crate_reference
+            mod _juniper {
+                __juniper_use_everything!();
+            }
             #body
         };
     };

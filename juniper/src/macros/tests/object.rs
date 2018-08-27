@@ -4,7 +4,7 @@ use ast::InputValue;
 use executor::{Context, FieldResult};
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Object, Value};
+use value::{Object, Value, DefaultScalarValue};
 
 /*
 
@@ -116,11 +116,11 @@ graphql_object!(CtxSwitcher: InnerContext |&self| {
         Some((executor.context(), InnerType))
     }
 
-    field ctx_switch_res(&executor) -> FieldResult<(&InnerContext, InnerType)> {
+    field ctx_switch_res(&executor) -> FieldResult<(&InnerContext, InnerType), __S> {
         Ok((executor.context(), InnerType))
     }
 
-    field ctx_switch_res_opt(&executor) -> FieldResult<Option<(&InnerContext, InnerType)>> {
+    field ctx_switch_res_opt(&executor) -> FieldResult<Option<(&InnerContext, InnerType)>, __S> {
         Ok(Some((executor.context(), InnerType)))
     }
 });
@@ -143,7 +143,7 @@ graphql_object!(<'a> Root: InnerContext as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&Object, &Vec<Value>) -> (),
+    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {

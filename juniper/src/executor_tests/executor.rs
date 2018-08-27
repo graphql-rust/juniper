@@ -2,7 +2,7 @@ mod field_execution {
     use ast::InputValue;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{DefaultScalarValue, Value};
 
     struct DataType;
     struct DeepDataType;
@@ -34,7 +34,8 @@ mod field_execution {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(DataType, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(DataType, EmptyMutation::<()>::new());
         let doc = r"
           query Example($size: Int) {
             a,
@@ -104,7 +105,7 @@ mod field_execution {
                                                 ("a", Value::string("Apple")),
                                                 ("b", Value::string("Banana")),
                                             ].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                         Value::null(),
                                         Value::object(
@@ -112,16 +113,16 @@ mod field_execution {
                                                 ("a", Value::string("Apple")),
                                                 ("b", Value::string("Banana")),
                                             ].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                     ]),
                                 ),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -130,7 +131,7 @@ mod field_execution {
 mod merge_parallel_fragments {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{DefaultScalarValue, Value};
 
     struct Type;
 
@@ -143,7 +144,8 @@ mod merge_parallel_fragments {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Type, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Type, EmptyMutation::<()>::new());
         let doc = r"
           { a, ...FragOne, ...FragTwo }
           fragment FragOne on Type {
@@ -181,17 +183,17 @@ mod merge_parallel_fragments {
                                             ("b", Value::string("Banana")),
                                             ("c", Value::string("Cherry")),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                 ),
                                 ("c", Value::string("Cherry")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("c", Value::string("Cherry")),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -200,7 +202,7 @@ mod merge_parallel_fragments {
 mod merge_parallel_inline_fragments {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{Value, DefaultScalarValue};
 
     struct Type;
     struct Other;
@@ -223,12 +225,13 @@ mod merge_parallel_inline_fragments {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Type, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Type, EmptyMutation::<()>::new());
         let doc = r"
           { a, ...FragOne }
           fragment FragOne on Type {
             b
-            deep: deep { 
+            deep: deep {
                 b
                 deeper: other {
                     deepest: deep {
@@ -279,10 +282,10 @@ mod merge_parallel_inline_fragments {
                                                         ("b", Value::string("Banana")),
                                                         ("c", Value::string("Cherry")),
                                                     ].into_iter()
-                                                        .collect(),
+                                                    .collect(),
                                                 ),
                                             )].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                         Value::object(
                                             vec![(
@@ -292,21 +295,21 @@ mod merge_parallel_inline_fragments {
                                                         ("b", Value::string("Banana")),
                                                         ("c", Value::string("Cherry")),
                                                     ].into_iter()
-                                                        .collect(),
+                                                    .collect(),
                                                 ),
                                             )].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                     ]),
                                 ),
                                 ("c", Value::string("Cherry")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     ("c", Value::string("Cherry")),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -316,7 +319,7 @@ mod threads_context_correctly {
     use executor::Context;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{Value, DefaultScalarValue};
 
     struct Schema;
 
@@ -332,7 +335,8 @@ mod threads_context_correctly {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema, EmptyMutation::<TestContext>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<TestContext>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
@@ -369,7 +373,7 @@ mod dynamic_context_switching {
     use parser::SourcePosition;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{Value, DefaultScalarValue};
 
     struct Schema;
 
@@ -391,14 +395,14 @@ mod dynamic_context_switching {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
         }
 
-        field item_res(&executor, key: i32) -> FieldResult<(&InnerContext, ItemRef)> {
+        field item_res(&executor, key: i32) -> FieldResult<(&InnerContext, ItemRef), __S> {
             let res = executor.context().items.get(&key)
                 .ok_or(format!("Could not find key {}", key))
                 .map(|c| (c, ItemRef))?;
             Ok(res)
         }
 
-        field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
+        field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>, __S> {
             if key > 100 {
                 Err(format!("Key too large: {}", key))?;
             }
@@ -419,7 +423,8 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_opt() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
         let doc = r"{ first: itemOpt(key: 0) { value }, missing: itemOpt(key: 2) { value } }";
 
         let vars = vec![].into_iter().collect();
@@ -439,7 +444,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -462,14 +467,15 @@ mod dynamic_context_switching {
                     ),
                     ("missing", Value::null()),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
 
     #[test]
     fn test_res_success() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
         let doc = r"
           {
             first: itemRes(key: 0) { value }
@@ -493,7 +499,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -513,14 +519,15 @@ mod dynamic_context_switching {
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
 
     #[test]
     fn test_res_fail() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
         let doc = r"
           {
             missing: itemRes(key: 2) { value }
@@ -544,7 +551,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -565,7 +572,8 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_res_opt() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
         let doc = r"
           {
             first: itemResOpt(key: 0) { value }
@@ -591,7 +599,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -622,14 +630,15 @@ mod dynamic_context_switching {
                     ("missing", Value::null()),
                     ("tooLarge", Value::null()),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
 
     #[test]
     fn test_always() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
         let doc = r"{ first: itemAlways(key: 0) { value } }";
 
         let vars = vec![].into_iter().collect();
@@ -649,7 +658,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -669,7 +678,7 @@ mod dynamic_context_switching {
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -680,7 +689,7 @@ mod propagates_errors_to_nullable_fields {
     use parser::SourcePosition;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{DefaultScalarValue, ScalarValue, Value};
 
     struct Schema;
     struct Inner;
@@ -689,15 +698,18 @@ mod propagates_errors_to_nullable_fields {
         NotFound,
     }
 
-    impl IntoFieldError for CustomError {
-        fn into_field_error(self) -> FieldError {
+    impl<S> IntoFieldError<S> for CustomError
+    where
+        S: ScalarValue,
+    {
+        fn into_field_error(self) -> FieldError<S> {
             match self {
-                CustomError::NotFound => FieldError::new(
-                    "Not Found",
-                    graphql_value!({
+                CustomError::NotFound => {
+                    let v: Value<S> = graphql_value!({
                         "type": "NOT_FOUND"
-                    }),
-                ),
+                    });
+                    FieldError::new("Not Found", v)
+                }
             }
         }
     }
@@ -711,14 +723,15 @@ mod propagates_errors_to_nullable_fields {
     graphql_object!(Inner: () |&self| {
         field nullable_field() -> Option<Inner> { Some(Inner) }
         field non_nullable_field() -> Inner { Inner }
-        field nullable_error_field() -> FieldResult<Option<&str>> { Err("Error for nullableErrorField")? }
-        field non_nullable_error_field() -> FieldResult<&str> { Err("Error for nonNullableErrorField")? }
+        field nullable_error_field() -> FieldResult<Option<&str>, __S> { Err("Error for nullableErrorField")? }
+        field non_nullable_error_field() -> FieldResult<&str, __S> { Err("Error for nonNullableErrorField")? }
         field custom_error_field() -> Result<&str, CustomError> { Err(CustomError::NotFound) }
     });
 
     #[test]
     fn nullable_first_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inner { nullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -744,7 +757,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_nullable_first_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inner { nonNullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -767,7 +781,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn custom_error_first_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inner { customErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -790,7 +805,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn nullable_nested_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inner { nullableField { nonNullableErrorField } } }";
 
         let vars = vec![].into_iter().collect();
@@ -816,7 +832,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_nullable_nested_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inner { nonNullableField { nonNullableErrorField } } }";
 
         let vars = vec![].into_iter().collect();
@@ -839,7 +856,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn nullable_innermost() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inner { nonNullableField { nullableErrorField } } }";
 
         let vars = vec![].into_iter().collect();
@@ -865,7 +883,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_null_list() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ inners { nonNullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -888,7 +907,8 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_null_list_of_nullable() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ nullableInners { nonNullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -938,7 +958,7 @@ mod propagates_errors_to_nullable_fields {
 mod named_operations {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{Value, DefaultScalarValue};
     use GraphQLError;
 
     struct Schema;
@@ -949,7 +969,8 @@ mod named_operations {
 
     #[test]
     fn uses_inline_operation_if_no_name_provided() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
@@ -966,7 +987,8 @@ mod named_operations {
 
     #[test]
     fn uses_only_named_operation() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { a }";
 
         let vars = vec![].into_iter().collect();
@@ -983,7 +1005,8 @@ mod named_operations {
 
     #[test]
     fn uses_named_operation_if_name_provided() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
@@ -1001,7 +1024,8 @@ mod named_operations {
 
     #[test]
     fn error_if_multiple_operations_provided_but_no_name() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
@@ -1013,7 +1037,8 @@ mod named_operations {
 
     #[test]
     fn error_if_unknown_operation_name_provided() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema: RootNode<DefaultScalarValue, _, _> =
+            RootNode::new(Schema, EmptyMutation::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();

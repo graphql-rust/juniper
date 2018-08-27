@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object};
+use value::{Value, Object, DefaultScalarValue};
 
 struct TestType;
 
@@ -15,9 +15,9 @@ graphql_object!(TestType: () |&self| {
     }
 });
 
-fn run_variable_query<F>(query: &str, vars: Variables, f: F)
+fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where
-    F: Fn(&Object) -> (),
+    F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -34,7 +34,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object) -> (),
+    F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }

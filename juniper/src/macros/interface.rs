@@ -202,7 +202,7 @@ macro_rules! graphql_interface {
 
         $(
             if ($resolver as Option<$srctype>).is_some() {
-                return (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned();
+                return (<$srctype as $crate::GraphQLType<__S>>::name(&())).unwrap().to_owned();
             }
         )*
 
@@ -219,7 +219,7 @@ macro_rules! graphql_interface {
         let $ctxtvar = &$execarg.context();
 
         $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name(&())).unwrap() {
+            if $typenamearg == (<$srctype as $crate::GraphQLType<__S>>::name(&())).unwrap() {
                 return $execarg.resolve(&(), &$resolver);
             }
         )*
@@ -238,7 +238,10 @@ macro_rules! graphql_interface {
             $( $items:tt )*
         }
     ) => {
-        graphql_interface!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
+        graphql_interface!(@as_item, impl<$($lifetime, )* __S> $crate::GraphQLType<__S> for $name
+            where __S: $crate::ScalarValue,
+                  for<'__b> &'__b __S: $crate::ScalarRefValue<'__b>
+            {
             type Context = $ctxt;
             type TypeInfo = ();
 
@@ -250,8 +253,10 @@ macro_rules! graphql_interface {
             #[allow(unused_mut)]
             fn meta<'r>(
                 info: &(),
-                registry: &mut $crate::Registry<'r>
-            ) -> $crate::meta::MetaType<'r> {
+                registry: &mut $crate::Registry<'r, __S>
+            ) -> $crate::meta::MetaType<'r, __S>
+                   where __S: 'r
+                {
                 let mut fields = Vec::new();
                 let mut description = None;
                 graphql_interface!(
@@ -272,9 +277,9 @@ macro_rules! graphql_interface {
                 &$mainself,
                 info: &(),
                 field: &str,
-                args: &$crate::Arguments,
-                mut executor: &$crate::Executor<Self::Context>
-            ) -> $crate::ExecutionResult {
+                args: &$crate::Arguments<__S>,
+                mut executor: &$crate::Executor<__S, Self::Context>
+            ) -> $crate::ExecutionResult<__S> {
                 __graphql__build_field_matches!(
                     ($outname, $mainself, field, args, executor),
                     (),
@@ -292,10 +297,10 @@ macro_rules! graphql_interface {
                 &$mainself,
                 _: &(),
                 type_name: &str,
-                _: Option<&[$crate::Selection]>,
-                executor: &$crate::Executor<Self::Context>,
+                _: Option<&[$crate::Selection<__S>]>,
+                executor: &$crate::Executor<__S, Self::Context>,
             )
-                -> $crate::ExecutionResult
+                -> $crate::ExecutionResult<__S>
             {
                 graphql_interface!(
                     @ resolve_into_type,
