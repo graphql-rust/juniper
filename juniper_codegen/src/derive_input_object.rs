@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
-use quote::{ToTokens, Tokens};
+use proc_macro2::{Span, TokenStream};
+use quote::ToTokens;
 use syn::{self, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta};
 
 use util::*;
@@ -20,9 +21,9 @@ impl ObjAttrs {
         res.description = get_doc_comment(&input.attrs);
 
         // Check attributes for name and description.
-        if let Some(items) = get_graphl_attr(&input.attrs) {
+        if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(&item, "name", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -33,7 +34,7 @@ impl ObjAttrs {
                         );
                     }
                 }
-                if let Some(val) = keyed_item_value(&item, "description", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
                 }
@@ -72,9 +73,9 @@ impl ObjFieldAttrs {
         res.description = get_doc_comment(&variant.attrs);
 
         // Check attributes for name and description.
-        if let Some(items) = get_graphl_attr(&variant.attrs) {
+        if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(val) = keyed_item_value(&item, "name", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -85,11 +86,11 @@ impl ObjFieldAttrs {
                         );
                     }
                 }
-                if let Some(val) = keyed_item_value(&item, "description", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(val) = keyed_item_value(&item, "default", true) {
+                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "default", AttributeValidation::Any) {
                     res.default_expr = Some(val);
                     continue;
                 }
@@ -112,7 +113,7 @@ impl ObjFieldAttrs {
     }
 }
 
-pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
+pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
     let fields = match ast.data {
         Data::Struct(ref data) => match data.fields {
             Fields::Named(ref named) => named.named.iter().collect::<Vec<_>>(),
@@ -138,9 +139,9 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         None => quote!{ let meta = meta; },
     };
 
-    let mut meta_fields = Vec::<Tokens>::new();
-    let mut from_inputs = Vec::<Tokens>::new();
-    let mut to_inputs = Vec::<Tokens>::new();
+    let mut meta_fields = TokenStream::new();
+    let mut from_inputs = TokenStream::new();
+    let mut to_inputs = TokenStream::new();
 
     for field in fields {
         let field_ty = &field.ty;
@@ -155,7 +156,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             }
             None => {
                 // Note: auto camel casing when no custom name specified.
-                ::util::to_camel_case(field_ident.as_ref())
+                ::util::to_camel_case(&field_ident.to_string())
             }
         };
         let field_description = match field_attrs.description {
@@ -170,7 +171,11 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 match field_attrs.default_expr {
                     Some(ref def) => match ::proc_macro::TokenStream::from_str(def) {
                         Ok(t) => match syn::parse::<syn::Expr>(t) {
-                            Ok(e) => Some(e.into_tokens()),
+                            Ok(e) => {
+                                let mut tokens = TokenStream::new();
+                                e.to_tokens(&mut tokens);
+                                Some(tokens)
+                            }
                             Err(_) => {
                                 panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
                             }
@@ -196,14 +201,13 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                 }
             }
         };
-        let meta_field = quote!{
+        meta_fields.extend(quote!{
             {
                 #create_meta_field
                 #field_description
                 field
             },
-        };
-        meta_fields.push(meta_field);
+        });
 
         // Build from_input clause.
 
@@ -216,7 +220,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
             None => quote!{},
         };
 
-        let from_input = quote!{
+        from_inputs.extend(quote!{
             #field_ident: {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
@@ -228,14 +232,12 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
                     },
                 }
             },
-        };
-        from_inputs.push(from_input);
+        });
 
         // Build to_input clause.
-        let to_input = quote!{
+        to_inputs.extend(quote!{
             (#name, self.#field_ident.to_input_value()),
-        };
-        to_inputs.push(to_input);
+        });
     }
 
     let body = quote! {
@@ -283,7 +285,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> Tokens {
         }
     };
 
-    let dummy_const = Ident::from(format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident).as_str());
+    let dummy_const = Ident::new(
+        &format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident),
+        Span::call_site(),
+    );
 
     // This ugly hack makes it possible to use the derive inside juniper itself.
     // FIXME: Figure out a better way to do this!

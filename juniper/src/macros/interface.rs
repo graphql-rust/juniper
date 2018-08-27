@@ -85,7 +85,7 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
 [1]: macro.graphql_object!.html
 
 */
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! graphql_interface {
     ( @as_item, $i:item) => { $i };
     ( @as_expr, $e:expr) => { $e };
@@ -104,7 +104,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info)
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
                 .description($desc)
                 .deprecated($reason),
             $info,
@@ -123,7 +123,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info)
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
                 .deprecated($reason),
             $info,
             $args));
@@ -141,7 +141,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info)
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
                 .description($desc),
             $info,
             $args));
@@ -159,7 +159,7 @@ macro_rules! graphql_interface {
             @apply_args,
             $reg,
             $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(stringify!($name)), $info),
+                &$crate::to_camel_case(__graphql__stringify!($name)), $info),
             $info,
             $args));
 
@@ -206,7 +206,7 @@ macro_rules! graphql_interface {
             }
         )*
 
-            panic!("Concrete type not handled by instance resolvers on {}", $outname);
+            __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
     };
 
     // instance_resolvers: | <ctxtvar> |
@@ -224,7 +224,7 @@ macro_rules! graphql_interface {
             }
         )*
 
-            panic!("Concrete type not handled by instance resolvers on {}", $outname);
+            __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
     };
 
     ( @ $mfn:ident, $args:tt, $first:tt $($rest:tt)* ) => {
@@ -327,6 +327,6 @@ macro_rules! graphql_interface {
             $( $items:tt )*
         }
     ) => {
-        graphql_interface!(() $name : $ctxt as (stringify!($name)) | &$mainself | { $( $items )* });
+        graphql_interface!(() $name : $ctxt as (__graphql__stringify!($name)) | &$mainself | { $( $items )* });
     };
 }

@@ -1,6 +1,17 @@
 use regex::Regex;
 use syn::{Attribute, Lit, Meta, MetaNameValue, NestedMeta};
 
+pub enum AttributeValidation {
+    Any,
+    Bare,
+    String,
+}
+
+pub enum AttributeValue {
+    Bare,
+    String(String),
+}
+
 // Gets doc comment.
 pub fn get_doc_comment(attrs: &Vec<Attribute>) -> Option<String> {
     if let Some(items) = get_doc_attr(attrs) {
@@ -59,7 +70,7 @@ fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
 }
 
 // Get the nested items of a a #[graphql(...)] attribute.
-pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
+pub fn get_graphql_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
     for attr in attrs {
         match attr.interpret_meta() {
             Some(Meta::List(ref list)) if list.ident == "graphql" => {
@@ -71,21 +82,36 @@ pub fn get_graphl_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
     None
 }
 
-pub fn keyed_item_value(item: &NestedMeta, name: &str, must_be_string: bool) -> Option<String> {
+pub fn keyed_item_value(item: &NestedMeta, name: &str, validation: AttributeValidation) -> Option<AttributeValue> {
     match item {
+        // Attributes in the form of `#[graphql(name = "value")]`.
         &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.ident == name => {
             match &nameval.lit {
-                &Lit::Str(ref strlit) => Some(strlit.value()),
-                _ => if must_be_string {
+                // We have a string attribute value.
+                &Lit::Str(ref strlit) => match validation {
+                    AttributeValidation::Bare => {
+                        panic!(format!(
+                            "Invalid format for attribute \"{:?}\": expected a bare attribute without a value",
+                            item
+                        ));
+                    },
+                    _ => Some(AttributeValue::String(strlit.value())),
+                },
+                _  => None,
+            }
+        },
+        // Attributes in the form of `#[graphql(name)]`.
+        &NestedMeta::Meta(Meta::Word(ref ident)) if ident.to_string() == name => {
+            match validation {
+                AttributeValidation::String => {
                     panic!(format!(
-                        "Invalid format for attribute \"{:?}\": expected a string",
+                    "Invalid format for attribute \"{:?}\": expected a string value",
                         item
                     ));
-                } else {
-                    None
                 },
+                _ => Some(AttributeValue::Bare),
             }
-        }
+        },
         _ => None,
     }
 }
