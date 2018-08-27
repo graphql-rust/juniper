@@ -36,7 +36,7 @@ In addition to implementing `GraphQLType` for the type in question,
 usable as arguments and default values.
 
 */
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! graphql_scalar {
     ( @as_expr, $e:expr) => { $e };
 
@@ -151,6 +151,6 @@ macro_rules! graphql_scalar {
     // Entry point
     // RustName { ... }
     ( $name:ty { $( $items:tt )* }) => {
-        graphql_scalar!( @parse, ( $name, stringify!($name), None ), ( None, None ), $($items)* );
+        graphql_scalar!( @parse, ( $name, __graphql__stringify!($name), None ), ( None, None ), $($items)* );
     };
 }

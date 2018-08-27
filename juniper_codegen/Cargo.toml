@@ -14,9 +14,10 @@ repository = "https://github.com/graphql-rust/juniper"
 proc-macro = true
 
 [dependencies]
-syn = { version = "0.13.*", features = ["full", "extra-traits"] }
-quote = "0.5.*"
-regex = "0.2.10"
+proc-macro2 = "0.4"
+syn = { version = "0.14", features = ["full", "extra-traits"] }
+quote = "0.6"
+regex = "1"
 lazy_static = "1.0.0"
 
 [badges]

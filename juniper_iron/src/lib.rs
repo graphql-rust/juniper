@@ -327,7 +327,7 @@ where
 
 impl Handler for GraphiQLHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let content_type = "text/html".parse::<Mime>().unwrap();
+        let content_type = "text/html; charset=utf-8".parse::<Mime>().unwrap();
 
         Ok(Response::with((
             content_type,
