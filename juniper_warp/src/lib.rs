@@ -61,6 +61,10 @@ use warp::{filters::BoxedFilter, Filter};
 ///
 /// The `context_extractor` argument should be a filter that provides the GraphQL context required by the schema.
 ///
+/// In order to avoid blocking, this helper will create a [futures_cpupool::CpuPool] to resolve GraphQL requests.
+///
+/// If you want to pass your own threadpool, use [make_graphql_filter_with_thread_pool] instead.
+///
 /// Example:
 ///
 /// ```
