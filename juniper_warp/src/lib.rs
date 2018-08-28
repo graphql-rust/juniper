@@ -44,6 +44,9 @@ extern crate failure;
 extern crate futures;
 extern crate futures_cpupool;
 extern crate juniper;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
 extern crate serde_json;
 extern crate warp;
 
@@ -54,6 +57,44 @@ use futures::Future;
 use futures_cpupool::CpuPool;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+enum GraphQLBatchRequest {
+    Single(juniper::http::GraphQLRequest),
+    Batch(Vec<juniper::http::GraphQLRequest>),
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum GraphQLBatchResponse<'a> {
+    Single(juniper::http::GraphQLResponse<'a>),
+    Batch(Vec<juniper::http::GraphQLResponse<'a>>),
+}
+
+impl GraphQLBatchRequest {
+    pub fn execute<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &juniper::RootNode<QueryT, MutationT>,
+        context: &CtxT,
+    ) -> GraphQLBatchResponse<'a>
+    where
+        QueryT: juniper::GraphQLType<Context = CtxT>,
+        MutationT: juniper::GraphQLType<Context = CtxT>,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
+                GraphQLBatchResponse::Single(request.execute(root_node, context))
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+                requests
+                    .iter()
+                    .map(|request| request.execute(root_node, context))
+                    .collect(),
+            ),
+        }
+    }
+}
 
 /// Make a filter for graphql endpoint.
 ///
@@ -146,17 +187,15 @@ where
     let post_schema = schema.clone();
     let pool_filter = warp::any().map(move || thread_pool.clone());
 
-    let handle_post_request = move |context: Context,
-                                    request: juniper::http::GraphQLRequest,
-                                    pool: CpuPool|
-          -> Response {
-        let schema = post_schema.clone();
-        Box::new(
-            pool.spawn_fn(move || Ok(serde_json::to_vec(&request.execute(&schema, &context))?))
-                .then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|_: failure::Error| warp::reject::server_error()),
-        )
-    };
+    let handle_post_request =
+        move |context: Context, request: GraphQLBatchRequest, pool: CpuPool| -> Response {
+            let schema = post_schema.clone();
+            Box::new(
+                pool.spawn_fn(move || Ok(serde_json::to_vec(&request.execute(&schema, &context))?))
+                    .then(|result| ::futures::future::done(Ok(build_response(result))))
+                    .map_err(|_: failure::Error| warp::reject::server_error()),
+            )
+        };
 
     let post_filter = warp::post2()
         .and(context_extractor.clone())
@@ -315,6 +354,42 @@ mod tests {
         assert_eq!(
             String::from_utf8(response.body().to_vec()).unwrap(),
             r#"{"data":{"hero":{"name":"R2-D2"}}}"#
+        );
+    }
+
+    #[test]
+    fn batch_requests_work() {
+        use juniper::tests::model::Database;
+        use juniper::{EmptyMutation, RootNode};
+
+        type Schema = juniper::RootNode<'static, Database, EmptyMutation<Database>>;
+
+        let schema: Schema = RootNode::new(Database::new(), EmptyMutation::<Database>::new());
+
+        let state = warp::any().map(move || Database::new());
+        let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
+
+        let response = request()
+            .method("POST")
+            .path("/graphql2")
+            .header("accept", "application/json")
+            .header("content-type", "application/json")
+            .body(
+                r##"[
+                     { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
+                     { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
+                 ]"##,
+            )
+            .reply(&filter);
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+        assert_eq!(
+            String::from_utf8(response.body().to_vec()).unwrap(),
+            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
+        );
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/json",
         );
     }
 }
