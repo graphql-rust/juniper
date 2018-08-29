@@ -8,7 +8,7 @@ repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
 warp = "0.1.2"
-juniper = { path = "../juniper", version = "0.9.2", default-features = false  }
+juniper = { path = "../juniper", version = "0.10.0", default-features = false  }
 serde_json = "1.0.24"
 serde_derive = "1.0.75"
 failure = "0.1.2"
@@ -17,7 +17,7 @@ futures = "0.1.23"
 serde = "1.0.75"
 
 [dev-dependencies]
-juniper = { path = "../juniper", version = "0.9.2", features = ["expose-test-schema", "serde_json"] }
+juniper = { path = "../juniper", version = "0.10.0", features = ["expose-test-schema", "serde_json"] }
 percent-encoding = "1.0"
 
 [workspace]

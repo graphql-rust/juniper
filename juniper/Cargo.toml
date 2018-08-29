@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.9.2"
+version = "0.10.0"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -32,7 +32,7 @@ default = [
 ]
 
 [dependencies]
-juniper_codegen = { version = "0.9.2", path = "../juniper_codegen"  }
+juniper_codegen = { version = "0.10.0", path = "../juniper_codegen"  }
 
 fnv = "1.0.3"
 indexmap = { version = "1.0.0", features = ["serde-1"] }

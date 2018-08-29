@@ -12,7 +12,7 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 url = "1.7"
-juniper = { version = "0.9" , default-features = false, path = "../juniper"}
+juniper = { version = "0.10.0" , default-features = false, path = "../juniper"}
 
 futures = "0.1"
 futures-cpupool = "0.1"
@@ -24,6 +24,6 @@ tokio = "0.1.8"
 reqwest = { git = "https://github.com/seanmonstar/reqwest" }
 
 [dev-dependencies.juniper]
-version = "0.9"
+version = "0.10.0"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"
