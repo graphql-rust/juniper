@@ -1,67 +1,22 @@
 [tasks.build-verbose]
 condition = { channels = ["nightly", "beta", "stable"]  }
-condition_script = [
-  """
-  MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-  if [$MINOR_VERSION -gt 22]; then
-      exit 0
-  else
-      exit 1
-  fi
-  """,
-]
+condition_script = ["./juniper_warp/scripts/rustc_version_is_supported.sh"]
 
 [tasks.build-verbose.windows]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-  """
-  MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-  if [$MINOR_VERSION -gt 22]; then
-      exit 0
-  else
-      exit 1
-  fi
-  """,
-]
+condition_script = ["./juniper_warp/scripts/rustc_version_is_supported.sh"]
 
 [tasks.test-verbose]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-  """
-  MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-  if [$MINOR_VERSION -gt 22]; then
-      exit 0
-  else
-      exit 1
-  fi
-  """,
-]
+condition_script = ["./juniper_warp/scripts/rustc_version_is_supported.sh"]
 
 [tasks.test-verbose.windows]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-  """
-  MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-  if [$MINOR_VERSION -gt 22]; then
-      exit 0
-  else
-      exit 1
-  fi
-  """,
-]
+condition_script = ["./juniper_warp/scripts/rustc_version_is_supported.sh"]
 
 [tasks.ci-coverage-flow]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-  """
-  MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-  if [$MINOR_VERSION -gt 22]; then
-      exit 0
-  else
-      exit 1
-  fi
-  """,
-]
+condition_script = ["./juniper_warp/scripts/rustc_version_is_supported.sh"]
 
 [tasks.ci-coverage-flow.windows]
 disabled = true
