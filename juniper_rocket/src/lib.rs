@@ -121,7 +121,7 @@ impl<'a> GraphQLBatchResponse<'a> {
 pub struct GraphQLRequest(GraphQLBatchRequest);
 
 /// Simple wrapper around the result of executing a GraphQL query
-pub struct GraphQLResponse(Status, String);
+pub struct GraphQLResponse(pub Status, pub String);
 
 /// Generate an HTML page containing GraphiQL
 pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
