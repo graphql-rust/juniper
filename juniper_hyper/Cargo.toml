@@ -20,7 +20,8 @@ hyper = "0.12"
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
-tokio = "0.1.7"
+tokio = "0.1.8"
+reqwest = { git = "https://github.com/seanmonstar/reqwest" }
 
 [dev-dependencies.juniper]
 version = "0.9"

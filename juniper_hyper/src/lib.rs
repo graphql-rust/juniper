@@ -6,15 +6,17 @@ extern crate hyper;
 extern crate juniper;
 #[macro_use]
 extern crate serde_derive;
+#[cfg(test)]
+extern crate reqwest;
 extern crate serde_json;
 #[cfg(test)]
 extern crate tokio;
 extern crate url;
 
-use futures::future;
-use futures::{Future, Stream};
+use futures::{future, Future};
 use futures_cpupool::CpuPool;
 use hyper::header::HeaderValue;
+use hyper::rt::Stream;
 use hyper::{header, Body, Method, Request, Response, StatusCode};
 use juniper::http::{
     GraphQLRequest as JuniperGraphQLRequest, GraphQLResponse as JuniperGraphQLResponse,
@@ -317,58 +319,44 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
-    use futures::future;
-    use futures::{Future, Stream};
+    use futures::{future, Future};
     use futures_cpupool::Builder;
     use hyper::service::service_fn;
-    use hyper::Client;
     use hyper::Method;
-    use hyper::{header, Body, Request, Response, Server, StatusCode};
+    use hyper::{header, Body, Response, Server, StatusCode};
     use juniper::http::tests as http_tests;
     use juniper::tests::model::Database;
     use juniper::EmptyMutation;
     use juniper::RootNode;
+    use reqwest;
+    use reqwest::Response as ReqwestResponse;
     use std::sync::Arc;
-    use tokio::runtime::Runtime;
-
     use std::thread;
     use std::time;
+    use tokio::runtime::Runtime;
 
     struct TestHyperIntegration;
 
     impl http_tests::HTTPIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            let client = Client::new();
-            let url = format!("http://localhost:3001/graphql{}", url);
-            let uri: hyper::Uri = url.parse().expect(&format!("url {} is invalid", url));
-            let resp = make_test_response(
-                client
-                    .get(uri.clone())
-                    .wait()
-                    .expect(&format!("failed GET {}", uri)),
-            );
-            resp
+            let url = format!("http://127.0.0.1:3001/graphql{}", url);
+            make_test_response(reqwest::get(&url).expect(&format!("failed GET {}", url)))
         }
 
         fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://localhost:3001/graphql{}", url);
-            let client = Client::new();
-            let uri: hyper::Uri = url.parse().unwrap();
-            let mut req = Request::new(Body::from(body.to_string()));
-            *req.method_mut() = Method::POST;
-            *req.uri_mut() = uri.clone();
-            make_test_response(
-                client
-                    .request(req)
-                    .wait()
-                    .expect(&format!("failed POST {}", url)),
-            )
+            let url = format!("http://127.0.0.1:3001/graphql{}", url);
+            let client = reqwest::Client::new();
+            let res = client
+                .post(&url)
+                .body(body.to_string())
+                .send()
+                .expect(&format!("failed POST {}", url));
+            make_test_response(res)
         }
     }
 
-    fn make_test_response(response: Response<Body>) -> http_tests::TestResponse {
+    fn make_test_response(mut response: ReqwestResponse) -> http_tests::TestResponse {
         let status_code = response.status().as_u16() as i32;
-
         let content_type = String::from_utf8(
             response
                 .headers()
@@ -377,14 +365,7 @@ mod tests {
                 .unwrap_or(vec![]),
         ).expect("Content-type header invalid UTF-8");
 
-        let body = response
-            .into_body()
-            .concat2()
-            .map(|chunk| {
-                String::from_utf8(chunk.iter().cloned().collect::<Vec<u8>>())
-                    .expect("body is not valid utf-8")
-            }).wait()
-            .unwrap();
+        let body = response.text().unwrap();
 
         http_tests::TestResponse {
             status_code,
@@ -433,10 +414,8 @@ mod tests {
         runtime.spawn(server);
         thread::sleep(time::Duration::from_millis(10)); // wait 10ms for server to bind
 
-        let _ = runtime.block_on::<_, _, ()>(future::lazy(|| {
-            let integration = TestHyperIntegration;
-            future::ok(http_tests::run_http_test_suite(&integration))
-        }));
+        let integration = TestHyperIntegration;
+        http_tests::run_http_test_suite(&integration);
 
         runtime.shutdown_now().wait().unwrap();
     }
