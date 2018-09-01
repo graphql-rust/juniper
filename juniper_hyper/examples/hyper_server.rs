@@ -6,7 +6,7 @@ extern crate juniper_hyper;
 extern crate pretty_env_logger;
 
 use futures::future;
-use futures_cpupool::CpuPool;
+use futures_cpupool::Builder as CpuPoolBuilder;
 use hyper::rt::{self, Future};
 use hyper::service::service_fn;
 use hyper::Method;
@@ -21,7 +21,7 @@ fn main() {
 
     let addr = ([127, 0, 0, 1], 3000).into();
 
-    let pool = CpuPool::new(4);
+    let pool = CpuPoolBuilder::new().create();
     let db = Arc::new(Database::new());
     let root_node = Arc::new(RootNode::new(db.clone(), EmptyMutation::<Database>::new()));
 
@@ -34,7 +34,7 @@ fn main() {
             let root_node = root_node.clone();
             let ctx = ctx.clone();
             match (req.method(), req.uri().path()) {
-                (&Method::GET, "/graphiql") => juniper_hyper::graphiql("/graphql"),
+                (&Method::GET, "/") => juniper_hyper::graphiql("/graphql"),
                 (&Method::GET, "/graphql") => juniper_hyper::graphql(pool, root_node, ctx, req),
                 (&Method::POST, "/graphql") => juniper_hyper::graphql(pool, root_node, ctx, req),
                 _ => {
