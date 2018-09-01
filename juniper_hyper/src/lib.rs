@@ -111,7 +111,7 @@ where
             let code = if res.is_ok() {
                 StatusCode::OK
             } else {
-                StatusCode::UNPROCESSABLE_ENTITY
+                StatusCode::BAD_REQUEST
             };
             let mut resp = new_response(code);
             resp.headers_mut().insert(
