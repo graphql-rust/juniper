@@ -34,7 +34,6 @@ fn main() {
             let root_node = root_node.clone();
             let ctx = ctx.clone();
             match (req.method(), req.uri().path()) {
-                (&Method::GET, "/playground") => juniper_hyper::playground("/graphql"),
                 (&Method::GET, "/graphiql") => juniper_hyper::graphiql("/graphql"),
                 (&Method::GET, "/graphql") => juniper_hyper::graphql(pool, root_node, ctx, req),
                 (&Method::POST, "/graphql") => juniper_hyper::graphql(pool, root_node, ctx, req),
