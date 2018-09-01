@@ -1,82 +1,17 @@
 [tasks.build-verbose]
 condition = { channels = ["nightly", "beta", "stable"]  }
-condition_script = [
-"""
-# Exits successfully if the Rust version that is running is compatible with juniper_warp.
-# This must be run in cargo make to have the proper environment variables.
-
-MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-if (( $MINOR_VERSION > 22 )); then
-  exit 0
-else
-  exit 1
-fi
-""",
-]
 
 [tasks.build-verbose.windows]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-"""
-# Exits successfully if the Rust version that is running is compatible with juniper_warp.
-# This must be run in cargo make to have the proper environment variables.
-
-MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-if (( $MINOR_VERSION > 22 )); then
-  exit 0
-else
-  exit 1
-fi
-""",
-]
 
 [tasks.test-verbose]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-"""
-# Exits successfully if the Rust version that is running is compatible with juniper_warp.
-# This must be run in cargo make to have the proper environment variables.
-
-MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-if (( $MINOR_VERSION > 22 )); then
-  exit 0
-else
-  exit 1
-fi
-""",
-]
 
 [tasks.test-verbose.windows]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-"""
-# Exits successfully if the Rust version that is running is compatible with juniper_warp.
-# This must be run in cargo make to have the proper environment variables.
-
-MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-if (( $MINOR_VERSION > 22 )); then
-  exit 0
-else
-  exit 1
-fi
-""",
-]
 
 [tasks.ci-coverage-flow]
 condition = { channels = ["nightly", "beta", "stable"] }
-condition_script = [
-"""
-# Exits successfully if the Rust version that is running is compatible with juniper_warp.
-# This must be run in cargo make to have the proper environment variables.
-
-MINOR_VERSION=`echo $CARGO_MAKE_RUST_VERSION | cut -d. -f2`;
-if (( $MINOR_VERSION > 22 )); then
-  exit 0
-else
-  exit 1
-fi
-""",
-]
 
 [tasks.ci-coverage-flow.windows]
 disabled = true
