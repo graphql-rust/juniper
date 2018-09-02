@@ -381,7 +381,7 @@ impl From<GraphQLIronError> for IronError {
 
 #[cfg(test)]
 mod tests {
-    use iron::prelude::*;
+    use super::*;
     use iron::Url;
     use iron::{Handler, Headers};
     use iron_test::{request, response};
@@ -413,20 +413,19 @@ mod tests {
 
     impl http_tests::HTTPIntegration for TestIronIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            make_test_response(request::get(
-                &fixup_url(url),
-                Headers::new(),
-                &make_handler(),
-            ))
+            let result = request::get(&fixup_url(url), Headers::new(), &make_handler());
+            match result {
+                Ok(response) => make_test_response(response),
+                Err(e) => make_test_error_response(e),
+            }
         }
 
         fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            make_test_response(request::post(
-                &fixup_url(url),
-                Headers::new(),
-                body,
-                &make_handler(),
-            ))
+            let result = request::post(&fixup_url(url), Headers::new(), body, &make_handler());
+            match result {
+                Ok(response) => make_test_response(response),
+                Err(e) => make_test_error_response(e),
+            }
         }
     }
 
@@ -441,8 +440,17 @@ mod tests {
         Ok(Database::new())
     }
 
-    fn make_test_response(response: IronResult<Response>) -> http_tests::TestResponse {
-        let response = response.expect("Error response from GraphQL handler");
+    fn make_test_error_response(_: IronError) -> http_tests::TestResponse {
+        // For now all errors return the same status code.
+        // `juniper_iron` users can choose to do something different if desired.
+        http_tests::TestResponse {
+            status_code: 400,
+            body: None,
+            content_type: "application/json".to_string(),
+        }
+    }
+
+    fn make_test_response(response: Response) -> http_tests::TestResponse {
         let status_code = response
             .status
             .expect("No status code returned from handler")
