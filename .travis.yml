@@ -18,6 +18,7 @@ env:
     - CARGO_MAKE_RUN_CODECOV=true
 
 script:
+  - echo $TRAVIS_RUST_VERSION
   - wget -O ~/.cargo/bin/cargo-make https://bintray.com/sagiegurari/cargo-make/download_file?file_path=cargo-make_v0.11.0u
   - chmod 777 ~/.cargo/bin/cargo-make
   - cargo make workspace-ci-flow --no-workspace
