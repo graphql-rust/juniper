@@ -21,7 +21,7 @@ GraphQL schemas as convenient as possible as Rust will allow.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Iron][iron] and [Rocket] frameworks, including
+pre-built integration for the [Hyper][hyper], [Iron][iron], and [Rocket] frameworks, including
 embedded [Graphiql][graphiql] for easy debugging.
 
 * [Cargo crate](https://crates.io/crates/juniper)
@@ -43,7 +43,7 @@ For specific information about macros, types and the Juniper api, the
 You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
 schema including polymorphism with traits and interfaces.  
 For an example of web framework integration, 
-see the [rocket][rocket_examples] and [iron][iron_examples] examples folders.
+see the [hyper][hyper_examples], [rocket][rocket_examples], and [iron][iron_examples] examples folders.
 
 
 ## Features
@@ -90,8 +90,10 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
+[hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/hyper_rocket/examples
 [rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
 [iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
+[Hyper]: https://hyper.rs
 [Rocket]: https://rocket.rs
 [book]: https://graphql-rust.github.io
 [book_quickstart]: https://graphql-rust.github.io/quickstart.html

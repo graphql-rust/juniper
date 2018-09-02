@@ -180,7 +180,8 @@ pub mod tests {
     }
 
     fn test_simple_get<T: HTTPIntegration>(integration: &T) {
-        let response = integration.get("/?query={hero{name}}");
+        // {hero{name}}
+        let response = integration.get("/?query=%7Bhero%7Bname%7D%7D");
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type.as_str(), "application/json");
@@ -193,8 +194,9 @@ pub mod tests {
     }
 
     fn test_encoded_get<T: HTTPIntegration>(integration: &T) {
+        // query { human(id: "1000") { id, name, appearsIn, homePlanet } }
         let response = integration.get(
-            "/?query=query%20{%20%20%20human(id:%20\"1000\")%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}");
+            "/?query=query%20%7B%20human(id%3A%20%221000%22)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D");
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type.as_str(), "application/json");
@@ -221,8 +223,10 @@ pub mod tests {
     }
 
     fn test_get_with_variables<T: HTTPIntegration>(integration: &T) {
+        // query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }
+        // with variables = { "id": "1000" }
         let response = integration.get(
-            "/?query=query($id:%20String!)%20{%20%20%20human(id:%20$id)%20{%20%20%20%20%20id,%20%20%20%20%20name,%20%20%20%20%20appearsIn,%20%20%20%20%20homePlanet%20%20%20}%20}&variables={%20%20%20\"id\":%20%20\"1000\"%20}");
+            "/?query=query(%24id%3A%20String!)%20%7B%20human(id%3A%20%24id)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D&variables=%7B%20%22id%22%3A%20%221000%22%20%7D");
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
