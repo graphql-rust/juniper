@@ -72,6 +72,7 @@ your Schemas automatically.
 
 ### Web Frameworks
 
+* [hyper][hyper]
 * [rocket][rocket]
 * [iron][iron]
 
