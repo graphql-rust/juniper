@@ -168,6 +168,15 @@ pub mod tests {
 
         println!("  - test_batched_post");
         test_batched_post(integration);
+
+        println!("  - test_invalid_json");
+        test_invalid_json(integration);
+
+        println!("  - test_invalid_field");
+        test_invalid_field(integration);
+
+        println!("  - test_duplicate_keys");
+        test_duplicate_keys(integration);
     }
 
     fn unwrap_json_response(response: &TestResponse) -> Json {
@@ -280,5 +289,30 @@ pub mod tests {
                 r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#
             ).expect("Invalid JSON constant in test")
         );
+    }
+
+    fn test_invalid_json<T: HTTPIntegration>(integration: &T) {
+        let response = integration.get("/?query=blah");
+        assert_eq!(response.status_code, 400);
+        let response = integration.post("/", r#"blah"#);
+        assert_eq!(response.status_code, 400);
+    }
+
+    fn test_invalid_field<T: HTTPIntegration>(integration: &T) {
+        // {hero{blah}}
+        let response = integration.get("/?query=%7Bhero%blah%7D%7D");
+        assert_eq!(response.status_code, 400);
+        let response = integration.post("/", r#"{"query": "{hero{blah}}"}"#);
+        assert_eq!(response.status_code, 400);
+    }
+
+    fn test_duplicate_keys<T: HTTPIntegration>(integration: &T) {
+        // {hero{name}}
+        let response = integration.get("/?query=%7B%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%2C%20%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%7D");
+        assert_eq!(response.status_code, 400);
+        let response = integration.post("/", r#"
+            {"query": "{hero{name}}", "query": "{hero{name}}"}
+        "#);
+        assert_eq!(response.status_code, 400);
     }
 }
