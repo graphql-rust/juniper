@@ -30,6 +30,6 @@ Check the LICENSE file for details.
 [Juniper]: https://github.com/graphql-rust/juniper
 [GraphQL]: http://graphql.org
 [documentation]: https://docs.rs/juniper_hyper
-[example]: https://github.com/graphql-rust/juniper/blob/hyper-integration/juniper_hyper/examples/hyper_server.rs
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/examples/hyper_server.rs
 
 
