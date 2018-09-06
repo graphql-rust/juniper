@@ -107,7 +107,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()
@@ -138,7 +138,7 @@ where
         .as_object_value()
         .expect("Field is not an object");
 
-    println!("Field: {:?}", field);
+    println!("Field: {:#?}", field);
 
     let args = field
         .get_field_value("args")
@@ -146,7 +146,7 @@ where
         .as_list_value()
         .expect("args is not a list");
 
-    println!("Args: {:?}", args);
+    println!("Args: {:#?}", args);
 
     f(args);
 }

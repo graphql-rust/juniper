@@ -36,7 +36,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let obj = result.as_object_value().expect("Result is not an object");
 

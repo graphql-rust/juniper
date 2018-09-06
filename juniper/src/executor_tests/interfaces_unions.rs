@@ -111,7 +111,7 @@ mod interface {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -242,7 +242,7 @@ mod union {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
