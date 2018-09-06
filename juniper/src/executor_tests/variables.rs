@@ -1,10 +1,10 @@
-use ast::InputValue;
+use ast::{FromInputValue, InputValue};
 use executor::Variables;
 use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::{Value, Object};
+use value::{Object, Value};
 use GraphQLError::ValidationError;
 
 #[derive(Debug)]
@@ -58,6 +58,47 @@ struct InputWithDefaults {
     a: i32,
 }
 
+#[derive(Debug)]
+enum CustomInput {
+    A(String),
+    B(String),
+}
+
+impl FromInputValue for CustomInput {
+    fn from_input_value(v: &InputValue) -> Option<Self> {
+        let obj = v.to_object_value()?;
+        match (obj.get("variant"), obj.get("value")) {
+            (Some(InputValue::String(variant)), Some(InputValue::String(value))) => {
+                match variant.as_str() {
+                    "A" => Some(CustomInput::A(value.to_owned())),
+                    "B" => Some(CustomInput::B(value.to_owned())),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+}
+
+impl ::GraphQLType for CustomInput {
+    type Context = ();
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("CustomInput")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut ::Registry<'r>) -> ::meta::MetaType<'r> {
+        let fields = &[
+            registry.arg::<String>("variant", &()),
+            registry.arg::<String>("value", &()),
+        ];
+        registry
+            .build_input_object_type::<CustomInput>(&(), fields)
+            .into_meta()
+    }
+}
+
 graphql_object!(TestType: () |&self| {
     field field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)
@@ -101,6 +142,10 @@ graphql_object!(TestType: () |&self| {
 
     field input_with_defaults(arg: InputWithDefaults) -> String {
         format!("a: {:?}", arg.a)
+    }
+
+    field input_with_custom(input: CustomInput) -> String {
+        format!("{:?}", input)
     }
 
     field integer_input(value: i32) -> String {
@@ -169,6 +214,59 @@ fn inline_runs_from_input_value_on_scalar() {
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
         },
+    );
+}
+
+#[test]
+fn variable_valid_custom_input() {
+    run_variable_query(
+        r#"query q($input: CustomInput!) { inputWithCustom(input: $input) }"#,
+        vec![(
+            "input".to_owned(),
+            InputValue::object(
+                vec![
+                    ("variant", InputValue::string("B")),
+                    ("value", InputValue::string("whatever")),
+                ].into_iter()
+                .collect(),
+            ),
+        )].into_iter()
+        .collect(),
+        |result| {
+            assert_eq!(
+                result.get_field_value("inputWithCustom"),
+                Some(&Value::string(r#"B("whatever")"#))
+            );
+        },
+    );
+}
+
+#[test]
+fn variable_invalid_custom_input() {
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+
+    let query = r#"query q($input: CustomInput!) { inputWithCustom(input: $input) }"#;
+
+    let vars = vec![(
+        "input".to_owned(),
+        InputValue::object(
+            vec![
+                ("variant", InputValue::string("C")),
+                ("value", InputValue::string("whatever")),
+            ].into_iter()
+            .collect(),
+        ),
+    )].into_iter()
+    .collect();
+
+    let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
+
+    assert_eq!(
+        error,
+        ValidationError(vec![RuleError::new(
+            r#"Variable "$input" got invalid value. Expected input of type "CustomInput". Got: "{variant: "C", value: "whatever"}"."#,
+            &[SourcePosition::new(8, 0, 8)],
+        )])
     );
 }
 

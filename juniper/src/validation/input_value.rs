@@ -209,6 +209,16 @@ fn unify_input_object<'a>(
     errors: &mut Vec<RuleError>,
     path: &Path<'a>,
 ) {
+    if !(meta.try_parse_fn)(value) {
+        push_unification_error(
+            errors,
+            var_name,
+            var_pos,
+            path,
+            &format!(r#"Expected input of type "{}". Got: "{}""#, meta.name, value),
+        );
+        return;
+    }
     if let Some(ref obj) = value.to_object_value() {
         let mut keys = obj.keys().collect::<HashSet<&&str>>();
 
