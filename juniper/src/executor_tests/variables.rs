@@ -68,7 +68,7 @@ impl FromInputValue for CustomInput {
     fn from_input_value(v: &InputValue) -> Option<Self> {
         let obj = v.to_object_value()?;
         match (obj.get("variant"), obj.get("value")) {
-            (Some(&InputValue::String(variant)), Some(&InputValue::String(value))) => {
+            (Some(&&InputValue::String(ref variant)), Some(&&InputValue::String(ref value))) => {
                 match variant.as_str() {
                     "A" => Some(CustomInput::A(value.to_owned())),
                     "B" => Some(CustomInput::B(value.to_owned())),
