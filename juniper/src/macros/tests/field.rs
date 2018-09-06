@@ -80,7 +80,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()
@@ -111,7 +111,7 @@ where
         .as_object_value()
         .expect("Field is not an object");
 
-    println!("Field: {:?}", field);
+    println!("Field: {:#?}", field);
 
     f(field);
 }

@@ -78,7 +78,7 @@ fn test_execution() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     assert_eq!(
         result,
@@ -121,7 +121,7 @@ fn enum_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()
@@ -232,7 +232,7 @@ fn interface_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()
@@ -378,7 +378,7 @@ fn object_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()
@@ -578,7 +578,7 @@ fn scalar_introspection() {
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()

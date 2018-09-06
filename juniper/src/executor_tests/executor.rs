@@ -69,7 +69,7 @@ mod field_execution {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -161,7 +161,7 @@ mod merge_parallel_fragments {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -255,7 +255,7 @@ mod merge_parallel_inline_fragments {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -349,7 +349,7 @@ mod threads_context_correctly {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -446,7 +446,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -500,7 +500,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, vec![]);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -558,7 +558,7 @@ mod dynamic_context_switching {
             )]
         );
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(result, Value::null());
     }
@@ -605,7 +605,7 @@ mod dynamic_context_switching {
             )]
         );
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -656,7 +656,7 @@ mod dynamic_context_switching {
 
         assert_eq!(errs, []);
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -725,7 +725,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -751,7 +751,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(result, graphql_value!(None));
 
@@ -774,7 +774,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(result, graphql_value!(None));
 
@@ -797,7 +797,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -823,7 +823,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(result, graphql_value!(None));
 
@@ -846,7 +846,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,
@@ -872,7 +872,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(result, graphql_value!(None));
 
@@ -895,7 +895,7 @@ mod propagates_errors_to_nullable_fields {
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
-        println!("Result: {:?}", result);
+        println!("Result: {:#?}", result);
 
         assert_eq!(
             result,

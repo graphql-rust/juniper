@@ -79,7 +79,7 @@ where
 
     assert_eq!(errs, []);
 
-    println!("Result: {:?}", result);
+    println!("Result: {:#?}", result);
 
     let type_info = result
         .as_object_value()
