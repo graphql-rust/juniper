@@ -137,6 +137,7 @@ pub mod tests {
 
     /// Normalized response content we expect to get back from
     /// the http framework integration we are testing.
+    #[derive(Debug)]
     pub struct TestResponse {
         pub status_code: i32,
         pub body: Option<String>,

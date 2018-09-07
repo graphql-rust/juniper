@@ -43,7 +43,7 @@ For specific information about macros, types and the Juniper api, the
 You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
 schema including polymorphism with traits and interfaces.
 For an example of web framework integration,
-see the [hyper][hyper_examples], [rocket][rocket_examples], and [iron][iron_examples] examples folders.
+see the [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
 
 
 ## Features
@@ -75,6 +75,7 @@ your Schemas automatically.
 * [hyper][hyper]
 * [rocket][rocket]
 * [iron][iron]
+* [warp][warp]
 
 ## Guides & Examples
 
@@ -99,8 +100,9 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [book]: https://graphql-rust.github.io
 [book_quickstart]: https://graphql-rust.github.io/quickstart.html
 [docsrs]: https://docs.rs/juniper
+[warp]: https://github.com/seanmonstar/warp
+[warp_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples
 
 [uuid]: https://crates.io/crates/uuid
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
-
