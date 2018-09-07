@@ -65,13 +65,6 @@ enum GraphQLBatchRequest {
     Batch(Vec<juniper::http::GraphQLRequest>),
 }
 
-#[derive(Serialize)]
-#[serde(untagged)]
-enum GraphQLBatchResponse<'a> {
-    Single(juniper::http::GraphQLResponse<'a>),
-    Batch(Vec<juniper::http::GraphQLResponse<'a>>),
-}
-
 impl GraphQLBatchRequest {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
@@ -92,6 +85,22 @@ impl GraphQLBatchRequest {
                     .map(|request| request.execute(root_node, context))
                     .collect(),
             ),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum GraphQLBatchResponse<'a> {
+    Single(juniper::http::GraphQLResponse<'a>),
+    Batch(Vec<juniper::http::GraphQLResponse<'a>>),
+}
+
+impl<'a> GraphQLBatchResponse<'a> {
+    fn is_ok(&self) -> bool {
+        match self {
+            GraphQLBatchResponse::Single(res) => res.is_ok(),
+            GraphQLBatchResponse::Batch(reses) => reses.iter().all(|res| res.is_ok()),
         }
     }
 }
@@ -191,9 +200,11 @@ where
         move |context: Context, request: GraphQLBatchRequest, pool: CpuPool| -> Response {
             let schema = post_schema.clone();
             Box::new(
-                pool.spawn_fn(move || Ok(serde_json::to_vec(&request.execute(&schema, &context))?))
-                    .then(|result| ::futures::future::done(Ok(build_response(result))))
-                    .map_err(|_: failure::Error| warp::reject::server_error()),
+                pool.spawn_fn(move || {
+                    let response = request.execute(&schema, &context);
+                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
+                }).then(|result| ::futures::future::done(Ok(build_response(result))))
+                .map_err(|_: failure::Error| warp::reject::server_error()),
             )
         };
 
@@ -210,20 +221,23 @@ where
         let schema = schema.clone();
         Box::new(
             pool.spawn_fn(move || {
+                let variables = match request.remove("variables") {
+                    None => None,
+                    Some(vs) => serde_json::from_str(&vs)?,
+                };
+
                 let graphql_request = juniper::http::GraphQLRequest::new(
                     request.remove("query").ok_or_else(|| {
                         format_err!("Missing GraphQL query string in query parameters")
                     })?,
                     request.get("operation_name").map(|s| s.to_owned()),
-                    request
-                        .remove("variables")
-                        .and_then(|vs| serde_json::from_str(&vs).ok()),
+                    variables,
                 );
-                Ok(serde_json::to_vec(
-                    &graphql_request.execute(&schema, &context),
-                )?)
+
+                let response = graphql_request.execute(&schema, &context);
+                Ok((serde_json::to_vec(&response)?, response.is_ok()))
             }).then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|_: failure::Error| warp::reject::server_error()),
+            .map_err(|_: failure::Error| warp::reject::server_error()),
         )
     };
 
@@ -236,9 +250,12 @@ where
     get_filter.or(post_filter).unify().boxed()
 }
 
-fn build_response(response: Result<Vec<u8>, failure::Error>) -> warp::http::Response<Vec<u8>> {
+fn build_response(
+    response: Result<(Vec<u8>, bool), failure::Error>,
+) -> warp::http::Response<Vec<u8>> {
     match response {
-        Ok(body) => warp::http::Response::builder()
+        Ok((body, is_ok)) => warp::http::Response::builder()
+            .status(if is_ok { 200 } else { 400 })
             .header("content-type", "application/json")
             .body(body)
             .expect("response is valid"),
@@ -379,8 +396,7 @@ mod tests {
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
                      { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
                  ]"##,
-            )
-            .reply(&filter);
+            ).reply(&filter);
 
         assert_eq!(response.status(), http::StatusCode::OK);
         assert_eq!(
@@ -391,6 +407,14 @@ mod tests {
             response.headers().get("content-type").unwrap(),
             "application/json",
         );
+    }
+
+    #[test]
+    fn batch_request_deserialization_can_fail() {
+        let json = r#"blah"#;
+        let result: Result<GraphQLBatchRequest, _> = serde_json::from_str(json);
+
+        assert!(result.is_err());
     }
 }
 
@@ -446,7 +470,13 @@ mod tests_http_harness {
                 .method("GET")
                 .path(&format!("/?{}", url))
                 .filter(&self.filter)
-                .expect("warp filter failed");
+                .unwrap_or_else(|rejection| {
+                    warp::http::Response::builder()
+                        .status(rejection.status())
+                        .header("content-type", "application/json")
+                        .body(Vec::new())
+                        .unwrap()
+                });
             test_response_from_http_response(response)
         }
 
@@ -457,7 +487,13 @@ mod tests_http_harness {
                 .path(url)
                 .body(body)
                 .filter(&self.filter)
-                .expect("warp filter failed");
+                .unwrap_or_else(|rejection| {
+                    warp::http::Response::builder()
+                        .status(rejection.status())
+                        .header("content-type", "application/json")
+                        .body(Vec::new())
+                        .unwrap()
+                });
             test_response_from_http_response(response)
         }
     }
