@@ -20,28 +20,26 @@ pub fn validate_input_values(
     document: &Document,
     schema: &SchemaType,
 ) -> Vec<RuleError> {
-    let mut errs = vec![];
+    let mut errors: Vec<RuleError> = vec![];
 
     for def in document {
         if let Definition::Operation(ref op) = *def {
             if let Some(ref vars) = op.item.variable_definitions {
-                validate_var_defs(values, &vars.item, schema, &mut errs);
+                validate_var_defs(values, &vars.item, schema, &mut errors);
             }
         }
     }
 
-    errs.sort();
-    errs
+    errors.sort();
+    errors
 }
 
 fn validate_var_defs(
     values: &Variables,
     var_defs: &VariableDefinitions,
     schema: &SchemaType,
-    all_errors: &mut Vec<RuleError>,
+    errors: &mut Vec<RuleError>,
 ) {
-    let mut errors: Vec<RuleError> = vec![];
-
     for &(ref name, ref def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
@@ -70,8 +68,6 @@ fn validate_var_defs(
             )),
         }
     }
-
-    all_errors.append(&mut errors);
 }
 
 fn unify_value<'a>(
