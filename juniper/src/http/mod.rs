@@ -294,10 +294,8 @@ pub mod tests {
 
     fn test_invalid_json<T: HTTPIntegration>(integration: &T) {
         let response = integration.get("/?query=blah");
-        println!("get response: {:#?}", response);
         assert_eq!(response.status_code, 400);
         let response = integration.post("/", r#"blah"#);
-        println!("post response: {:#?}", response);
         assert_eq!(response.status_code, 400);
     }
 
