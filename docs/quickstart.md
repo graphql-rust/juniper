@@ -137,7 +137,7 @@ To actually serve the schema, see the guides for our [Rocket][rocket_guide] or
 You can invoke `juniper::execute` directly to run a GraphQL query:
 
 !FILENAME main.rs
-```
+```rust
 #[macro_use] extern crate juniper;
 
 use juniper::{FieldResult, Variables, EmptyMutation};
