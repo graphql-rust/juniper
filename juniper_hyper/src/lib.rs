@@ -1,5 +1,3 @@
-#![feature(extern_prelude)]
-
 extern crate futures;
 extern crate futures_cpupool;
 extern crate hyper;
@@ -283,7 +281,7 @@ mod tests {
     use futures_cpupool::Builder;
     use hyper::service::service_fn;
     use hyper::Method;
-    use hyper::{header, Body, Response, Server, StatusCode};
+    use hyper::{Body, Response, Server, StatusCode};
     use juniper::http::tests as http_tests;
     use juniper::tests::model::Database;
     use juniper::EmptyMutation;
@@ -317,15 +315,15 @@ mod tests {
 
     fn make_test_response(mut response: ReqwestResponse) -> http_tests::TestResponse {
         let status_code = response.status().as_u16() as i32;
-        let content_type = String::from_utf8(
-            response
-                .headers()
-                .get(header::CONTENT_TYPE)
-                .map(|h| h.clone().as_ref().to_vec())
-                .unwrap_or(vec![]),
-        ).expect("Content-type header invalid UTF-8");
-
         let body = response.text().unwrap();
+        let content_type_header = response
+            .headers()
+            .get::<reqwest::header::ContentType>();
+        let content_type = if let Some(ct) = content_type_header {
+            format!("{}", ct)
+        } else {
+            String::default()
+        };
 
         http_tests::TestResponse {
             status_code,
