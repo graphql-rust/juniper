@@ -12,7 +12,7 @@ for more detailed information.
 
 ```toml
 [dependencies]
-juniper = "0.10.0"
+juniper = "0.10"
 ```
 
 ## Schema example
