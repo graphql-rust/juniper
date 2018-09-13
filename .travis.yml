@@ -33,5 +33,6 @@ deploy:
   github_token: $DEPLOY_TOKEN
   on:
     branch: source
+    rust: stable
   target_branch: master
   local_dir: _book/
