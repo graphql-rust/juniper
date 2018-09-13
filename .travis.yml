@@ -1,19 +1,26 @@
-language: node_js
-node_js:
-  - "8"
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
 
 env:
   global:
     - secure: "vaPicq7s2hHBZwtG5eZ1wSmlIYog8FBZ7OilJs6cXQ0fyP5FqGFdc+VG+FSNbEDqPct/v5ojrfbwhQWZVjzgyMZ+Ikrpd9QD0T2Ie4f5yHh2schpphiog7pAfRG1A56/JsGq7aZr76DsICYUGeU4d8BzjaeFC2ozoo5tE9NXpp5ENLFNuErYGwMcQ0vlLTrK2miyuDn18HasHeT5pmxZT1qN5KjxzqChTvEFbH9pQsVKv+dVQiWVifYt4beOfSxaZJmCyBJHv2MjUOyWmYPtqikVxz4dkTbS/Cyx9dK3u2AgrH2Trrl0RFa5VKQUA+06v9NC+oH8NJj72aw44JdryVTchfQw3VF27H/2xfeg3WJX87/1J1oWvCBBtFWU5UwWapXq4Tz7UjT75H7unmlnc11hwmgMklpqMpD52om8n/GLMY2wkS5/dPJpLbYWt6OnBCPtHdP2EO59Wxg1YJ73PZdsrC81z3t8c4SSUXCmzUCG7P8UrSjpBl0g3yXTtR1/fvvSU1qQLFIDN8ib4tl8KGEgbX1ipJkkgCExriuZ58wOPqOdioqNMfWxyGszqxALsL1qxcET8ZtVOzIRCGuVptV0cUujxUwM9LJBqWq4MqPVO9+98FtX6xZvMM5gUM2dq4gWI45KK/VcNEkgihoSKUyVR2OaW5sTs6d28OejOXs="
 
 before_install:
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y
-  - export PATH=$HOME/.cargo/bin:$PATH
-  - rustup update
+  # Install node.
+  - curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+  - sudo apt-get install -y nodejs
+  # Install yarn.
+  - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  - sudo apt-get update && sudo apt-get install -y yarn
 
 script:
-  # - yarn test
+  - yarn
   - yarn build
+  - yarn test
   - touch _book/.nojekyll
 
 branches:

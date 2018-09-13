@@ -41,9 +41,6 @@ use juniper::{FieldResult};
 #     fn insert_human(&self, human: &NewHuman) -> FieldResult<Human> { Err("")? }
 # }
 
-
-use juniper::{FieldResult};
-
 #[derive(GraphQLEnum)]
 enum Episode {
     NewHope,
@@ -180,7 +177,7 @@ fn main() {
 
     // Ensure the value matches.
     assert_eq!(
-        res.as_object_value().unwrap()["favoriteEpisode"].as_string_value().unwrap(),
+        res.as_object_value().unwrap().get_field_value("favoriteEpisode").unwrap().as_string_value().unwrap(),
         "NEW_HOPE",
     );
 }

@@ -8,10 +8,11 @@ channel.
 Juniper's Iron integration is contained in the `juniper_iron` crate:
 
 !FILENAME Cargo.toml
+
 ```toml
 [dependencies]
-juniper = "0.9.0"
-juniper_iron = "0.1.0"
+juniper = "0.10"
+juniper_iron = "0.2.0"
 ```
 
 Included in the source is a [small
@@ -29,7 +30,7 @@ set up other global data that the schema might require.
 
 In this example, we won't use any global data so we just return an empty value.
 
-```rust
+```rust,ignore
 #[macro_use] extern crate juniper;
 extern crate juniper_iron;
 extern crate iron;
@@ -40,15 +41,15 @@ use iron::prelude::*;
 use juniper::EmptyMutation;
 use juniper_iron::GraphQLHandler;
 
-fn context_factory(_: &mut Request) -> () {
-    ()
+fn context_factory(_: &mut Request) -> IronResult<()> {
+    Ok(())
 }
 
 struct Root;
 
 graphql_object!(Root: () |&self| {
     field foo() -> String {
-        "Bar".to_owned() 
+        "Bar".to_owned()
     }
 });
 
@@ -77,7 +78,7 @@ If you want to access e.g. the source IP address of the request from a field
 resolver, you need to pass this data using Juniper's [context
 feature](context.md).
 
-```rust
+```rust,ignore
 # #[macro_use] extern crate juniper;
 # extern crate juniper_iron;
 # extern crate iron;
@@ -90,10 +91,10 @@ struct Context {
 
 impl juniper::Context for Context {}
 
-fn context_factory(req: &mut Request) -> Context {
-    Context {
+fn context_factory(req: &mut Request) -> IronResult<Context> {
+    Ok(Context {
         remote_addr: req.remote_addr
-    }
+    })
 }
 
 struct Root;
@@ -119,7 +120,6 @@ graphql_object!(Root: Context |&self| {
 
 FIXME: Show how the `persistent` crate works with contexts using e.g. `r2d2`.
 
-
-[Iron]: http://ironframework.io
-[GraphiQL]: https://github.com/graphql/graphiql
+[iron]: http://ironframework.io
+[graphiql]: https://github.com/graphql/graphiql
 [mount]: https://github.com/iron/mount

@@ -11,12 +11,10 @@ juniper_iron = { git = "https://github.com/graphql-rust/juniper" }
 iron = "^0.5.0"
 mount = "^0.3.0"
 
-skeptic = "0.12"
+skeptic = "0.13"
 
 [build-dependencies]
-skeptic = "0.12"
+skeptic = "0.13"
 
 [patch.crates-io]
 juniper_codegen = { git = "https://github.com/graphql-rust/juniper" }
-
-
