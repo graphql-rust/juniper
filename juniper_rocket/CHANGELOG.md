@@ -1,3 +1,9 @@
+# [master]
+
+# juniper_rocket [0.1.3] 2018-09-13
+
+- Add `juniper-0.10.0` compatibility.
+
 # juniper_rocket [0.1.2] 2018-01-13
 
 ## Changes
