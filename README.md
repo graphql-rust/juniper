@@ -1,4 +1,4 @@
-<img src="https://github.com/graphql-rust/juniper/blob/master/assets/logo/juniper-dark-word.png" alt="Juniper" width="500" />
+<img src="https://github.com/graphql-rust/juniper/raw/master/assets/logo/juniper-dark-word.png" alt="Juniper" width="500" />
 
 
 > GraphQL server library for Rust
