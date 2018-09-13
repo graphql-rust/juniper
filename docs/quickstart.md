@@ -2,17 +2,17 @@
 
 This page will give you a short introduction to the concepts in Juniper.
 
-Once you are done here, head over to the [Tutorial][tutorial] to learn how to 
+Once you are done here, head over to the [Tutorial][tutorial] to learn how to
 use Juniper by creating a full setup step by step, or consult the other chapters
 for more detailed information.
-
 
 ## Installation
 
 !FILENAME Cargo.toml
+
 ```toml
 [dependencies]
-juniper = "0.9.0"
+juniper = "0.10.0"
 ```
 
 ## Schema example
@@ -23,13 +23,13 @@ naturally map to GraphQL features, such as `Option<T>`, `Vec<T>`, `Box<T>`,
 `String`, `f64`, and `i32`, references, and slices.
 
 For more advanced mappings, Juniper provides multiple macros to map your Rust
-types to a GraphQL schema. The most important one is the 
+types to a GraphQL schema. The most important one is the
 [graphql_object!][jp_obj_macro] macro that is used for declaring an object with
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 !FILENAME main.rs
-```rust
 
+```rust
 #[macro_use] extern crate juniper;
 
 use juniper::{FieldResult};
@@ -124,12 +124,11 @@ type Schema = juniper::RootNode<'static, Query, Mutation>;
 fn main() {
     println!("Hello, world!");
 }
-
 ```
 
 We now have a very simple but functional schema for a GraphQL server!
 
-To actually serve the schema, see the guides for our [Rocket][rocket_guide] or 
+To actually serve the schema, see the guides for our [Rocket][rocket_guide] or
 [Iron][iron_guide] integrations. Or you can invoke the executor directly:
 
 ## Executor
@@ -137,6 +136,7 @@ To actually serve the schema, see the guides for our [Rocket][rocket_guide] or
 You can invoke `juniper::execute` directly to run a GraphQL query:
 
 !FILENAME main.rs
+
 ```rust
 #[macro_use] extern crate juniper;
 
