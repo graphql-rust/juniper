@@ -22,8 +22,15 @@
 
 ## Adding a server
 
-- [Rocket](servers/rocket.md)
-- [Iron](servers/iron.md)
+- Integrations by Juniper
+  - [Hyper](servers/hyper.md)
+  - [Warp](servers/warp.md)
+  - [Rocket](servers/rocket.md)
+  - [Iron](servers/iron.md)
+- Integrations by others
+  - [Actix-Web](https://github.com/actix/examples/tree/master/juniper)
+  - [Finchers](https://github.com/finchers-rs/finchers-juniper)
+  - [Tsukuyomi](https://github.com/tsukuyomi-rs/tsukuyomi-juniper)
 
 ## Advanced Topics
 

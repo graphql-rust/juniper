@@ -125,8 +125,8 @@ fn main() {
 
 We now have a very simple but functional schema for a GraphQL server!
 
-To actually serve the schema, see the guides for our [Rocket][rocket_guide] or
-[Iron][iron_guide] integrations. Or you can invoke the executor directly:
+To actually serve the schema, see the guides for our [Hyper], [Rocket],
+[Warp], and [Iron] server integrations. Or you can invoke the executor directly:
 
 ## Executor
 
@@ -183,7 +183,9 @@ fn main() {
 }
 ```
 
+[hyper]: servers/hyper.md
+[warp]: servers/warp.md
+[rocket]: servers/rocket.md
+[iron]: servers/iron.md
 [tutorial]: ./tutorial.html
-[jp_obj_macro]: https://docs.rs/juniper/0.9.0/juniper/macro.graphql_object.html
-[rocket_guide]: ./servers/rocket.html
-[iron_guide]: ./servers/iron.html
+[jp_obj_macro]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html
