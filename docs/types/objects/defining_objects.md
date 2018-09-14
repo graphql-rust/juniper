@@ -28,19 +28,64 @@ can use `Option<T>`.
 
 We should take advantage of the
 fact that GraphQL is self-documenting and add descriptions to the type and
-fields:
+fields. Juniper will automatically use associated doc comments as GraphQL
+descriptions:
+
+!FILENAME GraphQL descriptions via Rust doc comments
 
 ```rust
 # extern crate juniper;
 # #[macro_use] extern crate juniper_codegen;
-# 
+#
+#[derive(GraphQLObject)]
+/// Information about a person
+struct Person {
+    /// The person's full name, including both first and last names
+    name: String,
+    /// The person's age in years, rounded down
+    age: i32,
+}
+
+# fn main() {}
+```
+
+Objects and fields without doc comments can instead set a `description`
+in the `graphql` attribute. The following example is equivalent to the above:
+
+!FILENAME GraphQL descriptions via attribute
+
+```rust
+# extern crate juniper;
+# #[macro_use] extern crate juniper_codegen;
+#
 #[derive(GraphQLObject)]
 #[graphql(description="Information about a person")]
 struct Person {
     #[graphql(description="The person's full name, including both first and last names")]
     name: String,
-
     #[graphql(description="The person's age in years, rounded down")]
+    age: i32,
+}
+
+# fn main() {}
+```
+
+Descriptions set via the `graphql` attribute take precedence over Rust
+doc comments. This enables internal Rust documentation and external GraphQL
+documentation to differ:
+
+```rust
+# extern crate juniper;
+# #[macro_use] extern crate juniper_codegen;
+#
+#[derive(GraphQLObject)]
+#[graphql(description="This description shows up in GraphQL")]
+/// This description shows up in RustDoc
+struct Person {
+    #[graphql(description="This description shows up in GraphQL")]
+    /// This description shows up in RustDoc
+    name: String,
+    /// This description shows up in both RustDoc and GraphQL
     age: i32,
 }
 
@@ -51,12 +96,12 @@ struct Person {
 
 You can only use the custom derive attribute under these circumstances:
 
-* The annotated type is a `struct`,
-* Every struct field is either
-  * A primitive type (`i32`, `f64`, `bool`, `String`, `juniper::ID`), or
-  * A valid custom GraphQL type, e.g. another struct marked with this attribute,
+- The annotated type is a `struct`,
+- Every struct field is either
+  - A primitive type (`i32`, `f64`, `bool`, `String`, `juniper::ID`), or
+  - A valid custom GraphQL type, e.g. another struct marked with this attribute,
     or
-  * A container/reference containing any of the above, e.g. `Vec<T>`, `Box<T>`,
+  - A container/reference containing any of the above, e.g. `Vec<T>`, `Box<T>`,
     `Option<T>`
 
 Let's see what that means for building relationships between objects:
@@ -92,7 +137,7 @@ convention into GraphQL's `camelCase` convention:
 ```rust
 # extern crate juniper;
 # #[macro_use] extern crate juniper_codegen;
-# 
+#
 #[derive(GraphQLObject)]
 struct Person {
     first_name: String, // Would be exposed as firstName in the GraphQL schema
@@ -108,7 +153,7 @@ fields:
 ```rust
 # extern crate juniper;
 # #[macro_use] extern crate juniper_codegen;
-# 
+#
 #[derive(GraphQLObject)]
 struct Person {
     name: String,
@@ -128,7 +173,7 @@ attribute:
 ```rust
 # extern crate juniper;
 # #[macro_use] extern crate juniper_codegen;
-# 
+#
 #[derive(GraphQLObject)]
 struct Person {
     name: String,
