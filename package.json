@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "gitbook build",
-    "serve": "gitbook serve",
+    "build": "gitbook install && gitbook build",
+    "serve": "gitbook install && gitbook serve",
     "test": "(cd _skeptic && cargo test)"
   },
   "dependencies": {
