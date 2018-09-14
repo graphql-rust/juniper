@@ -50,7 +50,7 @@ struct Person {
 ```
 
 Objects and fields without doc comments can instead set a `description`
-in the `graphql` attribute. The following example is equivalent to the above:
+via the `graphql` attribute. The following example is equivalent to the above:
 
 !FILENAME GraphQL descriptions via attribute
 
@@ -186,5 +186,24 @@ struct Person {
 ```
 
 The `name`, `description`, and `deprecation` arguments can of course be
-combined. Some restrictions from the GraphQL spec stil applies though; you can
+combined. Some restrictions from the GraphQL spec still applies though; you can
 only deprecate object fields and enum values.
+
+## Skipping fields
+
+By default all fields in a `GraphQLObject` are included in the generated GraphQL type. To prevent including a specific field, annotate the field with `#[graphql(skip)]`:
+
+```rust
+# extern crate juniper;
+# #[macro_use] extern crate juniper_codegen;
+#
+#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(skip)]
+    password_hash: String, // This cannot be queried or modified from GraphQL
+}
+
+# fn main() {}
+```
