@@ -80,9 +80,9 @@ fn test_node() {
         Ok((
             Value::object(
                 vec![
-                    ("foo", Value::string("1")),
-                    ("bar", Value::string("2")),
-                    ("baz", Value::string("3")),
+                    ("foo", Value::scalar("1")),
+                    ("bar", Value::scalar("2")),
+                    ("baz", Value::scalar("3")),
                 ].into_iter()
                 .collect()
             ),

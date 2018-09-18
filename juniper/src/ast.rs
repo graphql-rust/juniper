@@ -215,21 +215,25 @@ where
     }
 
     /// Construct an integer value.
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
     pub fn int(i: i32) -> Self {
         Self::scalar(i)
     }
 
     /// Construct a floating point value.
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
     pub fn float(f: f64) -> Self {
         Self::scalar(f)
     }
 
     /// Construct a boolean value.
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
     pub fn boolean(b: bool) -> Self {
         Self::scalar(b)
     }
 
     /// Construct a string value.
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
     pub fn string<T: AsRef<str>>(s: T) -> Self {
         InputValue::scalar(s.as_ref().to_owned())
     }
@@ -342,6 +346,10 @@ where
     }
 
     /// View the underlying int value, if present.
+    #[deprecated(
+        since = "0.11.0",
+        note = "Use `InputValue::as_scalar_value` instead"
+    )]
     pub fn as_int_value<'a>(&'a self) -> Option<i32>
     where
         &'a S: Into<Option<&'a i32>>,
@@ -350,6 +358,10 @@ where
     }
 
     /// View the underlying float value, if present.
+    #[deprecated(
+        since = "0.11.0",
+        note = "Use `InputValue::as_scalar_value` instead"
+    )]
     pub fn as_float_value<'a>(&'a self) -> Option<f64>
     where
         &'a S: Into<Option<&'a f64>>,
@@ -358,6 +370,10 @@ where
     }
 
     /// View the underlying string value, if present.
+    #[deprecated(
+        since = "0.11.0",
+        note = "Use `InputValue::as_scalar_value` instead"
+    )]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         &'a S: Into<Option<&'a String>>,
@@ -534,16 +550,16 @@ mod tests {
         let value: TestValue = InputValue::null();
         assert_eq!(format!("{}", value), "null");
 
-        let value: TestValue = InputValue::int(123);
+        let value: TestValue = InputValue::scalar(123);
         assert_eq!(format!("{}", value), "123");
 
-        let value: TestValue = InputValue::float(12.3);
+        let value: TestValue = InputValue::scalar(12.3);
         assert_eq!(format!("{}", value), "12.3");
 
-        let value: TestValue = InputValue::string("FOO".to_owned());
+        let value: TestValue = InputValue::scalar("FOO".to_owned());
         assert_eq!(format!("{}", value), "\"FOO\"");
 
-        let value: TestValue = InputValue::boolean(true);
+        let value: TestValue = InputValue::scalar(true);
         assert_eq!(format!("{}", value), "true");
 
         let value: TestValue = InputValue::enum_value("BAR".to_owned());
@@ -552,18 +568,18 @@ mod tests {
         let value: TestValue = InputValue::variable("baz".to_owned());
         assert_eq!(format!("{}", value), "$baz");
 
-        let list = vec![InputValue::int(1), InputValue::int(2)];
+        let list = vec![InputValue::scalar(1), InputValue::scalar(2)];
         let value: TestValue = InputValue::list(list);
         assert_eq!(format!("{}", value), "[1, 2]");
 
         let object = vec![
             (
                 Spanning::unlocated("foo".to_owned()),
-                Spanning::unlocated(InputValue::int(1)),
+                Spanning::unlocated(InputValue::scalar(1)),
             ),
             (
                 Spanning::unlocated("bar".to_owned()),
-                Spanning::unlocated(InputValue::int(2)),
+                Spanning::unlocated(InputValue::scalar(2)),
             ),
         ];
         let value: TestValue = InputValue::parsed_object(object);

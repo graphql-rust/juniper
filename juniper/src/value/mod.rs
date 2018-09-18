@@ -37,21 +37,25 @@ where
     }
 
     /// Construct an integer value.
+    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
     pub fn int(i: i32) -> Self {
         Self::scalar(i)
     }
 
     /// Construct a floating point value.
+    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
     pub fn float(f: f64) -> Self {
         Self::scalar(f)
     }
 
     /// Construct a string value.
+    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
     pub fn string(s: &str) -> Self {
         Self::scalar(s.to_owned())
     }
 
     /// Construct a boolean value.
+    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
     pub fn boolean(b: bool) -> Self {
         Self::scalar(b)
     }
@@ -66,6 +70,7 @@ where
         Value::Object(o)
     }
 
+    /// Construct a scalar value
     pub fn scalar<T>(s: T) -> Self
     where
         T: Into<S>,
@@ -95,6 +100,7 @@ where
     }
 
     /// View the underlying float value, if present.
+    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_float_value(&self) -> Option<f64>
     where
         for<'a> &'a S: ScalarRefValue<'a>,
@@ -135,6 +141,7 @@ where
     }
 
     /// View the underlying string value, if present.
+    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         Option<&'a String>: From<&'a S>,
@@ -270,31 +277,31 @@ mod tests {
     #[test]
     fn value_macro_string() {
         let s: Value<DefaultScalarValue> = graphql_value!("test");
-        assert_eq!(s, Value::string("test"));
+        assert_eq!(s, Value::scalar("test"));
     }
 
     #[test]
     fn value_macro_int() {
         let s: Value<DefaultScalarValue> = graphql_value!(123);
-        assert_eq!(s, Value::int(123));
+        assert_eq!(s, Value::scalar(123));
     }
 
     #[test]
     fn value_macro_float() {
         let s: Value<DefaultScalarValue> = graphql_value!(123.5);
-        assert_eq!(s, Value::float(123.5));
+        assert_eq!(s, Value::scalar(123.5));
     }
 
     #[test]
     fn value_macro_boolean() {
         let s: Value<DefaultScalarValue> = graphql_value!(false);
-        assert_eq!(s, Value::boolean(false));
+        assert_eq!(s, Value::scalar(false));
     }
 
     #[test]
     fn value_macro_option() {
         let s: Value<DefaultScalarValue> = graphql_value!(Some("test"));
-        assert_eq!(s, Value::string("test"));
+        assert_eq!(s, Value::scalar("test"));
         let s: Value<DefaultScalarValue> = graphql_value!(None);
         assert_eq!(s, Value::null());
     }
@@ -305,18 +312,18 @@ mod tests {
         assert_eq!(
             s,
             Value::list(vec![
-                Value::int(123),
-                Value::string("Test"),
-                Value::boolean(false),
+                Value::scalar(123),
+                Value::scalar("Test"),
+                Value::scalar(false),
             ])
         );
         let s: Value<DefaultScalarValue> = graphql_value!([123, [456], 789]);
         assert_eq!(
             s,
             Value::list(vec![
-                Value::int(123),
-                Value::list(vec![Value::int(456)]),
-                Value::int(789),
+                Value::scalar(123),
+                Value::list(vec![Value::scalar(456)]),
+                Value::scalar(789),
             ])
         );
     }
@@ -327,7 +334,7 @@ mod tests {
         assert_eq!(
             s,
             Value::object(
-                vec![("key", Value::int(123)), ("next", Value::boolean(true))]
+                vec![("key", Value::scalar(123)), ("next", Value::scalar(true))]
                     .into_iter()
                     .collect(),
             )

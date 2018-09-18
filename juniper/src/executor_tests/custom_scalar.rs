@@ -4,11 +4,10 @@ use parser::{ParseError, ScalarToken, Token};
 use schema::meta::MetaType;
 use schema::model::RootNode;
 use serde::de::{self, Deserialize, Deserializer};
-use serde::ser::{Serialize, Serializer};
-use std::fmt::{self, Display};
+use std::fmt;
 use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
-use value::{Object, ScalarRefValue, ScalarValue, Value};
+use value::{Object, ScalarRefValue, Value};
 
 #[derive(Debug, Clone, PartialEq, ScalarValue)]
 enum MyScalarValue {

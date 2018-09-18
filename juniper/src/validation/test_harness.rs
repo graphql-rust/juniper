@@ -718,7 +718,7 @@ where
     let errs = validate(r, m, q, factory);
 
     if !errs.is_empty() {
-        print_errors(&errs, q);
+        print_errors(&errs);
         panic!("Expected rule to pass, but errors found");
     }
 }
@@ -753,16 +753,16 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
         panic!("Expected rule to fail, but no errors were found");
     } else if errs != expected_errors {
         println!("==> Expected errors:");
-        print_errors(expected_errors, q);
+        print_errors(expected_errors);
 
         println!("\n==> Actual errors:");
-        print_errors(&errs, q);
+        print_errors(&errs);
 
         panic!("Unexpected set of errors found");
     }
 }
 
-fn print_errors(errs: &[RuleError], query: &str) {
+fn print_errors(errs: &[RuleError]) {
     for err in errs {
         for p in err.locations() {
             print!("[{:>3},{:>3},{:>3}]  ", p.index(), p.line(), p.column());

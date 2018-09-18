@@ -15,12 +15,12 @@ struct TestType;
 
 graphql_scalar!(TestComplexScalar where Scalar = <S> {
     resolve(&self) -> Value {
-        Value::string("SerializedValue")
+        Value::scalar(String::from("SerializedValue"))
     }
 
     from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
-        if let Some(s) = v.as_string_value() {
-            if s == "SerializedValue" {
+        if let Some(s) = v.as_scalar_value::<String>() {
+            if *s == "SerializedValue" {
                 return Some(TestComplexScalar);
             }
         }
@@ -144,7 +144,7 @@ fn inline_complex_input() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
+                Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
 }
@@ -156,7 +156,7 @@ fn inline_parse_single_value_to_list() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
+                Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
 }
@@ -168,7 +168,7 @@ fn inline_runs_from_input_value_on_scalar() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
+                Some(&Value::scalar(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
         },
     );
 }
@@ -181,9 +181,9 @@ fn variable_complex_input() {
             "input".to_owned(),
             InputValue::object(
                 vec![
-                    ("a", InputValue::string("foo")),
-                    ("b", InputValue::list(vec![InputValue::string("bar")])),
-                    ("c", InputValue::string("baz")),
+                    ("a", InputValue::scalar("foo")),
+                    ("b", InputValue::list(vec![InputValue::scalar("bar")])),
+                    ("c", InputValue::scalar("baz")),
                 ].into_iter()
                 .collect(),
             ),
@@ -192,7 +192,7 @@ fn variable_complex_input() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
+                Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
 }
@@ -205,9 +205,9 @@ fn variable_parse_single_value_to_list() {
             "input".to_owned(),
             InputValue::object(
                 vec![
-                    ("a", InputValue::string("foo")),
-                    ("b", InputValue::string("bar")),
-                    ("c", InputValue::string("baz")),
+                    ("a", InputValue::scalar("foo")),
+                    ("b", InputValue::scalar("bar")),
+                    ("c", InputValue::scalar("baz")),
                 ].into_iter()
                 .collect(),
             ),
@@ -216,7 +216,7 @@ fn variable_parse_single_value_to_list() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::string(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
+                Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
         },
     );
 }
@@ -229,8 +229,8 @@ fn variable_runs_from_input_value_on_scalar() {
             "input".to_owned(),
             InputValue::object(
                 vec![
-                    ("c", InputValue::string("baz")),
-                    ("d", InputValue::string("SerializedValue")),
+                    ("c", InputValue::scalar("baz")),
+                    ("d", InputValue::scalar("SerializedValue")),
                 ].into_iter()
                 .collect(),
             ),
@@ -239,7 +239,7 @@ fn variable_runs_from_input_value_on_scalar() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
-                Some(&Value::string(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
+                Some(&Value::scalar(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
         },
     );
 }
@@ -254,8 +254,8 @@ fn variable_error_on_nested_non_null() {
         "input".to_owned(),
         InputValue::object(
             vec![
-                ("a", InputValue::string("foo")),
-                ("b", InputValue::string("bar")),
+                ("a", InputValue::scalar("foo")),
+                ("b", InputValue::scalar("bar")),
                 ("c", InputValue::null()),
             ].into_iter()
             .collect(),
@@ -280,7 +280,7 @@ fn variable_error_on_incorrect_type() {
         RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
-    let vars = vec![("input".to_owned(), InputValue::string("foo bar"))]
+    let vars = vec![("input".to_owned(), InputValue::scalar("foo bar"))]
         .into_iter()
         .collect();
 
@@ -304,8 +304,8 @@ fn variable_error_on_omit_non_null() {
         "input".to_owned(),
         InputValue::object(
             vec![
-                ("a", InputValue::string("foo")),
-                ("b", InputValue::string("bar")),
+                ("a", InputValue::scalar("foo")),
+                ("b", InputValue::scalar("bar")),
             ].into_iter()
             .collect(),
         ),
@@ -335,7 +335,7 @@ fn variable_multiple_errors_with_nesting() {
         InputValue::object(
             vec![(
                 "na",
-                InputValue::object(vec![("a", InputValue::string("foo"))].into_iter().collect()),
+                InputValue::object(vec![("a", InputValue::scalar("foo"))].into_iter().collect()),
             )].into_iter()
             .collect(),
         ),
@@ -366,10 +366,10 @@ fn variable_error_on_additional_field() {
         "input".to_owned(),
         InputValue::object(
             vec![
-                ("a", InputValue::string("foo")),
-                ("b", InputValue::string("bar")),
-                ("c", InputValue::string("baz")),
-                ("extra", InputValue::string("dog")),
+                ("a", InputValue::scalar("foo")),
+                ("b", InputValue::scalar("bar")),
+                ("c", InputValue::scalar("baz")),
+                ("extra", InputValue::scalar("dog")),
             ].into_iter()
             .collect(),
         ),
@@ -394,7 +394,7 @@ fn allow_nullable_inputs_to_be_omitted() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::string(r#"None"#))
+                Some(&Value::scalar(r#"None"#))
             );
         },
     );
@@ -407,7 +407,7 @@ fn allow_nullable_inputs_to_be_omitted_in_variable() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::string(r#"None"#))
+                Some(&Value::scalar(r#"None"#))
             );
         },
     );
@@ -420,7 +420,7 @@ fn allow_nullable_inputs_to_be_explicitly_null() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::string(r#"None"#))
+                Some(&Value::scalar(r#"None"#))
             );
         },
     );
@@ -436,7 +436,7 @@ fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::string(r#"None"#))
+                Some(&Value::scalar(r#"None"#))
             );
         },
     );
@@ -446,13 +446,13 @@ fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
 fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
     run_variable_query(
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,
-        vec![("value".to_owned(), InputValue::string("a"))]
+        vec![("value".to_owned(), InputValue::scalar("a"))]
             .into_iter()
             .collect(),
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::string(r#"Some("a")"#))
+                Some(&Value::scalar(r#"Some("a")"#))
             );
         },
     );
@@ -465,7 +465,7 @@ fn allow_nullable_inputs_to_be_set_to_value_directly() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
-                Some(&Value::string(r#"Some("a")"#))
+                Some(&Value::scalar(r#"Some("a")"#))
             );
         },
     );
@@ -515,13 +515,13 @@ fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
 fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
     run_variable_query(
         r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#,
-        vec![("value".to_owned(), InputValue::string("a"))]
+        vec![("value".to_owned(), InputValue::scalar("a"))]
             .into_iter()
             .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithNonNullableStringInput"),
-                Some(&Value::string(r#""a""#))
+                Some(&Value::scalar(r#""a""#))
             );
         },
     );
@@ -534,7 +534,7 @@ fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNonNullableStringInput"),
-                Some(&Value::string(r#""a""#))
+                Some(&Value::scalar(r#""a""#))
             );
         },
     );
@@ -550,7 +550,7 @@ fn allow_lists_to_be_null() {
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
                 result.get_field_value("list"),
-                Some(&Value::string(r#"None"#))
+                Some(&Value::scalar(r#"None"#))
             );
         },
     );
@@ -562,13 +562,13 @@ fn allow_lists_to_contain_values() {
         r#"query q($input: [String]) { list(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::list(vec![InputValue::string("A")]),
+            InputValue::list(vec![InputValue::scalar("A")]),
         )].into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
-                Some(&Value::string(r#"Some([Some("A")])"#))
+                Some(&Value::scalar(r#"Some([Some("A")])"#))
             );
         },
     );
@@ -581,16 +581,16 @@ fn allow_lists_to_contain_null() {
         vec![(
             "input".to_owned(),
             InputValue::list(vec![
-                InputValue::string("A"),
+                InputValue::scalar("A"),
                 InputValue::null(),
-                InputValue::string("B"),
+                InputValue::scalar("B"),
             ]),
         )].into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("list"),
-                Some(&Value::string(r#"Some([Some("A"), None, Some("B")])"#))
+                Some(&Value::scalar(r#"Some([Some("A"), None, Some("B")])"#))
             );
         },
     );
@@ -623,13 +623,13 @@ fn allow_non_null_lists_to_contain_values() {
         r#"query q($input: [String]!) { nnList(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::list(vec![InputValue::string("A")]),
+            InputValue::list(vec![InputValue::scalar("A")]),
         )].into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
-                Some(&Value::string(r#"[Some("A")]"#))
+                Some(&Value::scalar(r#"[Some("A")]"#))
             );
         },
     );
@@ -641,16 +641,16 @@ fn allow_non_null_lists_to_contain_null() {
         vec![(
             "input".to_owned(),
             InputValue::list(vec![
-                InputValue::string("A"),
+                InputValue::scalar("A"),
                 InputValue::null(),
-                InputValue::string("B"),
+                InputValue::scalar("B"),
             ]),
         )].into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnList"),
-                Some(&Value::string(r#"[Some("A"), None, Some("B")]"#))
+                Some(&Value::scalar(r#"[Some("A"), None, Some("B")]"#))
             );
         },
     );
@@ -666,7 +666,7 @@ fn allow_lists_of_non_null_to_be_null() {
         |result| {
             assert_eq!(
                 result.get_field_value("listNn"),
-                Some(&Value::string(r#"None"#))
+                Some(&Value::scalar(r#"None"#))
             );
         },
     );
@@ -678,13 +678,13 @@ fn allow_lists_of_non_null_to_contain_values() {
         r#"query q($input: [String!]) { listNn(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::list(vec![InputValue::string("A")]),
+            InputValue::list(vec![InputValue::scalar("A")]),
         )].into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("listNn"),
-                Some(&Value::string(r#"Some(["A"])"#))
+                Some(&Value::scalar(r#"Some(["A"])"#))
             );
         },
     );
@@ -699,9 +699,9 @@ fn does_not_allow_lists_of_non_null_to_contain_null() {
     let vars = vec![(
         "input".to_owned(),
         InputValue::list(vec![
-            InputValue::string("A"),
+            InputValue::scalar("A"),
             InputValue::null(),
-            InputValue::string("B"),
+            InputValue::scalar("B"),
         ]),
     )].into_iter()
     .collect();
@@ -725,9 +725,9 @@ fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
     let vars = vec![(
         "input".to_owned(),
         InputValue::list(vec![
-            InputValue::string("A"),
+            InputValue::scalar("A"),
             InputValue::null(),
-            InputValue::string("B"),
+            InputValue::scalar("B"),
         ]),
     )].into_iter()
     .collect();
@@ -769,13 +769,13 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
         r#"query q($input: [String!]!) { nnListNn(input: $input) }"#,
         vec![(
             "input".to_owned(),
-            InputValue::list(vec![InputValue::string("A")]),
+            InputValue::list(vec![InputValue::scalar("A")]),
         )].into_iter()
         .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("nnListNn"),
-                Some(&Value::string(r#"["A"]"#))
+                Some(&Value::scalar(r#"["A"]"#))
             );
         },
     );
@@ -789,7 +789,7 @@ fn does_not_allow_invalid_types_to_be_used_as_values() {
     let query = r#"query q($input: TestType!) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "value".to_owned(),
-        InputValue::list(vec![InputValue::string("A"), InputValue::string("B")]),
+        InputValue::list(vec![InputValue::scalar("A"), InputValue::scalar("B")]),
     )].into_iter()
     .collect();
 
@@ -811,7 +811,7 @@ fn does_not_allow_unknown_types_to_be_used_as_values() {
     let query = r#"query q($input: UnknownType!) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
         "value".to_owned(),
-        InputValue::list(vec![InputValue::string("A"), InputValue::string("B")]),
+        InputValue::list(vec![InputValue::scalar("A"), InputValue::scalar("B")]),
     )].into_iter()
     .collect();
 
@@ -830,7 +830,7 @@ fn default_argument_when_not_provided() {
     run_query(r#"{ fieldWithDefaultArgumentValue }"#, |result| {
         assert_eq!(
             result.get_field_value("fieldWithDefaultArgumentValue"),
-            Some(&Value::string(r#""Hello World""#))
+            Some(&Value::scalar(r#""Hello World""#))
         );
     });
 }
@@ -842,7 +842,7 @@ fn default_argument_when_nullable_variable_not_provided() {
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&Value::string(r#""Hello World""#))
+                Some(&Value::scalar(r#""Hello World""#))
             );
         },
     );
@@ -858,7 +858,7 @@ fn default_argument_when_nullable_variable_set_to_null() {
         |result| {
             assert_eq!(
                 result.get_field_value("fieldWithDefaultArgumentValue"),
-                Some(&Value::string(r#""Hello World""#))
+                Some(&Value::scalar(r#""Hello World""#))
             );
         },
     );
@@ -869,14 +869,14 @@ fn nullable_input_object_arguments_successful_without_variables() {
     run_query(r#"{ exampleInput(arg: {a: "abc", b: 123}) }"#, |result| {
         assert_eq!(
             result.get_field_value("exampleInput"),
-            Some(&Value::string(r#"a: Some("abc"), b: 123"#))
+            Some(&Value::scalar(r#"a: Some("abc"), b: 123"#))
         );
     });
 
     run_query(r#"{ exampleInput(arg: {a: null, b: 1}) }"#, |result| {
         assert_eq!(
             result.get_field_value("exampleInput"),
-            Some(&Value::string(r#"a: None, b: 1"#))
+            Some(&Value::scalar(r#"a: None, b: 1"#))
         );
     });
 }
@@ -885,13 +885,13 @@ fn nullable_input_object_arguments_successful_without_variables() {
 fn nullable_input_object_arguments_successful_with_variables() {
     run_variable_query(
         r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#,
-        vec![("var".to_owned(), InputValue::int(123))]
+        vec![("var".to_owned(), InputValue::scalar(123))]
             .into_iter()
             .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("exampleInput"),
-                Some(&Value::string(r#"a: None, b: 123"#))
+                Some(&Value::scalar(r#"a: None, b: 123"#))
             );
         },
     );
@@ -904,7 +904,7 @@ fn nullable_input_object_arguments_successful_with_variables() {
         |result| {
             assert_eq!(
                 result.get_field_value("exampleInput"),
-                Some(&Value::string(r#"a: None, b: 1"#))
+                Some(&Value::scalar(r#"a: None, b: 1"#))
             );
         },
     );
@@ -915,7 +915,7 @@ fn nullable_input_object_arguments_successful_with_variables() {
         |result| {
             assert_eq!(
                 result.get_field_value("exampleInput"),
-                Some(&Value::string(r#"a: None, b: 1"#))
+                Some(&Value::scalar(r#"a: None, b: 1"#))
             );
         },
     );
@@ -1004,19 +1004,19 @@ fn input_object_with_default_values() {
     run_query(r#"{ inputWithDefaults(arg: {a: 1}) }"#, |result| {
         assert_eq!(
             result.get_field_value("inputWithDefaults"),
-            Some(&Value::string(r#"a: 1"#))
+            Some(&Value::scalar(r#"a: 1"#))
         );
     });
 
     run_variable_query(
         r#"query q($var: Int!) { inputWithDefaults(arg: {a: $var}) }"#,
-        vec![("var".to_owned(), InputValue::int(1))]
+        vec![("var".to_owned(), InputValue::scalar(1))]
             .into_iter()
             .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("inputWithDefaults"),
-                Some(&Value::string(r#"a: 1"#))
+                Some(&Value::scalar(r#"a: 1"#))
             );
         },
     );
@@ -1027,20 +1027,20 @@ fn input_object_with_default_values() {
         |result| {
             assert_eq!(
                 result.get_field_value("inputWithDefaults"),
-                Some(&Value::string(r#"a: 1"#))
+                Some(&Value::scalar(r#"a: 1"#))
             );
         },
     );
 
     run_variable_query(
         r#"query q($var: Int = 1) { inputWithDefaults(arg: {a: $var}) }"#,
-        vec![("var".to_owned(), InputValue::int(2))]
+        vec![("var".to_owned(), InputValue::scalar(2))]
             .into_iter()
             .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("inputWithDefaults"),
-                Some(&Value::string(r#"a: 2"#))
+                Some(&Value::scalar(r#"a: 2"#))
             );
         },
     );
@@ -1053,26 +1053,26 @@ mod integers {
     fn positive_and_negative_should_work() {
         run_variable_query(
             r#"query q($var: Int!) { integerInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::int(1))]
+            vec![("var".to_owned(), InputValue::scalar(1))]
                 .into_iter()
                 .collect(),
             |result| {
                 assert_eq!(
                     result.get_field_value("integerInput"),
-                    Some(&Value::string(r#"value: 1"#))
+                    Some(&Value::scalar(r#"value: 1"#))
                 );
             },
         );
 
         run_variable_query(
             r#"query q($var: Int!) { integerInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::int(-1))]
+            vec![("var".to_owned(), InputValue::scalar(-1))]
                 .into_iter()
                 .collect(),
             |result| {
                 assert_eq!(
                     result.get_field_value("integerInput"),
-                    Some(&Value::string(r#"value: -1"#))
+                    Some(&Value::scalar(r#"value: -1"#))
                 );
             },
         );
@@ -1084,7 +1084,7 @@ mod integers {
             RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
-        let vars = vec![("var".to_owned(), InputValue::float(10.0))]
+        let vars = vec![("var".to_owned(), InputValue::scalar(10.0))]
             .into_iter()
             .collect();
 
@@ -1105,7 +1105,7 @@ mod integers {
             RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
-        let vars = vec![("var".to_owned(), InputValue::string("10"))]
+        let vars = vec![("var".to_owned(), InputValue::scalar("10"))]
             .into_iter()
             .collect();
 
@@ -1128,13 +1128,13 @@ mod floats {
     fn float_values_should_work() {
         run_variable_query(
             r#"query q($var: Float!) { floatInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::float(10.0))]
+            vec![("var".to_owned(), InputValue::scalar(10.0))]
                 .into_iter()
                 .collect(),
             |result| {
                 assert_eq!(
                     result.get_field_value("floatInput"),
-                    Some(&Value::string(r#"value: 10"#))
+                    Some(&Value::scalar(r#"value: 10"#))
                 );
             },
         );
@@ -1144,13 +1144,13 @@ mod floats {
     fn coercion_from_integers_should_work() {
         run_variable_query(
             r#"query q($var: Float!) { floatInput(value: $var) }"#,
-            vec![("var".to_owned(), InputValue::int(-1))]
+            vec![("var".to_owned(), InputValue::scalar(-1))]
                 .into_iter()
                 .collect(),
             |result| {
                 assert_eq!(
                     result.get_field_value("floatInput"),
-                    Some(&Value::string(r#"value: -1"#))
+                    Some(&Value::scalar(r#"value: -1"#))
                 );
             },
         );
@@ -1162,7 +1162,7 @@ mod floats {
             RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
-        let vars = vec![("var".to_owned(), InputValue::string("10"))]
+        let vars = vec![("var".to_owned(), InputValue::scalar("10"))]
             .into_iter()
             .collect();
 

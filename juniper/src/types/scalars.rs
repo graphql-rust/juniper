@@ -33,7 +33,7 @@ impl Deref for ID {
 
 graphql_scalar!(ID as "ID" where Scalar = <S>{
     resolve(&self) -> Value {
-        Value::string(&self.0)
+        Value::scalar(self.0.clone())
     }
 
     from_input_value(v: &InputValue) -> Option<ID> {
@@ -59,7 +59,7 @@ graphql_scalar!(ID as "ID" where Scalar = <S>{
 
 graphql_scalar!(String as "String" where Scalar = <S>{
     resolve(&self) -> Value {
-        Value::string(self)
+        Value::scalar(self.clone())
     }
 
     from_input_value(v: &InputValue) -> Option<String> {
@@ -182,7 +182,7 @@ where
         _: Option<&[Selection<S>]>,
         _: &Executor<S, Self::Context>,
     ) -> Value<S> {
-        Value::string(self)
+        Value::scalar(String::from(*self))
     }
 }
 
@@ -191,13 +191,13 @@ where
     S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
-        InputValue::string(self)
+        InputValue::scalar(String::from(*self))
     }
 }
 
 graphql_scalar!(bool as "Boolean" where Scalar = <S>{
     resolve(&self) -> Value {
-        Value::boolean(*self)
+        Value::scalar(*self)
     }
 
     from_input_value(v: &InputValue) -> Option<bool> {
@@ -215,7 +215,7 @@ graphql_scalar!(bool as "Boolean" where Scalar = <S>{
 
 graphql_scalar!(i32 as "Int" where Scalar = <S>{
     resolve(&self) -> Value {
-        Value::int(*self)
+        Value::scalar(*self)
     }
 
     from_input_value(v: &InputValue) -> Option<i32> {
@@ -238,7 +238,7 @@ graphql_scalar!(i32 as "Int" where Scalar = <S>{
 
 graphql_scalar!(f64 as "Float" where Scalar = <S>{
     resolve(&self) -> Value {
-        Value::float(*self)
+        Value::scalar(*self)
     }
 
     from_input_value(v: &InputValue) -> Option<f64> {

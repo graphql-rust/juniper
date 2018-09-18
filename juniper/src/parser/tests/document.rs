@@ -71,7 +71,7 @@ fn simple_ast() {
                                     Spanning::start_end(
                                         &SourcePosition::new(40, 2, 25),
                                         &SourcePosition::new(41, 2, 26),
-                                        InputValue::int(4),
+                                        InputValue::scalar(4),
                                     ),
                                 )],
                             },

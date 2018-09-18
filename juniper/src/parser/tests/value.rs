@@ -76,7 +76,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(3, 0, 3),
-            InputValue::int(123)
+            InputValue::scalar(123)
         )
     );
     assert_eq!(
@@ -84,7 +84,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(6, 0, 6),
-            InputValue::float(123.45)
+            InputValue::scalar(123.45)
         )
     );
     assert_eq!(
@@ -92,7 +92,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(4, 0, 4),
-            InputValue::boolean(true)
+            InputValue::scalar(true)
         )
     );
     assert_eq!(
@@ -100,7 +100,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(5, 0, 5),
-            InputValue::boolean(false)
+            InputValue::scalar(false)
         )
     );
     assert_eq!(
@@ -108,7 +108,7 @@ fn input_value_literals() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(6, 0, 6),
-            InputValue::string("test")
+            InputValue::scalar("test")
         )
     );
     let values = &[EnumValue::new("enum_value")];
@@ -147,7 +147,7 @@ fn input_value_literals() {
                 Spanning::start_end(
                     &SourcePosition::new(1, 0, 1),
                     &SourcePosition::new(2, 0, 2),
-                    InputValue::int(1),
+                    InputValue::scalar(1),
                 ),
                 Spanning::start_end(
                     &SourcePosition::new(4, 0, 4),
@@ -156,12 +156,12 @@ fn input_value_literals() {
                         Spanning::start_end(
                             &SourcePosition::new(5, 0, 5),
                             &SourcePosition::new(6, 0, 6),
-                            InputValue::int(2),
+                            InputValue::scalar(2),
                         ),
                         Spanning::start_end(
                             &SourcePosition::new(8, 0, 8),
                             &SourcePosition::new(9, 0, 9),
-                            InputValue::int(3),
+                            InputValue::scalar(3),
                         ),
                     ]),
                 ),
@@ -198,7 +198,7 @@ fn input_value_literals() {
                     Spanning::start_end(
                         &SourcePosition::new(6, 0, 6),
                         &SourcePosition::new(9, 0, 9),
-                        InputValue::int(123),
+                        InputValue::scalar(123),
                     ),
                 ),
                 (
@@ -219,7 +219,7 @@ fn input_value_literals() {
                             Spanning::start_end(
                                 &SourcePosition::new(24, 0, 24),
                                 &SourcePosition::new(29, 0, 29),
-                                InputValue::string("bar"),
+                                InputValue::scalar("bar"),
                             ),
                         )]),
                     ),

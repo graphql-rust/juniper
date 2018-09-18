@@ -124,7 +124,7 @@ where
     }
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
-    let vars = vec![("typeName".to_owned(), InputValue::string(type_name))]
+    let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();
 
@@ -154,12 +154,12 @@ where
 #[test]
 fn introspect_custom_name() {
     run_type_info_query("ACustomNamedUnion", |union, possible_types| {
-        assert_eq!(union.get_field_value("name"), Some(&Value::string("ACustomNamedUnion")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::scalar("ACustomNamedUnion")));
         assert_eq!(union.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))
@@ -170,12 +170,12 @@ fn introspect_custom_name() {
 #[test]
 fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |union, possible_types| {
-        assert_eq!(union.get_field_value("name"), Some(&Value::string("WithLifetime")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::scalar("WithLifetime")));
         assert_eq!(union.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))
@@ -186,12 +186,12 @@ fn introspect_with_lifetime() {
 #[test]
 fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |union, possible_types| {
-        assert_eq!(union.get_field_value("name"), Some(&Value::string("WithGenerics")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::scalar("WithGenerics")));
         assert_eq!(union.get_field_value("description"), Some(&Value::null()));
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))
@@ -202,15 +202,15 @@ fn introspect_with_generics() {
 #[test]
 fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |union, possible_types| {
-        assert_eq!(union.get_field_value("name"), Some(&Value::string("DescriptionFirst")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::scalar("DescriptionFirst")));
         assert_eq!(
             union.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))
@@ -221,15 +221,15 @@ fn introspect_description_first() {
 #[test]
 fn introspect_resolvers_first() {
     run_type_info_query("ResolversFirst", |union, possible_types| {
-        assert_eq!(union.get_field_value("name"), Some(&Value::string("ResolversFirst")));
+        assert_eq!(union.get_field_value("name"), Some(&Value::scalar("ResolversFirst")));
         assert_eq!(
             union.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))
@@ -242,16 +242,16 @@ fn introspect_commas_with_trailing() {
     run_type_info_query("CommasWithTrailing", |union, possible_types| {
         assert_eq!(
             union.get_field_value("name"),
-            Some(&Value::string("CommasWithTrailing"))
+            Some(&Value::scalar("CommasWithTrailing"))
         );
         assert_eq!(
             union.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))
@@ -264,16 +264,16 @@ fn introspect_resolvers_with_trailing_comma() {
     run_type_info_query("ResolversWithTrailingComma", |union, possible_types| {
         assert_eq!(
             union.get_field_value("name"),
-            Some(&Value::string("ResolversWithTrailingComma"))
+            Some(&Value::scalar("ResolversWithTrailingComma"))
         );
         assert_eq!(
             union.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
 
         assert!(
             possible_types.contains(&Value::object(
-                vec![("name", Value::string("Concrete"))]
+                vec![("name", Value::scalar("Concrete"))]
                     .into_iter()
                     .collect(),
             ))

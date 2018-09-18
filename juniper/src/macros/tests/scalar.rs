@@ -22,11 +22,11 @@ Syntax to validate:
 
 graphql_scalar!(DefaultName where Scalar = <S> {
     resolve(&self) -> Value {
-        Value::int(self.0)
+        Value::scalar(self.0)
     }
 
     from_input_value(v: &InputValue) -> Option<DefaultName> {
-        v.as_int_value().map(|i| DefaultName(i))
+        v.as_scalar_value().map(|i: &i32| DefaultName(*i))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
@@ -35,11 +35,11 @@ graphql_scalar!(DefaultName where Scalar = <S> {
 });
 graphql_scalar!(OtherOrder where Scalar = <S> {
     resolve(&self) -> Value {
-        Value::int(self.0)
+        Value::scalar(self.0)
     }
 
     from_input_value(v: &InputValue) -> Option<OtherOrder> {
-        v.as_int_value().map(|i| OtherOrder(i))
+        v.as_scalar_value().map(|i: &i32| OtherOrder(*i))
     }
 
 
@@ -49,11 +49,11 @@ graphql_scalar!(OtherOrder where Scalar = <S> {
 });
 graphql_scalar!(Named as "ANamedScalar" where Scalar = <S> {
     resolve(&self) -> Value {
-        Value::int(self.0)
+        Value::scalar(self.0)
     }
 
     from_input_value(v: &InputValue) -> Option<Named> {
-        v.as_int_value().map(|i| Named(i))
+        v.as_scalar_value().map(|i: &i32| Named(*i))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
@@ -65,11 +65,11 @@ graphql_scalar!(ScalarDescription where Scalar = <S> {
     description: "A sample scalar, represented as an integer"
 
     resolve(&self) -> Value {
-        Value::int(self.0)
+        Value::scalar(self.0)
     }
 
     from_input_value(v: &InputValue) -> Option<ScalarDescription> {
-        v.as_int_value().map(|i| ScalarDescription(i))
+        v.as_scalar_value().map(|i: &i32| ScalarDescription(*i))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
@@ -134,7 +134,7 @@ fn default_name_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("DefaultName")));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("DefaultName")));
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
     });
 }
@@ -151,7 +151,7 @@ fn other_order_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("OtherOrder")));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("OtherOrder")));
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
     });
 }
@@ -168,7 +168,7 @@ fn named_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("ANamedScalar")));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("ANamedScalar")));
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
     });
 }
@@ -187,11 +187,11 @@ fn scalar_description_introspection() {
     run_type_info_query(doc, |type_info| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::string("ScalarDescription"))
+            Some(&Value::scalar("ScalarDescription"))
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::string("A sample scalar, represented as an integer"))
+            Some(&Value::scalar("A sample scalar, represented as an integer"))
         );
     });
 }

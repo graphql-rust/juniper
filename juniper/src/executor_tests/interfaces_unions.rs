@@ -121,15 +121,15 @@ mod interface {
                     Value::list(vec![
                         Value::object(
                             vec![
-                                ("name", Value::string("Odie")),
-                                ("woofs", Value::boolean(true)),
+                                ("name", Value::scalar("Odie")),
+                                ("woofs", Value::scalar(true)),
                             ].into_iter()
                             .collect(),
                         ),
                         Value::object(
                             vec![
-                                ("name", Value::string("Garfield")),
-                                ("meows", Value::boolean(false)),
+                                ("name", Value::scalar("Garfield")),
+                                ("meows", Value::scalar(false)),
                             ].into_iter()
                             .collect(),
                         ),
@@ -252,17 +252,17 @@ mod union {
                     Value::list(vec![
                         Value::object(
                             vec![
-                                ("__typename", Value::string("Dog")),
-                                ("name", Value::string("Odie")),
-                                ("woofs", Value::boolean(true)),
+                                ("__typename", Value::scalar("Dog")),
+                                ("name", Value::scalar("Odie")),
+                                ("woofs", Value::scalar(true)),
                             ].into_iter()
                             .collect(),
                         ),
                         Value::object(
                             vec![
-                                ("__typename", Value::string("Cat")),
-                                ("name", Value::string("Garfield")),
-                                ("meows", Value::boolean(false)),
+                                ("__typename", Value::scalar("Cat")),
+                                ("name", Value::scalar("Garfield")),
+                                ("meows", Value::scalar(false)),
                             ].into_iter()
                             .collect(),
                         ),

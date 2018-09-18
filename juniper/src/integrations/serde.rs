@@ -96,7 +96,7 @@ where
             }
 
             fn visit_bool<E>(self, value: bool) -> Result<InputValue<S>, E> {
-                Ok(InputValue::boolean(value))
+                Ok(InputValue::scalar(value))
             }
 
             fn visit_i64<E>(self, value: i64) -> Result<InputValue<S>, E>
@@ -104,14 +104,14 @@ where
                 E: de::Error,
             {
                 if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
-                    Ok(InputValue::int(value as i32))
+                    Ok(InputValue::scalar(value as i32))
                 } else {
                     // Browser's JSON.stringify serialize all numbers having no
                     // fractional part as integers (no decimal point), so we
                     // must parse large integers as floating point otherwise
                     // we would error on transferring large floating point
                     // numbers.
-                    Ok(InputValue::float(value as f64))
+                    Ok(InputValue::scalar(value as f64))
                 }
             }
 
@@ -127,12 +127,12 @@ where
                     // must parse large integers as floating point otherwise
                     // we would error on transferring large floating point
                     // numbers.
-                    Ok(InputValue::float(value as f64))
+                    Ok(InputValue::scalar(value as f64))
                 }
             }
 
             fn visit_f64<E>(self, value: f64) -> Result<InputValue<S>, E> {
-                Ok(InputValue::float(value))
+                Ok(InputValue::scalar(value))
             }
 
             fn visit_str<E>(self, value: &str) -> Result<InputValue<S>, E>
@@ -143,7 +143,7 @@ where
             }
 
             fn visit_string<E>(self, value: String) -> Result<InputValue<S>, E> {
-                Ok(InputValue::string(value))
+                Ok(InputValue::scalar(value))
             }
 
             fn visit_none<E>(self) -> Result<InputValue<S>, E> {
@@ -313,6 +313,7 @@ where
 mod tests {
     use super::{ExecutionError, GraphQLError};
     use ast::InputValue;
+    use executor::ExecutionError;
     use serde_json::from_str;
     use serde_json::to_string;
     use {FieldError, Value};
@@ -322,7 +323,7 @@ mod tests {
     fn int() {
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
-            InputValue::int(1235)
+            InputValue::scalar(1235)
         );
     }
 
@@ -330,12 +331,12 @@ mod tests {
     fn float() {
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
-            InputValue::float(2.0)
+            InputValue::scalar(2.0)
         );
         // large value without a decimal part is also float
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
-            InputValue::float(123567890123.0)
+            InputValue::scalar(123567890123.0)
         );
     }
 

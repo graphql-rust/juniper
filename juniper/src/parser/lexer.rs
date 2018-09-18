@@ -16,7 +16,11 @@ pub struct Lexer<'a> {
     has_reached_eof: bool,
 }
 
+/// A single scalar value literal
+///
+/// This is only used for tagging how the lexer has interpreted a value literal
 #[derive(Debug, PartialEq, Clone, Copy)]
+#[allow(missing_docs)]
 pub enum ScalarToken<'a> {
     String(&'a str),
     Float(&'a str),

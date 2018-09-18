@@ -91,14 +91,14 @@ where
                 ..
             },
             _,
-        ) => Ok(parser.next()?.map(|_| InputValue::boolean(true))),
+        ) => Ok(parser.next()?.map(|_| InputValue::scalar(true))),
         (
             &Spanning {
                 item: Token::Name("false"),
                 ..
             },
             _,
-        ) => Ok(parser.next()?.map(|_| InputValue::boolean(false))),
+        ) => Ok(parser.next()?.map(|_| InputValue::scalar(false))),
         (
             &Spanning {
                 item: Token::Name("null"),

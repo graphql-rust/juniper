@@ -62,7 +62,7 @@ mod field_execution {
             e
           }";
 
-        let vars = vec![("size".to_owned(), InputValue::int(100))]
+        let vars = vec![("size".to_owned(), InputValue::scalar(100))]
             .into_iter()
             .collect();
 
@@ -76,25 +76,25 @@ mod field_execution {
             result,
             Value::object(
                 vec![
-                    ("a", Value::string("Apple")),
-                    ("b", Value::string("Banana")),
-                    ("x", Value::string("Cookie")),
-                    ("d", Value::string("Donut")),
-                    ("e", Value::string("Egg")),
-                    ("f", Value::string("Fish")),
-                    ("pic", Value::string("Pic of size: 100")),
+                    ("a", Value::scalar("Apple")),
+                    ("b", Value::scalar("Banana")),
+                    ("x", Value::scalar("Cookie")),
+                    ("d", Value::scalar("Donut")),
+                    ("e", Value::scalar("Egg")),
+                    ("f", Value::scalar("Fish")),
+                    ("pic", Value::scalar("Pic of size: 100")),
                     (
                         "deep",
                         Value::object(
                             vec![
-                                ("a", Value::string("Already Been Done")),
-                                ("b", Value::string("Boring")),
+                                ("a", Value::scalar("Already Been Done")),
+                                ("b", Value::scalar("Boring")),
                                 (
                                     "c",
                                     Value::list(vec![
-                                        Value::string("Contrived"),
+                                        Value::scalar("Contrived"),
                                         Value::null(),
-                                        Value::string("Confusing"),
+                                        Value::scalar("Confusing"),
                                     ]),
                                 ),
                                 (
@@ -102,16 +102,16 @@ mod field_execution {
                                     Value::list(vec![
                                         Value::object(
                                             vec![
-                                                ("a", Value::string("Apple")),
-                                                ("b", Value::string("Banana")),
+                                                ("a", Value::scalar("Apple")),
+                                                ("b", Value::scalar("Banana")),
                                             ].into_iter()
                                             .collect(),
                                         ),
                                         Value::null(),
                                         Value::object(
                                             vec![
-                                                ("a", Value::string("Apple")),
-                                                ("b", Value::string("Banana")),
+                                                ("a", Value::scalar("Apple")),
+                                                ("b", Value::scalar("Banana")),
                                             ].into_iter()
                                             .collect(),
                                         ),
@@ -169,29 +169,29 @@ mod merge_parallel_fragments {
             result,
             Value::object(
                 vec![
-                    ("a", Value::string("Apple")),
-                    ("b", Value::string("Banana")),
+                    ("a", Value::scalar("Apple")),
+                    ("b", Value::scalar("Banana")),
                     (
                         "deep",
                         Value::object(
                             vec![
-                                ("b", Value::string("Banana")),
+                                ("b", Value::scalar("Banana")),
                                 (
                                     "deeper",
                                     Value::object(
                                         vec![
-                                            ("b", Value::string("Banana")),
-                                            ("c", Value::string("Cherry")),
+                                            ("b", Value::scalar("Banana")),
+                                            ("c", Value::scalar("Cherry")),
                                         ].into_iter()
                                         .collect(),
                                     ),
                                 ),
-                                ("c", Value::string("Cherry")),
+                                ("c", Value::scalar("Cherry")),
                             ].into_iter()
                             .collect(),
                         ),
                     ),
-                    ("c", Value::string("Cherry")),
+                    ("c", Value::scalar("Cherry")),
                 ].into_iter()
                 .collect()
             )
@@ -264,13 +264,13 @@ mod merge_parallel_inline_fragments {
             result,
             Value::object(
                 vec![
-                    ("a", Value::string("Apple")),
-                    ("b", Value::string("Banana")),
+                    ("a", Value::scalar("Apple")),
+                    ("b", Value::scalar("Banana")),
                     (
                         "deep",
                         Value::object(
                             vec![
-                                ("b", Value::string("Banana")),
+                                ("b", Value::scalar("Banana")),
                                 (
                                     "deeper",
                                     Value::list(vec![
@@ -279,8 +279,8 @@ mod merge_parallel_inline_fragments {
                                                 "deepest",
                                                 Value::object(
                                                     vec![
-                                                        ("b", Value::string("Banana")),
-                                                        ("c", Value::string("Cherry")),
+                                                        ("b", Value::scalar("Banana")),
+                                                        ("c", Value::scalar("Cherry")),
                                                     ].into_iter()
                                                     .collect(),
                                                 ),
@@ -292,8 +292,8 @@ mod merge_parallel_inline_fragments {
                                                 "deepest",
                                                 Value::object(
                                                     vec![
-                                                        ("b", Value::string("Banana")),
-                                                        ("c", Value::string("Cherry")),
+                                                        ("b", Value::scalar("Banana")),
+                                                        ("c", Value::scalar("Cherry")),
                                                     ].into_iter()
                                                     .collect(),
                                                 ),
@@ -302,12 +302,12 @@ mod merge_parallel_inline_fragments {
                                         ),
                                     ]),
                                 ),
-                                ("c", Value::string("Cherry")),
+                                ("c", Value::scalar("Cherry")),
                             ].into_iter()
                             .collect(),
                         ),
                     ),
-                    ("c", Value::string("Cherry")),
+                    ("c", Value::scalar("Cherry")),
                 ].into_iter()
                 .collect()
             )
@@ -358,7 +358,7 @@ mod threads_context_correctly {
         assert_eq!(
             result,
             Value::object(
-                vec![("a", Value::string("Context value"))]
+                vec![("a", Value::scalar("Context value"))]
                     .into_iter()
                     .collect()
             )
@@ -460,7 +460,7 @@ mod dynamic_context_switching {
                     (
                         "first",
                         Value::object(
-                            vec![("value", Value::string("First value"))]
+                            vec![("value", Value::scalar("First value"))]
                                 .into_iter()
                                 .collect(),
                         ),
@@ -514,7 +514,7 @@ mod dynamic_context_switching {
                 vec![(
                     "first",
                     Value::object(
-                        vec![("value", Value::string("First value"))]
+                        vec![("value", Value::scalar("First value"))]
                             .into_iter()
                             .collect(),
                     ),
@@ -622,7 +622,7 @@ mod dynamic_context_switching {
                     (
                         "first",
                         Value::object(
-                            vec![("value", Value::string("First value"))]
+                            vec![("value", Value::scalar("First value"))]
                                 .into_iter()
                                 .collect(),
                         ),
@@ -673,7 +673,7 @@ mod dynamic_context_switching {
                 vec![(
                     "first",
                     Value::object(
-                        vec![("value", Value::string("First value"))]
+                        vec![("value", Value::scalar("First value"))]
                             .into_iter()
                             .collect(),
                     ),
@@ -981,7 +981,7 @@ mod named_operations {
 
         assert_eq!(
             result,
-            Value::object(vec![("a", Value::string("b"))].into_iter().collect())
+            Value::object(vec![("a", Value::scalar("b"))].into_iter().collect())
         );
     }
 
@@ -999,7 +999,7 @@ mod named_operations {
 
         assert_eq!(
             result,
-            Value::object(vec![("a", Value::string("b"))].into_iter().collect())
+            Value::object(vec![("a", Value::scalar("b"))].into_iter().collect())
         );
     }
 
@@ -1018,7 +1018,7 @@ mod named_operations {
 
         assert_eq!(
             result,
-            Value::object(vec![("second", Value::string("b"))].into_iter().collect())
+            Value::object(vec![("second", Value::scalar("b"))].into_iter().collect())
         );
     }
 

@@ -54,7 +54,7 @@ fn accepts_enum_literal() {
     run_query("{ toString(color: RED) }", |result| {
         assert_eq!(
             result.get_field_value("toString"),
-            Some(&Value::string("Color::Red"))
+            Some(&Value::scalar("Color::Red"))
         );
     });
 }
@@ -64,7 +64,7 @@ fn serializes_as_output() {
     run_query("{ aColor }", |result| {
         assert_eq!(
             result.get_field_value("aColor"),
-            Some(&Value::string("RED"))
+            Some(&Value::scalar("RED"))
         );
     });
 }
@@ -92,13 +92,13 @@ fn does_not_accept_string_literals() {
 fn accepts_strings_in_variables() {
     run_variable_query(
         "query q($color: Color!) { toString(color: $color) }",
-        vec![("color".to_owned(), InputValue::string("RED"))]
+        vec![("color".to_owned(), InputValue::scalar("RED"))]
             .into_iter()
             .collect(),
         |result| {
             assert_eq!(
                 result.get_field_value("toString"),
-                Some(&Value::string("Color::Red"))
+                Some(&Value::scalar("Color::Red"))
             );
         },
     );
@@ -110,7 +110,7 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
         RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), InputValue::string("BLURPLE"))]
+    let vars = vec![("color".to_owned(), InputValue::scalar("BLURPLE"))]
         .into_iter()
         .collect();
 
@@ -131,7 +131,7 @@ fn does_not_accept_incorrect_type_in_variables() {
         RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = vec![("color".to_owned(), InputValue::int(123))]
+    let vars = vec![("color".to_owned(), InputValue::scalar(123))]
         .into_iter()
         .collect();
 

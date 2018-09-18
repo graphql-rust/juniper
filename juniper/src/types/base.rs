@@ -378,7 +378,7 @@ where
                 if f.name.item == "__typename" {
                     result.add_field(
                         response_name,
-                        Value::string(&instance.concrete_type_name(executor.context(), info)),
+                        Value::scalar(instance.concrete_type_name(executor.context(), info)),
                     );
                     continue;
                 }

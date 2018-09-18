@@ -162,11 +162,12 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
                 description: #descr,
                 deprecation_reason: #depr,
             },
-        });
+        };
+        values.push(value);
 
         // Build resolve match clause.
         resolves.extend(quote!{
-            &#ident::#var_ident => _juniper::Value::String(#name.to_string()),
+            &#ident::#var_ident => _juniper::Value::scalar(String::from(#name)),
         });
 
         // Build from_input clause.
@@ -177,7 +178,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
         // Build to_input clause.
         to_inputs.extend(quote!{
             &#ident::#var_ident =>
-                _juniper::InputValue::string(#name.to_string()),
+                _juniper::InputValue::scalar(#name.to_string()),
         });
     }
 
@@ -220,7 +221,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             fn from_input_value(v: &_juniper::InputValue<__S>) -> Option<#ident>
                 where for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
             {
-                match v.as_enum_value().or_else(|| v.as_string_value()) {
+                match v.as_enum_value().or_else(|| v.as_scalar_value().map(|s: &String| s as &str)) {
                     #(#from_inputs)*
                     _ => None,
                 }

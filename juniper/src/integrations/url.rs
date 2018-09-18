@@ -8,12 +8,12 @@ graphql_scalar!(Url where Scalar = <S>{
     description: "Url"
 
     resolve(&self) -> Value {
-        Value::string(self.as_str())
+        Value::scalar(self.as_str().to_owned())
     }
 
     from_input_value(v: &InputValue) -> Option<Url> {
-        v.as_string_value()
-         .and_then(|s| Url::parse(s).ok())
+        v.as_scalar_value()
+         .and_then(|s: &String| Url::parse(s).ok())
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
@@ -29,7 +29,7 @@ mod test {
     #[test]
     fn url_from_input_value() {
         let raw = "https://example.net/";
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::string(raw.to_string());
+        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
 
         let parsed: Url = ::FromInputValue::from_input_value(&input).unwrap();
         let url = Url::parse(raw).unwrap();
