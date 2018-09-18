@@ -1,8 +1,8 @@
 use ast::InputValue;
 use executor::{ExecutionResult, Executor, Registry, Variables};
 use parser::{ParseError, ScalarToken, Token};
-use schema::model::RootNode;
 use schema::meta::MetaType;
+use schema::model::RootNode;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use std::fmt::{self, Display};
@@ -10,161 +10,13 @@ use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
 use value::{Object, ScalarRefValue, ScalarValue, Value};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, ScalarValue)]
 enum MyScalarValue {
     Int(i32),
     Long(i64),
     Float(f64),
     String(String),
     Boolean(bool),
-}
-
-impl ScalarValue for MyScalarValue {}
-
-impl Display for MyScalarValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            MyScalarValue::Int(i) => write!(f, "{}", i),
-            MyScalarValue::Long(i) => write!(f, "{}", i),
-            MyScalarValue::Float(n) => write!(f, "{}", n),
-            MyScalarValue::String(ref s) => write!(f, "\"{}\"", s),
-            MyScalarValue::Boolean(b) => write!(f, "{}", b),
-        }
-    }
-}
-
-impl<'a> From<&'a str> for MyScalarValue {
-    fn from(s: &'a str) -> Self {
-        MyScalarValue::String(s.into())
-    }
-}
-
-impl From<String> for MyScalarValue {
-    fn from(s: String) -> Self {
-        (&s as &str).into()
-    }
-}
-
-impl From<bool> for MyScalarValue {
-    fn from(b: bool) -> Self {
-        MyScalarValue::Boolean(b)
-    }
-}
-
-impl From<i32> for MyScalarValue {
-    fn from(i: i32) -> Self {
-        MyScalarValue::Int(i)
-    }
-}
-
-impl From<i64> for MyScalarValue {
-    fn from(i: i64) -> Self {
-        MyScalarValue::Long(i)
-    }
-}
-
-impl From<f64> for MyScalarValue {
-    fn from(f: f64) -> Self {
-        MyScalarValue::Float(f)
-    }
-}
-
-impl From<MyScalarValue> for Option<bool> {
-    fn from(s: MyScalarValue) -> Self {
-        match s {
-            MyScalarValue::Boolean(b) => Some(b),
-            _ => None,
-        }
-    }
-}
-
-impl From<MyScalarValue> for Option<i32> {
-    fn from(s: MyScalarValue) -> Self {
-        match s {
-            MyScalarValue::Int(i) => Some(i),
-            _ => None,
-        }
-    }
-}
-
-impl From<MyScalarValue> for Option<f64> {
-    fn from(s: MyScalarValue) -> Self {
-        match s {
-            MyScalarValue::Float(s) => Some(s),
-            MyScalarValue::Int(i) => Some(i as f64),
-            _ => None,
-        }
-    }
-}
-
-impl From<MyScalarValue> for Option<String> {
-    fn from(s: MyScalarValue) -> Self {
-        match s {
-            MyScalarValue::String(s) => Some(s),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a MyScalarValue> for Option<bool> {
-    fn from(s: &'a MyScalarValue) -> Self {
-        match *s {
-            MyScalarValue::Boolean(b) => Some(b),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a MyScalarValue> for Option<f64> {
-    fn from(s: &'a MyScalarValue) -> Self {
-        match *s {
-            MyScalarValue::Float(b) => Some(b),
-            MyScalarValue::Int(i) => Some(i as f64),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a MyScalarValue> for Option<i32> {
-    fn from(s: &'a MyScalarValue) -> Self {
-        match *s {
-            MyScalarValue::Int(b) => Some(b),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a MyScalarValue> for Option<i64> {
-    fn from(s: &'a MyScalarValue) -> Self {
-        match *s {
-            MyScalarValue::Long(l) => Some(l),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a MyScalarValue> for Option<&'a str> {
-    fn from(s: &'a MyScalarValue) -> Self {
-        match *s {
-            MyScalarValue::String(ref s) => Some(s),
-            _ => None,
-        }
-    }
-}
-
-impl Serialize for MyScalarValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match *self {
-            MyScalarValue::Int(v) => serializer.serialize_i32(v),
-            MyScalarValue::Long(v) => serializer.serialize_i64(v),
-            MyScalarValue::Float(v) => serializer.serialize_f64(v),
-            MyScalarValue::String(ref v) => serializer.serialize_str(v),
-            MyScalarValue::Boolean(v) => serializer.serialize_bool(v),
-        }
-    }
 }
 
 impl<'de> Deserialize<'de> for MyScalarValue {
@@ -253,7 +105,7 @@ graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
 
     from_input_value(v: &InputValue) -> Option<i64> {
         match *v {
-            InputValue::Scalar(ref i) => <_ as Into<Option<i64>>>::into(i),
+            InputValue::Scalar(MyScalarValue::Long(i)) => Some(i),
             _ => None,
         }
     }

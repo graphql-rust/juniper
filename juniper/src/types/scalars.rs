@@ -6,7 +6,7 @@ use std::{char, u32};
 
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use executor::{Executor, Registry};
-use parser::{LexerError, ParseError, Token, ScalarToken};
+use parser::{LexerError, ParseError, ScalarToken, Token};
 use schema::meta::MetaType;
 use types::base::GraphQLType;
 use value::{ParseScalarValue, ScalarRefValue, ScalarValue, Value};
@@ -50,7 +50,7 @@ graphql_scalar!(ID as "ID" where Scalar = <S>{
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         match value {
             ScalarToken::String(value) | ScalarToken::Int(value) => {
-                Ok(S::from(value))
+                Ok(S::from(value.to_owned()))
             }
             _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
         }
@@ -202,7 +202,7 @@ graphql_scalar!(bool as "Boolean" where Scalar = <S>{
 
     from_input_value(v: &InputValue) -> Option<bool> {
         match *v {
-            InputValue::Scalar(ref b) => <_ as Into<Option<bool>>>::into(b),
+            InputValue::Scalar(ref b) => <_ as Into<Option<& bool>>>::into(b).map(|b| *b),
             _ => None,
         }
     }
@@ -220,7 +220,7 @@ graphql_scalar!(i32 as "Int" where Scalar = <S>{
 
     from_input_value(v: &InputValue) -> Option<i32> {
         match *v {
-            InputValue::Scalar(ref i) => <_ as Into<Option<i32>>>::into(i),
+            InputValue::Scalar(ref i) => <_ as Into<Option<&i32>>>::into(i).map(|i| *i),
             _ => None,
         }
     }
@@ -244,7 +244,8 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
     from_input_value(v: &InputValue) -> Option<f64> {
         match *v {
             InputValue::Scalar(ref s) => {
-                <_ as Into<Option<f64>>>::into(s)
+                <_ as Into<Option<&f64>>>::into(s).map(|i| *i)
+                    .or_else(|| <_ as Into<Option<&i32>>>::into(s).map(|i| *i as f64))
             }
             _ => None,
         }
@@ -345,8 +346,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::ID;
-    use value::{DefaultScalarValue, ParseScalarValue};
     use parser::ScalarToken;
+    use value::{DefaultScalarValue, ParseScalarValue};
 
     #[test]
     fn test_id_from_string() {
@@ -364,7 +365,8 @@ mod tests {
     #[test]
     fn parse_strings() {
         fn parse_string(s: &str, expected: &str) {
-            let s = <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
+            let s =
+                <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
             assert!(s.is_ok(), "A parsing error occurred: {:?}", s);
             let s: Option<String> = s.unwrap().into();
             assert!(s.is_some(), "No string returned");

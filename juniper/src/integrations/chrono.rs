@@ -36,7 +36,7 @@ graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         if let ScalarToken::String(value) =  value {
-            Ok(S::from(value))
+            Ok(S::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -57,7 +57,7 @@ graphql_scalar!(DateTime<Utc> as "DateTimeUtc" where Scalar = <S>{
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value))
+            Ok(S::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
@@ -83,7 +83,7 @@ graphql_scalar!(NaiveDate where Scalar = <S>{
 
     from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         if let ScalarToken::String(value) = value {
-            Ok(S::from(value))
+            Ok(S::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }

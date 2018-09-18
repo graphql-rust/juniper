@@ -48,7 +48,7 @@ where
 
     /// Construct a string value.
     pub fn string(s: &str) -> Self {
-        Self::scalar(s)
+        Self::scalar(s.to_owned())
     }
 
     /// Construct a boolean value.
@@ -83,10 +83,9 @@ where
         }
     }
 
-    pub fn as_scalar_value<'a, T>(&self) -> Option<T>
+    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
     where
-        for<'b> &'b S: Into<Option<T>>,
-        S: 'a,
+        &'a S: Into<Option<&'a T>>,
     {
         match *self {
             Value::Scalar(ref s) => s.into(),
@@ -99,7 +98,7 @@ where
     where
         for<'a> &'a S: ScalarRefValue<'a>,
     {
-        self.as_scalar_value::<f64>()
+        self.as_scalar_value::<f64>().map(|v| *v)
     }
 
     /// View the underlying object value, if present.
@@ -136,12 +135,9 @@ where
     /// View the underlying string value, if present.
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
-        Option<&'a str>: From<&'a S>,
+        Option<&'a String>: From<&'a S>,
     {
-        match *self {
-            Value::Scalar(ref s) => <_ as Into<Option<&str>>>::into(s),
-            _ => None,
-        }
+        self.as_scalar_value::<String>().map(|s| s as &str)
     }
 }
 
@@ -186,7 +182,7 @@ where
     S: ScalarValue,
 {
     fn from(s: &'a str) -> Self {
-        Value::scalar(s)
+        Value::scalar(s.to_owned())
     }
 }
 

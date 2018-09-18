@@ -1,6 +1,6 @@
 use ast::{Directive, Fragment, InputValue, Selection};
 use parser::Spanning;
-use value::ScalarValue;
+use value::{ScalarRefValue, ScalarValue};
 
 use std::collections::HashMap;
 
@@ -103,7 +103,7 @@ pub struct LookAheadSelection<'a, S: 'a> {
 impl<'a, S> LookAheadSelection<'a, S>
 where
     S: ScalarValue,
-    &'a S: Into<Option<bool>>,
+    &'a S: ScalarRefValue<'a>,
 {
     fn should_include<'b, 'c>(
         directives: Option<&'b Vec<Spanning<Directive<S>>>>,
@@ -128,7 +128,9 @@ where
                                 if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    s.into().unwrap_or(false)
+                                    <&S as Into<Option<&bool>>>::into(s)
+                                        .map(|b| *b)
+                                        .unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -142,7 +144,9 @@ where
                                 if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    b.into().map(::std::ops::Not::not).unwrap_or(false)
+                                    <&S as Into<Option<&bool>>>::into(b)
+                                        .map(::std::ops::Not::not)
+                                        .unwrap_or(false)
                                 } else {
                                     false
                                 }

@@ -1,6 +1,6 @@
 use parser::{ParseError, ScalarToken};
 use serde::de::{self, Deserialize, Deserializer};
-use serde::ser::{Serialize, Serializer};
+use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};
 
 pub trait ParseScalarValue<S> {
@@ -13,7 +13,6 @@ pub trait ScalarValue:
     + PartialEq
     + Clone
     + Serialize
-    + for<'a> From<&'a str>
     + From<String>
     + From<bool>
     + From<i32>
@@ -32,153 +31,29 @@ pub trait ScalarValue:
 }
 
 pub trait ScalarRefValue<'a>:
-    Debug + Into<Option<bool>> + Into<Option<i32>> + Into<Option<&'a str>> + Into<Option<f64>>
+    Debug
+    + Into<Option<&'a bool>>
+    + Into<Option<&'a i32>>
+    + Into<Option<&'a String>>
+    + Into<Option<&'a f64>>
 {
 }
 
 impl<'a, T> ScalarRefValue<'a> for &'a T
 where
     T: ScalarValue,
-    &'a T: Into<Option<bool>> + Into<Option<i32>> + Into<Option<&'a str>> + Into<Option<f64>>,
+    &'a T: Into<Option<&'a bool>>
+        + Into<Option<&'a i32>>
+        + Into<Option<&'a String>>
+        + Into<Option<&'a f64>>,
 {}
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, ScalarValue)]
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),
     String(String),
     Boolean(bool),
-}
-
-impl ScalarValue for DefaultScalarValue {}
-
-impl Display for DefaultScalarValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            DefaultScalarValue::Int(i) => write!(f, "{}", i),
-            DefaultScalarValue::Float(n) => write!(f, "{}", n),
-            DefaultScalarValue::String(ref s) => write!(f, "\"{}\"", s),
-            DefaultScalarValue::Boolean(b) => write!(f, "{}", b),
-        }
-    }
-}
-
-impl<'a> From<&'a str> for DefaultScalarValue {
-    fn from(s: &'a str) -> Self {
-        DefaultScalarValue::String(s.into())
-    }
-}
-
-impl From<String> for DefaultScalarValue {
-    fn from(s: String) -> Self {
-        (&s as &str).into()
-    }
-}
-
-impl From<bool> for DefaultScalarValue {
-    fn from(b: bool) -> Self {
-        DefaultScalarValue::Boolean(b)
-    }
-}
-
-impl From<i32> for DefaultScalarValue {
-    fn from(i: i32) -> Self {
-        DefaultScalarValue::Int(i)
-    }
-}
-
-impl From<f64> for DefaultScalarValue {
-    fn from(f: f64) -> Self {
-        DefaultScalarValue::Float(f)
-    }
-}
-
-impl From<DefaultScalarValue> for Option<bool> {
-    fn from(s: DefaultScalarValue) -> Self {
-        match s {
-            DefaultScalarValue::Boolean(b) => Some(b),
-            _ => None,
-        }
-    }
-}
-
-impl From<DefaultScalarValue> for Option<i32> {
-    fn from(s: DefaultScalarValue) -> Self {
-        match s {
-            DefaultScalarValue::Int(i) => Some(i),
-            _ => None,
-        }
-    }
-}
-
-impl From<DefaultScalarValue> for Option<f64> {
-    fn from(s: DefaultScalarValue) -> Self {
-        match s {
-            DefaultScalarValue::Float(s) => Some(s),
-            DefaultScalarValue::Int(i) => Some(i as f64),
-            _ => None,
-        }
-    }
-}
-
-impl From<DefaultScalarValue> for Option<String> {
-    fn from(s: DefaultScalarValue) -> Self {
-        match s {
-            DefaultScalarValue::String(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<bool> {
-    fn from(s: &'a DefaultScalarValue) -> Self {
-        match *s {
-            DefaultScalarValue::Boolean(b) => Some(b),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<f64> {
-    fn from(s: &'a DefaultScalarValue) -> Self {
-        match *s {
-            DefaultScalarValue::Float(b) => Some(b),
-            DefaultScalarValue::Int(i) => Some(i as f64),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<i32> {
-    fn from(s: &'a DefaultScalarValue) -> Self {
-        match *s {
-            DefaultScalarValue::Int(b) => Some(b),
-            _ => None,
-        }
-    }
-}
-
-impl<'a> From<&'a DefaultScalarValue> for Option<&'a str> {
-    fn from(s: &'a DefaultScalarValue) -> Self {
-        match *s {
-            DefaultScalarValue::String(ref s) => Some(s),
-            _ => None,
-        }
-    }
-}
-
-impl Serialize for DefaultScalarValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match *self {
-            DefaultScalarValue::Int(v) => serializer.serialize_i32(v),
-            DefaultScalarValue::Float(v) => serializer.serialize_f64(v),
-            DefaultScalarValue::String(ref v) => serializer.serialize_str(v),
-            DefaultScalarValue::Boolean(v) => serializer.serialize_bool(v),
-        }
-    }
 }
 
 impl<'de> Deserialize<'de> for DefaultScalarValue {

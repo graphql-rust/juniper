@@ -90,7 +90,8 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 */
 #![warn(missing_docs)]
 
-extern crate serde;
+#[doc(hidden)]
+pub extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
@@ -117,6 +118,14 @@ extern crate uuid;
 extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __juniper_use_everything {
+    () => {
+        pub use $crate::*;
+    };
+}
 
 #[macro_use]
 mod value;

@@ -18,6 +18,7 @@ extern crate regex;
 mod derive_enum;
 mod derive_input_object;
 mod derive_object;
+mod derive_juniper_scalar_value;
 mod util;
 
 use proc_macro::TokenStream;
@@ -40,5 +41,12 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::impl_object(&ast);
+    gen.into()
+}
+
+#[proc_macro_derive(ScalarValue)]
+pub fn derive_juniper_scalar_value(input: TokenStream) -> TokenStream {
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
+    let gen = derive_juniper_scalar_value::impl_scalar_value(&ast);
     gen.into()
 }

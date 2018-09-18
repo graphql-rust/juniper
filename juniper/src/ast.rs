@@ -231,7 +231,7 @@ where
 
     /// Construct a string value.
     pub fn string<T: AsRef<str>>(s: T) -> Self {
-        InputValue::scalar(s.as_ref())
+        InputValue::scalar(s.as_ref().to_owned())
     }
 
     pub fn scalar<T>(v: T) -> Self
@@ -343,25 +343,25 @@ where
     /// View the underlying int value, if present.
     pub fn as_int_value<'a>(&'a self) -> Option<i32>
     where
-        &'a S: Into<Option<i32>>,
+        &'a S: Into<Option<&'a i32>>,
     {
-        self.as_scalar_value()
+        self.as_scalar_value().map(|i| *i)
     }
 
     /// View the underlying float value, if present.
     pub fn as_float_value<'a>(&'a self) -> Option<f64>
     where
-        &'a S: Into<Option<f64>>,
+        &'a S: Into<Option<&'a f64>>,
     {
-        self.as_scalar_value()
+        self.as_scalar_value().map(|f| *f)
     }
 
     /// View the underlying string value, if present.
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
-        &'a S: Into<Option<&'a str>>,
+        &'a S: Into<Option<&'a String>>,
     {
-        self.as_scalar_value()
+        self.as_scalar_value().map(|s| s as &str)
     }
 
     pub fn as_scalar(&self) -> Option<&S> {
@@ -447,10 +447,12 @@ where
 impl<S> fmt::Display for InputValue<S>
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             InputValue::Null => write!(f, "null"),
+            InputValue::Scalar(ref s) if s.is_type::<&String>() => write!(f, "\"{}\"", s),
             InputValue::Scalar(ref s) => write!(f, "{}", s),
             InputValue::Enum(ref v) => write!(f, "{}", v),
             InputValue::Variable(ref v) => write!(f, "${}", v),

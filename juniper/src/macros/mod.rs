@@ -31,12 +31,5 @@ mod field;
 #[macro_use]
 mod union;
 
-#[macro_export]
-macro_rules! __juniper_use_everything {
-    () => {
-        pub use $crate::*;
-    };
-}
-
 #[cfg(test)]
 mod tests;
