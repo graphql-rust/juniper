@@ -15,8 +15,8 @@
 */
 use chrono::prelude::*;
 
-use parser::ParseError;
-use value::{ParseScalarValue, ScalarValue};
+use parser::{ParseError, ScalarToken, Token};
+use value::ParseScalarValue;
 use Value;
 
 #[doc(hidden)]
@@ -34,8 +34,12 @@ graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S
          .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        Ok(S::from(value))
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        if let ScalarToken::String(value) =  value {
+            Ok(S::from(value))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
@@ -51,11 +55,14 @@ graphql_scalar!(DateTime<Utc> as "DateTimeUtc" where Scalar = <S>{
          .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        Ok(S::from(value))
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        if let ScalarToken::String(value) = value {
+            Ok(S::from(value))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
-
 
 // Don't use `Date` as the docs say:
 // "[Date] should be considered ambiguous at best, due to the "
@@ -74,8 +81,12 @@ graphql_scalar!(NaiveDate where Scalar = <S>{
          .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        Ok(S::from(value))
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        if let ScalarToken::String(value) = value {
+            Ok(S::from(value))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
@@ -93,7 +104,7 @@ graphql_scalar!(NaiveDateTime where Scalar = <S> {
          .and_then(|f| NaiveDateTime::from_timestamp_opt(f as i64, 0))
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <f64 as ParseScalarValue<S>>::from_str(value)
     }
 });

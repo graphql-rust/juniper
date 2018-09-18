@@ -1,4 +1,4 @@
-use parser::{Lexer, LexerError, SourcePosition, Spanning, Token};
+use parser::{Lexer, LexerError, SourcePosition, Spanning, Token, ScalarToken};
 
 fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
     let mut tokens = Vec::new();
@@ -148,7 +148,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(8, 0, 8),
-            Token::Scalar("simple")
+            Token::Scalar(ScalarToken::String("simple"))
         )
     );
 
@@ -157,7 +157,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::Scalar(" white space ")
+            Token::Scalar(ScalarToken::String(" white space "))
         )
     );
 
@@ -166,7 +166,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(10, 0, 10),
-            Token::Scalar("quote \"")
+            Token::Scalar(ScalarToken::String(r#"quote \""#))
         )
     );
 
@@ -175,7 +175,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(20, 0, 20),
-            Token::Scalar("escaped \n\r\u{0008}\t\u{000c}")
+            Token::Scalar(ScalarToken::String(r#"escaped \n\r\b\t\f"#))
         )
     );
 
@@ -184,7 +184,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::Scalar("slashes \\ /")
+            Token::Scalar(ScalarToken::String(r#"slashes \\ \/"#))
         )
     );
 
@@ -193,7 +193,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(34, 0, 34),
-            Token::Scalar("unicode \u{1234}\u{5678}\u{90ab}\u{cdef}")
+            Token::Scalar(ScalarToken::String(r#"unicode \u1234\u5678\u90AB\uCDEF"#))
         )
     );
 }
@@ -334,7 +334,7 @@ fn numbers() {
         assert_eq!(parsed.end, end);
 
         match parsed.item {
-            Token::Scalar(actual) => {
+            Token::Scalar(ScalarToken::Float(actual)) => {
                 assert!(
                     expected == actual,
                     "[expected] {} != {} [actual]",
@@ -351,7 +351,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(1, 0, 1),
-            Token::Scalar("4")
+            Token::Scalar(ScalarToken::Int("4"))
         )
     );
 
@@ -374,7 +374,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            Token::Scalar("-4")
+            Token::Scalar(ScalarToken::Int("-4"))
         )
     );
 
@@ -383,7 +383,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(1, 0, 1),
-            Token::Scalar("9")
+            Token::Scalar(ScalarToken::Int("9"))
         )
     );
 
@@ -392,7 +392,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(1, 0, 1),
-            Token::Scalar("0")
+            Token::Scalar(ScalarToken::Int("0"))
         )
     );
 
@@ -652,19 +652,19 @@ fn punctuation_error() {
 fn display() {
     assert_eq!(format!("{}", Token::Name("identifier")), "identifier");
 
-    assert_eq!(format!("{}", Token::Scalar("123")), "123");
+    assert_eq!(format!("{}", Token::Scalar(ScalarToken::Int("123"))), "123");
 
-    assert_eq!(format!("{}", Token::Scalar("4.5")), "4.5");
+    assert_eq!(format!("{}", Token::Scalar(ScalarToken::Float("4.5"))), "4.5");
 
     assert_eq!(
-        format!("{}", Token::Scalar("some string")),
+        format!("{}", Token::Scalar(ScalarToken::String("some string"))),
         "\"some string\""
     );
 
     assert_eq!(
         format!(
             "{}",
-            Token::Scalar("string with \\ escape and \" quote")
+            Token::Scalar(ScalarToken::String("string with \\ escape and \" quote"))
         ),
         "\"string with \\\\ escape and \\\" quote\""
     );

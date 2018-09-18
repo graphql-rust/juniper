@@ -162,7 +162,7 @@ mod tests {
                 &error_message("Foo"),
                 &[
                     SourcePosition::new(11, 1, 10),
-                    SourcePosition::new(64, 4, 10),
+                    SourcePosition::new(96, 6, 10),
                 ],
             )],
         );
@@ -186,7 +186,7 @@ mod tests {
                 &error_message("Foo"),
                 &[
                     SourcePosition::new(11, 1, 10),
-                    SourcePosition::new(64, 4, 10),
+                    SourcePosition::new(96, 6, 10),
                 ],
             )],
         );

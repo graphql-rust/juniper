@@ -6,7 +6,7 @@ use std::{char, u32};
 
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use executor::{Executor, Registry};
-use parser::{LexerError, ParseError, Token};
+use parser::{LexerError, ParseError, Token, ScalarToken};
 use schema::meta::MetaType;
 use types::base::GraphQLType;
 use value::{ParseScalarValue, ScalarRefValue, ScalarValue, Value};
@@ -47,8 +47,13 @@ graphql_scalar!(ID as "ID" where Scalar = <S>{
         }
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        Ok(S::from(value))
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        match value {
+            ScalarToken::String(value) | ScalarToken::Int(value) => {
+                Ok(S::from(value))
+            }
+            _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
+        }
     }
 });
 
@@ -64,32 +69,36 @@ graphql_scalar!(String as "String" where Scalar = <S>{
         }
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        let mut ret = String::with_capacity(value.len());
-        let mut char_iter = value.chars();
-        while let Some(ch) = char_iter.next() {
-            match ch {
-                '\\' => {
-                    match char_iter.next() {
-                        Some('"') => {ret.push('"');}
-                        Some('/') => {ret.push('/');}
-                        Some('n') => {ret.push('\n');}
-                        Some('r') => {ret.push('\r');}
-                        Some('t') => {ret.push('\t');}
-                        Some('\\') => {ret.push('\\');}
-                        Some('f') => {ret.push('\u{000c}');}
-                        Some('b') => {ret.push('\u{0008}');}
-                        Some('u') => {
-                            ret.push(parse_unicode_codepoint(&mut char_iter)?);
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        if let ScalarToken::String(value) = value {
+            let mut ret = String::with_capacity(value.len());
+            let mut char_iter = value.chars();
+            while let Some(ch) = char_iter.next() {
+                match ch {
+                    '\\' => {
+                        match char_iter.next() {
+                            Some('"') => {ret.push('"');}
+                            Some('/') => {ret.push('/');}
+                            Some('n') => {ret.push('\n');}
+                            Some('r') => {ret.push('\r');}
+                            Some('t') => {ret.push('\t');}
+                            Some('\\') => {ret.push('\\');}
+                            Some('f') => {ret.push('\u{000c}');}
+                            Some('b') => {ret.push('\u{0008}');}
+                            Some('u') => {
+                                ret.push(parse_unicode_codepoint(&mut char_iter)?);
+                            }
+                            Some(s) => return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\{}", s)))),
+                            None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
                         }
-                        Some(s) => return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\{}", s)))),
-                        None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
-                    }
-                },
-                ch => {ret.push(ch);}
+                    },
+                    ch => {ret.push(ch);}
+                }
             }
+            Ok(ret.into())
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
-        Ok(ret.into())
     }
 });
 
@@ -198,11 +207,9 @@ graphql_scalar!(bool as "Boolean" where Scalar = <S>{
         }
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        value
-            .parse()
-            .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-            .map(|s: bool| s.into())
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        // Bools are parsed on it's own. This should not hit this code path
+        Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 });
 
@@ -218,11 +225,14 @@ graphql_scalar!(i32 as "Int" where Scalar = <S>{
         }
     }
 
-     from_str(value: &str) -> Result<S, ParseError> {
-        value
-            .parse()
-            .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-            .map(|s: i32| s.into())
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        if let ScalarToken::Int(v) = value {
+            v.parse()
+             .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+             .map(|s: i32| s.into())
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
@@ -240,11 +250,17 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
         }
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        value
-            .parse()
-            .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-            .map(|s: f64| s.into())
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        match value {
+            ScalarToken::Int(v) | ScalarToken::Float(v) => {
+                v.parse()
+                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                 .map(|s: f64| s.into())
+            }
+            ScalarToken::String(_) => {
+                Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            }
+        }
     }
 });
 
@@ -273,7 +289,7 @@ impl<S> ParseScalarValue<S> for ()
 where
     S: ScalarValue,
 {
-    fn from_str(_value: &str) -> Result<S, ParseError> {
+    fn from_str<'a>(_value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         Ok(S::from(0))
     }
 }
@@ -329,6 +345,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::ID;
+    use value::{DefaultScalarValue, ParseScalarValue};
+    use parser::ScalarToken;
 
     #[test]
     fn test_id_from_string() {
@@ -341,5 +359,26 @@ mod tests {
     fn test_id_deref() {
         let id = ID(String::from("foo"));
         assert_eq!(id.len(), 3);
+    }
+
+    #[test]
+    fn parse_strings() {
+        fn parse_string(s: &str, expected: &str) {
+            let s = <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
+            assert!(s.is_ok(), "A parsing error occurred: {:?}", s);
+            let s: Option<String> = s.unwrap().into();
+            assert!(s.is_some(), "No string returned");
+            assert_eq!(s.unwrap(), expected);
+        }
+
+        parse_string("simple", "simple");
+        parse_string(" white space ", " white space ");
+        parse_string(r#"quote \""#, "quote \"");
+        parse_string(r#"escaped \n\r\b\t\f"#, "escaped \n\r\u{0008}\t\u{000c}");
+        parse_string(r#"slashes \\ \/"#, "slashes \\ /");
+        parse_string(
+            r#"unicode \u1234\u5678\u90AB\uCDEF"#,
+            "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
+        );
     }
 }

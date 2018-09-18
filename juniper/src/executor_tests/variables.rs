@@ -28,7 +28,7 @@ graphql_scalar!(TestComplexScalar where Scalar = <S> {
         None
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 });

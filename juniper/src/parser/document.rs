@@ -10,7 +10,7 @@ use parser::{
     Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
     UnlocatedParseResult,
 };
-use schema::meta::{Argument, Field as MetaField, MetaType};
+use schema::meta::{Argument, Field as MetaField};
 use schema::model::SchemaType;
 use value::ScalarValue;
 
@@ -71,11 +71,9 @@ where
     S: ScalarValue,
 {
     if parser.peek().item == Token::CurlyOpen {
-        let fields = schema
-            .concrete_query_type()
-            .fields(schema)
-            .unwrap_or_else(Vec::new);
-        let selection_set = parse_selection_set(parser, schema, &fields)?;
+        let fields = schema.concrete_query_type().fields(schema);
+        let fields = fields.as_ref().map(|c| c as &[_]);
+        let selection_set = parse_selection_set(parser, schema, fields)?;
 
         Ok(Spanning::start_end(
             &selection_set.start,
@@ -95,7 +93,8 @@ where
             OperationType::Query => Some(schema.concrete_query_type()),
             OperationType::Mutation => schema.concrete_mutation_type(),
         };
-        let fields = op.and_then(|m| m.fields(schema)).unwrap_or_else(Vec::new);
+        let fields = op.and_then(|m| m.fields(schema));
+        let fields = fields.as_ref().map(|c| c as &[_]);
 
         let name = match parser.peek().item {
             Token::Name(_) => Some(parser.expect_name()?),
@@ -103,7 +102,7 @@ where
         };
         let variable_definitions = parse_variable_definitions(parser, schema)?;
         let directives = parse_directives(parser, schema)?;
-        let selection_set = parse_selection_set(parser, schema, &fields)?;
+        let selection_set = parse_selection_set(parser, schema, fields)?;
 
         Ok(Spanning::start_end(
             &start_pos,
@@ -143,18 +142,11 @@ where
 
     let fields = schema
         .concrete_type_by_name(type_cond.item)
-        .and_then(|m| m.fields(schema))
-        .ok_or_else(|| {
-            println!(
-                "{:?}",
-                schema.types.values().map(|v| v.name()).collect::<Vec<_>>()
-            );
-            println!("{}", type_cond.item);
-            unimplemented!()
-        })?;
+        .and_then(|m| m.fields(schema));
+    let fields = fields.as_ref().map(|c| c as &[_]);
 
     let directives = parse_directives(parser, schema)?;
-    let selection_set = parse_selection_set(parser, schema, &fields)?;
+    let selection_set = parse_selection_set(parser, schema, fields)?;
 
     Ok(Spanning::start_end(
         &start_pos,
@@ -171,7 +163,7 @@ where
 fn parse_optional_selection_set<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    fields: &[&MetaField<'b, S>],
+    fields: Option<&[&MetaField<'b, S>]>,
 ) -> OptionParseResult<'a, Vec<Selection<'a, S>>>
 where
     S: ScalarValue,
@@ -186,7 +178,7 @@ where
 fn parse_selection_set<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    fields: &[&MetaField<'b, S>],
+    fields: Option<&[&MetaField<'b, S>]>,
 ) -> ParseResult<'a, Vec<Selection<'a, S>>>
 where
     S: ScalarValue,
@@ -201,7 +193,7 @@ where
 fn parse_selection<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    fields: &[&MetaField<'b, S>],
+    fields: Option<&[&MetaField<'b, S>]>,
 ) -> UnlocatedParseResult<'a, Selection<'a, S>>
 where
     S: ScalarValue,
@@ -215,7 +207,7 @@ where
 fn parse_fragment<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    fields: &[&MetaField<'b, S>],
+    fields: Option<&[&MetaField<'b, S>]>,
 ) -> UnlocatedParseResult<'a, Selection<'a, S>>
 where
     S: ScalarValue,
@@ -232,10 +224,10 @@ where
 
             let fields = schema
                 .concrete_type_by_name(name.item)
-                .and_then(|m| m.fields(schema))
-                .ok_or_else(|| unimplemented!())?;
+                .and_then(|m| m.fields(schema));
+            let fields = fields.as_ref().map(|c| c as &[_]);
             let directives = parse_directives(parser, schema)?;
-            let selection_set = parse_selection_set(parser, schema, &fields)?;
+            let selection_set = parse_selection_set(parser, schema, fields)?;
 
             Ok(Selection::InlineFragment(Spanning::start_end(
                 &start_pos.clone(),
@@ -297,7 +289,7 @@ where
 fn parse_field<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    fields: &[&MetaField<'b, S>],
+    fields: Option<&[&MetaField<'b, S>]>,
 ) -> ParseResult<'a, Field<'a, S>>
 where
     S: ScalarValue,
@@ -310,26 +302,21 @@ where
         alias.take().unwrap()
     };
 
-    let field = fields.iter().find(|f| f.name == name.item).ok_or_else(|| {
-        println!("Field: {}", name.item);
-        println!(
-            "Fields: {:?}",
-            fields.iter().map(|f| &f.name).collect::<Vec<_>>()
-        );
-        unimplemented!()
-    })?;
+    let field = fields.and_then(|f| f.iter().find(|f| f.name == name.item));
+    let args = field
+        .as_ref()
+        .and_then(|f| f.arguments.as_ref().map(|a| a as &[_]));
 
-    let arguments = parse_arguments(
-        parser,
-        schema,
-        &field.arguments.as_ref().map(|a| a as &[_]).unwrap_or(&[]),
-    )?;
-    let fields = schema
-        .lookup_type(&field.field_type)
-        .and_then(|m| m.fields(schema))
-        .unwrap_or_else(Vec::new);
+    let fields = field
+        .as_ref()
+        .and_then(|f| schema.lookup_type(&f.field_type))
+        .and_then(|m| m.fields(schema));
+    let fields = fields.as_ref().map(|c| c as &[_]);
+
+    let arguments = parse_arguments(parser, schema, args)?;
+
     let directives = parse_directives(parser, schema)?;
-    let selection_set = parse_optional_selection_set(parser, schema, &fields)?;
+    let selection_set = parse_optional_selection_set(parser, schema, fields)?;
 
     Ok(Spanning::start_end(
         &alias.as_ref().unwrap_or(&name).start.clone(),
@@ -353,7 +340,7 @@ where
 fn parse_arguments<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    arguments: &[Argument<'b, S>],
+    arguments: Option<&[Argument<'b, S>]>,
 ) -> OptionParseResult<'a, Arguments<'a, S>>
 where
     S: ScalarValue,
@@ -377,20 +364,15 @@ where
 fn parse_argument<'a, 'b, S>(
     parser: &mut Parser<'a>,
     schema: &'b SchemaType<'b, S>,
-    arguments: &[Argument<'b, S>],
+    arguments: Option<&[Argument<'b, S>]>,
 ) -> ParseResult<'a, (Spanning<&'a str>, Spanning<InputValue<S>>)>
 where
     S: ScalarValue,
 {
     let name = parser.expect_name()?;
-    let arg = arguments
-        .iter()
-        .find(|a| a.name == name.item)
-        .ok_or_else(|| unimplemented!())?;
-
-    let tpe = schema
-        .lookup_type(&arg.arg_type)
-        .ok_or_else(|| unimplemented!())?;
+    let tpe = arguments
+        .and_then(|args| args.iter().find(|a| a.name == name.item))
+        .and_then(|arg| schema.lookup_type(&arg.arg_type));
 
     parser.expect(&Token::Colon)?;
     let value = parse_value_literal(parser, false, schema, tpe)?;
@@ -446,12 +428,10 @@ where
     let var_name = parser.expect_name()?;
     parser.expect(&Token::Colon)?;
     let var_type = parse_type(parser)?;
-    let tpe = schema
-        .lookup_type(&var_type.item)
-        .ok_or_else(|| unimplemented!())?;
+    let tpe = schema.lookup_type(&var_type.item);
 
     let default_value = if parser.skip(&Token::Equals)?.is_some() {
-        Some(parse_value_literal(parser, true, schema, &tpe)?)
+        Some(parse_value_literal(parser, true, schema, tpe)?)
     } else {
         None
     };
@@ -502,11 +482,14 @@ where
         start: start_pos, ..
     } = parser.expect(&Token::At)?;
     let name = parser.expect_name()?;
-    let directive = schema
-        .directive_by_name(name.item)
-        .ok_or_else(|| unimplemented!())?;
 
-    let arguments = parse_arguments(parser, schema, &directive.arguments)?;
+    let directive = schema.directive_by_name(name.item);
+
+    let arguments = parse_arguments(
+        parser,
+        schema,
+        directive.as_ref().map(|d| &d.arguments as &[_]),
+    )?;
 
     Ok(Spanning::start_end(
         &start_pos,

@@ -25,7 +25,7 @@ struct HumanOrAlien;
 
 struct ComplicatedArgs;
 
-struct QueryRoot;
+pub(crate) struct QueryRoot;
 
 #[derive(Debug, GraphQLInputObject)]
 struct TestInput {
@@ -33,7 +33,7 @@ struct TestInput {
     name: String,
 }
 
-struct MutationRoot;
+pub(crate) struct MutationRoot;
 
 #[derive(Debug)]
 enum DogCommand {
@@ -769,8 +769,5 @@ fn print_errors(errs: &[RuleError], query: &str) {
         }
         println!("{}", err.message());
 
-        for p in err.locations() {
-            println!("{}", &query[p.index()..]);
-        }
     }
 }

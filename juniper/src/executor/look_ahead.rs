@@ -350,9 +350,21 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 mod tests {
     use super::*;
     use ast::Document;
+    use parser::UnlocatedParseResult;
+    use schema::model::SchemaType;
     use std::collections::HashMap;
+    use validation::test_harness::{MutationRoot, QueryRoot};
+    use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
-    fn extract_fragments<'a>(doc: &'a Document) -> HashMap<&'a str, &'a Fragment<'a>> {
+    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        ::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
+    }
+
+    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {
         let mut fragments = HashMap::new();
         for d in doc {
             if let ::ast::Definition::Fragment(ref f) = *d {
@@ -365,7 +377,7 @@ mod tests {
 
     #[test]
     fn check_simple_query() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     hero {
@@ -417,7 +429,7 @@ query Hero {
 
     #[test]
     fn check_query_with_alias() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     custom_hero: hero {
@@ -469,7 +481,7 @@ query Hero {
 
     #[test]
     fn check_query_with_child() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     hero {
@@ -553,7 +565,7 @@ query Hero {
 
     #[test]
     fn check_query_with_argument() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source(
             "
 query Hero {
     hero(episode: EMPIRE) {
@@ -595,7 +607,7 @@ query Hero {
                             alias: None,
                             arguments: vec![LookAheadArgument {
                                 name: "uppercase",
-                                value: LookAheadValue::Boolean(true),
+                                value: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
                             }],
                             children: Vec::new(),
                         },
@@ -611,7 +623,7 @@ query Hero {
 
     #[test]
     fn check_query_with_variable() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero($episode: Episode) {
     hero(episode: $episode) {
@@ -667,7 +679,7 @@ query Hero($episode: Episode) {
 
     #[test]
     fn check_query_with_fragment() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     hero {
@@ -733,7 +745,7 @@ fragment commonFields on Character {
 
     #[test]
     fn check_query_with_directives() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     hero {
@@ -786,7 +798,7 @@ query Hero {
 
     #[test]
     fn check_query_with_inline_fragments() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     hero {
@@ -851,7 +863,7 @@ query Hero {
 
     #[test]
     fn check_complex_query() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query HeroNameAndFriends($id: Integer!, $withFriends: Boolean! = true) {
   hero(id: $id) {
@@ -876,9 +888,12 @@ fragment comparisonFields on Character {
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
             let mut vars = Variables::default();
-            vars.insert("id".into(), InputValue::Int(42));
+            vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
             // This will normally be there
-            vars.insert("withFriends".into(), InputValue::Boolean(true));
+            vars.insert(
+                "withFriends".into(),
+                InputValue::Scalar(DefaultScalarValue::Boolean(true)),
+            );
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
                 &vars,
@@ -889,7 +904,7 @@ fragment comparisonFields on Character {
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "id",
-                    value: LookAheadValue::Int(42),
+                    value: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
                 }],
                 children: vec![
                     ChildSelection {
@@ -1011,7 +1026,7 @@ fragment comparisonFields on Character {
 
     #[test]
     fn check_resolve_concrete_type() {
-        let docs = ::parse_document_source(
+        let docs = parse_document_source::<DefaultScalarValue>(
             "
 query Hero {
     hero {
@@ -1061,7 +1076,7 @@ query Hero {
 
     #[test]
     fn check_select_child() {
-        let lookahead = LookAheadSelection {
+        let lookahead: LookAheadSelection<DefaultScalarValue> = LookAheadSelection {
             name: "hero",
             alias: None,
             arguments: Vec::new(),

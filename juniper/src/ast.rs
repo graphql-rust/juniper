@@ -519,7 +519,7 @@ impl<'a, S> VariableDefinitions<'a, S> {
 mod tests {
     use super::InputValue;
     use parser::Spanning;
-    use value::{DefaultScalarValue, Value};
+    use value::DefaultScalarValue;
 
     type TestValue = InputValue<DefaultScalarValue>;
 

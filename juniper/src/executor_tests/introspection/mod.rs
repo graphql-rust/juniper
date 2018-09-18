@@ -33,7 +33,7 @@ graphql_scalar!(Scalar as "SampleScalar" where Scalar = <S> {
         v.as_int_value().map(|i| Scalar(i))
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });

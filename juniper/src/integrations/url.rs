@@ -1,7 +1,7 @@
 use url::Url;
 
 use parser::ParseError;
-use value::{ParseScalarValue, ScalarValue};
+use value::ParseScalarValue;
 use Value;
 
 graphql_scalar!(Url where Scalar = <S>{
@@ -16,11 +16,10 @@ graphql_scalar!(Url where Scalar = <S>{
          .and_then(|s| Url::parse(s).ok())
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 });
-
 
 #[cfg(test)]
 mod test {

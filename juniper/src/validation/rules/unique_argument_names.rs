@@ -85,7 +85,7 @@ mod tests {
             factory,
             r#"
           {
-            field @directive
+            dog @directive
           }
         "#,
         );
@@ -109,7 +109,7 @@ mod tests {
             factory,
             r#"
           {
-            field @directive(arg: "value")
+            dog @directive(arg: "value")
           }
         "#,
         );

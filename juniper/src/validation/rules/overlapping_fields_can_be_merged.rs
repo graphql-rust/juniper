@@ -996,18 +996,18 @@ mod tests {
             ...A
             ...B
           }
-          fragment A on Type {
-            x: a
+          fragment A on Dog {
+            x: name
           }
-          fragment B on Type {
-            x: b
+          fragment B on Dog {
+            x: barks
           }
         "#,
             &[RuleError::new(
-                &error_message("x", &Message("a and b are different fields".to_owned())),
+                &error_message("x", &Message("name and barks are different fields".to_owned())),
                 &[
-                    SourcePosition::new(102, 6, 12),
-                    SourcePosition::new(162, 9, 12),
+                    SourcePosition::new(101, 6, 12),
+                    SourcePosition::new(163, 9, 12),
                 ],
             )],
         );
@@ -1019,47 +1019,47 @@ mod tests {
             factory,
             r#"
           {
-            f1 {
+            dorOrHuman {
               ...A
               ...B
             }
-            f2 {
+            catOrDog {
               ...B
               ...A
             }
-            f3 {
+            dog {
               ...A
               ...B
-              x: c
+              x: name
             }
           }
-          fragment A on Type {
-            x: a
+          fragment A on Dog {
+            x: barks
           }
-          fragment B on Type {
-            x: b
+          fragment B on Dog {
+            x: nickname
           }
         "#,
             &[
                 RuleError::new(
-                    &error_message("x", &Message("c and a are different fields".to_owned())),
+                    &error_message("x", &Message("name and barks are different fields".to_owned())),
                     &[
-                        SourcePosition::new(220, 13, 14),
-                        SourcePosition::new(294, 17, 12),
+                        SourcePosition::new(235, 13, 14),
+                        SourcePosition::new(311, 17, 12),
                     ],
                 ),
                 RuleError::new(
-                    &error_message("x", &Message("c and b are different fields".to_owned())),
+                    &error_message("x", &Message("name and nickname are different fields".to_owned())),
                     &[
-                        SourcePosition::new(220, 13, 14),
-                        SourcePosition::new(354, 20, 12),
+                        SourcePosition::new(235, 13, 14),
+                        SourcePosition::new(374, 20, 12),
                     ],
                 ),
                 RuleError::new(
-                    &error_message("x", &Message("a and b are different fields".to_owned())),
+                    &error_message("x", &Message("barks and nickname are different fields".to_owned())),
                     &[
-                        SourcePosition::new(294, 17, 12),
-                        SourcePosition::new(354, 20, 12),
+                        SourcePosition::new(311, 17, 12),
+                        SourcePosition::new(374, 20, 12),
                     ],
                 ),
             ],
@@ -1072,27 +1072,27 @@ mod tests {
             factory,
             r#"
           {
-            field {
-              x: a
+            dog {
+              x: name
             },
-            field {
-              x: b
+            dog {
+              x: barks
             }
           }
         "#,
             &[RuleError::new(
                 &error_message(
-                    "field",
+                    "dog",
                     &Nested(vec![ConflictReason(
                         "x".to_owned(),
-                        Message("a and b are different fields".to_owned()),
+                        Message("name and barks are different fields".to_owned()),
                     )]),
                 ),
                 &[
                     SourcePosition::new(25, 2, 12),
-                    SourcePosition::new(47, 3, 14),
-                    SourcePosition::new(79, 5, 12),
-                    SourcePosition::new(101, 6, 14),
+                    SourcePosition::new(45, 3, 14),
+                    SourcePosition::new(80, 5, 12),
+                    SourcePosition::new(100, 6, 14),
                 ],
             )],
         );
@@ -1104,37 +1104,37 @@ mod tests {
             factory,
             r#"
           {
-            field {
-              x: a
-              y: c
+            dog {
+              x: barks
+              y: name
             },
-            field {
-              x: b
-              y: d
+              dog {
+              x: nickname
+              y: barkVolume
             }
           }
         "#,
             &[RuleError::new(
                 &error_message(
-                    "field",
+                    "dog",
                     &Nested(vec![
                         ConflictReason(
                             "x".to_owned(),
-                            Message("a and b are different fields".to_owned()),
+                            Message("barks and nickname are different fields".to_owned()),
                         ),
                         ConflictReason(
                             "y".to_owned(),
-                            Message("c and d are different fields".to_owned()),
+                            Message("name and barkVolume are different fields".to_owned()),
                         ),
                     ]),
                 ),
                 &[
                     SourcePosition::new(25, 2, 12),
-                    SourcePosition::new(47, 3, 14),
-                    SourcePosition::new(66, 4, 14),
-                    SourcePosition::new(98, 6, 12),
-                    SourcePosition::new(120, 7, 14),
-                    SourcePosition::new(139, 8, 14),
+                    SourcePosition::new(45, 3, 14),
+                    SourcePosition::new(68, 4, 14),
+                    SourcePosition::new(105, 6, 14),
+                    SourcePosition::new(125, 7, 14),
+                    SourcePosition::new(151, 8, 14),
                 ],
             )],
         );
@@ -1146,26 +1146,26 @@ mod tests {
             factory,
             r#"
           {
-            field {
-              deepField {
-                x: a
+            human {
+              relatives {
+                x: name
               }
             },
-            field {
-              deepField {
-                x: b
+            human {
+              relatives {
+                x: iq
               }
             }
           }
         "#,
             &[RuleError::new(
                 &error_message(
-                    "field",
+                    "human",
                     &Nested(vec![ConflictReason(
-                        "deepField".to_owned(),
+                        "relatives".to_owned(),
                         Nested(vec![ConflictReason(
                             "x".to_owned(),
-                            Message("a and b are different fields".to_owned()),
+                            Message("name and iq are different fields".to_owned()),
                         )]),
                     )]),
                 ),
@@ -1173,9 +1173,9 @@ mod tests {
                     SourcePosition::new(25, 2, 12),
                     SourcePosition::new(47, 3, 14),
                     SourcePosition::new(75, 4, 16),
-                    SourcePosition::new(123, 7, 12),
-                    SourcePosition::new(145, 8, 14),
-                    SourcePosition::new(173, 9, 16),
+                    SourcePosition::new(126, 7, 12),
+                    SourcePosition::new(148, 8, 14),
+                    SourcePosition::new(176, 9, 16),
                 ],
             )],
         );
@@ -1187,34 +1187,34 @@ mod tests {
             factory,
             r#"
           {
-            field {
-              deepField {
-                x: a
+            human {
+              relatives {
+                x: iq
               }
-              deepField {
-                x: b
+              relatives {
+                x: name
               }
             },
-            field {
-              deepField {
-                y
+            human {
+              relatives {
+                iq
               }
             }
           }
         "#,
             &[RuleError::new(
                 &error_message(
-                    "deepField",
+                    "relatives",
                     &Nested(vec![ConflictReason(
                         "x".to_owned(),
-                        Message("a and b are different fields".to_owned()),
+                        Message("iq and name are different fields".to_owned()),
                     )]),
                 ),
                 &[
                     SourcePosition::new(47, 3, 14),
                     SourcePosition::new(75, 4, 16),
-                    SourcePosition::new(110, 6, 14),
-                    SourcePosition::new(138, 7, 16),
+                    SourcePosition::new(111, 6, 14),
+                    SourcePosition::new(139, 7, 16),
                 ],
             )],
         );
@@ -1226,42 +1226,42 @@ mod tests {
             factory,
             r#"
           {
-            field {
+            human {
               ...F
             }
-            field {
+            human {
               ...F
             }
           }
-          fragment F on T {
-            deepField {
-              deeperField {
-                x: a
+          fragment F on Human {
+            relatives {
+              relatives {
+                x: iq
               }
-              deeperField {
-                x: b
+              relatives {
+                x: name
               }
             },
-            deepField {
-              deeperField {
-                y
+            relatives {
+              relatives {
+                iq
               }
             }
           }
         "#,
             &[RuleError::new(
                 &error_message(
-                    "deeperField",
+                    "relatives",
                     &Nested(vec![ConflictReason(
                         "x".to_owned(),
-                        Message("a and b are different fields".to_owned()),
+                        Message("iq and name are different fields".to_owned()),
                     )]),
                 ),
                 &[
-                    SourcePosition::new(197, 11, 14),
-                    SourcePosition::new(227, 12, 16),
-                    SourcePosition::new(262, 14, 14),
-                    SourcePosition::new(292, 15, 16),
+                    SourcePosition::new(201, 11, 14),
+                    SourcePosition::new(229, 12, 16),
+                    SourcePosition::new(265, 14, 14),
+                    SourcePosition::new(293, 15, 16),
                 ],
             )],
         );
@@ -1273,49 +1273,49 @@ mod tests {
             factory,
             r#"
           {
-            field {
+            dog {
               ...F
             }
-            field {
+            dog {
               ...I
             }
           }
-          fragment F on T {
-            x: a
+          fragment F on Dog {
+            x: name
             ...G
           }
-          fragment G on T {
-            y: c
+          fragment G on Dog {
+            y: barkVolume
           }
-          fragment I on T {
-            y: d
+          fragment I on Dog {
+            y: nickname
             ...J
           }
-          fragment J on T {
-            x: b
+          fragment J on Dog {
+            x: barks
           }
         "#,
             &[RuleError::new(
                 &error_message(
-                    "field",
+                    "dog",
                     &Nested(vec![
                         ConflictReason(
                             "x".to_owned(),
-                            Message("a and b are different fields".to_owned()),
+                            Message("name and barks are different fields".to_owned()),
                         ),
                         ConflictReason(
                             "y".to_owned(),
-                            Message("c and d are different fields".to_owned()),
+                            Message("barkVolume and nickname are different fields".to_owned()),
                         ),
                     ]),
                 ),
                 &[
                     SourcePosition::new(25, 2, 12),
-                    SourcePosition::new(171, 10, 12),
-                    SourcePosition::new(245, 14, 12),
-                    SourcePosition::new(78, 5, 12),
-                    SourcePosition::new(376, 21, 12),
-                    SourcePosition::new(302, 17, 12),
+                    SourcePosition::new(169, 10, 12),
+                    SourcePosition::new(248, 14, 12),
+                    SourcePosition::new(76, 5, 12),
+                    SourcePosition::new(399, 21, 12),
+                    SourcePosition::new(316, 17, 12),
                 ],
             )],
         );
@@ -1327,13 +1327,17 @@ mod tests {
             factory,
             r#"
         {
-          field
+          dog {
+            name
+          }
           ...Unknown
           ...Known
         }
 
-        fragment Known on T {
-          field
+        fragment Known on QueryRoot {
+          dog {
+            name
+          }
           ...OtherUnknown
         }
         "#,
@@ -1371,6 +1375,7 @@ mod tests {
             let fields = &[
                 registry.field::<Option<SomeBox>>("deepBox", i),
                 registry.field::<Option<String>>("unrelatedField", i),
+                registry.field::<Option<String>>("otherField", i),
             ];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
@@ -1776,25 +1781,25 @@ mod tests {
               }
             }
             fragment X on SomeBox {
-              scalar
+              otherField
             }
             fragment Y on SomeBox {
-              scalar: unrelatedField
+              otherField: unrelatedField
             }
         "#,
             &[RuleError::new(
                 &error_message(
                     "other",
                     &Nested(vec![ConflictReason(
-                        "scalar".to_owned(),
-                        Message("scalar and unrelatedField are different fields".to_owned()),
+                        "otherField".to_owned(),
+                        Message("otherField and unrelatedField are different fields".to_owned()),
                     )]),
                 ),
                 &[
                     SourcePosition::new(703, 30, 14),
                     SourcePosition::new(889, 38, 14),
                     SourcePosition::new(771, 33, 14),
-                    SourcePosition::new(960, 41, 14),
+                    SourcePosition::new(964, 41, 14),
                 ],
             )],
         );
@@ -2024,9 +2029,13 @@ mod tests {
             factory,
             r#"
             {
-              a
+              someBox {
+                unrelatedField
+              }
               ... {
-                a
+                someBox {
+                  unrelatedField
+                }
               }
             }
         "#,

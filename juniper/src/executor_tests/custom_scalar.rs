@@ -1,9 +1,8 @@
-use ast::{FromInputValue, InputValue, Selection, ToInputValue};
+use ast::InputValue;
 use executor::{ExecutionResult, Executor, Registry, Variables};
-use parser::ParseError;
-use parser::Token;
-use schema::meta::{MetaType, ScalarMeta};
+use parser::{ParseError, ScalarToken, Token};
 use schema::model::RootNode;
+use schema::meta::MetaType;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use std::fmt::{self, Display};
@@ -101,7 +100,7 @@ impl From<MyScalarValue> for Option<f64> {
 impl From<MyScalarValue> for Option<String> {
     fn from(s: MyScalarValue) -> Self {
         match s {
-            MyScalarValue::String(s) => Some(s.clone()),
+            MyScalarValue::String(s) => Some(s),
             _ => None,
         }
     }
@@ -259,11 +258,14 @@ graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
         }
     }
 
-     from_str(value: &str) -> Result<MyScalarValue, ParseError> {
-        value
-            .parse()
-            .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-            .map(|s: i64| s.into())
+    from_str<'a>(value: ScalarToken<'a>) -> Result<MyScalarValue, ParseError<'a>> {
+        if let ScalarToken::Int(v) = value {
+                v.parse()
+                    .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                    .map(|s: i64| s.into())
+        } else {
+                Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
@@ -300,10 +302,10 @@ impl GraphQLType<MyScalarValue> for TestType {
 
     fn resolve_field(
         &self,
-        info: &Self::TypeInfo,
+        _info: &Self::TypeInfo,
         field_name: &str,
         args: &Arguments<MyScalarValue>,
-        executor: &Executor<MyScalarValue, Self::Context>,
+        _executor: &Executor<MyScalarValue, Self::Context>,
     ) -> ExecutionResult<MyScalarValue> {
         match field_name {
             "longField" => Ok(Value::Scalar(MyScalarValue::Long(

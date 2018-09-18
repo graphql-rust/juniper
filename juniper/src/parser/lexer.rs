@@ -16,12 +16,19 @@ pub struct Lexer<'a> {
     has_reached_eof: bool,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum ScalarToken<'a> {
+    String(&'a str),
+    Float(&'a str),
+    Int(&'a str)
+}
+
 /// A single token in the input source
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(missing_docs)]
 pub enum Token<'a> {
     Name(&'a str),
-    Scalar(&'a str),
+    Scalar(ScalarToken<'a>),
     ExclamationMark,
     Dollar,
     ParenOpen,
@@ -217,19 +224,45 @@ impl<'a> Lexer<'a> {
         }
 
         let mut escaped = false;
-
+        let mut old_pos = self.position;
         while let Some((idx, ch)) = self.next_char() {
             match ch {
+                'b' |'f' |'n'|'r' |'t'|'\\'|'/'| '"' if escaped  => {
+                    escaped = false;
+                }
+                'u' if escaped => {
+                    self.scan_escaped_unicode(&old_pos)?;
+                    escaped = false;
+                },
+                c if escaped => {
+                    return Err(Spanning::zero_width(
+                        &old_pos,
+                        LexerError::UnknownEscapeSequence(format!("\\{}", c))
+                            ))
+                }
                 '\\' => escaped = true,
                 '"' if !escaped => {
                     return Ok(Spanning::start_end(
                         &start_pos,
                         &self.position,
-                        Token::Scalar(&self.source[start_idx+1..idx]),
+                        Token::Scalar(ScalarToken::String(&self.source[start_idx+1..idx])),
                     ));
                 }
-                _ => escaped = false,
+                '\n' | '\r' => {
+                    return Err(Spanning::zero_width(
+                        &old_pos,
+                        LexerError::UnterminatedString,
+                        ));
+                }
+                c if !is_source_char(c) => {
+                    return Err(Spanning::zero_width(
+                        &old_pos,
+                        LexerError::UnknownCharacterInString(ch),
+                    ));
+                }
+                _ => {}
             }
+            old_pos = self.position;
         }
 
         Err(Spanning::zero_width(
@@ -241,7 +274,7 @@ impl<'a> Lexer<'a> {
     fn scan_escaped_unicode(
         &mut self,
         start_pos: &SourcePosition,
-    ) -> Result<char, Spanning<LexerError>> {
+    ) -> Result<(), Spanning<LexerError>> {
         let (start_idx, _) = self.peek_char().ok_or(Spanning::zero_width(
             &self.position,
             LexerError::UnterminatedString,
@@ -284,7 +317,7 @@ impl<'a> Lexer<'a> {
                 start_pos,
                 LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
             )
-        })
+        }).map(|_|())
     }
 
     fn scan_number(&mut self) -> LexerResult<'a> {
@@ -296,6 +329,7 @@ impl<'a> Lexer<'a> {
 
         let mut last_idx = start_idx;
         let mut last_char = '1';
+        let mut is_float = false;
 
         let mut end_idx = loop {
             if let Some((idx, ch)) = self.peek_char() {
@@ -318,11 +352,12 @@ impl<'a> Lexer<'a> {
                 }
                 last_idx = idx;
             } else {
-                break last_idx;
+                break last_idx + 1;
             }
         };
 
         if let Some((start_idx, '.')) = self.peek_char() {
+            is_float = true;
             let mut last_idx = start_idx;
             self.next_char();
             end_idx = loop {
@@ -344,12 +379,13 @@ impl<'a> Lexer<'a> {
                         LexerError::UnexpectedEndOfFile,
                     ));
                 } else {
-                    break last_idx;
+                    break last_idx + 1;
                 }
             };
         }
         if let Some((start_idx, ch)) = self.peek_char() {
             if ch == 'e' || ch == 'E' {
+                is_float = true;
                 self.next_char();
                 let mut last_idx = start_idx;
 
@@ -374,17 +410,24 @@ impl<'a> Lexer<'a> {
                             LexerError::UnexpectedEndOfFile,
                         ));
                     } else {
-                        break last_idx;
+                        break last_idx + 1;
                     }
                 };
             }
         }
         let number = &self.source[start_idx..end_idx];
         let end_pos = &self.position;
+
+        let token = if is_float {
+            Token::Scalar(ScalarToken::Float(number))
+        }else {
+            Token::Scalar(ScalarToken::Int(number))
+        };
+
         Ok(Spanning::start_end(
             &start_pos,
             end_pos,
-            Token::Scalar(number),
+            token,
         ))
     }
 }
@@ -438,7 +481,10 @@ impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Token::Name(name) => write!(f, "{}", name),
-            Token::Scalar(s) => write!(f, "{}", s),
+            Token::Scalar(ScalarToken::Int(s)) | Token::Scalar(ScalarToken::Float(s)) => write!(f, "{}", s),
+            Token::Scalar(ScalarToken::String(s)) => {
+                write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
+            },
             Token::ExclamationMark => write!(f, "!"),
             Token::Dollar => write!(f, "$"),
             Token::ParenOpen => write!(f, "("),

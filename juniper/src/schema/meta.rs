@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use ast::{FromInputValue, InputValue, Type};
-use parser::ParseError;
+use parser::{ParseError, ScalarToken};
 use schema::model::SchemaType;
 use types::base::TypeKind;
 use value::{ParseScalarValue, ScalarRefValue, ScalarValue};
@@ -17,7 +17,7 @@ pub struct ScalarMeta<'a, S: fmt::Debug> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub try_parse_fn: Box<Fn(&InputValue<S>) -> bool + Send + Sync>,
-    pub(crate) parse_fn: fn(&str) -> Result<S, ParseError>,
+    pub(crate) parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
 }
 
 /// List type metadata

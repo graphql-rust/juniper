@@ -1,11 +1,10 @@
-use parser::ParseError;
-use schema::meta::ScalarMeta;
+use parser::{ParseError, ScalarToken};
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use std::fmt::{self, Debug, Display};
 
 pub trait ParseScalarValue<S> {
-    fn from_str(value: &str) -> Result<S, ParseError>;
+    fn from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>>;
 }
 
 pub trait ScalarValue:

@@ -29,7 +29,7 @@ graphql_scalar!(DefaultName where Scalar = <S> {
         v.as_int_value().map(|i| DefaultName(i))
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });
@@ -38,12 +38,12 @@ graphql_scalar!(OtherOrder where Scalar = <S> {
         Value::int(self.0)
     }
 
-        from_input_value(v: &InputValue) -> Option<OtherOrder> {
+    from_input_value(v: &InputValue) -> Option<OtherOrder> {
         v.as_int_value().map(|i| OtherOrder(i))
     }
 
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });
@@ -56,7 +56,7 @@ graphql_scalar!(Named as "ANamedScalar" where Scalar = <S> {
         v.as_int_value().map(|i| Named(i))
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });
@@ -72,7 +72,7 @@ graphql_scalar!(ScalarDescription where Scalar = <S> {
         v.as_int_value().map(|i| ScalarDescription(i))
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });

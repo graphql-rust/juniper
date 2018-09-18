@@ -8,7 +8,7 @@ mod traits;
 mod visitor;
 
 #[cfg(test)]
-mod test_harness;
+pub(crate) mod test_harness;
 
 pub use self::context::{RuleError, ValidatorContext};
 pub use self::input_value::validate_input_values;

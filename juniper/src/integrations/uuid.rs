@@ -1,7 +1,6 @@
 use uuid::Uuid;
 
-use parser::ParseError;
-use value::{ParseScalarValue, ScalarValue};
+use parser::{ParseError, ScalarToken, Token};
 use Value;
 
 graphql_scalar!(Uuid where Scalar = <S> {
@@ -16,11 +15,14 @@ graphql_scalar!(Uuid where Scalar = <S> {
          .and_then(|s| Uuid::parse_str(s).ok())
     }
 
-    from_str(value: &str) -> Result<S, ParseError> {
-        Ok(S::from(value))
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        if let ScalarToken::String(value) = value {
+            Ok(S::from(value))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
-
 
 #[cfg(test)]
 mod test {

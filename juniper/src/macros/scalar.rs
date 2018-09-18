@@ -13,10 +13,11 @@ datatype appropriate for that platform.
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::{Value, FieldResult};
+# use juniper::{Value, FieldResult, ParseScalarValue};
+# use juniper::parser::ParseError;
 struct UserID(String);
 
-graphql_scalar!(UserID {
+graphql_scalar!(UserID where Scalar = <S> {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {
@@ -25,6 +26,10 @@ graphql_scalar!(UserID {
 
     from_input_value(v: &InputValue) -> Option<UserID> {
         v.as_string_value().map(|s| UserID(s.to_owned()))
+    }
+
+    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 });
 
@@ -103,6 +108,7 @@ macro_rules! graphql_scalar {
             value_arg = $from_str_arg: ident,
             result = $from_str_result: ty,
             body = $from_str_body: block,
+            lifetime = $from_str_lt: tt,
         },
 
     ) => {
@@ -163,7 +169,7 @@ macro_rules! graphql_scalar {
         graphql_scalar!(
             @impl_trait
             impl<$($scalar)+> ParseScalarValue for $name {
-                fn from_str($from_str_arg: &str) -> $from_str_result {
+                fn from_str<$from_str_lt>($from_str_arg: $crate::parser::ScalarToken<$from_str_lt>) -> $from_str_result {
                     $from_str_body
                 }
             }
@@ -302,7 +308,7 @@ macro_rules! graphql_scalar {
         $(resolve = {$($resolve_body:tt)+},)*
         $(from_input_value = {$($from_input_value_body:tt)+},)*
         $(from_str = {$($from_str_body:tt)+},)*
-        rest = from_str($value_arg:ident: &str) -> $result:ty $body:block $($rest:tt)*
+        rest = from_str<$from_str_lt: tt>($value_arg:ident: ScalarToken<$ignored_lt2: tt>) -> $result:ty $body:block $($rest:tt)*
     ) => {
         graphql_scalar!(
             @parse,
@@ -313,6 +319,7 @@ macro_rules! graphql_scalar {
                 value_arg = $value_arg,
                 result = $result,
                 body = $body,
+                lifetime = $from_str_lt,
             },
             rest = $($rest)*
         );

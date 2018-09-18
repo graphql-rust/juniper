@@ -133,7 +133,7 @@ mod validation;
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;
 pub mod integrations;
-// // TODO: remove this alias export in 0.10. (breaking change)
+// TODO: remove this alias export in 0.10. (breaking change)
 pub use http::graphiql;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
@@ -144,7 +144,7 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
-// // Needs to be public because macros use it.
+// Needs to be public because macros use it.
 pub use util::to_camel_case;
 
 use executor::execute_validated_query;
@@ -164,7 +164,7 @@ pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
 pub use validation::RuleError;
-pub use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value, ParseScalarValue};
+pub use value::{DefaultScalarValue, Object, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -191,25 +191,25 @@ where
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
 {
-    let document = parse_document_source(document_source)?;
+    let document = parse_document_source(document_source, &root_node.schema)?;
 
-        {
-            let errors = validate_input_values(variables, &document, &root_node.schema);
+    {
+        let errors = validate_input_values(variables, &document, &root_node.schema);
 
-            if !errors.is_empty() {
-                return Err(GraphQLError::ValidationError(errors));
-            }
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
         }
+    }
 
-        {
-            let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-            visit_all_rules(&mut ctx, &document);
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
 
-            let errors = ctx.into_errors();
-            if !errors.is_empty() {
-                return Err(GraphQLError::ValidationError(errors));
-            }
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
         }
+    }
 
     execute_validated_query(document, operation_name, root_node, variables, context)
 }
