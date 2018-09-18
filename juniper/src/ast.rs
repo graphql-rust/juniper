@@ -234,6 +234,7 @@ where
         InputValue::scalar(s.as_ref().to_owned())
     }
 
+    /// Construct a scalar value
     pub fn scalar<T>(v: T) -> Self
     where
         T: Into<S>,
@@ -364,6 +365,7 @@ where
         self.as_scalar_value().map(|s| s as &str)
     }
 
+    /// View the underlying scalar value, if present.
     pub fn as_scalar(&self) -> Option<&S> {
         match *self {
             InputValue::Scalar(ref s) => Some(s),
@@ -371,9 +373,11 @@ where
         }
     }
 
-    pub fn as_scalar_value<'a, T>(&'a self) -> Option<T>
+    /// View the underlying scalar value, if present.
+    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
     where
-        &'a S: Into<Option<T>>,
+        T: 'a,
+        &'a S: Into<Option<&'a T>>,
     {
         self.as_scalar().and_then(Into::into)
     }
@@ -452,7 +456,7 @@ where
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             InputValue::Null => write!(f, "null"),
-            InputValue::Scalar(ref s) if s.is_type::<&String>() => write!(f, "\"{}\"", s),
+            InputValue::Scalar(ref s) if s.is_type::<String>() => write!(f, "\"{}\"", s),
             InputValue::Scalar(ref s) => write!(f, "{}", s),
             InputValue::Enum(ref v) => write!(f, "{}", v),
             InputValue::Variable(ref v) => write!(f, "${}", v),

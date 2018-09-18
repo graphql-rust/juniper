@@ -83,6 +83,7 @@ where
         }
     }
 
+    /// View the underlying scalar value if present
     pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
     where
         &'a S: Into<Option<&'a T>>,
@@ -125,6 +126,7 @@ where
         }
     }
 
+    /// View the underlying scalar value, if present
     pub fn as_scalar(&self) -> Option<&S> {
         match *self {
             Value::Scalar(ref s) => Some(s),
