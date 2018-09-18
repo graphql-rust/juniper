@@ -15,8 +15,7 @@ pub struct ScalarMeta<'a, S: fmt::Debug> {
     pub name: Cow<'a, str>,
     #[doc(hidden)]
     pub description: Option<String>,
-    #[doc(hidden)]
-    pub try_parse_fn: Box<Fn(&InputValue<S>) -> bool + Send + Sync>,
+    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
     pub(crate) parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
 }
 
@@ -55,8 +54,7 @@ pub struct EnumMeta<'a, S: fmt::Debug> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub values: Vec<EnumValue>,
-    #[doc(hidden)]
-    pub try_parse_fn: Box<Fn(&InputValue<S>) -> bool + Send + Sync>,
+    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
 }
 
 /// Interface type metadata
@@ -89,8 +87,7 @@ pub struct InputObjectMeta<'a, S: fmt::Debug> {
     pub description: Option<String>,
     #[doc(hidden)]
     pub input_fields: Vec<Argument<'a, S>>,
-    #[doc(hidden)]
-    pub try_parse_fn: Box<Fn(&InputValue<S>) -> bool + Send + Sync>,
+    pub(crate) try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
 }
 
 /// A placeholder for not-yet-registered types
@@ -287,7 +284,7 @@ impl<'a, S: fmt::Debug> MetaType<'a, S> {
     /// `true` if it can be parsed as the provided type.
     ///
     /// Only scalars, enums, and input objects have parse functions.
-    pub fn input_value_parse_fn(&self) -> Option<&Box<Fn(&InputValue<S>) -> bool + Send + Sync>> {
+    pub fn input_value_parse_fn(&self) -> Option<for<'b> fn(&'b InputValue<S>) -> bool> {
         match *self {
             MetaType::Scalar(ScalarMeta {
                 ref try_parse_fn, ..
@@ -297,7 +294,7 @@ impl<'a, S: fmt::Debug> MetaType<'a, S> {
             })
             | MetaType::InputObject(InputObjectMeta {
                 ref try_parse_fn, ..
-            }) => Some(try_parse_fn),
+            }) => Some(*try_parse_fn),
             _ => None,
         }
     }
@@ -372,9 +369,7 @@ where
         ScalarMeta {
             name: name,
             description: None,
-            try_parse_fn: Box::new(|v: &InputValue<S>| {
-                <T as FromInputValue<S>>::from_input_value(v).is_some()
-            }),
+            try_parse_fn: try_parse_fn::<S, T>,
             parse_fn: <T as ParseScalarValue<S>>::from_str,
         }
     }
@@ -462,17 +457,16 @@ where
     S: ScalarValue + 'a,
 {
     /// Build a new enum type with the specified name and possible values
-    pub fn new<T: FromInputValue<S>>(name: Cow<'a, str>, values: &[EnumValue]) -> Self
+    pub fn new<T>(name: Cow<'a, str>, values: &[EnumValue]) -> Self
     where
+        T: FromInputValue<S>,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         EnumMeta {
             name: name,
             description: None,
             values: values.to_vec(),
-            try_parse_fn: Box::new(|v: &InputValue<S>| {
-                <T as FromInputValue<S>>::from_input_value(v).is_some()
-            }),
+            try_parse_fn: try_parse_fn::<S, T>,
         }
     }
 
@@ -557,9 +551,7 @@ where
             name: name,
             description: None,
             input_fields: input_fields.to_vec(),
-            try_parse_fn: Box::new(|v: &InputValue<S>| {
-                <T as FromInputValue<S>>::from_input_value(v).is_some()
-            }),
+            try_parse_fn: try_parse_fn::<S, T>,
         }
     }
 
@@ -693,4 +685,12 @@ impl<'a, S: fmt::Debug> fmt::Debug for InputObjectMeta<'a, S> {
             .field("input_fields", &self.input_fields)
             .finish()
     }
+}
+
+fn try_parse_fn<S, T>(v: &InputValue<S>) -> bool
+where
+    T: FromInputValue<S>,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    <T as FromInputValue<S>>::from_input_value(v).is_some()
 }
