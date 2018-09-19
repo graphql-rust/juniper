@@ -10,7 +10,7 @@ use util::*;
 struct ObjAttrs {
     name: Option<String>,
     description: Option<String>,
-    internal: bool,
+    scalar: Option<Ident>,
 }
 
 impl ObjAttrs {
@@ -38,14 +38,9 @@ impl ObjAttrs {
                     res.description = Some(val);
                     continue;
                 }
-                match item {
-                    NestedMeta::Meta(Meta::Word(ref ident)) => {
-                        if ident == "_internal" {
-                            res.internal = true;
-                            continue;
-                        }
-                    }
-                    _ => {}
+                if let Some(scalar) = keyed_item_value(&item, "scalar", true) {
+                    res.scalar = Some(Ident::from(&scalar as &str));
+                    continue;
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
@@ -94,6 +89,7 @@ impl ObjFieldAttrs {
                     res.default_expr = Some(val);
                     continue;
                 }
+
                 match item {
                     NestedMeta::Meta(Meta::Word(ref ident)) => {
                         if ident == "default" {
@@ -240,10 +236,23 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
         });
     }
 
+    let (where_clause, define_scalar) = if attrs.scalar.is_none() {
+        (
+            Some(quote!{
+                where __S: _juniper::ScalarValue,
+                      for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+            }),
+            Some(quote!(<__S>)),
+        )
+    } else {
+        (None, None)
+    };
+
+    let scalar = attrs.scalar.unwrap_or_else(|| Ident::from("__S"));
+
     let body = quote! {
-            impl<S> _juniper::GraphQLType<S> for #ident
-            where S: _juniper::ScalarValue,
-                  for<'b> &'b S: _juniper::ScalarRefValue<'b>
+            impl#define_scalar _juniper::GraphQLType<#scalar> for #ident
+            #where_clause
             {
                 type Context = ();
                 type TypeInfo = ();
@@ -254,9 +263,9 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
 
                 fn meta<'r>(
                     _: &(),
-                    registry: &mut _juniper::Registry<'r, S>
-                ) -> _juniper::meta::MetaType<'r, S>
-                    where S: 'r
+                    registry: &mut _juniper::Registry<'r, #scalar>
+                ) -> _juniper::meta::MetaType<'r, #scalar>
+                    where #scalar: 'r
                 {
                     let fields = &[
                         #(#meta_fields)*
@@ -267,15 +276,12 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                 }
             }
 
-            impl<S> _juniper::FromInputValue<S> for #ident
-            where S: _juniper::ScalarValue,
-                for<'__b> &'__b S: _juniper::ScalarRefValue<'__b>
+            impl#define_scalar _juniper::FromInputValue<#scalar> for #ident
+            #where_clause
             {
-                fn from_input_value(value: &_juniper::InputValue<S>) -> Option<#ident>
+                fn from_input_value(value: &_juniper::InputValue<#scalar>) -> Option<#ident>
                 where
-                    for<'b> &'b S: _juniper::ScalarRefValue<'b>
-    //                S: 'a,
-    //                &'a S: _juniper::ScalarRefValue<'a>,
+                    for<'__b> &'__b #scalar: _juniper::ScalarRefValue<'__b>
                 {
                     if let Some(obj) = value.to_object_value() {
                         let item = #ident {
@@ -289,11 +295,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                 }
             }
 
-            impl<S> _juniper::ToInputValue<S> for #ident
-            where S: _juniper::ScalarValue,
-                for<'__b> &'__b S: _juniper::ScalarRefValue<'__b>
+            impl#define_scalar _juniper::ToInputValue<#scalar> for #ident
+            #where_clause
             {
-                fn to_input_value(&self) -> _juniper::InputValue<S> {
+                fn to_input_value(&self) -> _juniper::InputValue<#scalar> {
                     _juniper::InputValue::object(vec![
                         #(#to_inputs)*
                     ].into_iter().collect())

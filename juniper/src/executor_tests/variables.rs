@@ -12,7 +12,7 @@ struct TestComplexScalar;
 
 struct TestType;
 
-graphql_scalar!(TestComplexScalar where Scalar = <S> {
+graphql_scalar!(TestComplexScalar {
     resolve(&self) -> Value {
         Value::scalar(String::from("SerializedValue"))
     }
@@ -27,12 +27,13 @@ graphql_scalar!(TestComplexScalar where Scalar = <S> {
         None
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
         <String as ParseScalarValue<_>>::from_str(value)
     }
 });
 
 #[derive(GraphQLInputObject, Debug)]
+#[graphql(scalar = "DefaultScalarValue")]
 struct TestInputObject {
     a: Option<String>,
     b: Option<Vec<Option<String>>>,
@@ -41,6 +42,7 @@ struct TestInputObject {
 }
 
 #[derive(GraphQLInputObject, Debug)]
+#[graphql(scalar = "DefaultScalarValue")]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,

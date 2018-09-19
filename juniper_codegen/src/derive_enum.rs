@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 
 use syn;
-use syn::{Data, DeriveInput, Fields, Ident, Meta, NestedMeta, Variant};
+use syn::{Data, DeriveInput, Fields, Ident, Variant};
 
 use util::*;
 
@@ -9,7 +9,6 @@ use util::*;
 struct EnumAttrs {
     name: Option<String>,
     description: Option<String>,
-    internal: bool,
 }
 
 impl EnumAttrs {
@@ -17,8 +16,6 @@ impl EnumAttrs {
         let mut res = EnumAttrs {
             name: None,
             description: None,
-            /// Flag to specify whether the calling crate is the "juniper" crate itself.
-            internal: false,
         };
 
         // Check doc comments for description.
@@ -41,15 +38,6 @@ impl EnumAttrs {
                 if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
                     continue;
-                }
-                match item {
-                    NestedMeta::Meta(Meta::Word(ref ident)) => {
-                        if ident == "_internal" {
-                            res.internal = true;
-                            continue;
-                        }
-                    }
-                    _ => {}
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",

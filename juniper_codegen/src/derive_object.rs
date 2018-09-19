@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use syn;
-use syn::{Data, DeriveInput, Field, Fields};
+use syn::{Data, DeriveInput, Field, Fields, Ident};
 
 use util::*;
 
@@ -8,6 +8,7 @@ use util::*;
 struct ObjAttrs {
     name: Option<String>,
     description: Option<String>,
+    scalar: Option<Ident>,
 }
 
 impl ObjAttrs {
@@ -33,6 +34,10 @@ impl ObjAttrs {
                 }
                 if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
                     res.description = Some(val);
+                    continue;
+                }
+                if let Some(AttributeValue::String(scalar)) = keyed_item_value(&item, "scalar", true) {
+                    res.scalar = Some(Ident::from(&scalar as &str));
                     continue;
                 }
                 panic!(format!(
@@ -170,8 +175,25 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         });
     }
 
+    let (where_clause, define_scalar) = if attrs.scalar.is_none() {
+        (
+            Some(quote!{
+                where __S: juniper::ScalarValue,
+                      for<'__b> &'__b: juniper::ScalarRefValue<'__b>
+            }),
+            Some(quote!(<__S>)),
+        )
+    } else {
+        (None, None)
+    };
+
+    let scalar = attrs.scalar.unwrap_or_else(|| Ident::from("__S"));
+    let dummy_const = Ident::from(format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str());
+
     let toks = quote! {
-        impl #generics ::juniper::GraphQLType for #ident #generics {
+        impl#define_scalar juniper::GraphQLType<#scalar> for #ident
+            #where_clause
+        {
             type Context = ();
             type TypeInfo = ();
 
@@ -185,8 +207,8 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
 
             fn meta<'r>(
                 _: &(),
-                registry: &mut ::juniper::Registry<'r>
-            ) -> ::juniper::meta::MetaType<'r> {
+                registry: &mut juniper::Registry<'r, #scalar>
+            ) -> juniper::meta::MetaType<'r, #scalar> {
                 let fields = &[
                     #(#meta_fields)*
                 ];
@@ -199,9 +221,9 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
                 &self,
                 _: &(),
                 field_name: &str,
-                _: &::juniper::Arguments,
-                executor: &::juniper::Executor<Self::Context>
-            ) -> ::juniper::ExecutionResult
+                _: &juniper::Arguments<#scalar>,
+                executor: &juniper::Executor<Self::Context, #scalar>
+            ) -> juniper::ExecutionResult<#scalar>
             {
 
                 match field_name {
@@ -212,6 +234,15 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
     };
+    quote!{
+        const #dummy_const: () = {
+            mod juniper {
+                __juniper_use_everything!();
+            }
 
-    toks
+            extern crate std;
+
+            #toks
+        };
+    }
 }
