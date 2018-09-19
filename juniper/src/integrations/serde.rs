@@ -71,23 +71,23 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
 
 impl<'de, S> de::Deserialize<'de> for InputValue<S>
 where
-    S: de::Deserialize<'de> + ScalarValue,
+    S: ScalarValue,
 {
     fn deserialize<D>(deserializer: D) -> Result<InputValue<S>, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        struct InputValueVisitor<S>(::std::marker::PhantomData<S>);
+        struct InputValueVisitor<S: ScalarValue>(S::Visitor);
 
-        impl<S> Default for InputValueVisitor<S> {
+        impl<S: ScalarValue> Default for InputValueVisitor<S> {
             fn default() -> Self {
-                InputValueVisitor(Default::default())
+                InputValueVisitor(S::Visitor::default())
             }
         }
 
         impl<'de, S> de::Visitor<'de> for InputValueVisitor<S>
         where
-            S: ScalarValue + de::Deserialize<'de>,
+            S: ScalarValue,
         {
             type Value = InputValue<S>;
 
@@ -95,62 +95,143 @@ where
                 formatter.write_str("a valid input value")
             }
 
-            fn visit_bool<E>(self, value: bool) -> Result<InputValue<S>, E> {
-                Ok(InputValue::scalar(value))
+            fn visit_bool<E>(self, value: bool) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_bool(value).map(InputValue::Scalar)
+            }
+
+            fn visit_i8<E>(self, value: i8) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_i8(value).map(InputValue::Scalar)
+            }
+
+            fn visit_i16<E>(self, value: i16) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_i16(value).map(InputValue::Scalar)
+            }
+
+            fn visit_i32<E>(self, value: i32) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_i32(value).map(InputValue::Scalar)
             }
 
             fn visit_i64<E>(self, value: i64) -> Result<InputValue<S>, E>
             where
                 E: de::Error,
             {
-                if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
-                    Ok(InputValue::scalar(value as i32))
-                } else {
-                    // Browser's JSON.stringify serialize all numbers having no
-                    // fractional part as integers (no decimal point), so we
-                    // must parse large integers as floating point otherwise
-                    // we would error on transferring large floating point
-                    // numbers.
-                    Ok(InputValue::scalar(value as f64))
-                }
+                self.0.visit_i64(value).map(InputValue::Scalar)
+            }
+
+            fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_i128(value).map(InputValue::Scalar)
+            }
+
+            fn visit_u8<E>(self, value: u8) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_u8(value).map(InputValue::Scalar)
+            }
+
+            fn visit_u16<E>(self, value: u16) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_u16(value).map(InputValue::Scalar)
+            }
+
+            fn visit_u32<E>(self, value: u32) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_u32(value).map(InputValue::Scalar)
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<InputValue<S>, E>
             where
                 E: de::Error,
             {
-                if value <= i32::max_value() as u64 {
-                    self.visit_i64(value as i64)
-                } else {
-                    // Browser's JSON.stringify serialize all numbers having no
-                    // fractional part as integers (no decimal point), so we
-                    // must parse large integers as floating point otherwise
-                    // we would error on transferring large floating point
-                    // numbers.
-                    Ok(InputValue::scalar(value as f64))
-                }
+                self.0.visit_u64(value).map(InputValue::Scalar)
             }
 
-            fn visit_f64<E>(self, value: f64) -> Result<InputValue<S>, E> {
-                Ok(InputValue::scalar(value))
+            fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_u128(value).map(InputValue::Scalar)
+            }
+
+            fn visit_f32<E>(self, value: f32) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_f32(value).map(InputValue::Scalar)
+            }
+
+            fn visit_f64<E>(self, value: f64) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_f64(value).map(InputValue::Scalar)
+            }
+
+            fn visit_char<E>(self, value: char) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_char(value).map(InputValue::Scalar)
             }
 
             fn visit_str<E>(self, value: &str) -> Result<InputValue<S>, E>
             where
                 E: de::Error,
             {
-                self.visit_string(value.into())
+                self.0.visit_str(value).map(InputValue::Scalar)
             }
 
-            fn visit_string<E>(self, value: String) -> Result<InputValue<S>, E> {
-                Ok(InputValue::scalar(value))
+            fn visit_string<E>(self, value: String) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_string(value).map(InputValue::Scalar)
             }
 
-            fn visit_none<E>(self) -> Result<InputValue<S>, E> {
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_bytes(bytes).map(InputValue::Scalar)
+            }
+
+            fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
+                self.0.visit_byte_buf(bytes).map(InputValue::Scalar)
+            }
+
+            fn visit_none<E>(self) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
                 Ok(InputValue::null())
             }
 
-            fn visit_unit<E>(self) -> Result<InputValue<S>, E> {
+            fn visit_unit<E>(self) -> Result<InputValue<S>, E>
+            where
+                E: de::Error,
+            {
                 Ok(InputValue::null())
             }
 

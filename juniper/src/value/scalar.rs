@@ -1,5 +1,5 @@
 use parser::{ParseError, ScalarToken};
-use serde::de::{self, Deserialize, Deserializer};
+use serde::de;
 use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};
 
@@ -20,7 +20,9 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// needs.
 /// There is a custom derive (`#[derive(ScalarValue)]`) available that implements
 /// most of the required traits automatically for a enum representing a scalar value.
-/// The only trait that needs to be implemented manually in this case is `serde::Deserialize`.
+/// This derives needs a additional annotation of the form
+/// `#[juniper(visitor = "VisitorType")]` to specify a type that implements
+/// `serde::de::Visitor` and that is used to deserialize the value.
 ///
 /// # Implementing a new scalar value representation
 /// The preferred way to define a new scalar value representation is
@@ -36,6 +38,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use std::fmt;
 /// #
 /// #[derive(Debug, Clone, PartialEq, ScalarValue)]
+/// #[juniper(visitor = "MyScalarValueVisitor")]
 /// enum MyScalarValue {
 ///     Int(i32),
 ///     Long(i64),
@@ -44,84 +47,77 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     Boolean(bool),
 /// }
 ///
-/// impl<'de> Deserialize<'de> for MyScalarValue {
-///     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+/// #[derive(Default)]
+/// struct MyScalarValueVisitor;
+///
+/// impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
+///     type Value = MyScalarValue;
+///
+///     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+///         formatter.write_str("a valid input value")
+///     }
+///
+///     fn visit_bool<E>(self, value: bool) -> Result<MyScalarValue, E> {
+///         Ok(MyScalarValue::Boolean(value))
+///     }
+///
+///     fn visit_i32<E>(self, value: i32) -> Result<MyScalarValue, E>
 ///     where
-///         D: Deserializer<'de>,
+///         E: de::Error,
 ///     {
-///         struct MyScalarValueVisitor;
+///         Ok(MyScalarValue::Int(value))
+///     }
 ///
-///         impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
-///             type Value = MyScalarValue;
+///     fn visit_i64<E>(self, value: i64) -> Result<MyScalarValue, E>
+///     where
+///         E: de::Error,
+///     {
+///         Ok(MyScalarValue::Long(value))
+///     }
 ///
-///             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-///                 formatter.write_str("a valid input value")
-///             }
-///
-///             fn visit_bool<E>(self, value: bool) -> Result<MyScalarValue, E> {
-///                 Ok(MyScalarValue::Boolean(value))
-///             }
-///
-///             fn visit_i32<E>(self, value: i32) -> Result<MyScalarValue, E>
-///             where
-///                 E: de::Error,
-///             {
-///                 Ok(MyScalarValue::Int(value))
-///             }
-///
-///             fn visit_i64<E>(self, value: i64) -> Result<MyScalarValue, E>
-///             where
-///                 E: de::Error,
-///             {
-///                 Ok(MyScalarValue::Long(value))
-///             }
-///
-///             fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>
-///             where
-///                 E: de::Error,
-///             {
-///                 if value <= i32::max_value() as u32 {
-///                     self.visit_i32(value as i32)
-///                 } else {
-///                     self.visit_u64(value as u64)
-///                 }
-///             }
-///
-///             fn visit_u64<E>(self, value: u64) -> Result<MyScalarValue, E>
-///             where
-///                 E: de::Error,
-///             {
-///                 if value <= i64::max_value() as u64 {
-///                     self.visit_i64(value as i64)
-///                 } else {
-///                     // Browser's JSON.stringify serialize all numbers having no
-///                     // fractional part as integers (no decimal point), so we
-///                     // must parse large integers as floating point otherwise
-///                     // we would error on transferring large floating point
-///                     // numbers.
-///                     Ok(MyScalarValue::Float(value as f64))
-///                 }
-///             }
-///
-///             fn visit_f64<E>(self, value: f64) -> Result<MyScalarValue, E> {
-///                 Ok(MyScalarValue::Float(value))
-///             }
-///
-///             fn visit_str<E>(self, value: &str) -> Result<MyScalarValue, E>
-///             where
-///                 E: de::Error,
-///             {
-///                 self.visit_string(value.into())
-///             }
-///
-///             fn visit_string<E>(self, value: String) -> Result<MyScalarValue, E> {
-///                 Ok(MyScalarValue::String(value))
-///             }
+///     fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>
+///     where
+///         E: de::Error,
+///     {
+///         if value <= i32::max_value() as u32 {
+///             self.visit_i32(value as i32)
+///         } else {
+///             self.visit_u64(value as u64)
 ///         }
+///     }
 ///
-///         deserializer.deserialize_any(MyScalarValueVisitor)
+///     fn visit_u64<E>(self, value: u64) -> Result<MyScalarValue, E>
+///     where
+///         E: de::Error,
+///     {
+///         if value <= i64::max_value() as u64 {
+///             self.visit_i64(value as i64)
+///         } else {
+///             // Browser's JSON.stringify serialize all numbers having no
+///             // fractional part as integers (no decimal point), so we
+///             // must parse large integers as floating point otherwise
+///             // we would error on transferring large floating point
+///             // numbers.
+///             Ok(MyScalarValue::Float(value as f64))
+///         }
+///     }
+///
+///     fn visit_f64<E>(self, value: f64) -> Result<MyScalarValue, E> {
+///         Ok(MyScalarValue::Float(value))
+///     }
+///
+///     fn visit_str<E>(self, value: &str) -> Result<MyScalarValue, E>
+///     where
+///         E: de::Error,
+///     {
+///         self.visit_string(value.into())
+///     }
+///
+///     fn visit_string<E>(self, value: String) -> Result<MyScalarValue, E> {
+///         Ok(MyScalarValue::String(value))
 ///     }
 /// }
+///
 /// # fn main() {}
 /// ```
 pub trait ScalarValue:
@@ -139,6 +135,9 @@ pub trait ScalarValue:
     + Into<Option<f64>>
     + Into<Option<String>>
 {
+    /// Serde visitor used to deserialize this scalar value
+    type Visitor: for<'de> de::Visitor<'de, Value = Self> + Default;
+
     /// Checks if the current value contains the a value of the current type
     ///
     /// ```
@@ -190,6 +189,7 @@ where
 /// This types closely follows the graphql specification.
 #[derive(Debug, PartialEq, Clone, ScalarValue)]
 #[allow(missing_docs)]
+#[juniper(visitor = "DefaultScalarValueVisitor")]
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),
@@ -203,72 +203,64 @@ impl<'a> From<&'a str> for DefaultScalarValue {
     }
 }
 
-impl<'de> Deserialize<'de> for DefaultScalarValue {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+#[derive(Default, Clone, Copy, Debug)]
+pub struct DefaultScalarValueVisitor;
+
+impl<'de> de::Visitor<'de> for DefaultScalarValueVisitor {
+    type Value = DefaultScalarValue;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a valid input value")
+    }
+
+    fn visit_bool<E>(self, value: bool) -> Result<DefaultScalarValue, E> {
+        Ok(DefaultScalarValue::Boolean(value))
+    }
+
+    fn visit_i64<E>(self, value: i64) -> Result<DefaultScalarValue, E>
     where
-        D: Deserializer<'de>,
+        E: de::Error,
     {
-        struct DefaultScalarValueVisitor;
-
-        impl<'de> de::Visitor<'de> for DefaultScalarValueVisitor {
-            type Value = DefaultScalarValue;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a valid input value")
-            }
-
-            fn visit_bool<E>(self, value: bool) -> Result<DefaultScalarValue, E> {
-                Ok(DefaultScalarValue::Boolean(value))
-            }
-
-            fn visit_i64<E>(self, value: i64) -> Result<DefaultScalarValue, E>
-            where
-                E: de::Error,
-            {
-                if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
-                    Ok(DefaultScalarValue::Int(value as i32))
-                } else {
-                    // Browser's JSON.stringify serialize all numbers having no
-                    // fractional part as integers (no decimal point), so we
-                    // must parse large integers as floating point otherwise
-                    // we would error on transferring large floating point
-                    // numbers.
-                    Ok(DefaultScalarValue::Float(value as f64))
-                }
-            }
-
-            fn visit_u64<E>(self, value: u64) -> Result<DefaultScalarValue, E>
-            where
-                E: de::Error,
-            {
-                if value <= i32::max_value() as u64 {
-                    self.visit_i64(value as i64)
-                } else {
-                    // Browser's JSON.stringify serialize all numbers having no
-                    // fractional part as integers (no decimal point), so we
-                    // must parse large integers as floating point otherwise
-                    // we would error on transferring large floating point
-                    // numbers.
-                    Ok(DefaultScalarValue::Float(value as f64))
-                }
-            }
-
-            fn visit_f64<E>(self, value: f64) -> Result<DefaultScalarValue, E> {
-                Ok(DefaultScalarValue::Float(value))
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<DefaultScalarValue, E>
-            where
-                E: de::Error,
-            {
-                self.visit_string(value.into())
-            }
-
-            fn visit_string<E>(self, value: String) -> Result<DefaultScalarValue, E> {
-                Ok(DefaultScalarValue::String(value))
-            }
+        if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
+            Ok(DefaultScalarValue::Int(value as i32))
+        } else {
+            // Browser's JSON.stringify serialize all numbers having no
+            // fractional part as integers (no decimal point), so we
+            // must parse large integers as floating point otherwise
+            // we would error on transferring large floating point
+            // numbers.
+            Ok(DefaultScalarValue::Float(value as f64))
         }
+    }
 
-        deserializer.deserialize_any(DefaultScalarValueVisitor)
+    fn visit_u64<E>(self, value: u64) -> Result<DefaultScalarValue, E>
+    where
+        E: de::Error,
+    {
+        if value <= i32::max_value() as u64 {
+            self.visit_i64(value as i64)
+        } else {
+            // Browser's JSON.stringify serialize all numbers having no
+            // fractional part as integers (no decimal point), so we
+            // must parse large integers as floating point otherwise
+            // we would error on transferring large floating point
+            // numbers.
+            Ok(DefaultScalarValue::Float(value as f64))
+        }
+    }
+
+    fn visit_f64<E>(self, value: f64) -> Result<DefaultScalarValue, E> {
+        Ok(DefaultScalarValue::Float(value))
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<DefaultScalarValue, E>
+    where
+        E: de::Error,
+    {
+        self.visit_string(value.into())
+    }
+
+    fn visit_string<E>(self, value: String) -> Result<DefaultScalarValue, E> {
+        Ok(DefaultScalarValue::String(value))
     }
 }

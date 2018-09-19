@@ -1,8 +1,19 @@
 use quote::Tokens;
 use syn::{self, Data, Fields, Ident, Variant};
+use util::{get_juniper_attr, keyed_item_value};
 
 pub fn impl_scalar_value(ast: &syn::DeriveInput) -> Tokens {
     let ident = &ast.ident;
+    let visitor = if let Some(items) = get_juniper_attr(&ast.attrs) {
+        items.into_iter()
+            .filter_map(|i| keyed_item_value(&i, "visitor", true))
+            .next()
+            .map(|t| Ident::from(&t as &str))
+            .expect("`#[derive(ScalarValue)]` needs a annotation of the form `#[juniper(visitor = \"VisitorType\")]`")
+    } else {
+        panic!("`#[derive(ScalarValue)]` needs a annotation of the form `#[juniper(visitor = \"VisitorType\")]`");
+    };
+
     let variants = match ast.data {
         Data::Enum(ref enum_data) => &enum_data.variants,
         _ => {
@@ -34,7 +45,9 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput) -> Tokens {
             #serialize
             #display
 
-            impl juniper::ScalarValue for #ident {}
+            impl juniper::ScalarValue for #ident {
+                type Visitor = #visitor;
+            }
 
         };
     }

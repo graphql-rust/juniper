@@ -1,15 +1,16 @@
+extern crate serde_json;
+
 use ast::InputValue;
-use executor::{ExecutionResult, Executor, Registry, Variables};
-use parser::{ParseError, ScalarToken, Token};
-use schema::meta::MetaType;
+use executor::Variables;
+use parser::{ParseError, ScalarToken, Spanning, Token};
 use schema::model::RootNode;
-use serde::de::{self, Deserialize, Deserializer};
+use serde::de;
 use std::fmt;
-use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
-use value::{Object, ParseScalarResult, ScalarRefValue, Value};
+use value::{Object, ParseScalarResult, Value};
 
 #[derive(Debug, Clone, PartialEq, ScalarValue)]
+#[juniper(visitor = "MyScalarValueVisitor")]
 enum MyScalarValue {
     Int(i32),
     Long(i64),
@@ -18,82 +19,74 @@ enum MyScalarValue {
     Boolean(bool),
 }
 
-impl<'de> Deserialize<'de> for MyScalarValue {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+#[derive(Default, Debug)]
+struct MyScalarValueVisitor;
+
+impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
+    type Value = MyScalarValue;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a valid input value")
+    }
+
+    fn visit_bool<E>(self, value: bool) -> Result<MyScalarValue, E> {
+        Ok(MyScalarValue::Boolean(value))
+    }
+
+    fn visit_i32<E>(self, value: i32) -> Result<MyScalarValue, E>
     where
-        D: Deserializer<'de>,
+        E: de::Error,
     {
-        struct MyScalarValueVisitor;
+        Ok(MyScalarValue::Int(value))
+    }
 
-        impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
-            type Value = MyScalarValue;
+    fn visit_i64<E>(self, value: i64) -> Result<MyScalarValue, E>
+    where
+        E: de::Error,
+    {
+        Ok(MyScalarValue::Long(value))
+    }
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a valid input value")
-            }
-
-            fn visit_bool<E>(self, value: bool) -> Result<MyScalarValue, E> {
-                Ok(MyScalarValue::Boolean(value))
-            }
-
-            fn visit_i32<E>(self, value: i32) -> Result<MyScalarValue, E>
-            where
-                E: de::Error,
-            {
-                Ok(MyScalarValue::Int(value))
-            }
-
-            fn visit_i64<E>(self, value: i64) -> Result<MyScalarValue, E>
-            where
-                E: de::Error,
-            {
-                Ok(MyScalarValue::Long(value))
-            }
-
-            fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>
-            where
-                E: de::Error,
-            {
-                if value <= i32::max_value() as u32 {
-                    self.visit_i32(value as i32)
-                } else {
-                    self.visit_u64(value as u64)
-                }
-            }
-
-            fn visit_u64<E>(self, value: u64) -> Result<MyScalarValue, E>
-            where
-                E: de::Error,
-            {
-                if value <= i64::max_value() as u64 {
-                    self.visit_i64(value as i64)
-                } else {
-                    // Browser's JSON.stringify serialize all numbers having no
-                    // fractional part as integers (no decimal point), so we
-                    // must parse large integers as floating point otherwise
-                    // we would error on transferring large floating point
-                    // numbers.
-                    Ok(MyScalarValue::Float(value as f64))
-                }
-            }
-
-            fn visit_f64<E>(self, value: f64) -> Result<MyScalarValue, E> {
-                Ok(MyScalarValue::Float(value))
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<MyScalarValue, E>
-            where
-                E: de::Error,
-            {
-                self.visit_string(value.into())
-            }
-
-            fn visit_string<E>(self, value: String) -> Result<MyScalarValue, E> {
-                Ok(MyScalarValue::String(value))
-            }
+    fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>
+    where
+        E: de::Error,
+    {
+        if value <= i32::max_value() as u32 {
+            self.visit_i32(value as i32)
+        } else {
+            self.visit_u64(value as u64)
         }
+    }
 
-        deserializer.deserialize_any(MyScalarValueVisitor)
+    fn visit_u64<E>(self, value: u64) -> Result<MyScalarValue, E>
+    where
+        E: de::Error,
+    {
+        if value <= i64::max_value() as u64 {
+            self.visit_i64(value as i64)
+        } else {
+            // Browser's JSON.stringify serialize all numbers having no
+            // fractional part as integers (no decimal point), so we
+            // must parse large integers as floating point otherwise
+            // we would error on transferring large floating point
+            // numbers.
+            Ok(MyScalarValue::Float(value as f64))
+        }
+    }
+
+    fn visit_f64<E>(self, value: f64) -> Result<MyScalarValue, E> {
+        Ok(MyScalarValue::Float(value))
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<MyScalarValue, E>
+    where
+        E: de::Error,
+    {
+        self.visit_string(value.into())
+    }
+
+    fn visit_string<E>(self, value: String) -> Result<MyScalarValue, E> {
+        Ok(MyScalarValue::String(value))
     }
 }
 
@@ -122,53 +115,15 @@ graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
 
 struct TestType;
 
-impl GraphQLType<MyScalarValue> for TestType {
-    type Context = ();
-    type TypeInfo = ();
-
-    fn name((): &Self::TypeInfo) -> Option<&str> {
-        Some("TestType")
+graphql_object!(TestType: () where Scalar = MyScalarValue |&self| {
+    field long_field()  -> i64 {
+        (::std::i32::MAX as i64) + 1
     }
 
-    fn meta<'r>(
-        info: &Self::TypeInfo,
-        registry: &mut Registry<'r, MyScalarValue>,
-    ) -> MetaType<'r, MyScalarValue>
-    where
-        MyScalarValue: 'r,
-        for<'b> &'b MyScalarValue: ScalarRefValue<'b>,
-    {
-        let long_field = registry.field::<i64>("longField", info);
-
-        let long_arg = registry.arg::<i64>("longArg", info);
-
-        let long_field_with_arg = registry
-            .field::<i64>("longWithArg", info)
-            .argument(long_arg);
-
-        registry
-            .build_object_type::<Self>(info, &[long_field, long_field_with_arg])
-            .into_meta()
+    field long_with_arg(long_arg: i64) -> i64 {
+        long_arg
     }
-
-    fn resolve_field(
-        &self,
-        _info: &Self::TypeInfo,
-        field_name: &str,
-        args: &Arguments<MyScalarValue>,
-        _executor: &Executor<Self::Context, MyScalarValue>,
-    ) -> ExecutionResult<MyScalarValue> {
-        match field_name {
-            "longField" => Ok(Value::Scalar(MyScalarValue::Long(
-                (::std::i32::MAX as i64) + 1,
-            ))),
-            "longWithArg" => Ok(Value::Scalar(MyScalarValue::Long(
-                args.get::<i64>("longArg").unwrap(),
-            ))),
-            _ => unreachable!(),
-        }
-    }
-}
+});
 
 fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
 where
@@ -235,5 +190,21 @@ fn querying_long_variable() {
                 Some(&Value::scalar((::std::i32::MAX as i64) + 42))
             );
         },
+    );
+}
+
+#[test]
+fn deserialize_variable() {
+    let json = format!("{{\"field\": {}}}", (::std::i32::MAX as i64) + 42);
+
+    let input_value: InputValue<MyScalarValue> = self::serde_json::from_str(&json).unwrap();
+    assert_eq!(
+        input_value,
+        InputValue::Object(vec![(
+            Spanning::unlocated("field".into()),
+            Spanning::unlocated(InputValue::Scalar(MyScalarValue::Long(
+                (::std::i32::MAX as i64) + 42
+            )))
+        )])
     );
 }

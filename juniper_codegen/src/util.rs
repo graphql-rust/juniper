@@ -71,9 +71,17 @@ fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
 
 // Get the nested items of a a #[graphql(...)] attribute.
 pub fn get_graphql_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
+    get_named_attr(attrs, "graphql")
+}
+
+pub fn get_juniper_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
+    get_named_attr(attrs, "juniper")
+}
+
+pub fn get_named_attr(attrs: &Vec<Attribute>, name: &str) -> Option<Vec<NestedMeta>> {
     for attr in attrs {
         match attr.interpret_meta() {
-            Some(Meta::List(ref list)) if list.ident == "graphql" => {
+            Some(Meta::List(ref list)) if list.ident == name => {
                 return Some(list.nested.iter().map(|x| x.clone()).collect());
             }
             _ => {}
