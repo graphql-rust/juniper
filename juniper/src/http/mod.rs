@@ -7,7 +7,7 @@ use serde::ser::{self, Serialize, SerializeMap};
 
 use ast::InputValue;
 use executor::ExecutionError;
-use value::{ScalarRefValue, ScalarValue};
+use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -18,7 +18,7 @@ use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
 #[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
-pub struct GraphQLRequest<S>
+pub struct GraphQLRequest<S = DefaultScalarValue>
 where
     S: ScalarValue,
 {
@@ -92,7 +92,9 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
-pub struct GraphQLResponse<'a, S>(Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>);
+pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
+    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+);
 
 impl<'a, S> GraphQLResponse<'a, S>
 where
