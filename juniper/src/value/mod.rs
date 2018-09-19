@@ -5,7 +5,9 @@ mod scalar;
 
 pub use self::object::Object;
 
-pub use self::scalar::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+pub use self::scalar::{
+    DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
+};
 
 /// Serializable value returned from query and field execution.
 ///
@@ -18,7 +20,7 @@ pub use self::scalar::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, Sca
 /// than parsing a source query.
 #[derive(Debug, PartialEq, Clone)]
 #[allow(missing_docs)]
-pub enum Value<S> {
+pub enum Value<S = DefaultScalarValue> {
     Null,
     Scalar(S),
     List(Vec<Value<S>>),
@@ -100,7 +102,10 @@ where
     }
 
     /// View the underlying float value, if present.
-    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
+    #[deprecated(
+        since = "0.11",
+        note = "Use `Value::as_scalar_value` instead"
+    )]
     pub fn as_float_value(&self) -> Option<f64>
     where
         for<'a> &'a S: ScalarRefValue<'a>,
@@ -141,7 +146,10 @@ where
     }
 
     /// View the underlying string value, if present.
-    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
+    #[deprecated(
+        since = "0.11",
+        note = "Use `Value::as_scalar_value` instead"
+    )]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         Option<&'a String>: From<&'a S>,

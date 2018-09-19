@@ -7,7 +7,7 @@ use serde::de::{self, Deserialize, Deserializer};
 use std::fmt;
 use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
-use value::{Object, ScalarRefValue, Value};
+use value::{Object, ParseScalarResult, ScalarRefValue, Value};
 
 #[derive(Debug, Clone, PartialEq, ScalarValue)]
 enum MyScalarValue {
@@ -109,7 +109,7 @@ graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<MyScalarValue, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
         if let ScalarToken::Int(v) = value {
                 v.parse()
                     .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
@@ -156,7 +156,7 @@ impl GraphQLType<MyScalarValue> for TestType {
         _info: &Self::TypeInfo,
         field_name: &str,
         args: &Arguments<MyScalarValue>,
-        _executor: &Executor<MyScalarValue, Self::Context>,
+        _executor: &Executor<Self::Context, MyScalarValue>,
     ) -> ExecutionResult<MyScalarValue> {
         match field_name {
             "longField" => Ok(Value::Scalar(MyScalarValue::Long(

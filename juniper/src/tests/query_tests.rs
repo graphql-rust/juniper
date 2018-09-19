@@ -3,7 +3,7 @@ use executor::Variables;
 use schema::model::RootNode;
 use tests::model::Database;
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Value};
+use value::Value;
 
 #[test]
 fn test_hero_name() {
@@ -14,8 +14,7 @@ fn test_hero_name() {
             }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -35,8 +34,7 @@ fn test_hero_name() {
 #[test]
 fn test_hero_field_order() {
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let doc = r#"
         {
@@ -106,8 +104,7 @@ fn test_hero_name_and_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -167,8 +164,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -320,8 +316,7 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
 fn test_query_name() {
     let doc = r#"{ human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -346,8 +341,7 @@ fn test_query_name() {
 fn test_query_alias_single() {
     let doc = r#"{ luke: human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -376,8 +370,7 @@ fn test_query_alias_multiple() {
             leia: human(id: "1003") { name }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -421,8 +414,7 @@ fn test_query_alias_multiple_with_fragment() {
             homePlanet
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -461,8 +453,7 @@ fn test_query_alias_multiple_with_fragment() {
 fn test_query_name_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let vars = vec![("someId".to_owned(), InputValue::scalar("1000"))]
         .into_iter()
@@ -491,8 +482,7 @@ fn test_query_name_variable() {
 fn test_query_name_invalid_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let vars = vec![("someId".to_owned(), InputValue::scalar("some invalid id"))]
         .into_iter()
@@ -511,8 +501,7 @@ fn test_query_name_invalid_variable() {
 fn test_query_friends_names() {
     let doc = r#"{ human(id: "1000") { friends { name } } }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -567,8 +556,7 @@ fn test_query_inline_fragments_droid() {
         }
         "#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -603,8 +591,7 @@ fn test_query_inline_fragments_human() {
         }
         "#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -636,8 +623,7 @@ fn test_object_typename() {
             }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),

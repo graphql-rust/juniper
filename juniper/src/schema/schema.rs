@@ -9,7 +9,7 @@ use schema::meta::{
 };
 use schema::model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType};
 
-impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, S, QueryT, MutationT>
+impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
@@ -36,7 +36,7 @@ where
         info: &QueryT::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         match field {
             "__schema" => executor
@@ -56,7 +56,7 @@ where
         &self,
         info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, Self::Context>,
+        executor: &Executor<Self::Context, S>,
     ) -> Value<S> {
         use types::base::resolve_selection_set_into;
         use value::Object;

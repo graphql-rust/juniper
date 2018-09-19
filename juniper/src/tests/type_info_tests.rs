@@ -5,7 +5,7 @@ use schema::meta::MetaType;
 use schema::model::RootNode;
 use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue, Value};
+use value::{ScalarRefValue, ScalarValue, Value};
 
 pub struct NodeTypeInfo {
     name: String,
@@ -48,7 +48,7 @@ where
         _: &Self::TypeInfo,
         field_name: &str,
         _: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         executor.resolve(&(), &self.attributes.get(field_name).unwrap())
     }
@@ -72,8 +72,7 @@ fn test_node() {
     node.attributes.insert("foo".to_string(), "1".to_string());
     node.attributes.insert("bar".to_string(), "2".to_string());
     node.attributes.insert("baz".to_string(), "3".to_string());
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new_with_info(node, EmptyMutation::new(), node_info, ());
+    let schema: RootNode<_, _> = RootNode::new_with_info(node, EmptyMutation::new(), node_info, ());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &()),

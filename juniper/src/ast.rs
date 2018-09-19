@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 
 use executor::Variables;
 use parser::Spanning;
-use value::{ScalarRefValue, ScalarValue};
+use value::{ScalarRefValue, ScalarValue, DefaultScalarValue};
 
 /// A type literal in the syntax tree
 ///
@@ -38,7 +38,7 @@ pub enum Type<'a> {
 /// their position in the source file, if available.
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
-pub enum InputValue<S> {
+pub enum InputValue<S = DefaultScalarValue> {
     Null,
     Scalar(S),
     Enum(String),
@@ -151,7 +151,7 @@ pub type Document<'a, S> = Vec<Definition<'a, S>>;
 /// automatically by the convenience macro `graphql_scalar!` or by deriving GraphQLEnum.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
-pub trait FromInputValue<S>: Sized {
+pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn from_input_value(v: &InputValue<S>) -> Option<Self>
     where
@@ -159,7 +159,7 @@ pub trait FromInputValue<S>: Sized {
 }
 
 /// Losslessly clones a Rust data type into an InputValue.
-pub trait ToInputValue<S>: Sized {
+pub trait ToInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn to_input_value(&self) -> InputValue<S>;
 }

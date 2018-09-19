@@ -177,7 +177,7 @@ macro_rules! graphql_interface {
                     info: &Self::TypeInfo,
                     field: &str,
                     args: &$crate::Arguments<__juniper_insert_generic!($($scalar)+)>,
-                    executor: &$crate::Executor<__juniper_insert_generic!($($scalar)+), Self::Context>
+                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)+)>
                 ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)+)> {
                     $(
                         if field == &$crate::to_camel_case(stringify!($fn_name)) {
@@ -231,7 +231,7 @@ macro_rules! graphql_interface {
                     _info: &Self::TypeInfo,
                     type_name: &str,
                     _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)*)>]>,
-                    executor: &$crate::Executor<__juniper_insert_generic!($($scalar)*), Self::Context>,
+                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)*)>,
                 ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)*)> {
                     $(let $resolver_ctx = &executor.context();)*
 

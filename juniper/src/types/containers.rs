@@ -30,7 +30,7 @@ where
         &self,
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> Value<S> {
         match *self {
             Some(ref obj) => executor.resolve_into_value(info, obj),
@@ -96,7 +96,7 @@ where
         &self,
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> Value<S> {
         resolve_into_list(executor, info, self.iter())
     }
@@ -109,7 +109,7 @@ where
 {
     fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Vec<T>>
     where
-        for<'b> &'b S: ScalarRefValue<'b>
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         match *v {
             InputValue::List(ref ls) => {
@@ -165,7 +165,7 @@ where
         &self,
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> Value<S> {
         resolve_into_list(executor, info, self.iter())
     }
@@ -182,7 +182,7 @@ where
 }
 
 fn resolve_into_list<S, T, I>(
-    executor: &Executor<S, T::Context>,
+    executor: &Executor<T::Context, S>,
     info: &T::TypeInfo,
     iter: I,
 ) -> Value<S>

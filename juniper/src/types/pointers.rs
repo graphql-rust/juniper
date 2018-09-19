@@ -33,7 +33,7 @@ where
         info: &T::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
@@ -43,7 +43,7 @@ where
         info: &T::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
@@ -52,7 +52,7 @@ where
         &self,
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
     }
@@ -110,7 +110,7 @@ where
         info: &T::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
@@ -120,7 +120,7 @@ where
         info: &T::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
@@ -129,7 +129,7 @@ where
         &self,
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, CtxT>,
+        executor: &Executor<CtxT, S>,
     ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
     }
@@ -171,7 +171,7 @@ where
         info: &T::TypeInfo,
         name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, T::Context>,
+        executor: &Executor<T::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
@@ -181,7 +181,7 @@ where
         info: &T::TypeInfo,
         field: &str,
         args: &Arguments<S>,
-        executor: &Executor<S, T::Context>,
+        executor: &Executor<T::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
@@ -190,7 +190,7 @@ where
         &self,
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, T::Context>,
+        executor: &Executor<T::Context, S>,
     ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
     }

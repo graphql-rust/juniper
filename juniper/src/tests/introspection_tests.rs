@@ -4,7 +4,7 @@ use executor::Variables;
 use schema::model::RootNode;
 use tests::model::Database;
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Value};
+use value::Value;
 
 #[test]
 fn test_query_type_name() {
@@ -17,8 +17,7 @@ fn test_query_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -52,8 +51,7 @@ fn test_specific_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -81,8 +79,7 @@ fn test_specific_object_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -116,8 +113,7 @@ fn test_specific_interface_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -151,8 +147,7 @@ fn test_documentation() {
         }
         "#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
@@ -190,8 +185,7 @@ fn test_possible_types() {
         }
         "#;
     let database = Database::new();
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let result = ::execute(doc, None, &schema, &Variables::new(), &database);
 

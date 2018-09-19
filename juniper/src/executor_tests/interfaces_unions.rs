@@ -1,7 +1,7 @@
 mod interface {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::{DefaultScalarValue, Value};
+    use value::Value;
 
     trait Pet {
         fn name(&self) -> &str;
@@ -77,7 +77,7 @@ mod interface {
 
     #[test]
     fn test() {
-        let schema: RootNode<DefaultScalarValue, _, _> = RootNode::new(
+        let schema = RootNode::new(
             Schema {
                 pets: vec![
                     Box::new(Dog {
@@ -144,7 +144,7 @@ mod interface {
 mod union {
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::{Value, DefaultScalarValue};
+    use value::Value;
 
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {
@@ -206,7 +206,7 @@ mod union {
 
     #[test]
     fn test() {
-        let schema: RootNode<DefaultScalarValue, _, _> = RootNode::new(
+        let schema = RootNode::new(
             Schema {
                 pets: vec![
                     Box::new(Dog {

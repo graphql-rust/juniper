@@ -2,19 +2,17 @@ use indexmap::IndexMap;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
-use value::{Object, ScalarRefValue, ScalarValue, Value};
+use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
 
 use executor::{ExecutionResult, Executor, Registry};
 use parser::Spanning;
 use schema::meta::{Argument, MetaType};
-use std::fmt::Debug;
 
 /// GraphQL type kind
 ///
 /// The GraphQL specification defines a number of type kinds - the meta type
 /// of a type.
 #[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
-// Note: _internal flag needed to make derive work in juniper crate itself.
 #[graphql(name = "__TypeKind")]
 pub enum TypeKind {
     /// ## Scalar types
@@ -64,14 +62,13 @@ pub enum TypeKind {
     ///
     /// In GraphQL, nullable types are the default. By putting a `!` after a
     /// type, it becomes non-nullable.
-   #[graphql(name = "NON_NULL")]
+    #[graphql(name = "NON_NULL")]
     NonNull,
 }
 
-
 /// Field argument container
 #[derive(Debug)]
-pub struct Arguments<'a, S: Debug> {
+pub struct Arguments<'a, S = DefaultScalarValue> {
     args: Option<IndexMap<&'a str, InputValue<S>>>,
 }
 
@@ -152,7 +149,7 @@ root:
 ```rust
 use juniper::{GraphQLType, Registry, FieldResult, Context,
               Arguments, Executor, ExecutionResult,
-              ScalarValue, ScalarRefValue};
+              DefaultScalarValue};
 use juniper::meta::MetaType;
 # use std::collections::HashMap;
 
@@ -163,9 +160,7 @@ struct Database { users: HashMap<String, User> }
 
 impl Context for Database {}
 
-impl<S> GraphQLType<S> for User
-where S: ScalarValue,
-      for<'b> &'b S: ScalarRefValue<'b>
+impl GraphQLType for User
 {
     type Context = Database;
     type TypeInfo = ();
@@ -174,8 +169,8 @@ where S: ScalarValue,
         Some("User")
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where S: 'r,
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r>
+    where DefaultScalarValue: 'r,
     {
         // First, we need to define all fields and their types on this type.
         //
@@ -194,10 +189,10 @@ where S: ScalarValue,
         &self,
         info: &(),
         field_name: &str,
-        args: &Arguments<S>,
-        executor: &Executor<S, Database>
+        args: &Arguments,
+        executor: &Executor<Database>
     )
-        -> ExecutionResult<S>
+        -> ExecutionResult
     {
         // Next, we need to match the queried field name. All arms of this
         // match statement return `ExecutionResult`, which makes it hard to
@@ -234,7 +229,7 @@ where S: ScalarValue,
 ```
 
 */
-pub trait GraphQLType<S>: Sized
+pub trait GraphQLType<S = DefaultScalarValue>: Sized
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -279,7 +274,7 @@ where
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -296,7 +291,7 @@ where
         info: &Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, Self::Context>,
+        executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         if Self::name(info).unwrap() == type_name {
             Ok(self.resolve(info, selection_set, executor))
@@ -327,7 +322,7 @@ where
         &self,
         info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<S, Self::Context>,
+        executor: &Executor<Self::Context, S>,
     ) -> Value<S> {
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
@@ -346,7 +341,7 @@ pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection<S>],
-    executor: &Executor<S, CtxT>,
+    executor: &Executor<CtxT, S>,
     result: &mut Object<S>,
 ) -> bool
 where

@@ -9,7 +9,7 @@ use executor::{Executor, Registry};
 use parser::{LexerError, ParseError, ScalarToken, Token};
 use schema::meta::MetaType;
 use types::base::GraphQLType;
-use value::{ParseScalarValue, ScalarRefValue, ScalarValue, Value};
+use value::{ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
 
 /// An ID as defined by the GraphQL specification
 ///
@@ -47,7 +47,7 @@ graphql_scalar!(ID as "ID" where Scalar = <S>{
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         match value {
             ScalarToken::String(value) | ScalarToken::Int(value) => {
                 Ok(S::from(value.to_owned()))
@@ -69,7 +69,7 @@ graphql_scalar!(String as "String" where Scalar = <S>{
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
@@ -180,7 +180,7 @@ where
         &self,
         _: &(),
         _: Option<&[Selection<S>]>,
-        _: &Executor<S, Self::Context>,
+        _: &Executor<Self::Context, S>,
     ) -> Value<S> {
         Value::scalar(String::from(*self))
     }
@@ -207,7 +207,8 @@ graphql_scalar!(bool as "Boolean" where Scalar = <S>{
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S > {
         // Bools are parsed on it's own. This should not hit this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
@@ -225,7 +226,7 @@ graphql_scalar!(i32 as "Int" where Scalar = <S>{
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::Int(v) = value {
             v.parse()
              .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
@@ -251,7 +252,7 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         match value {
             ScalarToken::Int(v) | ScalarToken::Float(v) => {
                 v.parse()
@@ -290,7 +291,7 @@ impl<S> ParseScalarValue<S> for ()
 where
     S: ScalarValue,
 {
-    fn from_str<'a>(_value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    fn from_str<'a>(_value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         Ok(S::from(0))
     }
 }

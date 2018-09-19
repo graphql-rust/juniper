@@ -209,7 +209,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
                 &self,
                 _: &(),
                 _: Option<&[_juniper::Selection<__S>]>,
-                _: &_juniper::Executor<__S, Self::Context>
+                _: &_juniper::Executor<Self::Context, __S>
             ) -> _juniper::Value<__S> {
                 match self {
                     #(#resolves)*

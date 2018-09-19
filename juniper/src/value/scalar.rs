@@ -3,10 +3,13 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};
 
+/// The result of converting a string into a scalar value
+pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
+
 /// A trait used to convert a `ScalarToken` into a certain scalar value type
-pub trait ParseScalarValue<S> {
+pub trait ParseScalarValue<S = DefaultScalarValue> {
     /// See the trait documentation
-    fn from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>>;
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S>;
 }
 
 /// A trait marking a type that could be used as internal representation of

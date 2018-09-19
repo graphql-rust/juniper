@@ -16,7 +16,7 @@
 use chrono::prelude::*;
 
 use parser::{ParseError, ScalarToken, Token};
-use value::ParseScalarValue;
+use value::{ParseScalarResult, ParseScalarValue};
 use Value;
 
 #[doc(hidden)]
@@ -34,7 +34,7 @@ graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S
          .and_then(|s: &String| DateTime::parse_from_rfc3339(s).ok())
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) =  value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -55,7 +55,7 @@ graphql_scalar!(DateTime<Utc> as "DateTimeUtc" where Scalar = <S>{
          .and_then(|s: &String| (s.parse::<DateTime<Utc>>().ok()))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -81,7 +81,7 @@ graphql_scalar!(NaiveDate where Scalar = <S>{
          .and_then(|s: &String| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
@@ -104,7 +104,7 @@ graphql_scalar!(NaiveDateTime where Scalar = <S> {
          .and_then(|f: &f64| NaiveDateTime::from_timestamp_opt(*f as i64, 0))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         <f64 as ParseScalarValue<S>>::from_str(value)
     }
 });
@@ -203,11 +203,11 @@ mod integration_test {
     use executor::Variables;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::{DefaultScalarValue, Value};
+    use value::{Value};
 
     #[test]
     fn test_serialization() {
-        struct Root {}
+        struct Root;
         graphql_object!(Root: () |&self| {
             field exampleNaiveDate() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
@@ -232,8 +232,7 @@ mod integration_test {
         }
         "#;
 
-        let schema: RootNode<DefaultScalarValue, _, _> =
-            RootNode::new(Root {}, EmptyMutation::<()>::new());
+        let schema= RootNode::new(Root, EmptyMutation::<()>::new());
 
         let (result, errs) =
             ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");

@@ -8,8 +8,7 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use parser::ParseError;
-use value::{DefaultScalarValue, Value, ParseScalarValue};
+use value::{ParseScalarResult, ParseScalarValue, Value};
 
 #[derive(GraphQLEnum)]
 #[graphql(name = "SampleEnum")]
@@ -20,11 +19,11 @@ enum Sample {
 
 struct Scalar(i32);
 
-struct Interface {}
+struct Interface;
 
-struct Root {}
+struct Root;
 
-graphql_scalar!(Scalar as "SampleScalar" where Scalar = <S> {
+graphql_scalar!(Scalar as "SampleScalar" {
     resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -33,8 +32,8 @@ graphql_scalar!(Scalar as "SampleScalar" where Scalar = <S> {
         v.as_scalar_value().map(|i: &i32| Scalar(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+        <i32 as ParseScalarValue>::from_str(value)
     }
 });
 
@@ -46,7 +45,7 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
     }
 
     instance_resolvers: |&_| {
-        Root => Some(Root {}),
+        Root => Some(Root),
     }
 });
 
@@ -76,8 +75,7 @@ fn test_execution() {
         second: sampleScalar(first: 10 second: 20)
     }
     "#;
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -120,8 +118,7 @@ fn enum_introspection() {
         }
     }
     "#;
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -232,8 +229,7 @@ fn interface_introspection() {
         }
     }
     "#;
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -379,8 +375,7 @@ fn object_introspection() {
         }
     }
     "#;
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -580,8 +575,7 @@ fn scalar_introspection() {
         }
     }
     "#;
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
         ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");

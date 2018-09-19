@@ -1,11 +1,10 @@
 use ast::InputValue;
 use executor::Variables;
-use parser::ParseError;
 use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::{DefaultScalarValue, Object, ParseScalarValue, Value};
+use value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value};
 use GraphQLError::ValidationError;
 
 #[derive(Debug)]
@@ -28,8 +27,8 @@ graphql_scalar!(TestComplexScalar where Scalar = <S> {
         None
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
-        <String as ParseScalarValue<S>>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        <String as ParseScalarValue<_>>::from_str(value)
     }
 });
 
@@ -246,8 +245,7 @@ fn variable_runs_from_input_value_on_scalar() {
 
 #[test]
 fn variable_error_on_nested_non_null() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -276,8 +274,7 @@ fn variable_error_on_nested_non_null() {
 
 #[test]
 fn variable_error_on_incorrect_type() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![("input".to_owned(), InputValue::scalar("foo bar"))]
@@ -296,8 +293,7 @@ fn variable_error_on_incorrect_type() {
 
 #[test]
 fn variable_error_on_omit_non_null() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -325,8 +321,7 @@ fn variable_error_on_omit_non_null() {
 
 #[test]
 fn variable_multiple_errors_with_nesting() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query =
         r#"query q($input: TestNestedInputObject) { fieldWithNestedObjectInput(input: $input) }"#;
@@ -358,8 +353,7 @@ fn variable_multiple_errors_with_nesting() {
 
 #[test]
 fn variable_error_on_additional_field() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -473,8 +467,7 @@ fn allow_nullable_inputs_to_be_set_to_value_directly() {
 
 #[test]
 fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![].into_iter().collect();
@@ -492,8 +485,7 @@ fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
 
 #[test]
 fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![("value".to_owned(), InputValue::null())]
@@ -598,8 +590,7 @@ fn allow_lists_to_contain_null() {
 
 #[test]
 fn does_not_allow_non_null_lists_to_be_null() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String]!) { nnList(input: $input) }"#;
     let vars = vec![("input".to_owned(), InputValue::null())]
@@ -692,8 +683,7 @@ fn allow_lists_of_non_null_to_contain_values() {
 
 #[test]
 fn does_not_allow_lists_of_non_null_to_contain_null() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String!]) { listNn(input: $input) }"#;
     let vars = vec![(
@@ -718,8 +708,7 @@ fn does_not_allow_lists_of_non_null_to_contain_null() {
 
 #[test]
 fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![(
@@ -744,8 +733,7 @@ fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
 
 #[test]
 fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![("value".to_owned(), InputValue::null())]
@@ -783,8 +771,7 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
 
 #[test]
 fn does_not_allow_invalid_types_to_be_used_as_values() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: TestType!) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -805,8 +792,7 @@ fn does_not_allow_invalid_types_to_be_used_as_values() {
 
 #[test]
 fn does_not_allow_unknown_types_to_be_used_as_values() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($input: UnknownType!) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -923,8 +909,7 @@ fn nullable_input_object_arguments_successful_with_variables() {
 
 #[test]
 fn does_not_allow_missing_required_field() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"{ exampleInput(arg: {a: "abc"}) }"#;
     let vars = vec![].into_iter().collect();
@@ -942,8 +927,7 @@ fn does_not_allow_missing_required_field() {
 
 #[test]
 fn does_not_allow_null_in_required_field() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"{ exampleInput(arg: {a: "abc", b: null}) }"#;
     let vars = vec![].into_iter().collect();
@@ -961,8 +945,7 @@ fn does_not_allow_null_in_required_field() {
 
 #[test]
 fn does_not_allow_missing_variable_for_required_field() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![].into_iter().collect();
@@ -980,8 +963,7 @@ fn does_not_allow_missing_variable_for_required_field() {
 
 #[test]
 fn does_not_allow_null_variable_for_required_field() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![("var".to_owned(), InputValue::null())]
@@ -1080,8 +1062,7 @@ mod integers {
 
     #[test]
     fn does_not_coerce_from_float() {
-        let schema: RootNode<DefaultScalarValue, _, _> =
-            RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::scalar(10.0))]
@@ -1101,8 +1082,7 @@ mod integers {
 
     #[test]
     fn does_not_coerce_from_string() {
-        let schema: RootNode<DefaultScalarValue, _, _> =
-            RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::scalar("10"))]
@@ -1158,8 +1138,7 @@ mod floats {
 
     #[test]
     fn does_not_coerce_from_string() {
-        let schema: RootNode<DefaultScalarValue, _, _> =
-            RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
         let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::scalar("10"))]

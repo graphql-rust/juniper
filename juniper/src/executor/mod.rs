@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::fmt::{Debug, Display};
+use std::fmt::Display;
 use std::sync::RwLock;
 
 use fnv::FnvHashMap;
@@ -22,7 +22,7 @@ use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
 use types::name::Name;
-use value::{ParseScalarValue, ScalarRefValue, ScalarValue, DefaultScalarValue};
+use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
 mod look_ahead;
 
@@ -36,7 +36,7 @@ pub use self::look_ahead::{
 /// The registry gathers metadata for all types in a schema. It provides
 /// convenience methods to convert types implementing the `GraphQLType` trait
 /// into `Type` instances and automatically registers them.
-pub struct Registry<'r, S: Debug> {
+pub struct Registry<'r, S = DefaultScalarValue> {
     /// Currently registered types
     pub types: FnvHashMap<Name, MetaType<'r, S>>,
 }
@@ -51,10 +51,10 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-pub struct Executor<'a, S, CtxT>
+pub struct Executor<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
-    S: Debug + 'a,
+    S: 'a,
 {
     fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
     variables: &'a Variables<S>,
@@ -127,15 +127,14 @@ where
 ///
 /// ```rust
 /// # use juniper::{FieldError, ScalarValue};
-/// fn get_string<S>(data: Vec<u8>) -> Result<String, FieldError<S>>
-/// where S: ScalarValue
+/// fn get_string(data: Vec<u8>) -> Result<String, FieldError>
 /// {
 ///     let s = String::from_utf8(data)?;
 ///     Ok(s)
 /// }
 /// ```
 #[derive(Debug, PartialEq)]
-pub struct FieldError<S> {
+pub struct FieldError<S = DefaultScalarValue> {
     message: String,
     extensions: Value<S>,
 }
@@ -210,16 +209,16 @@ impl<S> FieldError<S> {
 pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 
 /// The result of resolving an unspecified field
-pub type ExecutionResult<S> = Result<Value<S>, FieldError<S>>;
+pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
 /// The map of variables used for substitution during query execution
-pub type Variables<S> = HashMap<String, InputValue<S>>;
+pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 
 /// Custom error handling trait to enable Error types other than `FieldError` to be specified
 /// as return value.
 ///
 /// Any custom error type should implement this trait to convert it to `FieldError`.
-pub trait IntoFieldError<S> {
+pub trait IntoFieldError<S = DefaultScalarValue> {
     #[doc(hidden)]
     fn into_field_error(self) -> FieldError<S>;
 }
@@ -348,33 +347,25 @@ where
     }
 }
 
-impl<'a, CtxT, S> Executor<'a, S, CtxT>
+impl<'a, CtxT, S> Executor<'a, CtxT, S>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve a single arbitrary value, mapping the context to a new type
-    pub fn resolve_with_ctx<NewCtxT, T: GraphQLType<S, Context = NewCtxT>>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T,
-    ) -> ExecutionResult<S>
+    pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
         NewCtxT: FromContext<CtxT>,
-        for<'b> &'b S: ScalarRefValue<'b>,
+        T: GraphQLType<S, Context = NewCtxT>,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .resolve(info, value)
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    pub fn resolve<T: GraphQLType<S, Context = CtxT>>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T,
-    ) -> ExecutionResult<S>
+    pub fn resolve<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        for<'b> &'b S: ScalarRefValue<'b>,
+        T: GraphQLType<S, Context = CtxT>,
     {
         Ok(value.resolve(info, self.current_selection_set, self))
     }
@@ -382,13 +373,9 @@ where
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_value<T: GraphQLType<S, Context = CtxT>>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T,
-    ) -> Value<S>
+    pub fn resolve_into_value<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
-        for<'b> &'b S: ScalarRefValue<'b>,
+        T: GraphQLType<S, Context = CtxT>,
     {
         match self.resolve(info, value) {
             Ok(v) => v,
@@ -403,7 +390,7 @@ where
     ///
     /// This can be used to connect different types, e.g. from different Rust
     /// libraries, that require different context types.
-    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, S, NewCtxT> {
+    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, NewCtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -424,7 +411,7 @@ where
         field_name: &'a str,
         location: SourcePosition,
         selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<S, CtxT> {
+    ) -> Executor<CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -450,7 +437,7 @@ where
         &self,
         type_name: Option<&'a str>,
         selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<S, CtxT> {
+    ) -> Executor<CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -596,7 +583,7 @@ impl<S> ExecutionError<S> {
 pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
     document: Document<S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<S, QueryT, MutationT>,
+    root_node: &RootNode<QueryT, MutationT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>

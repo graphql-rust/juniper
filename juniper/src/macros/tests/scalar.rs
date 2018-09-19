@@ -1,8 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object, DefaultScalarValue, ParseScalarValue};
-use parser::ParseError;
+use value::{Value, Object, DefaultScalarValue, ParseScalarValue, ParseScalarResult};
 
 struct DefaultName(i32);
 struct OtherOrder(i32);
@@ -29,11 +28,12 @@ graphql_scalar!(DefaultName where Scalar = <S> {
         v.as_scalar_value().map(|i: &i32| DefaultName(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
 });
-graphql_scalar!(OtherOrder where Scalar = <S> {
+
+graphql_scalar!(OtherOrder {
     resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -43,11 +43,12 @@ graphql_scalar!(OtherOrder where Scalar = <S> {
     }
 
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+        <i32 as ParseScalarValue>::from_str(value)
     }
 });
-graphql_scalar!(Named as "ANamedScalar" where Scalar = <S> {
+
+graphql_scalar!(Named as "ANamedScalar" where Scalar = DefaultScalarValue {
     resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -56,12 +57,12 @@ graphql_scalar!(Named as "ANamedScalar" where Scalar = <S> {
         v.as_scalar_value().map(|i: &i32| Named(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+        <i32 as ParseScalarValue>::from_str(value)
     }
 });
 
-graphql_scalar!(ScalarDescription where Scalar = <S> {
+graphql_scalar!(ScalarDescription  {
     description: "A sample scalar, represented as an integer"
 
     resolve(&self) -> Value {
@@ -72,8 +73,8 @@ graphql_scalar!(ScalarDescription where Scalar = <S> {
         v.as_scalar_value().map(|i: &i32| ScalarDescription(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+        <i32 as ParseScalarValue>::from_str(value)
     }
 });
 

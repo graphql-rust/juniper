@@ -112,13 +112,20 @@ extern crate url;
 extern crate uuid;
 
 // Depend on juniper_codegen and re-export everything in it.
-// This allows users to just depend on juniper and get the derive functionality automatically.
+// This allows users to just depend on juniper and get the derive
+// functionality automatically.
 #[allow(unused_imports)]
 #[macro_use]
 extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
 
+// This macro is used as abstraction to make custom derives work
+// in juniper itself and outside of juniper
+// This macro needs to be here because it is used a derive in value::scalar
+// The tests in macros are using a macro from the value module, and because
+// rust macros needs to be defined before they are used it would cause problems
+// to move this macro somewhere else.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __juniper_use_everything {
@@ -173,7 +180,10 @@ pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
 pub use validation::RuleError;
-pub use value::{DefaultScalarValue, Object, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
+pub use value::{
+    DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
+    Value,
+};
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -190,7 +200,7 @@ pub enum GraphQLError<'a> {
 pub fn execute<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<S, QueryT, MutationT>,
+    root_node: &'a RootNode<QueryT, MutationT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>

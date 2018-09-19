@@ -68,7 +68,7 @@ where
     /// top level of this crate.
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
-        root_node: &'a RootNode<S, QueryT, MutationT>,
+        root_node: &'a RootNode<QueryT, MutationT, S>,
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where

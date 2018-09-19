@@ -91,7 +91,7 @@ macro_rules! graphql_union {
                     _info: &Self::TypeInfo,
                     type_name: &str,
                     _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)*)>]>,
-                    executor: &$crate::Executor<__juniper_insert_generic!($($scalar)*), Self::Context>,
+                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)*)>,
                 ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)*)> {
                     $(let $resolver_ctx = &executor.context();)*
 

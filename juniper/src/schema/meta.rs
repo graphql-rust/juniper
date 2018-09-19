@@ -7,10 +7,10 @@ use ast::{FromInputValue, InputValue, Type};
 use parser::{ParseError, ScalarToken};
 use schema::model::SchemaType;
 use types::base::TypeKind;
-use value::{ParseScalarValue, ScalarRefValue, ScalarValue};
+use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
 /// Scalar type metadata
-pub struct ScalarMeta<'a, S: fmt::Debug> {
+pub struct ScalarMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
     #[doc(hidden)]
@@ -35,7 +35,7 @@ pub struct NullableMeta<'a> {
 
 /// Object type metadata
 #[derive(Debug)]
-pub struct ObjectMeta<'a, S: fmt::Debug> {
+pub struct ObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
     #[doc(hidden)]
@@ -47,7 +47,7 @@ pub struct ObjectMeta<'a, S: fmt::Debug> {
 }
 
 /// Enum type metadata
-pub struct EnumMeta<'a, S: fmt::Debug> {
+pub struct EnumMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
     #[doc(hidden)]
@@ -59,7 +59,7 @@ pub struct EnumMeta<'a, S: fmt::Debug> {
 
 /// Interface type metadata
 #[derive(Debug)]
-pub struct InterfaceMeta<'a, S: fmt::Debug> {
+pub struct InterfaceMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
     #[doc(hidden)]
@@ -80,7 +80,7 @@ pub struct UnionMeta<'a> {
 }
 
 /// Input object metadata
-pub struct InputObjectMeta<'a, S: fmt::Debug> {
+pub struct InputObjectMeta<'a, S> {
     #[doc(hidden)]
     pub name: Cow<'a, str>,
     #[doc(hidden)]
@@ -102,7 +102,7 @@ pub struct PlaceholderMeta<'a> {
 
 /// Generic type metadata
 #[derive(Debug)]
-pub enum MetaType<'a, S: fmt::Debug> {
+pub enum MetaType<'a, S = DefaultScalarValue> {
     #[doc(hidden)]
     Scalar(ScalarMeta<'a, S>),
     #[doc(hidden)]
@@ -125,7 +125,7 @@ pub enum MetaType<'a, S: fmt::Debug> {
 
 /// Metadata for a field
 #[derive(Debug, Clone)]
-pub struct Field<'a, S: fmt::Debug> {
+pub struct Field<'a, S> {
     #[doc(hidden)]
     pub name: String,
     #[doc(hidden)]
@@ -140,7 +140,7 @@ pub struct Field<'a, S: fmt::Debug> {
 
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
-pub struct Argument<'a, S: fmt::Debug> {
+pub struct Argument<'a, S> {
     #[doc(hidden)]
     pub name: String,
     #[doc(hidden)]
@@ -169,7 +169,7 @@ pub struct EnumValue {
     pub deprecation_reason: Option<String>,
 }
 
-impl<'a, S: fmt::Debug> MetaType<'a, S> {
+impl<'a, S> MetaType<'a, S> {
     /// Access the name of the type, if applicable
     ///
     /// Lists, non-null wrappers, and placeholders don't have names.
@@ -395,7 +395,7 @@ impl<'a> ListMeta<'a> {
     }
 
     /// Wrap the list in a generic meta type
-    pub fn into_meta<S: fmt::Debug>(self) -> MetaType<'a, S> {
+    pub fn into_meta<S>(self) -> MetaType<'a, S> {
         MetaType::List(self)
     }
 }
@@ -407,7 +407,7 @@ impl<'a> NullableMeta<'a> {
     }
 
     /// Wrap the nullable type in a generic meta type
-    pub fn into_meta<S: fmt::Debug>(self) -> MetaType<'a, S> {
+    pub fn into_meta<S>(self) -> MetaType<'a, S> {
         MetaType::Nullable(self)
     }
 }
@@ -533,7 +533,7 @@ impl<'a> UnionMeta<'a> {
     }
 
     /// Wrap this union type in a generic meta type
-    pub fn into_meta<S: fmt::Debug>(self) -> MetaType<'a, S> {
+    pub fn into_meta<S>(self) -> MetaType<'a, S> {
         MetaType::Union(self)
     }
 }
@@ -569,7 +569,7 @@ where
     }
 }
 
-impl<'a, S: fmt::Debug> Field<'a, S> {
+impl<'a, S> Field<'a, S> {
     /// Set the description of the field
     ///
     /// This overwrites the description if any was previously set.
@@ -603,7 +603,7 @@ impl<'a, S: fmt::Debug> Field<'a, S> {
     }
 }
 
-impl<'a, S: fmt::Debug> Argument<'a, S> {
+impl<'a, S> Argument<'a, S> {
     #[doc(hidden)]
     pub fn new(name: &str, arg_type: Type<'a>) -> Self {
         Argument {

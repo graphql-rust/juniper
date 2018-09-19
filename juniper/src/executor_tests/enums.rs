@@ -71,8 +71,7 @@ fn serializes_as_output() {
 
 #[test]
 fn does_not_accept_string_literals() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"{ toString(color: "RED") }"#;
     let vars = vec![].into_iter().collect();
@@ -106,8 +105,7 @@ fn accepts_strings_in_variables() {
 
 #[test]
 fn does_not_accept_incorrect_enum_name_in_variables() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![("color".to_owned(), InputValue::scalar("BLURPLE"))]
@@ -127,8 +125,7 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
 
 #[test]
 fn does_not_accept_incorrect_type_in_variables() {
-    let schema: RootNode<DefaultScalarValue, _, _> =
-        RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![("color".to_owned(), InputValue::scalar(123))]

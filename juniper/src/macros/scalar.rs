@@ -11,13 +11,17 @@ custom scalars will be transferred as strings. You therefore need to ensure that
 the client library you are sending data to can parse the custom value into a
 datatype appropriate for that platform.
 
+By default the trait is implemented in terms of the default scalar value
+representation provided by juniper. If that does not fit your needs it is
+possible to use the same syntax as on `graphql_object!` to specify a custom
+representation.
+
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::{Value, FieldResult, ParseScalarValue};
-# use juniper::parser::ParseError;
+# use juniper::{Value, FieldResult, ParseScalarValue, ParseScalarResult};
 struct UserID(String);
 
-graphql_scalar!(UserID where Scalar = <S> {
+graphql_scalar!(UserID {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {
@@ -28,8 +32,8 @@ graphql_scalar!(UserID where Scalar = <S> {
         v.as_string_value().map(|s| UserID(s.to_owned()))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
-        <String as ParseScalarValue<S>>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+        <String as ParseScalarValue>::from_str(value)
     }
 });
 
@@ -96,7 +100,10 @@ macro_rules! graphql_scalar {
                     &$resolve_self_var,
                     _: &(),
                     _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)+)>]>,
-                    _: &$crate::Executor<__juniper_insert_generic!($($scalar)+), Self::Context>) -> $crate::Value<__juniper_insert_generic!($($scalar)+)> {
+                    _: &$crate::Executor<
+                        Self::Context,
+                        __juniper_insert_generic!($($scalar)+)
+                    >) -> $crate::Value<__juniper_insert_generic!($($scalar)+)> {
                     $resolve_body
                 }
             });

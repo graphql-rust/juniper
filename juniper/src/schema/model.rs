@@ -7,14 +7,14 @@ use executor::{Context, Registry};
 use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 use types::base::GraphQLType;
 use types::name::Name;
-use value::{ScalarRefValue, ScalarValue};
+use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 /// Root query node of a schema
 ///
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
 #[derive(Debug)]
-pub struct RootNode<'a, S, QueryT: GraphQLType<S>, MutationT: GraphQLType<S>>
+pub struct RootNode<'a, QueryT: GraphQLType<S>, MutationT: GraphQLType<S>, S = DefaultScalarValue>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -33,24 +33,24 @@ where
 
 /// Metadata for a schema
 #[derive(Debug)]
-pub struct SchemaType<'a, S: fmt::Debug> {
+pub struct SchemaType<'a, S> {
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
     query_type_name: String,
     mutation_type_name: Option<String>,
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
-impl<'a, S: fmt::Debug> Context for SchemaType<'a, S> {}
+impl<'a, S> Context for SchemaType<'a, S> {}
 
 #[derive(Clone)]
-pub enum TypeType<'a, S: fmt::Debug + 'a> {
+pub enum TypeType<'a, S: 'a> {
     Concrete(&'a MetaType<'a, S>),
     NonNull(Box<TypeType<'a, S>>),
     List(Box<TypeType<'a, S>>),
 }
 
 #[derive(Debug)]
-pub struct DirectiveType<'a, S: fmt::Debug> {
+pub struct DirectiveType<'a, S> {
     pub name: String,
     pub description: Option<String>,
     pub locations: Vec<DirectiveLocation>,
@@ -71,7 +71,7 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
-impl<'a, QueryT, MutationT, S> RootNode<'a, S, QueryT, MutationT>
+impl<'a, QueryT, MutationT, S> RootNode<'a, QueryT, MutationT, S>
 where
     S: ScalarValue + 'a,
     QueryT: GraphQLType<S, TypeInfo = ()>,
@@ -82,7 +82,7 @@ where
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
-    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> RootNode<'a, S, QueryT, MutationT>
+    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> Self
     where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
@@ -90,7 +90,7 @@ where
     }
 }
 
-impl<'a, S, QueryT, MutationT> RootNode<'a, S, QueryT, MutationT>
+impl<'a, S, QueryT, MutationT> RootNode<'a, QueryT, MutationT, S>
 where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
@@ -105,7 +105,7 @@ where
         mutation_obj: MutationT,
         query_info: QueryT::TypeInfo,
         mutation_info: MutationT::TypeInfo,
-    ) -> RootNode<'a, S, QueryT, MutationT>
+    ) -> Self
     where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
@@ -119,7 +119,7 @@ where
     }
 }
 
-impl<'a, S: fmt::Debug> SchemaType<'a, S> {
+impl<'a, S> SchemaType<'a, S> {
     pub fn new<QueryT, MutationT>(
         query_info: &QueryT::TypeInfo,
         mutation_info: &MutationT::TypeInfo,
@@ -353,7 +353,7 @@ impl<'a, S: fmt::Debug> SchemaType<'a, S> {
     }
 }
 
-impl<'a, S: fmt::Debug> TypeType<'a, S> {
+impl<'a, S> TypeType<'a, S> {
     #[inline]
     pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
         match *self {
@@ -456,7 +456,7 @@ impl fmt::Display for DirectiveLocation {
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Display for TypeType<'a, S> {
+impl<'a, S> fmt::Display for TypeType<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             TypeType::Concrete(t) => f.write_str(t.name().unwrap()),

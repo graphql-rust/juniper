@@ -1,6 +1,7 @@
 use uuid::Uuid;
 
 use parser::{ParseError, ScalarToken, Token};
+use value::ParseScalarResult;
 use Value;
 
 graphql_scalar!(Uuid where Scalar = <S> {
@@ -15,7 +16,7 @@ graphql_scalar!(Uuid where Scalar = <S> {
          .and_then(|s: &String| Uuid::parse_str(s).ok())
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> Result<S, ParseError<'a>> {
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
