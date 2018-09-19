@@ -4,7 +4,7 @@ use ast::InputValue;
 use executor::{Context, FieldResult};
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Object, Value, DefaultScalarValue};
+use value::{DefaultScalarValue, Object, Value};
 
 /*
 
@@ -116,11 +116,11 @@ graphql_object!(CtxSwitcher: InnerContext |&self| {
         Some((executor.context(), InnerType))
     }
 
-    field ctx_switch_res(&executor) -> FieldResult<(&InnerContext, InnerType), __S> {
+    field ctx_switch_res(&executor) -> FieldResult<(&InnerContext, InnerType)> {
         Ok((executor.context(), InnerType))
     }
 
-    field ctx_switch_res_opt(&executor) -> FieldResult<Option<(&InnerContext, InnerType)>, __S> {
+    field ctx_switch_res_opt(&executor) -> FieldResult<Option<(&InnerContext, InnerType)>> {
         Ok(Some((executor.context(), InnerType)))
     }
 });
@@ -275,7 +275,7 @@ fn introspect_description_first() {
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -304,7 +304,7 @@ fn introspect_fields_first() {
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -333,7 +333,7 @@ fn introspect_interfaces_first() {
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -362,7 +362,7 @@ fn introspect_commas_with_trailing() {
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -391,7 +391,7 @@ fn introspect_commas_on_meta() {
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 

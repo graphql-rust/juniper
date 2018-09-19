@@ -27,7 +27,7 @@ struct Foo {
 
 struct Query;
 
-graphql_object!(Query: () |&self| {
+graphql_object!(Query: () where Scalar = <S> |&self| {
     field int_field() -> i32 {
         42
     }

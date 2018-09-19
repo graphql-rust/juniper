@@ -395,14 +395,14 @@ mod dynamic_context_switching {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
         }
 
-        field item_res(&executor, key: i32) -> FieldResult<(&InnerContext, ItemRef), __S> {
+        field item_res(&executor, key: i32) -> FieldResult<(&InnerContext, ItemRef)> {
             let res = executor.context().items.get(&key)
                 .ok_or(format!("Could not find key {}", key))
                 .map(|c| (c, ItemRef))?;
             Ok(res)
         }
 
-        field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>, __S> {
+        field item_res_opt(&executor, key: i32) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
             if key > 100 {
                 Err(format!("Key too large: {}", key))?;
             }
@@ -723,8 +723,8 @@ mod propagates_errors_to_nullable_fields {
     graphql_object!(Inner: () |&self| {
         field nullable_field() -> Option<Inner> { Some(Inner) }
         field non_nullable_field() -> Inner { Inner }
-        field nullable_error_field() -> FieldResult<Option<&str>, __S> { Err("Error for nullableErrorField")? }
-        field non_nullable_error_field() -> FieldResult<&str, __S> { Err("Error for nonNullableErrorField")? }
+        field nullable_error_field() -> FieldResult<Option<&str>> { Err("Error for nullableErrorField")? }
+        field non_nullable_error_field() -> FieldResult<&str> { Err("Error for nonNullableErrorField")? }
         field custom_error_field() -> Result<&str, CustomError> { Err(CustomError::NotFound) }
     });
 

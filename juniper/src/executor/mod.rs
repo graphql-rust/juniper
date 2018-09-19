@@ -22,7 +22,7 @@ use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
 use types::name::Name;
-use value::{ParseScalarValue, ScalarRefValue, ScalarValue};
+use value::{ParseScalarValue, ScalarRefValue, ScalarValue, DefaultScalarValue};
 
 mod look_ahead;
 
@@ -207,7 +207,7 @@ impl<S> FieldError<S> {
 }
 
 /// The result of resolving the value of a field of type `T`
-pub type FieldResult<T, S> = Result<T, FieldError<S>>;
+pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S> = Result<Value<S>, FieldError<S>>;

@@ -120,8 +120,8 @@ even have to be backed by a trait!
 
 ## Emitting errors
 
-`FieldResult<T, S>` is a type alias for `Result<T, FieldError<S>>`, where
-`FieldResult` is a tuple that contains an error message and optionally a
+`FieldResult<T, S = DefaultScalarValue>` is a type alias for `Result<T, FieldError<S>>`, where
+`FieldError` is a tuple that contains an error message and optionally a
 JSON-like data structure. In the end, errors that fields emit are serialized
 into strings in the response. However, the execution system will keep track of
 the source of all errors, and will continue executing despite some fields
@@ -137,13 +137,41 @@ automatically via the `?` operator, or you can construct them yourself using
 struct User { id: String }
 
 graphql_object!(User: () |&self| {
-    field id() -> FieldResult<&String, __S> {
+    field id() -> FieldResult<&String> {
         Ok(&self.id)
     }
 
-    field name() -> FieldResult<&String, __S> {
+    field name() -> FieldResult<&String> {
         Err("Does not have a name".to_owned())?
     }
+});
+
+# fn main() { }
+```
+
+## Specify scalar value representation
+
+Sometimes it is necessary to use a other scalar value representation as the default
+one provided by `DefaultScalarValue`.
+It is possible to specify a specific scalar value type using the `where Scalar = Type`
+syntax.
+Additionally it is possible to use a generic parameter for the scalar value type
+(in such a way that the type implements `GraphQLType` for all possible scalar value
+representation). Similary to the specific type case the syntax here is
+`where Scalar = <S>` where `S` is a freely choosable type parameter, that also could
+be used as type parameter to the implementing type.
+
+Example for using a generic scalar value type
+
+```rust
+# #[macro_use] extern crate juniper;
+struct User { id: String }
+
+graphql_object!(User: () where Scalar = <S> |&self| {
+    field id() -> &String {
+        &self.id
+    }
+
 });
 
 # fn main() { }
@@ -152,13 +180,20 @@ graphql_object!(User: () |&self| {
 # Syntax
 
 The top-most syntax of this macro defines which type to expose, the context
-type, which lifetime parameters or generics to define, and which name to use in
-the GraphQL schema. It takes one of the following two forms:
+type, which lifetime parameters or generics to define,  which name to use in
+the GraphQL schema and which scalar value type is used. It takes the
+following form:
 
 ```text
-ExposedType: ContextType as "ExposedName" |&self| { items... }
-<Generics> ExposedType: ContextType as "ExposedName" |&self| { items... }
+<Generics> ExposedType: ContextType as "ExposedName" where Scalar = <S> |&self| { items... }
+<Generics> ExposedType: ContextType as "ExposedName" where Scalar = SpecificType |&self| { items... }
 ```
+
+The following parts are optional:
+* `<Generics>`, if not set no generics are defined
+* `as "ExposedName"`, if not set `ExposedType` is used as name
+* `where Scalar = <S>` / `where Scalar = SpecificType` if not set `DefaultScalarValue`
+is used as scalar value
 
 ## Items
 
@@ -239,225 +274,214 @@ arg_name = ("default".to_owned()): String
 */
 #[macro_export(local_inner_macros)]
 macro_rules! graphql_object {
-    ( @as_item, $i:item) => { $i };
-    ( @as_expr, $e:expr) => { $e };
-
-    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
     (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        field deprecated
-            $reason:tt
-            $name:ident
-            $args:tt -> $t:ty
-            as $desc:tt
-            $body:block
-            $( $rest:tt )*
+        @generate,
+        meta = {
+            lifetimes = [$($lifetimes:tt,)*],
+            name = $name: ty,
+            ctx = $ctx: ty,
+            main_self = $main_self: ident,
+            outname = {$($outname: tt)*},
+            scalar = {$($scalar:tt)*},
+            $(description = $desciption: expr,)*
+            $(additional = {
+                $(interfaces = [$($interface:ty,)*],)*
+            },)*
+        },
+        items = [$({
+            name = $fn_name: ident,
+            body = $body: block,
+            return_ty = $return_ty: ty,
+            args = [$({
+                arg_name = $arg_name : ident,
+                arg_ty = $arg_ty: ty,
+                $(arg_description = $arg_description: expr,)*
+                $(arg_default = $arg_default: expr,)*
+            },)*],
+            $(decs = $fn_description: expr,)*
+            $(deprecated = $deprecated: expr,)*
+            $(executor_var = $executor: ident,)*
+        },)*],
     ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
-                .description($desc)
-                .deprecated($reason),
-            $info,
-            $args));
+        __juniper_impl_trait!(
+            impl<$($scalar)* $(, $lifetimes)* > GraphQLType for $name {
+                type Context = $ctx;
+                type TypeInfo = ();
 
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*);
-    };
-
-    // field deprecated <reason> <name>(...) -> <type> { ... }
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
-                .deprecated($reason),
-            $info,
-            $args));
-
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*);
-    };
-
-    // field <name>(...) -> <type> as <description> { ... }
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        field $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
-                .description($desc),
-            $info,
-            $args));
-
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*);
-    };
-
-    // field <name>(...) -> <type> { ... }
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        field $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info),
-            $info,
-            $args));
-
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*);
-    };
-
-    // description: <description>
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        description : $value:tt $( $rest:tt )*
-    ) => {
-        $descr = Some(graphql_object!(@as_expr, $value));
-
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*)
-    };
-
-    // interfaces: [...]
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-        interfaces : $value:tt $( $rest:tt )*
-    ) => {
-        graphql_object!(@assign_interfaces, $reg, $ifaces, $value);
-
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*)
-    };
-
-    // eat commas
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr, , $( $rest:tt )*
-    ) => {
-        graphql_object!(@gather_object_meta, $reg, $acc, $info, $descr, $ifaces, $( $rest )*)
-    };
-
-    // base case
-    (
-        @gather_object_meta,
-        $reg:expr, $acc:expr, $info:expr, $descr:expr, $ifaces:expr,
-    ) => {};
-
-    ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty,)* ] ) => {
-        $tgt = Some(__graphql__vec![
-            $($reg.get_type::<$t>(&())),*
-        ]);
-    };
-
-    ( @assign_interfaces, $reg:expr, $tgt:expr, [ $($t:ty),* ] ) => {
-        $tgt = Some(__graphql__vec![
-            $($reg.get_type::<$t>(&())),*
-        ]);
-    };
-
-    (
-        ( $($lifetime:tt)* );
-        $name:ty; $ctxt:ty; $outname:expr; $mainself:ident; $($items:tt)*
-    ) => {
-        graphql_object!(@as_item, impl<$($lifetime,)* __S> $crate::GraphQLType<__S> for $name
-            where __S: $crate::ScalarValue,
-                 for<'__b> &'__b __S: $crate::ScalarRefValue<'__b>,
-         {
-            type Context = $ctxt;
-            type TypeInfo = ();
-
-            fn name(_: &()) -> Option<&str> {
-                Some($outname)
-            }
-
-            #[allow(unused_assignments)]
-            #[allow(unused_mut)]
-            fn meta<'r>(
-                info: &(),
-                registry: &mut $crate::Registry<'r, __S>
-            ) -> $crate::meta::MetaType<'r, __S>
-             where __S: 'r
-             {
-                let mut fields = Vec::new();
-                let mut description = None;
-                let mut interfaces: Option<Vec<$crate::Type>> = None;
-                graphql_object!(
-                    @gather_object_meta,
-                    registry, fields, info, description, interfaces, $($items)*
-                );
-                let mut mt = registry.build_object_type::<$name>(info, &fields);
-
-                if let Some(description) = description {
-                    mt = mt.description(description);
+                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                    Some($($outname)*)
                 }
 
-                if let Some(interfaces) = interfaces {
-                    mt = mt.interfaces(&interfaces);
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut $crate::Registry<'r, __juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, __juniper_insert_generic!($($scalar)+)>
+                where for<'__b> &'__b __juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                    __juniper_insert_generic!($($scalar)+): 'r
+                {
+                    let fields = &[$(
+                        registry.field_convert::<$return_ty, _, Self::Context>(
+                            &$crate::to_camel_case(stringify!($fn_name)),
+                            info
+                        )
+                            $(.description($fn_description))*
+                            $(.deprecated($deprecated))*
+                            $(.argument(
+                                __juniper_create_arg!(
+                                    registry = registry,
+                                    info = info,
+                                    arg_ty = $arg_ty,
+                                    arg_name = $arg_name,
+                                    $(description = $arg_description,)*
+                                    $(default = $arg_default,)*
+                                )
+                            ))*,
+                    )*];
+                    registry.build_object_type::<$name>(
+                        info, fields
+                    )
+                        $(.description($desciption))*
+                        $($(.interfaces(&[
+                           $(registry.get_type::<$interface>(&()),)*
+                        ]))*)*
+                        .into_meta()
                 }
 
-                mt.into_meta()
-            }
+                fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
+                    $($outname)*.to_owned()
+                }
 
-            fn concrete_type_name(&self, _: &Self::Context, _: &()) -> String {
-                $outname.to_owned()
-            }
+                #[allow(unused_variables)]
+                fn resolve_field(
+                    &$main_self,
+                    info: &Self::TypeInfo,
+                    field: &str,
+                    args: &$crate::Arguments<__juniper_insert_generic!($($scalar)+)>,
+                    executor: &$crate::Executor<__juniper_insert_generic!($($scalar)+), Self::Context>
+                ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)+)> {
+                    $(
+                        if field == &$crate::to_camel_case(stringify!($fn_name)) {
+                            let result: $return_ty = (|| {
+                                $(
+                                    let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(stringify!($arg_name)))
+                                        .expect(concat!(
+                                            "Argument ",
+                                            stringify!($arg_name),
+                                            " missing - validation must have failed"
+                                        ));
+                                )*
+                                $(
+                                    let $executor = &executor;
+                                )*
+                                $body
+                            })();
 
-            #[allow(unused_variables)]
-            #[allow(unused_mut)]
-            fn resolve_field(
-                &$mainself,
-                info: &(),
-                field: &str,
-                args: &$crate::Arguments<__S>,
-                executor: &$crate::Executor<__S, Self::Context>
-            )
-                -> $crate::ExecutionResult<__S>
-            {
-                __graphql__build_field_matches!(
-                    ($outname, $mainself, field, args, executor),
-                    (),
-                    $($items)*);
+                            return $crate::IntoResolvable::into(result, executor.context())
+                                .and_then(|res| {
+                                    match res {
+                                        Some((ctx, r)) => {
+                                            executor.replaced_context(ctx)
+                                                .resolve_with_ctx(&(), &r)
+                                        }
+                                        None => Ok($crate::Value::null())
+                                    }
+                                });
+                        }
+                    )*
+
+                    panic!("Field {} not found on type {}", field, $($outname)*);
+                }
             }
-        });
+        );
     };
 
     (
-        <$( $lifetime:tt ),*> $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        @parse_interfaces,
+        success_callback = $success_callback: ident,
+        additional_parser = {$($additional:tt)*},
+        meta = {
+            lifetimes = [$($lifetime:tt,)*],
+            name = $name:ty,
+            ctx = $ctxt: ty,
+            main_self = $mainself: ident,
+            outname = {$($outname:tt)*},
+            scalar = {$($scalar:tt)*},
+            $(description = $desciption: tt,)*
+            $(additional = {
+                $(interfaces = [$($_interface:ty,)*],)*
+            },)*
+
+        },
+        items = [$({$($items: tt)*},)*],
+        rest = [$($interface: ty),+]  $($rest:tt)*
     ) => {
-        graphql_object!(
-            ( $($lifetime),* ); $name; $ctxt; $outname; $mainself; $( $items )*);
+        __juniper_parse_field_list!(
+            success_callback = $success_callback,
+            additional_parser = {$($additional)*},
+            meta = {
+                lifetimes = [$($lifetime,)*],
+                name = $name,
+                ctx = $ctxt,
+                main_self = $mainself,
+                outname = {$($outname)*},
+                scalar = {$($scalar)*},
+                $(description = $desciption,)*
+                additional = {
+                        interfaces = [$($interface,)*],
+                },
+            },
+            items = [$({$($items)*},)*],
+            rest = $($rest)*
+        );
     };
 
     (
-        $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        @parse_interfaces,
+        success_callback = $success_callback: ident,
+        additional_parser = {$($additional:tt)*},
+        meta = { $($meta:tt)* },
+        items = [$({$($items: tt)*},)*],
+        rest = interfaces: $($rest:tt)*
     ) => {
         graphql_object!(
-            ( ); $name; $ctxt; $outname; $mainself; $( $items )*);
+            @parse_interfaces,
+            success_callback = $success_callback,
+            additional_parser = {$($additional)*},
+            meta = { $($meta)* },
+            items = [$({$($items)*},)*],
+            rest = $($rest)*
+        );
+    };
+
+
+    (
+        @parse,
+        meta = {$($meta:tt)*},
+        rest = $($rest:tt)*
+    ) => {
+        __juniper_parse_field_list!(
+            success_callback = graphql_object,
+            additional_parser = {
+                callback = graphql_object,
+                header = {@parse_interfaces,},
+            },
+            meta = {$($meta)*},
+            items = [],
+            rest = $($rest)*
+        );
+    };
+
+    (@$($stuff:tt)*) => {
+        compile_error!("Invalid syntax for `graphql_object!`");
     };
 
     (
-        $name:ty : $ctxt:ty | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        $($rest:tt)*
     ) => {
-        graphql_object!(
-            ( ); $name; $ctxt; (__graphql__stringify!($name)); $mainself; $( $items )*);
-    };
+        __juniper_parse_object_header!(
+            callback = graphql_object,
+            rest = $($rest)*
+        );
+    }
+
 }

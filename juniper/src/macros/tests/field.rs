@@ -31,11 +31,11 @@ graphql_object!(Root: () |&self| {
     field deprecated "Deprecation reason"
         deprecated_descr() -> i32 as "Field description" { 0 }
 
-    field with_field_result() -> FieldResult<i32, __S> { Ok(0) }
+    field with_field_result() -> FieldResult<i32> { Ok(0) }
 
     field with_return() -> i32 { return 0; }
 
-    field with_return_field_result() -> FieldResult<i32, __S> { return Ok(0); }
+    field with_return_field_result() -> FieldResult<i32> { return Ok(0); }
 
     interfaces: [Interface]
 });

@@ -73,391 +73,190 @@ where
     }
 }
 
-impl<'a, S> GraphQLType<S> for SchemaType<'a, S>
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
+graphql_object!(<'a> SchemaType<'a, S>: SchemaType<'a, S> as "__Schema"
+    where Scalar = <S: 'a> |&self|
 {
-    type Context = Self;
-    type TypeInfo = ();
-
-    fn name((): &Self::TypeInfo) -> Option<&str> {
-        Some("__Schema")
+    field types() -> Vec<TypeType<S>> {
+        self.type_list()
+            .into_iter()
+            .filter(|t| t.to_concrete().map(|t| t.name() != Some("_EmptyMutation")).unwrap_or(false))
+            .collect()
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        let types = registry.field::<Vec<TypeType<S>>>("types", info);
-        let query_type = registry.field::<TypeType<S>>("queryType", info);
-        let mutation_type = registry.field::<Option<TypeType<S>>>("mutationType", info);
-        let subscription_type = registry.field::<Option<TypeType<S>>>("subscriptionType", info);
-        let directives = registry.field::<Vec<&DirectiveType<S>>>("directives", info);
-
-        let obj = registry.build_object_type::<Self>(
-            info,
-            &[
-                types,
-                query_type,
-                mutation_type,
-                subscription_type,
-                directives,
-            ],
-        );
-        obj.into_meta()
+    field query_type() -> TypeType<S> {
+        self.query_type()
     }
 
-    fn concrete_type_name(&self, _: &Self::Context, (): &Self::TypeInfo) -> String {
-        String::from("__Schema")
+    field mutation_type() -> Option<TypeType<S>> {
+        self.mutation_type()
     }
 
-    fn resolve_field(
-        &self,
-        info: &Self::TypeInfo,
-        field: &str,
-        _args: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
-    ) -> ExecutionResult<S> {
-        match field {
-            "types" => {
-                let r = self
-                    .type_list()
-                    .into_iter()
-                    .filter(|t| {
-                        t.to_concrete()
-                            .map(|t| t.name() != Some("_EmptyMutation"))
-                            .unwrap_or(false)
-                    }).collect::<Vec<_>>();
-                executor.resolve(info, &r)
-            }
-            "queryType" => executor.resolve(info, &self.query_type()),
-            "mutationType" => executor.resolve(info, &self.mutation_type()),
-            "subscriptionType" => executor.resolve::<Option<TypeType<S>>>(info, &None),
-            "directives" => executor.resolve(info, &self.directive_list()),
-            e => panic!("Field {} not found on type __Schema", e),
+    // Included for compatibility with the introspection query in GraphQL.js
+    field subscription_type() -> Option<TypeType<S>> {
+        None
+    }
+
+    field directives() -> Vec<&DirectiveType<S>> {
+        self.directive_list()
+    }
+});
+
+graphql_object!(<'a> TypeType<'a, S>: SchemaType<'a, S> as "__Type"
+    where Scalar = <S: 'a> |&self|
+{
+    field name() -> Option<&str> {
+        match *self {
+            TypeType::Concrete(t) => t.name(),
+            _ => None,
         }
     }
-}
 
-impl<'a, S> GraphQLType<S> for TypeType<'a, S>
-where
-    S: ScalarValue + 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
-{
-    type Context = SchemaType<'a, S>;
-    type TypeInfo = ();
-
-    fn name((): &Self::TypeInfo) -> Option<&str> {
-        Some("__Type")
+    field description() -> Option<&String> {
+        match *self {
+            TypeType::Concrete(t) => t.description(),
+            _ => None,
+        }
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        let name = registry.field::<Option<&str>>("name", info);
-        let description = registry.field::<Option<&String>>("description", info);
-        let kind = registry.field::<TypeKind>("kind", info);
-        let fields = registry
-            .field::<Option<Vec<&Field<S>>>>("fields", info)
-            .argument(registry.arg_with_default("includeDeprecated", &false, info));
-        let of_type = registry.field::<Option<&Box<TypeType<S>>>>("ofType", info);
-        let input_fields = registry.field::<Option<&Vec<Argument<S>>>>("inputFields", info);
-        let interfaces = registry.field::<Option<Vec<TypeType<S>>>>("interfaces", info);
-        let possible_types = registry.field::<Option<Vec<TypeType<S>>>>("possibleTypes", info);
-        let enum_values = registry
-            .field::<Option<Vec<&EnumValue>>>("enumValues", info)
-            .argument(registry.arg_with_default("includeDeprecated", &false, info));
-
-        let obj = registry.build_object_type::<Self>(
-            info,
-            &[
-                name,
-                description,
-                kind,
-                fields,
-                of_type,
-                input_fields,
-                interfaces,
-                possible_types,
-                enum_values,
-            ],
-        );
-        obj.into_meta()
+    field kind() -> TypeKind {
+        match *self {
+            TypeType::Concrete(t) => t.type_kind(),
+            TypeType::List(_) => TypeKind::List,
+            TypeType::NonNull(_) => TypeKind::NonNull,
+        }
     }
 
-    fn concrete_type_name(&self, _: &Self::Context, (): &Self::TypeInfo) -> String {
-        String::from("__Type")
+    field fields(include_deprecated = false: bool) -> Option<Vec<&Field<S>>> {
+        match *self {
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. })) |
+            TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) =>
+                Some(fields
+                    .iter()
+                    .filter(|f| include_deprecated || f.deprecation_reason.is_none())
+                    .filter(|f| !f.name.starts_with("__"))
+                    .collect()),
+            _ => None,
+        }
     }
 
-    fn resolve_field(
-        &self,
-        info: &Self::TypeInfo,
-        field: &str,
-        args: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
-    ) -> ExecutionResult<S> {
-        match field {
-            "name" => {
-                let r = match *self {
-                    TypeType::Concrete(t) => t.name(),
-                    _ => None,
-                };
-                executor.replaced_context(&()).resolve(info, &r)
-            }
-            "description" => {
-                let r = match *self {
-                    TypeType::Concrete(t) => t.description(),
-                    _ => None,
-                };
-                executor.replaced_context(&()).resolve(info, &r)
-            }
-            "kind" => {
-                let r = match *self {
-                    TypeType::Concrete(t) => t.type_kind(),
-                    TypeType::List(_) => TypeKind::List,
-                    TypeType::NonNull(_) => TypeKind::NonNull,
-                };
-                executor.replaced_context(&()).resolve(info, &r)
-            }
-            "fields" => {
-                let include_deprecated = args.get("includeDeprecated").unwrap_or(false);
-                let r: Option<Vec<_>> = match *self {
-                    TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
-                        ref fields, ..
-                    }))
-                    | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
-                        fields
-                            .iter()
-                            .filter(|f| include_deprecated || f.deprecation_reason.is_none())
-                            .filter(|f| !f.name.starts_with("__"))
-                            .collect(),
-                    ),
-                    _ => None,
-                };
-                executor.resolve(info, &r)
-            }
-            "ofType" => {
-                let r = match *self {
-                    TypeType::Concrete(_) => None,
-                    TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),
-                };
-                executor.resolve(info, &r)
-            }
-            "inputFields" => {
-                let r = match *self {
-                    TypeType::Concrete(&MetaType::InputObject(InputObjectMeta {
-                        ref input_fields,
-                        ..
-                    })) => Some(input_fields),
-                    _ => None,
-                };
-                executor.resolve(info, &r)
-            }
-            "interfaces" => {
-                let r: Option<Vec<_>> = match *self {
-                    TypeType::Concrete(&MetaType::Object(ObjectMeta {
-                        ref interface_names,
-                        ..
-                    })) => {
-                        let schema = executor.context();
-                        Some(
-                            interface_names
-                                .iter()
-                                .filter_map(|n| schema.type_by_name(n))
-                                .collect(),
-                        )
-                    }
-                    _ => None,
-                };
-                executor.resolve(info, &r)
-            }
-            "possibleTypes" => {
+    field of_type() -> Option<&Box<TypeType<S>>> {
+        match *self {
+            TypeType::Concrete(_) => None,
+            TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),
+        }
+    }
+
+    field input_fields() -> Option<&Vec<Argument<S>>> {
+        match *self {
+            TypeType::Concrete(&MetaType::InputObject(InputObjectMeta { ref input_fields, .. })) =>
+                Some(input_fields),
+            _ => None,
+        }
+    }
+
+    field interfaces(&executor) -> Option<Vec<TypeType<S>>> {
+        match *self {
+            TypeType::Concrete(&MetaType::Object(ObjectMeta { ref interface_names, .. })) => {
                 let schema = executor.context();
-                let r: Option<Vec<_>> = match *self {
-                    TypeType::Concrete(&MetaType::Union(UnionMeta {
-                        ref of_type_names, ..
-                    })) => Some(
-                        of_type_names
-                            .iter()
-                            .filter_map(|tn| schema.type_by_name(tn))
-                            .collect(),
-                    ),
-                    TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
-                        name: ref iface_name,
-                        ..
-                    })) => Some(
-                        schema
-                            .concrete_type_list()
-                            .iter()
-                            .filter_map(|&ct| {
-                                if let MetaType::Object(ObjectMeta {
-                                    ref name,
-                                    ref interface_names,
-                                    ..
-                                }) = *ct
-                                {
-                                    if interface_names.contains(&iface_name.to_string()) {
-                                        schema.type_by_name(name)
-                                    } else {
-                                        None
-                                    }
-                                } else {
-                                    None
-                                }
-                            }).collect(),
-                    ),
-                    _ => None,
-                };
-                executor.resolve(info, &r)
+                Some(interface_names
+                    .iter()
+                    .filter_map(|n| schema.type_by_name(n))
+                    .collect())
             }
-            "enumValues" => {
-                let include_deprecated = args.get("includeDeprecated").unwrap_or(false);
-                let r: Option<Vec<_>> = match *self {
-                    TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
-                        values
-                            .iter()
-                            .filter(|f| include_deprecated || f.deprecation_reason.is_none())
-                            .collect(),
-                    ),
-                    _ => None,
-                };
-                executor.replaced_context(&()).resolve(info, &r)
+            _ => None,
+        }
+    }
+
+    field possible_types(&executor) -> Option<Vec<TypeType<S>>> {
+        let schema = executor.context();
+        match *self {
+            TypeType::Concrete(&MetaType::Union(UnionMeta { ref of_type_names, .. })) => {
+                Some(of_type_names
+                    .iter()
+                    .filter_map(|tn| schema.type_by_name(tn))
+                    .collect())
             }
-            e => panic!("Field {} not found on type __Type", e),
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta{name: ref iface_name, .. })) => {
+                Some(schema.concrete_type_list()
+                    .iter()
+                    .filter_map(|&ct|
+                        if let MetaType::Object(ObjectMeta{
+                            ref name,
+                            ref interface_names,
+                            ..
+                        }) = *ct {
+                            if interface_names.contains(&iface_name.to_string()) {
+                                schema.type_by_name(name)
+                            } else { None }
+                        } else { None }
+                    )
+                    .collect())
+            }
+            _ => None,
         }
     }
-}
 
-impl<'a, S> GraphQLType<S> for Field<'a, S>
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
+    field enum_values(include_deprecated = false: bool) -> Option<Vec<&EnumValue>> {
+        match *self {
+            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) =>
+                Some(values
+                    .iter()
+                    .filter(|f| include_deprecated || f.deprecation_reason.is_none())
+                    .collect()),
+            _ => None,
+        }
+    }
+});
+
+graphql_object!(<'a> Field<'a, S>: SchemaType<'a, S> as "__Field"
+    where Scalar = <S: 'a> |&self|
 {
-    type Context = SchemaType<'a, S>;
-    type TypeInfo = ();
-
-    fn name((): &Self::TypeInfo) -> Option<&str> {
-        Some("__Field")
+    field name() -> &String {
+        &self.name
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        let name = registry.field::<Option<&str>>("name", info);
-        let description = registry.field::<Option<&String>>("description", info);
-        let args = registry.field::<Vec<&Argument<S>>>("args", info);
-        let tpe = registry.field::<TypeType<S>>("type", info);
-        let is_deprecated = registry.field::<bool>("isDeprecated", info);
-        let deprecation_reason = registry.field::<Option<&String>>("deprecationReason", info);
-
-        let obj = registry.build_object_type::<Self>(
-            info,
-            &[
-                name,
-                description,
-                args,
-                tpe,
-                is_deprecated,
-                deprecation_reason,
-            ],
-        );
-        obj.into_meta()
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    fn concrete_type_name(&self, _: &Self::Context, (): &Self::TypeInfo) -> String {
-        String::from("__Field")
+    field args() -> Vec<&Argument<S>> {
+        self.arguments.as_ref().map_or_else(Vec::new, |v| v.iter().collect())
     }
 
-    fn resolve_field(
-        &self,
-        info: &Self::TypeInfo,
-        field: &str,
-        _args: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
-    ) -> ExecutionResult<S> {
-        match field {
-            "name" => executor.replaced_context(&()).resolve(info, &self.name),
-            "description" => executor
-                .replaced_context(&())
-                .resolve(&(), &self.description),
-            "args" => executor.resolve(
-                info,
-                &self
-                    .arguments
-                    .as_ref()
-                    .map_or_else(Vec::new, |v| v.iter().collect()),
-            ),
-            "type" => executor.resolve(info, &executor.context().make_type(&self.field_type)),
-            "isDeprecated" => executor
-                .replaced_context(&())
-                .resolve(info, &self.deprecation_reason.is_some()),
-            "deprecationReason" => executor
-                .replaced_context(&())
-                .resolve(info, &&self.deprecation_reason),
-            e => panic!("Field {} not found on type __Type", e),
-        }
+    field type(&executor) -> TypeType<S> {
+        executor.context().make_type(&self.field_type)
     }
-}
 
-impl<'a, S> GraphQLType<S> for Argument<'a, S>
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
+    field is_deprecated() -> bool {
+        self.deprecation_reason.is_some()
+    }
+
+    field deprecation_reason() -> &Option<String> {
+        &self.deprecation_reason
+    }
+});
+
+graphql_object!(<'a> Argument<'a, S>: SchemaType<'a, S> as "__InputValue"
+    where Scalar = <S: 'a> |&self|
 {
-    type Context = SchemaType<'a, S>;
-    type TypeInfo = ();
-
-    fn name((): &Self::TypeInfo) -> Option<&str> {
-        Some("__InputValue")
+    field name() -> &String {
+        &self.name
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        let name = registry.field::<Option<&str>>("name", info);
-        let description = registry.field::<Option<&String>>("description", info);
-        let tpe = registry.field::<TypeType<S>>("type", info);
-        let default_value = registry.field::<Option<String>>("defaultValue", info);
-
-        let obj =
-            registry.build_object_type::<Self>(info, &[name, description, tpe, default_value]);
-        obj.into_meta()
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    fn concrete_type_name(&self, _: &Self::Context, (): &Self::TypeInfo) -> String {
-        String::from("__InputValue")
+    field type(&executor) -> TypeType<S> {
+        executor.context().make_type(&self.arg_type)
     }
 
-    fn resolve_field(
-        &self,
-        info: &Self::TypeInfo,
-        field: &str,
-        _args: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
-    ) -> ExecutionResult<S> {
-        match field {
-            "name" => executor.replaced_context(&()).resolve(info, &self.name),
-            "description" => executor
-                .replaced_context(&())
-                .resolve(info, &self.description),
-            "type" => executor.resolve(info, &executor.context().make_type(&self.arg_type)),
-            "defaultValue" => executor
-                .replaced_context(&())
-                .resolve(info, &self.default_value.as_ref().map(|v| format!("{}", v))),
-            e => panic!("Field {} not found on type __Type", e),
-        }
+    field default_value() -> Option<String> {
+        self.default_value.as_ref().map(|v| format!("{}", v))
     }
-}
+});
 
-graphql_object!(EnumValue: () as "__EnumValue" |&self| {
+graphql_object!(EnumValue: () as "__EnumValue" where Scalar = <S> |&self| {
     field name() -> &String {
         &self.name
     }
@@ -475,87 +274,42 @@ graphql_object!(EnumValue: () as "__EnumValue" |&self| {
     }
 });
 
-impl<'a, S> GraphQLType<S> for DirectiveType<'a, S>
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
+graphql_object!(<'a> DirectiveType<'a, S>: SchemaType<'a, S> as "__Directive"
+    where Scalar = <S: 'a> |&self|
 {
-    type Context = SchemaType<'a, S>;
-    type TypeInfo = ();
-
-    fn name((): &Self::TypeInfo) -> Option<&str> {
-        Some("__Directive")
+   field name() -> &String {
+        &self.name
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        let name = registry.field::<Option<&str>>("name", info);
-        let description = registry.field::<Option<&String>>("description", info);
-        let locations = registry.field::<&Vec<DirectiveLocation>>("locations", info);
-        let args = registry.field::<Vec<&Argument<S>>>("args", info);
-
-        let on_operation = registry
-            .field::<bool>("onOperation", info)
-            .deprecated("Use the locations array instead");
-        let on_fragment = registry
-            .field::<bool>("onFragment", info)
-            .deprecated("Use the locations array instead");
-        let on_field = registry
-            .field::<bool>("onField", info)
-            .deprecated("Use the locations array instead");
-
-        let obj = registry.build_object_type::<Self>(
-            info,
-            &[
-                name,
-                description,
-                locations,
-                args,
-                on_operation,
-                on_fragment,
-                on_field,
-            ],
-        );
-        obj.into_meta()
+    field description() -> &Option<String> {
+        &self.description
     }
 
-    fn concrete_type_name(&self, _: &Self::Context, (): &Self::TypeInfo) -> String {
-        String::from("__Directive")
+    field locations() -> &Vec<DirectiveLocation> {
+        &self.locations
     }
 
-    fn resolve_field(
-        &self,
-        info: &Self::TypeInfo,
-        field: &str,
-        _args: &Arguments<S>,
-        executor: &Executor<S, Self::Context>,
-    ) -> ExecutionResult<S> {
-        match field {
-            "name" => executor.replaced_context(&()).resolve(info, &self.name),
-            "description" => executor
-                .replaced_context(&())
-                .resolve(info, &self.description),
-            "locations" => executor
-                .replaced_context(&())
-                .resolve(info, &self.locations),
-            "args" => executor.resolve(info, &self.arguments),
-            "onOperation" => executor
-                .replaced_context(&())
-                .resolve(info, &self.locations.contains(&DirectiveLocation::Query)),
-            "onFragment" => executor.replaced_context(&()).resolve(
-                info,
-                &(self
-                    .locations
-                    .contains(&DirectiveLocation::FragmentDefinition)
-                    || self.locations.contains(&DirectiveLocation::InlineFragment)
-                    || self.locations.contains(&DirectiveLocation::FragmentSpread)),
-            ),
-            "onField" => executor
-                .replaced_context(&())
-                .resolve(info, &self.locations.contains(&DirectiveLocation::Field)),
-            e => panic!("Field {} not found on type __Type", e),
-        }
+    field args() -> &Vec<Argument<S>> {
+        &self.arguments
     }
-}
+
+    // Included for compatibility with the introspection query in GraphQL.js
+    field deprecated "Use the locations array instead"
+    on_operation() -> bool {
+        self.locations.contains(&DirectiveLocation::Query)
+    }
+
+    // Included for compatibility with the introspection query in GraphQL.js
+    field deprecated "Use the locations array instead"
+    on_fragment() -> bool {
+        self.locations.contains(&DirectiveLocation::FragmentDefinition) ||
+            self.locations.contains(&DirectiveLocation::InlineFragment) ||
+            self.locations.contains(&DirectiveLocation::FragmentSpread)
+    }
+
+    // Included for compatibility with the introspection query in GraphQL.js
+    field deprecated "Use the locations array instead"
+    on_field() -> bool {
+        self.locations.contains(&DirectiveLocation::Field)
+    }
+});
