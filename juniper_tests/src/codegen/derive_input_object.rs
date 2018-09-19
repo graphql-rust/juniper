@@ -3,8 +3,10 @@ use fnv::FnvHashMap;
 
 use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
+use juniper::DefaultScalarValue;
+
 #[derive(GraphQLInputObject, Debug, PartialEq)]
-#[graphql(name = "MyInput", description = "input descr")]
+#[graphql(name = "MyInput", description = "input descr", scalar = "DefaultScalarValue")]
 struct Input {
     regular_field: String,
     #[graphql(name = "haha", default = "33", description = "haha descr")]
@@ -83,10 +85,10 @@ struct WithLifetime<'a> {
 
 #[test]
 fn test_derived_input_object() {
-    assert_eq!(Input::name(&()), Some("MyInput"));
+    assert_eq!(<Input as GraphQLType>::name(&()), Some("MyInput"));
 
     // Validate meta info.
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = Input::meta(&(), &mut registry);
     assert_eq!(meta.name(), Some("MyInput"));
     assert_eq!(meta.description(), Some(&"input descr".to_string()));
@@ -128,14 +130,14 @@ fn test_derived_input_object() {
 
 #[test]
 fn test_doc_comment() {
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
 }
 
 #[test]
 fn test_multi_doc_comment() {
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
         meta.description(),
@@ -145,7 +147,7 @@ fn test_multi_doc_comment() {
 
 #[test]
 fn test_doc_comment_override() {
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"obj override".to_string()));
 }

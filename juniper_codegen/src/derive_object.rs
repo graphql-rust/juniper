@@ -179,7 +179,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         (
             Some(quote!{
                 where __S: juniper::ScalarValue,
-                      for<'__b> &'__b: juniper::ScalarRefValue<'__b>
+                      for<'__b> &'__b __S: juniper::ScalarRefValue<'__b>
             }),
             Some(quote!(<__S>)),
         )
@@ -208,7 +208,9 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             fn meta<'r>(
                 _: &(),
                 registry: &mut juniper::Registry<'r, #scalar>
-            ) -> juniper::meta::MetaType<'r, #scalar> {
+            ) -> juniper::meta::MetaType<'r, #scalar>
+                where #scalar: 'r
+            {
                 let fields = &[
                     #(#meta_fields)*
                 ];

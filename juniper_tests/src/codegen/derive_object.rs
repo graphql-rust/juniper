@@ -1,5 +1,6 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
+use juniper::DefaultScalarValue;
 #[cfg(test)]
 use juniper::Object;
 
@@ -7,14 +8,23 @@ use juniper::Object;
 use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
 
 #[derive(GraphQLObject, Debug, PartialEq)]
-#[graphql(name = "MyObj", description = "obj descr")]
+#[graphql(
+    name = "MyObj",
+    description = "obj descr",
+    scalar = "DefaultScalarValue"
+)]
 struct Obj {
     regular_field: bool,
-    #[graphql(name = "renamedField", description = "descr", deprecation = "field descr")]
+    #[graphql(
+        name = "renamedField",
+        description = "descr",
+        deprecation = "field descr"
+    )]
     c: i32,
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
+#[graphql(scalar = "DefaultScalarValue")]
 struct Nested {
     obj: Obj,
 }
@@ -105,21 +115,21 @@ graphql_object!(Query: () |&self| {
 
 #[test]
 fn test_doc_comment() {
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
 
     check_descriptions(
         "DocComment",
-        &Value::string("Object comment."),
+        &Value::scalar("Object comment."),
         "regularField",
-        &Value::string("Field comment."),
+        &Value::scalar("Field comment."),
     );
 }
 
 #[test]
 fn test_multi_doc_comment() {
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
         meta.description(),
@@ -128,32 +138,32 @@ fn test_multi_doc_comment() {
 
     check_descriptions(
         "MultiDocComment",
-        &Value::string("Doc 1. Doc 2.\nDoc 4."),
+        &Value::scalar("Doc 1. Doc 2.\nDoc 4."),
         "regularField",
-        &Value::string("Field 1. Field 2."),
+        &Value::scalar("Field 1. Field 2."),
     );
 }
 
 #[test]
 fn test_doc_comment_override() {
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"obj override".to_string()));
 
     check_descriptions(
         "OverrideDocComment",
-        &Value::string("obj override"),
+        &Value::scalar("obj override"),
         "regularField",
-        &Value::string("field override"),
+        &Value::scalar("field override"),
     );
 }
 
 #[test]
 fn test_derived_object() {
-    assert_eq!(Obj::name(&()), Some("MyObj"));
+    assert_eq!(<Obj as GraphQLType>::name(&()), Some("MyObj"));
 
     // Verify meta info.
-    let mut registry = juniper::Registry::new(FnvHashMap::default());
+    let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = Obj::meta(&(), &mut registry);
 
     assert_eq!(meta.name(), Some("MyObj"));
@@ -177,13 +187,13 @@ fn test_derived_object() {
                     "obj",
                     Value::object(
                         vec![
-                            ("regularField", Value::boolean(true)),
-                            ("renamedField", Value::int(22)),
+                            ("regularField", Value::scalar(true)),
+                            ("renamedField", Value::scalar(22)),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -240,16 +250,16 @@ fn test_derived_object_nested() {
                             "obj",
                             Value::object(
                                 vec![
-                                    ("regularField", Value::boolean(false)),
-                                    ("renamedField", Value::int(333)),
+                                    ("regularField", Value::scalar(false)),
+                                    ("renamedField", Value::scalar(333)),
                                 ].into_iter()
-                                    .collect(),
+                                .collect(),
                             ),
                         )].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -279,15 +289,21 @@ fn check_descriptions(
         object_name
     );
     run_type_info_query(&doc, |(type_info, values)| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string(object_name)));
-        assert_eq!(type_info.get_field_value("description"), Some(object_description));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::scalar(object_name))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(object_description)
+        );
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string(field_name)),
+                    ("name", Value::scalar(field_name)),
                     ("description", field_value.clone()),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             ))
         );
     });
@@ -296,7 +312,7 @@ fn check_descriptions(
 #[cfg(test)]
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn((&Object, &Vec<Value>)) -> (),
+    F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),
 {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 

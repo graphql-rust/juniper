@@ -1,13 +1,13 @@
 extern crate serde_json;
 
-use ast::InputValue;
-use executor::Variables;
-use parser::{ParseError, ScalarToken, Spanning, Token};
-use schema::model::RootNode;
-use serde::de;
+#[cfg(test)]
+use juniper::parser::Spanning;
+use juniper::parser::{ParseError, ScalarToken, Token};
+use juniper::serde::de;
+#[cfg(test)]
+use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
+use juniper::{InputValue, ParseScalarResult, Value};
 use std::fmt;
-use types::scalars::EmptyMutation;
-use value::{Object, ParseScalarResult, Value};
 
 #[derive(Debug, Clone, PartialEq, ScalarValue)]
 #[juniper(visitor = "MyScalarValueVisitor")]
@@ -125,13 +125,14 @@ graphql_object!(TestType: () where Scalar = MyScalarValue |&self| {
     }
 });
 
+#[cfg(test)]
 fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(query, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = execute(query, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -142,6 +143,7 @@ where
     f(obj);
 }
 
+#[cfg(test)]
 fn run_query<F>(query: &str, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
