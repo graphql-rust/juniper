@@ -394,11 +394,10 @@ where
 mod tests {
     use super::{ExecutionError, GraphQLError};
     use ast::InputValue;
-    use executor::ExecutionError;
     use serde_json::from_str;
     use serde_json::to_string;
-    use {FieldError, Value};
     use value::{DefaultScalarValue, Object};
+    use {FieldError, Value};
 
     #[test]
     fn int() {
@@ -431,8 +430,8 @@ mod tests {
 
     #[test]
     fn error_extensions() {
-        let mut obj = Object::with_capacity(1);
-        obj.add_field("foo".to_string(), Value::String("bar".to_string()));
+        let mut obj: Object<DefaultScalarValue> = Object::with_capacity(1);
+        obj.add_field("foo".to_string(), Value::scalar("bar"));
         assert_eq!(
             to_string(&ExecutionError::at_origin(FieldError::new(
                 "foo error",

@@ -147,7 +147,7 @@ macro_rules! graphql_interface {
                     )*
                     let fields = &[$(
                         registry.field_convert::<$return_ty, _, Self::Context>(
-                            &$crate::to_camel_case(stringify!($fn_name)),
+                            &$crate::to_camel_case(__graphql__stringify!($fn_name)),
                             info
                         )
                             $(.description($fn_description))*
@@ -180,13 +180,13 @@ macro_rules! graphql_interface {
                     executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)+)>
                 ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)+)> {
                     $(
-                        if field == &$crate::to_camel_case(stringify!($fn_name)) {
+                        if field == &$crate::to_camel_case(__graphql__stringify!($fn_name)) {
                             let result: $return_ty = (|| {
                                 $(
                                     let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(stringify!($arg_name)))
-                                        .expect(concat!(
+                                        .expect(__graphql__concat!(
                                             "Argument ",
-                                            stringify!($arg_name),
+                                            __graphql__stringify!($arg_name),
                                             " missing - validation must have failed"
                                         ));
                                 )*
@@ -209,7 +209,7 @@ macro_rules! graphql_interface {
                         }
                     )*
 
-                    panic!("Field {} not found on type {}", field, $($outname)*)
+                    __graphql__panic!("Field {} not found on type {}", field, $($outname)*)
                 }
 
                 #[allow(unused_variables)]
@@ -223,7 +223,7 @@ macro_rules! graphql_interface {
                         }
                     )*
 
-                    panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                    __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
 
                 fn resolve_into_type(
@@ -241,7 +241,7 @@ macro_rules! graphql_interface {
                         }
                     )*
 
-                     panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                     __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
             }
         );
@@ -265,7 +265,7 @@ macro_rules! graphql_interface {
     };
 
     (@$($stuff:tt)*) => {
-        compile_error!("Invalid syntax for `graphql_interface!`");
+        __graphql__compile_error!("Invalid syntax for `graphql_interface!`");
     };
 
     (

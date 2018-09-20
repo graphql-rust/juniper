@@ -59,6 +59,7 @@ macro_rules! graphql_scalar {
         resolve = {
             self_var = $resolve_self_var:ident,
             body = $resolve_body: block,
+            return_type = $resolve_retun_type: ty,
         },
         from_input_value = {
             arg = $from_input_value_arg: ident,
@@ -134,12 +135,6 @@ macro_rules! graphql_scalar {
                 }
             }
         );
-
-        impl $crate::FromInputValue for $name {
-            fn from_input_value($fiv_arg: &$crate::InputValue) -> $fiv_result {
-                $fiv_body
-            }
-        }
     };
 
     // No more items to parse
@@ -182,7 +177,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+})*,
         rest =
     ) => {
-        compile_error!("Missing resolve function");
+        __graphql__compile_error!("Missing resolve function");
     };
 
     (
@@ -197,7 +192,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+})*,
         rest =
     ) => {
-        compile_error!("Missing from_input_value function");
+        __graphql__compile_error!("Missing from_input_value function");
     };
 
     (
@@ -212,7 +207,7 @@ macro_rules! graphql_scalar {
         from_input_value = {$($from_input_value_body:tt)+},
         rest =
     ) =>{
-        compile_error!("Missing from_str function");
+        __graphql__compile_error!("Missing from_str function");
     };
 
 
@@ -223,7 +218,7 @@ macro_rules! graphql_scalar {
         $(resolve = {$($resolve_body:tt)+},)*
         $(from_input_value = {$($from_input_value_body:tt)+},)*
         $(from_str = {$($from_str_body:tt)+},)*
-        rest = resolve(&$selfvar:ident) -> Value $body:block $($rest:tt)*
+        rest = resolve(&$selfvar:ident) -> $return_ty:ty $body:block $($rest:tt)*
     ) => {
         graphql_scalar!(
             @parse_functions,
@@ -231,6 +226,7 @@ macro_rules! graphql_scalar {
             resolve = {
                 self_var = $selfvar,
                 body = $body,
+                return_type = $return_ty,
             },
             $(from_input_value = {$($from_input_value_body)+},)*
             $(from_str = {$($from_str_body)+},)*
@@ -335,7 +331,7 @@ macro_rules! graphql_scalar {
     };
 
     (@$($stuff:tt)*) => {
-        compile_error!("Invalid syntax for `graphql_scalar!`");
+        __graphql__compile_error!("Invalid syntax for `graphql_scalar!`");
     };
 
     ($($rest:tt)*) => {

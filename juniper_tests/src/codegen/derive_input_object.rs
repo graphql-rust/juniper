@@ -6,7 +6,11 @@ use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 use juniper::DefaultScalarValue;
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
-#[graphql(name = "MyInput", description = "input descr", scalar = "DefaultScalarValue")]
+#[graphql(
+    name = "MyInput",
+    description = "input descr",
+    scalar = "DefaultScalarValue"
+)]
 struct Input {
     regular_field: String,
     #[graphql(name = "haha", default = "33", description = "haha descr")]
@@ -54,7 +58,7 @@ impl<'a> FromInputValue for &'a Fake {
 
 impl<'a> ToInputValue for &'a Fake {
     fn to_input_value(&self) -> InputValue {
-        InputValue::string("this is fake".to_string())
+        InputValue::scalar("this is fake")
     }
 }
 
@@ -65,7 +69,10 @@ impl<'a> GraphQLType for &'a Fake {
     fn name(_: &()) -> Option<&'static str> {
         None
     }
-    fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r>
+    where
+        DefaultScalarValue: 'r,
+    {
         let meta = registry.build_enum_type::<&'a Fake>(
             &(),
             &[juniper::meta::EnumValue {
@@ -79,6 +86,7 @@ impl<'a> GraphQLType for &'a Fake {
 }
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
+#[graphql(scalar = "DefaultScalarValue")]
 struct WithLifetime<'a> {
     regular_field: &'a Fake,
 }

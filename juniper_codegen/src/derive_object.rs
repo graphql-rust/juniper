@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use syn;
 use syn::{Data, DeriveInput, Field, Fields, Ident};
 
@@ -21,7 +21,9 @@ impl ObjAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -32,12 +34,16 @@ impl ObjAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(scalar)) = keyed_item_value(&item, "scalar", true) {
-                    res.scalar = Some(Ident::from(&scalar as &str));
+                if let Some(AttributeValue::String(scalar)) =
+                    keyed_item_value(&item, "scalar", AttributeValidation::String)
+                {
+                    res.scalar = Some(Ident::new(&scalar as &str, Span::call_site()));
                     continue;
                 }
                 panic!(format!(
@@ -68,7 +74,9 @@ impl ObjFieldAttrs {
         // Check attributes.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -79,11 +87,15 @@ impl ObjFieldAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "deprecation", AttributeValidation::String) {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "deprecation", AttributeValidation::String)
+                {
                     res.deprecation = Some(val);
                     continue;
                 }
@@ -175,23 +187,31 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         });
     }
 
-    let (where_clause, define_scalar) = if attrs.scalar.is_none() {
-        (
-            Some(quote!{
-                where __S: juniper::ScalarValue,
-                      for<'__b> &'__b __S: juniper::ScalarRefValue<'__b>
-            }),
-            Some(quote!(<__S>)),
-        )
-    } else {
-        (None, None)
-    };
+    let (_, ty_generics, _) = generics.split_for_impl();
 
-    let scalar = attrs.scalar.unwrap_or_else(|| Ident::from("__S"));
-    let dummy_const = Ident::from(format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str());
+    let mut generics = generics.clone();
+
+    if attrs.scalar.is_none() {
+        generics.params.push(parse_quote!(__S));
+        {
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: juniper::ScalarValue));
+            where_clause
+                .predicates
+                .push(parse_quote!(for<'__b> &'__b __S: juniper::ScalarRefValue<'__b>));
+        }
+    }
+
+    let scalar = attrs
+        .scalar
+        .unwrap_or_else(|| Ident::new("__S", Span::call_site()));
+
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let toks = quote! {
-        impl#define_scalar juniper::GraphQLType<#scalar> for #ident
+        impl#impl_generics juniper::GraphQLType<#scalar> for #ident #ty_generics
             #where_clause
         {
             type Context = ();
@@ -236,6 +256,12 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
     };
+
+    let dummy_const = Ident::new(
+        format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str(),
+        Span::call_site(),
+    );
+
     quote!{
         const #dummy_const: () = {
             mod juniper {

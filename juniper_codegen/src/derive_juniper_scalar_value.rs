@@ -1,14 +1,19 @@
-use quote::Tokens;
-use syn::{self, Data, Fields, Ident, Variant};
-use util::{get_juniper_attr, keyed_item_value};
+use proc_macro2::{Span, TokenStream};
 
-pub fn impl_scalar_value(ast: &syn::DeriveInput) -> Tokens {
+use syn::{self, Data, Fields, Ident, Variant};
+use util::{get_juniper_attr, keyed_item_value, AttributeValidation, AttributeValue};
+
+pub fn impl_scalar_value(ast: &syn::DeriveInput) -> TokenStream {
     let ident = &ast.ident;
     let visitor = if let Some(items) = get_juniper_attr(&ast.attrs) {
         items.into_iter()
-            .filter_map(|i| keyed_item_value(&i, "visitor", true))
+            .filter_map(|i| keyed_item_value(&i, "visitor", AttributeValidation::String))
             .next()
-            .map(|t| Ident::from(&t as &str))
+            .and_then(|t| if let AttributeValue::String(s) = t {
+                Some(Ident::new(&s, Span::call_site()))
+            } else {
+                None
+            })
             .expect("`#[derive(ScalarValue)]` needs a annotation of the form `#[juniper(visitor = \"VisitorType\")]`")
     } else {
         panic!("`#[derive(ScalarValue)]` needs a annotation of the form `#[juniper(visitor = \"VisitorType\")]`");
@@ -30,7 +35,10 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput) -> Tokens {
     let serialize = derive_serialize(variants.iter(), ident);
 
     let display = derive_display(variants.iter(), ident);
-    let dummy_const = Ident::from(format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str());
+    let dummy_const = Ident::new(
+        format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str(),
+        Span::call_site(),
+    );
 
     quote!{
         const #dummy_const: () = {
@@ -53,7 +61,7 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput) -> Tokens {
     }
 }
 
-fn derive_display<'a, I>(variants: I, ident: &Ident) -> Tokens
+fn derive_display<'a, I>(variants: I, ident: &Ident) -> TokenStream
 where
     I: Iterator<Item = &'a Variant>,
 {
@@ -73,7 +81,7 @@ where
     }
 }
 
-fn derive_serialize<'a, I>(variants: I, ident: &Ident) -> Tokens
+fn derive_serialize<'a, I>(variants: I, ident: &Ident) -> TokenStream
 where
     I: Iterator<Item = &'a Variant>,
 {
@@ -95,7 +103,7 @@ where
     }
 }
 
-fn derive_from_variant(variant: &Variant, ident: &Ident) -> Result<Tokens, String> {
+fn derive_from_variant(variant: &Variant, ident: &Ident) -> Result<TokenStream, String> {
     let ty = match variant.fields {
         Fields::Unnamed(ref u) if u.unnamed.len() == 1 => &u.unnamed.first().unwrap().value().ty,
 

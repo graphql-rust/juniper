@@ -23,7 +23,9 @@ impl ObjAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -34,12 +36,16 @@ impl ObjAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(scalar) = keyed_item_value(&item, "scalar", true) {
-                    res.scalar = Some(Ident::from(&scalar as &str));
+                if let Some(AttributeValue::String(scalar)) =
+                    keyed_item_value(&item, "scalar", AttributeValidation::String)
+                {
+                    res.scalar = Some(Ident::new(&scalar as &str, Span::call_site()));
                     continue;
                 }
                 panic!(format!(
@@ -70,7 +76,9 @@ impl ObjFieldAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -81,11 +89,15 @@ impl ObjFieldAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "default", AttributeValidation::Any) {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "default", AttributeValidation::Any)
+                {
                     res.default_expr = Some(val);
                     continue;
                 }
@@ -236,75 +248,83 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
         });
     }
 
-    let (where_clause, define_scalar) = if attrs.scalar.is_none() {
-        (
-            Some(quote!{
-                where __S: _juniper::ScalarValue,
-                      for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
-            }),
-            Some(quote!(<__S>)),
-        )
+    let (_, ty_generics, _) = generics.split_for_impl();
+
+    let mut generics = generics.clone();
+
+    let scalar = if let Some(scalar) = attrs.scalar {
+        scalar
     } else {
-        (None, None)
+        generics.params.push(parse_quote!(__S));
+        {
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: _juniper::ScalarValue));
+            where_clause
+                .predicates
+                .push(parse_quote!(for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>));
+        }
+        Ident::new("__S", Span::call_site())
     };
 
-    let scalar = attrs.scalar.unwrap_or_else(|| Ident::from("__S"));
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let body = quote! {
-            impl#define_scalar _juniper::GraphQLType<#scalar> for #ident
-            #where_clause
-            {
-                type Context = ();
-                type TypeInfo = ();
+        impl#impl_generics _juniper::GraphQLType<#scalar> for #ident #ty_generics
+        #where_clause
+        {
+            type Context = ();
+            type TypeInfo = ();
 
-                fn name(_: &()) -> Option<&'static str> {
-                    Some(#name)
-                }
-
-                fn meta<'r>(
-                    _: &(),
-                    registry: &mut _juniper::Registry<'r, #scalar>
-                ) -> _juniper::meta::MetaType<'r, #scalar>
-                    where #scalar: 'r
-                {
-                    let fields = &[
-                        #(#meta_fields)*
-                    ];
-                    let meta = registry.build_input_object_type::<#ident>(&(), fields);
-                    #meta_description
-                    meta.into_meta()
-                }
+            fn name(_: &()) -> Option<&'static str> {
+                Some(#name)
             }
 
-            impl#define_scalar _juniper::FromInputValue<#scalar> for #ident
-            #where_clause
+            fn meta<'r>(
+                _: &(),
+                registry: &mut _juniper::Registry<'r, #scalar>
+            ) -> _juniper::meta::MetaType<'r, #scalar>
+                where #scalar: 'r
             {
-                fn from_input_value(value: &_juniper::InputValue<#scalar>) -> Option<#ident>
-                where
-                    for<'__b> &'__b #scalar: _juniper::ScalarRefValue<'__b>
-                {
-                    if let Some(obj) = value.to_object_value() {
-                        let item = #ident {
-                            #(#from_inputs)*
-                        };
-                        Some(item)
-                    }
-                    else {
-                        None
-                    }
-                }
+                let fields = &[
+                    #(#meta_fields)*
+                ];
+                let meta = registry.build_input_object_type::<#ident>(&(), fields);
+                #meta_description
+                meta.into_meta()
             }
+        }
 
-            impl#define_scalar _juniper::ToInputValue<#scalar> for #ident
-            #where_clause
+        impl#impl_generics _juniper::FromInputValue<#scalar> for #ident #ty_generics
+        #where_clause
+        {
+            fn from_input_value(value: &_juniper::InputValue<#scalar>) -> Option<Self>
+            where
+                for<'__b> &'__b #scalar: _juniper::ScalarRefValue<'__b>
             {
-                fn to_input_value(&self) -> _juniper::InputValue<#scalar> {
-                    _juniper::InputValue::object(vec![
-                        #(#to_inputs)*
-                    ].into_iter().collect())
+                if let Some(obj) = value.to_object_value() {
+                    let item = #ident {
+                        #(#from_inputs)*
+                    };
+                    Some(item)
+                }
+                else {
+                    None
                 }
             }
-        };
+        }
+
+        impl#impl_generics _juniper::ToInputValue<#scalar> for #ident #ty_generics
+        #where_clause
+        {
+            fn to_input_value(&self) -> _juniper::InputValue<#scalar> {
+                _juniper::InputValue::object(vec![
+                    #(#to_inputs)*
+                ].into_iter().collect())
+            }
+        }
+    };
 
     let dummy_const = Ident::new(
         &format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident),

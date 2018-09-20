@@ -14,8 +14,14 @@ macro_rules! __graphql__stringify {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __graphql__vec {
-    ($($t:tt)*) => ( vec!($($t)*) );
+macro_rules! __graphql__concat {
+    ($($t:tt)*) => ( concat!($($t)*) );
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __graphql__compile_error {
+    ($t:expr) => ( compile_error!($t) );
 }
 
 #[macro_use]

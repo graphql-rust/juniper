@@ -83,7 +83,7 @@ macro_rules! graphql_union {
                         }
                     )*
 
-                    panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                    __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
 
                 fn resolve_into_type(
@@ -101,7 +101,7 @@ macro_rules! graphql_union {
                         }
                     )*
 
-                     panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                     __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
             }
         );
@@ -125,7 +125,7 @@ macro_rules! graphql_union {
         );
     };
     (@$($stuff:tt)*) => {
-        compile_error!("Invalid syntax for `graphql_union!`");
+        __graphql__compile_error!("Invalid syntax for `graphql_union!`");
     };
 
     ($($rest: tt)*) => {

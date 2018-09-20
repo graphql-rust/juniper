@@ -112,13 +112,18 @@ where
 #[test]
 fn path_in_resolve_return_type() {
     struct ResolvePath(i32);
+
     graphql_scalar!(ResolvePath {
         resolve(&self) -> self::Value {
-            Value::int(self.0)
+            Value::scalar(self.0)
         }
 
         from_input_value(v: &InputValue) -> Option<ResolvePath> {
-            v.as_int_value().map(|i| ResolvePath(i))
+            v.as_scalar_value().map(|i: &i32| ResolvePath(*i))
+        }
+
+        from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+            <i32 as ParseScalarValue>::from_str(value)
         }
     });
 }

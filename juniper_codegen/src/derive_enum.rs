@@ -24,7 +24,9 @@ impl EnumAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -35,7 +37,9 @@ impl EnumAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
@@ -66,7 +70,9 @@ impl EnumVariantAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -77,11 +83,15 @@ impl EnumVariantAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "deprecated", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "deprecated", AttributeValidation::String)
+                {
                     res.deprecation = Some(val);
                     continue;
                 }
@@ -150,8 +160,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
                 description: #descr,
                 deprecation_reason: #depr,
             },
-        };
-        values.push(value);
+        });
 
         // Build resolve match clause.
         resolves.extend(quote!{

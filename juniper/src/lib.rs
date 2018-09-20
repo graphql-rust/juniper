@@ -211,7 +211,6 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
-
     {
         let errors = validate_input_values(variables, &document, &root_node.schema);
 

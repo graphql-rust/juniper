@@ -20,6 +20,3 @@ serde = "1.0.75"
 [dev-dependencies]
 juniper = { path = "../juniper", version = "0.10.0", features = ["expose-test-schema", "serde_json"] }
 percent-encoding = "1.0"
-
-[workspace]
-members = [".", "examples/warp_server"]
