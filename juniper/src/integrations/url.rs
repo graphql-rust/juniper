@@ -11,8 +11,8 @@ graphql_scalar!(Url where Scalar = <S>{
     }
 
     from_input_value(v: &InputValue) -> Option<Url> {
-        v.as_scalar_value()
-         .and_then(|s: &String| Url::parse(s).ok())
+        v.as_scalar_value::<String>()
+         .and_then(|s| Url::parse(s).ok())
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

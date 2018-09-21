@@ -263,6 +263,8 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
     );
 
     quote!{
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        #[doc(hidden)]
         const #dummy_const: () = {
             mod juniper {
                 __juniper_use_everything!();

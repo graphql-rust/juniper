@@ -91,6 +91,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![warn(missing_docs)]
 
 #[doc(hidden)]
+#[macro_use]
 pub extern crate serde;
 #[macro_use]
 extern crate serde_derive;

@@ -340,19 +340,21 @@ impl<'a, S> MetaType<'a, S> {
     }
 
     pub(crate) fn fields<'b>(&self, schema: &'b SchemaType<S>) -> Option<Vec<&'b Field<'b, S>>> {
-        match schema.lookup_type(&self.as_type()) {
-            Some(MetaType::Interface(ref i)) => Some(i.fields.iter().collect()),
-            Some(MetaType::Object(ref o)) => Some(o.fields.iter().collect()),
-            Some(MetaType::Union(ref u)) => Some(
-                u.of_type_names
-                    .iter()
-                    .filter_map(|n| schema.concrete_type_by_name(n))
-                    .filter_map(|t| t.fields(schema))
-                    .flatten()
-                    .collect(),
-            ),
-            _ => None,
-        }
+        schema.lookup_type(&self.as_type()).and_then(|tpe| {
+            match *tpe {
+                MetaType::Interface(ref i) => Some(i.fields.iter().collect()),
+                MetaType::Object(ref o) => Some(o.fields.iter().collect()),
+                MetaType::Union(ref u) => Some(
+                    u.of_type_names
+                        .iter()
+                        .filter_map(|n| schema.concrete_type_by_name(n))
+                        .filter_map(|t| t.fields(schema))
+                        .flat_map(|f| f)
+                        .collect(),
+                ),
+                _ => None,
+            }
+        })
     }
 }
 

@@ -218,7 +218,9 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             fn from_input_value(v: &_juniper::InputValue<__S>) -> Option<#ident>
                 where for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
             {
-                match v.as_enum_value().or_else(|| v.as_scalar_value().map(|s: &String| s as &str)) {
+                match v.as_enum_value().or_else(|| {
+                    v.as_scalar_value::<String>().map(|s| s as &str)
+                }) {
                     #(#from_inputs)*
                     _ => None,
                 }

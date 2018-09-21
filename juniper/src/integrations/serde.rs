@@ -130,11 +130,13 @@ where
                 self.0.visit_i64(value).map(InputValue::Scalar)
             }
 
-            fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_i128(value).map(InputValue::Scalar)
+            serde_if_integer128! {
+                fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
+                where
+                    E: de::Error,
+                {
+                    self.0.visit_i128(value).map(InputValue::Scalar)
+                }
             }
 
             fn visit_u8<E>(self, value: u8) -> Result<InputValue<S>, E>
@@ -165,11 +167,13 @@ where
                 self.0.visit_u64(value).map(InputValue::Scalar)
             }
 
-            fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
-            where
-                E: de::Error,
-            {
-                self.0.visit_u128(value).map(InputValue::Scalar)
+            serde_if_integer128!{
+                fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
+                where
+                    E: de::Error,
+                {
+                    self.0.visit_u128(value).map(InputValue::Scalar)
+                }
             }
 
             fn visit_f32<E>(self, value: f32) -> Result<InputValue<S>, E>

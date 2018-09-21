@@ -621,7 +621,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn name((): &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&str> {
         Some("MutationRoot")
     }
 

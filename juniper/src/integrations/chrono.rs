@@ -30,8 +30,8 @@ graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S
     }
 
     from_input_value(v: &InputValue) -> Option<DateTime<FixedOffset>> {
-        v.as_scalar_value()
-         .and_then(|s: &String| DateTime::parse_from_rfc3339(s).ok())
+        v.as_scalar_value::<String>()
+         .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -51,8 +51,8 @@ graphql_scalar!(DateTime<Utc> as "DateTimeUtc" where Scalar = <S>{
     }
 
     from_input_value(v: &InputValue) -> Option<DateTime<Utc>> {
-        v.as_scalar_value()
-         .and_then(|s: &String| (s.parse::<DateTime<Utc>>().ok()))
+        v.as_scalar_value::<String>()
+         .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -77,8 +77,8 @@ graphql_scalar!(NaiveDate where Scalar = <S>{
     }
 
     from_input_value(v: &InputValue) -> Option<NaiveDate> {
-        v.as_scalar_value()
-         .and_then(|s: &String| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
+        v.as_scalar_value::<String>()
+         .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -100,8 +100,8 @@ graphql_scalar!(NaiveDateTime where Scalar = <S> {
     }
 
     from_input_value(v: &InputValue) -> Option<NaiveDateTime> {
-        v.as_scalar_value()
-         .and_then(|f: &f64| NaiveDateTime::from_timestamp_opt(*f as i64, 0))
+        v.as_scalar_value::<f64>()
+         .and_then(|f| NaiveDateTime::from_timestamp_opt(*f as i64, 0))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

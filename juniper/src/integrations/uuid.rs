@@ -12,8 +12,8 @@ graphql_scalar!(Uuid where Scalar = <S> {
     }
 
     from_input_value(v: &InputValue) -> Option<Uuid> {
-        v.as_scalar_value()
-         .and_then(|s: &String| Uuid::parse_str(s).ok())
+        v.as_scalar_value::<String>()
+         .and_then(|s| Uuid::parse_str(s).ok())
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {

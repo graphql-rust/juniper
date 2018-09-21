@@ -259,7 +259,7 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
-        self.map(|v| Some((FromContext::from(ctx), v)))
+        self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
             .map_err(|e| e.into_field_error())
     }
 }
@@ -604,7 +604,7 @@ where
                 }
 
                 let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item.as_ref()) == operation_name;
+                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
 
                 if move_op {
                     operation = Some(op);

@@ -210,7 +210,7 @@ impl<'a> Lexer<'a> {
         Ok(Spanning::start_end(
             &start_pos,
             &self.position,
-            Token::Name(&self.source[start_idx..=end_idx]),
+            Token::Name(&self.source[start_idx..end_idx + 1]),
         ))
     }
 
@@ -300,7 +300,7 @@ impl<'a> Lexer<'a> {
             len += 1;
         }
 
-        let escape = &self.source[start_idx..=end_idx];
+        let escape = &self.source[start_idx..end_idx + 1];
 
         if len != 4 {
             return Err(Spanning::zero_width(

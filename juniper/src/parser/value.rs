@@ -210,7 +210,7 @@ where
 {
     match token {
         ScalarToken::String(_) => {
-            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("String") {
+            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("String") {
                 (s.parse_fn)(token)
                     .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
                     .map_err(|e| Spanning::start_end(start, end, e))
@@ -219,7 +219,7 @@ where
             }
         }
         ScalarToken::Int(_) => {
-            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("Int") {
+            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Int") {
                 (s.parse_fn)(token)
                     .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
                     .map_err(|e| Spanning::start_end(start, end, e))
@@ -228,7 +228,7 @@ where
             }
         }
         ScalarToken::Float(_) => {
-            if let Some(MetaType::Scalar(s)) = schema.concrete_type_by_name("Float") {
+            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Float") {
                 (s.parse_fn)(token)
                     .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
                     .map_err(|e| Spanning::start_end(start, end, e))
