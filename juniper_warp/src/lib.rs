@@ -38,6 +38,7 @@ Check the LICENSE file for details.
 
 #![deny(missing_docs)]
 #![deny(warnings)]
+#![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use futures::{future::poll_fn, Future};
 use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
