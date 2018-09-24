@@ -1,3 +1,5 @@
+#![doc(html_root_url = "https://docs.rs/juniper_hyper/0.2.0")]
+
 #[cfg(test)]
 extern crate reqwest;
 

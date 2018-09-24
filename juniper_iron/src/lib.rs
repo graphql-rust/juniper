@@ -103,6 +103,8 @@ supported.
 
 */
 
+#![doc(html_root_url = "https://docs.rs/juniper_iron/0.3.0")]
+
 #[cfg(test)]
 extern crate iron_test;
 #[cfg(test)]

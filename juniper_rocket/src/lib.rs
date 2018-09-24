@@ -36,6 +36,8 @@ Check the LICENSE file for details.
 
 */
 
+#![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
+
 #![feature(decl_macro, proc_macro_hygiene)]
 
 use std::error::Error;
