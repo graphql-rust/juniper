@@ -102,7 +102,7 @@ pub struct InlineFragment<'a, S> {
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 #[allow(missing_docs)]
-pub enum Selection<'a, S> {
+pub enum Selection<'a, S = DefaultScalarValue> {
     Field(Spanning<Field<'a, S>>),
     FragmentSpread(Spanning<FragmentSpread<'a, S>>),
     InlineFragment(Spanning<InlineFragment<'a, S>>),
@@ -541,35 +541,32 @@ impl<'a, S> VariableDefinitions<'a, S> {
 mod tests {
     use super::InputValue;
     use parser::Spanning;
-    use value::DefaultScalarValue;
-
-    type TestValue = InputValue<DefaultScalarValue>;
 
     #[test]
     fn test_input_value_fmt() {
-        let value: TestValue = InputValue::null();
+        let value: InputValue = InputValue::null();
         assert_eq!(format!("{}", value), "null");
 
-        let value: TestValue = InputValue::scalar(123);
+        let value: InputValue = InputValue::scalar(123);
         assert_eq!(format!("{}", value), "123");
 
-        let value: TestValue = InputValue::scalar(12.3);
+        let value: InputValue = InputValue::scalar(12.3);
         assert_eq!(format!("{}", value), "12.3");
 
-        let value: TestValue = InputValue::scalar("FOO".to_owned());
+        let value: InputValue = InputValue::scalar("FOO".to_owned());
         assert_eq!(format!("{}", value), "\"FOO\"");
 
-        let value: TestValue = InputValue::scalar(true);
+        let value: InputValue = InputValue::scalar(true);
         assert_eq!(format!("{}", value), "true");
 
-        let value: TestValue = InputValue::enum_value("BAR".to_owned());
+        let value: InputValue = InputValue::enum_value("BAR".to_owned());
         assert_eq!(format!("{}", value), "BAR");
 
-        let value: TestValue = InputValue::variable("baz".to_owned());
+        let value: InputValue = InputValue::variable("baz".to_owned());
         assert_eq!(format!("{}", value), "$baz");
 
         let list = vec![InputValue::scalar(1), InputValue::scalar(2)];
-        let value: TestValue = InputValue::list(list);
+        let value: InputValue = InputValue::list(list);
         assert_eq!(format!("{}", value), "[1, 2]");
 
         let object = vec![
@@ -582,7 +579,7 @@ mod tests {
                 Spanning::unlocated(InputValue::scalar(2)),
             ),
         ];
-        let value: TestValue = InputValue::parsed_object(object);
+        let value: InputValue = InputValue::parsed_object(object);
         assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }
 }

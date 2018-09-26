@@ -867,7 +867,7 @@ query Hero {
 
     #[test]
     fn check_complex_query() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source(
             "
 query HeroNameAndFriends($id: Integer!, $withFriends: Boolean! = true) {
   hero(id: $id) {
