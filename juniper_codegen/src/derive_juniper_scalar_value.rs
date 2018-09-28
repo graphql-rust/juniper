@@ -1,23 +1,9 @@
 use proc_macro2::{Span, TokenStream};
 
 use syn::{self, Data, Fields, Ident, Variant};
-use util::{get_juniper_attr, keyed_item_value, AttributeValidation, AttributeValue};
 
 pub fn impl_scalar_value(ast: &syn::DeriveInput) -> TokenStream {
     let ident = &ast.ident;
-    let visitor = if let Some(items) = get_juniper_attr(&ast.attrs) {
-        items.into_iter()
-            .filter_map(|i| keyed_item_value(&i, "visitor", AttributeValidation::String))
-            .next()
-            .and_then(|t| if let AttributeValue::String(s) = t {
-                Some(Ident::new(&s, Span::call_site()))
-            } else {
-                None
-            })
-            .expect("`#[derive(ScalarValue)]` needs a annotation of the form `#[juniper(visitor = \"VisitorType\")]`")
-    } else {
-        panic!("`#[derive(ScalarValue)]` needs a annotation of the form `#[juniper(visitor = \"VisitorType\")]`");
-    };
 
     let variants = match ast.data {
         Data::Enum(ref enum_data) => &enum_data.variants,
@@ -54,11 +40,6 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput) -> TokenStream {
 
             #serialize
             #display
-
-            impl juniper::ScalarValue for #ident {
-                type Visitor = #visitor;
-            }
-
         };
     }
 }

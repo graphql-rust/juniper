@@ -39,9 +39,8 @@ graphql_scalar!(ID as "ID" where Scalar = <S>{
     from_input_value(v: &InputValue) -> Option<ID> {
         match *v {
             InputValue::Scalar(ref s) => {
-                <_ as Into<Option<String>>>::into(s.clone()).or_else(||{
-                    <_ as Into<Option<i32>>>::into(s.clone()).map(|i| i.to_string())
-                }).map(ID)
+                s.as_string().or_else(|| s.as_int().map(|i| i.to_string()))
+                    .map(ID)
             }
             _ => None
         }
@@ -64,7 +63,7 @@ graphql_scalar!(String as "String" where Scalar = <S>{
 
     from_input_value(v: &InputValue) -> Option<String> {
         match *v {
-            InputValue::Scalar(ref s) => <_ as Into<Option<String>>>::into(s.clone()),
+            InputValue::Scalar(ref s) => s.as_string(),
             _ => None,
         }
     }
@@ -202,7 +201,7 @@ graphql_scalar!(bool as "Boolean" where Scalar = <S>{
 
     from_input_value(v: &InputValue) -> Option<bool> {
         match *v {
-            InputValue::Scalar(ref b) => <_ as Into<Option<& bool>>>::into(b).map(|b| *b),
+            InputValue::Scalar(ref b) => b.as_boolean(),
             _ => None,
         }
     }
@@ -221,7 +220,7 @@ graphql_scalar!(i32 as "Int" where Scalar = <S>{
 
     from_input_value(v: &InputValue) -> Option<i32> {
         match *v {
-            InputValue::Scalar(ref i) => <_ as Into<Option<&i32>>>::into(i).map(|i| *i),
+            InputValue::Scalar(ref i) => i.as_int(),
             _ => None,
         }
     }
@@ -244,10 +243,7 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
 
     from_input_value(v: &InputValue) -> Option<f64> {
         match *v {
-            InputValue::Scalar(ref s) => {
-                <_ as Into<Option<&f64>>>::into(s).map(|i| *i)
-                    .or_else(|| <_ as Into<Option<&i32>>>::into(s).map(|i| *i as f64))
-            }
+            InputValue::Scalar(ref s) => s.as_float(),
             _ => None,
         }
     }

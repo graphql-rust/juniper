@@ -6,17 +6,49 @@ use juniper::parser::{ParseError, ScalarToken, Token};
 use juniper::serde::de;
 #[cfg(test)]
 use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
-use juniper::{InputValue, ParseScalarResult, Value};
+use juniper::{InputValue, ParseScalarResult, ScalarValue, Value};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, ScalarValue)]
-#[juniper(visitor = "MyScalarValueVisitor")]
 enum MyScalarValue {
     Int(i32),
     Long(i64),
     Float(f64),
     String(String),
     Boolean(bool),
+}
+
+impl ScalarValue for MyScalarValue {
+    type Visitor = MyScalarValueVisitor;
+
+    fn as_int(&self) -> Option<i32> {
+        match *self {
+            MyScalarValue::Int(ref i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    fn as_string(&self) -> Option<String> {
+        match *self {
+            MyScalarValue::String(ref s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn as_float(&self) -> Option<f64> {
+        match *self {
+            MyScalarValue::Int(ref i) => Some(*i as f64),
+            MyScalarValue::Float(ref f) => Some(*f),
+            _ => None,
+        }
+    }
+
+    fn as_boolean(&self) -> Option<bool> {
+        match *self {
+            MyScalarValue::Boolean(ref b) => Some(*b),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Default, Debug)]
@@ -44,7 +76,11 @@ impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
     where
         E: de::Error,
     {
-        Ok(MyScalarValue::Long(value))
+        if value <= i32::max_value() as i64 {
+            self.visit_i32(value as i32)
+        } else {
+            Ok(MyScalarValue::Long(value))
+        }
     }
 
     fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>

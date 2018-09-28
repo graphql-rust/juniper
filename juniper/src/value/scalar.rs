@@ -35,16 +35,49 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # extern crate juniper;
 /// # extern crate serde;
 /// # use serde::{de, Deserialize, Deserializer};
+/// # use juniper::ScalarValue;
 /// # use std::fmt;
 /// #
 /// #[derive(Debug, Clone, PartialEq, ScalarValue)]
-/// #[juniper(visitor = "MyScalarValueVisitor")]
 /// enum MyScalarValue {
 ///     Int(i32),
 ///     Long(i64),
 ///     Float(f64),
 ///     String(String),
 ///     Boolean(bool),
+/// }
+///
+/// impl ScalarValue for MyScalarValue {
+///     type Visitor = MyScalarValueVisitor;
+///
+///      fn as_int(&self) -> Option<i32> {
+///        match *self {
+///            MyScalarValue::Int(ref i) => Some(*i),
+///            _ => None,
+///        }
+///    }
+///
+///    fn as_string(&self) -> Option<String> {
+///        match *self {
+///            MyScalarValue::String(ref s) => Some(s.clone()),
+///            _ => None,
+///        }
+///    }
+///
+///    fn as_float(&self) -> Option<f64> {
+///        match *self {
+///            MyScalarValue::Int(ref i) => Some(*i as f64),
+///            MyScalarValue::Float(ref f) => Some(*f),
+///            _ => None,
+///        }
+///    }
+///
+///    fn as_boolean(&self) -> Option<bool> {
+///        match *self {
+///            MyScalarValue::Boolean(ref b) => Some(*b),
+///            _ => None,
+///        }
+///    }
 /// }
 ///
 /// #[derive(Default)]
@@ -72,7 +105,11 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     where
 ///         E: de::Error,
 ///     {
-///         Ok(MyScalarValue::Long(value))
+///         if value <= i32::max_value() as i64 {
+///             self.visit_i32(value as i32)
+///         } else {
+///             Ok(MyScalarValue::Long(value))
+///         }
 ///     }
 ///
 ///     fn visit_u32<E>(self, value: u32) -> Result<MyScalarValue, E>
@@ -156,6 +193,33 @@ pub trait ScalarValue:
     {
         self.into().is_some()
     }
+
+    /// Convert the given scalar value into an integer value
+    ///
+    /// This function is used for implementing `GraphQLType` for `i32` for all
+    /// scalar values. Implementations should convert all supported integer
+    /// types with 32 bit or less to an integer if requested.
+    fn as_int(&self) -> Option<i32>;
+
+    /// Convert the given scalar value into a string value
+    ///
+    /// This function is used for implementing `GraphQLType` for `String` for all
+    /// scalar values
+    fn as_string(&self) -> Option<String>;
+
+    /// Convert the given scalar value into a float value
+    ///
+    /// This function is used for implementing `GraphQLType` for `f64` for all
+    /// scalar values. Implementations should convert all supported integer
+    /// types with 64 bit or less and all floating point values with 64 bit or
+    /// less to a float if requested.
+    fn as_float(&self) -> Option<f64>;
+
+    /// Convert the given scalar value into a boolean value
+    ///
+    /// This function is used for implementing `GraphQLType` for `bool` for all
+    /// scalar values.
+    fn as_boolean(&self) -> Option<bool>;
 }
 
 /// A marker trait extending the [`ScalarValue`](../trait.ScalarValue.html) trait
@@ -189,12 +253,44 @@ where
 /// This types closely follows the graphql specification.
 #[derive(Debug, PartialEq, Clone, ScalarValue)]
 #[allow(missing_docs)]
-#[juniper(visitor = "DefaultScalarValueVisitor")]
 pub enum DefaultScalarValue {
     Int(i32),
     Float(f64),
     String(String),
     Boolean(bool),
+}
+
+impl ScalarValue for DefaultScalarValue {
+    type Visitor = DefaultScalarValueVisitor;
+
+    fn as_int(&self) -> Option<i32> {
+        match *self {
+            DefaultScalarValue::Int(ref i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    fn as_string(&self) -> Option<String> {
+        match *self {
+            DefaultScalarValue::String(ref s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn as_float(&self) -> Option<f64> {
+        match *self {
+            DefaultScalarValue::Int(ref i) => Some(*i as f64),
+            DefaultScalarValue::Float(ref f) => Some(*f),
+            _ => None,
+        }
+    }
+
+    fn as_boolean(&self) -> Option<bool> {
+        match *self {
+            DefaultScalarValue::Boolean(ref b) => Some(*b),
+            _ => None,
+        }
+    }
 }
 
 impl<'a> From<&'a str> for DefaultScalarValue {
