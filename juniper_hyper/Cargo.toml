@@ -15,13 +15,13 @@ url = "1.7"
 juniper = { version = ">=0.9, 0.10.0" , default-features = false, path = "../juniper"}
 
 futures = "0.1"
-futures-cpupool = "0.1"
+tokio = "0.1.8"
 hyper = "0.12"
+tokio-threadpool = "0.1.7"
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
-tokio = "0.1.8"
-reqwest = "0.8"
+reqwest = "0.9"
 
 [dev-dependencies.juniper]
 version = "0.10.0"

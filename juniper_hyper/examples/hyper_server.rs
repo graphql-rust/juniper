@@ -1,12 +1,10 @@
 extern crate futures;
-extern crate futures_cpupool;
 extern crate hyper;
 extern crate juniper;
 extern crate juniper_hyper;
 extern crate pretty_env_logger;
 
 use futures::future;
-use futures_cpupool::Builder as CpuPoolBuilder;
 use hyper::rt::{self, Future};
 use hyper::service::service_fn;
 use hyper::Method;
@@ -21,22 +19,21 @@ fn main() {
 
     let addr = ([127, 0, 0, 1], 3000).into();
 
-    let pool = CpuPoolBuilder::new().create();
     let db = Arc::new(Database::new());
     let root_node = Arc::new(RootNode::new(db.clone(), EmptyMutation::<Database>::new()));
 
     let new_service = move || {
-        let pool = pool.clone();
         let root_node = root_node.clone();
         let ctx = db.clone();
-        service_fn(move |req| {
-            let pool = pool.clone();
+        service_fn(move |req| -> Box<Future<Item = _, Error = _> + Send> {
             let root_node = root_node.clone();
             let ctx = ctx.clone();
             match (req.method(), req.uri().path()) {
-                (&Method::GET, "/") => juniper_hyper::graphiql("/graphql"),
-                (&Method::GET, "/graphql") => juniper_hyper::graphql(pool, root_node, ctx, req),
-                (&Method::POST, "/graphql") => juniper_hyper::graphql(pool, root_node, ctx, req),
+                (&Method::GET, "/") => Box::new(juniper_hyper::graphiql("/graphql")),
+                (&Method::GET, "/graphql") => Box::new(juniper_hyper::graphql(root_node, ctx, req)),
+                (&Method::POST, "/graphql") => {
+                    Box::new(juniper_hyper::graphql(root_node, ctx, req))
+                }
                 _ => {
                     let mut response = Response::new(Body::empty());
                     *response.status_mut() = StatusCode::NOT_FOUND;
