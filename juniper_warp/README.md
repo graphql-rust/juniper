@@ -17,7 +17,7 @@ server with GraphQL handlers.
 ## Links
 
 * [Juniper][Juniper]
-* [API Reference][documetation]
+* [API Reference][documentation]
 * [warp][warp]
 
 ## License
