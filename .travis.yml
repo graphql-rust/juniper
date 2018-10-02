@@ -18,17 +18,8 @@ env:
     - CARGO_MAKE_RUN_CODECOV=true
 
 script:
-  - wget -O ~/.cargo/bin/cargo-make https://bintray.com/sagiegurari/cargo-make/download_file?file_path=cargo-make_v0.11.0u
-  - chmod 777 ~/.cargo/bin/cargo-make
+  - cargo install --debug cargo-make -f
   - cargo make workspace-ci-flow --no-workspace
-  # The tests for juniper_warp need to run separately because warp has higher
-  # minimum rust version requirements than juniper.
-  #
-  # There is a cargo-make issue about this problem: https://github.com/sagiegurari/cargo-make/issues/110
-  #
-  # We check for '1' because we the only channels we want to support are
-  # "stable", "beta" and "nightly" (that will be the values of $TRAVIS_RUST_VERSION)
-  - if ! [[ $TRAVIS_RUST_VERSION = *'1'* ]]; then cargo test --all --manifest-path=juniper_warp/Cargo.toml; fi
 
 before_deploy:
   - rm -rf target/package/
