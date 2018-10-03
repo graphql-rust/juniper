@@ -8,7 +8,7 @@ condition = { rust_version = { min = "1.29.0" }, env = { "TARGET" = "x86_64-pc-w
 condition = { rust_version = { min = "1.29.0" } }
 
 [tasks.test-verbose.windows]
-ondition = { rust_version = { min = "1.29.0" }, env = { "TARGET" = "x86_64-pc-windows-msvc" } }
+condition = { rust_version = { min = "1.29.0" }, env = { "TARGET" = "x86_64-pc-windows-msvc" } }
 
 [tasks.ci-coverage-flow]
 condition = { rust_version = { min = "1.29.0" } }
