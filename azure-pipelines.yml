@@ -1,0 +1,31 @@
+strategy:
+  matrix:
+    stable:
+      rustup_toolchain: stable
+    beta:
+      rustup_toolchain: beta
+    nightly:
+      rustup_install: nightly
+    minimum_supported_version_plus_one:
+      rustup_toolchain: 1.23.0
+    minimum_supported_version:
+      rustup_toolchain: 1.22.0
+
+jobs:
+- template: _build/job.yml 
+  parameters:
+    name: macOS
+    pool:
+      vmImage: 'macOS-10.13'
+
+- template: _build/job.yml
+  parameters:
+    name: Linux
+    pool:
+      vmImage: 'Ubuntu-16.04'
+
+- template: _build/job.yml
+  parameters:
+    name: Windows
+    pool:
+      vmImage: 'vs2017-win2016'
