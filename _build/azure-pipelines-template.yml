@@ -20,7 +20,7 @@ jobs:
     - script: |
         curl https://sh.rustup.rs -sSf | sh -s -- -y
         echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
-      displayName: Install Rustup
+      displayName: Install rustup
   - ${{ if eq(variables.Agent.OS, 'Windows_NT') }}:
     # Windows.
     - script: |
@@ -28,13 +28,13 @@ jobs:
         rustup-init.exe -y
         set PATH=%PATH%;%USERPROFILE%\.cargo\bin
         echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
-      displayName: Install Rustup
+      displayName: Install rustup
   # All platforms.
   - script: |
         rustup toolchain install ${{ parameters.rustup_toolchain }}
         rustc -Vv
         cargo -V
-    displayName: Install Rust
+    displayName: Install rust
   - script: cargo install -f cargo-make
     displayName: Install cargo-make
   - script: cargo make workspace-ci-flow --no-workspace
