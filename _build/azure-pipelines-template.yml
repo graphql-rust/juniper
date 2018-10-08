@@ -1,0 +1,41 @@
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  strategy:
+    matrix:
+      stable:
+        rustup_toolchain: stable
+      beta:
+        rustup_toolchain: beta
+      nightly:
+        rustup_toolchain: nightly
+      minimum_supported_version_plus_one:
+        rustup_toolchain: 1.23.0
+      minimum_supported_version:
+        rustup_toolchain: 1.22.0
+  steps:
+  - ${{ if ne(parameters.name, 'Windows') }}:
+    # Linux and macOS.
+    - script: |
+        curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $RUSTUP_TOOLCHAIN
+        echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+      displayName: Install rust
+  - ${{ if eq(parameters.name, 'Windows') }}:
+    # Windows.
+    - script: |
+        curl -sSf -o rustup-init.exe https://win.rustup.rs
+        rustup-init.exe -y --default-toolchain %RUSTUP_TOOLCHAIN%
+        set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+        echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
+      displayName: Install rust (windows)
+  # All platforms.
+  - script: |
+        rustc -Vv
+        cargo -V
+    displayName: Query rust and cargo versions
+  - script: cargo install -f cargo-make
+    displayName: Install cargo-make
+  - script: cargo make workspace-ci-flow --no-workspace
+    env: { CARGO_MAKE_RUN_CODECOV: true }
+    displayName: Build and run tests
