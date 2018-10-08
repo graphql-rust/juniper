@@ -15,13 +15,13 @@ jobs:
       minimum_supported_version:
         rustup_toolchain: 1.22.0
   steps:
-  - ${{ if ne(variables.Agent.OS, 'Windows_NT') }}:
+  - ${{ if ne(parameters.name, 'Windows') }}:
     # Linux and macOS.
     - script: |
         curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $RUSTUP_TOOLCHAIN
         echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
       displayName: Install rust
-  - ${{ if eq(variables.Agent.OS, 'Windows_NT') }}:
+  - ${{ if eq(parameters.name, 'Windows') }}:
     # Windows.
     - script: |
         curl -sSf -o rustup-init.exe https://win.rustup.rs
