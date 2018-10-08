@@ -18,24 +18,22 @@ jobs:
   - ${{ if ne(variables.Agent.OS, 'Windows_NT') }}:
     # Linux and macOS.
     - script: |
-        curl https://sh.rustup.rs -sSf | sh -s -- -y
+        curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $(rustup_toolchain)
         echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
-      displayName: Install rustup
+      displayName: Install rust
   - ${{ if eq(variables.Agent.OS, 'Windows_NT') }}:
     # Windows.
     - script: |
         curl -sSf -o rustup-init.exe https://win.rustup.rs
-        rustup-init.exe -y
+        rustup-init.exe -y --default-toolchain $(rustup_toolchain)
         set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-        $env:PATH+=";%USERPROFILE%\.cargo\bin"
         echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
-      displayName: Install rustup
+      displayName: Install rust
   # All platforms.
   - script: |
-        rustup toolchain install ${{ parameters.rustup_toolchain }}
         rustc -Vv
         cargo -V
-    displayName: Install rust
+    displayName: Query rust and cargo versions
   - script: cargo install -f cargo-make
     displayName: Install cargo-make
   - script: cargo make workspace-ci-flow --no-workspace
