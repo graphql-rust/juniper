@@ -9,7 +9,7 @@ jobs:
       beta:
         rustup_toolchain: beta
       nightly:
-        rustup_install: nightly
+        rustup_toolchain: nightly
       minimum_supported_version_plus_one:
         rustup_toolchain: 1.23.0
       minimum_supported_version:
