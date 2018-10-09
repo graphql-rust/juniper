@@ -15,7 +15,6 @@ categories = ["web-programming"]
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper" }
-appveyor = { repository = "graphql-rust/juniper" }
 
 [[bench]]
 name = "bench"

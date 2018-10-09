@@ -22,4 +22,3 @@ lazy_static = "1.0.0"
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper" }
-appveyor = { repository = "graphql-rust/juniper" }
