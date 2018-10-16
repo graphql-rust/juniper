@@ -25,7 +25,7 @@ pub struct GraphQLRequest {
 }
 
 impl GraphQLRequest {
-    fn operation_name(&self) -> Option<&str> {
+    pub fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_ref().map(|oper_name| &**oper_name)
     }
 
