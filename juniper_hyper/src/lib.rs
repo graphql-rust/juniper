@@ -16,7 +16,8 @@ use hyper::header::HeaderValue;
 use hyper::rt::Stream;
 use hyper::{header, Body, Method, Request, Response, StatusCode};
 use juniper::http::GraphQLRequest as JuniperGraphQLRequest;
-use juniper::{GraphQLType, InputValue, RootNode};
+use juniper::serde::Deserialize;
+use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
 use serde_json::error::Error as SerdeError;
 use std::error::Error;
 use std::fmt;
@@ -65,7 +66,7 @@ where
                         String::from_utf8(chunk.iter().cloned().collect::<Vec<u8>>())
                             .map_err(GraphQLRequestError::BodyUtf8)
                             .and_then(|input| {
-                                serde_json::from_str::<GraphQLRequest>(&input)
+                                serde_json::from_str::<GraphQLRequest<S>>(&input)
                                     .map_err(GraphQLRequestError::BodyJSONError)
                             })
                     })
@@ -95,7 +96,7 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-fn execute_request<CtxT, QueryT, MutationT, Err, S>(
+fn execute_request<CtxT, QueryT, MutationT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
     request: GraphQLRequest<S>,
@@ -200,7 +201,7 @@ where
     Batch(Vec<JuniperGraphQLRequest<S>>),
 }
 
-impl<S> GraphQLRequest<S> 
+impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -211,6 +212,7 @@ where
         context: Arc<CtxT>,
     ) -> impl Future<Item = (bool, hyper::Body), Error = tokio_threadpool::BlockingError> + 'a
     where
+        S: 'a,
         QueryT: GraphQLType<S, Context = CtxT> + 'a,
         MutationT: GraphQLType<S, Context = CtxT> + 'a,
     {
