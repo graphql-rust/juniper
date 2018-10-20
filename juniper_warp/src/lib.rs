@@ -275,13 +275,13 @@ fn build_response(
 /// # extern crate juniper_warp;
 /// #
 /// # use warp::Filter;
-/// # use juniper_warp::graphiql_handler;
+/// # use juniper_warp::graphiql_filter;
 /// #
 /// # fn main() {
-/// let graphiql_route = warp::path("graphiql").and(graphiql_handler("/graphql"));
+/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql"));
 /// # }
 /// ```
-pub fn graphiql_handler(
+pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,
 ) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
     warp::any()
@@ -311,7 +311,7 @@ mod tests {
     fn graphiql_endpoint_matches() {
         let filter = warp::get2()
             .and(warp::path("graphiql"))
-            .and(graphiql_handler("/graphql"));
+            .and(graphiql_filter("/graphql"));
         let result = request()
             .method("GET")
             .path("/graphiql")
@@ -326,7 +326,7 @@ mod tests {
         let filter = warp::get2()
             .and(warp::path("dogs-api"))
             .and(warp::path("graphiql"))
-            .and(graphiql_handler("/dogs-api/graphql"));
+            .and(graphiql_filter("/dogs-api/graphql"));
         let response = request()
             .method("GET")
             .path("/dogs-api/graphiql")
