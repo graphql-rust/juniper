@@ -87,246 +87,195 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
 */
 #[macro_export(local_inner_macros)]
 macro_rules! graphql_interface {
-    ( @as_item, $i:item) => { $i };
-    ( @as_expr, $e:expr) => { $e };
-
-    // field deprecated <reason> <name>(...) -> <type> as <description> { ... }
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
-        field deprecated $reason:tt
-              $name:ident
-              $args:tt -> $t:ty as $desc:tt
-              $body:block
-              $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
-                .description($desc)
-                .deprecated($reason),
-            $info,
-            $args));
-
-        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
-    };
-
-    // field deprecated <reason> <name>(...) -> <type> { ... }
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
-        field deprecated $reason:tt $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
-                .deprecated($reason),
-            $info,
-            $args));
-
-        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
-    };
-
-    // field <name>(...) -> <type> as <description> { ... }
-    (
-        @gather_meta,
-        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
-        field $name:ident $args:tt -> $t:ty as $desc:tt $body:block $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info)
-                .description($desc),
-            $info,
-            $args));
-
-        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
-    };
-
-    // field <name>(...) -> <type> { ... }
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
-        field $name:ident $args:tt -> $t:ty $body:block $( $rest:tt )*
-    ) => {
-        $acc.push(__graphql__args!(
-            @apply_args,
-            $reg,
-            $reg.field_convert::<$t, _, Self::Context>(
-                &$crate::to_camel_case(__graphql__stringify!($name)), $info),
-            $info,
-            $args));
-
-        graphql_interface!(@ gather_meta, ($reg, $acc, $info, $descr), $( $rest )*);
-    };
-
-    // description: <description>
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
-        description : $value:tt $( $rest:tt )*
-    ) => {
-        $descr = Some(graphql_interface!(@as_expr, $value));
-
-        graphql_interface!(@gather_meta, ($reg, $acc, $info, $descr), $( $rest )*)
-    };
-
-    // instance_resolvers: | <ctxtvar> | [...]
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $info:expr, $descr:expr),
-        instance_resolvers : | $ctxtvar:pat
-                             | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
-    ) => {
-        $(
-            let _ = $reg.get_type::<$srctype>(&());
-        )*
-
-            graphql_interface!(@gather_meta, ($reg, $acc, $info, $descr), $( $rest )*)
-    };
-
-    // instance_resolvers: | <ctxtvar> | [...]
-    (
-        @ concrete_type_name,
-        ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
-        instance_resolvers : | $ctxtvar:pat
-                             | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
-    ) => {
-        let $ctxtvar = &$ctxtarg;
-
-        $(
-            if ($resolver as Option<$srctype>).is_some() {
-                return (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned();
-            }
-        )*
-
-            __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
-    };
-
-    // instance_resolvers: | <ctxtvar> |
-    (
-        @ resolve_into_type,
-        ($outname:tt, $typenamearg:ident, $execarg:ident, $ctxttype:ty),
-        instance_resolvers : | $ctxtvar:pat
-                             | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
-    ) => {
-        let $ctxtvar = &$execarg.context();
-
-        $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name(&())).unwrap() {
-                return $execarg.resolve(&(), &$resolver);
-            }
-        )*
-
-            __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
-    };
-
-    ( @ $mfn:ident, $args:tt, $first:tt $($rest:tt)* ) => {
-        graphql_interface!(@ $mfn, $args, $($rest)*);
-    };
-
-    ( @ $mfn:ident, $buildargs:tt, ) => {};
 
     (
-        ( $($lifetime:tt),* ) $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        @generate,
+        meta = {
+            lifetimes = [$($lifetimes:tt,)*],
+            name = $name:ty,
+            ctx = $ctx:ty,
+            main_self = $main_self:ident,
+            outname = {$($outname:tt)*},
+            scalar = {$($scalar:tt)*},
+            $(description = $desciption:tt,)*
+            additional = {
+                resolver = {
+                    $(context = $resolver_ctx: ident,)*
+                    items = [
+                        $({
+                            src = $resolver_src: ty,
+                            resolver = $resolver_expr: expr,
+                        },)*
+                    ],
+                 },
+            },
+        },
+        items = [$({
+            name = $fn_name: ident,
+            body = $body: block,
+            return_ty = $return_ty: ty,
+            args = [$({
+                arg_name = $arg_name : ident,
+                arg_ty = $arg_ty: ty,
+                $(arg_description = $arg_description: expr,)*
+                $(arg_default = $arg_default: expr,)*
+            },)*],
+            $(decs = $fn_description: expr,)*
+            $(deprecated = $deprecated: expr,)*
+            $(executor_var = $executor: ident,)*
+        },)*],
     ) => {
-        graphql_interface!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
-            type Context = $ctxt;
-            type TypeInfo = ();
+        __juniper_impl_trait!(
+            impl<$($scalar)* $(, $lifetimes)* > GraphQLType for $name {
+                type Context = $ctx;
+                type TypeInfo = ();
 
-            fn name(_: &()) -> Option<&str> {
-                Some($outname)
-            }
-
-            #[allow(unused_assignments)]
-            #[allow(unused_mut)]
-            fn meta<'r>(
-                info: &(),
-                registry: &mut $crate::Registry<'r>
-            ) -> $crate::meta::MetaType<'r> {
-                let mut fields = Vec::new();
-                let mut description = None;
-                graphql_interface!(
-                    @ gather_meta, (registry, fields, info, description), $($items)*
-                );
-                let mut mt = registry.build_interface_type::<$name>(&(), &fields);
-
-                if let Some(description) = description {
-                    mt = mt.description(description);
+                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                    Some($($outname)*)
                 }
 
-                mt.into_meta()
-            }
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut $crate::Registry<'r, __juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, __juniper_insert_generic!($($scalar)+)>
+                where for<'__b> &'__b __juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                    __juniper_insert_generic!($($scalar)+): 'r
+                {
+                    // Ensure all child types are registered
+                    $(
+                        let _ = registry.get_type::<$resolver_src>(info);
+                    )*
+                    let fields = &[$(
+                        registry.field_convert::<$return_ty, _, Self::Context>(
+                            &$crate::to_camel_case(__graphql__stringify!($fn_name)),
+                            info
+                        )
+                            $(.description($fn_description))*
+                            $(.deprecated($deprecated))*
+                            $(.argument(
+                                __juniper_create_arg!(
+                                    registry = registry,
+                                    info = info,
+                                    arg_ty = $arg_ty,
+                                    arg_name = $arg_name,
+                                    $(description = $arg_description,)*
+                                    $(default = $arg_default,)*
+                                )
+                            ))*,
+                    )*];
+                    registry.build_interface_type::<$name>(
+                        info, fields
+                    )
+                        $(.description($desciption))*
+                        .into_meta()
+                }
 
-            #[allow(unused_variables)]
-            #[allow(unused_mut)]
-            fn resolve_field(
-                &$mainself,
-                info: &(),
-                field: &str,
-                args: &$crate::Arguments,
-                mut executor: &$crate::Executor<Self::Context>
-            ) -> $crate::ExecutionResult {
-                __graphql__build_field_matches!(
-                    ($outname, $mainself, field, args, executor),
-                    (),
-                    $($items)*);
-            }
 
-            fn concrete_type_name(&$mainself, context: &Self::Context, _info: &()) -> String {
-                graphql_interface!(
-                    @ concrete_type_name,
-                    ($outname, context, $ctxt),
-                    $($items)*);
-            }
+                #[allow(unused_variables)]
+                fn resolve_field(
+                    &$main_self,
+                    info: &Self::TypeInfo,
+                    field: &str,
+                    args: &$crate::Arguments<__juniper_insert_generic!($($scalar)+)>,
+                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)+)> {
+                    $(
+                        if field == &$crate::to_camel_case(__graphql__stringify!($fn_name)) {
+                            let result: $return_ty = (|| {
+                                $(
+                                    let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(stringify!($arg_name)))
+                                        .expect(__graphql__concat!(
+                                            "Argument ",
+                                            __graphql__stringify!($arg_name),
+                                            " missing - validation must have failed"
+                                        ));
+                                )*
+                                $(
+                                    let $executor = &executor;
+                                )*
+                                $body
+                            })();
 
-            fn resolve_into_type(
-                &$mainself,
-                _: &(),
-                type_name: &str,
-                _: Option<&[$crate::Selection]>,
-                executor: &$crate::Executor<Self::Context>,
-            )
-                -> $crate::ExecutionResult
-            {
-                graphql_interface!(
-                    @ resolve_into_type,
-                    ($outname, type_name, executor, $ctxt),
-                    $($items)*);
+                            return $crate::IntoResolvable::into(result, executor.context())
+                                .and_then(|res| {
+                                    match res {
+                                        Some((ctx, r)) => {
+                                            executor.replaced_context(ctx)
+                                                .resolve_with_ctx(&(), &r)
+                                        }
+                                        None => Ok($crate::Value::null())
+                                    }
+                                });
+                        }
+                    )*
+
+                    __graphql__panic!("Field {} not found on type {}", field, $($outname)*)
+                }
+
+                #[allow(unused_variables)]
+                fn concrete_type_name(&$main_self, context: &Self::Context, _info: &Self::TypeInfo) -> String {
+                    $(let $resolver_ctx = &context;)*
+
+                    $(
+                        if ($resolver_expr as ::std::option::Option<$resolver_src>).is_some() {
+                            return
+                                <$resolver_src as $crate::GraphQLType<_>>::name(&()).unwrap().to_owned();
+                        }
+                    )*
+
+                    __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                }
+
+                fn resolve_into_type(
+                    &$main_self,
+                    _info: &Self::TypeInfo,
+                    type_name: &str,
+                    _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)*)>]>,
+                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)*)>,
+                ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)*)> {
+                    $(let $resolver_ctx = &executor.context();)*
+
+                    $(
+                        if type_name == (<$resolver_src as $crate::GraphQLType<_>>::name(&())).unwrap() {
+                            return executor.resolve(&(), &$resolver_expr);
+                        }
+                    )*
+
+                     __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                }
             }
-        });
+        );
     };
 
     (
-        <$($lifetime:tt),*> $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        @parse,
+        meta = {$($meta:tt)*},
+        rest = $($rest:tt)*
     ) => {
-        graphql_interface!(
-            ($($lifetime),*) $name : $ctxt as $outname | &$mainself | { $( $items )* });
+        __juniper_parse_field_list!(
+            success_callback = graphql_interface,
+            additional_parser = {
+                callback = __juniper_parse_instance_resolver,
+                header = {},
+            },
+            meta = {$($meta)*},
+            items = [],
+            rest = $($rest)*
+        );
+    };
+
+    (@$($stuff:tt)*) => {
+        __graphql__compile_error!("Invalid syntax for `graphql_interface!`");
     };
 
     (
-        $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        $($rest:tt)*
     ) => {
-        graphql_interface!(() $name : $ctxt as $outname | &$mainself | { $( $items )* });
-    };
+        __juniper_parse_object_header!(
+            callback = graphql_interface,
+            rest = $($rest)*
+        );
+    }
 
-    (
-        $name:ty : $ctxt:ty | &$mainself:ident | {
-            $( $items:tt )*
-        }
-    ) => {
-        graphql_interface!(() $name : $ctxt as (__graphql__stringify!($name)) | &$mainself | { $( $items )* });
-    };
+
 }

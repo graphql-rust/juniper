@@ -19,164 +19,119 @@ resolvers.
 */
 #[macro_export(local_inner_macros)]
 macro_rules! graphql_union {
-    ( @as_item, $i:item) => { $i };
-    ( @as_expr, $e:expr) => { $e };
-    ( @as_path, $p:path) => { $p };
-    ( @as_type, $t:ty) => { $t };
-
-    // description: <description>
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
-        description : $value:tt $( $rest:tt )*
-    ) => {
-        $descr = Some(graphql_interface!(@as_expr, $value));
-
-        graphql_union!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*)
-    };
-
-    // Gathering meta for instance resolvers
-    // instance_resolvers: | <ctxtvar> | [...]
-    (
-        @ gather_meta,
-        ($reg:expr, $acc:expr, $descr:expr),
-        instance_resolvers: | $ctxtvar:pat
-                            | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
-    ) => {
-        $acc = __graphql__vec![
-            $(
-                $reg.get_type::<$srctype>(&())
-            ),*
-        ];
-
-        graphql_union!(@ gather_meta, ($reg, $acc, $descr), $( $rest )*)
-    };
-
-    // To generate the "concrete type name" resolver, syntax case:
-    // instance_resolvers: | <ctxtvar> | [...]
-    (
-        @ concrete_type_name,
-        ($outname:tt, $ctxtarg:ident, $ctxttype:ty),
-        instance_resolvers: | $ctxtvar:pat
-                            | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
-    ) => {
-        let $ctxtvar = &$ctxtarg;
-
-        $(
-            if let Some(_) = $resolver as Option<$srctype> {
-                return (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned();
-            }
-        )*
-
-            __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
-    };
-
-    // To generate the "resolve into type" resolver, syntax case:
-    // instance_resolvers: | <ctxtvar> | [...]
-    (
-        @ resolve_into_type,
-        ($outname:tt, $typenamearg:ident, $execarg:ident, $ctxttype:ty),
-        instance_resolvers: | $ctxtvar:pat
-                            | { $( $srctype:ty => $resolver:expr ),* $(,)* } $( $rest:tt )*
-    ) => {
-        let $ctxtvar = &$execarg.context();
-
-        $(
-            if $typenamearg == (<$srctype as $crate::GraphQLType>::name(&())).unwrap().to_owned() {
-                return $execarg.resolve(&(), &$resolver);
-            }
-        )*
-
-           __graphql__panic!("Concrete type not handled by instance resolvers on {}", $outname);
-    };
-
-    // eat commas
-    ( @ $mfn:ident, $args:tt, , $($rest:tt)* ) => {
-        graphql_union!(@ $mfn, $args, $($rest)*);
-    };
-
-    // eat one tt
-    ( @ $mfn:ident, $args:tt, $item:tt $($rest:tt)* ) => {
-        graphql_union!(@ $mfn, $args, $($rest)*);
-    };
-
-    // end case
-    ( @ $mfn:ident, $args:tt, ) => {};
 
     (
-        ( $($lifetime:tt),* ) $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        @generate,
+        meta = {
+            lifetimes = [$($lifetimes:tt,)*],
+            name = $name:ty,
+            ctx = $ctx:ty,
+            main_self = $main_self:ident,
+            outname = {$($outname:tt)*},
+            scalar = {$($scalar:tt)*},
+            $(description = $desciption:tt,)*
+            additional = {
+                resolver = {
+                    $(context = $resolver_ctx: ident,)*
+                    items = [
+                        $({
+                            src = $resolver_src: ty,
+                            resolver = $resolver_expr: expr,
+                        },)*
+                    ],
+                 },
+            },
+        },
+        items = [],
     ) => {
-        graphql_union!(@as_item, impl<$($lifetime)*> $crate::GraphQLType for $name {
-            type Context = $ctxt;
-            type TypeInfo = ();
+        __juniper_impl_trait!(
+            impl<$($scalar)* $(, $lifetimes)* > GraphQLType for $name {
+                type Context = $ctx;
+                type TypeInfo = ();
 
-            fn name(_: &()) -> Option<&str> {
-                Some($outname)
-            }
-
-            #[allow(unused_assignments)]
-            #[allow(unused_mut)]
-            fn meta<'r>(_: &(), registry: &mut $crate::Registry<'r>) -> $crate::meta::MetaType<'r> {
-                let mut types;
-                let mut description = None;
-                graphql_union!(@ gather_meta, (registry, types, description), $($items)*);
-                let mut mt = registry.build_union_type::<$name>(&(), &types);
-
-                if let Some(description) = description {
-                    mt = mt.description(description);
+                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                    Some($($outname)*)
                 }
 
-                mt.into_meta()
-            }
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut $crate::Registry<'r, __juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, __juniper_insert_generic!($($scalar)+)>
+                where for<'__b> &'__b __juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                    __juniper_insert_generic!($($scalar)+): 'r
+                {
+                    let types = &[
+                        $(
+                          registry.get_type::<$resolver_src>(&()),
+                        )*
+                    ];
+                    registry.build_union_type::<$name>(
+                        info, types
+                    )
+                        $(.description($desciption))*
+                        .into_meta()
+                }
 
-            fn concrete_type_name(&$mainself, context: &Self::Context, _: &()) -> String {
-                graphql_union!(
-                    @ concrete_type_name,
-                    ($outname, context, $ctxt),
-                    $($items)*);
-            }
+                #[allow(unused_variables)]
+                fn concrete_type_name(&$main_self, context: &Self::Context, _info: &Self::TypeInfo) -> String {
+                    $(let $resolver_ctx = &context;)*
 
-            fn resolve_into_type(
-                &$mainself,
-                _: &(),
-                type_name: &str,
-                _: Option<&[$crate::Selection]>,
-                executor: &$crate::Executor<Self::Context>,
-            )
-                -> $crate::ExecutionResult
-            {
-                graphql_union!(
-                    @ resolve_into_type,
-                    ($outname, type_name, executor, $ctxt),
-                    $($items)*);
+                    $(
+                        if ($resolver_expr as ::std::option::Option<$resolver_src>).is_some() {
+                            return
+                                <$resolver_src as $crate::GraphQLType<_>>::name(&()).unwrap().to_owned();
+                        }
+                    )*
+
+                    __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                }
+
+                fn resolve_into_type(
+                    &$main_self,
+                    _info: &Self::TypeInfo,
+                    type_name: &str,
+                    _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)*)>]>,
+                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)*)>,
+                ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)*)> {
+                    $(let $resolver_ctx = &executor.context();)*
+
+                    $(
+                        if type_name == (<$resolver_src as $crate::GraphQLType<_>>::name(&())).unwrap() {
+                            return executor.resolve(&(), &$resolver_expr);
+                        }
+                    )*
+
+                     __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                }
             }
-        });
+        );
     };
 
-    (
-        <$($lifetime:tt),*> $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
-    ) => {
-        graphql_union!(
-            ($($lifetime),*) $name : $ctxt as $outname | &$mainself | { $( $items )* });
-    };
 
     (
-        $name:ty : $ctxt:ty as $outname:tt | &$mainself:ident | {
-            $( $items:tt )*
-        }
+        @parse,
+        meta = {$($meta:tt)*},
+        rest = $($rest:tt)*
     ) => {
-        graphql_union!(() $name : $ctxt as $outname | &$mainself | { $( $items )* });
+        __juniper_parse_field_list!(
+            success_callback = graphql_union,
+            additional_parser = {
+                callback = __juniper_parse_instance_resolver,
+                header = {},
+            },
+            meta = {$($meta)*},
+            items = [],
+            rest = $($rest)*
+        );
+    };
+    (@$($stuff:tt)*) => {
+        __graphql__compile_error!("Invalid syntax for `graphql_union!`");
     };
 
-    (
-        $name:ty : $ctxt:ty | &$mainself:ident | {
-            $( $items:tt )*
-        }
-    ) => {
-        graphql_union!(() $name : $ctxt as (__graphql__stringify!($name)) | &$mainself | { $( $items )* });
+    ($($rest: tt)*) => {
+        __juniper_parse_object_header!(
+            callback = graphql_union,
+            rest = $($rest)*
+        );
     };
 }

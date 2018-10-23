@@ -2,12 +2,16 @@ use ast::InputValue;
 use schema::meta::{EnumMeta, InputObjectMeta, MetaType};
 use schema::model::{SchemaType, TypeType};
 use std::collections::HashSet;
+use value::ScalarValue;
 
-pub fn is_valid_literal_value(
-    schema: &SchemaType,
-    arg_type: &TypeType,
-    arg_value: &InputValue,
-) -> bool {
+pub fn is_valid_literal_value<S>(
+    schema: &SchemaType<S>,
+    arg_type: &TypeType<S>,
+    arg_value: &InputValue<S>,
+) -> bool
+where
+    S: ScalarValue,
+{
     match *arg_type {
         TypeType::NonNull(ref inner) => if arg_value.is_null() {
             false
@@ -23,7 +27,7 @@ pub fn is_valid_literal_value(
         TypeType::Concrete(t) => {
             // Even though InputValue::String can be parsed into an enum, they
             // are not valid as enum *literals* in a GraphQL query.
-            if let (&InputValue::String(_), Some(&MetaType::Enum(EnumMeta { .. }))) =
+            if let (&InputValue::Scalar(_), Some(&MetaType::Enum(EnumMeta { .. }))) =
                 (arg_value, arg_type.to_concrete())
             {
                 return false;
@@ -31,10 +35,7 @@ pub fn is_valid_literal_value(
 
             match *arg_value {
                 InputValue::Null | InputValue::Variable(_) => true,
-                ref v @ InputValue::Int(_)
-                | ref v @ InputValue::Float(_)
-                | ref v @ InputValue::String(_)
-                | ref v @ InputValue::Boolean(_)
+                ref v @ InputValue::Scalar(_)
                 | ref v @ InputValue::Enum(_) => if let Some(parse_fn) = t.input_value_parse_fn() {
                     parse_fn(v)
                 } else {

@@ -6,20 +6,32 @@ use ast::{
 };
 use parser::Spanning;
 use schema::meta::Argument;
+use validation::multi_visitor::MultiVisitorCons;
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 #[doc(hidden)]
-pub fn visit<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, d: &'a Document) {
+pub fn visit<'a, A, B, S>(
+    v: &mut MultiVisitorCons<A, B>,
+    ctx: &mut ValidatorContext<'a, S>,
+    d: &'a Document<S>,
+) where
+    S: ScalarValue,
+    MultiVisitorCons<A, B>: Visitor<'a, S>,
+{
     v.enter_document(ctx, d);
     visit_definitions(v, ctx, d);
     v.exit_document(ctx, d);
 }
 
-fn visit_definitions<'a, V: Visitor<'a>>(
+fn visit_definitions<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    d: &'a Vec<Definition>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    d: &'a Vec<Definition<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     for def in d {
         let def_type = match *def {
             Definition::Fragment(Spanning {
@@ -47,7 +59,8 @@ fn visit_definitions<'a, V: Visitor<'a>>(
                         ..
                     },
                 ..
-            }) => ctx.schema
+            }) => ctx
+                .schema
                 .concrete_mutation_type()
                 .map(|t| Type::NonNullNamed(Cow::Borrowed(t.name().unwrap()))),
         };
@@ -60,33 +73,33 @@ fn visit_definitions<'a, V: Visitor<'a>>(
     }
 }
 
-fn enter_definition<'a, V: Visitor<'a>>(
-    v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    def: &'a Definition,
-) {
+fn enter_definition<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, def: &'a Definition<S>)
+where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     match *def {
         Definition::Operation(ref op) => v.enter_operation_definition(ctx, op),
         Definition::Fragment(ref f) => v.enter_fragment_definition(ctx, f),
     }
 }
 
-fn exit_definition<'a, V: Visitor<'a>>(
-    v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    def: &'a Definition,
-) {
+fn exit_definition<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, def: &'a Definition<S>)
+where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     match *def {
         Definition::Operation(ref op) => v.exit_operation_definition(ctx, op),
         Definition::Fragment(ref f) => v.exit_fragment_definition(ctx, f),
     }
 }
 
-fn visit_definition<'a, V: Visitor<'a>>(
-    v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    def: &'a Definition,
-) {
+fn visit_definition<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, def: &'a Definition<S>)
+where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     match *def {
         Definition::Operation(ref op) => {
             visit_variable_definitions(v, ctx, &op.item.variable_definitions);
@@ -100,11 +113,14 @@ fn visit_definition<'a, V: Visitor<'a>>(
     }
 }
 
-fn visit_variable_definitions<'a, V: Visitor<'a>>(
+fn visit_variable_definitions<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    defs: &'a Option<Spanning<VariableDefinitions>>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    defs: &'a Option<Spanning<VariableDefinitions<S>>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     if let Some(ref defs) = *defs {
         for def in defs.item.iter() {
             let var_type = def.1.var_type.item.clone();
@@ -122,14 +138,18 @@ fn visit_variable_definitions<'a, V: Visitor<'a>>(
     }
 }
 
-fn visit_directives<'a, V: Visitor<'a>>(
+fn visit_directives<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    directives: &'a Option<Vec<Spanning<Directive>>>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    directives: &'a Option<Vec<Spanning<Directive<S>>>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     if let Some(ref directives) = *directives {
         for directive in directives {
-            let directive_arguments = ctx.schema
+            let directive_arguments = ctx
+                .schema
                 .directive_by_name(directive.item.name.item)
                 .map(|d| &d.arguments);
 
@@ -140,12 +160,15 @@ fn visit_directives<'a, V: Visitor<'a>>(
     }
 }
 
-fn visit_arguments<'a, V: Visitor<'a>>(
+fn visit_arguments<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    meta_args: &Option<&Vec<Argument<'a>>>,
-    arguments: &'a Option<Spanning<Arguments>>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    meta_args: &Option<&Vec<Argument<'a, S>>>,
+    arguments: &'a Option<Spanning<Arguments<S>>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     if let Some(ref arguments) = *arguments {
         for argument in arguments.item.iter() {
             let arg_type = meta_args
@@ -163,11 +186,14 @@ fn visit_arguments<'a, V: Visitor<'a>>(
     }
 }
 
-fn visit_selection_set<'a, V: Visitor<'a>>(
+fn visit_selection_set<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    selection_set: &'a Vec<Selection>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    selection_set: &'a Vec<Selection<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     ctx.with_pushed_parent_type(|ctx| {
         v.enter_selection_set(ctx, selection_set);
 
@@ -179,11 +205,14 @@ fn visit_selection_set<'a, V: Visitor<'a>>(
     });
 }
 
-fn visit_selection<'a, V: Visitor<'a>>(
+fn visit_selection<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    selection: &'a Selection,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    selection: &'a Selection<S>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     match *selection {
         Selection::Field(ref field) => visit_field(v, ctx, field),
         Selection::FragmentSpread(ref spread) => visit_fragment_spread(v, ctx, spread),
@@ -191,12 +220,16 @@ fn visit_selection<'a, V: Visitor<'a>>(
     }
 }
 
-fn visit_field<'a, V: Visitor<'a>>(
+fn visit_field<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    field: &'a Spanning<Field>,
-) {
-    let meta_field = ctx.parent_type()
+    ctx: &mut ValidatorContext<'a, S>,
+    field: &'a Spanning<Field<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
+    let meta_field = ctx
+        .parent_type()
         .and_then(|t| t.field_by_name(field.item.name.item));
 
     let field_type = meta_field.map(|f| &f.field_type);
@@ -216,11 +249,14 @@ fn visit_field<'a, V: Visitor<'a>>(
     });
 }
 
-fn visit_fragment_spread<'a, V: Visitor<'a>>(
+fn visit_fragment_spread<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    spread: &'a Spanning<FragmentSpread>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    spread: &'a Spanning<FragmentSpread<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     v.enter_fragment_spread(ctx, spread);
 
     visit_directives(v, ctx, &spread.item.directives);
@@ -228,12 +264,15 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(
     v.exit_fragment_spread(ctx, spread);
 }
 
-fn visit_inline_fragment<'a, V: Visitor<'a>>(
+fn visit_inline_fragment<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    fragment: &'a Spanning<InlineFragment>,
-) {
-    let mut visit_fn = move |ctx: &mut ValidatorContext<'a>| {
+    ctx: &mut ValidatorContext<'a, S>,
+    fragment: &'a Spanning<InlineFragment<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
+    let mut visit_fn = move |ctx: &mut ValidatorContext<'a, S>| {
         v.enter_inline_fragment(ctx, fragment);
 
         visit_directives(v, ctx, &fragment.item.directives);
@@ -255,23 +294,26 @@ fn visit_inline_fragment<'a, V: Visitor<'a>>(
     }
 }
 
-fn visit_input_value<'a, V: Visitor<'a>>(
+fn visit_input_value<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    input_value: &'a Spanning<InputValue>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    input_value: &'a Spanning<InputValue<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     enter_input_value(v, ctx, input_value);
 
     match input_value.item {
         InputValue::Object(ref fields) => for field in fields {
-            let inner_type = ctx.current_input_type_literal()
+            let inner_type = ctx
+                .current_input_type_literal()
                 .and_then(|t| match *t {
                     Type::NonNullNamed(ref name) | Type::Named(ref name) => {
                         ctx.schema.concrete_type_by_name(name)
                     }
                     _ => None,
-                })
-                .and_then(|ct| ct.input_field_by_name(&field.0.item))
+                }).and_then(|ct| ct.input_field_by_name(&field.0.item))
                 .map(|f| &f.arg_type);
 
             ctx.with_pushed_input_type(inner_type, |ctx| {
@@ -300,11 +342,14 @@ fn visit_input_value<'a, V: Visitor<'a>>(
     exit_input_value(v, ctx, input_value);
 }
 
-fn enter_input_value<'a, V: Visitor<'a>>(
+fn enter_input_value<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    input_value: &'a Spanning<InputValue>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    input_value: &'a Spanning<InputValue<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     use InputValue::*;
 
     let start = &input_value.start;
@@ -312,10 +357,7 @@ fn enter_input_value<'a, V: Visitor<'a>>(
 
     match input_value.item {
         Null => v.enter_null_value(ctx, Spanning::start_end(start, end, ())),
-        Int(ref i) => v.enter_int_value(ctx, Spanning::start_end(start, end, *i)),
-        Float(ref f) => v.enter_float_value(ctx, Spanning::start_end(start, end, *f)),
-        String(ref s) => v.enter_string_value(ctx, Spanning::start_end(start, end, s)),
-        Boolean(ref b) => v.enter_boolean_value(ctx, Spanning::start_end(start, end, *b)),
+        Scalar(ref s) => v.enter_scalar_value(ctx, Spanning::start_end(start, end, s)),
         Enum(ref s) => v.enter_enum_value(ctx, Spanning::start_end(start, end, s)),
         Variable(ref s) => v.enter_variable_value(ctx, Spanning::start_end(start, end, s)),
         List(ref l) => v.enter_list_value(ctx, Spanning::start_end(start, end, l)),
@@ -323,11 +365,14 @@ fn enter_input_value<'a, V: Visitor<'a>>(
     }
 }
 
-fn exit_input_value<'a, V: Visitor<'a>>(
+fn exit_input_value<'a, S, V>(
     v: &mut V,
-    ctx: &mut ValidatorContext<'a>,
-    input_value: &'a Spanning<InputValue>,
-) {
+    ctx: &mut ValidatorContext<'a, S>,
+    input_value: &'a Spanning<InputValue<S>>,
+) where
+    S: ScalarValue,
+    V: Visitor<'a, S>,
+{
     use InputValue::*;
 
     let start = &input_value.start;
@@ -335,10 +380,7 @@ fn exit_input_value<'a, V: Visitor<'a>>(
 
     match input_value.item {
         Null => v.exit_null_value(ctx, Spanning::start_end(start, end, ())),
-        Int(ref i) => v.exit_int_value(ctx, Spanning::start_end(start, end, *i)),
-        Float(ref f) => v.exit_float_value(ctx, Spanning::start_end(start, end, *f)),
-        String(ref s) => v.exit_string_value(ctx, Spanning::start_end(start, end, s)),
-        Boolean(ref b) => v.exit_boolean_value(ctx, Spanning::start_end(start, end, *b)),
+        Scalar(ref s) => v.exit_scalar_value(ctx, Spanning::start_end(start, end, s)),
         Enum(ref s) => v.exit_enum_value(ctx, Spanning::start_end(start, end, s)),
         Variable(ref s) => v.exit_variable_value(ctx, Spanning::start_end(start, end, s)),
         List(ref l) => v.exit_list_value(ctx, Spanning::start_end(start, end, l)),

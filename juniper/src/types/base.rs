@@ -2,7 +2,7 @@ use indexmap::IndexMap;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
-use value::{Object, Value};
+use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
 
 use executor::{ExecutionResult, Executor, Registry};
 use parser::Spanning;
@@ -12,9 +12,8 @@ use schema::meta::{Argument, MetaType};
 ///
 /// The GraphQL specification defines a number of type kinds - the meta type
 /// of a type.
-#[derive(GraphQLEnum, Clone, Eq, PartialEq, Debug)]
-// Note: _internal flag needed to make derive work in juniper crate itself.
-#[graphql(name = "__TypeKind", _internal)]
+#[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
+#[graphql(name = "__TypeKind")]
 pub enum TypeKind {
     /// ## Scalar types
     ///
@@ -68,16 +67,20 @@ pub enum TypeKind {
 }
 
 /// Field argument container
-pub struct Arguments<'a> {
-    args: Option<IndexMap<&'a str, InputValue>>,
+#[derive(Debug)]
+pub struct Arguments<'a, S = DefaultScalarValue> {
+    args: Option<IndexMap<&'a str, InputValue<S>>>,
 }
 
-impl<'a> Arguments<'a> {
+impl<'a, S> Arguments<'a, S>
+where
+    S: ScalarValue,
+{
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<IndexMap<&'a str, InputValue>>,
-        meta_args: &'a Option<Vec<Argument>>,
-    ) -> Arguments<'a> {
+        mut args: Option<IndexMap<&'a str, InputValue<S>>>,
+        meta_args: &'a Option<Vec<Argument<S>>>,
+    ) -> Self {
         if meta_args.is_some() && args.is_none() {
             args = Some(IndexMap::new());
         }
@@ -106,7 +109,8 @@ impl<'a> Arguments<'a> {
     /// succeeeds.
     pub fn get<T>(&self, key: &str) -> Option<T>
     where
-        T: FromInputValue,
+        T: FromInputValue<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         match self.args {
             Some(ref args) => match args.get(key) {
@@ -144,16 +148,20 @@ root:
 
 ```rust
 use juniper::{GraphQLType, Registry, FieldResult, Context,
-              Arguments, Executor, ExecutionResult};
+              Arguments, Executor, ExecutionResult,
+              DefaultScalarValue};
 use juniper::meta::MetaType;
 # use std::collections::HashMap;
 
+#[derive(Debug)]
 struct User { id: String, name: String, friend_ids: Vec<String>  }
+#[derive(Debug)]
 struct Database { users: HashMap<String, User> }
 
 impl Context for Database {}
 
-impl GraphQLType for User {
+impl GraphQLType for User
+{
     type Context = Database;
     type TypeInfo = ();
 
@@ -161,7 +169,9 @@ impl GraphQLType for User {
         Some("User")
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r>
+    where DefaultScalarValue: 'r,
+    {
         // First, we need to define all fields and their types on this type.
         //
         // If we need arguments, want to implement interfaces, or want to add
@@ -219,7 +229,11 @@ impl GraphQLType for User {
 ```
 
 */
-pub trait GraphQLType: Sized {
+pub trait GraphQLType<S = DefaultScalarValue>: Sized
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     /// The expected context type for this GraphQL type
     ///
     /// The context is threaded through query execution to all affected nodes,
@@ -242,7 +256,9 @@ pub trait GraphQLType: Sized {
     fn name(info: &Self::TypeInfo) -> Option<&str>;
 
     /// The meta type representing this GraphQL type.
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r>;
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r;
 
     /// Resolve the value of a single field on this type.
     ///
@@ -257,9 +273,9 @@ pub trait GraphQLType: Sized {
         &self,
         info: &Self::TypeInfo,
         field_name: &str,
-        arguments: &Arguments,
-        executor: &Executor<Self::Context>,
-    ) -> ExecutionResult {
+        arguments: &Arguments<S>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
         panic!("resolve_field must be implemented by object types");
     }
 
@@ -274,9 +290,9 @@ pub trait GraphQLType: Sized {
         &self,
         info: &Self::TypeInfo,
         type_name: &str,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<Self::Context>,
-    ) -> ExecutionResult {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
         if Self::name(info).unwrap() == type_name {
             Ok(self.resolve(info, selection_set, executor))
         } else {
@@ -305,9 +321,9 @@ pub trait GraphQLType: Sized {
     fn resolve(
         &self,
         info: &Self::TypeInfo,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<Self::Context>,
-    ) -> Value {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> Value<S> {
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
@@ -321,15 +337,17 @@ pub trait GraphQLType: Sized {
     }
 }
 
-pub(crate) fn resolve_selection_set_into<T, CtxT>(
+pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
-    selection_set: &[Selection],
-    executor: &Executor<CtxT>,
-    result: &mut Object,
+    selection_set: &[Selection<S>],
+    executor: &Executor<CtxT, S>,
+    result: &mut Object<S>,
 ) -> bool
 where
-    T: GraphQLType<Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT>,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let meta_type = executor
         .schema()
@@ -337,8 +355,7 @@ where
             T::name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
-        )
-        .expect("Type not found in schema");
+        ).expect("Type not found in schema");
 
     for selection in selection_set {
         match *selection {
@@ -356,7 +373,7 @@ where
                 if f.name.item == "__typename" {
                     result.add_field(
                         response_name,
-                        Value::string(instance.concrete_type_name(executor.context(), info)),
+                        Value::scalar(instance.concrete_type_name(executor.context(), info)),
                     );
                     continue;
                 }
@@ -387,8 +404,7 @@ where
                                 .iter()
                                 .map(|&(ref k, ref v)| {
                                     (k.item, v.item.clone().into_const(exec_vars))
-                                })
-                                .collect()
+                                }).collect()
                         }),
                         &meta_field.arguments,
                     ),
@@ -477,7 +493,11 @@ where
     true
 }
 
-fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) -> bool {
+fn is_excluded<S>(directives: &Option<Vec<Spanning<Directive<S>>>>, vars: &Variables<S>) -> bool
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     if let Some(ref directives) = *directives {
         for &Spanning {
             item: ref directive,
@@ -502,8 +522,10 @@ fn is_excluded(directives: &Option<Vec<Spanning<Directive>>>, vars: &Variables) 
     false
 }
 
-fn merge_key_into(result: &mut Object, response_name: &str, value: Value) {
-    if let Some(&mut (_, ref mut e)) = result.iter_mut().find(|&&mut (ref key, _)| key == response_name)
+fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
+    if let Some(&mut (_, ref mut e)) = result
+        .iter_mut()
+        .find(|&&mut (ref key, _)| key == response_name)
     {
         match *e {
             Value::Object(ref mut dest_obj) => {
@@ -533,7 +555,7 @@ fn merge_key_into(result: &mut Object, response_name: &str, value: Value) {
     result.add_field(response_name, value);
 }
 
-fn merge_maps(dest: &mut Object, src: Object) {
+fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
     for (key, value) in src {
         if dest.contains_field(&key) {
             merge_key_into(dest, &key, value);

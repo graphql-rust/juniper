@@ -1,14 +1,17 @@
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
+use std::fmt::Debug;
 use std::sync::Arc;
-use value::Value;
 
 use executor::{ExecutionResult, Executor, Registry};
 use schema::meta::MetaType;
 use types::base::{Arguments, GraphQLType};
+use value::{ScalarRefValue, ScalarValue, Value};
 
-impl<T, CtxT> GraphQLType for Box<T>
+impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
-    T: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    T: GraphQLType<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -17,7 +20,11 @@ where
         T::name(info)
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         T::meta(info, registry)
     }
 
@@ -25,9 +32,9 @@ where
         &self,
         info: &T::TypeInfo,
         name: &str,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
@@ -35,46 +42,53 @@ where
         &self,
         info: &T::TypeInfo,
         field: &str,
-        args: &Arguments,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        args: &Arguments<S>,
+        executor: &Executor<CtxT, S>,
+    ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
 
     fn resolve(
         &self,
         info: &T::TypeInfo,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> Value {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
 
-impl<T> FromInputValue for Box<T>
+impl<T, S> FromInputValue<S> for Box<T>
 where
-    T: FromInputValue,
+    S: ScalarValue,
+    T: FromInputValue<S>,
 {
-    fn from_input_value(v: &InputValue) -> Option<Box<T>> {
-        match <T as FromInputValue>::from_input_value(v) {
+    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Box<T>>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>
+    {
+        match <T as FromInputValue<S>>::from_input_value(v) {
             Some(v) => Some(Box::new(v)),
             None => None,
         }
     }
 }
 
-impl<T> ToInputValue for Box<T>
+impl<T, S> ToInputValue<S> for Box<T>
 where
-    T: ToInputValue,
+    S: Debug,
+    T: ToInputValue<S>,
 {
-    fn to_input_value(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue<S> {
         (**self).to_input_value()
     }
 }
 
-impl<'a, T, CtxT> GraphQLType for &'a T
+impl<'a, S, T, CtxT> GraphQLType<S> for &'a T
 where
-    T: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    T: GraphQLType<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -83,7 +97,11 @@ where
         T::name(info)
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         T::meta(info, registry)
     }
 
@@ -91,9 +109,9 @@ where
         &self,
         info: &T::TypeInfo,
         name: &str,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
@@ -101,43 +119,50 @@ where
         &self,
         info: &T::TypeInfo,
         field: &str,
-        args: &Arguments,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        args: &Arguments<S>,
+        executor: &Executor<CtxT, S>,
+    ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
 
     fn resolve(
         &self,
         info: &T::TypeInfo,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> Value {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
 
-impl<'a, T> ToInputValue for &'a T
+impl<'a, T, S> ToInputValue<S> for &'a T
 where
-    T: ToInputValue,
+    S: Debug,
+    T: ToInputValue<S>,
 {
-    fn to_input_value(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue<S> {
         (**self).to_input_value()
     }
 }
 
-impl<T, CtxT> GraphQLType for Arc<T>
+impl<S, T> GraphQLType<S> for Arc<T>
 where
-    T: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    T: GraphQLType<S>,
+    for<'b> &'b S: ScalarRefValue<'b>
 {
-    type Context = CtxT;
+    type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
     fn name(info: &T::TypeInfo) -> Option<&str> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         T::meta(info, registry)
     }
 
@@ -145,9 +170,9 @@ where
         &self,
         info: &T::TypeInfo,
         name: &str,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<T::Context, S>,
+    ) -> ExecutionResult<S> {
         (**self).resolve_into_type(info, name, selection_set, executor)
     }
 
@@ -155,27 +180,28 @@ where
         &self,
         info: &T::TypeInfo,
         field: &str,
-        args: &Arguments,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        args: &Arguments<S>,
+        executor: &Executor<T::Context, S>,
+    ) -> ExecutionResult<S> {
         (**self).resolve_field(info, field, args, executor)
     }
 
     fn resolve(
         &self,
         info: &T::TypeInfo,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> Value {
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<T::Context, S>,
+    ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
 
-impl<T> ToInputValue for Arc<T>
+impl<T, S> ToInputValue<S> for Arc<T>
 where
-    T: ToInputValue,
+    S: Debug,
+    T: ToInputValue<S>,
 {
-    fn to_input_value(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue<S> {
         (**self).to_input_value()
     }
 }

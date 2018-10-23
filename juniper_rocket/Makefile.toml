@@ -1,4 +1,3 @@
-
 [tasks.build-verbose]
 condition = { channels = ["nightly"] }
 

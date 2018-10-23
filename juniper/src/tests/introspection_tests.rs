@@ -29,13 +29,13 @@ fn test_query_type_name() {
                         vec![(
                             "queryType",
                             Value::object(
-                                vec![("name", Value::string("Query"))].into_iter().collect(),
+                                vec![("name", Value::scalar("Query"))].into_iter().collect(),
                             ),
                         )].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -59,9 +59,9 @@ fn test_specific_type_name() {
             Value::object(
                 vec![(
                     "__type",
-                    Value::object(vec![("name", Value::string("Droid"))].into_iter().collect()),
+                    Value::object(vec![("name", Value::scalar("Droid"))].into_iter().collect()),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -89,13 +89,13 @@ fn test_specific_object_type_name_and_kind() {
                     "__type",
                     Value::object(
                         vec![
-                            ("name", Value::string("Droid")),
-                            ("kind", Value::string("OBJECT")),
+                            ("name", Value::scalar("Droid")),
+                            ("kind", Value::scalar("OBJECT")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -123,13 +123,13 @@ fn test_specific_interface_type_name_and_kind() {
                     "__type",
                     Value::object(
                         vec![
-                            ("name", Value::string("Character")),
-                            ("kind", Value::string("INTERFACE")),
+                            ("name", Value::scalar("Character")),
+                            ("kind", Value::scalar("INTERFACE")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -157,16 +157,16 @@ fn test_documentation() {
                     "__type",
                     Value::object(
                         vec![
-                            ("name", Value::string("Droid")),
+                            ("name", Value::scalar("Droid")),
                             (
                                 "description",
-                                Value::string("A mechanical creature in the Star Wars universe."),
+                                Value::scalar("A mechanical creature in the Star Wars universe."),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -212,10 +212,9 @@ fn test_possible_types() {
                 .expect("possible type not an object")
                 .get_field_value("name")
                 .expect("'name' not present in type")
-                .as_string_value()
-                .expect("'name' not a string")
-        })
-        .collect::<HashSet<_>>();
+                .as_scalar_value::<String>()
+                .expect("'name' not a string") as &str
+        }).collect::<HashSet<_>>();
 
     assert_eq!(possible_types, vec!["Human", "Droid"].into_iter().collect());
 }

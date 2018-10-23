@@ -2,11 +2,12 @@
 
 pub mod graphiql;
 
-use serde::ser;
-use serde::ser::SerializeMap;
+use serde::de::Deserialize;
+use serde::ser::{self, Serialize, SerializeMap};
 
 use ast::InputValue;
 use executor::ExecutionError;
+use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -17,19 +18,26 @@ use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
 #[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
-pub struct GraphQLRequest {
+pub struct GraphQLRequest<S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
     query: String,
     #[serde(rename = "operationName")]
     operation_name: Option<String>,
-    variables: Option<InputValue>,
+    #[serde(bound(deserialize = "InputValue<S>: Deserialize<'de> + Serialize"))]
+    variables: Option<InputValue<S>>,
 }
 
-impl GraphQLRequest {
+impl<S> GraphQLRequest<S>
+where
+    S: ScalarValue,
+{
     fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_ref().map(|oper_name| &**oper_name)
     }
 
-    fn variables(&self) -> Variables {
+    fn variables(&self) -> Variables<S> {
         self.variables
             .as_ref()
             .and_then(|iv| {
@@ -38,16 +46,15 @@ impl GraphQLRequest {
                         .map(|(k, v)| (k.to_owned(), v.clone()))
                         .collect()
                 })
-            })
-            .unwrap_or_default()
+            }).unwrap_or_default()
     }
 
     /// Construct a new GraphQL request from parts
     pub fn new(
         query: String,
         operation_name: Option<String>,
-        variables: Option<InputValue>,
-    ) -> GraphQLRequest {
+        variables: Option<InputValue<S>>,
+    ) -> Self {
         GraphQLRequest {
             query: query,
             operation_name: operation_name,
@@ -61,12 +68,14 @@ impl GraphQLRequest {
     /// top level of this crate.
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
-        root_node: &RootNode<QueryT, MutationT>,
+        root_node: &'a RootNode<QueryT, MutationT, S>,
         context: &CtxT,
-    ) -> GraphQLResponse<'a>
+    ) -> GraphQLResponse<'a, S>
     where
-        QueryT: GraphQLType<Context = CtxT>,
-        MutationT: GraphQLType<Context = CtxT>,
+        S: ScalarValue,
+        QueryT: GraphQLType<S, Context = CtxT>,
+        MutationT: GraphQLType<S, Context = CtxT>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(::execute(
             &self.query,
@@ -83,11 +92,16 @@ impl GraphQLRequest {
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
-pub struct GraphQLResponse<'a>(Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>);
+pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
+    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+);
 
-impl<'a> GraphQLResponse<'a> {
+impl<'a, S> GraphQLResponse<'a, S>
+where
+    S: ScalarValue,
+{
     /// Constructs an error response outside of the normal execution flow
-    pub fn error(error: FieldError) -> Self {
+    pub fn error(error: FieldError<S>) -> Self {
         GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
     }
 
@@ -100,7 +114,13 @@ impl<'a> GraphQLResponse<'a> {
     }
 }
 
-impl<'a> ser::Serialize for GraphQLResponse<'a> {
+impl<'a, T> Serialize for GraphQLResponse<'a, T>
+where
+    T: Serialize + ScalarValue,
+    Value<T>: Serialize,
+    ExecutionError<T>: Serialize,
+    GraphQLError<'a>: Serialize,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,

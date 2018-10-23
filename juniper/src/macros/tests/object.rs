@@ -4,7 +4,7 @@ use ast::InputValue;
 use executor::{Context, FieldResult};
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Object, Value};
+use value::{DefaultScalarValue, Object, Value};
 
 /*
 
@@ -143,7 +143,7 @@ graphql_object!(<'a> Root: InnerContext as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&Object, &Vec<Value>) -> (),
+    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {
@@ -169,7 +169,7 @@ where
     }
     "#;
     let schema = RootNode::new(Root {}, EmptyMutation::<InnerContext>::new());
-    let vars = vec![("typeName".to_owned(), InputValue::string(type_name))]
+    let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();
 
@@ -202,7 +202,7 @@ fn introspect_custom_name() {
     run_type_info_query("ACustomNamedType", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("ACustomNamedType"))
+            Some(&Value::scalar("ACustomNamedType"))
         );
         assert_eq!(object.get_field_value("description"), Some(&Value::null()));
         assert_eq!(
@@ -222,7 +222,7 @@ fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("WithLifetime"))
+            Some(&Value::scalar("WithLifetime"))
         );
         assert_eq!(object.get_field_value("description"), Some(&Value::null()));
         assert_eq!(
@@ -242,7 +242,7 @@ fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("WithGenerics"))
+            Some(&Value::scalar("WithGenerics"))
         );
         assert_eq!(object.get_field_value("description"), Some(&Value::null()));
         assert_eq!(
@@ -262,20 +262,20 @@ fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("DescriptionFirst"))
+            Some(&Value::scalar("DescriptionFirst"))
         );
         assert_eq!(
             object.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
         assert_eq!(
             object.get_field_value("interfaces"),
             Some(&Value::list(vec![Value::object(
                 vec![
-                    ("name", Value::string("Interface")),
-                    ("kind", Value::string("INTERFACE")),
+                    ("name", Value::scalar("Interface")),
+                    ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -291,20 +291,20 @@ fn introspect_fields_first() {
     run_type_info_query("FieldsFirst", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("FieldsFirst"))
+            Some(&Value::scalar("FieldsFirst"))
         );
         assert_eq!(
             object.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
         assert_eq!(
             object.get_field_value("interfaces"),
             Some(&Value::list(vec![Value::object(
                 vec![
-                    ("name", Value::string("Interface")),
-                    ("kind", Value::string("INTERFACE")),
+                    ("name", Value::scalar("Interface")),
+                    ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -320,20 +320,20 @@ fn introspect_interfaces_first() {
     run_type_info_query("InterfacesFirst", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("InterfacesFirst"))
+            Some(&Value::scalar("InterfacesFirst"))
         );
         assert_eq!(
             object.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
         assert_eq!(
             object.get_field_value("interfaces"),
             Some(&Value::list(vec![Value::object(
                 vec![
-                    ("name", Value::string("Interface")),
-                    ("kind", Value::string("INTERFACE")),
+                    ("name", Value::scalar("Interface")),
+                    ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -349,20 +349,20 @@ fn introspect_commas_with_trailing() {
     run_type_info_query("CommasWithTrailing", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("CommasWithTrailing"))
+            Some(&Value::scalar("CommasWithTrailing"))
         );
         assert_eq!(
             object.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
         assert_eq!(
             object.get_field_value("interfaces"),
             Some(&Value::list(vec![Value::object(
                 vec![
-                    ("name", Value::string("Interface")),
-                    ("kind", Value::string("INTERFACE")),
+                    ("name", Value::scalar("Interface")),
+                    ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 
@@ -378,20 +378,20 @@ fn introspect_commas_on_meta() {
     run_type_info_query("CommasOnMeta", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
-            Some(&Value::string("CommasOnMeta"))
+            Some(&Value::scalar("CommasOnMeta"))
         );
         assert_eq!(
             object.get_field_value("description"),
-            Some(&Value::string("A description"))
+            Some(&Value::scalar("A description"))
         );
         assert_eq!(
             object.get_field_value("interfaces"),
             Some(&Value::list(vec![Value::object(
                 vec![
-                    ("name", Value::string("Interface")),
-                    ("kind", Value::string("INTERFACE")),
+                    ("name", Value::scalar("Interface")),
+                    ("kind", Value::scalar("INTERFACE")),
                 ].into_iter()
-                    .collect(),
+                .collect(),
             )]))
         );
 

@@ -1,7 +1,7 @@
+use ast::Selection;
 use executor::{ExecutionResult, Executor, Registry};
 use types::base::{Arguments, GraphQLType, TypeKind};
-use value::Value;
-use ast::Selection;
+use value::{ScalarRefValue, ScalarValue, Value};
 
 use schema::meta::{
     Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType, ObjectMeta,
@@ -9,10 +9,12 @@ use schema::meta::{
 };
 use schema::model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType};
 
-impl<'a, CtxT, QueryT, MutationT> GraphQLType for RootNode<'a, QueryT, MutationT>
+impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
 where
-    QueryT: GraphQLType<Context = CtxT>,
-    MutationT: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = QueryT::TypeInfo;
@@ -21,7 +23,11 @@ where
         QueryT::name(info)
     }
 
-    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         QueryT::meta(info, registry)
     }
 
@@ -29,9 +35,9 @@ where
         &self,
         info: &QueryT::TypeInfo,
         field: &str,
-        args: &Arguments,
-        executor: &Executor<CtxT>,
-    ) -> ExecutionResult {
+        args: &Arguments<S>,
+        executor: &Executor<CtxT, S>,
+    ) -> ExecutionResult<S> {
         match field {
             "__schema" => executor
                 .replaced_context(&self.schema)
@@ -49,11 +55,11 @@ where
     fn resolve(
         &self,
         info: &Self::TypeInfo,
-        selection_set: Option<&[Selection]>,
-        executor: &Executor<Self::Context>,
-    ) -> Value {
-        use value::Object;
+        selection_set: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> Value<S> {
         use types::base::resolve_selection_set_into;
+        use value::Object;
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
@@ -67,33 +73,37 @@ where
     }
 }
 
-graphql_object!(<'a> SchemaType<'a>: SchemaType<'a> as "__Schema" |&self| {
-    field types() -> Vec<TypeType> {
+graphql_object!(<'a> SchemaType<'a, S>: SchemaType<'a, S> as "__Schema"
+    where Scalar = <S: 'a> |&self|
+{
+    field types() -> Vec<TypeType<S>> {
         self.type_list()
             .into_iter()
             .filter(|t| t.to_concrete().map(|t| t.name() != Some("_EmptyMutation")).unwrap_or(false))
             .collect()
     }
 
-    field query_type() -> TypeType {
+    field query_type() -> TypeType<S> {
         self.query_type()
     }
 
-    field mutation_type() -> Option<TypeType> {
+    field mutation_type() -> Option<TypeType<S>> {
         self.mutation_type()
     }
 
     // Included for compatibility with the introspection query in GraphQL.js
-    field subscription_type() -> Option<TypeType> {
+    field subscription_type() -> Option<TypeType<S>> {
         None
     }
 
-    field directives() -> Vec<&DirectiveType> {
+    field directives() -> Vec<&DirectiveType<S>> {
         self.directive_list()
     }
 });
 
-graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
+graphql_object!(<'a> TypeType<'a, S>: SchemaType<'a, S> as "__Type"
+    where Scalar = <S: 'a> |&self|
+{
     field name() -> Option<&str> {
         match *self {
             TypeType::Concrete(t) => t.name(),
@@ -116,7 +126,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
         }
     }
 
-    field fields(include_deprecated = false: bool) -> Option<Vec<&Field>> {
+    field fields(include_deprecated = false: bool) -> Option<Vec<&Field<S>>> {
         match *self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. })) |
             TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) =>
@@ -129,14 +139,14 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
         }
     }
 
-    field of_type() -> Option<&Box<TypeType>> {
+    field of_type() -> Option<&Box<TypeType<S>>> {
         match *self {
             TypeType::Concrete(_) => None,
             TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),
         }
     }
 
-    field input_fields() -> Option<&Vec<Argument>> {
+    field input_fields() -> Option<&Vec<Argument<S>>> {
         match *self {
             TypeType::Concrete(&MetaType::InputObject(InputObjectMeta { ref input_fields, .. })) =>
                 Some(input_fields),
@@ -144,7 +154,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
         }
     }
 
-    field interfaces(&executor) -> Option<Vec<TypeType>> {
+    field interfaces(&executor) -> Option<Vec<TypeType<S>>> {
         match *self {
             TypeType::Concrete(&MetaType::Object(ObjectMeta { ref interface_names, .. })) => {
                 let schema = executor.context();
@@ -157,7 +167,7 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
         }
     }
 
-    field possible_types(&executor) -> Option<Vec<TypeType>> {
+    field possible_types(&executor) -> Option<Vec<TypeType<S>>> {
         let schema = executor.context();
         match *self {
             TypeType::Concrete(&MetaType::Union(UnionMeta { ref of_type_names, .. })) => {
@@ -198,7 +208,9 @@ graphql_object!(<'a> TypeType<'a>: SchemaType<'a> as "__Type" |&self| {
     }
 });
 
-graphql_object!(<'a> Field<'a>: SchemaType<'a> as "__Field" |&self| {
+graphql_object!(<'a> Field<'a, S>: SchemaType<'a, S> as "__Field"
+    where Scalar = <S: 'a> |&self|
+{
     field name() -> &String {
         &self.name
     }
@@ -207,11 +219,11 @@ graphql_object!(<'a> Field<'a>: SchemaType<'a> as "__Field" |&self| {
         &self.description
     }
 
-    field args() -> Vec<&Argument> {
+    field args() -> Vec<&Argument<S>> {
         self.arguments.as_ref().map_or_else(Vec::new, |v| v.iter().collect())
     }
 
-    field type(&executor) -> TypeType {
+    field type(&executor) -> TypeType<S> {
         executor.context().make_type(&self.field_type)
     }
 
@@ -224,7 +236,9 @@ graphql_object!(<'a> Field<'a>: SchemaType<'a> as "__Field" |&self| {
     }
 });
 
-graphql_object!(<'a> Argument<'a>: SchemaType<'a> as "__InputValue" |&self| {
+graphql_object!(<'a> Argument<'a, S>: SchemaType<'a, S> as "__InputValue"
+    where Scalar = <S: 'a> |&self|
+{
     field name() -> &String {
         &self.name
     }
@@ -233,7 +247,7 @@ graphql_object!(<'a> Argument<'a>: SchemaType<'a> as "__InputValue" |&self| {
         &self.description
     }
 
-    field type(&executor) -> TypeType {
+    field type(&executor) -> TypeType<S> {
         executor.context().make_type(&self.arg_type)
     }
 
@@ -242,7 +256,7 @@ graphql_object!(<'a> Argument<'a>: SchemaType<'a> as "__InputValue" |&self| {
     }
 });
 
-graphql_object!(EnumValue: () as "__EnumValue" |&self| {
+graphql_object!(EnumValue: () as "__EnumValue" where Scalar = <S> |&self| {
     field name() -> &String {
         &self.name
     }
@@ -260,8 +274,10 @@ graphql_object!(EnumValue: () as "__EnumValue" |&self| {
     }
 });
 
-graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| {
-    field name() -> &String {
+graphql_object!(<'a> DirectiveType<'a, S>: SchemaType<'a, S> as "__Directive"
+    where Scalar = <S: 'a> |&self|
+{
+   field name() -> &String {
         &self.name
     }
 
@@ -273,7 +289,7 @@ graphql_object!(<'a> DirectiveType<'a>: SchemaType<'a> as "__Directive" |&self| 
         &self.locations
     }
 
-    field args() -> &Vec<Argument> {
+    field args() -> &Vec<Argument<S>> {
         &self.arguments
     }
 

@@ -3,6 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::Operation;
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 pub struct UniqueOperationNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -14,11 +15,15 @@ pub fn factory<'a>() -> UniqueOperationNames<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
+impl<'a, S> Visitor<'a, S> for UniqueOperationNames<'a>
+where
+    S: ScalarValue,
+{
+
     fn enter_operation_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        op: &'a Spanning<Operation>,
+        ctx: &mut ValidatorContext<'a, S>,
+        op: &'a Spanning<Operation<S>>,
     ) {
         if let Some(ref op_name) = op.item.name {
             match self.names.entry(op_name.item) {
@@ -46,14 +51,15 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn no_operations() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-          fragment fragA on Type {
-            field
+          fragment fragA on Dog {
+            name
           }
         "#,
         );
@@ -61,7 +67,7 @@ mod tests {
 
     #[test]
     fn one_anon_operation() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -73,7 +79,7 @@ mod tests {
 
     #[test]
     fn one_named_operation() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
@@ -85,15 +91,19 @@ mod tests {
 
     #[test]
     fn multiple_operations() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
-            field
+            dog {
+              name
+            }
           }
 
           query Bar {
-            field
+            dog {
+              name
+            }
           }
         "#,
         );
@@ -101,7 +111,7 @@ mod tests {
 
     #[test]
     fn multiple_operations_of_different_types() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
@@ -117,14 +127,16 @@ mod tests {
 
     #[test]
     fn fragment_and_operation_named_the_same() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
-            ...Foo
+            dog {
+              ...Foo
+            }
           }
-          fragment Foo on Type {
-            field
+          fragment Foo on Dog {
+            name
           }
         "#,
         );
@@ -132,21 +144,25 @@ mod tests {
 
     #[test]
     fn multiple_operations_of_same_name() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
-            fieldA
+            dog {
+              name
+            }
           }
           query Foo {
-            fieldB
+            human {
+              name
+            }
           }
         "#,
             &[RuleError::new(
                 &error_message("Foo"),
                 &[
                     SourcePosition::new(11, 1, 10),
-                    SourcePosition::new(64, 4, 10),
+                    SourcePosition::new(96, 6, 10),
                 ],
             )],
         );
@@ -154,21 +170,23 @@ mod tests {
 
     #[test]
     fn multiple_ops_of_same_name_of_different_types() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
-            fieldA
+            dog {
+              name
+            }
           }
           mutation Foo {
-            fieldB
+            testInput
           }
         "#,
             &[RuleError::new(
                 &error_message("Foo"),
                 &[
                     SourcePosition::new(11, 1, 10),
-                    SourcePosition::new(64, 4, 10),
+                    SourcePosition::new(96, 6, 10),
                 ],
             )],
         );

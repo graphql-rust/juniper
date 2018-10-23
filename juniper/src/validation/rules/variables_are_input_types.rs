@@ -1,20 +1,25 @@
 use ast::VariableDefinition;
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
-pub struct UniqueVariableNames {}
+pub struct UniqueVariableNames;
 
 pub fn factory() -> UniqueVariableNames {
-    UniqueVariableNames {}
+    UniqueVariableNames
 }
 
-impl<'a> Visitor<'a> for UniqueVariableNames {
+impl<'a, S> Visitor<'a, S> for UniqueVariableNames
+where
+    S: ScalarValue,
+{
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition),
+        ctx: &mut ValidatorContext<'a, S>,
+        &(ref var_name, ref var_def): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
-        if let Some(var_type) = ctx.schema
+        if let Some(var_type) = ctx
+            .schema
             .concrete_type_by_name(var_def.var_type.item.innermost_name())
         {
             if !var_type.is_input() {
@@ -40,10 +45,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn input_types_are_valid() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
@@ -55,7 +61,7 @@ mod tests {
 
     #[test]
     fn output_types_are_invalid() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {

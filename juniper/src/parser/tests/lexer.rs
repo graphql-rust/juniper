@@ -1,4 +1,4 @@
-use parser::{Lexer, LexerError, SourcePosition, Spanning, Token};
+use parser::{Lexer, LexerError, SourcePosition, Spanning, Token, ScalarToken};
 
 fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
     let mut tokens = Vec::new();
@@ -148,7 +148,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(8, 0, 8),
-            Token::String("simple".to_owned())
+            Token::Scalar(ScalarToken::String("simple"))
         )
     );
 
@@ -157,7 +157,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::String(" white space ".to_owned())
+            Token::Scalar(ScalarToken::String(" white space "))
         )
     );
 
@@ -166,7 +166,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(10, 0, 10),
-            Token::String("quote \"".to_owned())
+            Token::Scalar(ScalarToken::String(r#"quote \""#))
         )
     );
 
@@ -175,7 +175,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(20, 0, 20),
-            Token::String("escaped \n\r\u{0008}\t\u{000c}".to_owned())
+            Token::Scalar(ScalarToken::String(r#"escaped \n\r\b\t\f"#))
         )
     );
 
@@ -184,7 +184,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::String("slashes \\ /".to_owned())
+            Token::Scalar(ScalarToken::String(r#"slashes \\ \/"#))
         )
     );
 
@@ -193,7 +193,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(34, 0, 34),
-            Token::String("unicode \u{1234}\u{5678}\u{90ab}\u{cdef}".to_owned())
+            Token::Scalar(ScalarToken::String(r#"unicode \u1234\u5678\u90AB\uCDEF"#))
         )
     );
 }
@@ -327,17 +327,16 @@ fn numbers() {
         source: &str,
         start: SourcePosition,
         end: SourcePosition,
-        expected: f64,
+        expected: &str,
     ) {
         let parsed = tokenize_single(source);
         assert_eq!(parsed.start, start);
         assert_eq!(parsed.end, end);
 
         match parsed.item {
-            Token::Float(actual) => {
-                let relative_error = ((expected - actual) / actual).abs();
+            Token::Scalar(ScalarToken::Float(actual)) => {
                 assert!(
-                    relative_error.abs() < 0.001,
+                    expected == actual,
                     "[expected] {} != {} [actual]",
                     expected,
                     actual
@@ -352,7 +351,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(1, 0, 1),
-            Token::Int(4)
+            Token::Scalar(ScalarToken::Int("4"))
         )
     );
 
@@ -360,14 +359,14 @@ fn numbers() {
         "4.123",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(5, 0, 5),
-        4.123,
+        "4.123",
     );
 
     assert_float_token_eq(
         "4.0",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(3, 0, 3),
-        4.0,
+        "4.0",
     );
 
     assert_eq!(
@@ -375,7 +374,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(2, 0, 2),
-            Token::Int(-4)
+            Token::Scalar(ScalarToken::Int("-4"))
         )
     );
 
@@ -384,7 +383,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(1, 0, 1),
-            Token::Int(9)
+            Token::Scalar(ScalarToken::Int("9"))
         )
     );
 
@@ -393,7 +392,7 @@ fn numbers() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(1, 0, 1),
-            Token::Int(0)
+            Token::Scalar(ScalarToken::Int("0"))
         )
     );
 
@@ -401,77 +400,77 @@ fn numbers() {
         "-4.123",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(6, 0, 6),
-        -4.123,
+        "-4.123",
     );
 
     assert_float_token_eq(
         "0.123",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(5, 0, 5),
-        0.123,
+        "0.123",
     );
 
     assert_float_token_eq(
         "123e4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(5, 0, 5),
-        123e4,
+        "123e4",
     );
 
     assert_float_token_eq(
         "123E4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(5, 0, 5),
-        123e4,
+        "123E4",
     );
 
     assert_float_token_eq(
         "123e-4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(6, 0, 6),
-        123e-4,
+        "123e-4",
     );
 
     assert_float_token_eq(
         "123e+4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(6, 0, 6),
-        123e4,
+        "123e+4",
     );
 
     assert_float_token_eq(
         "-1.123e4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(8, 0, 8),
-        -1.123e4,
+        "-1.123e4",
     );
 
     assert_float_token_eq(
         "-1.123E4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(8, 0, 8),
-        -1.123e4,
+        "-1.123E4",
     );
 
     assert_float_token_eq(
         "-1.123e-4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(9, 0, 9),
-        -1.123e-4,
+        "-1.123e-4",
     );
 
     assert_float_token_eq(
         "-1.123e+4",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(9, 0, 9),
-        -1.123e4,
+        "-1.123e+4",
     );
 
     assert_float_token_eq(
         "-1.123e45",
         SourcePosition::new(0, 0, 0),
         SourcePosition::new(9, 0, 9),
-        -1.123e45,
+        "-1.123e45",
     );
 }
 
@@ -653,19 +652,19 @@ fn punctuation_error() {
 fn display() {
     assert_eq!(format!("{}", Token::Name("identifier")), "identifier");
 
-    assert_eq!(format!("{}", Token::Int(123)), "123");
+    assert_eq!(format!("{}", Token::Scalar(ScalarToken::Int("123"))), "123");
 
-    assert_eq!(format!("{}", Token::Float(4.5)), "4.5");
+    assert_eq!(format!("{}", Token::Scalar(ScalarToken::Float("4.5"))), "4.5");
 
     assert_eq!(
-        format!("{}", Token::String("some string".to_owned())),
+        format!("{}", Token::Scalar(ScalarToken::String("some string"))),
         "\"some string\""
     );
 
     assert_eq!(
         format!(
             "{}",
-            Token::String("string with \\ escape and \" quote".to_owned())
+            Token::Scalar(ScalarToken::String("string with \\ escape and \" quote"))
         ),
         "\"string with \\\\ escape and \\\" quote\""
     );

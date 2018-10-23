@@ -1,13 +1,15 @@
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use schema::meta::MetaType;
-use value::Value;
+use value::{ScalarRefValue, ScalarValue, Value};
 
 use executor::{Executor, Registry};
 use types::base::GraphQLType;
 
-impl<T, CtxT> GraphQLType for Option<T>
+impl<S, T, CtxT> GraphQLType<S> for Option<T>
 where
-    T: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    T: GraphQLType<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -16,16 +18,20 @@ where
         None
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         registry.build_nullable_type::<T>(info).into_meta()
     }
 
     fn resolve(
         &self,
         info: &T::TypeInfo,
-        _: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> Value {
+        _: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> Value<S> {
         match *self {
             Some(ref obj) => executor.resolve_into_value(info, obj),
             None => Value::null(),
@@ -33,11 +39,15 @@ where
     }
 }
 
-impl<T> FromInputValue for Option<T>
+impl<S, T> FromInputValue<S> for Option<T>
 where
-    T: FromInputValue,
+    T: FromInputValue<S>,
+    S: ScalarValue,
 {
-    fn from_input_value(v: &InputValue) -> Option<Option<T>> {
+    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Option<T>>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         match v {
             &InputValue::Null => Some(None),
             v => match v.convert() {
@@ -48,11 +58,12 @@ where
     }
 }
 
-impl<T> ToInputValue for Option<T>
+impl<S, T> ToInputValue<S> for Option<T>
 where
-    T: ToInputValue,
+    T: ToInputValue<S>,
+    S: ScalarValue,
 {
-    fn to_input_value(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue<S> {
         match *self {
             Some(ref v) => v.to_input_value(),
             None => InputValue::null(),
@@ -60,9 +71,11 @@ where
     }
 }
 
-impl<T, CtxT> GraphQLType for Vec<T>
+impl<S, T, CtxT> GraphQLType<S> for Vec<T>
 where
-    T: GraphQLType<Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT>,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -71,25 +84,33 @@ where
         None
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         registry.build_list_type::<T>(info).into_meta()
     }
 
     fn resolve(
         &self,
         info: &T::TypeInfo,
-        _: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> Value {
+        _: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> Value<S> {
         resolve_into_list(executor, info, self.iter())
     }
 }
 
-impl<T> FromInputValue for Vec<T>
+impl<T, S> FromInputValue<S> for Vec<T>
 where
-    T: FromInputValue,
+    T: FromInputValue<S>,
+    S: ScalarValue,
 {
-    fn from_input_value(v: &InputValue) -> Option<Vec<T>> {
+    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Vec<T>>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         match *v {
             InputValue::List(ref ls) => {
                 let v: Vec<_> = ls.iter().filter_map(|i| i.item.convert()).collect();
@@ -109,18 +130,21 @@ where
     }
 }
 
-impl<T> ToInputValue for Vec<T>
+impl<T, S> ToInputValue<S> for Vec<T>
 where
-    T: ToInputValue,
+    T: ToInputValue<S>,
+    S: ScalarValue,
 {
-    fn to_input_value(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
     }
 }
 
-impl<'a, T, CtxT> GraphQLType for &'a [T]
+impl<'a, S, T, CtxT> GraphQLType<S> for &'a [T]
 where
-    T: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    T: GraphQLType<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -129,33 +153,44 @@ where
         None
     }
 
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
         registry.build_list_type::<T>(info).into_meta()
     }
 
     fn resolve(
         &self,
         info: &T::TypeInfo,
-        _: Option<&[Selection]>,
-        executor: &Executor<CtxT>,
-    ) -> Value {
+        _: Option<&[Selection<S>]>,
+        executor: &Executor<CtxT, S>,
+    ) -> Value<S> {
         resolve_into_list(executor, info, self.iter())
     }
 }
 
-impl<'a, T> ToInputValue for &'a [T]
+impl<'a, T, S> ToInputValue<S> for &'a [T]
 where
-    T: ToInputValue,
+    T: ToInputValue<S>,
+    S: ScalarValue,
 {
-    fn to_input_value(&self) -> InputValue {
+    fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
     }
 }
 
-fn resolve_into_list<T, I>(executor: &Executor<T::Context>, info: &T::TypeInfo, iter: I) -> Value
+fn resolve_into_list<S, T, I>(
+    executor: &Executor<T::Context, S>,
+    info: &T::TypeInfo,
+    iter: I,
+) -> Value<S>
 where
+    S: ScalarValue,
     I: Iterator<Item = T> + ExactSizeIterator,
-    T: GraphQLType,
+    T: GraphQLType<S>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let stop_on_null = executor
         .current_type()

@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object};
+use value::{Value, Object, DefaultScalarValue};
 
 /*
 
@@ -16,35 +16,32 @@ Syntax to validate:
 */
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum DefaultName {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(name = "ANamedEnum", _internal)]
+#[graphql(name = "ANamedEnum")]
 enum Named {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum NoTrailingComma {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(description = "A description of the enum itself", _internal)]
+#[graphql(description = "A description of the enum itself")]
 enum EnumDescription {
     Foo,
     Bar,
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum EnumValueDescription {
     #[graphql(description = "The FOO value")]
     Foo,
@@ -53,7 +50,6 @@ enum EnumValueDescription {
 }
 
 #[derive(GraphQLEnum)]
-#[graphql(_internal)]
 enum EnumDeprecation {
     #[graphql(deprecated = "Please don't use FOO any more")]
     Foo,
@@ -74,7 +70,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn((&Object, &Vec<Value>)) -> (),
+    F: Fn((&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>)) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
@@ -120,7 +116,7 @@ fn default_name_introspection() {
     "#;
 
     run_type_info_query(doc, |(type_info, values)| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("DefaultName")));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("DefaultName")));
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(values.len(), 2);
@@ -128,9 +124,9 @@ fn default_name_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("FOO")),
+                    ("name", Value::scalar("FOO")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -140,9 +136,9 @@ fn default_name_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("BAR")),
+                    ("name", Value::scalar("BAR")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -169,7 +165,7 @@ fn named_introspection() {
     "#;
 
     run_type_info_query(doc, |(type_info, values)| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::string("ANamedEnum")));
+        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("ANamedEnum")));
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
         assert_eq!(values.len(), 2);
@@ -177,9 +173,9 @@ fn named_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("FOO")),
+                    ("name", Value::scalar("FOO")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -189,9 +185,9 @@ fn named_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("BAR")),
+                    ("name", Value::scalar("BAR")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -220,7 +216,7 @@ fn no_trailing_comma_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::string("NoTrailingComma"))
+            Some(&Value::scalar("NoTrailingComma"))
         );
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
@@ -229,9 +225,9 @@ fn no_trailing_comma_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("FOO")),
+                    ("name", Value::scalar("FOO")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -241,9 +237,9 @@ fn no_trailing_comma_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("BAR")),
+                    ("name", Value::scalar("BAR")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -272,11 +268,11 @@ fn enum_description_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::string("EnumDescription"))
+            Some(&Value::scalar("EnumDescription"))
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&Value::string("A description of the enum itself"))
+            Some(&Value::scalar("A description of the enum itself"))
         );
 
         assert_eq!(values.len(), 2);
@@ -284,9 +280,9 @@ fn enum_description_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("FOO")),
+                    ("name", Value::scalar("FOO")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -296,9 +292,9 @@ fn enum_description_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("BAR")),
+                    ("name", Value::scalar("BAR")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -327,7 +323,7 @@ fn enum_value_description_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::string("EnumValueDescription"))
+            Some(&Value::scalar("EnumValueDescription"))
         );
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
@@ -336,9 +332,9 @@ fn enum_value_description_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("FOO")),
-                    ("description", Value::string("The FOO value")),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("name", Value::scalar("FOO")),
+                    ("description", Value::scalar("The FOO value")),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -348,9 +344,9 @@ fn enum_value_description_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("BAR")),
-                    ("description", Value::string("The BAR value")),
-                    ("isDeprecated", Value::boolean(false)),
+                    ("name", Value::scalar("BAR")),
+                    ("description", Value::scalar("The BAR value")),
+                    ("isDeprecated", Value::scalar(false)),
                     ("deprecationReason", Value::null()),
                 ].into_iter()
                     .collect(),
@@ -379,7 +375,7 @@ fn enum_deprecation_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::string("EnumDeprecation"))
+            Some(&Value::scalar("EnumDeprecation"))
         );
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 
@@ -388,12 +384,12 @@ fn enum_deprecation_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("FOO")),
+                    ("name", Value::scalar("FOO")),
                     ("description", Value::null()),
-                    ("isDeprecated", Value::boolean(true)),
+                    ("isDeprecated", Value::scalar(true)),
                     (
                         "deprecationReason",
-                        Value::string("Please don't use FOO any more"),
+                        Value::scalar("Please don't use FOO any more"),
                     ),
                 ].into_iter()
                     .collect(),
@@ -403,12 +399,12 @@ fn enum_deprecation_introspection() {
         assert!(
             values.contains(&Value::object(
                 vec![
-                    ("name", Value::string("BAR")),
-                    ("description", Value::string("The BAR value")),
-                    ("isDeprecated", Value::boolean(true)),
+                    ("name", Value::scalar("BAR")),
+                    ("description", Value::scalar("The BAR value")),
+                    ("isDeprecated", Value::scalar(true)),
                     (
                         "deprecationReason",
-                        Value::string("Please don't use BAR any more"),
+                        Value::scalar("Please don't use BAR any more"),
                     ),
                 ].into_iter()
                     .collect(),
@@ -437,7 +433,7 @@ fn enum_deprecation_no_values_introspection() {
     run_type_info_query(doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&Value::string("EnumDeprecation"))
+            Some(&Value::scalar("EnumDeprecation"))
         );
         assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
 

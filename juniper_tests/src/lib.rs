@@ -10,3 +10,4 @@ extern crate fnv;
 extern crate indexmap;
 
 mod codegen;
+mod custom_scalar;

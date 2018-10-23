@@ -3,6 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::{Operation, VariableDefinition};
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 pub struct UniqueVariableNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -14,19 +15,23 @@ pub fn factory<'a>() -> UniqueVariableNames<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
+impl<'a, S> Visitor<'a, S> for UniqueVariableNames<'a>
+where
+    S: ScalarValue,
+{
+
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Operation<S>>,
     ) {
         self.names = HashMap::new();
     }
 
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition),
+        ctx: &mut ValidatorContext<'a, S>,
+        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         match self.names.entry(var_name.item) {
             Entry::Occupied(e) => {
@@ -52,10 +57,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn unique_variable_names() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query A($x: Int, $y: String) { __typename }
@@ -66,7 +72,7 @@ mod tests {
 
     #[test]
     fn duplicate_variable_names() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query A($x: Int, $x: Int, $x: String) { __typename }

@@ -22,9 +22,9 @@ fn test_hero_name() {
             Value::object(
                 vec![(
                     "hero",
-                    Value::object(vec![("name", Value::string("R2-D2"))].into_iter().collect()),
+                    Value::object(vec![("name", Value::scalar("R2-D2"))].into_iter().collect()),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -51,13 +51,13 @@ fn test_hero_field_order() {
                     "hero",
                     Value::object(
                         vec![
-                            ("id", Value::string("2001")),
-                            ("name", Value::string("R2-D2")),
+                            ("id", Value::scalar("2001")),
+                            ("name", Value::scalar("R2-D2")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -78,13 +78,13 @@ fn test_hero_field_order() {
                     "hero",
                     Value::object(
                         vec![
-                            ("name", Value::string("R2-D2")),
-                            ("id", Value::string("2001")),
+                            ("name", Value::scalar("R2-D2")),
+                            ("id", Value::scalar("2001")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -114,33 +114,33 @@ fn test_hero_name_and_friends() {
                     "hero",
                     Value::object(
                         vec![
-                            ("id", Value::string("2001")),
-                            ("name", Value::string("R2-D2")),
+                            ("id", Value::scalar("2001")),
+                            ("name", Value::scalar("R2-D2")),
                             (
                                 "friends",
                                 Value::list(vec![
                                     Value::object(
-                                        vec![("name", Value::string("Luke Skywalker"))]
+                                        vec![("name", Value::scalar("Luke Skywalker"))]
                                             .into_iter()
                                             .collect(),
                                     ),
                                     Value::object(
-                                        vec![("name", Value::string("Han Solo"))]
+                                        vec![("name", Value::scalar("Han Solo"))]
                                             .into_iter()
                                             .collect(),
                                     ),
                                     Value::object(
-                                        vec![("name", Value::string("Leia Organa"))]
+                                        vec![("name", Value::scalar("Leia Organa"))]
                                             .into_iter()
                                             .collect(),
                                     ),
                                 ]),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -174,61 +174,61 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                     "hero",
                     Value::object(
                         vec![
-                            ("id", Value::string("2001")),
-                            ("name", Value::string("R2-D2")),
+                            ("id", Value::scalar("2001")),
+                            ("name", Value::scalar("R2-D2")),
                             (
                                 "friends",
                                 Value::list(vec![
                                     Value::object(
                                         vec![
-                                            ("name", Value::string("Luke Skywalker")),
+                                            ("name", Value::scalar("Luke Skywalker")),
                                             (
                                                 "appearsIn",
                                                 Value::list(vec![
-                                                    Value::string("NEW_HOPE"),
-                                                    Value::string("EMPIRE"),
-                                                    Value::string("JEDI"),
+                                                    Value::scalar("NEW_HOPE"),
+                                                    Value::scalar("EMPIRE"),
+                                                    Value::scalar("JEDI"),
                                                 ]),
                                             ),
                                             (
                                                 "friends",
                                                 Value::list(vec![
                                                     Value::object(
-                                                        vec![("name", Value::string("Han Solo"))]
+                                                        vec![("name", Value::scalar("Han Solo"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                     Value::object(
                                                         vec![(
                                                             "name",
-                                                            Value::string("Leia Organa"),
+                                                            Value::scalar("Leia Organa"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
-                                                        vec![("name", Value::string("C-3PO"))]
+                                                        vec![("name", Value::scalar("C-3PO"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                     Value::object(
-                                                        vec![("name", Value::string("R2-D2"))]
+                                                        vec![("name", Value::scalar("R2-D2"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                 ]),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                     Value::object(
                                         vec![
-                                            ("name", Value::string("Han Solo")),
+                                            ("name", Value::scalar("Han Solo")),
                                             (
                                                 "appearsIn",
                                                 Value::list(vec![
-                                                    Value::string("NEW_HOPE"),
-                                                    Value::string("EMPIRE"),
-                                                    Value::string("JEDI"),
+                                                    Value::scalar("NEW_HOPE"),
+                                                    Value::scalar("EMPIRE"),
+                                                    Value::scalar("JEDI"),
                                                 ]),
                                             ),
                                             (
@@ -237,36 +237,36 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                     Value::object(
                                                         vec![(
                                                             "name",
-                                                            Value::string("Luke Skywalker"),
+                                                            Value::scalar("Luke Skywalker"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
                                                         vec![(
                                                             "name",
-                                                            Value::string("Leia Organa"),
+                                                            Value::scalar("Leia Organa"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
-                                                        vec![("name", Value::string("R2-D2"))]
+                                                        vec![("name", Value::scalar("R2-D2"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                 ]),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                     Value::object(
                                         vec![
-                                            ("name", Value::string("Leia Organa")),
+                                            ("name", Value::scalar("Leia Organa")),
                                             (
                                                 "appearsIn",
                                                 Value::list(vec![
-                                                    Value::string("NEW_HOPE"),
-                                                    Value::string("EMPIRE"),
-                                                    Value::string("JEDI"),
+                                                    Value::scalar("NEW_HOPE"),
+                                                    Value::scalar("EMPIRE"),
+                                                    Value::scalar("JEDI"),
                                                 ]),
                                             ),
                                             (
@@ -275,37 +275,37 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
                                                     Value::object(
                                                         vec![(
                                                             "name",
-                                                            Value::string("Luke Skywalker"),
+                                                            Value::scalar("Luke Skywalker"),
                                                         )].into_iter()
-                                                            .collect(),
+                                                        .collect(),
                                                     ),
                                                     Value::object(
-                                                        vec![("name", Value::string("Han Solo"))]
+                                                        vec![("name", Value::scalar("Han Solo"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                     Value::object(
-                                                        vec![("name", Value::string("C-3PO"))]
+                                                        vec![("name", Value::scalar("C-3PO"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                     Value::object(
-                                                        vec![("name", Value::string("R2-D2"))]
+                                                        vec![("name", Value::scalar("R2-D2"))]
                                                             .into_iter()
                                                             .collect(),
                                                     ),
                                                 ]),
                                             ),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                 ]),
                             ),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -325,12 +325,12 @@ fn test_query_name() {
                 vec![(
                     "human",
                     Value::object(
-                        vec![("name", Value::string("Luke Skywalker"))]
+                        vec![("name", Value::scalar("Luke Skywalker"))]
                             .into_iter()
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -350,12 +350,12 @@ fn test_query_alias_single() {
                 vec![(
                     "luke",
                     Value::object(
-                        vec![("name", Value::string("Luke Skywalker"))]
+                        vec![("name", Value::scalar("Luke Skywalker"))]
                             .into_iter()
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -380,7 +380,7 @@ fn test_query_alias_multiple() {
                     (
                         "luke",
                         Value::object(
-                            vec![("name", Value::string("Luke Skywalker"))]
+                            vec![("name", Value::scalar("Luke Skywalker"))]
                                 .into_iter()
                                 .collect(),
                         ),
@@ -388,13 +388,13 @@ fn test_query_alias_multiple() {
                     (
                         "leia",
                         Value::object(
-                            vec![("name", Value::string("Leia Organa"))]
+                            vec![("name", Value::scalar("Leia Organa"))]
                                 .into_iter()
                                 .collect(),
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -425,24 +425,24 @@ fn test_query_alias_multiple_with_fragment() {
                         "luke",
                         Value::object(
                             vec![
-                                ("name", Value::string("Luke Skywalker")),
-                                ("homePlanet", Value::string("Tatooine")),
+                                ("name", Value::scalar("Luke Skywalker")),
+                                ("homePlanet", Value::scalar("Tatooine")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                     (
                         "leia",
                         Value::object(
                             vec![
-                                ("name", Value::string("Leia Organa")),
-                                ("homePlanet", Value::string("Alderaan")),
+                                ("name", Value::scalar("Leia Organa")),
+                                ("homePlanet", Value::scalar("Alderaan")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -455,7 +455,7 @@ fn test_query_name_variable() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let vars = vec![("someId".to_owned(), InputValue::string("1000"))]
+    let vars = vec![("someId".to_owned(), InputValue::scalar("1000"))]
         .into_iter()
         .collect();
 
@@ -466,12 +466,12 @@ fn test_query_name_variable() {
                 vec![(
                     "human",
                     Value::object(
-                        vec![("name", Value::string("Luke Skywalker"))]
+                        vec![("name", Value::scalar("Luke Skywalker"))]
                             .into_iter()
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -484,7 +484,7 @@ fn test_query_name_invalid_variable() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let vars = vec![("someId".to_owned(), InputValue::string("some invalid id"))]
+    let vars = vec![("someId".to_owned(), InputValue::scalar("some invalid id"))]
         .into_iter()
         .collect();
 
@@ -514,27 +514,27 @@ fn test_query_friends_names() {
                             "friends",
                             Value::list(vec![
                                 Value::object(
-                                    vec![("name", Value::string("Han Solo"))]
+                                    vec![("name", Value::scalar("Han Solo"))]
                                         .into_iter()
                                         .collect(),
                                 ),
                                 Value::object(
-                                    vec![("name", Value::string("Leia Organa"))]
+                                    vec![("name", Value::scalar("Leia Organa"))]
                                         .into_iter()
                                         .collect(),
                                 ),
                                 Value::object(
-                                    vec![("name", Value::string("C-3PO"))].into_iter().collect(),
+                                    vec![("name", Value::scalar("C-3PO"))].into_iter().collect(),
                                 ),
                                 Value::object(
-                                    vec![("name", Value::string("R2-D2"))].into_iter().collect(),
+                                    vec![("name", Value::scalar("R2-D2"))].into_iter().collect(),
                                 ),
                             ]),
                         )].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -566,14 +566,14 @@ fn test_query_inline_fragments_droid() {
                     "hero",
                     Value::object(
                         vec![
-                            ("name", Value::string("R2-D2")),
-                            ("__typename", Value::string("Droid")),
-                            ("primaryFunction", Value::string("Astromech")),
+                            ("name", Value::scalar("R2-D2")),
+                            ("__typename", Value::scalar("Droid")),
+                            ("primaryFunction", Value::scalar("Astromech")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -601,13 +601,13 @@ fn test_query_inline_fragments_human() {
                     "hero",
                     Value::object(
                         vec![
-                            ("name", Value::string("Luke Skywalker")),
-                            ("__typename", Value::string("Human")),
+                            ("name", Value::scalar("Luke Skywalker")),
+                            ("__typename", Value::scalar("Human")),
                         ].into_iter()
-                            .collect(),
+                        .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))
@@ -632,12 +632,12 @@ fn test_object_typename() {
                 vec![(
                     "human",
                     Value::object(
-                        vec![("__typename", Value::string("Human"))]
+                        vec![("__typename", Value::scalar("Human"))]
                             .into_iter()
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))

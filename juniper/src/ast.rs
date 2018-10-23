@@ -8,6 +8,7 @@ use indexmap::IndexMap;
 
 use executor::Variables;
 use parser::Spanning;
+use value::{ScalarRefValue, ScalarValue, DefaultScalarValue};
 
 /// A type literal in the syntax tree
 ///
@@ -35,56 +36,53 @@ pub enum Type<'a> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
-pub enum InputValue {
+pub enum InputValue<S = DefaultScalarValue> {
     Null,
-    Int(i32),
-    Float(f64),
-    String(String),
-    Boolean(bool),
+    Scalar(S),
     Enum(String),
     Variable(String),
-    List(Vec<Spanning<InputValue>>),
-    Object(Vec<(Spanning<String>, Spanning<InputValue>)>),
+    List(Vec<Spanning<InputValue<S>>>),
+    Object(Vec<(Spanning<String>, Spanning<InputValue<S>>)>),
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct VariableDefinition<'a> {
+pub struct VariableDefinition<'a, S> {
     pub var_type: Spanning<Type<'a>>,
-    pub default_value: Option<Spanning<InputValue>>,
+    pub default_value: Option<Spanning<InputValue<S>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Arguments<'a> {
-    pub items: Vec<(Spanning<&'a str>, Spanning<InputValue>)>,
+pub struct Arguments<'a, S> {
+    pub items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct VariableDefinitions<'a> {
-    pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a>)>,
+pub struct VariableDefinitions<'a, S> {
+    pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Field<'a> {
+pub struct Field<'a, S> {
     pub alias: Option<Spanning<&'a str>>,
     pub name: Spanning<&'a str>,
-    pub arguments: Option<Spanning<Arguments<'a>>>,
-    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
-    pub selection_set: Option<Vec<Selection<'a>>>,
+    pub arguments: Option<Spanning<Arguments<'a, S>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
+    pub selection_set: Option<Vec<Selection<'a, S>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct FragmentSpread<'a> {
+pub struct FragmentSpread<'a, S> {
     pub name: Spanning<&'a str>,
-    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct InlineFragment<'a> {
+pub struct InlineFragment<'a, S> {
     pub type_condition: Option<Spanning<&'a str>>,
-    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
-    pub selection_set: Vec<Selection<'a>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
+    pub selection_set: Vec<Selection<'a, S>>,
 }
 
 /// Entry in a GraphQL selection set
@@ -104,16 +102,16 @@ pub struct InlineFragment<'a> {
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 #[allow(missing_docs)]
-pub enum Selection<'a> {
-    Field(Spanning<Field<'a>>),
-    FragmentSpread(Spanning<FragmentSpread<'a>>),
-    InlineFragment(Spanning<InlineFragment<'a>>),
+pub enum Selection<'a, S = DefaultScalarValue> {
+    Field(Spanning<Field<'a, S>>),
+    FragmentSpread(Spanning<FragmentSpread<'a, S>>),
+    InlineFragment(Spanning<InlineFragment<'a, S>>),
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Directive<'a> {
+pub struct Directive<'a, S> {
     pub name: Spanning<&'a str>,
-    pub arguments: Option<Spanning<Arguments<'a>>>,
+    pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -123,29 +121,29 @@ pub enum OperationType {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Operation<'a> {
+pub struct Operation<'a, S> {
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
-    pub variable_definitions: Option<Spanning<VariableDefinitions<'a>>>,
-    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
-    pub selection_set: Vec<Selection<'a>>,
+    pub variable_definitions: Option<Spanning<VariableDefinitions<'a, S>>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
+    pub selection_set: Vec<Selection<'a, S>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Fragment<'a> {
+pub struct Fragment<'a, S> {
     pub name: Spanning<&'a str>,
     pub type_condition: Spanning<&'a str>,
-    pub directives: Option<Vec<Spanning<Directive<'a>>>>,
-    pub selection_set: Vec<Selection<'a>>,
+    pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
+    pub selection_set: Vec<Selection<'a, S>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum Definition<'a> {
-    Operation(Spanning<Operation<'a>>),
-    Fragment(Spanning<Fragment<'a>>),
+pub enum Definition<'a, S> {
+    Operation(Spanning<Operation<'a, S>>),
+    Fragment(Spanning<Fragment<'a, S>>),
 }
 
-pub type Document<'a> = Vec<Definition<'a>>;
+pub type Document<'a, S> = Vec<Definition<'a, S>>;
 
 /// Parse an unstructured input value into a Rust data type.
 ///
@@ -153,15 +151,17 @@ pub type Document<'a> = Vec<Definition<'a>>;
 /// automatically by the convenience macro `graphql_scalar!` or by deriving GraphQLEnum.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
-pub trait FromInputValue: Sized {
+pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
-    fn from_input_value(v: &InputValue) -> Option<Self>;
+    fn from_input_value(v: &InputValue<S>) -> Option<Self>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>;
 }
 
 /// Losslessly clones a Rust data type into an InputValue.
-pub trait ToInputValue: Sized {
+pub trait ToInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
-    fn to_input_value(&self) -> InputValue;
+    fn to_input_value(&self) -> InputValue<S>;
 }
 
 impl<'a> Type<'a> {
@@ -205,39 +205,54 @@ impl<'a> fmt::Display for Type<'a> {
     }
 }
 
-impl InputValue {
+impl<S> InputValue<S>
+where
+    S: ScalarValue,
+{
     /// Construct a null value.
-    pub fn null() -> InputValue {
+    pub fn null() -> Self {
         InputValue::Null
     }
 
     /// Construct an integer value.
-    pub fn int(i: i32) -> InputValue {
-        InputValue::Int(i)
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
+    pub fn int(i: i32) -> Self {
+        Self::scalar(i)
     }
 
     /// Construct a floating point value.
-    pub fn float(f: f64) -> InputValue {
-        InputValue::Float(f)
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
+    pub fn float(f: f64) -> Self {
+        Self::scalar(f)
     }
 
     /// Construct a boolean value.
-    pub fn boolean(b: bool) -> InputValue {
-        InputValue::Boolean(b)
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
+    pub fn boolean(b: bool) -> Self {
+        Self::scalar(b)
     }
 
     /// Construct a string value.
-    pub fn string<T: AsRef<str>>(s: T) -> InputValue {
-        InputValue::String(s.as_ref().to_owned())
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::scalar` instead")]
+    pub fn string<T: AsRef<str>>(s: T) -> Self {
+        InputValue::scalar(s.as_ref().to_owned())
+    }
+
+    /// Construct a scalar value
+    pub fn scalar<T>(v: T) -> Self
+    where
+        T: Into<S>,
+    {
+        InputValue::Scalar(v.into())
     }
 
     /// Construct an enum value.
-    pub fn enum_value<T: AsRef<str>>(s: T) -> InputValue {
+    pub fn enum_value<T: AsRef<str>>(s: T) -> Self {
         InputValue::Enum(s.as_ref().to_owned())
     }
 
     /// Construct a variable value.
-    pub fn variable<T: AsRef<str>>(v: T) -> InputValue {
+    pub fn variable<T: AsRef<str>>(v: T) -> Self {
         InputValue::Variable(v.as_ref().to_owned())
     }
 
@@ -246,12 +261,12 @@ impl InputValue {
     /// Convenience function to make each `InputValue` in the input vector
     /// not contain any location information. Can be used from `ToInputValue`
     /// implementations, where no source code position information is available.
-    pub fn list(l: Vec<InputValue>) -> InputValue {
+    pub fn list(l: Vec<Self>) -> Self {
         InputValue::List(l.into_iter().map(Spanning::unlocated).collect())
     }
 
     /// Construct a located list.
-    pub fn parsed_list(l: Vec<Spanning<InputValue>>) -> InputValue {
+    pub fn parsed_list(l: Vec<Spanning<Self>>) -> Self {
         InputValue::List(l)
     }
 
@@ -259,7 +274,7 @@ impl InputValue {
     ///
     /// Similar to `InputValue::list`, it makes each key and value in the given
     /// hash map not contain any location information.
-    pub fn object<K>(o: IndexMap<K, InputValue>) -> InputValue
+    pub fn object<K>(o: IndexMap<K, Self>) -> Self
     where
         K: AsRef<str> + Eq + Hash,
     {
@@ -270,18 +285,17 @@ impl InputValue {
                         Spanning::unlocated(k.as_ref().to_owned()),
                         Spanning::unlocated(v),
                     )
-                })
-                .collect(),
+                }).collect(),
         )
     }
 
     /// Construct a located object.
-    pub fn parsed_object(o: Vec<(Spanning<String>, Spanning<InputValue>)>) -> InputValue {
+    pub fn parsed_object(o: Vec<(Spanning<String>, Spanning<Self>)>) -> Self {
         InputValue::Object(o)
     }
 
     /// Resolve all variables to their values.
-    pub fn into_const(self, vars: &Variables) -> InputValue {
+    pub fn into_const(self, vars: &Variables<S>) -> Self {
         match self {
             InputValue::Variable(v) => vars.get(&v).map_or_else(InputValue::null, Clone::clone),
             InputValue::List(l) => InputValue::List(
@@ -301,9 +315,10 @@ impl InputValue {
     /// Shorthand form of invoking `FromInputValue::from()`.
     pub fn convert<T>(&self) -> Option<T>
     where
-        T: FromInputValue,
+        T: FromInputValue<S>,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
-        <T as FromInputValue>::from_input_value(self)
+        <T as FromInputValue<S>>::from_input_value(self)
     }
 
     /// Does the value represent null?
@@ -331,34 +346,63 @@ impl InputValue {
     }
 
     /// View the underlying int value, if present.
-    pub fn as_int_value(&self) -> Option<i32> {
-        match *self {
-            InputValue::Int(i) => Some(i),
-            _ => None,
-        }
+    #[deprecated(
+        since = "0.11.0",
+        note = "Use `InputValue::as_scalar_value` instead"
+    )]
+    pub fn as_int_value<'a>(&'a self) -> Option<i32>
+    where
+        &'a S: Into<Option<&'a i32>>,
+    {
+        self.as_scalar_value().map(|i| *i)
     }
 
     /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64> {
+    #[deprecated(
+        since = "0.11.0",
+        note = "Use `InputValue::as_scalar_value` instead"
+    )]
+    pub fn as_float_value<'a>(&'a self) -> Option<f64>
+    where
+        &'a S: Into<Option<&'a f64>>,
+    {
+        self.as_scalar_value().map(|f| *f)
+    }
+
+    /// View the underlying string value, if present.
+    #[deprecated(
+        since = "0.11.0",
+        note = "Use `InputValue::as_scalar_value` instead"
+    )]
+    pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
+    where
+        &'a S: Into<Option<&'a String>>,
+    {
+        self.as_scalar_value().map(|s| s as &str)
+    }
+
+    /// View the underlying scalar value, if present.
+    pub fn as_scalar(&self) -> Option<&S> {
         match *self {
-            InputValue::Float(f) => Some(f),
+            InputValue::Scalar(ref s) => Some(s),
             _ => None,
         }
     }
 
-    /// View the underlying string value, if present.
-    pub fn as_string_value(&self) -> Option<&str> {
-        match *self {
-            InputValue::String(ref s) => Some(s),
-            _ => None,
-        }
+    /// View the underlying scalar value, if present.
+    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
+    where
+        T: 'a,
+        &'a S: Into<Option<&'a T>>,
+    {
+        self.as_scalar().and_then(Into::into)
     }
 
     /// Convert the input value to an unlocated object value.
     ///
     /// This constructs a new IndexMap that contain references to the keys
     /// and values in `self`.
-    pub fn to_object_value(&self) -> Option<IndexMap<&str, &InputValue>> {
+    pub fn to_object_value<'a>(&'a self) -> Option<IndexMap<&'a str, &'a Self>> {
         match *self {
             InputValue::Object(ref o) => Some(
                 o.iter()
@@ -373,7 +417,7 @@ impl InputValue {
     ///
     /// This constructs a new vector that contain references to the values
     /// in `self`.
-    pub fn to_list_value(&self) -> Option<Vec<&InputValue>> {
+    pub fn to_list_value(&self) -> Option<Vec<&Self>> {
         match *self {
             InputValue::List(ref l) => Some(l.iter().map(|s| &s.item).collect()),
             _ => None,
@@ -384,10 +428,12 @@ impl InputValue {
     pub fn referenced_variables(&self) -> Vec<&str> {
         match *self {
             InputValue::Variable(ref name) => vec![name],
-            InputValue::List(ref l) => l.iter()
+            InputValue::List(ref l) => l
+                .iter()
                 .flat_map(|v| v.item.referenced_variables())
                 .collect(),
-            InputValue::Object(ref obj) => obj.iter()
+            InputValue::Object(ref obj) => obj
+                .iter()
                 .flat_map(|&(_, ref v)| v.item.referenced_variables())
                 .collect(),
             _ => vec![],
@@ -395,18 +441,15 @@ impl InputValue {
     }
 
     /// Compare equality with another `InputValue` ignoring any source position information.
-    pub fn unlocated_eq(&self, other: &InputValue) -> bool {
+    pub fn unlocated_eq(&self, other: &Self) -> bool {
         use InputValue::*;
 
         match (self, other) {
             (&Null, &Null) => true,
-            (&Int(i1), &Int(i2)) => i1 == i2,
-            (&Float(f1), &Float(f2)) => f1 == f2,
-            (&String(ref s1), &String(ref s2))
-            | (&Enum(ref s1), &Enum(ref s2))
-            | (&Variable(ref s1), &Variable(ref s2)) => s1 == s2,
-            (&Boolean(b1), &Boolean(b2)) => b1 == b2,
-            (&List(ref l1), &List(ref l2)) => l1.iter()
+            (&Scalar(ref s1), &Scalar(ref s2)) => s1 == s2,
+            (&Enum(ref s1), &Enum(ref s2)) | (&Variable(ref s1), &Variable(ref s2)) => s1 == s2,
+            (&List(ref l1), &List(ref l2)) => l1
+                .iter()
                 .zip(l2.iter())
                 .all(|(v1, v2)| v1.item.unlocated_eq(&v2.item)),
             (&Object(ref o1), &Object(ref o2)) => {
@@ -421,14 +464,16 @@ impl InputValue {
     }
 }
 
-impl fmt::Display for InputValue {
+impl<S> fmt::Display for InputValue<S>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             InputValue::Null => write!(f, "null"),
-            InputValue::Int(v) => write!(f, "{}", v),
-            InputValue::Float(v) => write!(f, "{}", v),
-            InputValue::String(ref v) => write!(f, "\"{}\"", v),
-            InputValue::Boolean(v) => write!(f, "{}", v),
+            InputValue::Scalar(ref s) if s.is_type::<String>() => write!(f, "\"{}\"", s),
+            InputValue::Scalar(ref s) => write!(f, "{}", s),
             InputValue::Enum(ref v) => write!(f, "{}", v),
             InputValue::Variable(ref v) => write!(f, "${}", v),
             InputValue::List(ref v) => {
@@ -460,16 +505,16 @@ impl fmt::Display for InputValue {
     }
 }
 
-impl<'a> Arguments<'a> {
-    pub fn into_iter(self) -> vec::IntoIter<(Spanning<&'a str>, Spanning<InputValue>)> {
+impl<'a, S> Arguments<'a, S> {
+    pub fn into_iter(self) -> vec::IntoIter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.into_iter()
     }
 
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue>)> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.iter()
     }
 
-    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue>)> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.iter_mut()
     }
 
@@ -477,7 +522,7 @@ impl<'a> Arguments<'a> {
         self.items.len()
     }
 
-    pub fn get(&self, key: &str) -> Option<&Spanning<InputValue>> {
+    pub fn get(&self, key: &str) -> Option<&Spanning<InputValue<S>>> {
         self.items
             .iter()
             .filter(|&&(ref k, _)| k.item == key)
@@ -486,8 +531,8 @@ impl<'a> Arguments<'a> {
     }
 }
 
-impl<'a> VariableDefinitions<'a> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition)> {
+impl<'a, S> VariableDefinitions<'a, S> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<S>)> {
         self.items.iter()
     }
 }
@@ -499,42 +544,42 @@ mod tests {
 
     #[test]
     fn test_input_value_fmt() {
-        let value = InputValue::null();
+        let value: InputValue = InputValue::null();
         assert_eq!(format!("{}", value), "null");
 
-        let value = InputValue::int(123);
+        let value: InputValue = InputValue::scalar(123);
         assert_eq!(format!("{}", value), "123");
 
-        let value = InputValue::float(12.3);
+        let value: InputValue = InputValue::scalar(12.3);
         assert_eq!(format!("{}", value), "12.3");
 
-        let value = InputValue::string("FOO".to_owned());
+        let value: InputValue = InputValue::scalar("FOO".to_owned());
         assert_eq!(format!("{}", value), "\"FOO\"");
 
-        let value = InputValue::boolean(true);
+        let value: InputValue = InputValue::scalar(true);
         assert_eq!(format!("{}", value), "true");
 
-        let value = InputValue::enum_value("BAR".to_owned());
+        let value: InputValue = InputValue::enum_value("BAR".to_owned());
         assert_eq!(format!("{}", value), "BAR");
 
-        let value = InputValue::variable("baz".to_owned());
+        let value: InputValue = InputValue::variable("baz".to_owned());
         assert_eq!(format!("{}", value), "$baz");
 
-        let list = vec![InputValue::int(1), InputValue::int(2)];
-        let value = InputValue::list(list);
+        let list = vec![InputValue::scalar(1), InputValue::scalar(2)];
+        let value: InputValue = InputValue::list(list);
         assert_eq!(format!("{}", value), "[1, 2]");
 
         let object = vec![
             (
                 Spanning::unlocated("foo".to_owned()),
-                Spanning::unlocated(InputValue::int(1)),
+                Spanning::unlocated(InputValue::scalar(1)),
             ),
             (
                 Spanning::unlocated("bar".to_owned()),
-                Spanning::unlocated(InputValue::int(2)),
+                Spanning::unlocated(InputValue::scalar(2)),
             ),
         ];
-        let value = InputValue::parsed_object(object);
+        let value: InputValue = InputValue::parsed_object(object);
         assert_eq!(format!("{}", value), "{foo: 1, bar: 2}");
     }
 }
