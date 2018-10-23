@@ -71,6 +71,9 @@ impl ObjFieldAttrs {
         // Check doc comments for description.
         res.description = get_doc_comment(&variant.attrs);
 
+        // Check rust "deprecated" for deprecation.
+        res.deprecation = get_deprecated_note(&variant.attrs);
+
         // Check attributes.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
