@@ -182,8 +182,8 @@ impl<'a> Parser<'a> {
                 item: Token::EndOfFile,
                 ..
             } => Err(Spanning::start_end(
-                &self.peek().start.clone(),
-                &self.peek().end.clone(),
+                &self.peek().start,
+                &self.peek().end,
                 ParseError::UnexpectedEndOfFile,
             )),
             _ => Err(self.next()?.map(ParseError::UnexpectedToken)),

@@ -27,7 +27,7 @@ expose-test-schema = []
 default = [
     "chrono",
     "url",
-    "uuid"
+    "uuid",
 ]
 
 [dependencies]

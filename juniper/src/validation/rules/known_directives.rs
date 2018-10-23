@@ -2,6 +2,7 @@ use ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation,
 use parser::Spanning;
 use schema::model::DirectiveLocation;
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 pub struct KnownDirectives {
     location_stack: Vec<DirectiveLocation>,
@@ -13,11 +14,15 @@ pub fn factory() -> KnownDirectives {
     }
 }
 
-impl<'a> Visitor<'a> for KnownDirectives {
+impl<'a, S> Visitor<'a, S> for KnownDirectives
+where
+    S: ScalarValue,
+{
+
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        op: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        op: &'a Spanning<Operation<S>>,
     ) {
         self.location_stack.push(match op.item.operation_type {
             OperationType::Query => DirectiveLocation::Query,
@@ -27,26 +32,26 @@ impl<'a> Visitor<'a> for KnownDirectives {
 
     fn exit_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Operation<S>>,
     ) {
         let top = self.location_stack.pop();
         assert!(top == Some(DirectiveLocation::Query) || top == Some(DirectiveLocation::Mutation));
     }
 
-    fn enter_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {
+    fn enter_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {
         self.location_stack.push(DirectiveLocation::Field);
     }
 
-    fn exit_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {
+    fn exit_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::Field));
     }
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Fragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Fragment<S>>,
     ) {
         self.location_stack
             .push(DirectiveLocation::FragmentDefinition);
@@ -54,8 +59,8 @@ impl<'a> Visitor<'a> for KnownDirectives {
 
     fn exit_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<Fragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Fragment<S>>,
     ) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::FragmentDefinition));
@@ -63,16 +68,16 @@ impl<'a> Visitor<'a> for KnownDirectives {
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<FragmentSpread>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<FragmentSpread<S>>,
     ) {
         self.location_stack.push(DirectiveLocation::FragmentSpread);
     }
 
     fn exit_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<FragmentSpread>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<FragmentSpread<S>>,
     ) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::FragmentSpread));
@@ -80,16 +85,16 @@ impl<'a> Visitor<'a> for KnownDirectives {
 
     fn enter_inline_fragment(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<InlineFragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<InlineFragment<S>>,
     ) {
         self.location_stack.push(DirectiveLocation::InlineFragment);
     }
 
     fn exit_inline_fragment(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: &'a Spanning<InlineFragment>,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<InlineFragment<S>>,
     ) {
         let top = self.location_stack.pop();
         assert_eq!(top, Some(DirectiveLocation::InlineFragment));
@@ -97,8 +102,8 @@ impl<'a> Visitor<'a> for KnownDirectives {
 
     fn enter_directive(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        directive: &'a Spanning<Directive>,
+        ctx: &mut ValidatorContext<'a, S>,
+        directive: &'a Spanning<Directive<S>>,
     ) {
         let directive_name = &directive.item.name.item;
 
@@ -143,10 +148,11 @@ mod tests {
     use parser::SourcePosition;
     use schema::model::DirectiveLocation;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn with_no_directives() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo {
@@ -163,7 +169,7 @@ mod tests {
 
     #[test]
     fn with_known_directives() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -180,7 +186,7 @@ mod tests {
 
     #[test]
     fn with_unknown_directive() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -198,7 +204,7 @@ mod tests {
 
     #[test]
     fn with_many_unknown_directives() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -232,7 +238,7 @@ mod tests {
 
     #[test]
     fn with_well_placed_directives() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo @onQuery {
@@ -251,7 +257,7 @@ mod tests {
 
     #[test]
     fn with_misplaced_directives() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo @include(if: true) {

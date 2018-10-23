@@ -90,7 +90,9 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 */
 #![warn(missing_docs)]
 
-extern crate serde;
+#[doc(hidden)]
+#[macro_use]
+pub extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
@@ -111,12 +113,27 @@ extern crate url;
 extern crate uuid;
 
 // Depend on juniper_codegen and re-export everything in it.
-// This allows users to just depend on juniper and get the derive functionality automatically.
+// This allows users to just depend on juniper and get the derive
+// functionality automatically.
 #[allow(unused_imports)]
 #[macro_use]
 extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
+
+// This macro is used as abstraction to make custom derives work
+// in juniper itself and outside of juniper
+// This macro needs to be here because it is used a derive in value::scalar
+// The tests in macros are using a macro from the value module, and because
+// rust macros needs to be defined before they are used it would cause problems
+// to move this macro somewhere else.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __juniper_use_everything {
+    () => {
+        pub use $crate::*;
+    };
+}
 
 #[macro_use]
 mod value;
@@ -125,7 +142,7 @@ mod macros;
 mod ast;
 mod executor;
 pub mod parser;
-mod schema;
+pub(crate) mod schema;
 mod types;
 mod util;
 mod validation;
@@ -159,13 +176,15 @@ pub use executor::{
     Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult, FromContext,
     IntoFieldError, IntoResolvable, Registry, Variables,
 };
+pub use schema::meta;
 pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
 pub use validation::RuleError;
-pub use value::{Value, Object};
-
-pub use schema::meta;
+pub use value::{
+    DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
+    Value,
+};
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -179,19 +198,20 @@ pub enum GraphQLError<'a> {
 }
 
 /// Execute a query in a provided schema
-pub fn execute<'a, CtxT, QueryT, MutationT>(
+pub fn execute<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT>,
-    variables: &Variables,
+    root_node: &'a RootNode<QueryT, MutationT, S>,
+    variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(Value, Vec<ExecutionError>), GraphQLError<'a>>
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    QueryT: GraphQLType<Context = CtxT>,
-    MutationT: GraphQLType<Context = CtxT>,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
 {
-    let document = parse_document_source(document_source)?;
-
+    let document = parse_document_source(document_source, &root_node.schema)?;
     {
         let errors = validate_input_values(variables, &document, &root_node.schema);
 

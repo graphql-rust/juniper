@@ -16,7 +16,8 @@ use hyper::header::HeaderValue;
 use hyper::rt::Stream;
 use hyper::{header, Body, Method, Request, Response, StatusCode};
 use juniper::http::GraphQLRequest as JuniperGraphQLRequest;
-use juniper::{GraphQLType, InputValue, RootNode};
+use juniper::serde::Deserialize;
+use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
 use serde_json::error::Error as SerdeError;
 use std::error::Error;
 use std::fmt;
@@ -25,15 +26,17 @@ use std::sync::Arc;
 use tokio::prelude::*;
 use url::form_urlencoded;
 
-pub fn graphql<CtxT, QueryT, MutationT>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT>>,
+pub fn graphql<CtxT, QueryT, MutationT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
     request: Request<Body>,
 ) -> impl Future<Item = Response<Body>, Error = hyper::Error>
 where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
     CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
 {
@@ -63,7 +66,7 @@ where
                         String::from_utf8(chunk.iter().cloned().collect::<Vec<u8>>())
                             .map_err(GraphQLRequestError::BodyUtf8)
                             .and_then(|input| {
-                                serde_json::from_str::<GraphQLRequest>(&input)
+                                serde_json::from_str::<GraphQLRequest<S>>(&input)
                                     .map_err(GraphQLRequestError::BodyJSONError)
                             })
                     })
@@ -93,15 +96,17 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-fn execute_request<CtxT, QueryT, MutationT>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT>>,
+fn execute_request<CtxT, QueryT, MutationT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
-    request: GraphQLRequest,
+    request: GraphQLRequest<S>,
 ) -> impl Future<Item = Response<Body>, Error = tokio_threadpool::BlockingError>
 where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
     CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<Context = CtxT> + Send + Sync + 'static,
+    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
 {
@@ -121,7 +126,10 @@ where
     })
 }
 
-fn gql_request_from_get(input: &str) -> Result<JuniperGraphQLRequest, GraphQLRequestError> {
+fn gql_request_from_get<S>(input: &str) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError>
+where
+    S: ScalarValue,
+{
     let mut query = None;
     let operation_name = None;
     let mut variables = None;
@@ -142,7 +150,7 @@ fn gql_request_from_get(input: &str) -> Result<JuniperGraphQLRequest, GraphQLReq
                 if variables.is_some() {
                     return Err(invalid_err("variables"));
                 }
-                match serde_json::from_str::<InputValue>(&value)
+                match serde_json::from_str::<InputValue<S>>(&value)
                     .map_err(GraphQLRequestError::Variables)
                 {
                     Ok(parsed_variables) => variables = Some(parsed_variables),
@@ -184,20 +192,29 @@ fn new_html_response(code: StatusCode) -> Response<Body> {
 
 #[derive(Deserialize)]
 #[serde(untagged)]
-enum GraphQLRequest {
-    Single(JuniperGraphQLRequest),
-    Batch(Vec<JuniperGraphQLRequest>),
+#[serde(bound = "InputValue<S>: Deserialize<'de>")]
+enum GraphQLRequest<S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
+    Single(JuniperGraphQLRequest<S>),
+    Batch(Vec<JuniperGraphQLRequest<S>>),
 }
 
-impl GraphQLRequest {
+impl<S> GraphQLRequest<S>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     fn execute<'a, CtxT: 'a, QueryT, MutationT>(
         self,
-        root_node: Arc<RootNode<'a, QueryT, MutationT>>,
+        root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
         context: Arc<CtxT>,
     ) -> impl Future<Item = (bool, hyper::Body), Error = tokio_threadpool::BlockingError> + 'a
     where
-        QueryT: GraphQLType<Context = CtxT> + 'a,
-        MutationT: GraphQLType<Context = CtxT> + 'a,
+        S: 'a,
+        QueryT: GraphQLType<S, Context = CtxT> + 'a,
+        MutationT: GraphQLType<S, Context = CtxT> + 'a,
     {
         match self {
             GraphQLRequest::Single(request) => Either::A(future::poll_fn(move || {

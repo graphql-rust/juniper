@@ -24,10 +24,14 @@ mod variables_are_input_types;
 mod variables_in_allowed_position;
 
 use ast::Document;
-use validation::{visit, MultiVisitor, MultiVisitorNil, ValidatorContext};
+use std::fmt::Debug;
+use validation::{visit, MultiVisitorNil, ValidatorContext};
+use value::ScalarValue;
 
-#[doc(hidden)]
-pub fn visit_all_rules<'a>(ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
+pub(crate) fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
+where
+    S: ScalarValue,
+{
     let mut mv = MultiVisitorNil
         .with(self::arguments_of_correct_type::factory())
         .with(self::default_values_of_correct_type::factory())
@@ -54,5 +58,5 @@ pub fn visit_all_rules<'a>(ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
         .with(self::variables_are_input_types::factory())
         .with(self::variables_in_allowed_position::factory());
 
-    visit(&mut mv, ctx, doc);
+    visit(&mut mv, ctx, doc)
 }

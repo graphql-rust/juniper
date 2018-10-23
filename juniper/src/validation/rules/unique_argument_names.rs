@@ -3,6 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::{Directive, Field, InputValue};
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 pub struct UniqueArgumentNames<'a> {
     known_names: HashMap<&'a str, SourcePosition>,
@@ -14,19 +15,31 @@ pub fn factory<'a>() -> UniqueArgumentNames<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
-    fn enter_directive(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Directive>) {
+impl<'a, S> Visitor<'a, S> for UniqueArgumentNames<'a>
+where
+    S: ScalarValue,
+{
+
+    fn enter_directive(
+        &mut self,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Directive<S>>,
+    ) {
         self.known_names = HashMap::new();
     }
 
-    fn enter_field(&mut self, _: &mut ValidatorContext<'a>, _: &'a Spanning<Field>) {
+    fn enter_field(
+        &mut self,
+        _: &mut ValidatorContext<'a, S>,
+        _: &'a Spanning<Field<S>>,
+    ) {
         self.known_names = HashMap::new();
     }
 
     fn enter_argument(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue>),
+        ctx: &mut ValidatorContext<'a, S>,
+        &(ref arg_name, _): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         match self.known_names.entry(arg_name.item) {
             Entry::Occupied(e) => {
@@ -52,10 +65,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn no_arguments_on_field() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -67,11 +81,11 @@ mod tests {
 
     #[test]
     fn no_arguments_on_directive() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
-            field @directive
+            dog @directive
           }
         "#,
         );
@@ -79,7 +93,7 @@ mod tests {
 
     #[test]
     fn argument_on_field() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -91,11 +105,11 @@ mod tests {
 
     #[test]
     fn argument_on_directive() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
-            field @directive(arg: "value")
+            dog @directive(arg: "value")
           }
         "#,
         );
@@ -103,7 +117,7 @@ mod tests {
 
     #[test]
     fn same_argument_on_two_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -116,7 +130,7 @@ mod tests {
 
     #[test]
     fn same_argument_on_field_and_directive() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -128,7 +142,7 @@ mod tests {
 
     #[test]
     fn same_argument_on_two_directives() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -140,7 +154,7 @@ mod tests {
 
     #[test]
     fn multiple_field_arguments() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -152,7 +166,7 @@ mod tests {
 
     #[test]
     fn multiple_directive_arguments() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -164,7 +178,7 @@ mod tests {
 
     #[test]
     fn duplicate_field_arguments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -183,7 +197,7 @@ mod tests {
 
     #[test]
     fn many_duplicate_field_arguments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -211,7 +225,7 @@ mod tests {
 
     #[test]
     fn duplicate_directive_arguments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -230,7 +244,7 @@ mod tests {
 
     #[test]
     fn many_duplicate_directive_arguments() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {

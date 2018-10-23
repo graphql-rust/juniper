@@ -1,99 +1,176 @@
 use ast::InputValue;
 
-use parser::{ParseError, ParseResult, Parser, Spanning, Token};
+use parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token};
+use schema::meta::{InputObjectMeta, MetaType};
+use schema::model::SchemaType;
+use value::ScalarValue;
 
-pub fn parse_value_literal<'a>(
+pub fn parse_value_literal<'a, 'b, S>(
     parser: &mut Parser<'a>,
     is_const: bool,
-) -> ParseResult<'a, InputValue> {
-    match *parser.peek() {
-        Spanning {
-            item: Token::BracketOpen,
-            ..
-        } => parse_list_literal(parser, is_const),
-        Spanning {
-            item: Token::CurlyOpen,
-            ..
-        } => parse_object_literal(parser, is_const),
-        Spanning {
-            item: Token::Dollar,
-            ..
-        } if !is_const =>
+    schema: &'b SchemaType<'b, S>,
+    tpe: Option<&MetaType<'b, S>>,
+) -> ParseResult<'a, InputValue<S>>
+where
+    S: ScalarValue,
+{
+    match (parser.peek(), tpe) {
+        (
+            &Spanning {
+                item: Token::BracketOpen,
+                ..
+            },
+            _,
+        ) => parse_list_literal(parser, is_const, schema, tpe),
+        (
+            &Spanning {
+                item: Token::CurlyOpen,
+                ..
+            },
+            None,
+        ) => parse_object_literal(parser, is_const, schema, None),
+        (
+            &Spanning {
+                item: Token::CurlyOpen,
+                ..
+            },
+            Some(&MetaType::InputObject(ref o)),
+        ) => parse_object_literal(parser, is_const, schema, Some(o)),
+        (
+            &Spanning {
+                item: Token::Dollar,
+                ..
+            },
+            _,
+        )
+            if !is_const =>
         {
             parse_variable_literal(parser)
         }
-        Spanning {
-            item: Token::Int(i),
-            ..
-        } => Ok(parser.next()?.map(|_| InputValue::int(i))),
-        Spanning {
-            item: Token::Float(f),
-            ..
-        } => Ok(parser.next()?.map(|_| InputValue::float(f))),
-        Spanning {
-            item: Token::String(_),
-            ..
-        } => Ok(parser.next()?.map(|t| {
-            if let Token::String(s) = t {
-                InputValue::string(s)
+        (
+            &Spanning {
+                item: Token::Scalar(_),
+                ..
+            },
+            Some(&MetaType::Scalar(ref s)),
+        ) => {
+            if let Spanning {
+                item: Token::Scalar(scalar),
+                start,
+                end,
+            } = parser.next()?
+            {
+                (s.parse_fn)(scalar)
+                    .map(|s| Spanning::start_end(&start, &end, InputValue::Scalar(s)))
+                    .or_else(|_| parse_scalar_literal_by_infered_type(scalar, &start, &end, schema))
             } else {
-                panic!("Internal parser error");
+                unreachable!()
             }
-        })),
-        Spanning {
-            item: Token::Name("true"),
-            ..
-        } => Ok(parser.next()?.map(|_| InputValue::boolean(true))),
-        Spanning {
-            item: Token::Name("false"),
-            ..
-        } => Ok(parser.next()?.map(|_| InputValue::boolean(false))),
-        Spanning {
-            item: Token::Name("null"),
-            ..
-        } => Ok(parser.next()?.map(|_| InputValue::null())),
-        Spanning {
-            item: Token::Name(name),
-            ..
-        } => Ok(parser
+        }
+        (
+            &Spanning {
+                item: Token::Scalar(_),
+                ..
+            },
+            _,
+        ) => {
+            if let Spanning {
+                item: Token::Scalar(token),
+                start,
+                end,
+            } = parser.next()?
+            {
+                parse_scalar_literal_by_infered_type(token, &start, &end, schema)
+            } else {
+                unreachable!()
+            }
+        }
+        (
+            &Spanning {
+                item: Token::Name("true"),
+                ..
+            },
+            _,
+        ) => Ok(parser.next()?.map(|_| InputValue::scalar(true))),
+        (
+            &Spanning {
+                item: Token::Name("false"),
+                ..
+            },
+            _,
+        ) => Ok(parser.next()?.map(|_| InputValue::scalar(false))),
+        (
+            &Spanning {
+                item: Token::Name("null"),
+                ..
+            },
+            _,
+        ) => Ok(parser.next()?.map(|_| InputValue::null())),
+        (
+            &Spanning {
+                item: Token::Name(name),
+                ..
+            },
+            _,
+        ) => Ok(parser
             .next()?
             .map(|_| InputValue::enum_value(name.to_owned()))),
         _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
 
-fn parse_list_literal<'a>(parser: &mut Parser<'a>, is_const: bool) -> ParseResult<'a, InputValue> {
+fn parse_list_literal<'a, 'b, S>(
+    parser: &mut Parser<'a>,
+    is_const: bool,
+    schema: &'b SchemaType<'b, S>,
+    tpe: Option<&MetaType<'b, S>>,
+) -> ParseResult<'a, InputValue<S>>
+where
+    S: ScalarValue,
+{
     Ok(parser
         .delimited_list(
             &Token::BracketOpen,
-            |p| parse_value_literal(p, is_const),
+            |p| parse_value_literal(p, is_const, schema, tpe),
             &Token::BracketClose,
-        )?
-        .map(InputValue::parsed_list))
+        )?.map(InputValue::parsed_list))
 }
 
-fn parse_object_literal<'a>(
+fn parse_object_literal<'a, 'b, S>(
     parser: &mut Parser<'a>,
     is_const: bool,
-) -> ParseResult<'a, InputValue> {
+    schema: &'b SchemaType<'b, S>,
+    object_tpe: Option<&InputObjectMeta<'b, S>>,
+) -> ParseResult<'a, InputValue<S>>
+where
+    S: ScalarValue,
+{
     Ok(parser
         .delimited_list(
             &Token::CurlyOpen,
-            |p| parse_object_field(p, is_const),
+            |p| parse_object_field(p, is_const, schema, object_tpe),
             &Token::CurlyClose,
-        )?
-        .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
+        )?.map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
-fn parse_object_field<'a>(
+fn parse_object_field<'a, 'b, S>(
     parser: &mut Parser<'a>,
     is_const: bool,
-) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue>)> {
+    schema: &'b SchemaType<'b, S>,
+    object_meta: Option<&InputObjectMeta<'b, S>>,
+) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue<S>>)>
+where
+    S: ScalarValue,
+{
     let key = parser.expect_name()?;
+
+    let tpe = object_meta
+        .and_then(|o| o.input_fields.iter().find(|f| f.name == key.item))
+        .and_then(|f| schema.lookup_type(&f.arg_type));
 
     parser.expect(&Token::Colon)?;
 
-    let value = parse_value_literal(parser, is_const)?;
+    let value = parse_value_literal(parser, is_const, schema, tpe)?;
 
     Ok(Spanning::start_end(
         &key.start.clone(),
@@ -102,7 +179,10 @@ fn parse_object_field<'a>(
     ))
 }
 
-fn parse_variable_literal<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue> {
+fn parse_variable_literal<'a, S>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue<S>>
+where
+    S: ScalarValue,
+{
     let Spanning {
         start: start_pos, ..
     } = parser.expect(&Token::Dollar)?;
@@ -117,4 +197,44 @@ fn parse_variable_literal<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, InputV
         &end_pos,
         InputValue::variable(name),
     ))
+}
+
+fn parse_scalar_literal_by_infered_type<'a, 'b, S>(
+    token: ScalarToken<'a>,
+    start: &SourcePosition,
+    end: &SourcePosition,
+    schema: &'b SchemaType<'b, S>,
+) -> ParseResult<'a, InputValue<S>>
+where
+    S: ScalarValue,
+{
+    match token {
+        ScalarToken::String(_) => {
+            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("String") {
+                (s.parse_fn)(token)
+                    .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
+                    .map_err(|e| Spanning::start_end(start, end, e))
+            } else {
+                panic!("There needs to be a String type")
+            }
+        }
+        ScalarToken::Int(_) => {
+            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Int") {
+                (s.parse_fn)(token)
+                    .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
+                    .map_err(|e| Spanning::start_end(start, end, e))
+            } else {
+                panic!("There needs to be a Int type")
+            }
+        }
+        ScalarToken::Float(_) => {
+            if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Float") {
+                (s.parse_fn)(token)
+                    .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
+                    .map_err(|e| Spanning::start_end(start, end, e))
+            } else {
+                panic!("There needs to be a Float type")
+            }
+        }
+    }
 }

@@ -1,6 +1,6 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use syn;
-use syn::{Data, DeriveInput, Field, Fields};
+use syn::{Data, DeriveInput, Field, Fields, Ident};
 
 use util::*;
 
@@ -8,6 +8,7 @@ use util::*;
 struct ObjAttrs {
     name: Option<String>,
     description: Option<String>,
+    scalar: Option<Ident>,
 }
 
 impl ObjAttrs {
@@ -20,7 +21,9 @@ impl ObjAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -31,8 +34,16 @@ impl ObjAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
+                    continue;
+                }
+                if let Some(AttributeValue::String(scalar)) =
+                    keyed_item_value(&item, "scalar", AttributeValidation::String)
+                {
+                    res.scalar = Some(Ident::new(&scalar as &str, Span::call_site()));
                     continue;
                 }
                 panic!(format!(
@@ -63,7 +74,9 @@ impl ObjFieldAttrs {
         // Check attributes.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -74,11 +87,15 @@ impl ObjFieldAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "deprecation", AttributeValidation::String) {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "deprecation", AttributeValidation::String)
+                {
                     res.deprecation = Some(val);
                     continue;
                 }
@@ -170,8 +187,33 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         });
     }
 
+    let (_, ty_generics, _) = generics.split_for_impl();
+
+    let mut generics = generics.clone();
+
+    if attrs.scalar.is_none() {
+        generics.params.push(parse_quote!(__S));
+        {
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: juniper::ScalarValue));
+            where_clause
+                .predicates
+                .push(parse_quote!(for<'__b> &'__b __S: juniper::ScalarRefValue<'__b>));
+        }
+    }
+
+    let scalar = attrs
+        .scalar
+        .unwrap_or_else(|| Ident::new("__S", Span::call_site()));
+
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+
     let toks = quote! {
-        impl #generics ::juniper::GraphQLType for #ident #generics {
+        impl#impl_generics juniper::GraphQLType<#scalar> for #ident #ty_generics
+            #where_clause
+        {
             type Context = ();
             type TypeInfo = ();
 
@@ -185,8 +227,10 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
 
             fn meta<'r>(
                 _: &(),
-                registry: &mut ::juniper::Registry<'r>
-            ) -> ::juniper::meta::MetaType<'r> {
+                registry: &mut juniper::Registry<'r, #scalar>
+            ) -> juniper::meta::MetaType<'r, #scalar>
+                where #scalar: 'r
+            {
                 let fields = &[
                     #(#meta_fields)*
                 ];
@@ -199,9 +243,9 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
                 &self,
                 _: &(),
                 field_name: &str,
-                _: &::juniper::Arguments,
-                executor: &::juniper::Executor<Self::Context>
-            ) -> ::juniper::ExecutionResult
+                _: &juniper::Arguments<#scalar>,
+                executor: &juniper::Executor<Self::Context, #scalar>
+            ) -> juniper::ExecutionResult<#scalar>
             {
 
                 match field_name {
@@ -213,5 +257,22 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         }
     };
 
-    toks
+    let dummy_const = Ident::new(
+        format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str(),
+        Span::call_site(),
+    );
+
+    quote!{
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        #[doc(hidden)]
+        const #dummy_const: () = {
+            mod juniper {
+                __juniper_use_everything!();
+            }
+
+            extern crate std;
+
+            #toks
+        };
+    }
 }

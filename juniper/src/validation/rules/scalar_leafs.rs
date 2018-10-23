@@ -1,15 +1,24 @@
 use ast::Field;
 use parser::Spanning;
 use validation::{RuleError, ValidatorContext, Visitor};
+use value::ScalarValue;
 
-pub struct ScalarLeafs {}
+pub struct ScalarLeafs;
 
 pub fn factory() -> ScalarLeafs {
-    ScalarLeafs {}
+    ScalarLeafs
 }
 
-impl<'a> Visitor<'a> for ScalarLeafs {
-    fn enter_field(&mut self, ctx: &mut ValidatorContext<'a>, field: &'a Spanning<Field>) {
+impl<'a, S> Visitor<'a, S> for ScalarLeafs
+where
+    S: ScalarValue,
+{
+
+    fn enter_field(
+        &mut self,
+        ctx: &mut ValidatorContext<'a, S>,
+        field: &'a Spanning<Field<S>>,
+    ) {
         let field_name = &field.item.name.item;
 
         let error = if let (Some(field_type), Some(field_type_literal)) =
@@ -55,10 +64,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn valid_scalar_selection() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelection on Dog {
@@ -70,7 +80,7 @@ mod tests {
 
     #[test]
     fn object_type_missing_selection() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query directQueryOnObjectWithoutSubFields {
@@ -86,7 +96,7 @@ mod tests {
 
     #[test]
     fn interface_type_missing_selection() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -102,7 +112,7 @@ mod tests {
 
     #[test]
     fn valid_scalar_selection_with_args() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelectionWithArgs on Dog {
@@ -114,7 +124,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_on_boolean() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedOnBoolean on Dog {
@@ -130,7 +140,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_on_enum() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedOnEnum on Cat {
@@ -146,7 +156,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_with_args() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedWithArgs on Dog {
@@ -162,7 +172,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_with_directives() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedWithDirectives on Dog {
@@ -178,7 +188,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_with_directives_and_args() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedWithDirectivesAndArgs on Dog {

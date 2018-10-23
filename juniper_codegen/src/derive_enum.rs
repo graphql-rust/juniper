@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 
 use syn;
-use syn::{Data, DeriveInput, Fields, Ident, Meta, NestedMeta, Variant};
+use syn::{Data, DeriveInput, Fields, Ident, Variant};
 
 use util::*;
 
@@ -9,7 +9,6 @@ use util::*;
 struct EnumAttrs {
     name: Option<String>,
     description: Option<String>,
-    internal: bool,
 }
 
 impl EnumAttrs {
@@ -17,8 +16,6 @@ impl EnumAttrs {
         let mut res = EnumAttrs {
             name: None,
             description: None,
-            /// Flag to specify whether the calling crate is the "juniper" crate itself.
-            internal: false,
         };
 
         // Check doc comments for description.
@@ -27,7 +24,9 @@ impl EnumAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -38,18 +37,11 @@ impl EnumAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
-                }
-                match item {
-                    NestedMeta::Meta(Meta::Word(ref ident)) => {
-                        if ident == "_internal" {
-                            res.internal = true;
-                            continue;
-                        }
-                    }
-                    _ => {}
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
@@ -78,7 +70,9 @@ impl EnumVariantAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -89,11 +83,15 @@ impl EnumVariantAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "deprecated", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "deprecated", AttributeValidation::String)
+                {
                     res.deprecation = Some(val);
                     continue;
                 }
@@ -166,7 +164,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
 
         // Build resolve match clause.
         resolves.extend(quote!{
-            &#ident::#var_ident => _juniper::Value::String(#name.to_string()),
+            &#ident::#var_ident => _juniper::Value::scalar(String::from(#name)),
         });
 
         // Build from_input clause.
@@ -177,12 +175,15 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
         // Build to_input clause.
         to_inputs.extend(quote!{
             &#ident::#var_ident =>
-                _juniper::InputValue::string(#name.to_string()),
+                _juniper::InputValue::scalar(#name.to_string()),
         });
     }
 
     let body = quote! {
-        impl _juniper::GraphQLType for #ident {
+        impl<__S> _juniper::GraphQLType<__S> for #ident
+        where __S: _juniper::ScalarValue,
+            for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+        {
             type Context = ();
             type TypeInfo = ();
 
@@ -190,8 +191,9 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r>)
-                -> _juniper::meta::MetaType<'r>
+            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r, __S>)
+                        -> _juniper::meta::MetaType<'r, __S>
+            where __S: 'r,
             {
                 let meta = registry.build_enum_type::<#ident>(&(), &[
                     #(#values)*
@@ -203,26 +205,30 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             fn resolve(
                 &self,
                 _: &(),
-                _: Option<&[_juniper::Selection]>,
-                _: &_juniper::Executor<Self::Context>
-            ) -> _juniper::Value {
+                _: Option<&[_juniper::Selection<__S>]>,
+                _: &_juniper::Executor<Self::Context, __S>
+            ) -> _juniper::Value<__S> {
                 match self {
                     #(#resolves)*
                 }
             }
         }
 
-        impl _juniper::FromInputValue for #ident {
-            fn from_input_value(v: &_juniper::InputValue) -> Option<#ident> {
-                match v.as_enum_value().or_else(|| v.as_string_value()) {
+        impl<__S: _juniper::ScalarValue> _juniper::FromInputValue<__S> for #ident {
+            fn from_input_value(v: &_juniper::InputValue<__S>) -> Option<#ident>
+                where for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+            {
+                match v.as_enum_value().or_else(|| {
+                    v.as_scalar_value::<String>().map(|s| s as &str)
+                }) {
                     #(#from_inputs)*
                     _ => None,
                 }
             }
         }
 
-        impl _juniper::ToInputValue for #ident {
-            fn to_input_value(&self) -> _juniper::InputValue {
+        impl<__S: _juniper::ScalarValue> _juniper::ToInputValue<__S> for #ident {
+            fn to_input_value(&self) -> _juniper::InputValue<__S> {
                 match self {
                     #(#to_inputs)*
                 }
@@ -235,35 +241,13 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
         Span::call_site(),
     );
 
-    // This ugly hack makes it possible to use the derive inside juniper itself.
-    // FIXME: Figure out a better way to do this!
-    let crate_reference = if attrs.internal {
-        quote! {
-            #[doc(hidden)]
-            mod _juniper {
-                pub use ::{
-                    InputValue,
-                    Value,
-                    ToInputValue,
-                    FromInputValue,
-                    Executor,
-                    Selection,
-                    Registry,
-                    GraphQLType,
-                    meta
-                };
-            }
-        }
-    } else {
-        quote! {
-            extern crate juniper as _juniper;
-        }
-    };
     let generated = quote! {
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
         #[doc(hidden)]
         const #dummy_const : () = {
-            #crate_reference
+            mod _juniper {
+                __juniper_use_everything!();
+            }
             #body
         };
     };

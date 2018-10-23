@@ -15,34 +15,52 @@
 */
 use chrono::prelude::*;
 
+use parser::{ParseError, ScalarToken, Token};
+use value::{ParseScalarResult, ParseScalarValue};
 use Value;
 
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
 
-graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" {
+graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S>{
     description: "DateTime"
 
     resolve(&self) -> Value {
-        Value::string(self.to_rfc3339())
+        Value::scalar(self.to_rfc3339())
     }
 
     from_input_value(v: &InputValue) -> Option<DateTime<FixedOffset>> {
-        v.as_string_value()
+        v.as_scalar_value::<String>()
          .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+    }
+
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        if let ScalarToken::String(value) =  value {
+            Ok(S::from(value.to_owned()))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
-graphql_scalar!(DateTime<Utc> as "DateTimeUtc" {
+graphql_scalar!(DateTime<Utc> as "DateTimeUtc" where Scalar = <S>{
     description: "DateTime"
 
     resolve(&self) -> Value {
-        Value::string(self.to_rfc3339())
+        Value::scalar(self.to_rfc3339())
     }
 
     from_input_value(v: &InputValue) -> Option<DateTime<Utc>> {
-        v.as_string_value()
+        v.as_scalar_value::<String>()
          .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
+    }
+
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        if let ScalarToken::String(value) = value {
+            Ok(S::from(value.to_owned()))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
@@ -51,40 +69,53 @@ graphql_scalar!(DateTime<Utc> as "DateTimeUtc" {
 // inherent lack of precision required for the time zone resolution.
 // For serialization and deserialization uses, it is best to use
 // `NaiveDate` instead."
-graphql_scalar!(NaiveDate {
+graphql_scalar!(NaiveDate where Scalar = <S>{
     description: "NaiveDate"
 
     resolve(&self) -> Value {
-        Value::string(self.format("%Y-%m-%d").to_string())
+        Value::scalar(self.format("%Y-%m-%d").to_string())
     }
 
     from_input_value(v: &InputValue) -> Option<NaiveDate> {
-        v.as_string_value()
+        v.as_scalar_value::<String>()
          .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
+    }
+
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        if let ScalarToken::String(value) = value {
+            Ok(S::from(value.to_owned()))
+        } else {
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+        }
     }
 });
 
 /// JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
 /// datetimes. Values will be truncated to microsecond resolution.
-graphql_scalar!(NaiveDateTime {
+graphql_scalar!(NaiveDateTime where Scalar = <S> {
     description: "NaiveDateTime"
 
     resolve(&self) -> Value {
-        Value::float(self.timestamp() as f64)
+        Value::scalar(self.timestamp() as f64)
     }
 
     from_input_value(v: &InputValue) -> Option<NaiveDateTime> {
-        v.as_float_value()
-         .and_then(|f| NaiveDateTime::from_timestamp_opt(f as i64, 0))
+        v.as_scalar_value::<f64>()
+         .and_then(|f| NaiveDateTime::from_timestamp_opt(*f as i64, 0))
+    }
+
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+        <f64 as ParseScalarValue<S>>::from_str(value)
     }
 });
 
 #[cfg(test)]
 mod test {
     use chrono::prelude::*;
+    use value::DefaultScalarValue;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
-        let input = ::InputValue::String(raw.to_string());
+        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
 
         let parsed: DateTime<FixedOffset> = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw).unwrap();
@@ -108,7 +139,7 @@ mod test {
     }
 
     fn datetime_utc_test(raw: &'static str) {
-        let input = ::InputValue::String(raw.to_string());
+        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
 
         let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw)
@@ -135,7 +166,8 @@ mod test {
 
     #[test]
     fn naivedate_from_input_value() {
-        let input = ::InputValue::String("1996-12-19".to_string());
+        let input: ::InputValue<DefaultScalarValue> =
+            ::InputValue::scalar("1996-12-19".to_string());
         let y = 1996;
         let m = 12;
         let d = 19;
@@ -153,7 +185,7 @@ mod test {
     #[test]
     fn naivedatetime_from_input_value() {
         let raw = 1_000_000_000_f64;
-        let input = ::InputValue::Float(raw);
+        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw);
 
         let parsed: NaiveDateTime = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveDateTime::from_timestamp_opt(raw as i64, 0).unwrap();
@@ -171,11 +203,11 @@ mod integration_test {
     use executor::Variables;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{Value};
 
     #[test]
     fn test_serialization() {
-        struct Root {}
+        struct Root;
         graphql_object!(Root: () |&self| {
             field exampleNaiveDate() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
@@ -200,7 +232,7 @@ mod integration_test {
         }
         "#;
 
-        let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+        let schema= RootNode::new(Root, EmptyMutation::<()>::new());
 
         let (result, errs) =
             ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -211,18 +243,18 @@ mod integration_test {
             result,
             Value::object(
                 vec![
-                    ("exampleNaiveDate", Value::string("2015-03-14")),
-                    ("exampleNaiveDateTime", Value::float(1467969011.0)),
+                    ("exampleNaiveDate", Value::scalar("2015-03-14")),
+                    ("exampleNaiveDateTime", Value::scalar(1467969011.0)),
                     (
                         "exampleDateTimeFixedOffset",
-                        Value::string("1996-12-19T16:39:57-08:00"),
+                        Value::scalar("1996-12-19T16:39:57-08:00"),
                     ),
                     (
                         "exampleDateTimeUtc",
-                        Value::string("1970-01-01T00:01:01+00:00"),
+                        Value::scalar("1970-01-01T00:01:01+00:00"),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }

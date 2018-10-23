@@ -10,7 +10,7 @@ use util::*;
 struct ObjAttrs {
     name: Option<String>,
     description: Option<String>,
-    internal: bool,
+    scalar: Option<Ident>,
 }
 
 impl ObjAttrs {
@@ -23,7 +23,9 @@ impl ObjAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -34,18 +36,17 @@ impl ObjAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                match item {
-                    NestedMeta::Meta(Meta::Word(ref ident)) => {
-                        if ident == "_internal" {
-                            res.internal = true;
-                            continue;
-                        }
-                    }
-                    _ => {}
+                if let Some(AttributeValue::String(scalar)) =
+                    keyed_item_value(&item, "scalar", AttributeValidation::String)
+                {
+                    res.scalar = Some(Ident::new(&scalar as &str, Span::call_site()));
+                    continue;
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
@@ -75,7 +76,9 @@ impl ObjFieldAttrs {
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
             for item in items {
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "name", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "name", AttributeValidation::String)
+                {
                     if is_valid_name(&*val) {
                         res.name = Some(val);
                         continue;
@@ -86,14 +89,19 @@ impl ObjFieldAttrs {
                         );
                     }
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "description", AttributeValidation::String)  {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "description", AttributeValidation::String)
+                {
                     res.description = Some(val);
                     continue;
                 }
-                if let Some(AttributeValue::String(val)) = keyed_item_value(&item, "default", AttributeValidation::Any) {
+                if let Some(AttributeValue::String(val)) =
+                    keyed_item_value(&item, "default", AttributeValidation::Any)
+                {
                     res.default_expr = Some(val);
                     continue;
                 }
+
                 match item {
                     NestedMeta::Meta(Meta::Word(ref ident)) => {
                         if ident == "default" {
@@ -225,8 +233,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
                     #from_input_default
-                    Some(v) => _juniper::FromInputValue::from_input_value(v).unwrap(),
-                    _ => {
+                    Some(ref v) => _juniper::FromInputValue::from_input_value(v).unwrap(),
+                    None => {
                         _juniper::FromInputValue::from_input_value(&_juniper::InputValue::null())
                             .unwrap()
                     },
@@ -240,8 +248,32 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
         });
     }
 
+    let (_, ty_generics, _) = generics.split_for_impl();
+
+    let mut generics = generics.clone();
+
+    let scalar = if let Some(scalar) = attrs.scalar {
+        scalar
+    } else {
+        generics.params.push(parse_quote!(__S));
+        {
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: _juniper::ScalarValue));
+            where_clause
+                .predicates
+                .push(parse_quote!(for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>));
+        }
+        Ident::new("__S", Span::call_site())
+    };
+
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+
     let body = quote! {
-        impl #generics _juniper::GraphQLType for #ident #generics {
+        impl#impl_generics _juniper::GraphQLType<#scalar> for #ident #ty_generics
+        #where_clause
+        {
             type Context = ();
             type TypeInfo = ();
 
@@ -251,8 +283,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
 
             fn meta<'r>(
                 _: &(),
-                registry: &mut _juniper::Registry<'r>
-            ) -> _juniper::meta::MetaType<'r> {
+                registry: &mut _juniper::Registry<'r, #scalar>
+            ) -> _juniper::meta::MetaType<'r, #scalar>
+                where #scalar: 'r
+            {
                 let fields = &[
                     #(#meta_fields)*
                 ];
@@ -262,8 +296,13 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl #generics _juniper::FromInputValue for #ident #generics {
-            fn from_input_value(value: &_juniper::InputValue) -> Option<#ident #generics> {
+        impl#impl_generics _juniper::FromInputValue<#scalar> for #ident #ty_generics
+        #where_clause
+        {
+            fn from_input_value(value: &_juniper::InputValue<#scalar>) -> Option<Self>
+            where
+                for<'__b> &'__b #scalar: _juniper::ScalarRefValue<'__b>
+            {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {
                         #(#from_inputs)*
@@ -276,8 +315,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl #generics _juniper::ToInputValue for #ident #generics {
-            fn to_input_value(&self) -> _juniper::InputValue {
+        impl#impl_generics _juniper::ToInputValue<#scalar> for #ident #ty_generics
+        #where_clause
+        {
+            fn to_input_value(&self) -> _juniper::InputValue<#scalar> {
                 _juniper::InputValue::object(vec![
                     #(#to_inputs)*
                 ].into_iter().collect())
@@ -290,32 +331,13 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
         Span::call_site(),
     );
 
-    // This ugly hack makes it possible to use the derive inside juniper itself.
-    // FIXME: Figure out a better way to do this!
-    let crate_reference = if attrs.internal {
-        quote! {
-            #[doc(hidden)]
-            mod _juniper {
-                pub use ::{
-                    InputValue,
-                    FromInputValue,
-                    GraphQLType,
-                    Registry,
-                    meta,
-                    ToInputValue
-                };
-            }
-        }
-    } else {
-        quote! {
-            extern crate juniper as _juniper;
-        }
-    };
     let generated = quote! {
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
         #[doc(hidden)]
         const #dummy_const : () = {
-            #crate_reference
+            mod _juniper {
+                __juniper_use_everything!();
+            }
             #body
         };
     };

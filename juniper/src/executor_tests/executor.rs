@@ -61,7 +61,7 @@ mod field_execution {
             e
           }";
 
-        let vars = vec![("size".to_owned(), InputValue::int(100))]
+        let vars = vec![("size".to_owned(), InputValue::scalar(100))]
             .into_iter()
             .collect();
 
@@ -75,25 +75,25 @@ mod field_execution {
             result,
             Value::object(
                 vec![
-                    ("a", Value::string("Apple")),
-                    ("b", Value::string("Banana")),
-                    ("x", Value::string("Cookie")),
-                    ("d", Value::string("Donut")),
-                    ("e", Value::string("Egg")),
-                    ("f", Value::string("Fish")),
-                    ("pic", Value::string("Pic of size: 100")),
+                    ("a", Value::scalar("Apple")),
+                    ("b", Value::scalar("Banana")),
+                    ("x", Value::scalar("Cookie")),
+                    ("d", Value::scalar("Donut")),
+                    ("e", Value::scalar("Egg")),
+                    ("f", Value::scalar("Fish")),
+                    ("pic", Value::scalar("Pic of size: 100")),
                     (
                         "deep",
                         Value::object(
                             vec![
-                                ("a", Value::string("Already Been Done")),
-                                ("b", Value::string("Boring")),
+                                ("a", Value::scalar("Already Been Done")),
+                                ("b", Value::scalar("Boring")),
                                 (
                                     "c",
                                     Value::list(vec![
-                                        Value::string("Contrived"),
+                                        Value::scalar("Contrived"),
                                         Value::null(),
-                                        Value::string("Confusing"),
+                                        Value::scalar("Confusing"),
                                     ]),
                                 ),
                                 (
@@ -101,27 +101,27 @@ mod field_execution {
                                     Value::list(vec![
                                         Value::object(
                                             vec![
-                                                ("a", Value::string("Apple")),
-                                                ("b", Value::string("Banana")),
+                                                ("a", Value::scalar("Apple")),
+                                                ("b", Value::scalar("Banana")),
                                             ].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                         Value::null(),
                                         Value::object(
                                             vec![
-                                                ("a", Value::string("Apple")),
-                                                ("b", Value::string("Banana")),
+                                                ("a", Value::scalar("Apple")),
+                                                ("b", Value::scalar("Banana")),
                                             ].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                     ]),
                                 ),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -167,31 +167,31 @@ mod merge_parallel_fragments {
             result,
             Value::object(
                 vec![
-                    ("a", Value::string("Apple")),
-                    ("b", Value::string("Banana")),
+                    ("a", Value::scalar("Apple")),
+                    ("b", Value::scalar("Banana")),
                     (
                         "deep",
                         Value::object(
                             vec![
-                                ("b", Value::string("Banana")),
+                                ("b", Value::scalar("Banana")),
                                 (
                                     "deeper",
                                     Value::object(
                                         vec![
-                                            ("b", Value::string("Banana")),
-                                            ("c", Value::string("Cherry")),
+                                            ("b", Value::scalar("Banana")),
+                                            ("c", Value::scalar("Cherry")),
                                         ].into_iter()
-                                            .collect(),
+                                        .collect(),
                                     ),
                                 ),
-                                ("c", Value::string("Cherry")),
+                                ("c", Value::scalar("Cherry")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
-                    ("c", Value::string("Cherry")),
+                    ("c", Value::scalar("Cherry")),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -228,7 +228,7 @@ mod merge_parallel_inline_fragments {
           { a, ...FragOne }
           fragment FragOne on Type {
             b
-            deep: deep { 
+            deep: deep {
                 b
                 deeper: other {
                     deepest: deep {
@@ -261,13 +261,13 @@ mod merge_parallel_inline_fragments {
             result,
             Value::object(
                 vec![
-                    ("a", Value::string("Apple")),
-                    ("b", Value::string("Banana")),
+                    ("a", Value::scalar("Apple")),
+                    ("b", Value::scalar("Banana")),
                     (
                         "deep",
                         Value::object(
                             vec![
-                                ("b", Value::string("Banana")),
+                                ("b", Value::scalar("Banana")),
                                 (
                                     "deeper",
                                     Value::list(vec![
@@ -276,37 +276,37 @@ mod merge_parallel_inline_fragments {
                                                 "deepest",
                                                 Value::object(
                                                     vec![
-                                                        ("b", Value::string("Banana")),
-                                                        ("c", Value::string("Cherry")),
+                                                        ("b", Value::scalar("Banana")),
+                                                        ("c", Value::scalar("Cherry")),
                                                     ].into_iter()
-                                                        .collect(),
+                                                    .collect(),
                                                 ),
                                             )].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                         Value::object(
                                             vec![(
                                                 "deepest",
                                                 Value::object(
                                                     vec![
-                                                        ("b", Value::string("Banana")),
-                                                        ("c", Value::string("Cherry")),
+                                                        ("b", Value::scalar("Banana")),
+                                                        ("c", Value::scalar("Cherry")),
                                                     ].into_iter()
-                                                        .collect(),
+                                                    .collect(),
                                                 ),
                                             )].into_iter()
-                                                .collect(),
+                                            .collect(),
                                         ),
                                     ]),
                                 ),
-                                ("c", Value::string("Cherry")),
+                                ("c", Value::scalar("Cherry")),
                             ].into_iter()
-                                .collect(),
+                            .collect(),
                         ),
                     ),
-                    ("c", Value::string("Cherry")),
+                    ("c", Value::scalar("Cherry")),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -354,7 +354,7 @@ mod threads_context_correctly {
         assert_eq!(
             result,
             Value::object(
-                vec![("a", Value::string("Context value"))]
+                vec![("a", Value::scalar("Context value"))]
                     .into_iter()
                     .collect()
             )
@@ -439,7 +439,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -455,14 +455,14 @@ mod dynamic_context_switching {
                     (
                         "first",
                         Value::object(
-                            vec![("value", Value::string("First value"))]
+                            vec![("value", Value::scalar("First value"))]
                                 .into_iter()
                                 .collect(),
                         ),
                     ),
                     ("missing", Value::null()),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -493,7 +493,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -508,12 +508,12 @@ mod dynamic_context_switching {
                 vec![(
                     "first",
                     Value::object(
-                        vec![("value", Value::string("First value"))]
+                        vec![("value", Value::scalar("First value"))]
                             .into_iter()
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -544,7 +544,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -591,7 +591,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -614,7 +614,7 @@ mod dynamic_context_switching {
                     (
                         "first",
                         Value::object(
-                            vec![("value", Value::string("First value"))]
+                            vec![("value", Value::scalar("First value"))]
                                 .into_iter()
                                 .collect(),
                         ),
@@ -622,7 +622,7 @@ mod dynamic_context_switching {
                     ("missing", Value::null()),
                     ("tooLarge", Value::null()),
                 ].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -649,7 +649,7 @@ mod dynamic_context_switching {
                     },
                 ),
             ].into_iter()
-                .collect(),
+            .collect(),
         };
 
         let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
@@ -664,12 +664,12 @@ mod dynamic_context_switching {
                 vec![(
                     "first",
                     Value::object(
-                        vec![("value", Value::string("First value"))]
+                        vec![("value", Value::scalar("First value"))]
                             .into_iter()
                             .collect(),
                     ),
                 )].into_iter()
-                    .collect()
+                .collect()
             )
         );
     }
@@ -680,7 +680,7 @@ mod propagates_errors_to_nullable_fields {
     use parser::SourcePosition;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::Value;
+    use value::{ScalarValue, Value};
 
     struct Schema;
     struct Inner;
@@ -689,15 +689,18 @@ mod propagates_errors_to_nullable_fields {
         NotFound,
     }
 
-    impl IntoFieldError for CustomError {
-        fn into_field_error(self) -> FieldError {
+    impl<S> IntoFieldError<S> for CustomError
+    where
+        S: ScalarValue,
+    {
+        fn into_field_error(self) -> FieldError<S> {
             match self {
-                CustomError::NotFound => FieldError::new(
-                    "Not Found",
-                    graphql_value!({
+                CustomError::NotFound => {
+                    let v: Value<S> = graphql_value!({
                         "type": "NOT_FOUND"
-                    }),
-                ),
+                    });
+                    FieldError::new("Not Found", v)
+                }
             }
         }
     }
@@ -960,7 +963,7 @@ mod named_operations {
 
         assert_eq!(
             result,
-            Value::object(vec![("a", Value::string("b"))].into_iter().collect())
+            Value::object(vec![("a", Value::scalar("b"))].into_iter().collect())
         );
     }
 
@@ -977,7 +980,7 @@ mod named_operations {
 
         assert_eq!(
             result,
-            Value::object(vec![("a", Value::string("b"))].into_iter().collect())
+            Value::object(vec![("a", Value::scalar("b"))].into_iter().collect())
         );
     }
 
@@ -995,7 +998,7 @@ mod named_operations {
 
         assert_eq!(
             result,
-            Value::object(vec![("second", Value::string("b"))].into_iter().collect())
+            Value::object(vec![("second", Value::scalar("b"))].into_iter().collect())
         );
     }
 

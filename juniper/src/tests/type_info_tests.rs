@@ -5,7 +5,7 @@ use schema::meta::MetaType;
 use schema::model::RootNode;
 use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
-use value::Value;
+use value::{ScalarRefValue, ScalarValue, Value};
 
 pub struct NodeTypeInfo {
     name: String,
@@ -16,7 +16,11 @@ pub struct Node {
     attributes: IndexMap<String, String>,
 }
 
-impl GraphQLType for Node {
+impl<S> GraphQLType<S> for Node
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     type Context = ();
     type TypeInfo = NodeTypeInfo;
 
@@ -24,8 +28,12 @@ impl GraphQLType for Node {
         Some(&info.name)
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r> {
-        let fields = info.attribute_names
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        let fields = info
+            .attribute_names
             .iter()
             .map(|name| registry.field::<String>(name, &()))
             .collect::<Vec<_>>();
@@ -39,9 +47,9 @@ impl GraphQLType for Node {
         &self,
         _: &Self::TypeInfo,
         field_name: &str,
-        _: &Arguments,
-        executor: &Executor<Self::Context>,
-    ) -> ExecutionResult {
+        _: &Arguments<S>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
         executor.resolve(&(), &self.attributes.get(field_name).unwrap())
     }
 }
@@ -64,18 +72,18 @@ fn test_node() {
     node.attributes.insert("foo".to_string(), "1".to_string());
     node.attributes.insert("bar".to_string(), "2".to_string());
     node.attributes.insert("baz".to_string(), "3".to_string());
-    let schema = RootNode::new_with_info(node, EmptyMutation::new(), node_info, ());
+    let schema: RootNode<_, _> = RootNode::new_with_info(node, EmptyMutation::new(), node_info, ());
 
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
                 vec![
-                    ("foo", Value::string("1")),
-                    ("bar", Value::string("2")),
-                    ("baz", Value::string("3")),
+                    ("foo", Value::scalar("1")),
+                    ("bar", Value::scalar("2")),
+                    ("baz", Value::scalar("3")),
                 ].into_iter()
-                    .collect()
+                .collect()
             ),
             vec![]
         ))

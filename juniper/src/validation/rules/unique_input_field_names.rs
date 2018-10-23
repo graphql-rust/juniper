@@ -3,6 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::InputValue;
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
 pub struct UniqueInputFieldNames<'a> {
     known_name_stack: Vec<HashMap<&'a str, SourcePosition>>,
@@ -14,27 +15,30 @@ pub fn factory<'a>() -> UniqueInputFieldNames<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for UniqueInputFieldNames<'a> {
+impl<'a, S> Visitor<'a, S> for UniqueInputFieldNames<'a>
+where
+    S: ScalarValue,
+{
     fn enter_object_value(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>,
+        _: &mut ValidatorContext<'a, S>,
+        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
     ) {
         self.known_name_stack.push(HashMap::new());
     }
 
     fn exit_object_value(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue>)>>,
+        _: &mut ValidatorContext<'a, S>,
+        _: Spanning<&'a Vec<(Spanning<String>, Spanning<InputValue<S>>)>>,
     ) {
         self.known_name_stack.pop();
     }
 
     fn enter_object_field(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
-        &(ref field_name, _): &'a (Spanning<String>, Spanning<InputValue>),
+        ctx: &mut ValidatorContext<'a, S>,
+        &(ref field_name, _): &'a (Spanning<String>, Spanning<InputValue<S>>),
     ) {
         if let Some(ref mut known_names) = self.known_name_stack.last_mut() {
             match known_names.entry(&field_name.item) {
@@ -62,10 +66,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn input_object_with_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -77,7 +82,7 @@ mod tests {
 
     #[test]
     fn same_input_object_within_two_args() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -89,7 +94,7 @@ mod tests {
 
     #[test]
     fn multiple_input_object_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -101,7 +106,7 @@ mod tests {
 
     #[test]
     fn allows_for_nested_input_objects_with_similar_fields() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -121,7 +126,7 @@ mod tests {
 
     #[test]
     fn duplicate_input_object_fields() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -140,7 +145,7 @@ mod tests {
 
     #[test]
     fn many_duplicate_input_object_fields() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {

@@ -1,18 +1,23 @@
 use ast::FragmentSpread;
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
+use value::ScalarValue;
 
-pub struct KnownFragmentNames {}
+pub struct KnownFragmentNames;
 
 pub fn factory() -> KnownFragmentNames {
-    KnownFragmentNames {}
+    KnownFragmentNames
 }
 
-impl<'a> Visitor<'a> for KnownFragmentNames {
+impl<'a, S> Visitor<'a, S> for KnownFragmentNames
+where
+    S: ScalarValue,
+{
+
     fn enter_fragment_spread(
         &mut self,
-        context: &mut ValidatorContext<'a>,
-        spread: &'a Spanning<FragmentSpread>,
+        context: &mut ValidatorContext<'a, S>,
+        spread: &'a Spanning<FragmentSpread<S>>,
     ) {
         let spread_name = &spread.item.name;
         if !context.is_known_fragment(spread_name.item) {
@@ -34,10 +39,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn known() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {
@@ -67,7 +73,7 @@ mod tests {
 
     #[test]
     fn unknown() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           {

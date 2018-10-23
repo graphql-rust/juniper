@@ -2,6 +2,7 @@ use ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDef
 use parser::Spanning;
 use std::collections::{HashMap, HashSet};
 use validation::{RuleError, ValidatorContext, Visitor};
+use value::ScalarValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -55,8 +56,11 @@ impl<'a> NoUnusedVariables<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, _: &'a Document) {
+impl<'a, S> Visitor<'a, S> for NoUnusedVariables<'a>
+where
+    S: ScalarValue,
+{
+    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
         for (op_name, def_vars) in &self.defined_variables {
             let mut used = HashSet::new();
             let mut visited = HashSet::new();
@@ -81,8 +85,8 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 
     fn enter_operation_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        op: &'a Spanning<Operation>,
+        _: &mut ValidatorContext<'a, S>,
+        op: &'a Spanning<Operation<S>>,
     ) {
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -91,16 +95,16 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 
     fn enter_fragment_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        f: &'a Spanning<Fragment>,
+        _: &mut ValidatorContext<'a, S>,
+        f: &'a Spanning<Fragment<S>>,
     ) {
         self.current_scope = Some(Scope::Fragment(f.item.name.item));
     }
 
     fn enter_fragment_spread(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        spread: &'a Spanning<FragmentSpread>,
+        _: &mut ValidatorContext<'a, S>,
+        spread: &'a Spanning<FragmentSpread<S>>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
@@ -112,8 +116,8 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 
     fn enter_variable_definition(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition),
+        _: &mut ValidatorContext<'a, S>,
+        &(ref var_name, _): &'a (Spanning<&'a str>, VariableDefinition<S>),
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
@@ -124,8 +128,8 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 
     fn enter_argument(
         &mut self,
-        _: &mut ValidatorContext<'a>,
-        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue>),
+        _: &mut ValidatorContext<'a, S>,
+        &(_, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
@@ -153,10 +157,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use value::DefaultScalarValue;
 
     #[test]
     fn uses_all_variables() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -168,7 +173,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -184,7 +189,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply_in_inline_fragments() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -204,7 +209,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_in_fragments() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -229,7 +234,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_fragment_in_multiple_operations() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String) {
@@ -250,7 +255,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_recursive_fragment() {
-        expect_passes_rule(
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String) {
@@ -267,7 +272,7 @@ mod tests {
 
     #[test]
     fn variable_not_used() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -283,7 +288,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_1() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -305,7 +310,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_in_fragment() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -334,7 +339,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_2() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -369,7 +374,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_unreferenced_fragment() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($b: String) {
@@ -391,7 +396,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_fragment_used_by_other_operation() {
-        expect_fails_rule(
+        expect_fails_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
           query Foo($b: String) {

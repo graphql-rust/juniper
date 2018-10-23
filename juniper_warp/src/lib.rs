@@ -55,25 +55,35 @@ extern crate percent_encoding;
 
 use futures::Future;
 use futures_cpupool::CpuPool;
+use juniper::{DefaultScalarValue, ScalarRefValue, ScalarValue, InputValue};
+use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
-enum GraphQLBatchRequest {
-    Single(juniper::http::GraphQLRequest),
-    Batch(Vec<juniper::http::GraphQLRequest>),
+#[serde(bound = "InputValue<S>: Deserialize<'de>")]
+enum GraphQLBatchRequest<S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
+    Single(juniper::http::GraphQLRequest<S>),
+    Batch(Vec<juniper::http::GraphQLRequest<S>>),
 }
 
-impl GraphQLBatchRequest {
+impl<S> GraphQLBatchRequest<S>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
-        root_node: &juniper::RootNode<QueryT, MutationT>,
+        root_node: &'a juniper::RootNode<QueryT, MutationT, S>,
         context: &CtxT,
-    ) -> GraphQLBatchResponse<'a>
+    ) -> GraphQLBatchResponse<'a, S>
     where
-        QueryT: juniper::GraphQLType<Context = CtxT>,
-        MutationT: juniper::GraphQLType<Context = CtxT>,
+        QueryT: juniper::GraphQLType<S, Context = CtxT>,
+        MutationT: juniper::GraphQLType<S, Context = CtxT>,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
@@ -91,12 +101,18 @@ impl GraphQLBatchRequest {
 
 #[derive(Serialize)]
 #[serde(untagged)]
-enum GraphQLBatchResponse<'a> {
-    Single(juniper::http::GraphQLResponse<'a>),
-    Batch(Vec<juniper::http::GraphQLResponse<'a>>),
+enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
+    Single(juniper::http::GraphQLResponse<'a, S>),
+    Batch(Vec<juniper::http::GraphQLResponse<'a, S>>),
 }
 
-impl<'a> GraphQLBatchResponse<'a> {
+impl<'a, S> GraphQLBatchResponse<'a, S>
+where
+    S: ScalarValue,
+{
     fn is_ok(&self) -> bool {
         match self {
             GraphQLBatchResponse::Single(res) => res.is_ok(),
@@ -182,22 +198,24 @@ type Response =
     Box<Future<Item = warp::http::Response<Vec<u8>>, Error = warp::reject::Rejection> + Send>;
 
 /// Same as [make_graphql_filter](./fn.make_graphql_filter.html), but use the provided [CpuPool](../futures_cpupool/struct.CpuPool.html) instead.
-pub fn make_graphql_filter_with_thread_pool<Query, Mutation, Context>(
-    schema: juniper::RootNode<'static, Query, Mutation>,
+pub fn make_graphql_filter_with_thread_pool<Query, Mutation, Context, S>(
+    schema: juniper::RootNode<'static, Query, Mutation, S>,
     context_extractor: BoxedFilter<(Context,)>,
     thread_pool: futures_cpupool::CpuPool,
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + 'static,
-    Query: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: juniper::GraphQLType<Context = Context, TypeInfo = ()> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
     let pool_filter = warp::any().map(move || thread_pool.clone());
 
     let handle_post_request =
-        move |context: Context, request: GraphQLBatchRequest, pool: CpuPool| -> Response {
+        move |context: Context, request: GraphQLBatchRequest<S>, pool: CpuPool| -> Response {
             let schema = post_schema.clone();
             Box::new(
                 pool.spawn_fn(move || {
