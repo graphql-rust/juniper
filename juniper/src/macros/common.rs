@@ -398,7 +398,74 @@ macro_rules! __juniper_parse_field_list {
         );
     };
 
-
+    (
+        success_callback = $success_callback: ident,
+        additional_parser = {$($additional:tt)*},
+        meta = {$($meta:tt)*},
+        items = [$({$($items: tt)*},)*],
+        rest = $(#[doc = $desc: tt])*
+        #[deprecated($(since = $since: tt,)* note = $reason: tt)]
+        field $name: ident (
+            $(&$executor: tt)* $(,)*
+            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty),* $(,)*
+        ) -> $return_ty: ty $body: block
+            $($rest:tt)*
+    ) => {
+        __juniper_parse_field_list!(
+            success_callback = $success_callback,
+            additional_parser = {$($additional)*},
+            meta = {$($meta)*},
+            items = [$({$($items)*},)* {
+                name = $name,
+                body = $body,
+                return_ty = $return_ty,
+                args = [
+                    $({
+                        arg_name = $arg_name,
+                        arg_ty = $arg_ty,
+                        $(arg_default = $default_value,)*
+                    },)*
+                ],
+                $(decs_line = $desc,)*
+                deprecated = $reason,
+                $(executor_var = $executor,)*
+            },],
+            rest = $($rest)*
+        );
+    };
+    (
+        success_callback = $success_callback: ident,
+        additional_parser = {$($additional:tt)*},
+        meta = {$($meta:tt)*},
+        items = [$({$($items: tt)*},)*],
+        rest = $(#[doc = $desc: tt])*
+        field $name: ident (
+            $(&$executor: ident)* $(,)*
+            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty),* $(,)*
+        ) -> $return_ty: ty $body: block
+            $($rest:tt)*
+    ) => {
+        __juniper_parse_field_list!(
+            success_callback = $success_callback,
+            additional_parser = {$($additional)*},
+            meta = {$($meta)*},
+            items = [$({$($items)*},)* {
+                name = $name,
+                body = $body,
+                return_ty = $return_ty,
+                args = [
+                    $({
+                        arg_name = $arg_name,
+                        arg_ty = $arg_ty,
+                        $(arg_default = $default_value,)*
+                    },)*
+                ],
+                $(decs_line = $desc,)*
+                $(executor_var = $executor,)*
+            },],
+            rest = $($rest)*
+        );
+    };
     (
         success_callback = $success_callback: ident,
         additional_parser = {$($additional:tt)*},

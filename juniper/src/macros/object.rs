@@ -299,6 +299,7 @@ macro_rules! graphql_object {
                 $(arg_default = $arg_default: expr,)*
             },)*],
             $(decs = $fn_description: expr,)*
+            $(decs_line = $fn_description_line: expr,)*
             $(deprecated = $deprecated: expr,)*
             $(executor_var = $executor: ident,)*
         },)*],
@@ -325,6 +326,7 @@ macro_rules! graphql_object {
                             info
                         )
                             $(.description($fn_description))*
+                            $(.description_line($fn_description_line))*
                             $(.deprecated($deprecated))*
                             $(.argument(
                                 __juniper_create_arg!(

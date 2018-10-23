@@ -31,6 +31,20 @@ graphql_object!(Root: () |&self| {
     field deprecated "Deprecation reason"
         deprecated_descr() -> i32 as "Field description" { 0 }
 
+    #[doc = "Field description"]
+    field attr_description() -> i32 { 0 }
+
+    #[doc = "Field description"]
+    #[doc = "with `collapse_docs` behavior"] // https://doc.rust-lang.org/rustdoc/the-doc-attribute.html
+    field attr_description_collapse() -> i32 { 0 }
+
+    #[deprecated(note = "Deprecation reason")]
+    field attr_deprecated() -> i32 { 0 }
+
+    #[doc = "Field description"]
+    #[deprecated(note = "Deprecation reason")]
+    field attr_deprecated_descr() -> i32 { 0 }
+
     field with_field_result() -> FieldResult<i32> { Ok(0) }
 
     field with_return() -> i32 { return 0; }
@@ -50,6 +64,20 @@ graphql_interface!(Interface: () |&self| {
 
     field deprecated "Deprecation reason"
         deprecated_descr() -> i32 as "Field description" { 0 }
+
+    #[doc = "Field description"]
+    field attr_description() -> i32 { 0 }
+
+    #[doc = "Field description"]
+    #[doc = "with `collapse_docs` behavior"] // https://doc.rust-lang.org/rustdoc/the-doc-attribute.html
+    field attr_description_collapse() -> i32 { 0 }
+
+    #[deprecated(note = "Deprecation reason")]
+    field attr_deprecated() -> i32 { 0 }
+
+    #[doc = "Field description"]
+    #[deprecated(note = "Deprecation reason")]
+    field attr_deprecated_descr() -> i32 { 0 }
 
     instance_resolvers: |&_| {
         Root => Some(Root {}),
@@ -265,6 +293,176 @@ fn introspect_interface_field_deprecated_descr() {
         assert_eq!(
             field.get_field_value("name"),
             Some(&Value::scalar("deprecatedDescr"))
+        );
+        assert_eq!(
+            field.get_field_value("description"),
+            Some(&Value::scalar("Field description"))
+        );
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::scalar("Deprecation reason"))
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_attr_description() {
+    run_field_info_query("Root", "attrDescription", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDescription"))
+        );
+        assert_eq!(
+            field.get_field_value("description"),
+            Some(&Value::scalar("Field description"))
+        );
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(false))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
+    });
+}
+
+#[test]
+fn introspect_interface_field_attr_description() {
+    run_field_info_query("Interface", "attrDescription", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDescription"))
+        );
+        assert_eq!(
+            field.get_field_value("description"),
+            Some(&Value::scalar("Field description"))
+        );
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(false))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_attr_description_collapse() {
+    run_field_info_query("Root", "attrDescriptionCollapse", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDescriptionCollapse"))
+        );
+        assert_eq!(
+            field.get_field_value("description"),
+            Some(&Value::scalar("Field description\nwith `collapse_docs` behavior"))
+        );
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(false))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
+    });
+}
+
+#[test]
+fn introspect_interface_field_attr_description_collapse() {
+    run_field_info_query("Interface", "attrDescriptionCollapse", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDescriptionCollapse"))
+        );
+        assert_eq!(
+            field.get_field_value("description"),
+            Some(&Value::scalar("Field description\nwith `collapse_docs` behavior"))
+        );
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(false))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_attr_deprecated() {
+    run_field_info_query("Root", "attrDeprecated", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDeprecated"))
+        );
+        assert_eq!(field.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::scalar("Deprecation reason"))
+        );
+    });
+}
+
+#[test]
+fn introspect_interface_field_attr_deprecated() {
+    run_field_info_query("Interface", "attrDeprecated", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDeprecated"))
+        );
+        assert_eq!(field.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::scalar("Deprecation reason"))
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_attr_deprecated_descr() {
+    run_field_info_query("Root", "attrDeprecatedDescr", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDeprecatedDescr"))
+        );
+        assert_eq!(
+            field.get_field_value("description"),
+            Some(&Value::scalar("Field description"))
+        );
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::scalar("Deprecation reason"))
+        );
+    });
+}
+
+#[test]
+fn introspect_interface_field_attr_deprecated_descr() {
+    run_field_info_query("Interface", "attrDeprecatedDescr", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDeprecatedDescr"))
         );
         assert_eq!(
             field.get_field_value("description"),

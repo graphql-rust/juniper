@@ -580,6 +580,23 @@ impl<'a, S> Field<'a, S> {
         self
     }
 
+    /// Add a line to the description of the field
+    ///
+    /// If the description hasn't been set, the description is set to the provided line.
+    /// Otherwise, a newline is appended before appending the line.
+    pub fn description_line(mut self, line: &str) -> Field<'a, S> {
+        match &mut self.description {
+            Some(desc) => {
+                desc.push('\n');
+                desc.push_str(line);
+            }
+            desc @ None => {
+                *desc = Some(line.to_owned());
+            }
+        }
+        self
+    }
+
     /// Add an argument to the field
     ///
     /// Arguments are unordered and can't contain duplicates by name.
