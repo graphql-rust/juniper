@@ -12,36 +12,40 @@ pub enum AttributeValue {
     String(String),
 }
 
-pub fn get_deprecated_note(attrs: &Vec<Attribute>) -> Option<String> {
-    if let Some(item) = get_deprecated_attr(attrs) {
-        for meta in item.nested {
-            match meta {
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    match nv.lit {
-                        Lit::Str(ref strlit) => {
-                            return Some(strlit.value().to_string());
-                        }
-                        _ => panic!("deprecated attribute note value only has string literal"),
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-    None
+pub struct DeprecationAttr {
+    pub reason: Option<String>,
 }
 
-// Gets deprecated attribute; matches `#[deprecated(...)]`, but ignores empty `#[deprecated]`
-fn get_deprecated_attr(attrs: &Vec<Attribute>) -> Option<MetaList> {
+pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
     for attr in attrs {
         match attr.interpret_meta() {
             Some(Meta::List(ref list)) if list.ident == "deprecated" => {
-                return Some(list.clone());
+                return Some(get_deprecated_meta_list(list));
+            }
+            Some(Meta::Word(ref ident)) if ident == "deprecated" => {
+                return Some(DeprecationAttr { reason: None });
             }
             _ => {}
         }
     }
     None
+}
+
+fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
+    for meta in &list.nested {
+        match meta {
+            &NestedMeta::Meta(Meta::NameValue(ref nv)) if nv.ident == "note" => {
+                match &nv.lit {
+                    &Lit::Str(ref strlit) => {
+                        return DeprecationAttr { reason: Some(strlit.value().to_string()) };
+                    }
+                    _ => panic!("deprecated attribute note value only has string literal"),
+                }
+            }
+            _ => {}
+        }
+    }
+    DeprecationAttr { reason: None }
 }
 
 // Gets doc comment.

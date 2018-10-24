@@ -404,7 +404,7 @@ macro_rules! __juniper_parse_field_list {
         meta = {$($meta:tt)*},
         items = [$({$($items: tt)*},)*],
         rest = $(#[doc = $desc: tt])*
-        #[deprecated($(since = $since: tt,)* note = $reason: tt)]
+        #[deprecated($(since = $since: tt,)* $(note = $reason: tt),*)]
         field $name: ident (
             $(&$executor: tt)* $(,)*
             $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty),* $(,)*
@@ -427,7 +427,7 @@ macro_rules! __juniper_parse_field_list {
                     },)*
                 ],
                 $(docstring = $desc,)*
-                deprecated = $reason,
+                deprecated = None$(.unwrap_or(Some($reason)))*,
                 $(executor_var = $executor,)*
             },],
             rest = $($rest)*
@@ -494,7 +494,7 @@ macro_rules! __juniper_parse_field_list {
                     },)*
                 ],
                 $(decs = $desc,)*
-                deprecated = $reason,
+                deprecated = Some($reason),
                 $(executor_var = $executor,)*
             },],
             rest = $($rest)*

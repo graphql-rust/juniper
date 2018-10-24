@@ -80,7 +80,7 @@ graphql_interface!(Interface: () |&self| {
     #[doc = "with `collapse_docs` behavior"] // https://doc.rust-lang.org/rustdoc/the-doc-attribute.html
     field attr_description_collapse() -> i32 { 0 }
 
-    #[doc = r#"\
+    #[doc = r#"
         Get the i32 representation of 0.
 
         - This comment is longer.
