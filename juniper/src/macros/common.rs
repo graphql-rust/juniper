@@ -426,7 +426,7 @@ macro_rules! __juniper_parse_field_list {
                         $(arg_default = $default_value,)*
                     },)*
                 ],
-                $(decs_line = $desc,)*
+                $(docstring = $desc,)*
                 deprecated = $reason,
                 $(executor_var = $executor,)*
             },],
@@ -460,7 +460,7 @@ macro_rules! __juniper_parse_field_list {
                         $(arg_default = $default_value,)*
                     },)*
                 ],
-                $(decs_line = $desc,)*
+                $(docstring = $desc,)*
                 $(executor_var = $executor,)*
             },],
             rest = $($rest)*
