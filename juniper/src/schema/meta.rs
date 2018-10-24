@@ -586,11 +586,11 @@ impl<'a, S> Field<'a, S> {
     /// Otherwise, a newline is appended before appending the line.
     pub fn description_line(mut self, line: &str) -> Field<'a, S> {
         match &mut self.description {
-            Some(desc) => {
+            &mut Some(ref mut desc) => {
                 desc.push('\n');
                 desc.push_str(line);
             }
-            desc @ None => {
+            desc @ &mut None => {
                 *desc = Some(line.to_owned());
             }
         }
