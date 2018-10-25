@@ -63,6 +63,44 @@ graphql_object!(User: () |&self| {
 # fn main() { }
 ```
 
+**Alternatively,** descriptions can be added with the builtin `doc` attribute.
+Consecutive `#[doc = "..."]` attributes will be collapsed into a single description
+where the docstrings are separated by newlines.
+```
+# #[macro_use] extern crate juniper;
+struct User { id: String, name: String, group_ids: Vec<String> }
+
+graphql_object!(User: () |&self| {
+    description: "A user in the database"
+
+    #[doc = "The user's unique identifier"]
+    field id() -> &String {
+        &self.id
+    }
+
+    #[doc = "The user's name"]
+    field name() -> &String {
+        &self.name
+    }
+
+    #[doc = r#"
+        Test if a user is member of a group.
+
+        This may return a flitzbit if the floop is twizled.
+        Make sure not to rumblejumble the cog-rotater.
+    "#]
+    #[doc = "Added in vX.Y.44"]
+    field member_of_group(
+        #[doc = "The group id you want to test membership against"]
+        group_id: String,
+    ) -> bool {
+        self.group_ids.iter().any(|gid| gid == &group_id)
+    }
+});
+
+# fn main() { }
+```
+
 ## Generics and lifetimes
 
 You can expose generic or pointer types by prefixing the type with the necessary
@@ -232,6 +270,24 @@ Defines a field on the object. The name is converted to camel case, e.g.
 `user_name` is exposed as `userName`. The `as "Field description"` adds the
 string as documentation on the field.
 
+A field's description and deprecation can also be set using the
+builtin `doc` and `deprecated` attributes.
+
+```text
+#[doc = "Field description"]
+field name(args...) -> Type { }
+
+#[deprecated] // no reason required
+field name(args...) -> Type { }
+
+#[deprecated(note = "Reason")]
+field name(args...) -> Type { }
+
+#[doc = "Field description"]
+#[deprecated(note = "Reason")] // deprecated must come after doc
+field deprecated "Reason" name(args...) -> Type { }
+```
+
 ### Field arguments
 
 ```text
@@ -267,6 +323,13 @@ complex default value expressions:
 ```text
 arg_name = (Point { x: 1, y: 2 }): Point
 arg_name = ("default".to_owned()): String
+```
+
+A description can also be provided using the builtin `doc` attribute.
+
+```text
+#[doc = "Argument description"]
+arg_name: ArgType
 ```
 
 [1]: struct.Executor.html
