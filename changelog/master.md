@@ -34,7 +34,7 @@
     // Original syntax for setting deprecation reason
     field deprecated "Reason" my_field() -> { ... }
 
-    // New alternative syntax for deprecated
+    // New alternative syntax for deprecation reason.
     #[deprecated(note = "Reason")]
     field my_field() -> { ... }
 
@@ -45,15 +45,34 @@
 
   To set the __description__ of a graphql field:
     ```rust
-    // Original syntax for setting deprecation reason
+    // Original syntax for field descriptions
     field my_field() as "Description" -> { ... }
 
-    // New alternative syntax for deprecated
+    // Original syntax for argument descriptions
+    field my_field(
+      floops: i32 as "The number of starfish to be returned. \
+                      Can't be more than 100.",
+    ) -> {
+      ...
+    }
+
+    // New alternative syntax for field descriptions
     #[doc = "Description"]
     field my_field() -> { ... }
 
-    // You can now also use raw strings, const str, and
-    // combine multiple docstrings into one.
+    // New alternative syntax for argument descriptions
+    field my_field(
+      #[doc = "The number of starfish to be returned. \
+               Can't be more than 100."]
+      arg: i32,
+    ) -> {
+      ...
+    }
+
+    // You can also use raw strings and const &'static str.
+    //
+    // Multiple docstrings will be collapsed into a single
+    // description separated by newlines.
     #[doc = r#"
         This is my field.
 

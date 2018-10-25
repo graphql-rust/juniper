@@ -407,7 +407,7 @@ macro_rules! __juniper_parse_field_list {
         #[deprecated($(since = $since: tt,)* $(note = $reason: tt),*)]
         field $name: ident (
             $(&$executor: tt)* $(,)*
-            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty),* $(,)*
+            $($(#[doc = $arg_desc: expr])* $arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty),* $(,)*
         ) -> $return_ty: ty $body: block
             $($rest:tt)*
     ) => {
@@ -423,7 +423,8 @@ macro_rules! __juniper_parse_field_list {
                     $({
                         arg_name = $arg_name,
                         arg_ty = $arg_ty,
-                        $(arg_default = $default_value,)*
+                        $(arg_default = $arg_default,)*
+                        $(arg_docstring = $arg_desc,)*
                     },)*
                 ],
                 $(docstring = $desc,)*
@@ -441,7 +442,7 @@ macro_rules! __juniper_parse_field_list {
         rest = $(#[doc = $desc: tt])*
         field $name: ident (
             $(&$executor: ident)* $(,)*
-            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty),* $(,)*
+            $($(#[doc = $arg_desc: expr])* $arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty),* $(,)*
         ) -> $return_ty: ty $body: block
             $($rest:tt)*
     ) => {
@@ -457,7 +458,8 @@ macro_rules! __juniper_parse_field_list {
                     $({
                         arg_name = $arg_name,
                         arg_ty = $arg_ty,
-                        $(arg_default = $default_value,)*
+                        $(arg_default = $arg_default,)*
+                        $(arg_docstring = $arg_desc,)*
                     },)*
                 ],
                 $(docstring = $desc,)*
@@ -473,7 +475,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = field deprecated $reason:tt $name: ident (
             $(&$executor: tt)* $(,)*
-            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty $(as $arg_des: expr)*),* $(,)*
+            $($arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty $(as $arg_desc: expr)*),* $(,)*
         ) -> $return_ty: ty $(as $desc: tt)* $body: block
             $($rest:tt)*
     ) => {
@@ -489,8 +491,8 @@ macro_rules! __juniper_parse_field_list {
                     $({
                         arg_name = $arg_name,
                         arg_ty = $arg_ty,
+                        $(arg_default = $arg_default,)*
                         $(arg_description = $arg_desc,)*
-                        $(arg_default = $default_value,)*
                     },)*
                 ],
                 $(decs = $desc,)*
@@ -507,7 +509,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = field $name: ident (
             $(&$executor: ident)* $(,)*
-            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty $(as $arg_desc: expr)*),* $(,)*
+            $($arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty $(as $arg_desc: expr)*),* $(,)*
         ) -> $return_ty: ty $(as $desc: tt)* $body: block
             $($rest:tt)*
     ) => {
@@ -523,8 +525,8 @@ macro_rules! __juniper_parse_field_list {
                     $({
                         arg_name = $arg_name,
                         arg_ty = $arg_ty,
+                        $(arg_default = $arg_default,)*
                         $(arg_description = $arg_desc,)*
-                        $(arg_default = $default_value,)*
                     },)*
                 ],
                 $(decs = $desc,)*
@@ -668,12 +670,14 @@ macro_rules! __juniper_create_arg {
         arg_ty = $arg_ty: ty,
         arg_name = $arg_name: ident,
         $(description = $arg_description: expr,)*
+        $(docstring = $arg_docstring: expr,)*
     ) => {
         $reg.arg::<$arg_ty>(
             &$crate::to_camel_case(stringify!($arg_name)),
             $info,
         )
         $(.description($arg_description))*
+        $(.push_docstring($arg_docstring))*
     };
 
     (
@@ -681,8 +685,9 @@ macro_rules! __juniper_create_arg {
         info = $info: ident,
         arg_ty = $arg_ty: ty,
         arg_name = $arg_name: ident,
-        $(description = $arg_description: expr,)*
         default = $arg_default: expr,
+        $(description = $arg_description: expr,)*
+        $(docstring = $arg_docstring: expr,)*
     ) => {
         $reg.arg_with_default::<$arg_ty>(
             &$crate::to_camel_case(stringify!($arg_name)),
@@ -690,5 +695,6 @@ macro_rules! __juniper_create_arg {
             $info,
         )
         $(.description($arg_description))*
+        $(.push_docstring($arg_docstring))*
     };
 }

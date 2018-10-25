@@ -612,28 +612,16 @@ impl<'a, S> Field<'a, S> {
     /// will be removed from the beginning of each line.
     ///
     /// If the description hasn't been set, the description is set to the provided line.
-    /// Otherwise, a newline is appended before appending the line.
+    /// Otherwise, the doc string is added to the current description after a newline.
     pub fn push_docstring(mut self, multiline: &str) -> Field<'a, S> {
-        let trim_start = multiline.split('\n')
-            .skip(1)
-            .filter_map(|ln| ln.chars().position(|ch| ch != ' ' && ch != '\t'))
-            .min();
-        let doc = if let Some(trim) = trim_start {
-            let trimmed = multiline
-                .split('\n')
-                .map(|ln| if ln.len() >= trim { &ln[trim..] } else { "" })
-                .collect::<Vec<_>>();
-            Cow::from(trimmed.join("\n").trim_matches('\n').to_owned())
-        } else {
-            Cow::from(multiline.trim_matches('\n'))
-        };
+        let docstring = clean_docstring(multiline);
         match &mut self.description {
             &mut Some(ref mut desc) => {
                 desc.push('\n');
-                desc.push_str(&doc);
+                desc.push_str(&docstring);
             }
             desc @ &mut None => {
-                *desc = Some(doc.to_string());
+                *desc = Some(docstring.to_string());
             }
         }
         self
@@ -680,6 +668,28 @@ impl<'a, S> Argument<'a, S> {
     /// This overwrites the description if any was previously set.
     pub fn description(mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
+        self
+    }
+
+    /// Adds a (multi)line doc string to the description of the field.
+    /// Any leading or trailing newlines will be removed.
+    ///
+    /// If the docstring contains newlines, repeated leading tab and space characters
+    /// will be removed from the beginning of each line.
+    ///
+    /// If the description hasn't been set, the description is set to the provided line.
+    /// Otherwise, the doc string is added to the current description after a newline.
+    pub fn push_docstring(mut self, multiline: &str) -> Argument<'a, S> {
+        let docstring = clean_docstring(multiline);
+        match &mut self.description {
+            &mut Some(ref mut desc) => {
+                desc.push('\n');
+                desc.push_str(&docstring);
+            }
+            desc @ &mut None => {
+                *desc = Some(docstring.to_string());
+            }
+        }
         self
     }
 
@@ -754,4 +764,28 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     <T as FromInputValue<S>>::from_input_value(v).is_some()
+}
+
+fn clean_docstring<'a>(multiline: &'a str) -> Cow<'a, str> {
+    let trim_start = multiline.split('\n')
+        .skip(1)
+        .filter_map(|ln| ln.chars().position(|ch| ch != ' ' && ch != '\t'))
+        .min();
+    if let Some(trim) = trim_start {
+        let trimmed = multiline
+            .split('\n')
+            .map(|ln| {
+                if !ln.starts_with(' ') && !ln.starts_with('\t') {
+                    ln // skip trimming the first line
+                } else if ln.len() >= trim {
+                    &ln[trim..]
+                } else {
+                    ""
+                }
+            })
+            .collect::<Vec<_>>();
+        Cow::from(trimmed.join("\n").trim_matches('\n').to_owned())
+    } else {
+        Cow::from(multiline.trim_matches('\n'))
+    }
 }

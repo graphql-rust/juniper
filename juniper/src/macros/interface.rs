@@ -117,8 +117,9 @@ macro_rules! graphql_interface {
             args = [$({
                 arg_name = $arg_name : ident,
                 arg_ty = $arg_ty: ty,
-                $(arg_description = $arg_description: expr,)*
                 $(arg_default = $arg_default: expr,)*
+                $(arg_description = $arg_description: expr,)*
+                $(arg_docstring = $arg_docstring: expr,)*
             },)*],
             $(decs = $fn_description: expr,)*
             $(docstring = $docstring: expr,)*
@@ -160,8 +161,9 @@ macro_rules! graphql_interface {
                                     info = info,
                                     arg_ty = $arg_ty,
                                     arg_name = $arg_name,
-                                    $(description = $arg_description,)*
                                     $(default = $arg_default,)*
+                                    $(description = $arg_description,)*
+                                    $(docstring = $arg_docstring,)*
                                 )
                             ))*,
                     )*];
