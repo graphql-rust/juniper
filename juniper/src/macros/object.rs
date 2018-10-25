@@ -66,6 +66,7 @@ graphql_object!(User: () |&self| {
 **Alternatively,** descriptions can be added with the builtin `doc` attribute.
 Consecutive `#[doc = "..."]` attributes will be collapsed into a single description
 where the docstrings are separated by newlines.
+
 ```
 # #[macro_use] extern crate juniper;
 struct User { id: String, name: String, group_ids: Vec<String> }
