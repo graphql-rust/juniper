@@ -46,8 +46,11 @@ graphql_object!(Root: () |&self| {
     "#]
     field attr_description_long() -> i32 { 0 }
 
-    #[deprecated(note = "Deprecation reason")]
+    #[deprecated]
     field attr_deprecated() -> i32 { 0 }
+
+    #[deprecated(note = "Deprecation reason")]
+    field attr_deprecated_reason() -> i32 { 0 }
 
     #[doc = "Field description"]
     #[deprecated(note = "Deprecation reason")]
@@ -88,8 +91,11 @@ graphql_interface!(Interface: () |&self| {
     "#]
     field attr_description_long() -> i32 { 0 }
 
-    #[deprecated(note = "Deprecation reason")]
+    #[deprecated]
     field attr_deprecated() -> i32 { 0 }
+
+    #[deprecated(note = "Deprecation reason")]
+    field attr_deprecated_reason() -> i32 { 0 }
 
     #[doc = "Field description"]
     #[deprecated(note = "Deprecation reason")]
@@ -471,7 +477,7 @@ fn introspect_object_field_attr_deprecated() {
         );
         assert_eq!(
             field.get_field_value("deprecationReason"),
-            Some(&Value::scalar("Deprecation reason"))
+            Some(&Value::null())
         );
     });
 }
@@ -482,6 +488,44 @@ fn introspect_interface_field_attr_deprecated() {
         assert_eq!(
             field.get_field_value("name"),
             Some(&Value::scalar("attrDeprecated"))
+        );
+        assert_eq!(field.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null())
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_attr_deprecated_reason() {
+    run_field_info_query("Root", "attrDeprecatedReason", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDeprecatedReason"))
+        );
+        assert_eq!(field.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::scalar("Deprecation reason"))
+        );
+    });
+}
+
+#[test]
+fn introspect_interface_field_attr_deprecated_reason() {
+    run_field_info_query("Interface", "attrDeprecatedReason", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("attrDeprecatedReason"))
         );
         assert_eq!(field.get_field_value("description"), Some(&Value::null()));
         assert_eq!(

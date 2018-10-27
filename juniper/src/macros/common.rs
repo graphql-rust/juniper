@@ -404,7 +404,7 @@ macro_rules! __juniper_parse_field_list {
         meta = {$($meta:tt)*},
         items = [$({$($items: tt)*},)*],
         rest = $(#[doc = $desc: tt])*
-        #[deprecated($(since = $since: tt,)* $(note = $reason: tt),*)]
+        #[deprecated $(( $(since = $since: tt,)* note = $reason: tt ))* ]
         field $name: ident (
             $(&$executor: tt)* $(,)*
             $($(#[doc = $arg_desc: expr])* $arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty),* $(,)*
