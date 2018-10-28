@@ -398,7 +398,76 @@ macro_rules! __juniper_parse_field_list {
         );
     };
 
-
+    (
+        success_callback = $success_callback: ident,
+        additional_parser = {$($additional:tt)*},
+        meta = {$($meta:tt)*},
+        items = [$({$($items: tt)*},)*],
+        rest = $(#[doc = $desc: tt])*
+        #[deprecated $(( $(since = $since: tt,)* note = $reason: tt ))* ]
+        field $name: ident (
+            $(&$executor: tt)* $(,)*
+            $($(#[doc = $arg_desc: expr])* $arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty),* $(,)*
+        ) -> $return_ty: ty $body: block
+            $($rest:tt)*
+    ) => {
+        __juniper_parse_field_list!(
+            success_callback = $success_callback,
+            additional_parser = {$($additional)*},
+            meta = {$($meta)*},
+            items = [$({$($items)*},)* {
+                name = $name,
+                body = $body,
+                return_ty = $return_ty,
+                args = [
+                    $({
+                        arg_name = $arg_name,
+                        arg_ty = $arg_ty,
+                        $(arg_default = $arg_default,)*
+                        $(arg_docstring = $arg_desc,)*
+                    },)*
+                ],
+                $(docstring = $desc,)*
+                deprecated = None$(.unwrap_or(Some($reason)))*,
+                $(executor_var = $executor,)*
+            },],
+            rest = $($rest)*
+        );
+    };
+    (
+        success_callback = $success_callback: ident,
+        additional_parser = {$($additional:tt)*},
+        meta = {$($meta:tt)*},
+        items = [$({$($items: tt)*},)*],
+        rest = $(#[doc = $desc: tt])*
+        field $name: ident (
+            $(&$executor: ident)* $(,)*
+            $($(#[doc = $arg_desc: expr])* $arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty),* $(,)*
+        ) -> $return_ty: ty $body: block
+            $($rest:tt)*
+    ) => {
+        __juniper_parse_field_list!(
+            success_callback = $success_callback,
+            additional_parser = {$($additional)*},
+            meta = {$($meta)*},
+            items = [$({$($items)*},)* {
+                name = $name,
+                body = $body,
+                return_ty = $return_ty,
+                args = [
+                    $({
+                        arg_name = $arg_name,
+                        arg_ty = $arg_ty,
+                        $(arg_default = $arg_default,)*
+                        $(arg_docstring = $arg_desc,)*
+                    },)*
+                ],
+                $(docstring = $desc,)*
+                $(executor_var = $executor,)*
+            },],
+            rest = $($rest)*
+        );
+    };
     (
         success_callback = $success_callback: ident,
         additional_parser = {$($additional:tt)*},
@@ -406,7 +475,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = field deprecated $reason:tt $name: ident (
             $(&$executor: tt)* $(,)*
-            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty $(as $arg_des: expr)*),* $(,)*
+            $($arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty $(as $arg_desc: expr)*),* $(,)*
         ) -> $return_ty: ty $(as $desc: tt)* $body: block
             $($rest:tt)*
     ) => {
@@ -422,12 +491,12 @@ macro_rules! __juniper_parse_field_list {
                     $({
                         arg_name = $arg_name,
                         arg_ty = $arg_ty,
+                        $(arg_default = $arg_default,)*
                         $(arg_description = $arg_desc,)*
-                        $(arg_default = $default_value,)*
                     },)*
                 ],
                 $(decs = $desc,)*
-                deprecated = $reason,
+                deprecated = Some($reason),
                 $(executor_var = $executor,)*
             },],
             rest = $($rest)*
@@ -440,7 +509,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = field $name: ident (
             $(&$executor: ident)* $(,)*
-            $($arg_name:ident $(= $default_value: tt)* : $arg_ty: ty $(as $arg_desc: expr)*),* $(,)*
+            $($arg_name:ident $(= $arg_default: tt)* : $arg_ty: ty $(as $arg_desc: expr)*),* $(,)*
         ) -> $return_ty: ty $(as $desc: tt)* $body: block
             $($rest:tt)*
     ) => {
@@ -456,8 +525,8 @@ macro_rules! __juniper_parse_field_list {
                     $({
                         arg_name = $arg_name,
                         arg_ty = $arg_ty,
+                        $(arg_default = $arg_default,)*
                         $(arg_description = $arg_desc,)*
-                        $(arg_default = $default_value,)*
                     },)*
                 ],
                 $(decs = $desc,)*
@@ -601,12 +670,14 @@ macro_rules! __juniper_create_arg {
         arg_ty = $arg_ty: ty,
         arg_name = $arg_name: ident,
         $(description = $arg_description: expr,)*
+        $(docstring = $arg_docstring: expr,)*
     ) => {
         $reg.arg::<$arg_ty>(
             &$crate::to_camel_case(stringify!($arg_name)),
             $info,
         )
         $(.description($arg_description))*
+        $(.push_docstring($arg_docstring))*
     };
 
     (
@@ -614,8 +685,9 @@ macro_rules! __juniper_create_arg {
         info = $info: ident,
         arg_ty = $arg_ty: ty,
         arg_name = $arg_name: ident,
-        $(description = $arg_description: expr,)*
         default = $arg_default: expr,
+        $(description = $arg_description: expr,)*
+        $(docstring = $arg_docstring: expr,)*
     ) => {
         $reg.arg_with_default::<$arg_ty>(
             &$crate::to_camel_case(stringify!($arg_name)),
@@ -623,5 +695,6 @@ macro_rules! __juniper_create_arg {
             $info,
         )
         $(.description($arg_description))*
+        $(.push_docstring($arg_docstring))*
     };
 }

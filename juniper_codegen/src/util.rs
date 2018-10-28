@@ -1,5 +1,5 @@
 use regex::Regex;
-use syn::{Attribute, Lit, Meta, MetaNameValue, NestedMeta};
+use syn::{Attribute, Lit, Meta, MetaList, MetaNameValue, NestedMeta};
 
 pub enum AttributeValidation {
     Any,
@@ -10,6 +10,42 @@ pub enum AttributeValidation {
 pub enum AttributeValue {
     Bare,
     String(String),
+}
+
+pub struct DeprecationAttr {
+    pub reason: Option<String>,
+}
+
+pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
+    for attr in attrs {
+        match attr.interpret_meta() {
+            Some(Meta::List(ref list)) if list.ident == "deprecated" => {
+                return Some(get_deprecated_meta_list(list));
+            }
+            Some(Meta::Word(ref ident)) if ident == "deprecated" => {
+                return Some(DeprecationAttr { reason: None });
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
+    for meta in &list.nested {
+        match meta {
+            &NestedMeta::Meta(Meta::NameValue(ref nv)) if nv.ident == "note" => {
+                match &nv.lit {
+                    &Lit::Str(ref strlit) => {
+                        return DeprecationAttr { reason: Some(strlit.value().to_string()) };
+                    }
+                    _ => panic!("deprecated attribute note value only has string literal"),
+                }
+            }
+            _ => {}
+        }
+    }
+    DeprecationAttr { reason: None }
 }
 
 // Gets doc comment.

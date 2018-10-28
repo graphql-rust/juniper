@@ -44,7 +44,7 @@ impl EnumAttrs {
                     continue;
                 }
                 panic!(format!(
-                    "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
+                    "Unknown enum attribute for #[derive(GraphQLEnum)]: {:?}",
                     item
                 ));
             }
@@ -57,7 +57,7 @@ impl EnumAttrs {
 struct EnumVariantAttrs {
     name: Option<String>,
     description: Option<String>,
-    deprecation: Option<String>,
+    deprecation: Option<DeprecationAttr>,
 }
 
 impl EnumVariantAttrs {
@@ -66,6 +66,9 @@ impl EnumVariantAttrs {
 
         // Check doc comments for description.
         res.description = get_doc_comment(&variant.attrs);
+
+        // Check builtin deprecated attribute for deprecation.
+        res.deprecation = get_deprecated(&variant.attrs);
 
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
@@ -90,13 +93,24 @@ impl EnumVariantAttrs {
                     continue;
                 }
                 if let Some(AttributeValue::String(val)) =
-                    keyed_item_value(&item, "deprecated", AttributeValidation::String)
+                    keyed_item_value(&item, "deprecation", AttributeValidation::String)
                 {
-                    res.deprecation = Some(val);
+                    res.deprecation = Some(DeprecationAttr { reason: Some(val) });
                     continue;
                 }
+                match keyed_item_value(&item, "deprecated", AttributeValidation::String) {
+                    Some(AttributeValue::String(val)) => {
+                        res.deprecation = Some(DeprecationAttr { reason: Some(val) });
+                        continue;
+                    }
+                    Some(AttributeValue::Bare) => {
+                        res.deprecation = Some(DeprecationAttr { reason: None });
+                        continue;
+                    }
+                    None => {}
+                }
                 panic!(format!(
-                    "Unknown attribute for #[derive(GraphQLEnum)]: {:?}",
+                    "Unknown variant attribute for #[derive(GraphQLEnum)]: {:?}",
                     item
                 ));
             }
@@ -151,14 +165,21 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             None => quote!{ None },
         };
         let depr = match var_attrs.deprecation {
-            Some(s) => quote!{ Some(#s.to_string())  },
-            None => quote!{ None },
+            Some(DeprecationAttr { reason: Some(s) }) => quote!{
+                _juniper::meta::DeprecationStatus::Deprecated(Some(#s.to_string()))
+            },
+            Some(DeprecationAttr { reason: None }) => quote!{
+                _juniper::meta::DeprecationStatus::Deprecated(None)
+            },
+            None => quote!{
+                _juniper::meta::DeprecationStatus::Current
+            },
         };
         values.extend(quote!{
             _juniper::meta::EnumValue{
                 name: #name.to_string(),
                 description: #descr,
-                deprecation_reason: #depr,
+                deprecation_status: #depr,
             },
         });
 

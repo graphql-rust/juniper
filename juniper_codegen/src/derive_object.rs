@@ -47,7 +47,7 @@ impl ObjAttrs {
                     continue;
                 }
                 panic!(format!(
-                    "Unknown object attribute for #[derive(GraphQLObject)]: {:?}",
+                    "Unknown struct attribute for #[derive(GraphQLObject)]: {:?}",
                     item
                 ));
             }
@@ -60,7 +60,7 @@ impl ObjAttrs {
 struct ObjFieldAttrs {
     name: Option<String>,
     description: Option<String>,
-    deprecation: Option<String>,
+    deprecation: Option<DeprecationAttr>,
     skip: bool,
 }
 
@@ -70,6 +70,9 @@ impl ObjFieldAttrs {
 
         // Check doc comments for description.
         res.description = get_doc_comment(&variant.attrs);
+
+        // Check builtin deprecated attribute for deprecation.
+        res.deprecation = get_deprecated(&variant.attrs);
 
         // Check attributes.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
@@ -96,8 +99,19 @@ impl ObjFieldAttrs {
                 if let Some(AttributeValue::String(val)) =
                     keyed_item_value(&item, "deprecation", AttributeValidation::String)
                 {
-                    res.deprecation = Some(val);
+                    res.deprecation = Some(DeprecationAttr { reason: Some(val) });
                     continue;
+                }
+                match keyed_item_value(&item, "deprecated", AttributeValidation::String) {
+                    Some(AttributeValue::String(val)) => {
+                        res.deprecation = Some(DeprecationAttr { reason: Some(val) });
+                        continue;
+                    }
+                    Some(AttributeValue::Bare) => {
+                        res.deprecation = Some(DeprecationAttr { reason: None });
+                        continue;
+                    }
+                    None => {}
                 }
                 if let Some(_) = keyed_item_value(&item, "skip", AttributeValidation::Bare) {
                     res.skip = true;
@@ -167,7 +181,8 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         };
 
         let build_deprecation = match field_attrs.deprecation {
-            Some(s) => quote!{ field.deprecated(#s)  },
+            Some(DeprecationAttr { reason: Some(s) }) => quote!{ field.deprecated(Some(#s)) },
+            Some(DeprecationAttr { reason: None }) => quote!{ field.deprecated(None) },
             None => quote!{ field },
         };
 

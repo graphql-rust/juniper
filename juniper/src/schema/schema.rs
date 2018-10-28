@@ -132,7 +132,7 @@ graphql_object!(<'a> TypeType<'a, S>: SchemaType<'a, S> as "__Type"
             TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) =>
                 Some(fields
                     .iter()
-                    .filter(|f| include_deprecated || f.deprecation_reason.is_none())
+                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
                     .filter(|f| !f.name.starts_with("__"))
                     .collect()),
             _ => None,
@@ -201,7 +201,7 @@ graphql_object!(<'a> TypeType<'a, S>: SchemaType<'a, S> as "__Type"
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) =>
                 Some(values
                     .iter()
-                    .filter(|f| include_deprecated || f.deprecation_reason.is_none())
+                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
                     .collect()),
             _ => None,
         }
@@ -228,11 +228,11 @@ graphql_object!(<'a> Field<'a, S>: SchemaType<'a, S> as "__Field"
     }
 
     field is_deprecated() -> bool {
-        self.deprecation_reason.is_some()
+        self.deprecation_status.is_deprecated()
     }
 
-    field deprecation_reason() -> &Option<String> {
-        &self.deprecation_reason
+    field deprecation_reason() -> Option<&String> {
+        self.deprecation_status.reason()
     }
 });
 
@@ -266,11 +266,11 @@ graphql_object!(EnumValue: () as "__EnumValue" where Scalar = <S> |&self| {
     }
 
     field is_deprecated() -> bool {
-        self.deprecation_reason.is_some()
+        self.deprecation_status.is_deprecated()
     }
 
-    field deprecation_reason() -> &Option<String> {
-        &self.deprecation_reason
+    field deprecation_reason() -> Option<&String> {
+        self.deprecation_status.reason()
     }
 });
 

@@ -78,7 +78,7 @@ impl<'a> GraphQLType for &'a Fake {
             &[juniper::meta::EnumValue {
                 name: "fake".to_string(),
                 description: None,
-                deprecation_reason: None,
+                deprecation_status: juniper::meta::DeprecationStatus::Current,
             }],
         );
         meta.into_meta()
