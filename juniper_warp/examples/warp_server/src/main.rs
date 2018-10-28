@@ -23,7 +23,7 @@ fn main() {
 
     let log = log("warp_server");
 
-    let homepage = warp::index().map(|| {
+    let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
             .body(format!(

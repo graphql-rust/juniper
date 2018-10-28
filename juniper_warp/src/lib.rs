@@ -202,7 +202,7 @@ where
                         Ok((serde_json::to_vec(&response)?, response.is_ok()))
                     })
                 }).and_then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|_: tokio_threadpool::BlockingError| warp::reject::server_error()),
+                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
             )
         };
 
@@ -235,7 +235,7 @@ where
                     Ok((serde_json::to_vec(&response)?, response.is_ok()))
                 })
             }).and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(|_: tokio_threadpool::BlockingError| warp::reject::server_error()),
+            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
         )
     };
 
@@ -434,7 +434,7 @@ mod tests_http_harness {
         let schema: Schema = RootNode::new(Database::new(), EmptyMutation::<Database>::new());
 
         let state = warp::any().map(move || Database::new());
-        let filter = warp::filters::path::index().and(make_graphql_filter(schema, state.boxed()));
+        let filter = warp::filters::path::end().and(make_graphql_filter(schema, state.boxed()));
 
         filter.boxed()
     }
