@@ -31,19 +31,17 @@ graphql_object!(Root: () |&self| {
     field deprecated "Deprecation reason"
         deprecated_descr() -> i32 as "Field description" { 0 }
 
-    #[doc = "Field description"]
+    /// Field description
     field attr_description() -> i32 { 0 }
 
-    #[doc = "Field description"]
-    #[doc = "with `collapse_docs` behavior"] // https://doc.rust-lang.org/rustdoc/the-doc-attribute.html
+    /// Field description
+    /// with `collapse_docs` behavior
     field attr_description_collapse() -> i32 { 0 }
 
-    #[doc = r#"
-        Get the i32 representation of 0.
-
-        - This comment is longer.
-        - These two lines are rendered as bullets by GraphiQL.
-    "#]
+    /// Get the i32 representation of 0.
+    ///
+    /// - This comment is longer.
+    ///  - These two lines are rendered as bullets by GraphiQL.
     field attr_description_long() -> i32 { 0 }
 
     #[deprecated]
@@ -52,7 +50,7 @@ graphql_object!(Root: () |&self| {
     #[deprecated(note = "Deprecation reason")]
     field attr_deprecated_reason() -> i32 { 0 }
 
-    #[doc = "Field description"]
+    /// Field description
     #[deprecated(note = "Deprecation reason")]
     field attr_deprecated_descr() -> i32 { 0 }
 
@@ -76,19 +74,17 @@ graphql_interface!(Interface: () |&self| {
     field deprecated "Deprecation reason"
         deprecated_descr() -> i32 as "Field description" { 0 }
 
-    #[doc = "Field description"]
+    /// Field description
     field attr_description() -> i32 { 0 }
 
-    #[doc = "Field description"]
-    #[doc = "with `collapse_docs` behavior"] // https://doc.rust-lang.org/rustdoc/the-doc-attribute.html
+    /// Field description
+    /// with `collapse_docs` behavior
     field attr_description_collapse() -> i32 { 0 }
 
-    #[doc = r#"
-        Get the i32 representation of 0.
-
-        - This comment is longer.
-        - These two lines are rendered as bullets by GraphiQL.
-    "#]
+    /// Get the i32 representation of 0.
+    ///
+    /// - This comment is longer.
+    /// - These two lines are rendered as bullets by GraphiQL.
     field attr_description_long() -> i32 { 0 }
 
     #[deprecated]
@@ -97,7 +93,7 @@ graphql_interface!(Interface: () |&self| {
     #[deprecated(note = "Deprecation reason")]
     field attr_deprecated_reason() -> i32 { 0 }
 
-    #[doc = "Field description"]
+    /// Field description
     #[deprecated(note = "Deprecation reason")]
     field attr_deprecated_descr() -> i32 { 0 }
 

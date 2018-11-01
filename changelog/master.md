@@ -57,13 +57,13 @@
     }
 
     // New alternative syntax for field descriptions
-    #[doc = "Description"]
+    /// Description
     field my_field() -> { ... }
 
     // New alternative syntax for argument descriptions
     field my_field(
-      #[doc = "The number of starfish to be returned. \
-               Can't be more than 100."]
+      /// The number of starfish to be returned.
+      /// Can't be more than 100.
       arg: i32,
     ) -> {
       ...
@@ -73,12 +73,11 @@
     //
     // Multiple docstrings will be collapsed into a single
     // description separated by newlines.
-    #[doc = r#"
-        This is my field.
-
-        Make sure not to flitz the bitlet.
-        Flitzing without a bitlet has undefined behaviour.
-    "]
+    /// This is my field.
+    ///
+    /// Make sure not to filtz the bitlet.
+    /// Flitzing without a bitlet has undefined behaviour.
+    ///
     #[doc = my_consts::ADDED_IN_VERSION_XYZ]
     field my_field() -> { ... }
     ```
