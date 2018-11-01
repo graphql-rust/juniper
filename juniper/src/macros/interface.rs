@@ -153,7 +153,7 @@ macro_rules! graphql_interface {
                             info
                         )
                             $(.description($fn_description))*
-                            $(.push_docstring($docstring))*
+                            .push_docstring(&[$($docstring,)*])
                             $(.deprecated($deprecated))*
                             $(.argument(
                                 __juniper_create_arg!(

@@ -41,7 +41,8 @@ graphql_object!(Root: () |&self| {
     /// Get the i32 representation of 0.
     ///
     /// - This comment is longer.
-    ///  - These two lines are rendered as bullets by GraphiQL.
+    /// - These two lines are rendered as bullets by GraphiQL.
+    ///     - subsection
     field attr_description_long() -> i32 { 0 }
 
     #[deprecated]
@@ -380,7 +381,7 @@ fn introspect_object_field_attr_description_long() {
         );
         assert_eq!(
             field.get_field_value("description"),
-            Some(&Value::scalar("Get the i32 representation of 0.\n\n- This comment is longer.\n- These two lines are rendered as bullets by GraphiQL."))
+            Some(&Value::scalar("Get the i32 representation of 0.\n\n- This comment is longer.\n- These two lines are rendered as bullets by GraphiQL.\n    - subsection"))
         );
         assert_eq!(
             field.get_field_value("isDeprecated"),

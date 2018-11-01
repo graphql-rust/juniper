@@ -35,8 +35,11 @@ graphql_object!(User: () |&self| {
 
 ## Documentation and descriptions
 
-You can optionally add descriptions to the type itself, the fields, and field
-arguments:
+You can optionally add descriptions to the type itself, the fields,
+and field arguments. For field and argument descriptions it is
+possible to use normal rustdoc comments or doc
+attributes. Alternatively the same syntax as for the type could be
+used
 
 ```rust
 # #[macro_use] extern crate juniper;
@@ -45,7 +48,9 @@ struct User { id: String, name: String, group_ids: Vec<String> }
 graphql_object!(User: () |&self| {
     description: "A user in the database"
 
-    field id() -> &String as "The user's unique identifier" {
+
+    /// The user's unique identifier
+    field id() -> &String {
         &self.id
     }
 
@@ -53,43 +58,11 @@ graphql_object!(User: () |&self| {
         &self.name
     }
 
-    field member_of_group(
-        group_id: String as "The group id you want to test membership against"
-    ) -> bool as "Test if a user is member of a group" {
-        self.group_ids.iter().any(|gid| gid == &group_id)
-    }
-});
-
-# fn main() { }
-```
-
-**Alternatively,** descriptions can be added with normal rustdoc comments.
-
-```rust
-# #[macro_use] extern crate juniper;
-struct User { id: String, name: String, group_ids: Vec<String> }
-
-graphql_object!(User: () |&self| {
-    description: "A user in the database"
-
-    /// The user's unique identifier
-    field id() -> &String {
-        &self.id
-    }
-
-    /// The user's name
-    field name() -> &String {
-        &self.name
-    }
-
-    /// Test if a user is member of a group.
-    ///
-    /// This may return a flitzbit if the floop is twizled.
-    /// Make sure not to rumblejumble the cog-rotater.
-    /// Added in vX.Y.44
+    #[doc = "Test if a user is member of a group"]
     field member_of_group(
         /// The group id you want to test membership against
-        group_id: String,
+        /// second line
+        group_id: String
     ) -> bool {
         self.group_ids.iter().any(|gid| gid == &group_id)
     }
@@ -274,6 +247,9 @@ builtin `doc` and `deprecated` attributes.
 /// Field description
 field name(args...) -> Type { }
 
+#[doc = "Field description"]
+field name(args...) -> Type {}
+
 #[deprecated] // no reason required
 field name(args...) -> Type { }
 
@@ -322,10 +298,12 @@ arg_name = (Point { x: 1, y: 2 }): Point
 arg_name = ("default".to_owned()): String
 ```
 
-A description can also be provided using normal doc comments.
+A description can also be provided using normal doc comments or doc attributes.
 
 ```text
 /// Argument description
+arg_name: ArgType
+#[doc = "Argument description"]
 arg_name: ArgType
 ```
 
@@ -387,7 +365,7 @@ macro_rules! graphql_object {
                             info
                         )
                             $(.description($fn_description))*
-                            $(.push_docstring($docstring))*
+                            .push_docstring(&[$($docstring,)*])
                             $(.deprecated($deprecated))*
                             $(.argument(
                                 __juniper_create_arg!(

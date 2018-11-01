@@ -613,15 +613,16 @@ impl<'a, S> Field<'a, S> {
     ///
     /// If the description hasn't been set, the description is set to the provided line.
     /// Otherwise, the doc string is added to the current description after a newline.
-    pub fn push_docstring(mut self, multiline: &str) -> Field<'a, S> {
-        let docstring = clean_docstring(multiline);
-        match &mut self.description {
-            &mut Some(ref mut desc) => {
-                desc.push('\n');
-                desc.push_str(&docstring);
-            }
-            desc @ &mut None => {
-                *desc = Some(docstring.to_string());
+    pub fn push_docstring(mut self, multiline: &[&str]) -> Field<'a, S> {
+        if let Some(docstring) = clean_docstring(multiline) {
+            match &mut self.description {
+                &mut Some(ref mut desc) => {
+                    desc.push('\n');
+                    desc.push_str(&docstring);
+                }
+                desc @ &mut None => {
+                    *desc = Some(docstring);
+                }
             }
         }
         self
@@ -679,15 +680,16 @@ impl<'a, S> Argument<'a, S> {
     ///
     /// If the description hasn't been set, the description is set to the provided line.
     /// Otherwise, the doc string is added to the current description after a newline.
-    pub fn push_docstring(mut self, multiline: &str) -> Argument<'a, S> {
-        let docstring = clean_docstring(multiline);
-        match &mut self.description {
-            &mut Some(ref mut desc) => {
-                desc.push('\n');
-                desc.push_str(&docstring);
-            }
-            desc @ &mut None => {
-                *desc = Some(docstring.to_string());
+    pub fn push_docstring(mut self, multiline: &[&str]) -> Argument<'a, S> {
+        if let Some(docstring) = clean_docstring(multiline) {
+            match &mut self.description {
+                &mut Some(ref mut desc) => {
+                    desc.push('\n');
+                    desc.push_str(&docstring);
+                }
+                desc @ &mut None => {
+                    *desc = Some(docstring)
+                }
             }
         }
         self
@@ -766,26 +768,38 @@ where
     <T as FromInputValue<S>>::from_input_value(v).is_some()
 }
 
-fn clean_docstring<'a>(multiline: &'a str) -> Cow<'a, str> {
-    let trim_start = multiline.split('\n')
-        .skip(1)
-        .filter_map(|ln| ln.chars().position(|ch| ch != ' ' && ch != '\t'))
-        .min();
-    if let Some(trim) = trim_start {
-        let trimmed = multiline
-            .split('\n')
-            .map(|ln| {
-                if !ln.starts_with(' ') && !ln.starts_with('\t') {
-                    ln // skip trimming the first line
-                } else if ln.len() >= trim {
-                    &ln[trim..]
+fn clean_docstring(multiline: &[&str]) -> Option<String> {
+    if multiline.is_empty() {
+        return None;
+    }
+    let trim_start = multiline
+        .iter()
+        .filter_map(|ln| ln.chars().position(|ch| !ch.is_whitespace()))
+        .min()
+        .unwrap_or(0);
+    Some(
+        multiline
+            .iter()
+            .enumerate()
+            .flat_map(|(line, ln)| {
+                let new_ln = if !ln
+                    .chars()
+                    .next()
+                    .map(|ch| ch.is_whitespace())
+                    .unwrap_or(false)
+                {
+                    ln.trim_end() // skip trimming the first line
+                } else if ln.len() >= trim_start {
+                    &ln[trim_start..].trim_end()
                 } else {
                     ""
-                }
-            })
-            .collect::<Vec<_>>();
-        Cow::from(trimmed.join("\n").trim_matches('\n').to_owned())
-    } else {
-        Cow::from(multiline.trim_matches('\n'))
-    }
+                };
+                new_ln.chars().chain(
+                    ['\n']
+                        .iter()
+                        .take_while(move |_| line < multiline.len() - 1)
+                        .cloned(),
+                )
+            }).collect::<String>(),
+    )
 }
