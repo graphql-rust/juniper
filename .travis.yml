@@ -18,7 +18,7 @@ env:
     - CARGO_MAKE_RUN_CODECOV=true
 
 script:
-  - cargo install -f cargo-make --version ^0.13
+  - cargo install -f cargo-make --vers ^0.13
   - cargo make workspace-ci-flow --no-workspace
 
 before_deploy:
