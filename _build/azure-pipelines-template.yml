@@ -34,7 +34,7 @@ jobs:
         rustc -Vv
         cargo -V
     displayName: Query rust and cargo versions
-  - script: cargo install -f cargo-make --vers ^0.13
+  - script: cargo install -f cargo-make --vers '=0.13.0'
     displayName: Install cargo-make
   - script: cargo make workspace-ci-flow --no-workspace
     env: { CARGO_MAKE_RUN_CODECOV: true }
