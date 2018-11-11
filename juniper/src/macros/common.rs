@@ -677,7 +677,7 @@ macro_rules! __juniper_create_arg {
             $info,
         )
         $(.description($arg_description))*
-        $(.push_docstring($arg_docstring))*
+        .push_docstring(&[$($arg_docstring,)*])
     };
 
     (
@@ -695,6 +695,6 @@ macro_rules! __juniper_create_arg {
             $info,
         )
         $(.description($arg_description))*
-        $(.push_docstring($arg_docstring))*
+        .push_docstring(&[$($arg_docstring,)*])
     };
 }
