@@ -13,7 +13,7 @@ let's have a look at the same end-result from a few different implementations:
 
 Traits are maybe the most obvious concept you want to use when building
 interfaces. But because GraphQL supports downcasting while Rust doesn't, you'll
-have to manually specify how to convert an trait into a concrete type. This can
+have to manually specify how to convert a trait into a concrete type. This can
 be done in a couple of different ways:
 
 ### Downcasting via accessor methods
