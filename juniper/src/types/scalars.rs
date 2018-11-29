@@ -23,6 +23,13 @@ impl From<String> for ID {
     }
 }
 
+impl ID {
+    /// Construct a new ID from anything implementing `Into<String>`
+    pub fn new<S: Into<String>>(value: S) -> Self {
+        ID(value.into())
+    }
+}
+
 impl Deref for ID {
     type Target = str;
 
@@ -349,6 +356,13 @@ mod tests {
     #[test]
     fn test_id_from_string() {
         let actual = ID::from(String::from("foo"));
+        let expected = ID(String::from("foo"));
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_id_new() {
+        let actual = ID::new("foo");
         let expected = ID(String::from("foo"));
         assert_eq!(actual, expected);
     }
