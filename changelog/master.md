@@ -2,6 +2,10 @@
 
 ## Changes
 
+- The minimum required Rust version is now `1.28.0`.
+
+  [#271](https://github.com/graphql-rust/juniper/pull/271)
+
 - Juniper is now generic about the exact representation of scalar values. This
   allows downstream crates to add support for own scalar value representations.
 
