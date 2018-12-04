@@ -30,7 +30,7 @@
 - Integrations by others
   - [Actix-Web](https://github.com/actix/examples/tree/master/juniper)
   - [Finchers](https://github.com/finchers-rs/finchers-juniper)
-  - [Tsukuyomi](https://github.com/tsukuyomi-rs/tsukuyomi-juniper)
+  - [Tsukuyomi](https://github.com/tsukuyomi-rs/tsukuyomi/tree/master/examples/juniper)
 
 ## Advanced Topics
 
