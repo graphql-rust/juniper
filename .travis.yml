@@ -17,8 +17,20 @@ env:
     - RUSTFLAGS="-C link-dead-code"
     - CARGO_MAKE_RUN_CODECOV=true
 
+before_script:
+  - |
+      if [ "$TRAVIS_OS_NAME" = 'windows' ]; then
+        powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.15.3" -target "x86_64-pc-windows-msvc"
+      fi
+  - |
+      if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
+        _build/cargo-make.sh "0.15.3" "x86_64-unknown-linux-musl"
+      fi
+  - |
+      if [ "$TRAVIS_OS_NAME" = 'osx' ]; then
+        _build/cargo-make.sh "0.15.3" "x86_64-apple-darwin"
+      fi
 script:
-  - cargo install --debug cargo-make -f
   - cargo make workspace-ci-flow --no-workspace
 
 before_deploy:
