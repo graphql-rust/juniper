@@ -19,4 +19,6 @@ tokio-threadpool = "0.1.7"
 
 [dev-dependencies]
 juniper = { path = "../juniper", version = "0.10.0", features = ["expose-test-schema", "serde_json"] }
+env_logger = "0.5.11"
+log = "0.4.3"
 percent-encoding = "1.0"
