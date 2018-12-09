@@ -1,6 +1,4 @@
 language: rust
-cache: cargo
-sudo: true
 
 rust:
   - stable
@@ -59,14 +57,3 @@ deploy:
 after_deploy:
   - cd juniper_codegen && cargo publish --token "$CRATES_IO_TOKEN" && cd ..
   - cd juniper && cargo publish --token "$CRATES_IO_TOKEN" && cd ..
-
-before_cache:
-  rm -rf target/debug/juniper*
-  rm -rf target/debug/libjuniper*
-  rm -rf target/debug/.fingerprint/juniper*
-
-  rm -rf target/release/juniper*
-  rm -rf target/release/libjuniper*
-  rm -rf target/release/.fingerprint/juniper*
-
-  rm -rf target/package/
