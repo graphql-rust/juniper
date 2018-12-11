@@ -30,6 +30,6 @@ Check the LICENSE file for details.
 [Juniper]: https://github.com/graphql-rust/juniper
 [GraphQL]: http://graphql.org
 [documentation]: https://docs.rs/juniper_rocket
-[example]: https://github.com/graphql-rust/juniper_rocket/blob/master/examples/rocket_server.rs
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/rocket_server.rs
 
 
