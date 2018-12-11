@@ -36,8 +36,7 @@ Check the LICENSE file for details.
 
 */
 
-#![feature(plugin)]
-#![plugin(rocket_codegen)]
+#![feature(decl_macro, proc_macro_hygiene)]
 
 extern crate juniper;
 extern crate rocket;
@@ -48,9 +47,9 @@ extern crate serde_derive;
 use std::error::Error;
 use std::io::{Cursor, Read};
 
-use rocket::data::{FromData, Outcome as FromDataOutcome};
-use rocket::http::{ContentType, Status};
-use rocket::request::{FormItems, FromForm};
+use rocket::data::{FromDataSimple, Outcome as FromDataOutcome};
+use rocket::http::{ContentType, RawStr, Status};
+use rocket::request::{FormItems, FromForm, FromFormValue};
 use rocket::response::{content, Responder, Response};
 use rocket::Data;
 use rocket::Outcome::{Failure, Forward, Success};
@@ -181,14 +180,14 @@ impl GraphQLResponse {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(plugin)]
-    /// # #![plugin(rocket_codegen)]
+    /// # #![feature(decl_macro, proc_macro_hygiene)]
     /// #
     /// # extern crate juniper;
     /// # extern crate juniper_rocket;
-    /// # extern crate rocket;
+    /// # #[macro_use] extern crate rocket;
     /// #
     /// # use rocket::http::Cookies;
+    /// # use rocket::request::Form;
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
@@ -197,11 +196,11 @@ impl GraphQLResponse {
     /// #
     /// # type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
     /// #
-    /// #[get("/graphql?<request>")]
+    /// #[get("/graphql?<request..>")]
     /// fn get_graphql_handler(
     ///     mut cookies: Cookies,
     ///     context: State<Database>,
-    ///     request: juniper_rocket::GraphQLRequest,
+    ///     request: Form<juniper_rocket::GraphQLRequest>,
     ///     schema: State<Schema>,
     /// ) -> juniper_rocket::GraphQLResponse {
     ///     if cookies.get_private("user_id").is_none() {
@@ -240,7 +239,8 @@ where
         let mut operation_name = None;
         let mut variables = None;
 
-        for (key, value) in form_items {
+        for form_item in form_items {
+            let (key, value) = form_item.key_value();
             // Note: we explicitly decode in the match arms to save work rather
             // than decoding every form item blindly.
             match key.as_str() {
@@ -299,7 +299,19 @@ where
     }
 }
 
-impl<S> FromData for GraphQLRequest<S>
+impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
+    where S: ScalarValue
+{
+    type Error = String;
+
+    fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
+        let mut form_items = FormItems::from(form_value);
+
+        Self::from_form(&mut form_items, true)
+    }
+}
+
+impl<S> FromDataSimple for GraphQLRequest<S>
 where
     S: ScalarValue,
 {
@@ -447,7 +459,8 @@ mod fromform_tests {
 #[cfg(test)]
 mod tests {
 
-    use rocket;
+    use rocket::{self, get, post, routes};
+    use rocket::request::Form;
     use rocket::http::ContentType;
     use rocket::local::{Client, LocalRequest};
     use rocket::Rocket;
@@ -460,10 +473,10 @@ mod tests {
 
     type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
 
-    #[get("/?<request>")]
+    #[get("/?<request..>")]
     fn get_graphql_handler(
         context: State<Database>,
-        request: super::GraphQLRequest,
+        request: Form<super::GraphQLRequest>,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
         request.execute(&schema, &context)
@@ -512,8 +525,8 @@ mod tests {
             )).mount("/", routes![post_graphql_handler, get_graphql_handler])
     }
 
-    fn make_test_response<'r>(request: &LocalRequest<'r>) -> http_tests::TestResponse {
-        let mut response = request.cloned_dispatch();
+    fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {
+        let mut response = request.clone().dispatch();
         let status_code = response.status().code as i32;
         let content_type = response
             .content_type()
@@ -525,9 +538,9 @@ mod tests {
             .into_string();
 
         http_tests::TestResponse {
-            status_code: status_code,
-            body: body,
-            content_type: content_type,
+            status_code,
+            body,
+            content_type,
         }
     }
 }
