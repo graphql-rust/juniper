@@ -1,6 +1,7 @@
 [package]
 name = "juniper_tests"
 version = "0.1.0"
+publish = false
 
 [dependencies]
 juniper = { version = "0.10.0", path = "../juniper" }
