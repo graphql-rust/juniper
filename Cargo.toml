@@ -1,7 +1,8 @@
 [workspace]
+# Order is important as this is the order the crates will be released.
 members = [
-  "juniper",
   "juniper_codegen",
+  "juniper",
   "juniper_tests",
   "juniper_hyper",
   "juniper_iron",
