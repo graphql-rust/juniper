@@ -1,6 +1,6 @@
 [package]
 name = "juniper_rocket"
-version = "0.1.3"
+version = "0.2.0"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",

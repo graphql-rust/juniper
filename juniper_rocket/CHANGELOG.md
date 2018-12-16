@@ -1,4 +1,4 @@
-# [master]
+# juniper_rocket [0.2.0] 2018-12-16
 
 ### Rocket updated to v0.4
 
