@@ -1,0 +1,8 @@
+[tasks.release]
+args = ["release"]
+
+[tasks.release-patch]
+args = ["release", "patch"]
+
+[tasks.release-dry-run]
+args = ["release", "--dry-run"]

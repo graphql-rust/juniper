@@ -1,0 +1,17 @@
+# https://github.com/sagiegurari/cargo-make#automatically-extend-workspace-makefile
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
+
+# Run `cargo make release` to push a new minor release of every crate.
+[tasks.release]
+args = ["release", "--config", "../_build/release.toml"]
+
+# Run `cargo make release-patch` to push a new patch release of every crate.
+[tasks.release-patch]
+args = ["release", "--config", "../_build/release.toml", "patch"]
+
+# Run `cargo make release-dry-run` to do a dry run.
+[tasks.release-dry-run]
+description = "Run `cargo-release --dry-run` for every crate"
+command = "${HOME}/src/cargo-release/target/debug/cargo-release"
+args = ["release", "--config", "../_build/release.toml", "--dry-run"]
