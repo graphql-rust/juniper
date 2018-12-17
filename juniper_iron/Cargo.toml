@@ -1,6 +1,6 @@
 [package]
 name = "juniper_iron"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
