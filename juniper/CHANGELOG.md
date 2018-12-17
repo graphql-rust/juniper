@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [0.11.0] 2018-12-17
+
 ## Changes
 
 - The minimum required Rust version is now `1.28.0`.
