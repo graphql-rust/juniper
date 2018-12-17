@@ -9,7 +9,7 @@ repository = "https://github.com/graphql-rust/juniper"
 
 [dependencies]
 warp = "0.1.8"
-juniper = { path = "../juniper", version = ">=0.9, 0.10.0", default-features = false  }
+juniper = { path = "../juniper", version = "0.11.0", default-features = false  }
 serde_json = "1.0.24"
 serde_derive = "1.0.75"
 failure = "0.1.2"
@@ -18,7 +18,7 @@ serde = "1.0.75"
 tokio-threadpool = "0.1.7"
 
 [dev-dependencies]
-juniper = { path = "../juniper", version = "0.10.0", features = ["expose-test-schema", "serde_json"] }
+juniper = { path = "../juniper", version = "0.11.0", features = ["expose-test-schema", "serde_json"] }
 env_logger = "0.5.11"
 log = "0.4.3"
 percent-encoding = "1.0"
