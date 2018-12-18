@@ -310,7 +310,7 @@ arg_name: ArgType
 [1]: struct.Executor.html
 
 */
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! graphql_object {
     (
         @generate,
@@ -343,7 +343,7 @@ macro_rules! graphql_object {
             $(executor_var = $executor: ident,)*
         },)*],
     ) => {
-        __juniper_impl_trait!(
+        $crate::__juniper_impl_trait!(
             impl<$($scalar)* $(, $lifetimes)* > GraphQLType for $name {
                 type Context = $ctx;
                 type TypeInfo = ();
@@ -354,21 +354,21 @@ macro_rules! graphql_object {
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut $crate::Registry<'r, __juniper_insert_generic!($($scalar)+)>
-                ) -> $crate::meta::MetaType<'r, __juniper_insert_generic!($($scalar)+)>
-                where for<'__b> &'__b __juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
-                    __juniper_insert_generic!($($scalar)+): 'r
+                    registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                where for<'__b> &'__b $crate::__juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                    $crate::__juniper_insert_generic!($($scalar)+): 'r
                 {
                     let fields = &[$(
                         registry.field_convert::<$return_ty, _, Self::Context>(
-                            &$crate::to_camel_case(__graphql__stringify!($fn_name)),
+                            &$crate::to_camel_case(stringify!($fn_name)),
                             info
                         )
                             $(.description($fn_description))*
                             .push_docstring(&[$($docstring,)*])
                             $(.deprecated($deprecated))*
                             $(.argument(
-                                __juniper_create_arg!(
+                                $crate::__juniper_create_arg!(
                                     registry = registry,
                                     info = info,
                                     arg_ty = $arg_ty,
@@ -398,17 +398,17 @@ macro_rules! graphql_object {
                     &$main_self,
                     info: &Self::TypeInfo,
                     field: &str,
-                    args: &$crate::Arguments<__juniper_insert_generic!($($scalar)+)>,
-                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)+)>
-                ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)+)> {
+                    args: &$crate::Arguments<$crate::__juniper_insert_generic!($($scalar)+)>,
+                    executor: &$crate::Executor<Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)+)> {
                     $(
-                        if field == &$crate::to_camel_case(__graphql__stringify!($fn_name)) {
+                        if field == &$crate::to_camel_case(stringify!($fn_name)) {
                             let result: $return_ty = (|| {
                                 $(
-                                    let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(__graphql__stringify!($arg_name)))
-                                        .expect(__graphql__concat!(
+                                    let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(stringify!($arg_name)))
+                                        .expect(concat!(
                                             "Argument ",
-                                            __graphql__stringify!($arg_name),
+                                            stringify!($arg_name),
                                             " missing - validation must have failed"
                                         ));
                                 )*
@@ -431,7 +431,7 @@ macro_rules! graphql_object {
                         }
                     )*
 
-                    __graphql__panic!("Field {} not found on type {}", field, $($outname)*);
+                    panic!("Field {} not found on type {}", field, $($outname)*);
                 }
             }
         );
@@ -457,7 +457,7 @@ macro_rules! graphql_object {
         items = [$({$($items: tt)*},)*],
         rest = [$($interface: ty),+]  $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {
@@ -485,7 +485,7 @@ macro_rules! graphql_object {
         items = [$({$($items: tt)*},)*],
         rest = interfaces: $($rest:tt)*
     ) => {
-        graphql_object!(
+        $crate::graphql_object!(
             @parse_interfaces,
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
@@ -501,7 +501,7 @@ macro_rules! graphql_object {
         meta = {$($meta:tt)*},
         rest = $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = graphql_object,
             additional_parser = {
                 callback = graphql_object,
@@ -514,13 +514,13 @@ macro_rules! graphql_object {
     };
 
     (@$($stuff:tt)*) => {
-        __graphql__compile_error!("Invalid syntax for `graphql_object!`");
+        compile_error!("Invalid syntax for `graphql_object!`");
     };
 
     (
         $($rest:tt)*
     ) => {
-        __juniper_parse_object_header!(
+        $crate::__juniper_parse_object_header!(
             callback = graphql_object,
             rest = $($rest)*
         );

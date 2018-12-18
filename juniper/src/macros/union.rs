@@ -17,7 +17,7 @@ resolvers.
 [1]: macro.graphql_object!.html
 [2]: macro.graphql_interface!.html
 */
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! graphql_union {
 
     (
@@ -44,7 +44,7 @@ macro_rules! graphql_union {
         },
         items = [],
     ) => {
-        __juniper_impl_trait!(
+        $crate::__juniper_impl_trait!(
             impl<$($scalar)* $(, $lifetimes)* > GraphQLType for $name {
                 type Context = $ctx;
                 type TypeInfo = ();
@@ -55,10 +55,10 @@ macro_rules! graphql_union {
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut $crate::Registry<'r, __juniper_insert_generic!($($scalar)+)>
-                ) -> $crate::meta::MetaType<'r, __juniper_insert_generic!($($scalar)+)>
-                where for<'__b> &'__b __juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
-                    __juniper_insert_generic!($($scalar)+): 'r
+                    registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                where for<'__b> &'__b $crate::__juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                    $crate::__juniper_insert_generic!($($scalar)+): 'r
                 {
                     let types = &[
                         $(
@@ -83,16 +83,16 @@ macro_rules! graphql_union {
                         }
                     )*
 
-                    __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                    panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
 
                 fn resolve_into_type(
                     &$main_self,
                     _info: &Self::TypeInfo,
                     type_name: &str,
-                    _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)*)>]>,
-                    executor: &$crate::Executor<Self::Context, __juniper_insert_generic!($($scalar)*)>,
-                ) -> $crate::ExecutionResult<__juniper_insert_generic!($($scalar)*)> {
+                    _: Option<&[$crate::Selection<$crate::__juniper_insert_generic!($($scalar)*)>]>,
+                    executor: &$crate::Executor<Self::Context, $crate::__juniper_insert_generic!($($scalar)*)>,
+                ) -> $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)*)> {
                     $(let $resolver_ctx = &executor.context();)*
 
                     $(
@@ -101,7 +101,7 @@ macro_rules! graphql_union {
                         }
                     )*
 
-                     __graphql__panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                     panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
             }
         );
@@ -113,7 +113,7 @@ macro_rules! graphql_union {
         meta = {$($meta:tt)*},
         rest = $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = graphql_union,
             additional_parser = {
                 callback = __juniper_parse_instance_resolver,
@@ -125,11 +125,11 @@ macro_rules! graphql_union {
         );
     };
     (@$($stuff:tt)*) => {
-        __graphql__compile_error!("Invalid syntax for `graphql_union!`");
+        compile_error!("Invalid syntax for `graphql_union!`");
     };
 
     ($($rest: tt)*) => {
-        __juniper_parse_object_header!(
+        $crate::__juniper_parse_object_header!(
             callback = graphql_union,
             rest = $($rest)*
         );

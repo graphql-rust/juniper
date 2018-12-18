@@ -45,7 +45,7 @@ In addition to implementing `GraphQLType` for the type in question,
 usable as arguments and default values.
 
 */
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! graphql_scalar {
     ( @as_expr $e:expr) => { $e };
     (
@@ -74,21 +74,21 @@ macro_rules! graphql_scalar {
         },
 
     ) => {
-        __juniper_impl_trait!(
+        $crate::__juniper_impl_trait!(
             impl <$($scalar)+> GraphQLType for $name {
                 type Context = ();
                 type TypeInfo = ();
 
                 fn name(_: &Self::TypeInfo) -> Option<&str> {
-                    Some(graphql_scalar!(@as_expr $($outname)+))
+                    Some($crate::graphql_scalar!(@as_expr $($outname)+))
                 }
 
                 fn meta<'r>(
                     info: &Self::TypeInfo,
-                    registry: &mut $crate::Registry<'r, __juniper_insert_generic!($($scalar)+)>
-                ) -> $crate::meta::MetaType<'r, __juniper_insert_generic!($($scalar)+)>
-                where for<'__b> &'__b __juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
-                    __juniper_insert_generic!($($scalar)+): 'r
+                    registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
+                where for<'__b> &'__b $crate::__juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                    $crate::__juniper_insert_generic!($($scalar)+): 'r
                 {
                     let meta = registry.build_scalar_type::<Self>(info);
                     $(
@@ -100,35 +100,35 @@ macro_rules! graphql_scalar {
                 fn resolve(
                     &$resolve_self_var,
                     _: &(),
-                    _: Option<&[$crate::Selection<__juniper_insert_generic!($($scalar)+)>]>,
+                    _: Option<&[$crate::Selection<$crate::__juniper_insert_generic!($($scalar)+)>]>,
                     _: &$crate::Executor<
                         Self::Context,
-                        __juniper_insert_generic!($($scalar)+)
-                    >) -> $crate::Value<__juniper_insert_generic!($($scalar)+)> {
+                        $crate::__juniper_insert_generic!($($scalar)+)
+                    >) -> $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)> {
                     $resolve_body
                 }
             });
 
-        __juniper_impl_trait!(
+        $crate::__juniper_impl_trait!(
             impl<$($scalar)+> ToInputValue for $name {
-                fn to_input_value(&$resolve_self_var) -> $crate::InputValue<__juniper_insert_generic!($($scalar)+)> {
+                fn to_input_value(&$resolve_self_var) -> $crate::InputValue<$crate::__juniper_insert_generic!($($scalar)+)> {
                     let v = $resolve_body;
                     $crate::ToInputValue::to_input_value(&v)
                 }
             }
         );
 
-        __juniper_impl_trait!(
+        $crate::__juniper_impl_trait!(
             impl<$($scalar)+> FromInputValue for $name {
                 fn from_input_value(
-                    $from_input_value_arg: &$crate::InputValue<__juniper_insert_generic!($($scalar)+)>
+                    $from_input_value_arg: &$crate::InputValue<$crate::__juniper_insert_generic!($($scalar)+)>
                 ) -> $from_input_value_result {
                     $from_input_value_body
                 }
             }
         );
 
-        __juniper_impl_trait!(
+        $crate::__juniper_impl_trait!(
             impl<$($scalar)+> ParseScalarValue for $name {
                 fn from_str<$from_str_lt>($from_str_arg: $crate::parser::ScalarToken<$from_str_lt>) -> $from_str_result {
                     $from_str_body
@@ -151,7 +151,7 @@ macro_rules! graphql_scalar {
         from_str = {$($from_str_body:tt)+},
         rest =
     ) => {
-        graphql_scalar!(
+        $crate::graphql_scalar!(
             @generate,
             meta = {
                 name = $name,
@@ -177,7 +177,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+})*,
         rest =
     ) => {
-        __graphql__compile_error!("Missing resolve function");
+        compile_error!("Missing resolve function");
     };
 
     (
@@ -192,7 +192,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+})*,
         rest =
     ) => {
-        __graphql__compile_error!("Missing from_input_value function");
+        compile_error!("Missing from_input_value function");
     };
 
     (
@@ -207,7 +207,7 @@ macro_rules! graphql_scalar {
         from_input_value = {$($from_input_value_body:tt)+},
         rest =
     ) =>{
-        __graphql__compile_error!("Missing from_str function");
+        compile_error!("Missing from_str function");
     };
 
 
@@ -220,7 +220,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+},)*
         rest = resolve(&$selfvar:ident) -> $return_ty:ty $body:block $($rest:tt)*
     ) => {
-        graphql_scalar!(
+        $crate::graphql_scalar!(
             @parse_functions,
             meta = {$($meta)*},
             resolve = {
@@ -243,7 +243,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+},)*
         rest = from_input_value($arg:ident: &InputValue) -> $result:ty $body:block $($rest:tt)*
     ) => {
-        graphql_scalar!(
+        $crate::graphql_scalar!(
             @parse_functions,
             meta = { $($meta)* },
             $(resolve = {$($resolve_body)+},)*
@@ -266,7 +266,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+},)*
         rest = from_str<$from_str_lt: tt>($value_arg:ident: ScalarToken<$ignored_lt2: tt>) -> $result:ty $body:block $($rest:tt)*
     ) => {
-        graphql_scalar!(
+        $crate::graphql_scalar!(
             @parse_functions,
             meta = { $($meta)* },
             $(resolve = {$($resolve_body)+},)*
@@ -294,7 +294,7 @@ macro_rules! graphql_scalar {
         $(from_str = {$($from_str_body:tt)+},)*
         rest = description: $descr:tt $($rest:tt)*
     ) => {
-        graphql_scalar!(
+        $crate::graphql_scalar!(
             @parse_functions,
             meta = {
                 name = $name,
@@ -319,7 +319,7 @@ macro_rules! graphql_scalar {
         },
         rest = $($rest:tt)*
     ) => {
-         graphql_scalar!(
+         $crate::graphql_scalar!(
             @parse_functions,
             meta = {
                 name = $name,
@@ -331,11 +331,11 @@ macro_rules! graphql_scalar {
     };
 
     (@$($stuff:tt)*) => {
-        __graphql__compile_error!("Invalid syntax for `graphql_scalar!`");
+        compile_error!("Invalid syntax for `graphql_scalar!`");
     };
 
     ($($rest:tt)*) => {
-        __juniper_parse_object_header!(
+        $crate::__juniper_parse_object_header!(
             callback = graphql_scalar,
             rest = $($rest)*
         );
