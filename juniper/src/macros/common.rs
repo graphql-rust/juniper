@@ -61,7 +61,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [$($lifetime,)*],
@@ -82,7 +82,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [$($lifetime,)*],
@@ -102,7 +102,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [$($lifetime,)*],
@@ -123,7 +123,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [],
@@ -144,7 +144,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [],
@@ -165,7 +165,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [],
@@ -186,7 +186,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [$($lifetime,)*],
@@ -207,7 +207,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [$($lifetime,)*],
@@ -227,7 +227,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [$($lifetime,)*],
@@ -250,7 +250,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [],
@@ -270,7 +270,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [],
@@ -290,7 +290,7 @@ macro_rules! __juniper_parse_object_header {
             $($items: tt)*
         }
     ) => {
-        $callback!(
+        $crate::$callback!(
             @parse,
             meta = {
                 lifetimes = [],
@@ -311,7 +311,6 @@ macro_rules! __juniper_parse_object_header {
     };
 }
 
-
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_parse_field_list {
@@ -322,7 +321,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest =
     ) => {
-        $success_callback!(
+        $crate::$success_callback!(
             @generate,
             meta = {$($meta)*},
             items = [$({$($items)*},)*],
@@ -336,7 +335,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = , $($rest: tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {$($meta)*},
@@ -363,7 +362,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = $desc: tt  $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {
@@ -388,7 +387,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = description:  $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             @parse_description,
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
@@ -411,7 +410,7 @@ macro_rules! __juniper_parse_field_list {
         ) -> $return_ty: ty $body: block
             $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {$($meta)*},
@@ -446,7 +445,7 @@ macro_rules! __juniper_parse_field_list {
         ) -> $return_ty: ty $body: block
             $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {$($meta)*},
@@ -479,7 +478,7 @@ macro_rules! __juniper_parse_field_list {
         ) -> $return_ty: ty $(as $desc: tt)* $body: block
             $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {$($meta)*},
@@ -513,7 +512,7 @@ macro_rules! __juniper_parse_field_list {
         ) -> $return_ty: ty $(as $desc: tt)* $body: block
             $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {$($meta)*},
@@ -546,7 +545,7 @@ macro_rules! __juniper_parse_field_list {
         items = [$({$($items: tt)*},)*],
         rest = $($rest:tt)*
     ) => {
-        $callback!(
+        $crate::$callback!(
             $($header)*
             success_callback = $success_callback,
             additional_parser = {
@@ -586,7 +585,7 @@ macro_rules! __juniper_parse_instance_resolver {
             $( $srctype:ty => $resolver:expr ),* $(,)*
         } $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {
@@ -633,7 +632,7 @@ macro_rules! __juniper_parse_instance_resolver {
         items = [$({$($items: tt)*},)*],
         rest = instance_resolvers: |$(&)* _| {$( $srctype:ty => $resolver:expr ),* $(,)*} $($rest:tt)*
     ) => {
-        __juniper_parse_field_list!(
+        $crate::__juniper_parse_field_list!(
             success_callback = $success_callback,
             additional_parser = {$($additional)*},
             meta = {
