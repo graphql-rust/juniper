@@ -6,8 +6,8 @@ rust:
   - nightly
 
   # Prevent accidentally breaking older Rust versions
-  - 1.29.0
-  - 1.28.0
+  - 1.31.0
+  - 1.30.0
 
 matrix:
   include:
