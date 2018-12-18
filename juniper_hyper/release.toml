@@ -1,5 +1,0 @@
-dev-version-ext = "pre"
-pre-release-commit-message = "Release {{crate_name}} {{version}}"
-pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
-tag-message = "Release {{crate_name}} {{version}}"
-upload-doc = false
