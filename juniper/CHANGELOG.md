@@ -2,11 +2,21 @@
 
 - No changes yet
 
+# [0.11.1] 2018-12-19
+
+## Changes
+
+- The minimum required Rust version is now `1.30`.
+- All macros and the custom derives now support the macro system changes properly
+  and also support Rust 2018 edition crates.
+
+  [#298](https://github.com/graphql-rust/juniper/pull/298)
+
 # [0.11.0] 2018-12-17
 
 ## Changes
 
-- The minimum required Rust version is now `1.28.0`.
+- The minimum required Rust version is now `1.30.0`.
 
   [#271](https://github.com/graphql-rust/juniper/pull/271)
 
