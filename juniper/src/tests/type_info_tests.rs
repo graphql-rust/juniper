@@ -5,7 +5,7 @@ use schema::meta::MetaType;
 use schema::model::RootNode;
 use types::base::{Arguments, GraphQLType};
 use types::scalars::EmptyMutation;
-use value::{ScalarRefValue, ScalarValue, Value};
+use value::{ScalarRefValue, GraphQLScalarValue, Value};
 
 pub struct NodeTypeInfo {
     name: String,
@@ -18,7 +18,7 @@ pub struct Node {
 
 impl<S> GraphQLType<S> for Node
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();

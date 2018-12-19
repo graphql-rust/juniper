@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition};
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -81,7 +81,7 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
 
 impl<'a, S> Visitor<'a, S> for VariableInAllowedPosition<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
         for (op_scope, var_defs) in &self.variable_defs {
@@ -163,11 +163,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn boolean_into_boolean() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($booleanArg: Boolean)
@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn boolean_into_boolean_within_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment booleanArgFrag on ComplicatedArgs {
@@ -197,7 +197,7 @@ mod tests {
         "#,
         );
 
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($booleanArg: Boolean)
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($nonNullBooleanArg: Boolean!)
@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean_within_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment booleanArgFrag on ComplicatedArgs {
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_with_default() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($intArg: Int = 1)
@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn string_list_into_string_list() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringListVar: [String])
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn non_null_string_list_into_string_list() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringListVar: [String!])
@@ -294,7 +294,7 @@ mod tests {
 
     #[test]
     fn string_into_string_list_in_item_position() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringVar: String)
@@ -309,7 +309,7 @@ mod tests {
 
     #[test]
     fn non_null_string_into_string_list_in_item_position() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringVar: String!)
@@ -324,7 +324,7 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($complexVar: ComplexInput)
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input_in_field_position() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean = false)
@@ -354,7 +354,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_non_null_boolean_in_directive() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean!)
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn boolean_in_non_null_in_directive_with_default() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean = false)
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($intArg: Int) {
@@ -401,7 +401,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_within_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment nonNullIntArgFieldFrag on ComplicatedArgs {
@@ -426,7 +426,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_within_nested_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment outerFrag on ComplicatedArgs {
@@ -455,7 +455,7 @@ mod tests {
 
     #[test]
     fn string_over_boolean() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringVar: String) {
@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn string_into_string_list() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringVar: String) {
@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn boolean_into_non_null_boolean_in_directive() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($boolVar: Boolean) {
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn string_into_non_null_boolean_in_directive() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Query($stringVar: String) {

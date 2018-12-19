@@ -1,7 +1,7 @@
 use ast::Field;
 use parser::Spanning;
 use validation::{RuleError, ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct ScalarLeafs;
 
@@ -11,7 +11,7 @@ pub fn factory() -> ScalarLeafs {
 
 impl<'a, S> Visitor<'a, S> for ScalarLeafs
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
 
     fn enter_field(
@@ -64,11 +64,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn valid_scalar_selection() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelection on Dog {
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn object_type_missing_selection() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query directQueryOnObjectWithoutSubFields {
@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn interface_type_missing_selection() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn valid_scalar_selection_with_args() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelectionWithArgs on Dog {
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_on_boolean() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedOnBoolean on Dog {
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_on_enum() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedOnEnum on Cat {
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_with_args() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedWithArgs on Dog {
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_with_directives() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedWithDirectives on Dog {
@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn scalar_selection_not_allowed_with_directives_and_args() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarSelectionsNotAllowedWithDirectivesAndArgs on Dog {

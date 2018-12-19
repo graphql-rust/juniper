@@ -2,7 +2,7 @@ use ast::InputValue;
 use schema::meta::{EnumMeta, InputObjectMeta, MetaType};
 use schema::model::{SchemaType, TypeType};
 use std::collections::HashSet;
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub fn is_valid_literal_value<S>(
     schema: &SchemaType<S>,
@@ -10,7 +10,7 @@ pub fn is_valid_literal_value<S>(
     arg_value: &InputValue<S>,
 ) -> bool
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     match *arg_type {
         TypeType::NonNull(ref inner) => if arg_value.is_null() {

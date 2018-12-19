@@ -3,7 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::{Operation, VariableDefinition};
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct UniqueVariableNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -17,7 +17,7 @@ pub fn factory<'a>() -> UniqueVariableNames<'a> {
 
 impl<'a, S> Visitor<'a, S> for UniqueVariableNames<'a>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
 
     fn enter_operation_definition(
@@ -57,11 +57,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn unique_variable_names() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query A($x: Int, $y: String) { __typename }
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn duplicate_variable_names() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query A($x: Int, $x: Int, $x: String) { __typename }

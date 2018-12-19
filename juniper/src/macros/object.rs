@@ -128,7 +128,7 @@ even have to be backed by a trait!
 
 ## Emitting errors
 
-`FieldResult<T, S = DefaultScalarValue>` is a type alias for `Result<T, FieldError<S>>`, where
+`FieldResult<T, S = DefaultGraphQLScalarValue>` is a type alias for `Result<T, FieldError<S>>`, where
 `FieldError` is a tuple that contains an error message and optionally a
 JSON-like data structure. In the end, errors that fields emit are serialized
 into strings in the response. However, the execution system will keep track of
@@ -160,7 +160,7 @@ graphql_object!(User: () |&self| {
 ## Specify scalar value representation
 
 Sometimes it is necessary to use a other scalar value representation as the default
-one provided by `DefaultScalarValue`.
+one provided by `DefaultGraphQLScalarValue`.
 It is possible to specify a specific scalar value type using the `where Scalar = Type`
 syntax.
 Additionally it is possible to use a generic parameter for the scalar value type
@@ -200,7 +200,7 @@ following form:
 The following parts are optional:
 * `<Generics>`, if not set no generics are defined
 * `as "ExposedName"`, if not set `ExposedType` is used as name
-* `where Scalar = <S>` / `where Scalar = SpecificType` if not set `DefaultScalarValue`
+* `where Scalar = <S>` / `where Scalar = SpecificType` if not set `DefaultGraphQLScalarValue`
 is used as scalar value
 
 ## Items

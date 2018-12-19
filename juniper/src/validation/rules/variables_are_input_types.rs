@@ -1,7 +1,7 @@
 use ast::VariableDefinition;
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct UniqueVariableNames;
 
@@ -11,7 +11,7 @@ pub fn factory() -> UniqueVariableNames {
 
 impl<'a, S> Visitor<'a, S> for UniqueVariableNames
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_variable_definition(
         &mut self,
@@ -45,11 +45,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn input_types_are_valid() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn output_types_are_invalid() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {

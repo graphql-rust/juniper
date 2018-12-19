@@ -3,13 +3,13 @@ use fnv::FnvHashMap;
 
 use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
-use juniper::DefaultScalarValue;
+use juniper::DefaultGraphQLScalarValue;
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
 #[graphql(
     name = "MyInput",
     description = "input descr",
-    scalar = "DefaultScalarValue"
+    scalar = "DefaultGraphQLScalarValue"
 )]
 struct Input {
     regular_field: String,
@@ -71,7 +71,7 @@ impl<'a> GraphQLType for &'a Fake {
     }
     fn meta<'r>(_: &(), registry: &mut juniper::Registry<'r>) -> juniper::meta::MetaType<'r>
     where
-        DefaultScalarValue: 'r,
+        DefaultGraphQLScalarValue: 'r,
     {
         let meta = registry.build_enum_type::<&'a Fake>(
             &(),
@@ -86,7 +86,7 @@ impl<'a> GraphQLType for &'a Fake {
 }
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = "DefaultGraphQLScalarValue")]
 struct WithLifetime<'a> {
     regular_field: &'a Fake,
 }

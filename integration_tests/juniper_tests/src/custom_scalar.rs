@@ -6,10 +6,10 @@ use juniper::parser::{ParseError, ScalarToken, Token};
 use juniper::serde::de;
 #[cfg(test)]
 use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
-use juniper::{InputValue, ParseScalarResult, ScalarValue, Value};
+use juniper::{InputValue, ParseScalarResult, GraphQLScalarValue, Value};
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, ScalarValue)]
+#[derive(Debug, Clone, PartialEq, GraphQLScalarValue)]
 enum MyScalarValue {
     Int(i32),
     Long(i64),
@@ -18,7 +18,7 @@ enum MyScalarValue {
     Boolean(bool),
 }
 
-impl ScalarValue for MyScalarValue {
+impl GraphQLScalarValue for MyScalarValue {
     type Visitor = MyScalarValueVisitor;
 
     fn as_int(&self) -> Option<i32> {

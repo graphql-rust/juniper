@@ -4,7 +4,7 @@ use ast::{
 };
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[doc(hidden)]
 pub struct MultiVisitorNil;
@@ -24,11 +24,11 @@ impl<A, B> MultiVisitorCons<A, B> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for MultiVisitorNil where S: ScalarValue {}
+impl<'a, S> Visitor<'a, S> for MultiVisitorNil where S: GraphQLScalarValue {}
 
 impl<'a, A, B, S> Visitor<'a, S> for MultiVisitorCons<A, B>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     A: Visitor<'a, S> + 'a,
     B: Visitor<'a, S> + 'a,
 {

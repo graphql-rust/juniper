@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
@@ -154,7 +154,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ctx: &ValidatorContext<'a, S>,
     ) -> Vec<Conflict>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         let mut conflicts = Vec::new();
 
@@ -194,7 +194,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         mutually_exclusive: bool,
         ctx: &ValidatorContext<'a, S>,
     ) where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         if fragment_name1 == fragment_name2 {
             return;
@@ -270,7 +270,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         mutually_exclusive: bool,
         ctx: &ValidatorContext<'a, S>,
     ) where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         let fragment = match self.named_fragments.get(fragment_name) {
             Some(f) => f,
@@ -301,7 +301,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         field_map2: &AstAndDefCollection<'a, S>,
         ctx: &ValidatorContext<'a, S>,
     ) where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         for (response_name, fields1) in field_map1.iter() {
             if let Some(fields2) = field_map2.get(response_name) {
@@ -328,7 +328,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         field_map: &AstAndDefCollection<'a, S>,
         ctx: &ValidatorContext<'a, S>,
     ) where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         for (response_name, fields) in field_map.iter() {
             for (i, field1) in fields.iter().enumerate() {
@@ -352,7 +352,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ctx: &ValidatorContext<'a, S>,
     ) -> Option<Conflict>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         let AstAndDef(ref parent_type1, ast1, ref def1) = *field1;
         let AstAndDef(ref parent_type2, ast2, ref def2) = *field2;
@@ -438,7 +438,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ctx: &ValidatorContext<'a, S>,
     ) -> Vec<Conflict>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         let mut conflicts = Vec::new();
 
@@ -555,7 +555,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         args2: &Option<Spanning<Arguments<S>>>,
     ) -> bool
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         match (args1, args2) {
             (&None, &None) => true,
@@ -680,7 +680,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
 
 impl<'a, S> Visitor<'a, S> for OverlappingFieldsCanBeMerged<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_document(&mut self, _: &mut ValidatorContext<'a, S>, defs: &'a Document<S>) {
         for def in defs {
@@ -745,11 +745,11 @@ mod tests {
         expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
         expect_passes_rule_with_schema, RuleError,
     };
-    use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+    use value::{DefaultGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue};
 
     #[test]
     fn unique_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment uniqueFields on Dog {
@@ -762,7 +762,7 @@ mod tests {
 
     #[test]
     fn identical_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment mergeIdenticalFields on Dog {
@@ -775,7 +775,7 @@ mod tests {
 
     #[test]
     fn identical_fields_with_identical_args() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
@@ -788,7 +788,7 @@ mod tests {
 
     #[test]
     fn identical_fields_with_identical_directives() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment mergeSameFieldsWithSameDirectives on Dog {
@@ -801,7 +801,7 @@ mod tests {
 
     #[test]
     fn different_args_with_different_aliases() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment differentArgsWithDifferentAliases on Dog {
@@ -814,7 +814,7 @@ mod tests {
 
     #[test]
     fn different_directives_with_different_aliases() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment differentDirectivesWithDifferentAliases on Dog {
@@ -827,7 +827,7 @@ mod tests {
 
     #[test]
     fn different_skip_include_directives_accepted() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment differentDirectivesWithDifferentAliases on Dog {
@@ -840,7 +840,7 @@ mod tests {
 
     #[test]
     fn same_aliases_with_different_field_targets() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment sameAliasesWithDifferentFieldTargets on Dog {
@@ -863,7 +863,7 @@ mod tests {
 
     #[test]
     fn same_aliases_allowed_on_nonoverlapping_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment sameAliasesWithDifferentFieldTargets on Pet {
@@ -880,7 +880,7 @@ mod tests {
 
     #[test]
     fn alias_masking_direct_field_access() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment aliasMaskingDirectFieldAccess on Dog {
@@ -903,7 +903,7 @@ mod tests {
 
     #[test]
     fn different_args_second_adds_an_argument() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Dog {
@@ -926,7 +926,7 @@ mod tests {
 
     #[test]
     fn different_args_second_missing_an_argument() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Dog {
@@ -949,7 +949,7 @@ mod tests {
 
     #[test]
     fn conflicting_args() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Dog {
@@ -972,7 +972,7 @@ mod tests {
 
     #[test]
     fn allows_different_args_where_no_conflict_is_possible() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment conflictingArgs on Pet {
@@ -989,7 +989,7 @@ mod tests {
 
     #[test]
     fn encounters_conflict_in_fragments() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1015,7 +1015,7 @@ mod tests {
 
     #[test]
     fn reports_each_conflict_once() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1068,7 +1068,7 @@ mod tests {
 
     #[test]
     fn deep_conflict() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1100,7 +1100,7 @@ mod tests {
 
     #[test]
     fn deep_conflict_with_multiple_issues() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1142,7 +1142,7 @@ mod tests {
 
     #[test]
     fn very_deep_conflict() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1183,7 +1183,7 @@ mod tests {
 
     #[test]
     fn reports_deep_conflict_to_nearest_common_ancestor() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1222,7 +1222,7 @@ mod tests {
 
     #[test]
     fn reports_deep_conflict_to_nearest_common_ancestor_in_fragments() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1269,7 +1269,7 @@ mod tests {
 
     #[test]
     fn reports_deep_conflict_in_nested_fragments() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -1323,7 +1323,7 @@ mod tests {
 
     #[test]
     fn ignores_unknown_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
         {
@@ -1358,7 +1358,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for SomeBox
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1384,7 +1384,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for StringBox
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1416,7 +1416,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for IntBox
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1448,7 +1448,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for NonNullStringBox1
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1470,7 +1470,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for NonNullStringBox1Impl
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1501,7 +1501,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for NonNullStringBox2
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1523,7 +1523,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for NonNullStringBox2Impl
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1554,7 +1554,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for Node
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1579,7 +1579,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for Edge
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1601,7 +1601,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for Connection
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1623,7 +1623,7 @@ mod tests {
 
     impl<S> GraphQLType<S> for QueryRoot
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
@@ -1652,7 +1652,7 @@ mod tests {
 
     #[test]
     fn conflicting_return_types_which_potentially_overlap() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1683,7 +1683,7 @@ mod tests {
 
     #[test]
     fn compatible_return_shapes_on_different_return_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1708,7 +1708,7 @@ mod tests {
 
     #[test]
     fn disallows_differing_return_types_despite_no_overlap() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1739,7 +1739,7 @@ mod tests {
 
     #[test]
     fn reports_correctly_when_a_non_exclusive_follows_an_exclusive() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1807,7 +1807,7 @@ mod tests {
 
     #[test]
     fn disallows_differing_return_type_nullability_despite_no_overlap() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1838,7 +1838,7 @@ mod tests {
 
     #[test]
     fn disallows_differing_return_type_list_despite_no_overlap() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1870,7 +1870,7 @@ mod tests {
             )],
         );
 
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1905,7 +1905,7 @@ mod tests {
 
     #[test]
     fn disallows_differing_subfields() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1941,7 +1941,7 @@ mod tests {
 
     #[test]
     fn disallows_differing_deep_return_types_despite_no_overlap() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -1981,7 +1981,7 @@ mod tests {
 
     #[test]
     fn allows_non_conflicting_overlapping_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -2002,7 +2002,7 @@ mod tests {
 
     #[test]
     fn same_wrapped_scalar_return_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -2023,7 +2023,7 @@ mod tests {
 
     #[test]
     fn allows_inline_typeless_fragments() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -2044,7 +2044,7 @@ mod tests {
 
     #[test]
     fn compares_deep_types_including_list() {
-        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_fails_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,
@@ -2093,7 +2093,7 @@ mod tests {
 
     #[test]
     fn ignores_unknown_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultGraphQLScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
             factory,

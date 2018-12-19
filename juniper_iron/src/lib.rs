@@ -128,14 +128,14 @@ use serde_json::error::Error as SerdeError;
 
 use juniper::http;
 use juniper::serde::Deserialize;
-use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
+use juniper::{DefaultGraphQLScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, GraphQLScalarValue};
 
 #[derive(Deserialize)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
+enum GraphQLBatchRequest<S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(http::GraphQLRequest<S>),
     Batch(Vec<http::GraphQLRequest<S>>),
@@ -143,9 +143,9 @@ where
 
 #[derive(Serialize)]
 #[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
+enum GraphQLBatchResponse<'a, S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(http::GraphQLResponse<'a, S>),
     Batch(Vec<http::GraphQLResponse<'a, S>>),
@@ -153,7 +153,7 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
@@ -181,7 +181,7 @@ where
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn is_ok(&self) -> bool {
         match self {
@@ -203,9 +203,9 @@ where
 /// this endpoint containing the field `"query"` and optionally `"variables"`.
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
-pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S = DefaultScalarValue>
+pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
@@ -239,7 +239,7 @@ fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
 
 fn parse_variable_param<S>(params: Option<Vec<String>>) -> IronResult<Option<InputValue<S>>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     if let Some(values) = params {
         Ok(
@@ -255,7 +255,7 @@ where
 impl<'a, CtxFactory, Query, Mutation, CtxT, S>
     GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
@@ -330,7 +330,7 @@ impl GraphiQLHandler {
 impl<'a, CtxFactory, Query, Mutation, CtxT, S> Handler
     for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
 where
-    S: ScalarValue + Sync + Send + 'static,
+    S: GraphQLScalarValue + Sync + Send + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,

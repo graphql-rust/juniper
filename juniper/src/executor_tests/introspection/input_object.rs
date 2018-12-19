@@ -2,7 +2,7 @@ use ast::{FromInputValue, InputValue};
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, Value};
+use value::{DefaultGraphQLScalarValue, Object, Value};
 
 struct Root;
 
@@ -97,7 +97,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>, &Vec<Value<DefaultGraphQLScalarValue>>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
@@ -212,7 +212,7 @@ fn default_name_introspection() {
 
 #[test]
 fn default_name_input_value() {
-    let iv: InputValue<DefaultScalarValue> = InputValue::object(
+    let iv: InputValue<DefaultGraphQLScalarValue> = InputValue::object(
         vec![
             ("fieldOne", InputValue::scalar("number one")),
             ("fieldTwo", InputValue::scalar("number two")),

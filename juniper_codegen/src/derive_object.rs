@@ -212,7 +212,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
             where_clause
                 .predicates
-                .push(parse_quote!(__S: juniper::ScalarValue));
+                .push(parse_quote!(__S: juniper::GraphQLScalarValue));
             where_clause
                 .predicates
                 .push(parse_quote!(for<'__b> &'__b __S: juniper::ScalarRefValue<'__b>));

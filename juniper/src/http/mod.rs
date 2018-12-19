@@ -7,7 +7,7 @@ use serde::ser::{self, Serialize, SerializeMap};
 
 use ast::InputValue;
 use executor::ExecutionError;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use value::{DefaultGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue};
 use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -18,9 +18,9 @@ use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
 #[derive(Deserialize, Clone, Serialize, PartialEq, Debug)]
-pub struct GraphQLRequest<S = DefaultScalarValue>
+pub struct GraphQLRequest<S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     query: String,
     #[serde(rename = "operationName")]
@@ -31,7 +31,7 @@ where
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
      /// Returns the `operation_name` associated with this request.
     fn operation_name(&self) -> Option<&str> {
@@ -73,7 +73,7 @@ where
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
         for<'b> &'b S: ScalarRefValue<'b>,
@@ -93,13 +93,13 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
-pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
+pub struct GraphQLResponse<'a, S = DefaultGraphQLScalarValue>(
     Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
 impl<'a, S> GraphQLResponse<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     /// Constructs an error response outside of the normal execution flow
     pub fn error(error: FieldError<S>) -> Self {
@@ -117,7 +117,7 @@ where
 
 impl<'a, T> Serialize for GraphQLResponse<'a, T>
 where
-    T: Serialize + ScalarValue,
+    T: Serialize + GraphQLScalarValue,
     Value<T>: Serialize,
     ExecutionError<T>: Serialize,
     GraphQLError<'a>: Serialize,

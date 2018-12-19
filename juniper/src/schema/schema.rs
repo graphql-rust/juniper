@@ -1,7 +1,7 @@
 use ast::Selection;
 use executor::{ExecutionResult, Executor, Registry};
 use types::base::{Arguments, GraphQLType, TypeKind};
-use value::{ScalarRefValue, ScalarValue, Value};
+use value::{ScalarRefValue, GraphQLScalarValue, Value};
 
 use schema::meta::{
     Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType, ObjectMeta,
@@ -11,7 +11,7 @@ use schema::model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, Type
 
 impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,

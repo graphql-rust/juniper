@@ -7,7 +7,7 @@ use parser::SourcePosition;
 use schema::meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta};
 use schema::model::{SchemaType, TypeType};
 use validation::RuleError;
-use value::{ScalarRefValue, ScalarValue};
+use value::{ScalarRefValue, GraphQLScalarValue};
 
 #[derive(Debug)]
 enum Path<'a> {
@@ -22,7 +22,7 @@ pub fn validate_input_values<S>(
     schema: &SchemaType<S>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errs = vec![];
@@ -45,7 +45,7 @@ fn validate_var_defs<S>(
     schema: &SchemaType<S>,
     errors: &mut Vec<RuleError>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     for &(ref name, ref def) in var_defs.iter() {
@@ -87,7 +87,7 @@ fn unify_value<'a, S>(
     path: Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
@@ -214,7 +214,7 @@ fn unify_enum<'a, S>(
     path: &Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
@@ -260,7 +260,7 @@ fn unify_input_object<'a, S>(
     path: &Path<'a>,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
@@ -318,7 +318,7 @@ where
 
 fn is_absent_or_null<S>(v: Option<&InputValue<S>>) -> bool
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     v.map_or(true, InputValue::is_null)
 }

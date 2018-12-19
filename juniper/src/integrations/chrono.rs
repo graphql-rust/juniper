@@ -16,7 +16,7 @@
 use chrono::prelude::*;
 
 use parser::{ParseError, ScalarToken, Token};
-use value::{ParseScalarResult, ParseScalarValue};
+use value::{ParseScalarResult, ParseGraphQLScalarValue};
 use Value;
 
 #[doc(hidden)]
@@ -105,17 +105,17 @@ graphql_scalar!(NaiveDateTime where Scalar = <S> {
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <f64 as ParseScalarValue<S>>::from_str(value)
+        <f64 as ParseGraphQLScalarValue<S>>::from_str(value)
     }
 });
 
 #[cfg(test)]
 mod test {
     use chrono::prelude::*;
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
+        let input: ::InputValue<DefaultGraphQLScalarValue> = ::InputValue::scalar(raw.to_string());
 
         let parsed: DateTime<FixedOffset> = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw).unwrap();
@@ -139,7 +139,7 @@ mod test {
     }
 
     fn datetime_utc_test(raw: &'static str) {
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
+        let input: ::InputValue<DefaultGraphQLScalarValue> = ::InputValue::scalar(raw.to_string());
 
         let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw)
@@ -166,7 +166,7 @@ mod test {
 
     #[test]
     fn naivedate_from_input_value() {
-        let input: ::InputValue<DefaultScalarValue> =
+        let input: ::InputValue<DefaultGraphQLScalarValue> =
             ::InputValue::scalar("1996-12-19".to_string());
         let y = 1996;
         let m = 12;
@@ -185,7 +185,7 @@ mod test {
     #[test]
     fn naivedatetime_from_input_value() {
         let raw = 1_000_000_000_f64;
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw);
+        let input: ::InputValue<DefaultGraphQLScalarValue> = ::InputValue::scalar(raw);
 
         let parsed: NaiveDateTime = ::FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveDateTime::from_timestamp_opt(raw as i64, 0).unwrap();

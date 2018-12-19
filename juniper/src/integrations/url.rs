@@ -1,6 +1,6 @@
 use url::Url;
 
-use value::{ParseScalarResult, ParseScalarValue};
+use value::{ParseScalarResult, ParseGraphQLScalarValue};
 use Value;
 
 graphql_scalar!(Url where Scalar = <S>{
@@ -16,7 +16,7 @@ graphql_scalar!(Url where Scalar = <S>{
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
+        <String as ParseGraphQLScalarValue<S>>::from_str(value)
     }
 });
 

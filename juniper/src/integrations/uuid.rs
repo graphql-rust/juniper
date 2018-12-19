@@ -28,12 +28,12 @@ graphql_scalar!(Uuid where Scalar = <S> {
 #[cfg(test)]
 mod test {
     use uuid::Uuid;
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn uuid_from_input_value() {
         let raw = "123e4567-e89b-12d3-a456-426655440000";
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
+        let input: ::InputValue<DefaultGraphQLScalarValue> = ::InputValue::scalar(raw.to_string());
 
         let parsed: Uuid = ::FromInputValue::from_input_value(&input).unwrap();
         let id = Uuid::parse_str(raw).unwrap();

@@ -208,7 +208,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
 
     let body = quote! {
         impl<__S> #juniper_path::GraphQLType<__S> for #ident
-        where __S: #juniper_path::ScalarValue,
+        where __S: #juniper_path::GraphQLScalarValue,
             for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
         {
             type Context = ();
@@ -241,7 +241,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
             }
         }
 
-        impl<__S: #juniper_path::ScalarValue> #juniper_path::FromInputValue<__S> for #ident {
+        impl<__S: #juniper_path::GraphQLScalarValue> #juniper_path::FromInputValue<__S> for #ident {
             fn from_input_value(v: &#juniper_path::InputValue<__S>) -> Option<#ident>
                 where for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
             {
@@ -254,7 +254,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
             }
         }
 
-        impl<__S: #juniper_path::ScalarValue> #juniper_path::ToInputValue<__S> for #ident {
+        impl<__S: #juniper_path::GraphQLScalarValue> #juniper_path::ToInputValue<__S> for #ident {
             fn to_input_value(&self) -> #juniper_path::InputValue<__S> {
                 match self {
                     #(#to_inputs)*

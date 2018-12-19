@@ -2,7 +2,7 @@ use ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation,
 use parser::Spanning;
 use schema::model::DirectiveLocation;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct KnownDirectives {
     location_stack: Vec<DirectiveLocation>,
@@ -16,7 +16,7 @@ pub fn factory() -> KnownDirectives {
 
 impl<'a, S> Visitor<'a, S> for KnownDirectives
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
 
     fn enter_operation_definition(
@@ -148,11 +148,11 @@ mod tests {
     use parser::SourcePosition;
     use schema::model::DirectiveLocation;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn with_no_directives() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo {
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn with_known_directives() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn with_unknown_directive() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn with_many_unknown_directives() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn with_well_placed_directives() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo @onQuery {
@@ -257,7 +257,7 @@ mod tests {
 
     #[test]
     fn with_misplaced_directives() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo @include(if: true) {

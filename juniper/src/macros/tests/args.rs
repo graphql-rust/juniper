@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Value};
+use value::{DefaultGraphQLScalarValue, Value};
 
 struct Root;
 
@@ -84,7 +84,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_args_info_query<F>(field_name: &str, f: F)
 where
-    F: Fn(&Vec<Value<DefaultScalarValue>>) -> (),
+    F: Fn(&Vec<Value<DefaultGraphQLScalarValue>>) -> (),
 {
     let doc = r#"
     {

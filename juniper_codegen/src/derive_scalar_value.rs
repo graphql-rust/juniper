@@ -8,7 +8,7 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
     let variants = match ast.data {
         Data::Enum(ref enum_data) => &enum_data.variants,
         _ => {
-            panic!("#[derive(ScalarValue)] may only be applied to enums, not to structs");
+            panic!("#[derive(GraphQLScalarValue)] may only be applied to enums, not to structs");
         }
     };
 

@@ -4,7 +4,7 @@ use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value};
+use value::{DefaultGraphQLScalarValue, Object, ParseScalarResult, ParseGraphQLScalarValue, Value};
 use GraphQLError::ValidationError;
 
 #[derive(Debug)]
@@ -28,12 +28,12 @@ graphql_scalar!(TestComplexScalar {
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-        <String as ParseScalarValue<_>>::from_str(value)
+        <String as ParseGraphQLScalarValue<_>>::from_str(value)
     }
 });
 
 #[derive(GraphQLInputObjectInternal, Debug)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = "DefaultGraphQLScalarValue")]
 struct TestInputObject {
     a: Option<String>,
     b: Option<Vec<Option<String>>>,
@@ -42,7 +42,7 @@ struct TestInputObject {
 }
 
 #[derive(GraphQLInputObjectInternal, Debug)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = "DefaultGraphQLScalarValue")]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,
@@ -114,9 +114,9 @@ graphql_object!(TestType: () |&self| {
     }
 });
 
-fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
+fn run_variable_query<F>(query: &str, vars: Variables<DefaultGraphQLScalarValue>, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -133,7 +133,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }
@@ -142,7 +142,7 @@ where
 fn inline_complex_input() {
     run_query(
         r#"{ fieldWithObjectInput(input: {a: "foo", b: ["bar"], c: "baz"}) }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -154,7 +154,7 @@ fn inline_complex_input() {
 fn inline_parse_single_value_to_list() {
     run_query(
         r#"{ fieldWithObjectInput(input: {a: "foo", b: "bar", c: "baz"}) }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -166,7 +166,7 @@ fn inline_parse_single_value_to_list() {
 fn inline_runs_from_input_value_on_scalar() {
     run_query(
         r#"{ fieldWithObjectInput(input: {c: "baz", d: "SerializedValue"}) }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::scalar(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
@@ -190,7 +190,7 @@ fn variable_complex_input() {
             ),
         )].into_iter()
         .collect(),
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -214,7 +214,7 @@ fn variable_parse_single_value_to_list() {
             ),
         )].into_iter()
         .collect(),
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::scalar(r#"Some(TestInputObject { a: Some("foo"), b: Some([Some("bar")]), c: "baz", d: None })"#)));
@@ -237,7 +237,7 @@ fn variable_runs_from_input_value_on_scalar() {
             ),
         )].into_iter()
         .collect(),
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithObjectInput"),
                 Some(&Value::scalar(r#"Some(TestInputObject { a: None, b: None, c: "baz", d: Some(TestComplexScalar) })"#)));
@@ -387,7 +387,7 @@ fn variable_error_on_additional_field() {
 fn allow_nullable_inputs_to_be_omitted() {
     run_query(
         r#"{ fieldWithNullableStringInput }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::scalar(r#"None"#))
@@ -400,7 +400,7 @@ fn allow_nullable_inputs_to_be_omitted() {
 fn allow_nullable_inputs_to_be_omitted_in_variable() {
     run_query(
         r#"query q($value: String) { fieldWithNullableStringInput(input: $value) }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::scalar(r#"None"#))
@@ -413,7 +413,7 @@ fn allow_nullable_inputs_to_be_omitted_in_variable() {
 fn allow_nullable_inputs_to_be_explicitly_null() {
     run_query(
         r#"{ fieldWithNullableStringInput(input: null) }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::scalar(r#"None"#))
@@ -429,7 +429,7 @@ fn allow_nullable_inputs_to_be_set_to_null_in_variable() {
         vec![("value".to_owned(), InputValue::null())]
             .into_iter()
             .collect(),
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::scalar(r#"None"#))
@@ -445,7 +445,7 @@ fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
         vec![("value".to_owned(), InputValue::scalar("a"))]
             .into_iter()
             .collect(),
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::scalar(r#"Some("a")"#))
@@ -458,7 +458,7 @@ fn allow_nullable_inputs_to_be_set_to_value_in_variable() {
 fn allow_nullable_inputs_to_be_set_to_value_directly() {
     run_query(
         r#"{ fieldWithNullableStringInput(input: "a") }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNullableStringInput"),
                 Some(&Value::scalar(r#"Some("a")"#))
@@ -525,7 +525,7 @@ fn allow_non_nullable_inputs_to_be_set_to_value_in_variable() {
 fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
     run_query(
         r#"{ fieldWithNonNullableStringInput(input: "a") }"#,
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("fieldWithNonNullableStringInput"),
                 Some(&Value::scalar(r#""a""#))
@@ -541,7 +541,7 @@ fn allow_lists_to_be_null() {
         vec![("input".to_owned(), InputValue::null())]
             .into_iter()
             .collect(),
-        |result: &Object<DefaultScalarValue>| {
+        |result: &Object<DefaultGraphQLScalarValue>| {
             assert_eq!(
                 result.get_field_value("list"),
                 Some(&Value::scalar(r#"None"#))

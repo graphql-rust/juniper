@@ -2,7 +2,7 @@ use ast::InputValue;
 use executor::FieldResult;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, Value};
+use value::{DefaultGraphQLScalarValue, Object, Value};
 
 struct Interface;
 #[derive(Debug)]
@@ -105,7 +105,7 @@ graphql_interface!(Interface: () |&self| {
 
 fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {

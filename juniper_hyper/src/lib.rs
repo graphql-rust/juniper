@@ -17,7 +17,7 @@ use hyper::rt::Stream;
 use hyper::{header, Body, Method, Request, Response, StatusCode};
 use juniper::http::GraphQLRequest as JuniperGraphQLRequest;
 use juniper::serde::Deserialize;
-use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
+use juniper::{DefaultGraphQLScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, GraphQLScalarValue};
 use serde_json::error::Error as SerdeError;
 use std::error::Error;
 use std::fmt;
@@ -32,7 +32,7 @@ pub fn graphql<CtxT, QueryT, MutationT, S>(
     request: Request<Body>,
 ) -> impl Future<Item = Response<Body>, Error = hyper::Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: GraphQLScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
@@ -102,7 +102,7 @@ fn execute_request<CtxT, QueryT, MutationT, S>(
     request: GraphQLRequest<S>,
 ) -> impl Future<Item = Response<Body>, Error = tokio_threadpool::BlockingError>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: GraphQLScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
@@ -128,7 +128,7 @@ where
 
 fn gql_request_from_get<S>(input: &str) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let mut query = None;
     let operation_name = None;
@@ -193,9 +193,9 @@ fn new_html_response(code: StatusCode) -> Response<Body> {
 #[derive(Deserialize)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLRequest<S = DefaultScalarValue>
+enum GraphQLRequest<S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(JuniperGraphQLRequest<S>),
     Batch(Vec<JuniperGraphQLRequest<S>>),
@@ -203,7 +203,7 @@ where
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn execute<'a, CtxT: 'a, QueryT, MutationT>(

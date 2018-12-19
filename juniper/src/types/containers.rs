@@ -1,13 +1,13 @@
 use ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use schema::meta::MetaType;
-use value::{ScalarRefValue, ScalarValue, Value};
+use value::{ScalarRefValue, GraphQLScalarValue, Value};
 
 use executor::{Executor, Registry};
 use types::base::GraphQLType;
 
 impl<S, T, CtxT> GraphQLType<S> for Option<T>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -42,7 +42,7 @@ where
 impl<S, T> FromInputValue<S> for Option<T>
 where
     T: FromInputValue<S>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Option<T>>
     where
@@ -61,7 +61,7 @@ where
 impl<S, T> ToInputValue<S> for Option<T>
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         match *self {
@@ -74,7 +74,7 @@ where
 impl<S, T, CtxT> GraphQLType<S> for Vec<T>
 where
     T: GraphQLType<S, Context = CtxT>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
@@ -105,7 +105,7 @@ where
 impl<T, S> FromInputValue<S> for Vec<T>
 where
     T: FromInputValue<S>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Vec<T>>
     where
@@ -133,7 +133,7 @@ where
 impl<T, S> ToInputValue<S> for Vec<T>
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
@@ -142,7 +142,7 @@ where
 
 impl<'a, S, T, CtxT> GraphQLType<S> for &'a [T]
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -174,7 +174,7 @@ where
 impl<'a, T, S> ToInputValue<S> for &'a [T]
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(|v| v.to_input_value()).collect())
@@ -187,7 +187,7 @@ fn resolve_into_list<S, T, I>(
     iter: I,
 ) -> Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     I: Iterator<Item = T> + ExactSizeIterator,
     T: GraphQLType<S>,
     for<'b> &'b S: ScalarRefValue<'b>,

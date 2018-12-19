@@ -1,6 +1,6 @@
 use ast::{Directive, Fragment, InputValue, Selection};
 use parser::Spanning;
-use value::{ScalarRefValue, ScalarValue};
+use value::{ScalarRefValue, GraphQLScalarValue};
 
 use std::collections::HashMap;
 
@@ -32,7 +32,7 @@ pub enum LookAheadValue<'a, S: 'a> {
 
 impl<'a, S> LookAheadValue<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_input_value(input_value: &'a InputValue<S>, vars: &'a Variables<S>) -> Self {
         match *input_value {
@@ -67,7 +67,7 @@ pub struct LookAheadArgument<'a, S: 'a> {
 
 impl<'a, S> LookAheadArgument<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     pub(super) fn new(
         &(ref name, ref value): &'a (Spanning<&'a str>, Spanning<InputValue<S>>),
@@ -102,7 +102,7 @@ pub struct LookAheadSelection<'a, S: 'a> {
 
 impl<'a, S> LookAheadSelection<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     &'a S: ScalarRefValue<'a>,
 {
     fn should_include<'b, 'c>(
@@ -358,11 +358,11 @@ mod tests {
     use schema::model::SchemaType;
     use std::collections::HashMap;
     use validation::test_harness::{MutationRoot, QueryRoot};
-    use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+    use value::{DefaultGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue};
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         ::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn check_simple_query() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     hero {
@@ -433,7 +433,7 @@ query Hero {
 
     #[test]
     fn check_query_with_alias() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     custom_hero: hero {
@@ -485,7 +485,7 @@ query Hero {
 
     #[test]
     fn check_query_with_child() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     hero {
@@ -611,7 +611,7 @@ query Hero {
                             alias: None,
                             arguments: vec![LookAheadArgument {
                                 name: "uppercase",
-                                value: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
+                                value: LookAheadValue::Scalar(&DefaultGraphQLScalarValue::Boolean(true)),
                             }],
                             children: Vec::new(),
                         },
@@ -627,7 +627,7 @@ query Hero {
 
     #[test]
     fn check_query_with_variable() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero($episode: Episode) {
     hero(episode: $episode) {
@@ -683,7 +683,7 @@ query Hero($episode: Episode) {
 
     #[test]
     fn check_query_with_fragment() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     hero {
@@ -749,7 +749,7 @@ fragment commonFields on Character {
 
     #[test]
     fn check_query_with_directives() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     hero {
@@ -802,7 +802,7 @@ query Hero {
 
     #[test]
     fn check_query_with_inline_fragments() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     hero {
@@ -892,11 +892,11 @@ fragment comparisonFields on Character {
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
             let mut vars = Variables::default();
-            vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
+            vars.insert("id".into(), InputValue::Scalar(DefaultGraphQLScalarValue::Int(42)));
             // This will normally be there
             vars.insert(
                 "withFriends".into(),
-                InputValue::Scalar(DefaultScalarValue::Boolean(true)),
+                InputValue::Scalar(DefaultGraphQLScalarValue::Boolean(true)),
             );
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -908,7 +908,7 @@ fragment comparisonFields on Character {
                 alias: None,
                 arguments: vec![LookAheadArgument {
                     name: "id",
-                    value: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
+                    value: LookAheadValue::Scalar(&DefaultGraphQLScalarValue::Int(42)),
                 }],
                 children: vec![
                     ChildSelection {
@@ -1030,7 +1030,7 @@ fragment comparisonFields on Character {
 
     #[test]
     fn check_resolve_concrete_type() {
-        let docs = parse_document_source::<DefaultScalarValue>(
+        let docs = parse_document_source::<DefaultGraphQLScalarValue>(
             "
 query Hero {
     hero {
@@ -1080,7 +1080,7 @@ query Hero {
 
     #[test]
     fn check_select_child() {
-        let lookahead: LookAheadSelection<DefaultScalarValue> = LookAheadSelection {
+        let lookahead: LookAheadSelection<DefaultGraphQLScalarValue> = LookAheadSelection {
             name: "hero",
             alias: None,
             arguments: Vec::new(),

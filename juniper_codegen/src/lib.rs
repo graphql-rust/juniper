@@ -61,7 +61,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(ScalarValue)]
+#[proc_macro_derive(GraphQLScalarValue)]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, false);

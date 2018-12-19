@@ -4,7 +4,7 @@ use parser::SourcePosition;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use validation::RuleError;
-use value::{DefaultScalarValue, Object, Value};
+use value::{DefaultGraphQLScalarValue, Object, Value};
 use GraphQLError::ValidationError;
 
 #[derive(GraphQLEnumInternal, Debug)]
@@ -25,9 +25,9 @@ graphql_object!(TestType: () |&self| {
     }
 });
 
-fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
+fn run_variable_query<F>(query: &str, vars: Variables<DefaultGraphQLScalarValue>, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
@@ -44,7 +44,7 @@ where
 
 fn run_query<F>(query: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>) -> (),
 {
     run_variable_query(query, Variables::new(), f);
 }

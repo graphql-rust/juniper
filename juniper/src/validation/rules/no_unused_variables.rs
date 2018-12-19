@@ -2,7 +2,7 @@ use ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDef
 use parser::Spanning;
 use std::collections::{HashMap, HashSet};
 use validation::{RuleError, ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -58,7 +58,7 @@ impl<'a> NoUnusedVariables<'a> {
 
 impl<'a, S> Visitor<'a, S> for NoUnusedVariables<'a>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
         for (op_name, def_vars) in &self.defined_variables {
@@ -157,11 +157,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn uses_all_variables() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply_in_inline_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_in_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -234,7 +234,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_fragment_in_multiple_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String) {
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_recursive_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String) {
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn variable_not_used() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_1() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_in_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_2() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -374,7 +374,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_unreferenced_fragment() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($b: String) {
@@ -396,7 +396,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_fragment_used_by_other_operation() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($b: String) {

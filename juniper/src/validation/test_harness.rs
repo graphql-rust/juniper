@@ -6,7 +6,7 @@ use schema::model::{DirectiveLocation, DirectiveType, RootNode};
 use types::base::GraphQLType;
 use types::scalars::ID;
 use validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor};
-use value::{ScalarRefValue, ScalarValue};
+use value::{ScalarRefValue, GraphQLScalarValue};
 
 struct Being;
 struct Pet;
@@ -62,7 +62,7 @@ struct ComplexInput {
 
 impl<S> GraphQLType<S> for Being
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -86,7 +86,7 @@ where
 
 impl<S> GraphQLType<S> for Pet
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -110,7 +110,7 @@ where
 
 impl<S> GraphQLType<S> for Canine
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -134,7 +134,7 @@ where
 
 impl<S> GraphQLType<S> for DogCommand
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -162,7 +162,7 @@ where
 
 impl<S> FromInputValue<S> for DogCommand
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand>
     where
@@ -179,7 +179,7 @@ where
 
 impl<S> GraphQLType<S> for Dog
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -224,7 +224,7 @@ where
 
 impl<S> GraphQLType<S> for FurColor
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -253,7 +253,7 @@ where
 
 impl<S> FromInputValue<S> for FurColor
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor>
     where
@@ -273,7 +273,7 @@ where
 
 impl<S> GraphQLType<S> for Cat
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -306,7 +306,7 @@ where
 
 impl<S> GraphQLType<S> for CatOrDog
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -328,7 +328,7 @@ where
 
 impl<S> GraphQLType<S> for Intelligent
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -350,7 +350,7 @@ where
 
 impl<S> GraphQLType<S> for Human
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -383,7 +383,7 @@ where
 
 impl<S> GraphQLType<S> for Alien
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -416,7 +416,7 @@ where
 
 impl<S> GraphQLType<S> for DogOrHuman
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -438,7 +438,7 @@ where
 
 impl<S> GraphQLType<S> for HumanOrAlien
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -460,7 +460,7 @@ where
 
 impl<S> GraphQLType<S> for ComplexInput
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -490,7 +490,7 @@ where
 
 impl<S> FromInputValue<S> for ComplexInput
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput>
     where
@@ -517,7 +517,7 @@ where
 
 impl<S> GraphQLType<S> for ComplicatedArgs
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -581,7 +581,7 @@ where
 
 impl<S> GraphQLType<S> for QueryRoot
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -615,7 +615,7 @@ where
 
 impl<S> GraphQLType<S> for MutationRoot
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -647,7 +647,7 @@ where
 pub fn validate<'a, Q, M, V, F, S>(r: Q, m: M, q: &'a str, factory: F) -> Vec<RuleError>
 where
     for<'b> &'b S: ScalarRefValue<'b>,
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
@@ -698,7 +698,7 @@ where
 
 pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
@@ -708,7 +708,7 @@ where
 
 pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
@@ -725,7 +725,7 @@ where
 
 pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
@@ -740,7 +740,7 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     q: &'a str,
     expected_errors: &[RuleError],
 ) where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,

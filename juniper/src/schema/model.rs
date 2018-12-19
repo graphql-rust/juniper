@@ -7,16 +7,16 @@ use executor::{Context, Registry};
 use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
 use types::base::GraphQLType;
 use types::name::Name;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use value::{DefaultGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue};
 
 /// Root query node of a schema
 ///
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
 #[derive(Debug)]
-pub struct RootNode<'a, QueryT: GraphQLType<S>, MutationT: GraphQLType<S>, S = DefaultScalarValue>
+pub struct RootNode<'a, QueryT: GraphQLType<S>, MutationT: GraphQLType<S>, S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     #[doc(hidden)]
@@ -73,7 +73,7 @@ pub enum DirectiveLocation {
 
 impl<'a, QueryT, MutationT, S> RootNode<'a, QueryT, MutationT, S>
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     QueryT: GraphQLType<S, TypeInfo = ()>,
     MutationT: GraphQLType<S, TypeInfo = ()>,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -94,7 +94,7 @@ impl<'a, S, QueryT, MutationT> RootNode<'a, QueryT, MutationT, S>
 where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Construct a new root node from query and mutation nodes,
@@ -125,7 +125,7 @@ impl<'a, S> SchemaType<'a, S> {
         mutation_info: &MutationT::TypeInfo,
     ) -> Self
     where
-        S: ScalarValue + 'a,
+        S: GraphQLScalarValue + 'a,
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S>,
         for<'b> &'b S: ScalarRefValue<'b>,
@@ -390,7 +390,7 @@ impl<'a, S> TypeType<'a, S> {
 
 impl<'a, S> DirectiveType<'a, S>
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
 {
     pub fn new(
         name: &str,
@@ -407,7 +407,7 @@ where
 
     fn new_skip(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         Self::new(
@@ -423,7 +423,7 @@ where
 
     fn new_include(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         Self::new(

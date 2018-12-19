@@ -2,7 +2,7 @@ use indexmap::IndexMap;
 
 use ast::{Directive, FromInputValue, InputValue, Selection};
 use executor::Variables;
-use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
+use value::{DefaultGraphQLScalarValue, Object, ScalarRefValue, GraphQLScalarValue, Value};
 
 use executor::{ExecutionResult, Executor, Registry};
 use parser::Spanning;
@@ -68,13 +68,13 @@ pub enum TypeKind {
 
 /// Field argument container
 #[derive(Debug)]
-pub struct Arguments<'a, S = DefaultScalarValue> {
+pub struct Arguments<'a, S = DefaultGraphQLScalarValue> {
     args: Option<IndexMap<&'a str, InputValue<S>>>,
 }
 
 impl<'a, S> Arguments<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     #[doc(hidden)]
     pub fn new(
@@ -149,7 +149,7 @@ root:
 ```rust
 use juniper::{GraphQLType, Registry, FieldResult, Context,
               Arguments, Executor, ExecutionResult,
-              DefaultScalarValue};
+              DefaultGraphQLScalarValue};
 use juniper::meta::MetaType;
 # use std::collections::HashMap;
 
@@ -170,7 +170,7 @@ impl GraphQLType for User
     }
 
     fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r>
-    where DefaultScalarValue: 'r,
+    where DefaultGraphQLScalarValue: 'r,
     {
         // First, we need to define all fields and their types on this type.
         //
@@ -229,9 +229,9 @@ impl GraphQLType for User
 ```
 
 */
-pub trait GraphQLType<S = DefaultScalarValue>: Sized
+pub trait GraphQLType<S = DefaultGraphQLScalarValue>: Sized
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// The expected context type for this GraphQL type
@@ -346,7 +346,7 @@ pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
 ) -> bool
 where
     T: GraphQLType<S, Context = CtxT>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let meta_type = executor
@@ -495,7 +495,7 @@ where
 
 fn is_excluded<S>(directives: &Option<Vec<Spanning<Directive<S>>>>, vars: &Variables<S>) -> bool
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     if let Some(ref directives) = *directives {

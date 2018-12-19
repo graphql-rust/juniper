@@ -3,7 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::InputValue;
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct UniqueInputFieldNames<'a> {
     known_name_stack: Vec<HashMap<&'a str, SourcePosition>>,
@@ -17,7 +17,7 @@ pub fn factory<'a>() -> UniqueInputFieldNames<'a> {
 
 impl<'a, S> Visitor<'a, S> for UniqueInputFieldNames<'a>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_object_value(
         &mut self,
@@ -66,11 +66,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn input_object_with_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn same_input_object_within_two_args() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn multiple_input_object_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn allows_for_nested_input_objects_with_similar_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn duplicate_input_object_fields() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn many_duplicate_input_object_fields() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {

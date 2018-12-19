@@ -4,7 +4,7 @@ use ast::InputValue;
 use executor::{Context, FieldResult};
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, Value};
+use value::{DefaultGraphQLScalarValue, Object, Value};
 
 /*
 
@@ -143,7 +143,7 @@ graphql_object!(<'a> Root: InnerContext as "Root" |&self| {
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>, &Vec<Value<DefaultGraphQLScalarValue>>) -> (),
 {
     let doc = r#"
     query ($typeName: String!) {

@@ -5,11 +5,11 @@ use std::sync::Arc;
 use executor::{ExecutionResult, Executor, Registry};
 use schema::meta::MetaType;
 use types::base::{Arguments, GraphQLType};
-use value::{ScalarRefValue, ScalarValue, Value};
+use value::{ScalarRefValue, GraphQLScalarValue, Value};
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>
 {
@@ -60,7 +60,7 @@ where
 
 impl<T, S> FromInputValue<S> for Box<T>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: FromInputValue<S>,
 {
     fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Box<T>>
@@ -86,7 +86,7 @@ where
 
 impl<'a, S, T, CtxT> GraphQLType<S> for &'a T
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>
 {
@@ -147,7 +147,7 @@ where
 
 impl<S, T> GraphQLType<S> for Arc<T>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S>,
     for<'b> &'b S: ScalarRefValue<'b>
 {

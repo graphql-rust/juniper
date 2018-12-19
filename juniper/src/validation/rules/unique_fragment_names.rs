@@ -3,7 +3,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use ast::Fragment;
 use parser::{SourcePosition, Spanning};
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct UniqueFragmentNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -17,7 +17,7 @@ pub fn factory<'a>() -> UniqueFragmentNames<'a> {
 
 impl<'a, S> Visitor<'a, S> for UniqueFragmentNames<'a>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
 
     fn enter_fragment_definition(
@@ -49,11 +49,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn no_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn one_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn many_fragments() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn inline_fragments_always_unique() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn fragment_and_operation_named_the_same() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo {
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn fragments_named_the_same() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn fragments_named_the_same_no_reference() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment fragA on Dog {

@@ -59,19 +59,19 @@ use juniper::http;
 use juniper::InputValue;
 
 use juniper::serde::Deserialize;
-use juniper::DefaultScalarValue;
+use juniper::DefaultGraphQLScalarValue;
 use juniper::FieldError;
 use juniper::GraphQLType;
 use juniper::RootNode;
 use juniper::ScalarRefValue;
-use juniper::ScalarValue;
+use juniper::GraphQLScalarValue;
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
+enum GraphQLBatchRequest<S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(http::GraphQLRequest<S>),
     Batch(Vec<http::GraphQLRequest<S>>),
@@ -79,9 +79,9 @@ where
 
 #[derive(Serialize)]
 #[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
+enum GraphQLBatchResponse<'a, S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(http::GraphQLResponse<'a, S>),
     Batch(Vec<http::GraphQLResponse<'a, S>>),
@@ -89,7 +89,7 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
@@ -117,7 +117,7 @@ where
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn is_ok(&self) -> bool {
         match self {
@@ -135,9 +135,9 @@ where
 /// automatically from both GET and POST routes by implementing the `FromForm`
 /// and `FromData` traits.
 #[derive(Debug, PartialEq)]
-pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
+pub struct GraphQLRequest<S = DefaultGraphQLScalarValue>(GraphQLBatchRequest<S>)
 where
-    S: ScalarValue;
+    S: GraphQLScalarValue;
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
@@ -149,7 +149,7 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Execute an incoming GraphQL query
@@ -230,7 +230,7 @@ impl GraphQLResponse {
 
 impl<'f, S> FromForm<'f> for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     type Error = String;
 
@@ -300,7 +300,7 @@ where
 }
 
 impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
-    where S: ScalarValue
+    where S: GraphQLScalarValue
 {
     type Error = String;
 
@@ -313,7 +313,7 @@ impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
 
 impl<S> FromDataSimple for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     type Error = String;
 

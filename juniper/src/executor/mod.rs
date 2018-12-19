@@ -22,7 +22,7 @@ use schema::model::{RootNode, SchemaType, TypeType};
 
 use types::base::GraphQLType;
 use types::name::Name;
-use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use value::{DefaultGraphQLScalarValue, ParseGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue};
 
 mod look_ahead;
 
@@ -36,7 +36,7 @@ pub use self::look_ahead::{
 /// The registry gathers metadata for all types in a schema. It provides
 /// convenience methods to convert types implementing the `GraphQLType` trait
 /// into `Type` instances and automatically registers them.
-pub struct Registry<'r, S = DefaultScalarValue> {
+pub struct Registry<'r, S = DefaultGraphQLScalarValue> {
     /// Currently registered types
     pub types: FnvHashMap<Name, MetaType<'r, S>>,
 }
@@ -51,7 +51,7 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-pub struct Executor<'a, CtxT, S = DefaultScalarValue>
+pub struct Executor<'a, CtxT, S = DefaultGraphQLScalarValue>
 where
     CtxT: 'a,
     S: 'a,
@@ -126,7 +126,7 @@ where
 /// which makes error chaining with the `?` operator a breeze:
 ///
 /// ```rust
-/// # use juniper::{FieldError, ScalarValue};
+/// # use juniper::{FieldError, GraphQLScalarValue};
 /// fn get_string(data: Vec<u8>) -> Result<String, FieldError>
 /// {
 ///     let s = String::from_utf8(data)?;
@@ -134,14 +134,14 @@ where
 /// }
 /// ```
 #[derive(Debug, PartialEq)]
-pub struct FieldError<S = DefaultScalarValue> {
+pub struct FieldError<S = DefaultGraphQLScalarValue> {
     message: String,
     extensions: Value<S>,
 }
 
 impl<T: Display, S> From<T> for FieldError<S>
 where
-    S: ::value::ScalarValue,
+    S: ::value::GraphQLScalarValue,
 {
     fn from(e: T) -> FieldError<S> {
         FieldError {
@@ -159,10 +159,10 @@ impl<S> FieldError<S> {
     /// ```rust
     /// # #[macro_use] extern crate juniper;
     /// use juniper::FieldError;
-    /// # use juniper::DefaultScalarValue;
+    /// # use juniper::DefaultGraphQLScalarValue;
     ///
     /// # fn sample() {
-    /// # let _: FieldError<DefaultScalarValue> =
+    /// # let _: FieldError<DefaultGraphQLScalarValue> =
     /// FieldError::new(
     ///     "Could not open connection to the database",
     ///     graphql_value!({ "internal_error": "Connection refused" })
@@ -206,19 +206,19 @@ impl<S> FieldError<S> {
 }
 
 /// The result of resolving the value of a field of type `T`
-pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
+pub type FieldResult<T, S = DefaultGraphQLScalarValue> = Result<T, FieldError<S>>;
 
 /// The result of resolving an unspecified field
-pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
+pub type ExecutionResult<S = DefaultGraphQLScalarValue> = Result<Value<S>, FieldError<S>>;
 
 /// The map of variables used for substitution during query execution
-pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
+pub type Variables<S = DefaultGraphQLScalarValue> = HashMap<String, InputValue<S>>;
 
 /// Custom error handling trait to enable Error types other than `FieldError` to be specified
 /// as return value.
 ///
 /// Any custom error type should implement this trait to convert it to `FieldError`.
-pub trait IntoFieldError<S = DefaultScalarValue> {
+pub trait IntoFieldError<S = DefaultGraphQLScalarValue> {
     #[doc(hidden)]
     fn into_field_error(self) -> FieldError<S>;
 }
@@ -232,7 +232,7 @@ impl<S> IntoFieldError<S> for FieldError<S> {
 #[doc(hidden)]
 pub trait IntoResolvable<'a, S, T: GraphQLType<S>, C>: Sized
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     #[doc(hidden)]
@@ -242,7 +242,7 @@ where
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for T
 where
     T: GraphQLType<S>,
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T::Context: FromContext<C>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -253,7 +253,7 @@ where
 
 impl<'a, S, T, C, E: IntoFieldError<S>> IntoResolvable<'a, S, T, C> for Result<T, E>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S>,
     T::Context: FromContext<C>,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -266,7 +266,7 @@ where
 
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for (&'a T::Context, T)
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -277,7 +277,7 @@ where
 
 impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C> for Option<(&'a T::Context, T)>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -288,7 +288,7 @@ where
 
 impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T), S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -300,7 +300,7 @@ where
 impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
     for FieldResult<Option<(&'a T::Context, T)>, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     T: GraphQLType<S>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -349,7 +349,7 @@ where
 
 impl<'a, CtxT, S> Executor<'a, CtxT, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve a single arbitrary value, mapping the context to a new type
@@ -588,7 +588,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -686,7 +686,7 @@ where
 
 impl<'r, S> Registry<'r, S>
 where
-    S: ScalarValue + 'r,
+    S: GraphQLScalarValue + 'r,
 {
     /// Construct a new registry
     pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Registry<'r, S> {
@@ -792,7 +792,7 @@ where
     /// This expects the type to implement `FromInputValue`.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + 'r,
+        T: FromInputValue<S> + GraphQLType<S> + ParseGraphQLScalarValue<S> + 'r,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement name()");

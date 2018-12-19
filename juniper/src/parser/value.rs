@@ -3,7 +3,7 @@ use ast::InputValue;
 use parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token};
 use schema::meta::{InputObjectMeta, MetaType};
 use schema::model::SchemaType;
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub fn parse_value_literal<'a, 'b, S>(
     parser: &mut Parser<'a>,
@@ -12,7 +12,7 @@ pub fn parse_value_literal<'a, 'b, S>(
     tpe: Option<&MetaType<'b, S>>,
 ) -> ParseResult<'a, InputValue<S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     match (parser.peek(), tpe) {
         (
@@ -126,7 +126,7 @@ fn parse_list_literal<'a, 'b, S>(
     tpe: Option<&MetaType<'b, S>>,
 ) -> ParseResult<'a, InputValue<S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Ok(parser
         .delimited_list(
@@ -143,7 +143,7 @@ fn parse_object_literal<'a, 'b, S>(
     object_tpe: Option<&InputObjectMeta<'b, S>>,
 ) -> ParseResult<'a, InputValue<S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Ok(parser
         .delimited_list(
@@ -160,7 +160,7 @@ fn parse_object_field<'a, 'b, S>(
     object_meta: Option<&InputObjectMeta<'b, S>>,
 ) -> ParseResult<'a, (Spanning<String>, Spanning<InputValue<S>>)>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let key = parser.expect_name()?;
 
@@ -181,7 +181,7 @@ where
 
 fn parse_variable_literal<'a, S>(parser: &mut Parser<'a>) -> ParseResult<'a, InputValue<S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let Spanning {
         start: start_pos, ..
@@ -206,7 +206,7 @@ fn parse_scalar_literal_by_infered_type<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> ParseResult<'a, InputValue<S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     match token {
         ScalarToken::String(_) => {

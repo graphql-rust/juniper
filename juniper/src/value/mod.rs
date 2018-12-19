@@ -6,7 +6,7 @@ mod scalar;
 pub use self::object::Object;
 
 pub use self::scalar::{
-    DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
+    DefaultGraphQLScalarValue, ParseScalarResult, ParseGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue,
 };
 
 /// Serializable value returned from query and field execution.
@@ -20,7 +20,7 @@ pub use self::scalar::{
 /// than parsing a source query.
 #[derive(Debug, PartialEq, Clone)]
 #[allow(missing_docs)]
-pub enum Value<S = DefaultScalarValue> {
+pub enum Value<S = DefaultGraphQLScalarValue> {
     Null,
     Scalar(S),
     List(Vec<Value<S>>),
@@ -29,7 +29,7 @@ pub enum Value<S = DefaultScalarValue> {
 
 impl<S> Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     // CONSTRUCTORS
 
@@ -158,7 +158,7 @@ where
     }
 }
 
-impl<S: ScalarValue> ToInputValue<S> for Value<S> {
+impl<S: GraphQLScalarValue> ToInputValue<S> for Value<S> {
     fn to_input_value(&self) -> InputValue<S> {
         match *self {
             Value::Null => InputValue::Null,
@@ -183,7 +183,7 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
 
 impl<S, T> From<Option<T>> for Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     Value<S>: From<T>,
 {
     fn from(v: Option<T>) -> Value<S> {
@@ -196,7 +196,7 @@ where
 
 impl<'a, S> From<&'a str> for Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from(s: &'a str) -> Self {
         Value::scalar(s.to_owned())
@@ -205,7 +205,7 @@ where
 
 impl<S> From<String> for Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from(s: String) -> Self {
         Value::scalar(s)
@@ -214,7 +214,7 @@ where
 
 impl<S> From<i32> for Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from(i: i32) -> Self {
         Value::scalar(i)
@@ -223,7 +223,7 @@ where
 
 impl<S> From<f64> for Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from(f: f64) -> Self {
         Value::scalar(f)
@@ -232,7 +232,7 @@ where
 
 impl<S> From<bool> for Value<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from(b: bool) -> Self {
         Value::scalar(b)
@@ -248,8 +248,8 @@ where
 /// passed in.
 /// ```rust
 /// #[macro_use] extern crate juniper;
-/// # use juniper::{Value, DefaultScalarValue};
-/// # type V = Value<DefaultScalarValue>;
+/// # use juniper::{Value, DefaultGraphQLScalarValue};
+/// # type V = Value<DefaultGraphQLScalarValue>;
 ///
 /// # fn main() {
 /// # let _: V =
@@ -284,39 +284,39 @@ mod tests {
 
     #[test]
     fn value_macro_string() {
-        let s: Value<DefaultScalarValue> = graphql_value!("test");
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!("test");
         assert_eq!(s, Value::scalar("test"));
     }
 
     #[test]
     fn value_macro_int() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123);
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!(123);
         assert_eq!(s, Value::scalar(123));
     }
 
     #[test]
     fn value_macro_float() {
-        let s: Value<DefaultScalarValue> = graphql_value!(123.5);
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!(123.5);
         assert_eq!(s, Value::scalar(123.5));
     }
 
     #[test]
     fn value_macro_boolean() {
-        let s: Value<DefaultScalarValue> = graphql_value!(false);
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!(false);
         assert_eq!(s, Value::scalar(false));
     }
 
     #[test]
     fn value_macro_option() {
-        let s: Value<DefaultScalarValue> = graphql_value!(Some("test"));
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!(Some("test"));
         assert_eq!(s, Value::scalar("test"));
-        let s: Value<DefaultScalarValue> = graphql_value!(None);
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!(None);
         assert_eq!(s, Value::null());
     }
 
     #[test]
     fn value_macro_list() {
-        let s: Value<DefaultScalarValue> = graphql_value!([123, "Test", false]);
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!([123, "Test", false]);
         assert_eq!(
             s,
             Value::list(vec![
@@ -325,7 +325,7 @@ mod tests {
                 Value::scalar(false),
             ])
         );
-        let s: Value<DefaultScalarValue> = graphql_value!([123, [456], 789]);
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!([123, [456], 789]);
         assert_eq!(
             s,
             Value::list(vec![
@@ -338,7 +338,7 @@ mod tests {
 
     #[test]
     fn value_macro_object() {
-        let s: Value<DefaultScalarValue> = graphql_value!({ "key": 123, "next": true });
+        let s: Value<DefaultGraphQLScalarValue> = graphql_value!({ "key": 123, "next": true });
         assert_eq!(
             s,
             Value::object(

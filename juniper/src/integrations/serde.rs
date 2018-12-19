@@ -8,7 +8,7 @@ use ast::InputValue;
 use executor::ExecutionError;
 use parser::{ParseError, SourcePosition, Spanning};
 use validation::RuleError;
-use {GraphQLError, Object, ScalarValue, Value};
+use {GraphQLError, Object, GraphQLScalarValue, Value};
 
 #[derive(Serialize)]
 struct SerializeHelper {
@@ -17,7 +17,7 @@ struct SerializeHelper {
 
 impl<T> ser::Serialize for ExecutionError<T>
 where
-    T: ScalarValue,
+    T: GraphQLScalarValue,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -71,15 +71,15 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
 
 impl<'de, S> de::Deserialize<'de> for InputValue<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn deserialize<D>(deserializer: D) -> Result<InputValue<S>, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        struct InputValueVisitor<S: ScalarValue>(S::Visitor);
+        struct InputValueVisitor<S: GraphQLScalarValue>(S::Visitor);
 
-        impl<S: ScalarValue> Default for InputValueVisitor<S> {
+        impl<S: GraphQLScalarValue> Default for InputValueVisitor<S> {
             fn default() -> Self {
                 InputValueVisitor(S::Visitor::default())
             }
@@ -87,7 +87,7 @@ where
 
         impl<'de, S> de::Visitor<'de> for InputValueVisitor<S>
         where
-            S: ScalarValue,
+            S: GraphQLScalarValue,
         {
             type Value = InputValue<S>;
 
@@ -274,7 +274,7 @@ where
 
 impl<T> ser::Serialize for InputValue<T>
 where
-    T: ScalarValue,
+    T: GraphQLScalarValue,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -400,13 +400,13 @@ mod tests {
     use ast::InputValue;
     use serde_json::from_str;
     use serde_json::to_string;
-    use value::{DefaultScalarValue, Object};
+    use value::{DefaultGraphQLScalarValue, Object};
     use {FieldError, Value};
 
     #[test]
     fn int() {
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("1235").unwrap(),
+            from_str::<InputValue<DefaultGraphQLScalarValue>>("1235").unwrap(),
             InputValue::scalar(1235)
         );
     }
@@ -414,12 +414,12 @@ mod tests {
     #[test]
     fn float() {
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("2.0").unwrap(),
+            from_str::<InputValue<DefaultGraphQLScalarValue>>("2.0").unwrap(),
             InputValue::scalar(2.0)
         );
         // large value without a decimal part is also float
         assert_eq!(
-            from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
+            from_str::<InputValue<DefaultGraphQLScalarValue>>("123567890123").unwrap(),
             InputValue::scalar(123567890123.0)
         );
     }
@@ -434,7 +434,7 @@ mod tests {
 
     #[test]
     fn error_extensions() {
-        let mut obj: Object<DefaultScalarValue> = Object::with_capacity(1);
+        let mut obj: Object<DefaultGraphQLScalarValue> = Object::with_capacity(1);
         obj.add_field("foo".to_string(), Value::scalar("bar"));
         assert_eq!(
             to_string(&ExecutionError::at_origin(FieldError::new(

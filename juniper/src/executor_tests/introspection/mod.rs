@@ -8,7 +8,7 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{ParseScalarResult, ParseScalarValue, Value};
+use value::{ParseScalarResult, ParseGraphQLScalarValue, Value};
 
 #[derive(GraphQLEnumInternal)]
 #[graphql(name = "SampleEnum")]
@@ -33,7 +33,7 @@ graphql_scalar!(Scalar as "SampleScalar" {
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-        <i32 as ParseScalarValue>::from_str(value)
+        <i32 as ParseGraphQLScalarValue>::from_str(value)
     }
 });
 

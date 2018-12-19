@@ -7,7 +7,7 @@ use ast::{FromInputValue, InputValue, Type};
 use parser::{ParseError, ScalarToken};
 use schema::model::SchemaType;
 use types::base::TypeKind;
-use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use value::{DefaultGraphQLScalarValue, ParseGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue};
 
 /// Whether an item is deprecated, with context.
 #[derive(Debug, PartialEq, Hash, Clone)]
@@ -129,7 +129,7 @@ pub struct PlaceholderMeta<'a> {
 
 /// Generic type metadata
 #[derive(Debug)]
-pub enum MetaType<'a, S = DefaultScalarValue> {
+pub enum MetaType<'a, S = DefaultGraphQLScalarValue> {
     #[doc(hidden)]
     Scalar(ScalarMeta<'a, S>),
     #[doc(hidden)]
@@ -385,19 +385,19 @@ impl<'a, S> MetaType<'a, S> {
 
 impl<'a, S> ScalarMeta<'a, S>
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
 {
     /// Build a new scalar type metadata with the specified name
     pub fn new<T>(name: Cow<'a, str>) -> Self
     where
-        T: FromInputValue<S> + ParseScalarValue<S> + 'a,
+        T: FromInputValue<S> + ParseGraphQLScalarValue<S> + 'a,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         ScalarMeta {
             name: name,
             description: None,
             try_parse_fn: try_parse_fn::<S, T>,
-            parse_fn: <T as ParseScalarValue<S>>::from_str,
+            parse_fn: <T as ParseGraphQLScalarValue<S>>::from_str,
         }
     }
 
@@ -441,7 +441,7 @@ impl<'a> NullableMeta<'a> {
 
 impl<'a, S> ObjectMeta<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     /// Build a new object type with the specified name and fields
     pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self {
@@ -481,7 +481,7 @@ where
 
 impl<'a, S> EnumMeta<'a, S>
 where
-    S: ScalarValue + 'a,
+    S: GraphQLScalarValue + 'a,
 {
     /// Build a new enum type with the specified name and possible values
     pub fn new<T>(name: Cow<'a, str>, values: &[EnumValue]) -> Self
@@ -513,7 +513,7 @@ where
 
 impl<'a, S> InterfaceMeta<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     /// Build a new interface type with the specified name and fields
     pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> InterfaceMeta<'a, S> {
@@ -567,7 +567,7 @@ impl<'a> UnionMeta<'a> {
 
 impl<'a, S> InputObjectMeta<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     /// Build a new input type with the specified name and input fields
     pub fn new<T: FromInputValue<S>>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self

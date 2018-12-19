@@ -54,7 +54,7 @@ extern crate warp;
 extern crate percent_encoding;
 
 use futures::{future::poll_fn, Future};
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
+use juniper::{DefaultGraphQLScalarValue, InputValue, ScalarRefValue, GraphQLScalarValue};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
@@ -62,9 +62,9 @@ use warp::{filters::BoxedFilter, Filter};
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
+enum GraphQLBatchRequest<S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(juniper::http::GraphQLRequest<S>),
     Batch(Vec<juniper::http::GraphQLRequest<S>>),
@@ -72,7 +72,7 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
@@ -100,9 +100,9 @@ where
 
 #[derive(Serialize)]
 #[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
+enum GraphQLBatchResponse<'a, S = DefaultGraphQLScalarValue>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     Single(juniper::http::GraphQLResponse<'a, S>),
     Batch(Vec<juniper::http::GraphQLResponse<'a, S>>),
@@ -110,7 +110,7 @@ where
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn is_ok(&self) -> bool {
         match self {
@@ -183,7 +183,7 @@ pub fn make_graphql_filter<Query, Mutation, Context, S>(
     context_extractor: BoxedFilter<(Context,)>,
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: GraphQLScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,

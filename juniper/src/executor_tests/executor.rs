@@ -680,7 +680,7 @@ mod propagates_errors_to_nullable_fields {
     use parser::SourcePosition;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::{ScalarValue, Value};
+    use value::{GraphQLScalarValue, Value};
 
     struct Schema;
     struct Inner;
@@ -691,7 +691,7 @@ mod propagates_errors_to_nullable_fields {
 
     impl<S> IntoFieldError<S> for CustomError
     where
-        S: ScalarValue,
+        S: GraphQLScalarValue,
     {
         fn into_field_error(self) -> FieldError<S> {
             match self {

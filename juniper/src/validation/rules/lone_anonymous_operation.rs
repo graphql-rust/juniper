@@ -1,7 +1,7 @@
 use ast::{Definition, Document, Operation};
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct LoneAnonymousOperation {
     operation_count: Option<usize>,
@@ -15,7 +15,7 @@ pub fn factory() -> LoneAnonymousOperation {
 
 impl<'a, S> Visitor<'a, S> for LoneAnonymousOperation
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_document(&mut self, _: &mut ValidatorContext<'a, S>, doc: &'a Document<S>) {
         self.operation_count = Some(
@@ -50,11 +50,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn no_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment fragA on Type {
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn one_anon_operation() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn multiple_named_operations() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo {
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn anon_operation_with_fragment() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn multiple_anon_operations() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -128,7 +128,7 @@ mod tests {
 
     #[test]
     fn anon_operation_with_a_mutation() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {

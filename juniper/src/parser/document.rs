@@ -12,7 +12,7 @@ use parser::{
 };
 use schema::meta::{Argument, Field as MetaField};
 use schema::model::SchemaType;
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[doc(hidden)]
 pub fn parse_document_source<'a, 'b, S>(
@@ -20,7 +20,7 @@ pub fn parse_document_source<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> UnlocatedParseResult<'a, Document<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(ParseError::LexerError))?;
@@ -32,7 +32,7 @@ fn parse_document<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> UnlocatedParseResult<'a, Document<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let mut defs = Vec::new();
 
@@ -50,7 +50,7 @@ fn parse_definition<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> UnlocatedParseResult<'a, Definition<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     match parser.peek().item {
         Token::CurlyOpen | Token::Name("query") | Token::Name("mutation") => Ok(
@@ -68,7 +68,7 @@ fn parse_operation_definition<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> ParseResult<'a, Operation<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     if parser.peek().item == Token::CurlyOpen {
         let fields = schema.concrete_query_type().fields(schema);
@@ -123,7 +123,7 @@ fn parse_fragment_definition<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> ParseResult<'a, Fragment<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let Spanning {
         start: start_pos, ..
@@ -166,7 +166,7 @@ fn parse_optional_selection_set<'a, 'b, S>(
     fields: Option<&[&MetaField<'b, S>]>,
 ) -> OptionParseResult<'a, Vec<Selection<'a, S>>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     if parser.peek().item == Token::CurlyOpen {
         Ok(Some(parse_selection_set(parser, schema, fields)?))
@@ -181,7 +181,7 @@ fn parse_selection_set<'a, 'b, S>(
     fields: Option<&[&MetaField<'b, S>]>,
 ) -> ParseResult<'a, Vec<Selection<'a, S>>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     parser.unlocated_delimited_nonempty_list(
         &Token::CurlyOpen,
@@ -196,7 +196,7 @@ fn parse_selection<'a, 'b, S>(
     fields: Option<&[&MetaField<'b, S>]>,
 ) -> UnlocatedParseResult<'a, Selection<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     match parser.peek().item {
         Token::Ellipsis => parse_fragment(parser, schema, fields),
@@ -210,7 +210,7 @@ fn parse_fragment<'a, 'b, S>(
     fields: Option<&[&MetaField<'b, S>]>,
 ) -> UnlocatedParseResult<'a, Selection<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let Spanning {
         start: ref start_pos,
@@ -292,7 +292,7 @@ fn parse_field<'a, 'b, S>(
     fields: Option<&[&MetaField<'b, S>]>,
 ) -> ParseResult<'a, Field<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let mut alias = Some(parser.expect_name()?);
 
@@ -343,7 +343,7 @@ fn parse_arguments<'a, 'b, S>(
     arguments: Option<&[Argument<'b, S>]>,
 ) -> OptionParseResult<'a, Arguments<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     if parser.peek().item != Token::ParenOpen {
         Ok(None)
@@ -367,7 +367,7 @@ fn parse_argument<'a, 'b, S>(
     arguments: Option<&[Argument<'b, S>]>,
 ) -> ParseResult<'a, (Spanning<&'a str>, Spanning<InputValue<S>>)>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let name = parser.expect_name()?;
     let tpe = arguments
@@ -397,7 +397,7 @@ fn parse_variable_definitions<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> OptionParseResult<'a, VariableDefinitions<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     if parser.peek().item != Token::ParenOpen {
         Ok(None)
@@ -420,7 +420,7 @@ fn parse_variable_definition<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> ParseResult<'a, (Spanning<&'a str>, VariableDefinition<'a, S>)>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let Spanning {
         start: start_pos, ..
@@ -457,7 +457,7 @@ fn parse_directives<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> OptionParseResult<'a, Vec<Spanning<Directive<'a, S>>>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     if parser.peek().item != Token::At {
         Ok(None)
@@ -476,7 +476,7 @@ fn parse_directive<'a, 'b, S>(
     schema: &'b SchemaType<'b, S>,
 ) -> ParseResult<'a, Directive<'a, S>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let Spanning {
         start: start_pos, ..

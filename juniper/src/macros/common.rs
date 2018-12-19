@@ -2,11 +2,11 @@
 #[macro_export]
 macro_rules! __juniper_impl_trait {
     (
-        impl< < DefaultScalarValue > $(, $other: tt)* > $impl_trait:tt for $name:ty {
+        impl< < DefaultGraphQLScalarValue > $(, $other: tt)* > $impl_trait:tt for $name:ty {
             $($body:tt)+
         }
     ) => {
-        impl<$($other,)*> $crate::$impl_trait<$crate::DefaultScalarValue> for $name {
+        impl<$($other,)*> $crate::$impl_trait<$crate::DefaultGraphQLScalarValue> for $name {
             $($body)+
         }
     };
@@ -17,7 +17,7 @@ macro_rules! __juniper_impl_trait {
     ) => {
        impl<$($other,)* $generic $(: $bound)*> $crate::$impl_trait<$generic> for $name
         where
-            $generic: $crate::ScalarValue,
+            $generic: $crate::GraphQLScalarValue,
             for<'__b> &'__b $generic: $crate::ScalarRefValue<'__b>,
        {
            $($body)+
@@ -37,7 +37,7 @@ macro_rules! __juniper_impl_trait {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_insert_generic {
-    (<DefaultScalarValue>) => {$crate::DefaultScalarValue};
+    (<DefaultGraphQLScalarValue>) => {$crate::DefaultGraphQLScalarValue};
     (
         <$generic:tt $(: $bound: tt)*>
     ) => {
@@ -110,7 +110,7 @@ macro_rules! __juniper_parse_object_header {
                 $(ctx = $ctxt,)*
                 $(main_self = $mainself,)*
                 outname = {$outname},
-                scalar = {<DefaultScalarValue>},
+                scalar = {<DefaultGraphQLScalarValue>},
             },
             rest = $($items)*
         );
@@ -173,7 +173,7 @@ macro_rules! __juniper_parse_object_header {
                 $(ctx = $ctxt,)*
                 $(main_self = $mainself,)*
                 outname = {$outname},
-                scalar = {<DefaultScalarValue>},
+                scalar = {<DefaultGraphQLScalarValue>},
             },
             rest = $($items)*
         );
@@ -235,7 +235,7 @@ macro_rules! __juniper_parse_object_header {
                 $(ctx = $ctxt,)*
                 $(main_self = $mainself,)*
                 outname = {stringify!($name)},
-                scalar = {<DefaultScalarValue>},
+                scalar = {<DefaultGraphQLScalarValue>},
             },
             rest = $($items)*
         );
@@ -298,7 +298,7 @@ macro_rules! __juniper_parse_object_header {
                 $(ctx = $ctxt,)*
                 $(main_self = $mainself,)*
                 outname = {stringify!($name)},
-                scalar = {<DefaultScalarValue>},
+                scalar = {<DefaultGraphQLScalarValue>},
             },
             rest = $($items)*
         );

@@ -3,7 +3,7 @@ use parser::Spanning;
 use schema::meta::Argument;
 use std::fmt::Debug;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[derive(Debug)]
 enum ArgumentPosition<'a> {
@@ -21,7 +21,7 @@ pub fn factory<'a, S: Debug>() -> KnownArgumentNames<'a, S> {
 
 impl<'a, S> Visitor<'a, S> for KnownArgumentNames<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_directive(
         &mut self,
@@ -108,11 +108,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn single_arg_is_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment argOnRequiredArg on Dog {
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn multiple_args_are_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment multipleArgs on ComplicatedArgs {
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn ignores_args_of_unknown_fields() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment argOnUnknownField on Dog {
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn multiple_args_in_reverse_order_are_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment multipleArgsReverseOrder on ComplicatedArgs {
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn no_args_on_optional_arg() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment noArgOnOptionalArg on Dog {
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn args_are_known_deeply() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn directive_args_are_known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     fn undirective_args_are_invalid() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn invalid_arg_name() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment invalidArgName on Dog {
@@ -237,7 +237,7 @@ mod tests {
 
     #[test]
     fn unknown_args_amongst_known_args() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment oneGoodArgOneInvalidArg on Dog {
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn unknown_args_deeply() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {

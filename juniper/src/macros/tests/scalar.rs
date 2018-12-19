@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object, DefaultScalarValue, ParseScalarValue, ParseScalarResult};
+use value::{Value, Object, DefaultGraphQLScalarValue, ParseGraphQLScalarValue, ParseScalarResult};
 
 struct DefaultName(i32);
 struct OtherOrder(i32);
@@ -29,7 +29,7 @@ graphql_scalar!(DefaultName where Scalar = <S> {
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <i32 as ParseScalarValue<S>>::from_str(value)
+        <i32 as ParseGraphQLScalarValue<S>>::from_str(value)
     }
 });
 
@@ -43,12 +43,12 @@ graphql_scalar!(OtherOrder {
     }
 
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
-        <i32 as ParseScalarValue>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultGraphQLScalarValue> {
+        <i32 as ParseGraphQLScalarValue>::from_str(value)
     }
 });
 
-graphql_scalar!(Named as "ANamedScalar" where Scalar = DefaultScalarValue {
+graphql_scalar!(Named as "ANamedScalar" where Scalar = DefaultGraphQLScalarValue {
     resolve(&self) -> Value {
         Value::scalar(self.0)
     }
@@ -57,8 +57,8 @@ graphql_scalar!(Named as "ANamedScalar" where Scalar = DefaultScalarValue {
         v.as_scalar_value::<i32>().map(|i| Named(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
-        <i32 as ParseScalarValue>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultGraphQLScalarValue> {
+        <i32 as ParseGraphQLScalarValue>::from_str(value)
     }
 });
 
@@ -74,7 +74,7 @@ graphql_scalar!(ScalarDescription  {
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-        <i32 as ParseScalarValue>::from_str(value)
+        <i32 as ParseGraphQLScalarValue>::from_str(value)
     }
 });
 
@@ -87,7 +87,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn(&Object<DefaultScalarValue>) -> (),
+    F: Fn(&Object<DefaultGraphQLScalarValue>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
@@ -123,7 +123,7 @@ fn path_in_resolve_return_type() {
         }
 
         from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-            <i32 as ParseScalarValue>::from_str(value)
+            <i32 as ParseGraphQLScalarValue>::from_str(value)
         }
     });
 }

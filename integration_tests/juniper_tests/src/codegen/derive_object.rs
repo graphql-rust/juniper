@@ -1,6 +1,6 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
-use juniper::DefaultScalarValue;
+use juniper::DefaultGraphQLScalarValue;
 #[cfg(test)]
 use juniper::Object;
 
@@ -11,7 +11,7 @@ use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variab
 #[graphql(
     name = "MyObj",
     description = "obj descr",
-    scalar = "DefaultScalarValue"
+    scalar = "DefaultGraphQLScalarValue"
 )]
 struct Obj {
     regular_field: bool,
@@ -24,7 +24,7 @@ struct Obj {
 }
 
 #[derive(GraphQLObject, Debug, PartialEq)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = "DefaultGraphQLScalarValue")]
 struct Nested {
     obj: Obj,
 }
@@ -312,7 +312,7 @@ fn check_descriptions(
 #[cfg(test)]
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),
+    F: Fn((&Object<DefaultGraphQLScalarValue>, &Vec<Value>)) -> (),
 {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 

@@ -26,11 +26,11 @@ mod variables_in_allowed_position;
 use ast::Document;
 use std::fmt::Debug;
 use validation::{visit, MultiVisitorNil, ValidatorContext};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub(crate) fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     let mut mv = MultiVisitorNil
         .with(self::arguments_of_correct_type::factory())

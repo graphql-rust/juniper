@@ -266,7 +266,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
             let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
             where_clause
                 .predicates
-                .push(parse_quote!(__S: #juniper_path::ScalarValue));
+                .push(parse_quote!(__S: #juniper_path::GraphQLScalarValue));
             where_clause
                 .predicates
                 .push(parse_quote!(for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>));

@@ -4,12 +4,12 @@ use ast::{
 };
 use parser::Spanning;
 use validation::ValidatorContext;
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[doc(hidden)]
 pub trait Visitor<'a, S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_document(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {}
     fn exit_document(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {}

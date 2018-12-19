@@ -8,7 +8,7 @@ use parser::Spanning;
 use schema::meta::Argument;
 use validation::multi_visitor::MultiVisitorCons;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 #[doc(hidden)]
 pub fn visit<'a, A, B, S>(
@@ -16,7 +16,7 @@ pub fn visit<'a, A, B, S>(
     ctx: &mut ValidatorContext<'a, S>,
     d: &'a Document<S>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     MultiVisitorCons<A, B>: Visitor<'a, S>,
 {
     v.enter_document(ctx, d);
@@ -29,7 +29,7 @@ fn visit_definitions<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     d: &'a Vec<Definition<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     for def in d {
@@ -75,7 +75,7 @@ fn visit_definitions<'a, S, V>(
 
 fn enter_definition<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, def: &'a Definition<S>)
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     match *def {
@@ -86,7 +86,7 @@ where
 
 fn exit_definition<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, def: &'a Definition<S>)
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     match *def {
@@ -97,7 +97,7 @@ where
 
 fn visit_definition<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, def: &'a Definition<S>)
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     match *def {
@@ -118,7 +118,7 @@ fn visit_variable_definitions<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     defs: &'a Option<Spanning<VariableDefinitions<S>>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     if let Some(ref defs) = *defs {
@@ -143,7 +143,7 @@ fn visit_directives<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     directives: &'a Option<Vec<Spanning<Directive<S>>>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     if let Some(ref directives) = *directives {
@@ -166,7 +166,7 @@ fn visit_arguments<'a, S, V>(
     meta_args: &Option<&Vec<Argument<'a, S>>>,
     arguments: &'a Option<Spanning<Arguments<S>>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     if let Some(ref arguments) = *arguments {
@@ -191,7 +191,7 @@ fn visit_selection_set<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     selection_set: &'a Vec<Selection<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     ctx.with_pushed_parent_type(|ctx| {
@@ -210,7 +210,7 @@ fn visit_selection<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     selection: &'a Selection<S>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     match *selection {
@@ -225,7 +225,7 @@ fn visit_field<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     field: &'a Spanning<Field<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     let meta_field = ctx
@@ -254,7 +254,7 @@ fn visit_fragment_spread<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     spread: &'a Spanning<FragmentSpread<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     v.enter_fragment_spread(ctx, spread);
@@ -269,7 +269,7 @@ fn visit_inline_fragment<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     fragment: &'a Spanning<InlineFragment<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     let mut visit_fn = move |ctx: &mut ValidatorContext<'a, S>| {
@@ -299,7 +299,7 @@ fn visit_input_value<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     input_value: &'a Spanning<InputValue<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     enter_input_value(v, ctx, input_value);
@@ -347,7 +347,7 @@ fn enter_input_value<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     input_value: &'a Spanning<InputValue<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     use InputValue::*;
@@ -370,7 +370,7 @@ fn exit_input_value<'a, S, V>(
     ctx: &mut ValidatorContext<'a, S>,
     input_value: &'a Spanning<InputValue<S>>,
 ) where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     V: Visitor<'a, S>,
 {
     use InputValue::*;

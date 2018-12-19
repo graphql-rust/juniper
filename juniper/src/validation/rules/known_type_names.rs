@@ -2,7 +2,7 @@ use ast::{Fragment, InlineFragment, VariableDefinition};
 use parser::{SourcePosition, Spanning};
 use std::fmt::Debug;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct KnownTypeNames;
 
@@ -12,7 +12,7 @@ pub fn factory() -> KnownTypeNames {
 
 impl<'a, S> Visitor<'a, S> for KnownTypeNames
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_inline_fragment(
         &mut self,
@@ -63,11 +63,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn known_type_names_are_valid() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($var: String, $required: [String!]!) {
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn unknown_type_names_are_invalid() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           query Foo($var: JumbledUpLetters) {

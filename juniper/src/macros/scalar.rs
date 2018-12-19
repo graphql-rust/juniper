@@ -18,7 +18,7 @@ representation.
 
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::{Value, FieldResult, ParseScalarValue, ParseScalarResult};
+# use juniper::{Value, FieldResult, ParseGraphQLScalarValue, ParseScalarResult};
 struct UserID(String);
 
 graphql_scalar!(UserID {
@@ -33,7 +33,7 @@ graphql_scalar!(UserID {
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-        <String as ParseScalarValue>::from_str(value)
+        <String as ParseGraphQLScalarValue>::from_str(value)
     }
 });
 
@@ -129,7 +129,7 @@ macro_rules! graphql_scalar {
         );
 
         $crate::__juniper_impl_trait!(
-            impl<$($scalar)+> ParseScalarValue for $name {
+            impl<$($scalar)+> ParseGraphQLScalarValue for $name {
                 fn from_str<$from_str_lt>($from_str_arg: $crate::parser::ScalarToken<$from_str_lt>) -> $from_str_result {
                     $from_str_body
                 }

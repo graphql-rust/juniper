@@ -1,7 +1,7 @@
 use ast::FragmentSpread;
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct KnownFragmentNames;
 
@@ -11,7 +11,7 @@ pub fn factory() -> KnownFragmentNames {
 
 impl<'a, S> Visitor<'a, S> for KnownFragmentNames
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
 
     fn enter_fragment_spread(
@@ -39,11 +39,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn known() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {
@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn unknown() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           {

@@ -9,7 +9,7 @@ use executor::{Executor, Registry};
 use parser::{LexerError, ParseError, ScalarToken, Token};
 use schema::meta::MetaType;
 use types::base::GraphQLType;
-use value::{ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
+use value::{ParseScalarResult, ParseGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue, Value};
 
 /// An ID as defined by the GraphQL specification
 ///
@@ -164,7 +164,7 @@ where
 
 impl<'a, S> GraphQLType<S> for &'a str
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -194,7 +194,7 @@ where
 
 impl<'a, S> ToInputValue<S> for &'a str
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::scalar(String::from(*self))
@@ -271,7 +271,7 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
 
 impl<S> GraphQLType<S> for ()
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
@@ -290,9 +290,9 @@ where
     }
 }
 
-impl<S> ParseScalarValue<S> for ()
+impl<S> ParseGraphQLScalarValue<S> for ()
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn from_str<'a>(_value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         Ok(S::from(0))
@@ -328,7 +328,7 @@ impl<T> EmptyMutation<T> {
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = T;
@@ -351,7 +351,7 @@ where
 mod tests {
     use super::ID;
     use parser::ScalarToken;
-    use value::{DefaultScalarValue, ParseScalarValue};
+    use value::{DefaultGraphQLScalarValue, ParseGraphQLScalarValue};
 
     #[test]
     fn test_id_from_string() {
@@ -377,7 +377,7 @@ mod tests {
     fn parse_strings() {
         fn parse_string(s: &str, expected: &str) {
             let s =
-                <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
+                <String as ParseGraphQLScalarValue<DefaultGraphQLScalarValue>>::from_str(ScalarToken::String(s));
             assert!(s.is_ok(), "A parsing error occurred: {:?}", s);
             let s: Option<String> = s.unwrap().into();
             assert!(s.is_some(), "No string returned");

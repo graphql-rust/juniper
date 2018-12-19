@@ -1,7 +1,7 @@
 use ast::{Fragment, InlineFragment};
 use parser::Spanning;
 use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use value::GraphQLScalarValue;
 
 pub struct FragmentsOnCompositeTypes;
 
@@ -11,7 +11,7 @@ pub fn factory() -> FragmentsOnCompositeTypes {
 
 impl<'a, S> Visitor<'a, S> for FragmentsOnCompositeTypes
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     fn enter_fragment_definition(
         &mut self,
@@ -75,11 +75,11 @@ mod tests {
 
     use parser::SourcePosition;
     use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use value::DefaultGraphQLScalarValue;
 
     #[test]
     fn on_object() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment validFragment on Dog {
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn on_interface() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment validFragment on Pet {
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn on_object_inline() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment validFragment on Pet {
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn on_inline_without_type_cond() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment validFragment on Pet {
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn on_union() {
-        expect_passes_rule::<_, _, DefaultScalarValue>(
+        expect_passes_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment validFragment on CatOrDog {
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn not_on_scalar() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarFragment on Boolean {
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn not_on_enum() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment scalarFragment on FurColor {
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn not_on_input_object() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment inputFragment on ComplexInput {
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn not_on_scalar_inline() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+        expect_fails_rule::<_, _, DefaultGraphQLScalarValue>(
             factory,
             r#"
           fragment invalidFragment on Pet {

@@ -5,11 +5,11 @@ use parser::document::parse_document_source;
 use parser::{ParseError, SourcePosition, Spanning, Token};
 use schema::model::SchemaType;
 use validation::test_harness::{MutationRoot, QueryRoot};
-use value::{ScalarRefValue, ScalarValue, DefaultScalarValue};
+use value::{ScalarRefValue, GraphQLScalarValue, DefaultGraphQLScalarValue};
 
 fn parse_document<S>(s: &str) -> Document<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     parse_document_source(s, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
@@ -18,7 +18,7 @@ where
 
 fn parse_document_error<'a, S>(s: &'a str) -> Spanning<ParseError<'a>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     match parse_document_source::<S>(s, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &())) {
@@ -30,7 +30,7 @@ where
 #[test]
 fn simple_ast() {
     assert_eq!(
-        parse_document::<DefaultScalarValue>(
+        parse_document::<DefaultGraphQLScalarValue>(
             r#"
             {
                 node(id: 4) {
@@ -119,7 +119,7 @@ fn simple_ast() {
 #[test]
 fn errors() {
     assert_eq!(
-        parse_document_error::<DefaultScalarValue>("{"),
+        parse_document_error::<DefaultGraphQLScalarValue>("{"),
         Spanning::zero_width(
             &SourcePosition::new(1, 0, 1),
             ParseError::UnexpectedEndOfFile
@@ -127,7 +127,7 @@ fn errors() {
     );
 
     assert_eq!(
-        parse_document_error::<DefaultScalarValue>("{ ...MissingOn }\nfragment MissingOn Type"),
+        parse_document_error::<DefaultGraphQLScalarValue>("{ ...MissingOn }\nfragment MissingOn Type"),
         Spanning::start_end(
             &SourcePosition::new(36, 1, 19),
             &SourcePosition::new(40, 1, 23),
@@ -136,7 +136,7 @@ fn errors() {
     );
 
     assert_eq!(
-        parse_document_error::<DefaultScalarValue>("{ ...on }"),
+        parse_document_error::<DefaultGraphQLScalarValue>("{ ...on }"),
         Spanning::start_end(
             &SourcePosition::new(8, 0, 8),
             &SourcePosition::new(9, 0, 9),

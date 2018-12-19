@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object, DefaultScalarValue};
+use value::{Value, Object, DefaultGraphQLScalarValue};
 
 /*
 
@@ -70,7 +70,7 @@ graphql_object!(Root: () |&self| {
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where
-    F: Fn((&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>)) -> (),
+    F: Fn((&Object<DefaultGraphQLScalarValue>, &Vec<Value<DefaultGraphQLScalarValue>>)) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 

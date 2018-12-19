@@ -168,7 +168,7 @@ pub use types::base::{Arguments, GraphQLType, TypeKind};
 pub use types::scalars::{EmptyMutation, ID};
 pub use validation::RuleError;
 pub use value::{
-    DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
+    DefaultGraphQLScalarValue, Object, ParseScalarResult, ParseGraphQLScalarValue, ScalarRefValue, GraphQLScalarValue,
     Value,
 };
 
@@ -192,7 +192,7 @@ pub fn execute<'a, S, CtxT, QueryT, MutationT>(
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,

@@ -2,7 +2,7 @@
 use fnv::FnvHashMap;
 
 #[cfg(test)]
-use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
+use juniper::{self, DefaultGraphQLScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
 #[derive(GraphQLEnum, Debug, PartialEq)]
 #[graphql(name = "Some", description = "enum descr")]
@@ -61,7 +61,7 @@ fn test_derived_enum() {
         InputValue::scalar("REGULAR")
     );
     assert_eq!(
-        FromInputValue::<DefaultScalarValue>::from_input_value(&InputValue::scalar("REGULAR")),
+        FromInputValue::<DefaultGraphQLScalarValue>::from_input_value(&InputValue::scalar("REGULAR")),
         Some(SomeEnum::Regular)
     );
 
@@ -71,7 +71,7 @@ fn test_derived_enum() {
         InputValue::scalar("FULL")
     );
     assert_eq!(
-        FromInputValue::<DefaultScalarValue>::from_input_value(&InputValue::scalar("FULL")),
+        FromInputValue::<DefaultGraphQLScalarValue>::from_input_value(&InputValue::scalar("FULL")),
         Some(SomeEnum::Full)
     );
 }

@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 
 use executor::Variables;
 use parser::Spanning;
-use value::{ScalarRefValue, ScalarValue, DefaultScalarValue};
+use value::{ScalarRefValue, GraphQLScalarValue, DefaultGraphQLScalarValue};
 
 /// A type literal in the syntax tree
 ///
@@ -38,7 +38,7 @@ pub enum Type<'a> {
 /// their position in the source file, if available.
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
-pub enum InputValue<S = DefaultScalarValue> {
+pub enum InputValue<S = DefaultGraphQLScalarValue> {
     Null,
     Scalar(S),
     Enum(String),
@@ -102,7 +102,7 @@ pub struct InlineFragment<'a, S> {
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 #[allow(missing_docs)]
-pub enum Selection<'a, S = DefaultScalarValue> {
+pub enum Selection<'a, S = DefaultGraphQLScalarValue> {
     Field(Spanning<Field<'a, S>>),
     FragmentSpread(Spanning<FragmentSpread<'a, S>>),
     InlineFragment(Spanning<InlineFragment<'a, S>>),
@@ -151,7 +151,7 @@ pub type Document<'a, S> = Vec<Definition<'a, S>>;
 /// automatically by the convenience macro `graphql_scalar!` or by deriving GraphQLEnum.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
-pub trait FromInputValue<S = DefaultScalarValue>: Sized {
+pub trait FromInputValue<S = DefaultGraphQLScalarValue>: Sized {
     /// Performs the conversion.
     fn from_input_value(v: &InputValue<S>) -> Option<Self>
     where
@@ -159,7 +159,7 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
 }
 
 /// Losslessly clones a Rust data type into an InputValue.
-pub trait ToInputValue<S = DefaultScalarValue>: Sized {
+pub trait ToInputValue<S = DefaultGraphQLScalarValue>: Sized {
     /// Performs the conversion.
     fn to_input_value(&self) -> InputValue<S>;
 }
@@ -207,7 +207,7 @@ impl<'a> fmt::Display for Type<'a> {
 
 impl<S> InputValue<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
 {
     /// Construct a null value.
     pub fn null() -> Self {
@@ -466,7 +466,7 @@ where
 
 impl<S> fmt::Display for InputValue<S>
 where
-    S: ScalarValue,
+    S: GraphQLScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

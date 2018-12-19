@@ -4,10 +4,10 @@ use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};
 
 /// The result of converting a string into a scalar value
-pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;
+pub type ParseScalarResult<'a, S = DefaultGraphQLScalarValue> = Result<S, ParseError<'a>>;
 
 /// A trait used to convert a `ScalarToken` into a certain scalar value type
-pub trait ParseScalarValue<S = DefaultScalarValue> {
+pub trait ParseGraphQLScalarValue<S = DefaultGraphQLScalarValue> {
     /// See the trait documentation
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S>;
 }
@@ -18,7 +18,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits thei
 /// needs.
-/// There is a custom derive (`#[derive(ScalarValue)]`) available that implements
+/// There is a custom derive (`#[derive(GraphQLScalarValue)]`) available that implements
 /// most of the required traits automatically for a enum representing a scalar value.
 /// This derives needs a additional annotation of the form
 /// `#[juniper(visitor = "VisitorType")]` to specify a type that implements
@@ -35,10 +35,10 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # extern crate juniper;
 /// # extern crate serde;
 /// # use serde::{de, Deserialize, Deserializer};
-/// # use juniper::ScalarValue;
+/// # use juniper::GraphQLScalarValue;
 /// # use std::fmt;
 /// #
-/// #[derive(Debug, Clone, PartialEq, ScalarValue)]
+/// #[derive(Debug, Clone, PartialEq, GraphQLScalarValue)]
 /// enum MyScalarValue {
 ///     Int(i32),
 ///     Long(i64),
@@ -47,7 +47,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     Boolean(bool),
 /// }
 ///
-/// impl ScalarValue for MyScalarValue {
+/// impl GraphQLScalarValue for MyScalarValue {
 ///     type Visitor = MyScalarValueVisitor;
 ///
 ///      fn as_int(&self) -> Option<i32> {
@@ -157,7 +157,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///
 /// # fn main() {}
 /// ```
-pub trait ScalarValue:
+pub trait GraphQLScalarValue:
     Debug
     + Display
     + PartialEq
@@ -178,9 +178,9 @@ pub trait ScalarValue:
     /// Checks if the current value contains the a value of the current type
     ///
     /// ```
-    /// # use juniper::{ScalarValue, DefaultScalarValue};
+    /// # use juniper::{GraphQLScalarValue, DefaultGraphQLScalarValue};
     ///
-    /// let value = DefaultScalarValue::Int(42);
+    /// let value = DefaultGraphQLScalarValue::Int(42);
     ///
     /// assert_eq!(value.is_type::<i32>(), true);
     /// assert_eq!(value.is_type::<f64>(), false);
@@ -222,14 +222,14 @@ pub trait ScalarValue:
     fn as_boolean(&self) -> Option<bool>;
 }
 
-/// A marker trait extending the [`ScalarValue`](../trait.ScalarValue.html) trait
+/// A marker trait extending the [`GraphQLScalarValue`](../trait.GraphQLScalarValue.html) trait
 ///
 /// This trait should not be relied on directly by most apps.  However, you may
 /// need a where clause in the form of `for<'b> &'b S: ScalarRefValue<'b>` to
 /// abstract over different scalar value types.
 ///
 /// This is automatically implemented for a type as soon as the type implements
-/// `ScalarValue` and the additional conversations.
+/// `GraphQLScalarValue` and the additional conversations.
 pub trait ScalarRefValue<'a>:
     Debug
     + Into<Option<&'a bool>>
@@ -241,7 +241,7 @@ pub trait ScalarRefValue<'a>:
 
 impl<'a, T> ScalarRefValue<'a> for &'a T
 where
-    T: ScalarValue,
+    T: GraphQLScalarValue,
     &'a T: Into<Option<&'a bool>>
         + Into<Option<&'a i32>>
         + Into<Option<&'a String>>
@@ -253,83 +253,83 @@ where
 /// This types closely follows the graphql specification.
 #[derive(Debug, PartialEq, Clone, GraphQLScalarValueInternal)]
 #[allow(missing_docs)]
-pub enum DefaultScalarValue {
+pub enum DefaultGraphQLScalarValue {
     Int(i32),
     Float(f64),
     String(String),
     Boolean(bool),
 }
 
-impl ScalarValue for DefaultScalarValue {
-    type Visitor = DefaultScalarValueVisitor;
+impl GraphQLScalarValue for DefaultGraphQLScalarValue {
+    type Visitor = DefaultGraphQLScalarValueVisitor;
 
     fn as_int(&self) -> Option<i32> {
         match *self {
-            DefaultScalarValue::Int(ref i) => Some(*i),
+            DefaultGraphQLScalarValue::Int(ref i) => Some(*i),
             _ => None,
         }
     }
 
     fn as_string(&self) -> Option<String> {
         match *self {
-            DefaultScalarValue::String(ref s) => Some(s.clone()),
+            DefaultGraphQLScalarValue::String(ref s) => Some(s.clone()),
             _ => None,
         }
     }
 
     fn as_float(&self) -> Option<f64> {
         match *self {
-            DefaultScalarValue::Int(ref i) => Some(*i as f64),
-            DefaultScalarValue::Float(ref f) => Some(*f),
+            DefaultGraphQLScalarValue::Int(ref i) => Some(*i as f64),
+            DefaultGraphQLScalarValue::Float(ref f) => Some(*f),
             _ => None,
         }
     }
 
     fn as_boolean(&self) -> Option<bool> {
         match *self {
-            DefaultScalarValue::Boolean(ref b) => Some(*b),
+            DefaultGraphQLScalarValue::Boolean(ref b) => Some(*b),
             _ => None,
         }
     }
 }
 
-impl<'a> From<&'a str> for DefaultScalarValue {
+impl<'a> From<&'a str> for DefaultGraphQLScalarValue {
     fn from(s: &'a str) -> Self {
-        DefaultScalarValue::String(s.into())
+        DefaultGraphQLScalarValue::String(s.into())
     }
 }
 
 #[derive(Default, Clone, Copy, Debug)]
-pub struct DefaultScalarValueVisitor;
+pub struct DefaultGraphQLScalarValueVisitor;
 
-impl<'de> de::Visitor<'de> for DefaultScalarValueVisitor {
-    type Value = DefaultScalarValue;
+impl<'de> de::Visitor<'de> for DefaultGraphQLScalarValueVisitor {
+    type Value = DefaultGraphQLScalarValue;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a valid input value")
     }
 
-    fn visit_bool<E>(self, value: bool) -> Result<DefaultScalarValue, E> {
-        Ok(DefaultScalarValue::Boolean(value))
+    fn visit_bool<E>(self, value: bool) -> Result<DefaultGraphQLScalarValue, E> {
+        Ok(DefaultGraphQLScalarValue::Boolean(value))
     }
 
-    fn visit_i64<E>(self, value: i64) -> Result<DefaultScalarValue, E>
+    fn visit_i64<E>(self, value: i64) -> Result<DefaultGraphQLScalarValue, E>
     where
         E: de::Error,
     {
         if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
-            Ok(DefaultScalarValue::Int(value as i32))
+            Ok(DefaultGraphQLScalarValue::Int(value as i32))
         } else {
             // Browser's JSON.stringify serialize all numbers having no
             // fractional part as integers (no decimal point), so we
             // must parse large integers as floating point otherwise
             // we would error on transferring large floating point
             // numbers.
-            Ok(DefaultScalarValue::Float(value as f64))
+            Ok(DefaultGraphQLScalarValue::Float(value as f64))
         }
     }
 
-    fn visit_u64<E>(self, value: u64) -> Result<DefaultScalarValue, E>
+    fn visit_u64<E>(self, value: u64) -> Result<DefaultGraphQLScalarValue, E>
     where
         E: de::Error,
     {
@@ -341,22 +341,22 @@ impl<'de> de::Visitor<'de> for DefaultScalarValueVisitor {
             // must parse large integers as floating point otherwise
             // we would error on transferring large floating point
             // numbers.
-            Ok(DefaultScalarValue::Float(value as f64))
+            Ok(DefaultGraphQLScalarValue::Float(value as f64))
         }
     }
 
-    fn visit_f64<E>(self, value: f64) -> Result<DefaultScalarValue, E> {
-        Ok(DefaultScalarValue::Float(value))
+    fn visit_f64<E>(self, value: f64) -> Result<DefaultGraphQLScalarValue, E> {
+        Ok(DefaultGraphQLScalarValue::Float(value))
     }
 
-    fn visit_str<E>(self, value: &str) -> Result<DefaultScalarValue, E>
+    fn visit_str<E>(self, value: &str) -> Result<DefaultGraphQLScalarValue, E>
     where
         E: de::Error,
     {
         self.visit_string(value.into())
     }
 
-    fn visit_string<E>(self, value: String) -> Result<DefaultScalarValue, E> {
-        Ok(DefaultScalarValue::String(value))
+    fn visit_string<E>(self, value: String) -> Result<DefaultGraphQLScalarValue, E> {
+        Ok(DefaultGraphQLScalarValue::String(value))
     }
 }
