@@ -1,13 +1,26 @@
 jobs:
-- template: _build/azure-pipelines-template.yml
-  parameters:
-    name: macOS
-    vmImage: macOS-10.13
+
+- job: check_formatting
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - script: |
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
+        $HOME/.cargo/bin/rustup component add rustfmt
+      displayName: Install rust
+    - script: |
+        $HOME/.cargo/bin/cargo fmt -- --check
+      displayName: Check formatting
 
 - template: _build/azure-pipelines-template.yml
   parameters:
     name: Linux
     vmImage: ubuntu-16.04
+
+- template: _build/azure-pipelines-template.yml
+  parameters:
+    name: macOS
+    vmImage: macOS-10.13
 
 - template: _build/azure-pipelines-template.yml
   parameters:
