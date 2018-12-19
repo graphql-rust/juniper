@@ -3,7 +3,8 @@
 members = [
   "juniper_codegen",
   "juniper",
-  "juniper_tests",
+  "integration_tests/juniper_tests",
+  "integration_tests/juniper_2018_edition_tests",
   "juniper_hyper",
   "juniper_iron",
   "juniper_rocket",
