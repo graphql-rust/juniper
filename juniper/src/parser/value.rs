@@ -42,11 +42,7 @@ where
                 ..
             },
             _,
-        )
-            if !is_const =>
-        {
-            parse_variable_literal(parser)
-        }
+        ) if !is_const => parse_variable_literal(parser),
         (
             &Spanning {
                 item: Token::Scalar(_),
@@ -133,7 +129,8 @@ where
             &Token::BracketOpen,
             |p| parse_value_literal(p, is_const, schema, tpe),
             &Token::BracketClose,
-        )?.map(InputValue::parsed_list))
+        )?
+        .map(InputValue::parsed_list))
 }
 
 fn parse_object_literal<'a, 'b, S>(
@@ -150,7 +147,8 @@ where
             &Token::CurlyOpen,
             |p| parse_object_field(p, is_const, schema, object_tpe),
             &Token::CurlyClose,
-        )?.map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
+        )?
+        .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
 fn parse_object_field<'a, 'b, S>(

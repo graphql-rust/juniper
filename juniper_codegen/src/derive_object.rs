@@ -147,8 +147,8 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
     let attrs = ObjAttrs::from_input(ast);
     let name = attrs.name.unwrap_or(ast.ident.to_string());
     let build_description = match attrs.description {
-        Some(s) => quote!{ builder.description(#s)  },
-        None => quote!{ builder },
+        Some(s) => quote! { builder.description(#s)  },
+        None => quote! { builder },
     };
 
     let mut meta_fields = TokenStream::new();
@@ -176,17 +176,17 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         };
         let build_description = match field_attrs.description {
-            Some(s) => quote!{ field.description(#s)  },
-            None => quote!{ field },
+            Some(s) => quote! { field.description(#s)  },
+            None => quote! { field },
         };
 
         let build_deprecation = match field_attrs.deprecation {
-            Some(DeprecationAttr { reason: Some(s) }) => quote!{ field.deprecated(Some(#s)) },
-            Some(DeprecationAttr { reason: None }) => quote!{ field.deprecated(None) },
-            None => quote!{ field },
+            Some(DeprecationAttr { reason: Some(s) }) => quote! { field.deprecated(Some(#s)) },
+            Some(DeprecationAttr { reason: None }) => quote! { field.deprecated(None) },
+            None => quote! { field },
         };
 
-        meta_fields.extend(quote!{
+        meta_fields.extend(quote! {
             {
                 let field = registry.field::<#field_ty>(#name, &());
                 let field = #build_description;
@@ -197,7 +197,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
 
         // Build from_input clause.
 
-        resolvers.extend(quote!{
+        resolvers.extend(quote! {
             #name => executor.resolve_with_ctx(&(), &self.#field_ident),
         });
     }

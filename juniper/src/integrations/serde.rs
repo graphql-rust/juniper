@@ -55,16 +55,16 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
             GraphQLError::NoOperationProvided => [SerializeHelper {
                 message: "Must provide an operation",
             }]
-                .serialize(serializer),
+            .serialize(serializer),
             GraphQLError::MultipleOperationsProvided => [SerializeHelper {
                 message: "Must provide operation name \
                           if query contains multiple operations",
             }]
-                .serialize(serializer),
+            .serialize(serializer),
             GraphQLError::UnknownOperationName => [SerializeHelper {
                 message: "Unknown operation",
             }]
-                .serialize(serializer),
+            .serialize(serializer),
         }
     }
 }
@@ -167,7 +167,7 @@ where
                 self.0.visit_u64(value).map(InputValue::Scalar)
             }
 
-            serde_if_integer128!{
+            serde_if_integer128! {
                 fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
                 where
                     E: de::Error,

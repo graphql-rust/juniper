@@ -515,14 +515,16 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                     conflicts
                         .iter()
                         .flat_map(|&Conflict(_, ref fs1, _)| fs1.clone()),
-                ).collect(),
+                )
+                .collect(),
             vec![pos2.clone()]
                 .into_iter()
                 .chain(
                     conflicts
                         .iter()
                         .flat_map(|&Conflict(_, _, ref fs2)| fs2.clone()),
-                ).collect(),
+                )
+                .collect(),
         ))
     }
 
@@ -653,9 +655,11 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                 Selection::FragmentSpread(Spanning {
                     item: FragmentSpread { ref name, .. },
                     ..
-                }) => if fragment_names.iter().find(|n| *n == &name.item).is_none() {
-                    fragment_names.push(name.item);
-                },
+                }) => {
+                    if fragment_names.iter().find(|n| *n == &name.item).is_none() {
+                        fragment_names.push(name.item);
+                    }
+                }
                 Selection::InlineFragment(Spanning {
                     item: ref inline, ..
                 }) => {
@@ -725,7 +729,8 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
                     name,
                     format_reason(subreason)
                 )
-            }).collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>()
             .join(" and "),
     }
 }
@@ -1004,7 +1009,10 @@ mod tests {
           }
         "#,
             &[RuleError::new(
-                &error_message("x", &Message("name and barks are different fields".to_owned())),
+                &error_message(
+                    "x",
+                    &Message("name and barks are different fields".to_owned()),
+                ),
                 &[
                     SourcePosition::new(101, 6, 12),
                     SourcePosition::new(163, 9, 12),
@@ -1042,21 +1050,30 @@ mod tests {
         "#,
             &[
                 RuleError::new(
-                    &error_message("x", &Message("name and barks are different fields".to_owned())),
+                    &error_message(
+                        "x",
+                        &Message("name and barks are different fields".to_owned()),
+                    ),
                     &[
                         SourcePosition::new(235, 13, 14),
                         SourcePosition::new(311, 17, 12),
                     ],
                 ),
                 RuleError::new(
-                    &error_message("x", &Message("name and nickname are different fields".to_owned())),
+                    &error_message(
+                        "x",
+                        &Message("name and nickname are different fields".to_owned()),
+                    ),
                     &[
                         SourcePosition::new(235, 13, 14),
                         SourcePosition::new(374, 20, 12),
                     ],
                 ),
                 RuleError::new(
-                    &error_message("x", &Message("barks and nickname are different fields".to_owned())),
+                    &error_message(
+                        "x",
+                        &Message("barks and nickname are different fields".to_owned()),
+                    ),
                     &[
                         SourcePosition::new(311, 17, 12),
                         SourcePosition::new(374, 20, 12),
@@ -1495,7 +1512,8 @@ mod tests {
                 .interfaces(&[
                     registry.get_type::<NonNullStringBox1>(i),
                     registry.get_type::<SomeBox>(i),
-                ]).into_meta()
+                ])
+                .into_meta()
         }
     }
 
@@ -1548,7 +1566,8 @@ mod tests {
                 .interfaces(&[
                     registry.get_type::<NonNullStringBox2>(i),
                     registry.get_type::<SomeBox>(i),
-                ]).into_meta()
+                ])
+                .into_meta()
         }
     }
 

@@ -5,7 +5,7 @@ use parser::document::parse_document_source;
 use parser::{ParseError, SourcePosition, Spanning, Token};
 use schema::model::SchemaType;
 use validation::test_harness::{MutationRoot, QueryRoot};
-use value::{ScalarRefValue, ScalarValue, DefaultScalarValue};
+use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 fn parse_document<S>(s: &str) -> Document<S>
 where

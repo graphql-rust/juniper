@@ -220,7 +220,8 @@ fn querying_long_variable() {
         vec![(
             "test".to_owned(),
             InputValue::Scalar(MyScalarValue::Long((::std::i32::MAX as i64) + 42)),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(

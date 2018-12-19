@@ -1,4 +1,4 @@
-use proc_macro2::{TokenStream};
+use proc_macro2::TokenStream;
 
 use syn;
 use syn::{Data, DeriveInput, Fields, Variant};
@@ -139,8 +139,8 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
     let name = attrs.name.unwrap_or(ast.ident.to_string());
 
     let meta_description = match attrs.description {
-        Some(descr) => quote!{ let meta = meta.description(#descr); },
-        None => quote!{ let meta = meta; },
+        Some(descr) => quote! { let meta = meta.description(#descr); },
+        None => quote! { let meta = meta; },
     };
 
     let mut values = TokenStream::new();
@@ -167,21 +167,21 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
             .name
             .unwrap_or(::util::to_upper_snake_case(&variant.ident.to_string()));
         let descr = match var_attrs.description {
-            Some(s) => quote!{ Some(#s.to_string())  },
-            None => quote!{ None },
+            Some(s) => quote! { Some(#s.to_string())  },
+            None => quote! { None },
         };
         let depr = match var_attrs.deprecation {
-            Some(DeprecationAttr { reason: Some(s) }) => quote!{
+            Some(DeprecationAttr { reason: Some(s) }) => quote! {
                 #juniper_path::meta::DeprecationStatus::Deprecated(Some(#s.to_string()))
             },
-            Some(DeprecationAttr { reason: None }) => quote!{
+            Some(DeprecationAttr { reason: None }) => quote! {
                 #juniper_path::meta::DeprecationStatus::Deprecated(None)
             },
-            None => quote!{
+            None => quote! {
                 #juniper_path::meta::DeprecationStatus::Current
             },
         };
-        values.extend(quote!{
+        values.extend(quote! {
             #juniper_path::meta::EnumValue{
                 name: #name.to_string(),
                 description: #descr,
@@ -190,17 +190,17 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         });
 
         // Build resolve match clause.
-        resolves.extend(quote!{
+        resolves.extend(quote! {
             &#ident::#var_ident => #juniper_path::Value::scalar(String::from(#name)),
         });
 
         // Build from_input clause.
-        from_inputs.extend(quote!{
+        from_inputs.extend(quote! {
             Some(#name) => Some(#ident::#var_ident),
         });
 
         // Build to_input clause.
-        to_inputs.extend(quote!{
+        to_inputs.extend(quote! {
             &#ident::#var_ident =>
                 #juniper_path::InputValue::scalar(#name.to_string()),
         });

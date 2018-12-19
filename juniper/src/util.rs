@@ -11,7 +11,8 @@ pub fn to_camel_case<'a>(s: &'a str) -> Cow<'a, str> {
         if i > 0 && part.len() == 1 {
             dest += Cow::Owned(part.to_uppercase());
         } else if i > 0 && part.len() > 1 {
-            let first = part.chars()
+            let first = part
+                .chars()
                 .next()
                 .unwrap()
                 .to_uppercase()

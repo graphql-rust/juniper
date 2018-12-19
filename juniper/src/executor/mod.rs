@@ -515,7 +515,8 @@ where
         self.parent_selection_set
             .map(|p| {
                 LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
-            }).unwrap_or_else(|| LookAheadSelection {
+            })
+            .unwrap_or_else(|| LookAheadSelection {
                 name: self.current_type.innermost_concrete().name().unwrap_or(""),
                 alias: None,
                 arguments: Vec::new(),
@@ -530,8 +531,10 @@ where
                                     self.fragments,
                                 ),
                                 applies_for: Applies::All,
-                            }).collect()
-                    }).unwrap_or_else(Vec::new),
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_else(Vec::new),
             })
     }
 }
@@ -627,7 +630,8 @@ where
                 def.default_value
                     .as_ref()
                     .map(|i| (name.item.to_owned(), i.item.clone()))
-            }).collect::<HashMap<String, InputValue<S>>>()
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
     });
 
     let errors = RwLock::new(Vec::new());

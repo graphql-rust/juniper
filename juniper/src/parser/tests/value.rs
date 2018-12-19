@@ -5,13 +5,13 @@ use parser::value::parse_value_literal;
 use parser::{Lexer, Parser, SourcePosition, Spanning};
 use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
-use schema::meta::{MetaType, ScalarMeta, EnumMeta, EnumValue, InputObjectMeta, Argument};
+use schema::meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta};
 use schema::model::SchemaType;
 use types::scalars::EmptyMutation;
 
 #[derive(GraphQLEnumInternal)]
 enum Enum {
-    EnumValue
+    EnumValue,
 }
 
 #[derive(GraphQLInputObjectInternal)]
@@ -168,8 +168,10 @@ fn input_value_literals() {
             ])
         )
     );
-    let fields = [ Argument::new("key", Type::NonNullNamed("Int".into())),
-                   Argument::new("other", Type::NonNullNamed("Bar".into()))];
+    let fields = [
+        Argument::new("key", Type::NonNullNamed("Int".into())),
+        Argument::new("other", Type::NonNullNamed("Bar".into())),
+    ];
     let meta = &MetaType::InputObject(InputObjectMeta::new::<Foo>("foo".into(), &fields));
     assert_eq!(
         parse_value::<DefaultScalarValue>("{}", meta),
@@ -181,10 +183,7 @@ fn input_value_literals() {
     );
 
     assert_eq!(
-        parse_value::<DefaultScalarValue>(
-            r#"{key: 123, other: {foo: "bar"}}"#,
-            meta
-        ),
+        parse_value::<DefaultScalarValue>(r#"{key: 123, other: {foo: "bar"}}"#, meta),
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(31, 0, 31),

@@ -14,7 +14,6 @@ impl<'a, S> Visitor<'a, S> for FieldsOnCorrectType
 where
     S: ScalarValue,
 {
-
     fn enter_field(
         &mut self,
         context: &mut ValidatorContext<'a, S>,

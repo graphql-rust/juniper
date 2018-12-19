@@ -103,7 +103,8 @@ mod field_execution {
                                             vec![
                                                 ("a", Value::scalar("Apple")),
                                                 ("b", Value::scalar("Banana")),
-                                            ].into_iter()
+                                            ]
+                                            .into_iter()
                                             .collect(),
                                         ),
                                         Value::null(),
@@ -111,16 +112,19 @@ mod field_execution {
                                             vec![
                                                 ("a", Value::scalar("Apple")),
                                                 ("b", Value::scalar("Banana")),
-                                            ].into_iter()
+                                            ]
+                                            .into_iter()
                                             .collect(),
                                         ),
                                     ]),
                                 ),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                     ),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             )
         );
@@ -180,17 +184,20 @@ mod merge_parallel_fragments {
                                         vec![
                                             ("b", Value::scalar("Banana")),
                                             ("c", Value::scalar("Cherry")),
-                                        ].into_iter()
+                                        ]
+                                        .into_iter()
                                         .collect(),
                                     ),
                                 ),
                                 ("c", Value::scalar("Cherry")),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                     ),
                     ("c", Value::scalar("Cherry")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             )
         );
@@ -278,10 +285,12 @@ mod merge_parallel_inline_fragments {
                                                     vec![
                                                         ("b", Value::scalar("Banana")),
                                                         ("c", Value::scalar("Cherry")),
-                                                    ].into_iter()
+                                                    ]
+                                                    .into_iter()
                                                     .collect(),
                                                 ),
-                                            )].into_iter()
+                                            )]
+                                            .into_iter()
                                             .collect(),
                                         ),
                                         Value::object(
@@ -291,21 +300,25 @@ mod merge_parallel_inline_fragments {
                                                     vec![
                                                         ("b", Value::scalar("Banana")),
                                                         ("c", Value::scalar("Cherry")),
-                                                    ].into_iter()
+                                                    ]
+                                                    .into_iter()
                                                     .collect(),
                                                 ),
-                                            )].into_iter()
+                                            )]
+                                            .into_iter()
                                             .collect(),
                                         ),
                                     ]),
                                 ),
                                 ("c", Value::scalar("Cherry")),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                     ),
                     ("c", Value::scalar("Cherry")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             )
         );
@@ -345,7 +358,8 @@ mod threads_context_correctly {
             &TestContext {
                 value: "Context value".to_owned(),
             },
-        ).expect("Execution failed");
+        )
+        .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -438,7 +452,8 @@ mod dynamic_context_switching {
                         value: "Second value".to_owned(),
                     },
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         };
 
@@ -461,7 +476,8 @@ mod dynamic_context_switching {
                         ),
                     ),
                     ("missing", Value::null()),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             )
         );
@@ -492,7 +508,8 @@ mod dynamic_context_switching {
                         value: "Second value".to_owned(),
                     },
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         };
 
@@ -512,7 +529,8 @@ mod dynamic_context_switching {
                             .into_iter()
                             .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             )
         );
@@ -543,7 +561,8 @@ mod dynamic_context_switching {
                         value: "Second value".to_owned(),
                     },
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         };
 
@@ -590,7 +609,8 @@ mod dynamic_context_switching {
                         value: "Second value".to_owned(),
                     },
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         };
 
@@ -621,7 +641,8 @@ mod dynamic_context_switching {
                     ),
                     ("missing", Value::null()),
                     ("tooLarge", Value::null()),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             )
         );
@@ -648,7 +669,8 @@ mod dynamic_context_switching {
                         value: "Second value".to_owned(),
                     },
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         };
 
@@ -668,7 +690,8 @@ mod dynamic_context_switching {
                             .into_iter()
                             .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             )
         );

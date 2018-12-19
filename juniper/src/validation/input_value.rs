@@ -93,18 +93,20 @@ where
     let mut errors: Vec<RuleError> = vec![];
 
     match *meta_type {
-        TypeType::NonNull(ref inner) => if value.is_null() {
-            errors.push(unification_error(
-                var_name,
-                var_pos,
-                &path,
-                &format!(r#"Expected "{}", found null"#, meta_type),
-            ));
-        } else {
-            errors.append(&mut unify_value(
-                var_name, var_pos, value, inner, schema, path,
-            ));
-        },
+        TypeType::NonNull(ref inner) => {
+            if value.is_null() {
+                errors.push(unification_error(
+                    var_name,
+                    var_pos,
+                    &path,
+                    &format!(r#"Expected "{}", found null"#, meta_type),
+                ));
+            } else {
+                errors.append(&mut unify_value(
+                    var_name, var_pos, value, inner, schema, path,
+                ));
+            }
+        }
 
         TypeType::List(ref inner) => {
             if value.is_null() {
@@ -112,16 +114,18 @@ where
             }
 
             match value.to_list_value() {
-                Some(l) => for (i, v) in l.iter().enumerate() {
-                    errors.append(&mut unify_value(
-                        var_name,
-                        var_pos,
-                        v,
-                        inner,
-                        schema,
-                        Path::ArrayElement(i, &path),
-                    ));
-                },
+                Some(l) => {
+                    for (i, v) in l.iter().enumerate() {
+                        errors.append(&mut unify_value(
+                            var_name,
+                            var_pos,
+                            v,
+                            inner,
+                            schema,
+                            Path::ArrayElement(i, &path),
+                        ));
+                    }
+                }
                 _ => errors.append(&mut unify_value(
                     var_name, var_pos, value, inner, schema, path,
                 )),

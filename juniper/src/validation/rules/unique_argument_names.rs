@@ -19,20 +19,11 @@ impl<'a, S> Visitor<'a, S> for UniqueArgumentNames<'a>
 where
     S: ScalarValue,
 {
-
-    fn enter_directive(
-        &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        _: &'a Spanning<Directive<S>>,
-    ) {
+    fn enter_directive(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Directive<S>>) {
         self.known_names = HashMap::new();
     }
 
-    fn enter_field(
-        &mut self,
-        _: &mut ValidatorContext<'a, S>,
-        _: &'a Spanning<Field<S>>,
-    ) {
+    fn enter_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {
         self.known_names = HashMap::new();
     }
 

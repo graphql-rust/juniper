@@ -185,10 +185,12 @@ fn variable_complex_input() {
                     ("a", InputValue::scalar("foo")),
                     ("b", InputValue::list(vec![InputValue::scalar("bar")])),
                     ("c", InputValue::scalar("baz")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             ),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
@@ -209,10 +211,12 @@ fn variable_parse_single_value_to_list() {
                     ("a", InputValue::scalar("foo")),
                     ("b", InputValue::scalar("bar")),
                     ("c", InputValue::scalar("baz")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             ),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
@@ -232,10 +236,12 @@ fn variable_runs_from_input_value_on_scalar() {
                 vec![
                     ("c", InputValue::scalar("baz")),
                     ("d", InputValue::scalar("SerializedValue")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             ),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result: &Object<DefaultScalarValue>| {
             assert_eq!(
@@ -257,10 +263,12 @@ fn variable_error_on_nested_non_null() {
                 ("a", InputValue::scalar("foo")),
                 ("b", InputValue::scalar("bar")),
                 ("c", InputValue::null()),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         ),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -304,10 +312,12 @@ fn variable_error_on_omit_non_null() {
             vec![
                 ("a", InputValue::scalar("foo")),
                 ("b", InputValue::scalar("bar")),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         ),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -333,10 +343,12 @@ fn variable_multiple_errors_with_nesting() {
             vec![(
                 "na",
                 InputValue::object(vec![("a", InputValue::scalar("foo"))].into_iter().collect()),
-            )].into_iter()
+            )]
+            .into_iter()
             .collect(),
         ),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -366,10 +378,12 @@ fn variable_error_on_additional_field() {
                 ("b", InputValue::scalar("bar")),
                 ("c", InputValue::scalar("baz")),
                 ("extra", InputValue::scalar("dog")),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
         ),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -557,7 +571,8 @@ fn allow_lists_to_contain_values() {
         vec![(
             "input".to_owned(),
             InputValue::list(vec![InputValue::scalar("A")]),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(
@@ -579,7 +594,8 @@ fn allow_lists_to_contain_null() {
                 InputValue::null(),
                 InputValue::scalar("B"),
             ]),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(
@@ -617,7 +633,8 @@ fn allow_non_null_lists_to_contain_values() {
         vec![(
             "input".to_owned(),
             InputValue::list(vec![InputValue::scalar("A")]),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(
@@ -638,7 +655,8 @@ fn allow_non_null_lists_to_contain_null() {
                 InputValue::null(),
                 InputValue::scalar("B"),
             ]),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(
@@ -672,7 +690,8 @@ fn allow_lists_of_non_null_to_contain_values() {
         vec![(
             "input".to_owned(),
             InputValue::list(vec![InputValue::scalar("A")]),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(
@@ -695,7 +714,8 @@ fn does_not_allow_lists_of_non_null_to_contain_null() {
             InputValue::null(),
             InputValue::scalar("B"),
         ]),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -720,7 +740,8 @@ fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
             InputValue::null(),
             InputValue::scalar("B"),
         ]),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -760,7 +781,8 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
         vec![(
             "input".to_owned(),
             InputValue::list(vec![InputValue::scalar("A")]),
-        )].into_iter()
+        )]
+        .into_iter()
         .collect(),
         |result| {
             assert_eq!(
@@ -779,7 +801,8 @@ fn does_not_allow_invalid_types_to_be_used_as_values() {
     let vars = vec![(
         "value".to_owned(),
         InputValue::list(vec![InputValue::scalar("A"), InputValue::scalar("B")]),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
@@ -800,7 +823,8 @@ fn does_not_allow_unknown_types_to_be_used_as_values() {
     let vars = vec![(
         "value".to_owned(),
         InputValue::list(vec![InputValue::scalar("A"), InputValue::scalar("B")]),
-    )].into_iter()
+    )]
+    .into_iter()
     .collect();
 
     let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();

@@ -102,10 +102,7 @@ where
     }
 
     /// View the underlying float value, if present.
-    #[deprecated(
-        since = "0.11",
-        note = "Use `Value::as_scalar_value` instead"
-    )]
+    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_float_value(&self) -> Option<f64>
     where
         for<'a> &'a S: ScalarRefValue<'a>,
@@ -146,10 +143,7 @@ where
     }
 
     /// View the underlying string value, if present.
-    #[deprecated(
-        since = "0.11",
-        note = "Use `Value::as_scalar_value` instead"
-    )]
+    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         Option<&'a String>: From<&'a S>,
@@ -175,7 +169,8 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
                             Spanning::unlocated(k.clone()),
                             Spanning::unlocated(v.to_input_value()),
                         )
-                    }).collect(),
+                    })
+                    .collect(),
             ),
         }
     }

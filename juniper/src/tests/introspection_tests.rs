@@ -31,10 +31,12 @@ fn test_query_type_name() {
                             Value::object(
                                 vec![("name", Value::scalar("Query"))].into_iter().collect(),
                             ),
-                        )].into_iter()
+                        )]
+                        .into_iter()
                         .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -60,7 +62,8 @@ fn test_specific_type_name() {
                 vec![(
                     "__type",
                     Value::object(vec![("name", Value::scalar("Droid"))].into_iter().collect()),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -91,10 +94,12 @@ fn test_specific_object_type_name_and_kind() {
                         vec![
                             ("name", Value::scalar("Droid")),
                             ("kind", Value::scalar("OBJECT")),
-                        ].into_iter()
+                        ]
+                        .into_iter()
                         .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -125,10 +130,12 @@ fn test_specific_interface_type_name_and_kind() {
                         vec![
                             ("name", Value::scalar("Character")),
                             ("kind", Value::scalar("INTERFACE")),
-                        ].into_iter()
+                        ]
+                        .into_iter()
                         .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -162,10 +169,12 @@ fn test_documentation() {
                                 "description",
                                 Value::scalar("A mechanical creature in the Star Wars universe."),
                             ),
-                        ].into_iter()
+                        ]
+                        .into_iter()
                         .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -214,7 +223,8 @@ fn test_possible_types() {
                 .expect("'name' not present in type")
                 .as_scalar_value::<String>()
                 .expect("'name' not a string") as &str
-        }).collect::<HashSet<_>>();
+        })
+        .collect::<HashSet<_>>();
 
     assert_eq!(possible_types, vec!["Human", "Droid"].into_iter().collect());
 }

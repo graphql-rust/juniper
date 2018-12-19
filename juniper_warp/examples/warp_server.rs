@@ -43,5 +43,6 @@ fn main() {
             .or(homepage)
             .or(warp::path("graphql").and(graphql_filter))
             .with(log),
-    ).run(([127, 0, 0, 1], 8080));
+    )
+    .run(([127, 0, 0, 1], 8080));
 }

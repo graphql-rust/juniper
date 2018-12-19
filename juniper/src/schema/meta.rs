@@ -365,8 +365,9 @@ impl<'a, S> MetaType<'a, S> {
     }
 
     pub(crate) fn fields<'b>(&self, schema: &'b SchemaType<S>) -> Option<Vec<&'b Field<'b, S>>> {
-        schema.lookup_type(&self.as_type()).and_then(|tpe| {
-            match *tpe {
+        schema
+            .lookup_type(&self.as_type())
+            .and_then(|tpe| match *tpe {
                 MetaType::Interface(ref i) => Some(i.fields.iter().collect()),
                 MetaType::Object(ref o) => Some(o.fields.iter().collect()),
                 MetaType::Union(ref u) => Some(
@@ -378,8 +379,7 @@ impl<'a, S> MetaType<'a, S> {
                         .collect(),
                 ),
                 _ => None,
-            }
-        })
+            })
     }
 }
 
@@ -687,9 +687,7 @@ impl<'a, S> Argument<'a, S> {
                     desc.push('\n');
                     desc.push_str(&docstring);
                 }
-                desc @ &mut None => {
-                    *desc = Some(docstring)
-                }
+                desc @ &mut None => *desc = Some(docstring),
             }
         }
         self
@@ -800,6 +798,7 @@ fn clean_docstring(multiline: &[&str]) -> Option<String> {
                         .take_while(move |_| line < multiline.len() - 1)
                         .cloned(),
                 )
-            }).collect::<String>(),
+            })
+            .collect::<String>(),
     )
 }

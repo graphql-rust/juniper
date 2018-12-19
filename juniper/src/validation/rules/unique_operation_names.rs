@@ -19,7 +19,6 @@ impl<'a, S> Visitor<'a, S> for UniqueOperationNames<'a>
 where
     S: ScalarValue,
 {
-
     fn enter_operation_definition(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,

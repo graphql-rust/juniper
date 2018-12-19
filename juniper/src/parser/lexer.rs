@@ -24,7 +24,7 @@ pub struct Lexer<'a> {
 pub enum ScalarToken<'a> {
     String(&'a str),
     Float(&'a str),
-    Int(&'a str)
+    Int(&'a str),
 }
 
 /// A single token in the input source
@@ -231,32 +231,32 @@ impl<'a> Lexer<'a> {
         let mut old_pos = self.position;
         while let Some((idx, ch)) = self.next_char() {
             match ch {
-                'b' |'f' |'n'|'r' |'t'|'\\'|'/'| '"' if escaped  => {
+                'b' | 'f' | 'n' | 'r' | 't' | '\\' | '/' | '"' if escaped => {
                     escaped = false;
                 }
                 'u' if escaped => {
                     self.scan_escaped_unicode(&old_pos)?;
                     escaped = false;
-                },
+                }
                 c if escaped => {
                     return Err(Spanning::zero_width(
                         &old_pos,
-                        LexerError::UnknownEscapeSequence(format!("\\{}", c))
-                            ))
+                        LexerError::UnknownEscapeSequence(format!("\\{}", c)),
+                    ))
                 }
                 '\\' => escaped = true,
                 '"' if !escaped => {
                     return Ok(Spanning::start_end(
                         &start_pos,
                         &self.position,
-                        Token::Scalar(ScalarToken::String(&self.source[start_idx+1..idx])),
+                        Token::Scalar(ScalarToken::String(&self.source[start_idx + 1..idx])),
                     ));
                 }
                 '\n' | '\r' => {
                     return Err(Spanning::zero_width(
                         &old_pos,
                         LexerError::UnterminatedString,
-                        ));
+                    ));
                 }
                 c if !is_source_char(c) => {
                     return Err(Spanning::zero_width(
@@ -316,12 +316,14 @@ impl<'a> Lexer<'a> {
             )
         })?;
 
-        char::from_u32(code_point).ok_or_else(|| {
-            Spanning::zero_width(
-                start_pos,
-                LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
-            )
-        }).map(|_|())
+        char::from_u32(code_point)
+            .ok_or_else(|| {
+                Spanning::zero_width(
+                    start_pos,
+                    LexerError::UnknownEscapeSequence("\\u".to_owned() + escape),
+                )
+            })
+            .map(|_| ())
     }
 
     fn scan_number(&mut self) -> LexerResult<'a> {
@@ -424,15 +426,11 @@ impl<'a> Lexer<'a> {
 
         let token = if is_float {
             Token::Scalar(ScalarToken::Float(number))
-        }else {
+        } else {
             Token::Scalar(ScalarToken::Int(number))
         };
 
-        Ok(Spanning::start_end(
-            &start_pos,
-            end_pos,
-            token,
-        ))
+        Ok(Spanning::start_end(&start_pos, end_pos, token))
     }
 }
 
@@ -463,16 +461,18 @@ impl<'a> Iterator for Lexer<'a> {
             Some('|') => Ok(self.emit_single_char(Token::Pipe)),
             Some('.') => self.scan_ellipsis(),
             Some('"') => self.scan_string(),
-            Some(ch) => if is_number_start(ch) {
-                self.scan_number()
-            } else if is_name_start(ch) {
-                self.scan_name()
-            } else {
-                Err(Spanning::zero_width(
-                    &self.position,
-                    LexerError::UnknownCharacter(ch),
-                ))
-            },
+            Some(ch) => {
+                if is_number_start(ch) {
+                    self.scan_number()
+                } else if is_name_start(ch) {
+                    self.scan_name()
+                } else {
+                    Err(Spanning::zero_width(
+                        &self.position,
+                        LexerError::UnknownCharacter(ch),
+                    ))
+                }
+            }
             None => {
                 self.has_reached_eof = true;
                 Ok(Spanning::zero_width(&self.position, Token::EndOfFile))
@@ -485,10 +485,12 @@ impl<'a> fmt::Display for Token<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Token::Name(name) => write!(f, "{}", name),
-            Token::Scalar(ScalarToken::Int(s)) | Token::Scalar(ScalarToken::Float(s)) => write!(f, "{}", s),
+            Token::Scalar(ScalarToken::Int(s)) | Token::Scalar(ScalarToken::Float(s)) => {
+                write!(f, "{}", s)
+            }
             Token::Scalar(ScalarToken::String(s)) => {
                 write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
-            },
+            }
             Token::ExclamationMark => write!(f, "!"),
             Token::Dollar => write!(f, "$"),
             Token::ParenOpen => write!(f, "("),

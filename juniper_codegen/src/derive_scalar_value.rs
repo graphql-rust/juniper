@@ -1,4 +1,4 @@
-use proc_macro2::{TokenStream};
+use proc_macro2::TokenStream;
 
 use syn::{self, Data, Fields, Ident, Variant};
 
@@ -22,7 +22,7 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
 
     let display = derive_display(variants.iter(), ident);
 
-    quote!{
+    quote! {
         #(#froms)*
 
         #serialize
@@ -39,7 +39,7 @@ where
         quote!(#ident::#variant(ref v) => write!(f, "{}", v),)
     });
 
-    quote!{
+    quote! {
         impl std::fmt::Display for #ident {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 match *self {
@@ -65,7 +65,7 @@ where
         quote!(juniper::serde)
     };
 
-    quote!{
+    quote! {
         impl #serde_path::Serialize for #ident {
             fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
             where S: #serde_path::Serializer
@@ -91,7 +91,7 @@ fn derive_from_variant(variant: &Variant, ident: &Ident) -> Result<TokenStream, 
 
     let variant = &variant.ident;
 
-    Ok(quote!{
+    Ok(quote! {
         impl std::convert::From<#ty> for #ident {
             fn from(t: #ty) -> Self {
                 #ident::#variant(t)

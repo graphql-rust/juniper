@@ -154,7 +154,8 @@ where
                 .as_scalar_value::<String>()
                 .expect("name is not a string")
                 == field_name
-        }).next()
+        })
+        .next()
         .expect("Field not found")
         .as_object_value()
         .expect("Field is not an object");
@@ -425,7 +426,9 @@ fn introspect_object_field_attr_description_collapse() {
         );
         assert_eq!(
             field.get_field_value("description"),
-            Some(&Value::scalar("Field description\nwith `collapse_docs` behavior"))
+            Some(&Value::scalar(
+                "Field description\nwith `collapse_docs` behavior"
+            ))
         );
         assert_eq!(
             field.get_field_value("isDeprecated"),
@@ -447,7 +450,9 @@ fn introspect_interface_field_attr_description_collapse() {
         );
         assert_eq!(
             field.get_field_value("description"),
-            Some(&Value::scalar("Field description\nwith `collapse_docs` behavior"))
+            Some(&Value::scalar(
+                "Field description\nwith `collapse_docs` behavior"
+            ))
         );
         assert_eq!(
             field.get_field_value("isDeprecated"),

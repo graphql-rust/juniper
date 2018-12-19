@@ -31,6 +31,4 @@ juniper::graphql_object!(Query: () |&self| {
     }
 });
 
-
-fn main() {
-}
+fn main() {}

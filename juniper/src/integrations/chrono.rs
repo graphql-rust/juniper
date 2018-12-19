@@ -203,7 +203,7 @@ mod integration_test {
     use executor::Variables;
     use schema::model::RootNode;
     use types::scalars::EmptyMutation;
-    use value::{Value};
+    use value::Value;
 
     #[test]
     fn test_serialization() {
@@ -232,7 +232,7 @@ mod integration_test {
         }
         "#;
 
-        let schema= RootNode::new(Root, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
         let (result, errs) =
             ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -253,7 +253,8 @@ mod integration_test {
                         "exampleDateTimeUtc",
                         Value::scalar("1970-01-01T00:01:01+00:00"),
                     ),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             )
         );

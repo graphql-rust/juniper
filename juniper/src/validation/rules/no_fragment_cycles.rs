@@ -30,7 +30,6 @@ impl<'a, S> Visitor<'a, S> for NoFragmentCycles<'a>
 where
     S: ScalarValue,
 {
-
     fn exit_document(&mut self, ctx: &mut ValidatorContext<'a, S>, _: &'a Document<S>) {
         assert!(self.current_fragment.is_none());
 

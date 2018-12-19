@@ -156,7 +156,8 @@ where
                     EnumValue::new("HEEL"),
                     EnumValue::new("DOWN"),
                 ],
-            ).into_meta()
+            )
+            .into_meta()
     }
 }
 
@@ -218,7 +219,8 @@ where
                 registry.get_type::<Being>(i),
                 registry.get_type::<Pet>(i),
                 registry.get_type::<Canine>(i),
-            ]).into_meta()
+            ])
+            .into_meta()
     }
 }
 
@@ -247,7 +249,8 @@ where
                     EnumValue::new("TAN"),
                     EnumValue::new("SPOTTED"),
                 ],
-            ).into_meta()
+            )
+            .into_meta()
     }
 }
 
@@ -377,7 +380,8 @@ where
             .interfaces(&[
                 registry.get_type::<Being>(i),
                 registry.get_type::<Intelligent>(i),
-            ]).into_meta()
+            ])
+            .into_meta()
     }
 }
 
@@ -410,7 +414,8 @@ where
             .interfaces(&[
                 registry.get_type::<Being>(i),
                 registry.get_type::<Intelligent>(i),
-            ]).into_meta()
+            ])
+            .into_meta()
     }
 }
 
@@ -768,6 +773,5 @@ fn print_errors(errs: &[RuleError]) {
             print!("[{:>3},{:>3},{:>3}]  ", p.index(), p.line(), p.column());
         }
         println!("{}", err.message());
-
     }
 }

@@ -52,7 +52,8 @@ where
                             &n.item as &str,
                             LookAheadValue::from_input_value(&i.item, vars),
                         )
-                    }).collect(),
+                    })
+                    .collect(),
             ),
         }
     }
@@ -134,7 +135,8 @@ where
                                 } else {
                                     false
                                 }
-                            }).unwrap_or(false),
+                            })
+                            .unwrap_or(false),
                         ("skip", &Some(ref a)) => a
                             .item
                             .items
@@ -150,13 +152,15 @@ where
                                 } else {
                                     false
                                 }
-                            }).unwrap_or(false),
+                            })
+                            .unwrap_or(false),
                         ("skip", &None) => false,
                         ("include", &None) => true,
                         (_, _) => unreachable!(),
                     }
                 })
-            }).unwrap_or(true)
+            })
+            .unwrap_or(true)
     }
 
     pub(super) fn build_from_selection(
@@ -192,7 +196,8 @@ where
                             .iter()
                             .map(|p| LookAheadArgument::new(p, vars))
                             .collect()
-                    }).unwrap_or_else(Vec::new);
+                    })
+                    .unwrap_or_else(Vec::new);
                 let mut ret = LookAheadSelection {
                     name,
                     alias,
@@ -280,7 +285,8 @@ where
                     }
                     Applies::All => Some(c.inner.for_explicit_type(type_name)),
                     Applies::OnlyType(_) => None,
-                }).collect(),
+                })
+                .collect(),
             name: self.name,
             alias: self.alias,
             arguments: self.arguments.clone(),
@@ -390,7 +396,8 @@ query Hero {
     }
 }
 ",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -442,7 +449,8 @@ query Hero {
     }
 }
 ",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -498,7 +506,8 @@ query Hero {
     }
 }
 ",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -578,7 +587,8 @@ query Hero {
     }
 }
 ",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -636,7 +646,8 @@ query Hero($episode: Episode) {
     }
 }
 ",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -697,7 +708,8 @@ fragment commonFields on Character {
   appearsIn
 }
 ",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -759,7 +771,8 @@ query Hero {
         height @skip(if: false)
     }
 }",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -815,7 +828,8 @@ query Hero {
         }
     }
 }",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -887,7 +901,8 @@ fragment comparisonFields on Character {
   ... on Droid { primaryFunction }
   ... on Human { height }
 }",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -1043,7 +1058,8 @@ query Hero {
         }
     }
 }",
-        ).unwrap();
+        )
+        .unwrap();
         let fragments = extract_fragments(&docs);
 
         if let ::ast::Definition::Operation(ref op) = docs[0] {
@@ -1052,7 +1068,8 @@ query Hero {
                 &op.item.selection_set[0],
                 &vars,
                 &fragments,
-            ).for_explicit_type("Human");
+            )
+            .for_explicit_type("Human");
             let expected = ConcreteLookAheadSelection {
                 name: "hero",
                 alias: None,

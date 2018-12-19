@@ -79,7 +79,8 @@ where
                             &error_message(var.item, *op_name),
                             &[var.start.clone(), pos.clone()],
                         )
-                    }).collect(),
+                    })
+                    .collect(),
             );
         }
     }
@@ -144,7 +145,8 @@ where
                         .iter()
                         .map(|&var_name| {
                             Spanning::start_end(&value.start.clone(), &value.end.clone(), var_name)
-                        }).collect(),
+                        })
+                        .collect(),
                 );
         }
     }

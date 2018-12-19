@@ -300,7 +300,8 @@ where
 }
 
 impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
-    where S: ScalarValue
+where
+    S: ScalarValue,
 {
     type Error = String;
 
@@ -459,12 +460,12 @@ mod fromform_tests {
 #[cfg(test)]
 mod tests {
 
-    use rocket::{self, get, post, routes};
-    use rocket::request::Form;
     use rocket::http::ContentType;
     use rocket::local::{Client, LocalRequest};
+    use rocket::request::Form;
     use rocket::Rocket;
     use rocket::State;
+    use rocket::{self, get, post, routes};
 
     use juniper::http::tests as http_tests;
     use juniper::tests::model::Database;
@@ -522,7 +523,8 @@ mod tests {
             .manage(Schema::new(
                 Database::new(),
                 EmptyMutation::<Database>::new(),
-            )).mount("/", routes![post_graphql_handler, get_graphql_handler])
+            ))
+            .mount("/", routes![post_graphql_handler, get_graphql_handler])
     }
 
     fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {

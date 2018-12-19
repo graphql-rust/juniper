@@ -23,7 +23,8 @@ where
                 .filter(|d| match **d {
                     Definition::Operation(_) => true,
                     Definition::Fragment(_) => false,
-                }).count(),
+                })
+                .count(),
         );
     }
 

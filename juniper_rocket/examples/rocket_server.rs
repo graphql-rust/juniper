@@ -2,7 +2,8 @@
 
 extern crate juniper;
 extern crate juniper_rocket;
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
 use rocket::response::content;
 use rocket::State;

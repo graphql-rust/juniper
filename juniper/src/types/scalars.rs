@@ -116,14 +116,16 @@ where
         .next()
         .ok_or_else(|| {
             ParseError::LexerError(LexerError::UnknownEscapeSequence(String::from("\\u")))
-        }).and_then(|c1| {
+        })
+        .and_then(|c1| {
             char_iter
                 .next()
                 .map(|c2| format!("{}{}", c1, c2))
                 .ok_or_else(|| {
                     ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{}", c1)))
                 })
-        }).and_then(|mut s| {
+        })
+        .and_then(|mut s| {
             char_iter
                 .next()
                 .ok_or_else(|| {
@@ -131,11 +133,13 @@ where
                         "\\u{}",
                         s.clone()
                     )))
-                }).map(|c2| {
+                })
+                .map(|c2| {
                     s.push(c2);
                     s
                 })
-        }).and_then(|mut s| {
+        })
+        .and_then(|mut s| {
             char_iter
                 .next()
                 .ok_or_else(|| {
@@ -143,7 +147,8 @@ where
                         "\\u{}",
                         s.clone()
                     )))
-                }).map(|c2| {
+                })
+                .map(|c2| {
                     s.push(c2);
                     s
                 })

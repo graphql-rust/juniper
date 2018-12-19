@@ -19,7 +19,6 @@ impl<'a, S> Visitor<'a, S> for UniqueFragmentNames<'a>
 where
     S: ScalarValue,
 {
-
     fn enter_fragment_definition(
         &mut self,
         context: &mut ValidatorContext<'a, S>,

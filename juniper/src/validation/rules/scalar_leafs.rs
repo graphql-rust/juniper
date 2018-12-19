@@ -13,12 +13,7 @@ impl<'a, S> Visitor<'a, S> for ScalarLeafs
 where
     S: ScalarValue,
 {
-
-    fn enter_field(
-        &mut self,
-        ctx: &mut ValidatorContext<'a, S>,
-        field: &'a Spanning<Field<S>>,
-    ) {
+    fn enter_field(&mut self, ctx: &mut ValidatorContext<'a, S>, field: &'a Spanning<Field<S>>) {
         let field_name = &field.item.name.item;
 
         let error = if let (Some(field_type), Some(field_type_literal)) =
