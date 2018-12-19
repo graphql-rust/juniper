@@ -355,7 +355,8 @@ where
             T::name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
-        ).expect("Type not found in schema");
+        )
+        .expect("Type not found in schema");
 
     for selection in selection_set {
         match *selection {
@@ -404,7 +405,8 @@ where
                                 .iter()
                                 .map(|&(ref k, ref v)| {
                                     (k.item, v.item.clone().into_const(exec_vars))
-                                }).collect()
+                                })
+                                .collect()
                         }),
                         &meta_field.arguments,
                     ),

@@ -82,7 +82,8 @@ fn test_node() {
                     ("foo", Value::scalar("1")),
                     ("bar", Value::scalar("2")),
                     ("baz", Value::scalar("3")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect()
             ),
             vec![]

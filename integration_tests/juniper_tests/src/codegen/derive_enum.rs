@@ -8,11 +8,7 @@ use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue,
 #[graphql(name = "Some", description = "enum descr")]
 enum SomeEnum {
     Regular,
-    #[graphql(
-        name = "FULL",
-        description = "field descr",
-        deprecated = "depr"
-    )]
+    #[graphql(name = "FULL", description = "field descr", deprecated = "depr")]
     Full,
 }
 

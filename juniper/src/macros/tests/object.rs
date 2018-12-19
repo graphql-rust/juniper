@@ -274,7 +274,8 @@ fn introspect_description_first() {
                 vec![
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             )]))
         );
@@ -303,7 +304,8 @@ fn introspect_fields_first() {
                 vec![
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             )]))
         );
@@ -332,7 +334,8 @@ fn introspect_interfaces_first() {
                 vec![
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             )]))
         );
@@ -361,7 +364,8 @@ fn introspect_commas_with_trailing() {
                 vec![
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             )]))
         );
@@ -390,7 +394,8 @@ fn introspect_commas_on_meta() {
                 vec![
                     ("name", Value::scalar("Interface")),
                     ("kind", Value::scalar("INTERFACE")),
-                ].into_iter()
+                ]
+                .into_iter()
                 .collect(),
             )]))
         );

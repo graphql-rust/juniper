@@ -91,7 +91,8 @@ fn test_execution() {
                 ("sampleEnum", Value::scalar("ONE")),
                 ("first", Value::scalar(123)),
                 ("second", Value::scalar(30)),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect()
         )
     );
@@ -169,29 +170,27 @@ fn enum_introspection() {
 
     assert_eq!(values.len(), 2);
 
-    assert!(
-        values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("ONE")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ].into_iter()
-            .collect(),
-        ))
-    );
+    assert!(values.contains(&Value::object(
+        vec![
+            ("name", Value::scalar("ONE")),
+            ("description", Value::null()),
+            ("isDeprecated", Value::scalar(false)),
+            ("deprecationReason", Value::null()),
+        ]
+        .into_iter()
+        .collect(),
+    )));
 
-    assert!(
-        values.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("TWO")),
-                ("description", Value::null()),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ].into_iter()
-            .collect(),
-        ))
-    );
+    assert!(values.contains(&Value::object(
+        vec![
+            ("name", Value::scalar("TWO")),
+            ("description", Value::null()),
+            ("isDeprecated", Value::scalar(false)),
+            ("deprecationReason", Value::null()),
+        ]
+        .into_iter()
+        .collect(),
+    )));
 }
 
 #[test]
@@ -292,41 +291,42 @@ fn interface_introspection() {
 
     assert_eq!(fields.len(), 1);
 
-    assert!(
-        fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("sampleEnum")),
-                (
-                    "description",
-                    Value::scalar("A sample field in the interface"),
-                ),
-                ("args", Value::list(vec![])),
-                (
-                    "type",
-                    Value::object(
-                        vec![
-                            ("name", Value::null()),
-                            ("kind", Value::scalar("NON_NULL")),
-                            (
-                                "ofType",
-                                Value::object(
-                                    vec![
-                                        ("name", Value::scalar("SampleEnum")),
-                                        ("kind", Value::scalar("ENUM")),
-                                    ].into_iter()
-                                    .collect(),
-                                ),
+    assert!(fields.contains(&Value::object(
+        vec![
+            ("name", Value::scalar("sampleEnum")),
+            (
+                "description",
+                Value::scalar("A sample field in the interface"),
+            ),
+            ("args", Value::list(vec![])),
+            (
+                "type",
+                Value::object(
+                    vec![
+                        ("name", Value::null()),
+                        ("kind", Value::scalar("NON_NULL")),
+                        (
+                            "ofType",
+                            Value::object(
+                                vec![
+                                    ("name", Value::scalar("SampleEnum")),
+                                    ("kind", Value::scalar("ENUM")),
+                                ]
+                                .into_iter()
+                                .collect(),
                             ),
-                        ].into_iter()
-                        .collect(),
-                    ),
+                        ),
+                    ]
+                    .into_iter()
+                    .collect(),
                 ),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ].into_iter()
-            .collect(),
-        ))
-    );
+            ),
+            ("isDeprecated", Value::scalar(false)),
+            ("deprecationReason", Value::null()),
+        ]
+        .into_iter()
+        .collect(),
+    )));
 }
 
 #[test]
@@ -436,126 +436,133 @@ fn object_introspection() {
 
     println!("Fields: {:#?}", fields);
 
-    assert!(
-        fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("sampleEnum")),
-                ("description", Value::null()),
-                ("args", Value::list(vec![])),
-                (
-                    "type",
-                    Value::object(
-                        vec![
-                            ("name", Value::null()),
-                            ("kind", Value::scalar("NON_NULL")),
-                            (
-                                "ofType",
-                                Value::object(
-                                    vec![
-                                        ("name", Value::scalar("SampleEnum")),
-                                        ("kind", Value::scalar("ENUM")),
-                                    ].into_iter()
-                                    .collect(),
-                                ),
+    assert!(fields.contains(&Value::object(
+        vec![
+            ("name", Value::scalar("sampleEnum")),
+            ("description", Value::null()),
+            ("args", Value::list(vec![])),
+            (
+                "type",
+                Value::object(
+                    vec![
+                        ("name", Value::null()),
+                        ("kind", Value::scalar("NON_NULL")),
+                        (
+                            "ofType",
+                            Value::object(
+                                vec![
+                                    ("name", Value::scalar("SampleEnum")),
+                                    ("kind", Value::scalar("ENUM")),
+                                ]
+                                .into_iter()
+                                .collect(),
                             ),
-                        ].into_iter()
-                        .collect(),
-                    ),
+                        ),
+                    ]
+                    .into_iter()
+                    .collect(),
                 ),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ].into_iter()
-            .collect(),
-        ))
-    );
+            ),
+            ("isDeprecated", Value::scalar(false)),
+            ("deprecationReason", Value::null()),
+        ]
+        .into_iter()
+        .collect(),
+    )));
 
-    assert!(
-        fields.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("sampleScalar")),
-                (
-                    "description",
-                    Value::scalar("A sample scalar field on the object"),
-                ),
-                (
-                    "args",
-                    Value::list(vec![
-                        Value::object(
-                            vec![
-                                ("name", Value::scalar("first")),
-                                ("description", Value::scalar("The first number")),
-                                (
-                                    "type",
-                                    Value::object(
-                                        vec![
-                                            ("name", Value::null()),
-                                            ("kind", Value::scalar("NON_NULL")),
-                                            (
-                                                "ofType",
-                                                Value::object(
-                                                    vec![
-                                                        ("name", Value::scalar("Int")),
-                                                        ("kind", Value::scalar("SCALAR")),
-                                                        ("ofType", Value::null()),
-                                                    ].into_iter()
-                                                    .collect(),
-                                                ),
-                                            ),
-                                        ].into_iter()
-                                        .collect(),
-                                    ),
-                                ),
-                                ("defaultValue", Value::null()),
-                            ].into_iter()
-                            .collect(),
-                        ),
-                        Value::object(
-                            vec![
-                                ("name", Value::scalar("second")),
-                                ("description", Value::scalar("The second number")),
-                                (
-                                    "type",
-                                    Value::object(
-                                        vec![
-                                            ("name", Value::scalar("Int")),
-                                            ("kind", Value::scalar("SCALAR")),
-                                            ("ofType", Value::null()),
-                                        ].into_iter()
-                                        .collect(),
-                                    ),
-                                ),
-                                ("defaultValue", Value::scalar("123")),
-                            ].into_iter()
-                            .collect(),
-                        ),
-                    ]),
-                ),
-                (
-                    "type",
+    assert!(fields.contains(&Value::object(
+        vec![
+            ("name", Value::scalar("sampleScalar")),
+            (
+                "description",
+                Value::scalar("A sample scalar field on the object"),
+            ),
+            (
+                "args",
+                Value::list(vec![
                     Value::object(
                         vec![
-                            ("name", Value::null()),
-                            ("kind", Value::scalar("NON_NULL")),
+                            ("name", Value::scalar("first")),
+                            ("description", Value::scalar("The first number")),
                             (
-                                "ofType",
+                                "type",
                                 Value::object(
                                     vec![
-                                        ("name", Value::scalar("SampleScalar")),
-                                        ("kind", Value::scalar("SCALAR")),
-                                    ].into_iter()
+                                        ("name", Value::null()),
+                                        ("kind", Value::scalar("NON_NULL")),
+                                        (
+                                            "ofType",
+                                            Value::object(
+                                                vec![
+                                                    ("name", Value::scalar("Int")),
+                                                    ("kind", Value::scalar("SCALAR")),
+                                                    ("ofType", Value::null()),
+                                                ]
+                                                .into_iter()
+                                                .collect(),
+                                            ),
+                                        ),
+                                    ]
+                                    .into_iter()
                                     .collect(),
                                 ),
                             ),
-                        ].into_iter()
+                            ("defaultValue", Value::null()),
+                        ]
+                        .into_iter()
                         .collect(),
                     ),
+                    Value::object(
+                        vec![
+                            ("name", Value::scalar("second")),
+                            ("description", Value::scalar("The second number")),
+                            (
+                                "type",
+                                Value::object(
+                                    vec![
+                                        ("name", Value::scalar("Int")),
+                                        ("kind", Value::scalar("SCALAR")),
+                                        ("ofType", Value::null()),
+                                    ]
+                                    .into_iter()
+                                    .collect(),
+                                ),
+                            ),
+                            ("defaultValue", Value::scalar("123")),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ]),
+            ),
+            (
+                "type",
+                Value::object(
+                    vec![
+                        ("name", Value::null()),
+                        ("kind", Value::scalar("NON_NULL")),
+                        (
+                            "ofType",
+                            Value::object(
+                                vec![
+                                    ("name", Value::scalar("SampleScalar")),
+                                    ("kind", Value::scalar("SCALAR")),
+                                ]
+                                .into_iter()
+                                .collect(),
+                            ),
+                        ),
+                    ]
+                    .into_iter()
+                    .collect(),
                 ),
-                ("isDeprecated", Value::scalar(false)),
-                ("deprecationReason", Value::null()),
-            ].into_iter()
-            .collect(),
-        ))
-    );
+            ),
+            ("isDeprecated", Value::scalar(false)),
+            ("deprecationReason", Value::null()),
+        ]
+        .into_iter()
+        .collect(),
+    )));
 }
 
 #[test]
@@ -603,7 +610,8 @@ fn scalar_introspection() {
                 ("enumValues", Value::null()),
                 ("inputFields", Value::null()),
                 ("ofType", Value::null()),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect()
         )
     );

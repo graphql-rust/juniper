@@ -33,7 +33,7 @@ impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
 {
-     /// Returns the `operation_name` associated with this request.
+    /// Returns the `operation_name` associated with this request.
     fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_ref().map(|oper_name| &**oper_name)
     }
@@ -47,7 +47,8 @@ where
                         .map(|(k, v)| (k.to_owned(), v.clone()))
                         .collect()
                 })
-            }).unwrap_or_default()
+            })
+            .unwrap_or_default()
     }
 
     /// Construct a new GraphQL request from parts
@@ -207,7 +208,8 @@ pub mod tests {
                 .body
                 .as_ref()
                 .expect("No data returned from request"),
-        ).expect("Could not parse JSON object")
+        )
+        .expect("Could not parse JSON object")
     }
 
     fn test_simple_get<T: HTTPIntegration>(integration: &T) {
@@ -249,7 +251,8 @@ pub mod tests {
                             }
                         }
                     }"#
-            ).expect("Invalid JSON constant in test")
+            )
+            .expect("Invalid JSON constant in test")
         );
     }
 
@@ -279,7 +282,8 @@ pub mod tests {
                             }
                         }
                     }"#
-            ).expect("Invalid JSON constant in test")
+            )
+            .expect("Invalid JSON constant in test")
         );
     }
 
@@ -309,7 +313,8 @@ pub mod tests {
             unwrap_json_response(&response),
             serde_json::from_str::<Json>(
                 r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#
-            ).expect("Invalid JSON constant in test")
+            )
+            .expect("Invalid JSON constant in test")
         );
     }
 
@@ -332,9 +337,12 @@ pub mod tests {
         // {hero{name}}
         let response = integration.get("/?query=%7B%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%2C%20%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%7D");
         assert_eq!(response.status_code, 400);
-        let response = integration.post("/", r#"
+        let response = integration.post(
+            "/",
+            r#"
             {"query": "{hero{name}}", "query": "{hero{name}}"}
-        "#);
+        "#,
+        );
         assert_eq!(response.status_code, 400);
     }
 }

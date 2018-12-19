@@ -13,7 +13,6 @@ impl<'a, S> Visitor<'a, S> for KnownFragmentNames
 where
     S: ScalarValue,
 {
-
     fn enter_fragment_spread(
         &mut self,
         context: &mut ValidatorContext<'a, S>,

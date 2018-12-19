@@ -305,23 +305,26 @@ fn visit_input_value<'a, S, V>(
     enter_input_value(v, ctx, input_value);
 
     match input_value.item {
-        InputValue::Object(ref fields) => for field in fields {
-            let inner_type = ctx
-                .current_input_type_literal()
-                .and_then(|t| match *t {
-                    Type::NonNullNamed(ref name) | Type::Named(ref name) => {
-                        ctx.schema.concrete_type_by_name(name)
-                    }
-                    _ => None,
-                }).and_then(|ct| ct.input_field_by_name(&field.0.item))
-                .map(|f| &f.arg_type);
+        InputValue::Object(ref fields) => {
+            for field in fields {
+                let inner_type = ctx
+                    .current_input_type_literal()
+                    .and_then(|t| match *t {
+                        Type::NonNullNamed(ref name) | Type::Named(ref name) => {
+                            ctx.schema.concrete_type_by_name(name)
+                        }
+                        _ => None,
+                    })
+                    .and_then(|ct| ct.input_field_by_name(&field.0.item))
+                    .map(|f| &f.arg_type);
 
-            ctx.with_pushed_input_type(inner_type, |ctx| {
-                v.enter_object_field(ctx, field);
-                visit_input_value(v, ctx, &field.1);
-                v.exit_object_field(ctx, field);
-            })
-        },
+                ctx.with_pushed_input_type(inner_type, |ctx| {
+                    v.enter_object_field(ctx, field);
+                    visit_input_value(v, ctx, &field.1);
+                    v.exit_object_field(ctx, field);
+                })
+            }
+        }
         InputValue::List(ref ls) => {
             let inner_type = ctx.current_input_type_literal().and_then(|t| match *t {
                 Type::List(ref inner) | Type::NonNullList(ref inner) => {

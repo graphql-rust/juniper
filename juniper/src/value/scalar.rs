@@ -246,7 +246,8 @@ where
         + Into<Option<&'a i32>>
         + Into<Option<&'a String>>
         + Into<Option<&'a f64>>,
-{}
+{
+}
 
 /// The default scalar value representation in juniper
 ///

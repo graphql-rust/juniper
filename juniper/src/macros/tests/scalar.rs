@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object, DefaultScalarValue, ParseScalarValue, ParseScalarResult};
+use value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value};
 
 struct DefaultName(i32);
 struct OtherOrder(i32);
@@ -140,8 +140,14 @@ fn default_name_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("DefaultName")));
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::scalar("DefaultName"))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
     });
 }
 
@@ -157,8 +163,14 @@ fn other_order_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("OtherOrder")));
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::scalar("OtherOrder"))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
     });
 }
 
@@ -174,8 +186,14 @@ fn named_introspection() {
     "#;
 
     run_type_info_query(doc, |type_info| {
-        assert_eq!(type_info.get_field_value("name"), Some(&Value::scalar("ANamedScalar")));
-        assert_eq!(type_info.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            type_info.get_field_value("name"),
+            Some(&Value::scalar("ANamedScalar"))
+        );
+        assert_eq!(
+            type_info.get_field_value("description"),
+            Some(&Value::null())
+        );
     });
 }
 

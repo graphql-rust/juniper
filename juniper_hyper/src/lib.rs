@@ -50,11 +50,13 @@ where
                     .unwrap_or(Err(GraphQLRequestError::Invalid(
                         "'query' parameter is missing".to_string(),
                     ))),
-            ).and_then(move |gql_req| {
+            )
+            .and_then(move |gql_req| {
                 execute_request(root_node, context, gql_req).map_err(|_| {
                     unreachable!("thread pool has shut down?!");
                 })
-            }).or_else(|err| future::ok(render_error(err))),
+            })
+            .or_else(|err| future::ok(render_error(err))),
         )),
         &Method::POST => Either::A(Either::B(
             request
@@ -70,11 +72,13 @@ where
                                     .map_err(GraphQLRequestError::BodyJSONError)
                             })
                     })
-                }).and_then(move |gql_req| {
+                })
+                .and_then(move |gql_req| {
                     execute_request(root_node, context, gql_req).map_err(|_| {
                         unreachable!("thread pool has shut down?!");
                     })
-                }).or_else(|err| future::ok(render_error(err))),
+                })
+                .or_else(|err| future::ok(render_error(err))),
         )),
         _ => return Either::B(future::ok(new_response(StatusCode::METHOD_NOT_ALLOWED))),
     }
@@ -239,7 +243,8 @@ where
                             let body = serde_json::to_string_pretty(&res).unwrap();
                             Ok(Async::Ready((is_ok, body)))
                         })
-                    })).map(|results| {
+                    }))
+                    .map(|results| {
                         let is_ok = results.iter().all(|&(is_ok, _)| is_ok);
                         // concatenate json bodies as array
                         // TODO: maybe use Body chunks instead?

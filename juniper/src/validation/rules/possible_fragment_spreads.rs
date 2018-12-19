@@ -21,7 +21,6 @@ impl<'a, S> Visitor<'a, S> for PossibleFragmentSpreads<'a, S>
 where
     S: ScalarValue,
 {
-
     fn enter_document(&mut self, ctx: &mut ValidatorContext<'a, S>, defs: &'a Document<S>) {
         for def in defs {
             if let Definition::Fragment(Spanning { ref item, .. }) = *def {

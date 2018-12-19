@@ -121,11 +121,13 @@ where
                     None
                 }
             }
-            ref other => if let Some(e) = other.convert() {
-                Some(vec![e])
-            } else {
-                None
-            },
+            ref other => {
+                if let Some(e) = other.convert() {
+                    Some(vec![e])
+                } else {
+                    None
+                }
+            }
         }
     }
 }

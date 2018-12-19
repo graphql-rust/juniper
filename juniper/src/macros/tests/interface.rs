@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use ast::InputValue;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object, DefaultScalarValue};
+use value::{DefaultScalarValue, Object, Value};
 
 /*
 
@@ -179,102 +179,105 @@ fn introspect_custom_name() {
         );
         assert_eq!(object.get_field_value("description"), Some(&Value::null()));
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
 #[test]
 fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |object, fields| {
-        assert_eq!(object.get_field_value("name"), Some(&Value::scalar("WithLifetime")));
+        assert_eq!(
+            object.get_field_value("name"),
+            Some(&Value::scalar("WithLifetime"))
+        );
         assert_eq!(object.get_field_value("description"), Some(&Value::null()));
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
 #[test]
 fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |object, fields| {
-        assert_eq!(object.get_field_value("name"), Some(&Value::scalar("WithGenerics")));
+        assert_eq!(
+            object.get_field_value("name"),
+            Some(&Value::scalar("WithGenerics"))
+        );
         assert_eq!(object.get_field_value("description"), Some(&Value::null()));
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
 #[test]
 fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |object, fields| {
-        assert_eq!(object.get_field_value("name"), Some(&Value::scalar("DescriptionFirst")));
+        assert_eq!(
+            object.get_field_value("name"),
+            Some(&Value::scalar("DescriptionFirst"))
+        );
         assert_eq!(
             object.get_field_value("description"),
             Some(&Value::scalar("A description"))
         );
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
 #[test]
 fn introspect_fields_first() {
     run_type_info_query("FieldsFirst", |object, fields| {
-        assert_eq!(object.get_field_value("name"), Some(&Value::scalar("FieldsFirst")));
+        assert_eq!(
+            object.get_field_value("name"),
+            Some(&Value::scalar("FieldsFirst"))
+        );
         assert_eq!(
             object.get_field_value("description"),
             Some(&Value::scalar("A description"))
         );
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
 #[test]
 fn introspect_interfaces_first() {
     run_type_info_query("InterfacesFirst", |object, fields| {
-        assert_eq!(object.get_field_value("name"), Some(&Value::scalar("InterfacesFirst")));
+        assert_eq!(
+            object.get_field_value("name"),
+            Some(&Value::scalar("InterfacesFirst"))
+        );
         assert_eq!(
             object.get_field_value("description"),
             Some(&Value::scalar("A description"))
         );
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
@@ -290,32 +293,31 @@ fn introspect_commas_with_trailing() {
             Some(&Value::scalar("A description"))
         );
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
 #[test]
 fn introspect_commas_on_meta() {
     run_type_info_query("CommasOnMeta", |object, fields| {
-        assert_eq!(object.get_field_value("name"), Some(&Value::scalar("CommasOnMeta")));
+        assert_eq!(
+            object.get_field_value("name"),
+            Some(&Value::scalar("CommasOnMeta"))
+        );
         assert_eq!(
             object.get_field_value("description"),
             Some(&Value::scalar("A description"))
         );
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }
 
@@ -331,12 +333,10 @@ fn introspect_resolvers_with_trailing_comma() {
             Some(&Value::scalar("A description"))
         );
 
-        assert!(
-            fields.contains(&Value::object(
-                vec![("name", Value::scalar("simple"))]
-                    .into_iter()
-                    .collect(),
-            ))
-        );
+        assert!(fields.contains(&Value::object(
+            vec![("name", Value::scalar("simple"))]
+                .into_iter()
+                .collect(),
+        )));
     });
 }

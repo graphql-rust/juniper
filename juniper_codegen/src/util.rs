@@ -34,14 +34,14 @@ pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
 fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
     for meta in &list.nested {
         match meta {
-            &NestedMeta::Meta(Meta::NameValue(ref nv)) if nv.ident == "note" => {
-                match &nv.lit {
-                    &Lit::Str(ref strlit) => {
-                        return DeprecationAttr { reason: Some(strlit.value().to_string()) };
-                    }
-                    _ => panic!("deprecated attribute note value only has string literal"),
+            &NestedMeta::Meta(Meta::NameValue(ref nv)) if nv.ident == "note" => match &nv.lit {
+                &Lit::Str(ref strlit) => {
+                    return DeprecationAttr {
+                        reason: Some(strlit.value().to_string()),
+                    };
                 }
-            }
+                _ => panic!("deprecated attribute note value only has string literal"),
+            },
             _ => {}
         }
     }
@@ -60,7 +60,8 @@ pub fn get_doc_comment(attrs: &Vec<Attribute>) -> Option<String> {
 
 // Concatenates doc strings into one string.
 fn join_doc_strings(docs: &Vec<String>) -> String {
-    let s: String = docs.iter()
+    let s: String = docs
+        .iter()
         // Trim any extra spaces.
         .map(|x| x.trim().to_string())
         // Convert empty comments to newlines.
@@ -118,7 +119,11 @@ pub fn get_graphql_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
     None
 }
 
-pub fn keyed_item_value(item: &NestedMeta, name: &str, validation: AttributeValidation) -> Option<AttributeValue> {
+pub fn keyed_item_value(
+    item: &NestedMeta,
+    name: &str,
+    validation: AttributeValidation,
+) -> Option<AttributeValue> {
     match item {
         // Attributes in the form of `#[graphql(name = "value")]`.
         &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.ident == name => {
@@ -130,23 +135,21 @@ pub fn keyed_item_value(item: &NestedMeta, name: &str, validation: AttributeVali
                             "Invalid format for attribute \"{:?}\": expected a bare attribute without a value",
                             item
                         ));
-                    },
+                    }
                     _ => Some(AttributeValue::String(strlit.value())),
                 },
-                _  => None,
+                _ => None,
             }
-        },
+        }
         // Attributes in the form of `#[graphql(name)]`.
-        &NestedMeta::Meta(Meta::Word(ref ident)) if ident.to_string() == name => {
-            match validation {
-                AttributeValidation::String => {
-                    panic!(format!(
+        &NestedMeta::Meta(Meta::Word(ref ident)) if ident.to_string() == name => match validation {
+            AttributeValidation::String => {
+                panic!(format!(
                     "Invalid format for attribute \"{:?}\": expected a string value",
-                        item
-                    ));
-                },
-                _ => Some(AttributeValue::Bare),
+                    item
+                ));
             }
+            _ => Some(AttributeValue::Bare),
         },
         _ => None,
     }
@@ -161,7 +164,8 @@ pub fn to_camel_case(s: &str) -> String {
         if i > 0 && part.len() == 1 {
             dest.push_str(&part.to_uppercase());
         } else if i > 0 && part.len() > 1 {
-            let first = part.chars()
+            let first = part
+                .chars()
                 .next()
                 .unwrap()
                 .to_uppercase()

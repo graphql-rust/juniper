@@ -123,18 +123,21 @@ mod interface {
                             vec![
                                 ("name", Value::scalar("Odie")),
                                 ("woofs", Value::scalar(true)),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                         Value::object(
                             vec![
                                 ("name", Value::scalar("Garfield")),
                                 ("meows", Value::scalar(false)),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                     ]),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             )
         );
@@ -255,7 +258,8 @@ mod union {
                                 ("__typename", Value::scalar("Dog")),
                                 ("name", Value::scalar("Odie")),
                                 ("woofs", Value::scalar(true)),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                         Value::object(
@@ -263,11 +267,13 @@ mod union {
                                 ("__typename", Value::scalar("Cat")),
                                 ("name", Value::scalar("Garfield")),
                                 ("meows", Value::scalar(false)),
-                            ].into_iter()
+                            ]
+                            .into_iter()
                             .collect(),
                         ),
                     ]),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             )
         );

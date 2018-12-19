@@ -488,7 +488,8 @@ mod tests {
                 .get_raw("content-type")
                 .expect("No content type header from handler")[0]
                 .clone(),
-        ).expect("Content-type header invalid UTF-8");
+        )
+        .expect("Content-type header invalid UTF-8");
         let body = response::extract_body_to_string(response);
 
         http_tests::TestResponse {

@@ -1,4 +1,4 @@
-use parser::{Lexer, LexerError, SourcePosition, Spanning, Token, ScalarToken};
+use parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, Token};
 
 fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
     let mut tokens = Vec::new();
@@ -35,9 +35,11 @@ fn tokenize_error(s: &str) -> Spanning<LexerError> {
 
     loop {
         match lexer.next() {
-            Some(Ok(t)) => if t.item == Token::EndOfFile {
-                panic!("Tokenizer did not return error for {:#?}", s);
-            },
+            Some(Ok(t)) => {
+                if t.item == Token::EndOfFile {
+                    panic!("Tokenizer did not return error for {:#?}", s);
+                }
+            }
             Some(Err(e)) => {
                 return e;
             }
@@ -133,7 +135,8 @@ fn error_positions() {
             ?
 
             "#
-        ).next(),
+        )
+        .next(),
         Some(Err(Spanning::zero_width(
             &SourcePosition::new(14, 2, 12),
             LexerError::UnknownCharacter('?')
@@ -654,7 +657,10 @@ fn display() {
 
     assert_eq!(format!("{}", Token::Scalar(ScalarToken::Int("123"))), "123");
 
-    assert_eq!(format!("{}", Token::Scalar(ScalarToken::Float("4.5"))), "4.5");
+    assert_eq!(
+        format!("{}", Token::Scalar(ScalarToken::Float("4.5"))),
+        "4.5"
+    );
 
     assert_eq!(
         format!("{}", Token::Scalar(ScalarToken::String("some string"))),

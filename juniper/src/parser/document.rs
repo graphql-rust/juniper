@@ -129,11 +129,13 @@ where
         start: start_pos, ..
     } = parser.expect(&Token::Name("fragment"))?;
     let name = match parser.expect_name() {
-        Ok(n) => if n.item == "on" {
-            return Err(n.map(|_| ParseError::UnexpectedToken(Token::Name("on"))));
-        } else {
-            n
-        },
+        Ok(n) => {
+            if n.item == "on" {
+                return Err(n.map(|_| ParseError::UnexpectedToken(Token::Name("on"))));
+            } else {
+                n
+            }
+        }
         Err(e) => return Err(e),
     };
 
@@ -354,7 +356,8 @@ where
                     &Token::ParenOpen,
                     |p| parse_argument(p, schema, arguments),
                     &Token::ParenClose,
-                )?.map(|args| Arguments {
+                )?
+                .map(|args| Arguments {
                     items: args.into_iter().map(|s| s.item).collect(),
                 }),
         ))
@@ -408,7 +411,8 @@ where
                     &Token::ParenOpen,
                     |p| parse_variable_definition(p, schema),
                     &Token::ParenClose,
-                )?.map(|defs| VariableDefinitions {
+                )?
+                .map(|defs| VariableDefinitions {
                     items: defs.into_iter().map(|s| s.item).collect(),
                 }),
         ))

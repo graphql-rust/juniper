@@ -149,8 +149,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
     let generics = &ast.generics;
 
     let meta_description = match attrs.description {
-        Some(descr) => quote!{ let meta = meta.description(#descr); },
-        None => quote!{ let meta = meta; },
+        Some(descr) => quote! { let meta = meta.description(#descr); },
+        None => quote! { let meta = meta; },
     };
 
     let mut meta_fields = TokenStream::new();
@@ -174,8 +174,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
             }
         };
         let field_description = match field_attrs.description {
-            Some(s) => quote!{ let field = field.description(#s); },
-            None => quote!{},
+            Some(s) => quote! { let field = field.description(#s); },
+            None => quote! {},
         };
 
         let default = {
@@ -205,17 +205,17 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
 
         let create_meta_field = match default {
             Some(ref def) => {
-                quote!{
+                quote! {
                     let field = registry.arg_with_default::<#field_ty>( #name, &#def, &());
                 }
             }
             None => {
-                quote!{
+                quote! {
                     let field = registry.arg::<#field_ty>(#name, &());
                 }
             }
         };
-        meta_fields.extend(quote!{
+        meta_fields.extend(quote! {
             {
                 #create_meta_field
                 #field_description
@@ -227,11 +227,11 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
 
         let from_input_default = match default {
             Some(ref def) => {
-                quote!{
+                quote! {
                     Some(&&#juniper_path::InputValue::Null) | None if true => #def,
                 }
             }
-            None => quote!{},
+            None => quote! {},
         };
 
         from_inputs.extend(quote!{
@@ -249,7 +249,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
         });
 
         // Build to_input clause.
-        to_inputs.extend(quote!{
+        to_inputs.extend(quote! {
             (#name, self.#field_ident.to_input_value()),
         });
     }
@@ -332,5 +332,5 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
         }
     };
 
-   body
+    body
 }

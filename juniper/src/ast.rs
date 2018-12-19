@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 
 use executor::Variables;
 use parser::Spanning;
-use value::{ScalarRefValue, ScalarValue, DefaultScalarValue};
+use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 /// A type literal in the syntax tree
 ///
@@ -285,7 +285,8 @@ where
                         Spanning::unlocated(k.as_ref().to_owned()),
                         Spanning::unlocated(v),
                     )
-                }).collect(),
+                })
+                .collect(),
         )
     }
 
@@ -346,10 +347,7 @@ where
     }
 
     /// View the underlying int value, if present.
-    #[deprecated(
-        since = "0.11.0",
-        note = "Use `InputValue::as_scalar_value` instead"
-    )]
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::as_scalar_value` instead")]
     pub fn as_int_value<'a>(&'a self) -> Option<i32>
     where
         &'a S: Into<Option<&'a i32>>,
@@ -358,10 +356,7 @@ where
     }
 
     /// View the underlying float value, if present.
-    #[deprecated(
-        since = "0.11.0",
-        note = "Use `InputValue::as_scalar_value` instead"
-    )]
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::as_scalar_value` instead")]
     pub fn as_float_value<'a>(&'a self) -> Option<f64>
     where
         &'a S: Into<Option<&'a f64>>,
@@ -370,10 +365,7 @@ where
     }
 
     /// View the underlying string value, if present.
-    #[deprecated(
-        since = "0.11.0",
-        note = "Use `InputValue::as_scalar_value` instead"
-    )]
+    #[deprecated(since = "0.11.0", note = "Use `InputValue::as_scalar_value` instead")]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         &'a S: Into<Option<&'a String>>,
@@ -453,11 +445,12 @@ where
                 .zip(l2.iter())
                 .all(|(v1, v2)| v1.item.unlocated_eq(&v2.item)),
             (&Object(ref o1), &Object(ref o2)) => {
-                o1.len() == o2.len() && o1.iter().all(|&(ref sk1, ref sv1)| {
-                    o2.iter().any(|&(ref sk2, ref sv2)| {
-                        sk1.item == sk2.item && sv1.item.unlocated_eq(&sv2.item)
+                o1.len() == o2.len()
+                    && o1.iter().all(|&(ref sk1, ref sv1)| {
+                        o2.iter().any(|&(ref sk2, ref sv2)| {
+                            sk1.item == sk2.item && sv1.item.unlocated_eq(&sv2.item)
+                        })
                     })
-                })
             }
             _ => false,
         }

@@ -37,7 +37,9 @@ macro_rules! __juniper_impl_trait {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_insert_generic {
-    (<DefaultScalarValue>) => {$crate::DefaultScalarValue};
+    (<DefaultScalarValue>) => {
+        $crate::DefaultScalarValue
+    };
     (
         <$generic:tt $(: $bound: tt)*>
     ) => {
@@ -49,7 +51,6 @@ macro_rules! __juniper_insert_generic {
         $scalar
     };
 }
-
 
 #[doc(hidden)]
 #[macro_export]
@@ -559,7 +560,6 @@ macro_rules! __juniper_parse_field_list {
     }
 
 }
-
 
 #[doc(hidden)]
 #[macro_export]

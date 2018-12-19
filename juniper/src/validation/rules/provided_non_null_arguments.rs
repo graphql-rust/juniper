@@ -24,13 +24,13 @@ where
         }) = ctx.parent_type().and_then(|t| t.field_by_name(field_name))
         {
             for meta_arg in meta_args {
-                if meta_arg.arg_type.is_non_null() && field
-                    .item
-                    .arguments
-                    .as_ref()
-                    .and_then(|args| {
-                        args.item.get(&meta_arg.name)
-                    }).is_none()
+                if meta_arg.arg_type.is_non_null()
+                    && field
+                        .item
+                        .arguments
+                        .as_ref()
+                        .and_then(|args| args.item.get(&meta_arg.name))
+                        .is_none()
                 {
                     ctx.report_error(
                         &field_error_message(
@@ -58,12 +58,13 @@ where
         }) = ctx.schema.directive_by_name(directive_name)
         {
             for meta_arg in meta_args {
-                if meta_arg.arg_type.is_non_null() && directive
-                    .item
-                    .arguments
-                    .as_ref()
-                    .and_then(|args| args.item.get(&meta_arg.name))
-                    .is_none()
+                if meta_arg.arg_type.is_non_null()
+                    && directive
+                        .item
+                        .arguments
+                        .as_ref()
+                        .and_then(|args| args.item.get(&meta_arg.name))
+                        .is_none()
                 {
                     ctx.report_error(
                         &directive_error_message(

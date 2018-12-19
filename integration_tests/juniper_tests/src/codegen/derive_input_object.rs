@@ -105,7 +105,8 @@ fn test_derived_input_object() {
 
     let input_no_defaults: InputValue = ::serde_json::from_value(json!({
         "regularField": "a",
-    })).unwrap();
+    }))
+    .unwrap();
 
     let output_no_defaults: Input = FromInputValue::from_input_value(&input_no_defaults).unwrap();
     assert_eq!(
@@ -123,7 +124,8 @@ fn test_derived_input_object() {
         "regularField": "a",
         "haha": 55,
         "other": true,
-    })).unwrap();
+    }))
+    .unwrap();
 
     let output: Input = FromInputValue::from_input_value(&input).unwrap();
     assert_eq!(

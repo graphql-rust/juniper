@@ -1,7 +1,7 @@
 use executor::Variables;
 use schema::model::RootNode;
 use types::scalars::EmptyMutation;
-use value::{Value, Object, DefaultScalarValue};
+use value::{DefaultScalarValue, Object, Value};
 
 struct TestType;
 

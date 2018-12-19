@@ -189,10 +189,12 @@ fn test_derived_object() {
                         vec![
                             ("regularField", Value::scalar(true)),
                             ("renamedField", Value::scalar(22)),
-                        ].into_iter()
+                        ]
+                        .into_iter()
                         .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -252,13 +254,16 @@ fn test_derived_object_nested() {
                                 vec![
                                     ("regularField", Value::scalar(false)),
                                     ("renamedField", Value::scalar(333)),
-                                ].into_iter()
+                                ]
+                                .into_iter()
                                 .collect(),
                             ),
-                        )].into_iter()
+                        )]
+                        .into_iter()
                         .collect(),
                     ),
-                )].into_iter()
+                )]
+                .into_iter()
                 .collect()
             ),
             vec![]
@@ -297,15 +302,14 @@ fn check_descriptions(
             type_info.get_field_value("description"),
             Some(object_description)
         );
-        assert!(
-            values.contains(&Value::object(
-                vec![
-                    ("name", Value::scalar(field_name)),
-                    ("description", field_value.clone()),
-                ].into_iter()
-                .collect(),
-            ))
-        );
+        assert!(values.contains(&Value::object(
+            vec![
+                ("name", Value::scalar(field_name)),
+                ("description", field_value.clone()),
+            ]
+            .into_iter()
+            .collect(),
+        )));
     });
 }
 

@@ -201,7 +201,8 @@ where
                         let response = request.execute(&schema, &context);
                         Ok((serde_json::to_vec(&response)?, response.is_ok()))
                     })
-                }).and_then(|result| ::futures::future::done(Ok(build_response(result))))
+                })
+                .and_then(|result| ::futures::future::done(Ok(build_response(result))))
                 .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
             )
         };
@@ -234,7 +235,8 @@ where
                     let response = graphql_request.execute(&schema, &context);
                     Ok((serde_json::to_vec(&response)?, response.is_ok()))
                 })
-            }).and_then(|result| ::futures::future::done(Ok(build_response(result))))
+            })
+            .and_then(|result| ::futures::future::done(Ok(build_response(result))))
             .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
         )
     };
@@ -396,7 +398,8 @@ mod tests {
                      { "variables": null, "query": "{ hero(episode: NEW_HOPE) { name } }" },
                      { "variables": null, "query": "{ hero(episode: EMPIRE) { id name } }" }
                  ]"##,
-            ).reply(&filter);
+            )
+            .reply(&filter);
 
         assert_eq!(response.status(), http::StatusCode::OK);
         assert_eq!(

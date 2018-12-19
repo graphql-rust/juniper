@@ -302,7 +302,8 @@ impl<'a, S> SchemaType<'a, S> {
                         ..
                     }) => interface_names.iter().any(|iname| iname == name),
                     _ => false,
-                }).collect(),
+                })
+                .collect(),
             _ => panic!("Can't retrieve possible types from non-abstract meta type"),
         }
     }

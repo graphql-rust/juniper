@@ -11,7 +11,7 @@ impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -65,7 +65,7 @@ where
 {
     fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Box<T>>
     where
-        for<'b> &'b S: ScalarRefValue<'b>
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         match <T as FromInputValue<S>>::from_input_value(v) {
             Some(v) => Some(Box::new(v)),
@@ -88,7 +88,7 @@ impl<'a, S, T, CtxT> GraphQLType<S> for &'a T
 where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -149,7 +149,7 @@ impl<S, T> GraphQLType<S> for Arc<T>
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
