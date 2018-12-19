@@ -121,20 +121,6 @@ extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
 
-// This macro is used as abstraction to make custom derives work
-// in juniper itself and outside of juniper
-// This macro needs to be here because it is used a derive in value::scalar
-// The tests in macros are using a macro from the value module, and because
-// rust macros needs to be defined before they are used it would cause problems
-// to move this macro somewhere else.
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __juniper_use_everything {
-    () => {
-        pub use $crate::*;
-    };
-}
-
 #[macro_use]
 mod value;
 #[macro_use]

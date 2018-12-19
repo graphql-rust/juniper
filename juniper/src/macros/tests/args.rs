@@ -19,7 +19,7 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObjectInternal)]
 struct Point {
     x: i32,
 }

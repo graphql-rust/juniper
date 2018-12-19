@@ -10,7 +10,7 @@ use schema::model::RootNode;
 use types::scalars::EmptyMutation;
 use value::{ParseScalarResult, ParseScalarValue, Value};
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 #[graphql(name = "SampleEnum")]
 enum Sample {
     One,

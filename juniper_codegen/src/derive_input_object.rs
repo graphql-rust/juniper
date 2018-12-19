@@ -121,7 +121,13 @@ impl ObjFieldAttrs {
     }
 }
 
-pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
+pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
+    let juniper_path = if is_internal {
+        quote!(crate)
+    } else {
+        quote!(juniper)
+    };
+
     let fields = match ast.data {
         Data::Struct(ref data) => match data.fields {
             Fields::Named(ref named) => named.named.iter().collect::<Vec<_>>(),
@@ -222,7 +228,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
         let from_input_default = match default {
             Some(ref def) => {
                 quote!{
-                    Some(&&_juniper::InputValue::Null) | None if true => #def,
+                    Some(&&#juniper_path::InputValue::Null) | None if true => #def,
                 }
             }
             None => quote!{},
@@ -233,9 +239,9 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
                 // TODO: investigate the unwraps here, they seem dangerous!
                 match obj.get(#name) {
                     #from_input_default
-                    Some(ref v) => _juniper::FromInputValue::from_input_value(v).unwrap(),
+                    Some(ref v) => #juniper_path::FromInputValue::from_input_value(v).unwrap(),
                     None => {
-                        _juniper::FromInputValue::from_input_value(&_juniper::InputValue::null())
+                        #juniper_path::FromInputValue::from_input_value(&#juniper_path::InputValue::null())
                             .unwrap()
                     },
                 }
@@ -260,10 +266,10 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
             let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
             where_clause
                 .predicates
-                .push(parse_quote!(__S: _juniper::ScalarValue));
+                .push(parse_quote!(__S: #juniper_path::ScalarValue));
             where_clause
                 .predicates
-                .push(parse_quote!(for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>));
+                .push(parse_quote!(for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>));
         }
         Ident::new("__S", Span::call_site())
     };
@@ -271,7 +277,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let body = quote! {
-        impl#impl_generics _juniper::GraphQLType<#scalar> for #ident #ty_generics
+        impl#impl_generics #juniper_path::GraphQLType<#scalar> for #ident #ty_generics
         #where_clause
         {
             type Context = ();
@@ -283,8 +289,8 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
 
             fn meta<'r>(
                 _: &(),
-                registry: &mut _juniper::Registry<'r, #scalar>
-            ) -> _juniper::meta::MetaType<'r, #scalar>
+                registry: &mut #juniper_path::Registry<'r, #scalar>
+            ) -> #juniper_path::meta::MetaType<'r, #scalar>
                 where #scalar: 'r
             {
                 let fields = &[
@@ -296,12 +302,12 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl#impl_generics _juniper::FromInputValue<#scalar> for #ident #ty_generics
+        impl#impl_generics #juniper_path::FromInputValue<#scalar> for #ident #ty_generics
         #where_clause
         {
-            fn from_input_value(value: &_juniper::InputValue<#scalar>) -> Option<Self>
+            fn from_input_value(value: &#juniper_path::InputValue<#scalar>) -> Option<Self>
             where
-                for<'__b> &'__b #scalar: _juniper::ScalarRefValue<'__b>
+                for<'__b> &'__b #scalar: #juniper_path::ScalarRefValue<'__b>
             {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {
@@ -315,32 +321,16 @@ pub fn impl_input_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl#impl_generics _juniper::ToInputValue<#scalar> for #ident #ty_generics
+        impl#impl_generics #juniper_path::ToInputValue<#scalar> for #ident #ty_generics
         #where_clause
         {
-            fn to_input_value(&self) -> _juniper::InputValue<#scalar> {
-                _juniper::InputValue::object(vec![
+            fn to_input_value(&self) -> #juniper_path::InputValue<#scalar> {
+                #juniper_path::InputValue::object(vec![
                     #(#to_inputs)*
                 ].into_iter().collect())
             }
         }
     };
 
-    let dummy_const = Ident::new(
-        &format!("_IMPL_GRAPHQLINPUTOBJECT_FOR_{}", ident),
-        Span::call_site(),
-    );
-
-    let generated = quote! {
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-        #[doc(hidden)]
-        const #dummy_const : () = {
-            mod _juniper {
-                __juniper_use_everything!();
-            }
-            #body
-        };
-    };
-
-    generated
+   body
 }

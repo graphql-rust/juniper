@@ -1,7 +1,7 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{TokenStream};
 
 use syn;
-use syn::{Data, DeriveInput, Fields, Ident, Variant};
+use syn::{Data, DeriveInput, Fields, Variant};
 
 use util::*;
 
@@ -119,7 +119,13 @@ impl EnumVariantAttrs {
     }
 }
 
-pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
+pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
+    let juniper_path = if is_internal {
+        quote!(crate)
+    } else {
+        quote!(juniper)
+    };
+
     let variants = match ast.data {
         Data::Enum(ref enum_data) => enum_data.variants.iter().collect::<Vec<_>>(),
         _ => {
@@ -166,17 +172,17 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
         };
         let depr = match var_attrs.deprecation {
             Some(DeprecationAttr { reason: Some(s) }) => quote!{
-                _juniper::meta::DeprecationStatus::Deprecated(Some(#s.to_string()))
+                #juniper_path::meta::DeprecationStatus::Deprecated(Some(#s.to_string()))
             },
             Some(DeprecationAttr { reason: None }) => quote!{
-                _juniper::meta::DeprecationStatus::Deprecated(None)
+                #juniper_path::meta::DeprecationStatus::Deprecated(None)
             },
             None => quote!{
-                _juniper::meta::DeprecationStatus::Current
+                #juniper_path::meta::DeprecationStatus::Current
             },
         };
         values.extend(quote!{
-            _juniper::meta::EnumValue{
+            #juniper_path::meta::EnumValue{
                 name: #name.to_string(),
                 description: #descr,
                 deprecation_status: #depr,
@@ -185,7 +191,7 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
 
         // Build resolve match clause.
         resolves.extend(quote!{
-            &#ident::#var_ident => _juniper::Value::scalar(String::from(#name)),
+            &#ident::#var_ident => #juniper_path::Value::scalar(String::from(#name)),
         });
 
         // Build from_input clause.
@@ -196,14 +202,14 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
         // Build to_input clause.
         to_inputs.extend(quote!{
             &#ident::#var_ident =>
-                _juniper::InputValue::scalar(#name.to_string()),
+                #juniper_path::InputValue::scalar(#name.to_string()),
         });
     }
 
     let body = quote! {
-        impl<__S> _juniper::GraphQLType<__S> for #ident
-        where __S: _juniper::ScalarValue,
-            for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+        impl<__S> #juniper_path::GraphQLType<__S> for #ident
+        where __S: #juniper_path::ScalarValue,
+            for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
         {
             type Context = ();
             type TypeInfo = ();
@@ -212,8 +218,8 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
                 Some(#name)
             }
 
-            fn meta<'r>(_: &(), registry: &mut _juniper::Registry<'r, __S>)
-                        -> _juniper::meta::MetaType<'r, __S>
+            fn meta<'r>(_: &(), registry: &mut #juniper_path::Registry<'r, __S>)
+                        -> #juniper_path::meta::MetaType<'r, __S>
             where __S: 'r,
             {
                 let meta = registry.build_enum_type::<#ident>(&(), &[
@@ -226,18 +232,18 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             fn resolve(
                 &self,
                 _: &(),
-                _: Option<&[_juniper::Selection<__S>]>,
-                _: &_juniper::Executor<Self::Context, __S>
-            ) -> _juniper::Value<__S> {
+                _: Option<&[#juniper_path::Selection<__S>]>,
+                _: &#juniper_path::Executor<Self::Context, __S>
+            ) -> #juniper_path::Value<__S> {
                 match self {
                     #(#resolves)*
                 }
             }
         }
 
-        impl<__S: _juniper::ScalarValue> _juniper::FromInputValue<__S> for #ident {
-            fn from_input_value(v: &_juniper::InputValue<__S>) -> Option<#ident>
-                where for<'__b> &'__b __S: _juniper::ScalarRefValue<'__b>
+        impl<__S: #juniper_path::ScalarValue> #juniper_path::FromInputValue<__S> for #ident {
+            fn from_input_value(v: &#juniper_path::InputValue<__S>) -> Option<#ident>
+                where for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
             {
                 match v.as_enum_value().or_else(|| {
                     v.as_scalar_value::<String>().map(|s| s as &str)
@@ -248,30 +254,13 @@ pub fn impl_enum(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl<__S: _juniper::ScalarValue> _juniper::ToInputValue<__S> for #ident {
-            fn to_input_value(&self) -> _juniper::InputValue<__S> {
+        impl<__S: #juniper_path::ScalarValue> #juniper_path::ToInputValue<__S> for #ident {
+            fn to_input_value(&self) -> #juniper_path::InputValue<__S> {
                 match self {
                     #(#to_inputs)*
                 }
             }
         }
     };
-
-    let dummy_const = Ident::new(
-        &format!("_IMPL_GRAPHQLENUM_FOR_{}", ident),
-        Span::call_site(),
-    );
-
-    let generated = quote! {
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-        #[doc(hidden)]
-        const #dummy_const : () = {
-            mod _juniper {
-                __juniper_use_everything!();
-            }
-            #body
-        };
-    };
-
-    generated
+    body
 }

@@ -6,47 +6,47 @@ use value::{DefaultScalarValue, Object, Value};
 
 struct Root;
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObjectInternal)]
 struct DefaultName {
     field_one: String,
     field_two: String,
 }
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObjectInternal)]
 struct NoTrailingComma {
     field_one: String,
     field_two: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 struct Derive {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(name = "ANamedInputObject")]
 struct Named {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(description = "Description for the input object")]
 struct Description {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 pub struct Public {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(description = "Description for the input object")]
 pub struct PublicWithDescription {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(
     name = "APublicNamedInputObjectWithDescription",
     description = "Description for the input object",
@@ -55,13 +55,13 @@ pub struct NamedPublicWithDescription {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(name = "APublicNamedInputObject")]
 pub struct NamedPublic {
     field_one: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 struct FieldDescription {
     #[graphql(description = "The first field")]
     field_one: String,
@@ -69,7 +69,7 @@ struct FieldDescription {
     field_two: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 struct FieldWithDefaults {
     #[graphql(default = "123")]
     field_one: i32,

@@ -15,33 +15,33 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 enum DefaultName {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 #[graphql(name = "ANamedEnum")]
 enum Named {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 enum NoTrailingComma {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 #[graphql(description = "A description of the enum itself")]
 enum EnumDescription {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 enum EnumValueDescription {
     #[graphql(description = "The FOO value")]
     Foo,
@@ -49,7 +49,7 @@ enum EnumValueDescription {
     Bar,
 }
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 enum EnumDeprecation {
     #[graphql(deprecated = "Please don't use FOO any more")]
     Foo,

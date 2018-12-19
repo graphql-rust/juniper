@@ -251,7 +251,7 @@ where
 /// The default scalar value representation in juniper
 ///
 /// This types closely follows the graphql specification.
-#[derive(Debug, PartialEq, Clone, ScalarValue)]
+#[derive(Debug, PartialEq, Clone, GraphQLScalarValueInternal)]
 #[allow(missing_docs)]
 pub enum DefaultScalarValue {
     Int(i32),
