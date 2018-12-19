@@ -7,7 +7,7 @@ use validation::RuleError;
 use value::{DefaultScalarValue, Object, Value};
 use GraphQLError::ValidationError;
 
-#[derive(GraphQLEnum, Debug)]
+#[derive(GraphQLEnumInternal, Debug)]
 enum Color {
     Red,
     Green,

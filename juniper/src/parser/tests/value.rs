@@ -9,17 +9,17 @@ use schema::meta::{MetaType, ScalarMeta, EnumMeta, EnumValue, InputObjectMeta, A
 use schema::model::SchemaType;
 use types::scalars::EmptyMutation;
 
-#[derive(GraphQLEnum)]
+#[derive(GraphQLEnumInternal)]
 enum Enum {
     EnumValue
 }
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObjectInternal)]
 struct Bar {
     foo: String,
 }
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObjectInternal)]
 struct Foo {
     key: i32,
     other: Bar,

@@ -1,8 +1,8 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{TokenStream};
 
 use syn::{self, Data, Fields, Ident, Variant};
 
-pub fn impl_scalar_value(ast: &syn::DeriveInput) -> TokenStream {
+pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
     let ident = &ast.ident;
 
     let variants = match ast.data {
@@ -18,29 +18,15 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput) -> TokenStream {
         .collect::<Result<Vec<_>, String>>()
         .unwrap_or_else(|s| panic!("{}", s));
 
-    let serialize = derive_serialize(variants.iter(), ident);
+    let serialize = derive_serialize(variants.iter(), ident, is_internal);
 
     let display = derive_display(variants.iter(), ident);
-    let dummy_const = Ident::new(
-        format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str(),
-        Span::call_site(),
-    );
 
     quote!{
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-        #[doc(hidden)]
-        const #dummy_const: () = {
-            mod juniper {
-                __juniper_use_everything!();
-            }
+        #(#froms)*
 
-            extern crate std;
-
-            #(#froms)*
-
-            #serialize
-            #display
-        };
+        #serialize
+        #display
     }
 }
 
@@ -64,7 +50,7 @@ where
     }
 }
 
-fn derive_serialize<'a, I>(variants: I, ident: &Ident) -> TokenStream
+fn derive_serialize<'a, I>(variants: I, ident: &Ident, is_internal: bool) -> TokenStream
 where
     I: Iterator<Item = &'a Variant>,
 {
@@ -73,10 +59,16 @@ where
         quote!(#ident::#variant(ref v) => v.serialize(serializer),)
     });
 
+    let serde_path = if is_internal {
+        quote!(crate::serde)
+    } else {
+        quote!(juniper::serde)
+    };
+
     quote!{
-        impl juniper::serde::Serialize for #ident {
+        impl #serde_path::Serialize for #ident {
             fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where S: juniper::serde::Serializer
+            where S: #serde_path::Serializer
             {
                 match *self {
                     #(#arms)*

@@ -225,7 +225,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    let toks = quote! {
+    let body = quote! {
         impl#impl_generics juniper::GraphQLType<#scalar> for #ident #ty_generics
             #where_clause
         {
@@ -271,23 +271,5 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
     };
-
-    let dummy_const = Ident::new(
-        format!("_IMPL_JUNIPER_SCALAR_VALUE_FOR_{}", ident).as_str(),
-        Span::call_site(),
-    );
-
-    quote!{
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-        #[doc(hidden)]
-        const #dummy_const: () = {
-            mod juniper {
-                __juniper_use_everything!();
-            }
-
-            extern crate std;
-
-            #toks
-        };
-    }
+    body
 }

@@ -27,7 +27,7 @@ struct ComplicatedArgs;
 
 pub(crate) struct QueryRoot;
 
-#[derive(Debug, GraphQLInputObject)]
+#[derive(Debug, GraphQLInputObjectInternal)]
 struct TestInput {
     id: i32,
     name: String,

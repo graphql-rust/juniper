@@ -32,7 +32,7 @@ graphql_scalar!(TestComplexScalar {
     }
 });
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(scalar = "DefaultScalarValue")]
 struct TestInputObject {
     a: Option<String>,
@@ -41,20 +41,20 @@ struct TestInputObject {
     d: Option<TestComplexScalar>,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 #[graphql(scalar = "DefaultScalarValue")]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 struct ExampleInputObject {
     a: Option<String>,
     b: i32,
 }
 
-#[derive(GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObjectInternal, Debug)]
 struct InputWithDefaults {
     #[graphql(default = "123")]
     a: i32,

@@ -12,7 +12,7 @@ use schema::meta::{Argument, MetaType};
 ///
 /// The GraphQL specification defines a number of type kinds - the meta type
 /// of a type.
-#[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
+#[derive(Clone, Eq, PartialEq, Debug, GraphQLEnumInternal)]
 #[graphql(name = "__TypeKind")]
 pub enum TypeKind {
     /// ## Scalar types

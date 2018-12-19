@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-#[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(GraphQLEnumInternal, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Episode {
     #[graphql(name = "NEW_HOPE")]
     NewHope,
