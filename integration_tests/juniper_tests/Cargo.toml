@@ -4,7 +4,7 @@ version = "0.1.0"
 publish = false
 
 [dependencies]
-juniper = { version = "0.11.0", path = "../juniper" }
+juniper = { version = "0.11.0", path = "../../juniper" }
 serde_json = { version = "1" }
 
 [dev-dependencies]
