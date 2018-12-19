@@ -1,6 +1,7 @@
 # master
 
 - The minimum required Rust version is now `1.30.0`.
+- The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
 
 # [0.11.1] 2018-12-19
 

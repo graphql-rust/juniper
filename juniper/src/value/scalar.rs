@@ -18,7 +18,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits thei
 /// needs.
-/// There is a custom derive (`#[derive(ScalarValue)]`) available that implements
+/// There is a custom derive (`#[derive(GraphQLScalarValue)]`) available that implements
 /// most of the required traits automatically for a enum representing a scalar value.
 /// This derives needs a additional annotation of the form
 /// `#[juniper(visitor = "VisitorType")]` to specify a type that implements
@@ -38,7 +38,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use juniper::ScalarValue;
 /// # use std::fmt;
 /// #
-/// #[derive(Debug, Clone, PartialEq, ScalarValue)]
+/// #[derive(Debug, Clone, PartialEq, GraphQLScalarValue)]
 /// enum MyScalarValue {
 ///     Int(i32),
 ///     Long(i64),
