@@ -1,15 +1,15 @@
 
 [tasks.build-verbose]
-condition = { rust_version = { min = "1.32.0" } }
+condition = { rust_version = { min = "1.31.0" } }
 
 [tasks.build-verbose.windows]
-condition = { rust_version = { min = "1.32.0" } }
+condition = { rust_version = { min = "1.31.0" } }
 
 [tasks.test-verbose]
-condition = { rust_version = { min = "1.32.0" } }
+condition = { rust_version = { min = "1.31.0" } }
 
 [tasks.test-verbose.windows]
-condition = { rust_version = { min = "1.32.0" } }
+condition = { rust_version = { min = "1.31.0" } }
 
 [tasks.ci-coverage-flow]
 disabled = true
