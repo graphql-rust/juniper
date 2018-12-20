@@ -67,7 +67,7 @@ pub enum DirectiveLocation {
     FragmentDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
     FragmentSpread,
-    #[graphql(name = "INLINE_SPREAD")]
+    #[graphql(name = "INLINE_FRAGMENT")]
     InlineFragment,
 }
 
