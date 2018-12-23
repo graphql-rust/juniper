@@ -7,7 +7,7 @@ use types::scalars::EmptyMutation;
 use value::Value;
 
 #[test]
-fn test_query_type_name() {
+fn test_introspection_query_type_name() {
     let doc = r#"
         query IntrospectionQueryTypeQuery {
           __schema {
@@ -22,30 +22,21 @@ fn test_query_type_name() {
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
-            Value::object(
-                vec![(
-                    "__schema",
-                    Value::object(
-                        vec![(
-                            "queryType",
-                            Value::object(
-                                vec![("name", Value::scalar("Query"))].into_iter().collect(),
-                            ),
-                        )]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
+            graphql_value!({
+                "__schema": {
+                    "queryType": {
+                        "name": "Query"
+                    }
+                }
+
+            }),
             vec![]
         ))
     );
 }
 
 #[test]
-fn test_specific_type_name() {
+fn test_introspection_type_name() {
     let doc = r#"
         query IntrospectionQueryTypeQuery {
           __type(name: "Droid") {
@@ -58,21 +49,18 @@ fn test_specific_type_name() {
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
-            Value::object(
-                vec![(
-                    "__type",
-                    Value::object(vec![("name", Value::scalar("Droid"))].into_iter().collect()),
-                )]
-                .into_iter()
-                .collect()
-            ),
+            graphql_value!({
+                "__type": {
+                    "name": "Droid",
+                },
+            }),
             vec![]
         ))
     );
 }
 
 #[test]
-fn test_specific_object_type_name_and_kind() {
+fn test_introspection_specific_object_type_name_and_kind() {
     let doc = r#"
         query IntrospectionDroidKindQuery {
           __type(name: "Droid") {
@@ -87,28 +75,19 @@ fn test_specific_object_type_name_and_kind() {
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
-            Value::object(
-                vec![(
-                    "__type",
-                    Value::object(
-                        vec![
-                            ("name", Value::scalar("Droid")),
-                            ("kind", Value::scalar("OBJECT")),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
-            vec![]
+            graphql_value!({
+                "__type": {
+                    "name": "Droid",
+                    "kind": "OBJECT",
+                }
+            }),
+            vec![],
         ))
     );
 }
 
 #[test]
-fn test_specific_interface_type_name_and_kind() {
+fn test_introspection_specific_interface_type_name_and_kind() {
     let doc = r#"
         query IntrospectionDroidKindQuery {
           __type(name: "Character") {
@@ -123,28 +102,19 @@ fn test_specific_interface_type_name_and_kind() {
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
-            Value::object(
-                vec![(
-                    "__type",
-                    Value::object(
-                        vec![
-                            ("name", Value::scalar("Character")),
-                            ("kind", Value::scalar("INTERFACE")),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
+            graphql_value!({
+                "__type": {
+                    "name": "Character",
+                    "kind": "INTERFACE",
+                }
+            }),
             vec![]
         ))
     );
 }
 
 #[test]
-fn test_documentation() {
+fn test_introspection_documentation() {
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
           __type(name: "Droid") {
@@ -159,31 +129,19 @@ fn test_documentation() {
     assert_eq!(
         ::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
-            Value::object(
-                vec![(
-                    "__type",
-                    Value::object(
-                        vec![
-                            ("name", Value::scalar("Droid")),
-                            (
-                                "description",
-                                Value::scalar("A mechanical creature in the Star Wars universe."),
-                            ),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                )]
-                .into_iter()
-                .collect()
-            ),
+            graphql_value!({
+                "__type": {
+                    "name": "Droid",
+                    "description": "A mechanical creature in the Star Wars universe.",
+                },
+            }),
             vec![]
         ))
     );
 }
 
 #[test]
-fn test_possible_types() {
+fn test_introspection_possible_types() {
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
           __type(name: "Character") {
