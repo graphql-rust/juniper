@@ -2,6 +2,9 @@
 
 - The minimum required Rust version is now `1.30.0`.
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
+- Fix introspection query validity
+    The DirectiveLocation::InlineFragment had an invalid literal value,
+    which broke third party tools like apollo cli.
 
 # [0.11.1] 2018-12-19
 

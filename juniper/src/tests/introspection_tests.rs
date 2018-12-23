@@ -141,6 +141,50 @@ fn test_introspection_documentation() {
 }
 
 #[test]
+fn test_introspection_directives() {
+    let q = r#"
+        query IntrospectionQuery {
+          __schema {
+            directives {
+              name
+              locations
+            }
+          }
+        }
+    "#;
+
+    let database = Database::new();
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+
+    let result = ::execute(q, None, &schema, &Variables::new(), &database).unwrap();
+
+    let expected = graphql_value!({
+        "__schema": {
+            "directives": [
+                {
+                    "name": "skip",
+                    "locations": [
+                        "FIELD",
+                        "FRAGMENT_SPREAD",
+                        "INLINE_FRAGMENT",
+                    ],
+                },
+                {
+                    "name": "include",
+                    "locations": [
+                        "FIELD",
+                        "FRAGMENT_SPREAD",
+                        "INLINE_FRAGMENT",
+                    ],
+                },
+            ],
+        },
+    });
+
+    assert_eq!(result, (expected, vec![]));
+}
+
+#[test]
 fn test_introspection_possible_types() {
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
