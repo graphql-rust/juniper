@@ -4,7 +4,6 @@ use executor::Variables;
 use schema::model::RootNode;
 use tests::model::Database;
 use types::scalars::EmptyMutation;
-use value::Value;
 
 #[test]
 fn test_introspection_query_type_name() {
