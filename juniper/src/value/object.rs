@@ -49,22 +49,14 @@ impl<S> Object<S> {
     }
 
     /// Get a iterator over all field value pairs
-    ///
-    /// This method returns a iterator over `&'a (String, Value)`
-    // TODO: change this to `-> impl Iterator<Item = &(String, Value)>`
-    // as soon as juniper bumps the minimal supported rust verion to 1.26
-    pub fn iter(&self) -> FieldIter<S> {
+    pub fn iter(&self) -> impl Iterator<Item = &(String, Value<S>)> {
         FieldIter {
             inner: self.key_value_list.iter(),
         }
     }
 
     /// Get a iterator over all mutable field value pairs
-    ///
-    /// This method returns a iterator over `&mut 'a (String, Value)`
-    // TODO: change this to `-> impl Iterator<Item = &mut (String, Value)>`
-    // as soon as juniper bumps the minimal supported rust verion to 1.26
-    pub fn iter_mut(&mut self) -> FieldIterMut<S> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, Value<S>)> {
         FieldIterMut {
             inner: self.key_value_list.iter_mut(),
         }
