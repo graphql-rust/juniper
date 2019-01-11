@@ -12,7 +12,7 @@ for more detailed information.
 
 ```toml
 [dependencies]
-juniper = "0.10"
+juniper = "0.11"
 ```
 
 ## Schema example
@@ -27,11 +27,7 @@ types to a GraphQL schema. The most important one is the
 [graphql_object!][jp_obj_macro] macro that is used for declaring an object with
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
-!FILENAME main.rs
-
 ```rust
-#[macro_use] extern crate juniper;
-
 use juniper::{FieldResult};
 
 # struct DatabasePool;
@@ -41,14 +37,14 @@ use juniper::{FieldResult};
 #     fn insert_human(&self, human: &NewHuman) -> FieldResult<Human> { Err("")? }
 # }
 
-#[derive(GraphQLEnum)]
+#[derive(juniper::GraphQLEnum)]
 enum Episode {
     NewHope,
     Empire,
     Jedi,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 #[graphql(description="A humanoid creature in the Star Wars universe")]
 struct Human {
     id: String,
@@ -59,7 +55,7 @@ struct Human {
 
 // There is also a custom derive for mapping GraphQL input objects.
 
-#[derive(GraphQLInputObject)]
+#[derive(juniper::GraphQLInputObject)]
 #[graphql(description="A humanoid creature in the Star Wars universe")]
 struct NewHuman {
     name: String,
@@ -82,7 +78,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-graphql_object!(Query: Context |&self| {
+juniper::graphql_object!(Query: Context |&self| {
 
     field apiVersion() -> &str {
         "1.0"
@@ -105,7 +101,7 @@ graphql_object!(Query: Context |&self| {
 
 struct Mutation;
 
-graphql_object!(Mutation: Context |&self| {
+juniper::graphql_object!(Mutation: Context |&self| {
 
     field createHuman(&executor, new_human: NewHuman) -> FieldResult<Human> {
         let db = executor.context().pool.get_connection()?;
@@ -118,28 +114,25 @@ graphql_object!(Mutation: Context |&self| {
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode<'static, Query, Mutation>;
 
-fn main() {
-    println!("Hello, world!");
-}
+# fn main() { }
 ```
 
 We now have a very simple but functional schema for a GraphQL server!
 
-To actually serve the schema, see the guides for our [Hyper], [Rocket],
-[Warp], and [Iron] server integrations. Or you can invoke the executor directly:
+To actually serve the schema, see the guides for our various [server integrations](./servers/index.md). 
+
+You can also invoke the executor directly to get a result for a query:
 
 ## Executor
 
 You can invoke `juniper::execute` directly to run a GraphQL query:
 
-!FILENAME main.rs
-
 ```rust
-#[macro_use] extern crate juniper;
-
+# // Only needed due to 2018 edition because the macro is not accessible.
+# extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
-#[derive(GraphQLEnum, Clone, Copy)]
+#[derive(juniper::GraphQLEnum, Clone, Copy)]
 enum Episode {
     NewHope,
     Empire,
@@ -148,7 +141,7 @@ enum Episode {
 
 struct Query;
 
-graphql_object!(Query: Ctx |&self| {
+juniper::graphql_object!(Query: Ctx |&self| {
     field favoriteEpisode(&executor) -> FieldResult<Episode> {
         // Use the special &executor argument to fetch our fav episode.
         Ok(executor.context().0)
@@ -177,8 +170,10 @@ fn main() {
 
     // Ensure the value matches.
     assert_eq!(
-        res.as_object_value().unwrap().get_field_value("favoriteEpisode").unwrap().as_string_value().unwrap(),
-        "NEW_HOPE",
+        res,
+        graphql_value!({
+            "favoriteEpisode": "NEW_HONE",
+        })
     );
 }
 ```

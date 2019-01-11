@@ -1,0 +1,11 @@
+[book]
+title = "Juniper - GraphQL Server for Rust"
+description = "Documentation for juniper, a GraphQL server library for Rust."
+src = "content"
+
+[build]
+build-dir = "_rendered"
+create-missing = false
+
+[output.html]
+git_repository_url = "https://github.com/graphql-rs/juniper"

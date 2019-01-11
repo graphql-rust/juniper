@@ -9,11 +9,9 @@ Using `Result`-like enums can be a useful way of reporting e.g. validation
 errors from a mutation:
 
 ```rust
-#[macro_use] extern crate juniper;
-# #[macro_use] extern crate juniper_codegen;
-# #[derive(GraphQLObject)] struct User { name: String }
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct ValidationError {
     field: String,
     message: String,
@@ -25,7 +23,7 @@ enum SignUpResult {
     Error(Vec<ValidationError>),
 }
 
-graphql_object!(SignUpResult: () |&self| {
+juniper::graphql_object!(SignUpResult: () |&self| {
     field user() -> Option<&User> {
         match *self {
             SignUpResult::Ok(ref user) => Some(user),

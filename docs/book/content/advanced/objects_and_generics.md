@@ -13,11 +13,10 @@ Let's make a slightly more compact but generic implementation of [the last
 chapter](non_struct_objects.md):
 
 ```rust
-#[macro_use] extern crate juniper;
-# #[derive(GraphQLObject)] struct User { name: String }
-# #[derive(GraphQLObject)] struct ForumPost { title: String }
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
+# #[derive(juniper::GraphQLObject)] struct ForumPost { title: String }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct ValidationError {
     field: String,
     message: String,
@@ -26,7 +25,7 @@ struct ValidationError {
 # #[allow(dead_code)]
 struct MutationResult<T>(Result<T, Vec<ValidationError>>);
 
-graphql_object!(MutationResult<User>: () as "UserResult" |&self| {
+juniper::graphql_object!(MutationResult<User>: () as "UserResult" |&self| {
     field user() -> Option<&User> {
         self.0.as_ref().ok()
     }
@@ -36,7 +35,7 @@ graphql_object!(MutationResult<User>: () as "UserResult" |&self| {
     }
 });
 
-graphql_object!(MutationResult<ForumPost>: () as "ForumPostResult" |&self| {
+juniper::graphql_object!(MutationResult<ForumPost>: () as "ForumPostResult" |&self| {
     field forum_post() -> Option<&ForumPost> {
         self.0.as_ref().ok()
     }

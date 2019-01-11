@@ -31,7 +31,7 @@ set up other global data that the schema might require.
 In this example, we won't use any global data so we just return an empty value.
 
 ```rust,ignore
-#[macro_use] extern crate juniper;
+extern crate juniper;
 extern crate juniper_iron;
 extern crate iron;
 extern crate mount;
@@ -79,7 +79,7 @@ resolver, you need to pass this data using Juniper's [context
 feature](context.md).
 
 ```rust,ignore
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 # extern crate juniper_iron;
 # extern crate iron;
 # use iron::prelude::*;

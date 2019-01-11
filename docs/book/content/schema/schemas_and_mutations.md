@@ -23,13 +23,11 @@ The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the `graphql_object!` macro:
 
 ```rust
-# #[macro_use] extern crate juniper;
-# #[macro_use] extern crate juniper_codegen;
 # use juniper::FieldResult;
-# #[derive(GraphQLObject)] struct User { name: String }
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
 
-graphql_object!(Root: () |&self| {
+juniper::graphql_object!(Root: () |&self| {
     field userWithUsername(username: String) -> FieldResult<Option<User>> {
         // Look up user in database...
 # unimplemented!()
@@ -45,13 +43,11 @@ Mutations are _also_ just GraphQL objects. Each mutation is a single field that
 usually performs some mutating side-effect, such as updating a database.
 
 ```rust
-# #[macro_use] extern crate juniper;
-# #[macro_use] extern crate juniper_codegen;
 # use juniper::FieldResult;
-# #[derive(GraphQLObject)] struct User { name: String }
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-graphql_object!(Mutations: () |&self| {
+juniper::graphql_object!(Mutations: () |&self| {
     field signUpUser(name: String, email: String) -> FieldResult<User> {
         // Validate inputs and save user in database...
 # unimplemented!()

@@ -8,14 +8,13 @@ example from the last chapter, this is how you would define `Person` using the
 macro:
 
 ```rust
-#[macro_use] extern crate juniper;
 
 struct Person {
     name: String,
     age: i32,
 }
 
-graphql_object!(Person: () |&self| {
+juniper::graphql_object!(Person: () |&self| {
     field name() -> &str {
         self.name.as_str()
     }
@@ -33,9 +32,7 @@ field resolver. With this syntax, fields can also take arguments:
 
 
 ```rust
-# #[macro_use] extern crate juniper;
-# #[macro_use] extern crate juniper_codegen;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
     age: i32,
@@ -45,7 +42,7 @@ struct House {
     inhabitants: Vec<Person>,
 }
 
-graphql_object!(House: () |&self| {
+juniper::graphql_object!(House: () |&self| {
     // Creates the field inhabitantWithName(name), returning a nullable person
     field inhabitant_with_name(name: String) -> Option<&Person> {
         self.inhabitants.iter().find(|p| p.name == name)
@@ -66,14 +63,12 @@ to `camelCase`. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:
 
 ```rust
-#[macro_use] extern crate juniper;
-
 struct Person {
     name: String,
     website_url: String,
 }
 
-graphql_object!(Person: () as "PersonObject" |&self| {
+juniper::graphql_object!(Person: () as "PersonObject" |&self| {
     field name() -> &str {
         self.name.as_str()
     }

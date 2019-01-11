@@ -13,23 +13,25 @@ In Juniper, you use the `graphql_scalar!` macro to create a custom scalar. In
 this example, we're representing a user ID as a string wrapped in a custom type:
 
 ```rust
-#[macro_use] extern crate juniper;
-
 use juniper::Value;
 
 struct UserID(String);
 
-graphql_scalar!(UserID {
+juniper::graphql_scalar!(UserID {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {
-        Value::string(&self.0)
+        Value::scalar(self.0.clone())
     }
 
     from_input_value(v: &InputValue) -> Option<UserID> {
         // If there's a parse error here, simply return None. Juniper will
         // present an error to the client.
-        v.as_string_value().map(|s| UserID(s.to_owned()))
+        v.as_scalar_value::<String>().map(|s| UserID(s.to_owned()))
+    }
+
+    from_str<'a>(value: ScalarToken<'a>) -> juniper::ParseScalarResult<'a, juniper::DefaultScalarValue> {
+        <String as juniper::ParseScalarValue>::from_str(value)
     }
 });
 

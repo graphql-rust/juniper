@@ -36,7 +36,7 @@ current context object:
 
 ```rust
 # use std::collections::HashMap;
-#[macro_use] extern crate juniper;
+extern crate juniper;
 
 struct Database {
     users: HashMap<i32, User>,
@@ -52,7 +52,7 @@ struct User {
 impl juniper::Context for Database {}
 
 // 2. Assign Database as the context type for User
-graphql_object!(User: Database |&self| {
+juniper::graphql_object!(User: Database |&self| {
     // 3. Use the special executor argument
     field friends(&executor) -> Vec<&User> {
         // 4. Use the executor to access the context object

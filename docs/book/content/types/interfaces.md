@@ -19,15 +19,13 @@ be done in a couple of different ways:
 ### Downcasting via accessor methods
 
 ```rust
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -51,7 +49,7 @@ impl Character for Droid {
     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
 }
 
-graphql_interface!(<'a> &'a Character: () as "Character" |&self| {
+juniper::graphql_interface!(<'a> &'a Character: () as "Character" where Scalar = <S>|&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |_| {
@@ -78,19 +76,17 @@ If you can afford an extra database lookup when the concrete class is requested,
 you can do away with the downcast methods and use the context instead. Here,
 we'll use two hashmaps, but this could be two tables and some SQL calls instead:
 
-FIXME: This example does not compile at the moment
-
-```rust,ignore
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
+```rust
 # use std::collections::HashMap;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Droid {
     id: String,
     primary_function: String,
@@ -115,7 +111,7 @@ impl Character for Droid {
     fn id(&self) -> &str { self.id.as_str() }
 }
 
-graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
+juniper::graphql_interface!(<'a> &'a Character: Database as "Character" where Scalar = <S> |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |&context| {
@@ -134,19 +130,17 @@ This removes the need of downcast methods, but still requires some repetition.
 Continuing on from the last example, the trait itself seems a bit unneccesary.
 Maybe it can just be a struct containing the ID?
 
-FIXME: This example does not compile at the moment
-
-```rust,ignore
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
+```rust
 # use std::collections::HashMap;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Droid {
     id: String,
     primary_function: String,
@@ -163,7 +157,7 @@ struct Character {
     id: String,
 }
 
-graphql_interface!(Character: Database |&self| {
+juniper::graphql_interface!(Character: Database where Scalar = <S> |&self| {
     field id() -> &str { self.id.as_str() }
 
     instance_resolvers: |&context| {
@@ -185,15 +179,13 @@ placeholder objects. We don't need the extra database call in this case, so
 we'll remove it.
 
 ```rust
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -205,7 +197,7 @@ enum Character {
     Droid(Droid),
 }
 
-graphql_interface!(Character: () |&self| {
+juniper::graphql_interface!(Character: () where Scalar = <S> |&self| {
     field id() -> &str {
         match *self {
             Character::Human(Human { ref id, .. }) |

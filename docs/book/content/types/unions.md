@@ -16,15 +16,13 @@ similarities and the tradeoffs:
 ### Downcasting via accessor methods
 
 ```rust
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -44,7 +42,7 @@ impl Character for Droid {
     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
 }
 
-graphql_union!(<'a> &'a Character: () as "Character" |&self| {
+juniper::graphql_union!(<'a> &'a Character: () as "Character" where Scalar = <S>   |&self| { 
     instance_resolvers: |_| {
         // The left hand side indicates the concrete type T, the right hand
         // side should be an expression returning Option<T>
@@ -60,17 +58,17 @@ graphql_union!(<'a> &'a Character: () as "Character" |&self| {
 
 FIXME: This example does not compile at the moment
 
-```rust,ignore
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
+```rust
 # use std::collections::HashMap;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Droid {
     id: String,
     primary_function: String,
@@ -95,7 +93,7 @@ impl Character for Droid {
     fn id(&self) -> &str { self.id.as_str() }
 }
 
-graphql_union!(<'a> &'a Character: Database as "Character" |&self| {
+juniper::graphql_union!(<'a> &'a Character: Database as "Character" where Scalar = <S> |&self| {
     instance_resolvers: |&context| {
         &Human => context.humans.get(self.id()),
         &Droid => context.droids.get(self.id()),
@@ -107,19 +105,17 @@ graphql_union!(<'a> &'a Character: Database as "Character" |&self| {
 
 ## Placeholder objects
 
-FIXME: This example does not compile at the moment
-
-```rust,ignore
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
+```rust
 # use std::collections::HashMap;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = "Database")]
 struct Droid {
     id: String,
     primary_function: String,
@@ -136,7 +132,7 @@ struct Character {
     id: String,
 }
 
-graphql_union!(Character: Database |&self| {
+juniper::graphql_union!(Character: Database where Scalar = <S> |&self| {
     instance_resolvers: |&context| {
         &Human => context.humans.get(&self.id),
         &Droid => context.droids.get(&self.id),
@@ -149,15 +145,13 @@ graphql_union!(Character: Database |&self| {
 ## Enums
 
 ```rust
-# #[macro_use] extern crate juniper_codegen;
-# #[macro_use] extern crate juniper;
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(GraphQLObject)]
+#[derive(juniper::GraphQLObject)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -169,7 +163,7 @@ enum Character {
     Droid(Droid),
 }
 
-graphql_union!(Character: () |&self| {
+juniper::graphql_union!(Character: () where Scalar = <S> |&self| {
     instance_resolvers: |_| {
         &Human => match *self { Character::Human(ref h) => Some(h), _ => None },
         &Droid => match *self { Character::Droid(ref d) => Some(d), _ => None },

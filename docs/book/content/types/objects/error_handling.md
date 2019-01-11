@@ -12,18 +12,20 @@ can use the `?` operator or the `try!` macro and things will generally just work
 as you expect them to:
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
+use std::{
+    str,
+    path::PathBuf,
+    fs::{File},
+    io::{Read},
+};
 use juniper::FieldResult;
-use std::path::PathBuf;
-use std::fs::File;
-use std::io::Read;
-use std::str;
 
 struct Example {
     filename: PathBuf,
 }
 
-graphql_object!(Example: () |&self| {
+juniper::graphql_object!(Example: () |&self| {
     field contents() -> FieldResult<String> {
         let mut file = File::open(&self.filename)?;
         let mut contents = String::new();
@@ -118,18 +120,16 @@ to clients. This can be accomplished by implementing [`IntoFieldError`](https://
 
 ```rust
 # #[macro_use] extern crate juniper;
-use juniper::{FieldError, IntoFieldError};
-
 enum CustomError {
     WhateverNotSet,
 }
 
-impl IntoFieldError for CustomError {
-    fn into_field_error(self) -> FieldError {
+impl juniper::IntoFieldError for CustomError {
+    fn into_field_error(self) -> juniper::FieldError {
         match self {
-            CustomError::WhateverNotSet => FieldError::new(
+            CustomError::WhateverNotSet => juniper::FieldError::new(
                 "Whatever does not exist",
-                graphql_value!({
+                juniper::graphql_value!({
                     "type": "NO_WHATEVER"
                 }),
             ),
@@ -141,7 +141,7 @@ struct Example {
     whatever: Option<bool>,
 }
 
-graphql_object!(Example: () |&self| {
+juniper::graphql_object!(Example: () |&self| {
     field whatever() -> Result<bool, CustomError> {
       if let Some(value) = self.whatever {
         return Ok(value);
