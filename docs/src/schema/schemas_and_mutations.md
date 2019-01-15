@@ -1,0 +1,62 @@
+# Schemas
+
+A schema consists of two types: a query object and a mutation object (Juniper
+does not support subscriptions yet). These two define the root query fields
+and mutations of the schema, respectively.
+
+Both query and mutation objects are regular GraphQL objects, defined like any
+other object in Juniper. The mutation object, however, is optional since schemas
+can be read-only.
+
+In Juniper, the `RootNode` type represents a schema. You usually don't have to
+create this object yourself: see the framework integrations for [Iron](iron.md)
+and [Rocket](rocket.md) how schemas are created together with the handlers
+themselves.
+
+When the schema is first created, Juniper will traverse the entire object graph
+and register all types it can find. This means that if you define a GraphQL
+object somewhere but never references it, it will not be exposed in a schema.
+
+## The query root
+
+The query root is just a GraphQL object. You define it like any other GraphQL
+object in Juniper, most commonly using the `graphql_object!` macro:
+
+```rust
+# #[macro_use] extern crate juniper;
+# #[macro_use] extern crate juniper_codegen;
+# use juniper::FieldResult;
+# #[derive(GraphQLObject)] struct User { name: String }
+struct Root;
+
+graphql_object!(Root: () |&self| {
+    field userWithUsername(username: String) -> FieldResult<Option<User>> {
+        // Look up user in database...
+# unimplemented!()
+    }
+});
+
+# fn main() { }
+```
+
+## Mutations
+
+Mutations are _also_ just GraphQL objects. Each mutation is a single field that
+usually performs some mutating side-effect, such as updating a database.
+
+```rust
+# #[macro_use] extern crate juniper;
+# #[macro_use] extern crate juniper_codegen;
+# use juniper::FieldResult;
+# #[derive(GraphQLObject)] struct User { name: String }
+struct Mutations;
+
+graphql_object!(Mutations: () |&self| {
+    field signUpUser(name: String, email: String) -> FieldResult<User> {
+        // Validate inputs and save user in database...
+# unimplemented!()
+    }
+});
+
+# fn main() { }
+```

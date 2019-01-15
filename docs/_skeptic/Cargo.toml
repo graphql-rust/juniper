@@ -1,0 +1,20 @@
+[package]
+name = "_skeptic"
+version = "0.1.0"
+authors = ["Magnus Hallin <mhallin@fastmail.com>"]
+build = "build.rs"
+
+[dependencies]
+juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper_iron = { git = "https://github.com/graphql-rust/juniper" }
+
+iron = "^0.5.0"
+mount = "^0.3.0"
+
+skeptic = "0.13"
+
+[build-dependencies]
+skeptic = "0.13"
+
+[patch.crates-io]
+juniper_codegen = { git = "https://github.com/graphql-rust/juniper" }

@@ -1,0 +1,11 @@
+{
+    "plugins": [
+        "anchors",
+        "codeblock-omit",
+        "codeblock-rust",
+        "sane-sidebar",
+        "-sharing"
+    ],
+    "root": "./src"
+    
+}
