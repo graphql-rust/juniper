@@ -6,6 +6,6 @@
         "sane-sidebar",
         "-sharing"
     ],
-    "root": "./docs"
+    "root": "./src"
     
 }
