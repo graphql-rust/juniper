@@ -298,6 +298,22 @@ fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response
         .expect("response is valid")
 }
 
+/// Create a filter that replies with an HTML page containing GraphQL Playground. This does not handle routing, so you can mount it on any endpoint.
+pub fn playground_filter(
+    graphql_endpoint_url: &'static str,
+) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
+    warp::any()
+        .map(move || playground_response(graphql_endpoint_url))
+        .boxed()
+}
+
+fn playground_response(graphql_endpoint_url: &'static str) -> warp::http::Response<Vec<u8>> {
+    warp::http::Response::builder()
+        .header("content-type", "text/html;charset=utf-8")
+        .body(juniper::http::playground::playground_source(graphql_endpoint_url).into_bytes())
+        .expect("response is valid")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -343,6 +359,42 @@ mod tests {
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
         assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
+    }
+
+    #[test]
+    fn playground_endpoint_matches() {
+        let filter = warp::get2()
+            .and(warp::path("playground"))
+            .and(playground_filter("/graphql"));
+        let result = request()
+            .method("GET")
+            .path("/playground")
+            .header("accept", "text/html")
+            .filter(&filter);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn playground_endpoint_returns_playground_source() {
+        let filter = warp::get2()
+            .and(warp::path("dogs-api"))
+            .and(warp::path("graphiql"))
+            .and(playground_filter("/dogs-api/graphql"));
+        let response = request()
+            .method("GET")
+            .path("/dogs-api/playground")
+            .header("accept", "text/html")
+            .reply(&filter);
+
+        assert_eq!(response.status(), http::StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html;charset=utf-8"
+        );
+        let body = String::from_utf8(response.body().to_vec()).unwrap();
+
+        assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql' })"));
     }
 
     #[test]

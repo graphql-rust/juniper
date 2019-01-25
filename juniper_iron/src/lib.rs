@@ -221,6 +221,11 @@ pub struct GraphiQLHandler {
     graphql_url: String,
 }
 
+/// Handler that renders `GraphQL Playground` - a graphical query editor interface
+pub struct PlaygroundHandler {
+    graphql_url: String,
+}
+
 fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
     if values.len() == 1 {
         Ok(values.remove(0))
@@ -327,6 +332,18 @@ impl GraphiQLHandler {
     }
 }
 
+impl PlaygroundHandler {
+    /// Build a new GraphiQL handler targeting the specified URL.
+    ///
+    /// The provided URL should point to the URL of the attached `GraphQLHandler`. It can be
+    /// relative, so a common value could be `"/graphql"`.
+    pub fn new(graphql_url: &str) -> PlaygroundHandler {
+        PlaygroundHandler {
+            graphql_url: graphql_url.to_owned(),
+        }
+    }
+}
+
 impl<'a, CtxFactory, Query, Mutation, CtxT, S> Handler
     for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
 where
@@ -359,6 +376,18 @@ impl Handler for GraphiQLHandler {
             content_type,
             status::Ok,
             juniper::graphiql::graphiql_source(&self.graphql_url),
+        )))
+    }
+}
+
+impl Handler for PlaygroundHandler {
+    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        let content_type = "text/html; charset=utf-8".parse::<Mime>().unwrap();
+
+        Ok(Response::with((
+            content_type,
+            status::Ok,
+            juniper::http::playground::playground_source(&self.graphql_url),
         )))
     }
 }

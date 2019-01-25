@@ -147,6 +147,13 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
     content::Html(juniper::graphiql::graphiql_source(graphql_endpoint_url))
 }
 
+/// Generate an HTML page containing GraphQL Playground
+pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
+    content::Html(juniper::http::playground::playground_source(
+        graphql_endpoint_url,
+    ))
+}
+
 impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
