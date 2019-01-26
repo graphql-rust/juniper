@@ -1,6 +1,6 @@
 # master
 
-- Added GraphQL Playground integration
+- No changes yet
 
 # [0.3.0] 2018-12-17
 
