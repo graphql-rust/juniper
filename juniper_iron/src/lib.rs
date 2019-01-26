@@ -333,7 +333,7 @@ impl GraphiQLHandler {
 }
 
 impl PlaygroundHandler {
-    /// Build a new GraphiQL handler targeting the specified URL.
+    /// Build a new GraphQL Playground handler targeting the specified URL.
     ///
     /// The provided URL should point to the URL of the attached `GraphQLHandler`. It can be
     /// relative, so a common value could be `"/graphql"`.
