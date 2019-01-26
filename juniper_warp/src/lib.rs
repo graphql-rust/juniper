@@ -379,7 +379,7 @@ mod tests {
     fn playground_endpoint_returns_playground_source() {
         let filter = warp::get2()
             .and(warp::path("dogs-api"))
-            .and(warp::path("graphiql"))
+            .and(warp::path("playground"))
             .and(playground_filter("/dogs-api/graphql"));
         let response = request()
             .method("GET")
