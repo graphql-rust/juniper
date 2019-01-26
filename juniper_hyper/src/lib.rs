@@ -93,6 +93,16 @@ pub fn graphiql(
     future::ok(resp)
 }
 
+pub fn playground(
+    graphql_endpoint: &str,
+) -> impl Future<Item = Response<Body>, Error = hyper::Error> {
+    let mut resp = new_html_response(StatusCode::OK);
+    *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
+        graphql_endpoint,
+    ));
+    future::ok(resp)
+}
+
 fn render_error(err: GraphQLRequestError) -> Response<Body> {
     let message = format!("{}", err);
     let mut resp = new_response(StatusCode::BAD_REQUEST);

@@ -1,6 +1,7 @@
 //! Utilities for building HTTP endpoints in a library-agnostic manner
 
 pub mod graphiql;
+pub mod playground;
 
 use serde::de::Deserialize;
 use serde::ser::{self, Serialize, SerializeMap};
