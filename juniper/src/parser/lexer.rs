@@ -242,7 +242,7 @@ impl<'a> Lexer<'a> {
                     return Err(Spanning::zero_width(
                         &old_pos,
                         LexerError::UnknownEscapeSequence(format!("\\{}", c)),
-                    ))
+                    ));
                 }
                 '\\' => escaped = true,
                 '"' if !escaped => {

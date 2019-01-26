@@ -85,7 +85,7 @@ fn derive_from_variant(variant: &Variant, ident: &Ident) -> Result<TokenStream, 
         _ => {
             return Err(String::from(
                 "Only enums with exactly one unnamed field per variant are supported",
-            ))
+            ));
         }
     };
 
