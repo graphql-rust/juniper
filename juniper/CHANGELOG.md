@@ -2,13 +2,31 @@
 
 - The minimum required Rust version is now `1.30.0`.
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
-- Fix introspection query validity
-  The DirectiveLocation::InlineFragment had an invalid literal value,
+- Fix introspection query validity.
+  `DirectiveLocation::InlineFragment` had an invalid literal value,
   which broke third party tools like apollo cli.
 - Added GraphQL Playground integration
-    The DirectiveLocation::InlineFragment had an invalid literal value,
-    which broke third party tools like apollo cli.
 - The return type of `value::object::Object::iter/iter_mut` has changed to `impl Iter` [#312](https://github.com/graphql-rust/juniper/pull/312)
+- Added the `schema-language` feature (on by default). This feature enables converting
+  the schema to a `String` in the
+  [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
+  format (usually written to a file called `schema.graphql`).
+
+  Example:
+
+  ```rust
+    use juniper::{RootNode, EmptyMutation};
+
+    #[derive(GraphQLObject)]
+    struct Query{
+      foo: bool
+    };
+    let s = RootNode::new(Query, EmptyMutation::<()>::new());
+    println!("{}, s.as_schema_language());
+  ```
+
+  Note: The `schema-language` feature brings in more dependencies.
+  If you don't use the schema language you may want to turn the feature off.
 
 # [0.11.1] 2018-12-19
 

@@ -103,13 +103,16 @@ extern crate fnv;
 
 extern crate indexmap;
 
-#[cfg(any(test, feature = "chrono"))]
+#[cfg(feature = "graphql-parser-integration")]
+extern crate graphql_parser;
+
+#[cfg(feature = "chrono")]
 extern crate chrono;
 
-#[cfg(any(test, feature = "url"))]
+#[cfg(feature = "url")]
 extern crate url;
 
-#[cfg(any(test, feature = "uuid"))]
+#[cfg(feature = "uuid")]
 extern crate uuid;
 
 // Depend on juniper_codegen and re-export everything in it.

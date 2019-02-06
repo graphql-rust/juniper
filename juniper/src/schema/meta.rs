@@ -165,6 +165,14 @@ pub struct Field<'a, S> {
     pub deprecation_status: DeprecationStatus,
 }
 
+impl<'a, S> Field<'a, S> {
+    /// Returns true if the type is built-in to GraphQL.
+    pub fn is_builtin(&self) -> bool {
+        // "used exclusively by GraphQL’s introspection system"
+        self.name.starts_with("__")
+    }
+}
+
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
 pub struct Argument<'a, S> {
@@ -176,6 +184,14 @@ pub struct Argument<'a, S> {
     pub arg_type: Type<'a>,
     #[doc(hidden)]
     pub default_value: Option<InputValue<S>>,
+}
+
+impl<'a, S> Argument<'a, S> {
+    /// Returns true if the type is built-in to GraphQL.
+    pub fn is_builtin(&self) -> bool {
+        // "used exclusively by GraphQL’s introspection system"
+        self.name.starts_with("__")
+    }
 }
 
 /// Metadata for a single value in an enum
@@ -361,6 +377,22 @@ impl<'a, S> MetaType<'a, S> {
         match *self {
             MetaType::Scalar(_) | MetaType::Enum(_) | MetaType::InputObject(_) => true,
             _ => false,
+        }
+    }
+
+    /// Returns true if the type is built-in to GraphQL.
+    pub fn is_builtin(&self) -> bool {
+        if let Some(name) = self.name() {
+            // "used exclusively by GraphQL’s introspection system"
+            {
+                name.starts_with("__") ||
+            // <https://facebook.github.io/graphql/draft/#sec-Scalars>
+            name == "Boolean" || name == "String" || name == "Int" || name == "Float" || name == "ID" ||
+            // Our custom empty mutation marker
+            name == "_EmptyMutation"
+            }
+        } else {
+            false
         }
     }
 

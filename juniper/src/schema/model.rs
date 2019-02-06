@@ -4,7 +4,14 @@ use fnv::FnvHashMap;
 
 use ast::Type;
 use executor::{Context, Registry};
+#[cfg(feature = "graphql-parser-integration")]
+use graphql_parser::schema::Document;
 use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
+#[cfg(feature = "graphql-parser-integration")]
+use schema::translate::graphql_parser::GraphQLParserTranslator;
+#[cfg(feature = "graphql-parser-integration")]
+use schema::translate::SchemaTranslator;
+
 use types::base::GraphQLType;
 use types::name::Name;
 use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
@@ -35,8 +42,8 @@ where
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
-    query_type_name: String,
-    mutation_type_name: Option<String>,
+    pub(crate) query_type_name: String,
+    pub(crate) mutation_type_name: Option<String>,
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
@@ -87,6 +94,22 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         RootNode::new_with_info(query_obj, mutation_obj, (), ())
+    }
+
+    #[cfg(feature = "schema-language")]
+    /// The schema definition as a `String` in the
+    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
+    /// format.
+    pub fn as_schema_language(&self) -> String {
+        let doc = self.as_parser_document();
+        format!("{}", doc)
+    }
+
+    #[cfg(feature = "graphql-parser-integration")]
+    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
+    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
+    pub fn as_parser_document(&self) -> Document {
+        GraphQLParserTranslator::translate_schema(&self.schema)
     }
 }
 
@@ -463,6 +486,95 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
             TypeType::Concrete(t) => f.write_str(t.name().unwrap()),
             TypeType::List(ref i) => write!(f, "[{}]", i),
             TypeType::NonNull(ref i) => write!(f, "{}!", i),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    #[cfg(feature = "graphql-parser-integration")]
+    mod graphql_parser_integration {
+        use EmptyMutation;
+
+        #[test]
+        fn graphql_parser_doc() {
+            struct Query;
+            graphql_object!(Query: () |&self| {
+                field blah() -> bool {
+                    true
+                }
+            });
+            let schema = crate::RootNode::new(Query, EmptyMutation::<()>::new());
+            let ast = graphql_parser::parse_schema(
+                r#"
+                type Query {
+                  blah: Boolean!
+                }
+
+                schema {
+                  query: Query
+                }
+            "#,
+            )
+            .unwrap();
+            assert_eq!(
+                format!("{}", ast),
+                format!("{}", schema.as_parser_document()),
+            );
+        }
+    }
+
+    #[cfg(feature = "schema-language")]
+    mod schema_language {
+        use EmptyMutation;
+
+        #[test]
+        fn schema_language() {
+            struct Query;
+            graphql_object!(Query: () |&self| {
+                field blah() -> bool {
+                    true
+                }
+                /// This is whatever's description.
+                field whatever() -> String {
+                    "foo".to_string()
+                }
+                field fizz(buzz: String) -> Option<&str> {
+                    None
+                }
+                field arr(stuff: Vec<String>) -> Option<&str> {
+                    None
+                }
+                #[deprecated]
+                field old() -> i32 {
+                    42
+                }
+                #[deprecated(note="This field is deprecated, use another.")]
+                field really_old() -> f64 {
+                    42.0
+                }
+            });
+            let schema = crate::RootNode::new(Query, EmptyMutation::<()>::new());
+            let ast = graphql_parser::parse_schema(
+                r#"
+                type Query {
+                  blah: Boolean!
+                  "This is whatever's description."
+                  whatever: String!
+                  fizz(buzz: String!): String
+                  arr(stuff: [String!]!): String
+                  old: Int! @deprecated
+                  reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
+                }
+
+                schema {
+                  query: Query
+                }
+            "#,
+            )
+            .unwrap();
+            assert_eq!(format!("{}", ast), schema.as_schema_language());
         }
     }
 }
