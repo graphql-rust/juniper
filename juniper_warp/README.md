@@ -30,4 +30,4 @@ Check the LICENSE file for details.
 [Juniper]: https://github.com/graphql-rust/juniper
 [GraphQL]: http://graphql.org
 [documentation]: https://docs.rs/juniper_warp
-[example]: https://github.com/graphql-rust/juniper_warp/blob/master/examples/warp_server
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs
