@@ -24,8 +24,10 @@ path = "benches/bench.rs"
 [features]
 nightly = []
 expose-test-schema = []
+json = ["serde_json"]
 default = [
     "chrono",
+    "json",
     "url",
     "uuid",
 ]

@@ -96,7 +96,7 @@ pub extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-#[cfg(any(test, feature = "expose-test-schema"))]
+#[cfg(any(test, feature = "json", feature = "expose-test-schema"))]
 extern crate serde_json;
 
 extern crate fnv;
