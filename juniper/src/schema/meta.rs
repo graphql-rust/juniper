@@ -786,9 +786,9 @@ fn clean_docstring(multiline: &[&str]) -> Option<String> {
                     .map(|ch| ch.is_whitespace())
                     .unwrap_or(false)
                 {
-                    ln.trim_right() // skip trimming the first line
+                    ln.trim_end() // skip trimming the first line
                 } else if ln.len() >= trim_start {
-                    ln[trim_start..].trim_right()
+                    ln[trim_start..].trim_end()
                 } else {
                     ""
                 };
