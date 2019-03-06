@@ -13,6 +13,34 @@ jobs:
         $HOME/.cargo/bin/cargo fmt -- --check
       displayName: Run rustfmt
 
+- job: run_book_tests
+  displayName: Book code example tests
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - script: |
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
+        $HOME/.cargo/bin/rustup component add rustfmt
+      displayName: Install stable Rust
+    - script: |
+        cd docs/book/tests && $HOME/.cargo/bin/cargo test
+      displayName: Test book code examples via skeptic
+
+- job: build_book_master
+  displayName: Build rendered book on master branch and push to Github
+  dependsOn: run_book_tests
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  variables:
+  - group: github-keys
+  steps:
+    - task: InstallSSHKey@0
+      inputs:
+        hostName: $(secret.GHSshKnownHosts)
+        sshPublicKey: $(secret.GHSshPub)
+        sshKeySecureFile: $(secret.GHSshPriv)
+    - script: |
+        ./docs/book/build.sh master
+
 - template: _build/azure-pipelines-template.yml
   parameters:
     name: Linux
