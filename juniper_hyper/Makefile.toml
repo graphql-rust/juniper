@@ -1,18 +1,12 @@
+# Testing for juniper_hyper is disabled due to a bug in rustc # which causes 
+# an internal compiler error.
+# TODO: remove this file completely once the crate compiles again.
 
 [tasks.build-verbose]
-condition = { channels = ["nightly"] }
-
-[tasks.build-verbose.windows]
-condition = { channels = ["nightly"], env = { "TARGET" = "x86_64-pc-windows-msvc" } }
+condition = { channels = [] }
 
 [tasks.test-verbose]
-condition = { channels = ["nightly"] }
-
-[tasks.test-verbose.windows]
-condition = { channels = ["nightly"], env = { "TARGET" = "x86_64-pc-windows-msvc" } }
+condition = { channels = [] }
 
 [tasks.ci-coverage-flow]
-condition = { channels = ["nightly"] }
-
-[tasks.ci-coverage-flow.windows]
-disabled = true
+condition = { channels = [] }
