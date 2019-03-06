@@ -70,6 +70,15 @@ struct SkippedFieldObj {
     skipped: i32,
 }
 
+struct Context;
+impl juniper::Context for Context {}
+
+#[derive(GraphQLObject, Debug)]
+#[graphql(Context = "Context")]
+struct WithCustomContext {
+    a: bool,
+}
+
 graphql_object!(Query: () |&self| {
     field obj() -> Obj {
       Obj{
