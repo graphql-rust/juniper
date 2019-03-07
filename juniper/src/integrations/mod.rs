@@ -6,6 +6,10 @@ pub mod serde;
 /// GraphQL support for [chrono](https://github.com/chronotope/chrono) types.
 pub mod chrono;
 
+#[cfg(feature = "json")]
+/// GraphQL support for [serde_json::Value](https://docs.serde.rs/serde_json/value/enum.Value.html) types.
+pub mod json;
+
 #[cfg(feature = "url")]
 /// GraphQL support for [url](https://github.com/servo/rust-url) types.
 pub mod url;

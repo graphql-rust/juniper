@@ -6,6 +6,11 @@
   The DirectiveLocation::InlineFragment had an invalid literal value,
   which broke third party tools like apollo cli.
 - Added GraphQL Playground integration
+- Added built-in integration for [`serde_json::Value`](https://docs.serde.rs/serde_json/value).
+  `serde_json::Value` will serialize and deserialize as a
+  GraphQL scalar `String` named `JsonString`, as GraphQL [does not
+  support a Map type](https://github.com/facebook/graphql/issues/101).
+  The integration can be controlled via the `json` feature.
 
 # [0.11.1] 2018-12-19
 
