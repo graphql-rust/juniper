@@ -527,10 +527,16 @@ mod test {
 
     #[cfg(feature = "schema-language")]
     mod schema_language {
+        use crate as juniper;
         use EmptyMutation;
 
         #[test]
         fn schema_language() {
+            #[derive(GraphQLEnum)]
+            enum Fruit {
+                Apple,
+                Orange,
+            }
             struct Query;
             graphql_object!(Query: () |&self| {
                 field blah() -> bool {
@@ -546,6 +552,9 @@ mod test {
                 field arr(stuff: Vec<String>) -> Option<&str> {
                     None
                 }
+                field fruit() -> Fruit {
+                    Fruit::Apple
+                }
                 #[deprecated]
                 field old() -> i32 {
                     42
@@ -558,12 +567,18 @@ mod test {
             let schema = crate::RootNode::new(Query, EmptyMutation::<()>::new());
             let ast = graphql_parser::parse_schema(
                 r#"
+                enum Fruit {
+                    APPLE
+                    ORANGE
+                }
+
                 type Query {
                   blah: Boolean!
                   "This is whatever's description."
                   whatever: String!
                   fizz(buzz: String!): String
                   arr(stuff: [String!]!): String
+                  fruit: Fruit!
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
