@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["Method","The Request Method (VERB)"]]});

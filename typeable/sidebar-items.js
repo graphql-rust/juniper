@@ -1,1 +1,0 @@
-initSidebarItems({"trait":[["Typeable","Universal mixin trait for adding a `get_type` method."]]});

@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["StatusClass","The class of an HTTP `status-code`."],["StatusCode","An HTTP status code (`status-code` in RFC 7230 et al.)."]]});

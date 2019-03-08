@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["Response","The outgoing half for a Tcp connection, created by a `Server` and given to a `Handler`."]]});

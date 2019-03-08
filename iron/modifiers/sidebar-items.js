@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["Header","A modifier for changing headers on requests and responses."],["Redirect","A modifier for creating redirect responses."],["RedirectRaw","A modifier for creating redirect responses."]]});

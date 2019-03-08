@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["GRANDFATHERED","Contains all grandfathered tags."]],"enum":[["Error","Defines an Error type for langtags."]],"macro":[["langtag!","Utility for creating simple language tags."]],"struct":[["LanguageTag","A language tag as described in BCP47."]],"type":[["Result","Result type used for this library."]]});

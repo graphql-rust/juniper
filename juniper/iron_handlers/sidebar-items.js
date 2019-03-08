@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["GraphQLHandler","Handler that executes GraphQL queries in the given schema"],["GraphiQLHandler","Handler that renders GraphiQL - a graphical query editor interface"]]});
