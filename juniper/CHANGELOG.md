@@ -6,6 +6,9 @@
   The DirectiveLocation::InlineFragment had an invalid literal value,
   which broke third party tools like apollo cli.
 - Added GraphQL Playground integration
+    The DirectiveLocation::InlineFragment had an invalid literal value,
+    which broke third party tools like apollo cli.
+- The return type of `value::object::Object::iter/iter_mut` has changed to `impl Iter` [#312](https://github.com/graphql-rust/juniper/pull/312)
 
 # [0.11.1] 2018-12-19
 
