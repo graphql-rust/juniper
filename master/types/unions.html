@@ -1,0 +1,356 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Unions - Juniper - GraphQL Server for Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "../";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html" class="active"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.1.</strong> Non-struct objects</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.2.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.3.</strong> Multiple operations per request</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#unions" id="unions"><h1>Unions</h1></a>
+<p>From a server's point of view, GraphQL unions are similar to interfaces: the
+only exception is that they don't contain fields on their own.</p>
+<p>In Juniper, the <code>graphql_union!</code> has identical syntax to the <a href="interfaces.html">interface
+macro</a>, but does not support defining fields. Therefore, the same
+considerations about using traits, placeholder types, or enums still apply to
+unions.</p>
+<p>If we look at the same examples as in the interfaces chapter, we see the
+similarities and the tradeoffs:</p>
+<a class="header" href="#traits" id="traits"><h2>Traits</h2></a>
+<a class="header" href="#downcasting-via-accessor-methods" id="downcasting-via-accessor-methods"><h3>Downcasting via accessor methods</h3></a>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+trait Character {
+    // Downcast methods, each concrete class will need to implement one of these
+    fn as_human(&amp;self) -&gt; Option&lt;&amp;Human&gt; { None }
+    fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { None }
+}
+
+impl Character for Human {
+    fn as_human(&amp;self) -&gt; Option&lt;&amp;Human&gt; { Some(&amp;self) }
+}
+
+impl Character for Droid {
+    fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { Some(&amp;self) }
+}
+
+juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot; where Scalar = &lt;S&gt;   |&amp;self| { 
+    instance_resolvers: |_| {
+        // The left hand side indicates the concrete type T, the right hand
+        // side should be an expression returning Option&lt;T&gt;
+        &amp;Human =&gt; self.as_human(),
+        &amp;Droid =&gt; self.as_droid(),
+    }
+});
+
+# fn main() {}
+</code></pre></pre>
+<a class="header" href="#using-an-extra-database-lookup" id="using-an-extra-database-lookup"><h3>Using an extra database lookup</h3></a>
+<p>FIXME: This example does not compile at the moment</p>
+<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = &quot;Database&quot;)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = &quot;Database&quot;)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+struct Database {
+    humans: HashMap&lt;String, Human&gt;,
+    droids: HashMap&lt;String, Droid&gt;,
+}
+
+impl juniper::Context for Database {}
+
+trait Character {
+    fn id(&amp;self) -&gt; &amp;str;
+}
+
+impl Character for Human {
+    fn id(&amp;self) -&gt; &amp;str { self.id.as_str() }
+}
+
+impl Character for Droid {
+    fn id(&amp;self) -&gt; &amp;str { self.id.as_str() }
+}
+
+juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: Database as &quot;Character&quot; where Scalar = &lt;S&gt; |&amp;self| {
+    instance_resolvers: |&amp;context| {
+        &amp;Human =&gt; context.humans.get(self.id()),
+        &amp;Droid =&gt; context.droids.get(self.id()),
+    }
+});
+
+# fn main() {}
+</code></pre></pre>
+<a class="header" href="#placeholder-objects" id="placeholder-objects"><h2>Placeholder objects</h2></a>
+<pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = &quot;Database&quot;)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+#[graphql(Context = &quot;Database&quot;)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+struct Database {
+    humans: HashMap&lt;String, Human&gt;,
+    droids: HashMap&lt;String, Droid&gt;,
+}
+
+impl juniper::Context for Database {}
+
+struct Character {
+    id: String,
+}
+
+juniper::graphql_union!(Character: Database where Scalar = &lt;S&gt; |&amp;self| {
+    instance_resolvers: |&amp;context| {
+        &amp;Human =&gt; context.humans.get(&amp;self.id),
+        &amp;Droid =&gt; context.droids.get(&amp;self.id),
+    }
+});
+
+# fn main() {}
+</code></pre></pre>
+<a class="header" href="#enums" id="enums"><h2>Enums</h2></a>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+# #[allow(dead_code)]
+enum Character {
+    Human(Human),
+    Droid(Droid),
+}
+
+juniper::graphql_union!(Character: () where Scalar = &lt;S&gt; |&amp;self| {
+    instance_resolvers: |_| {
+        &amp;Human =&gt; match *self { Character::Human(ref h) =&gt; Some(h), _ =&gt; None },
+        &amp;Droid =&gt; match *self { Character::Droid(ref d) =&gt; Some(d), _ =&gt; None },
+    }
+});
+
+# fn main() {}
+</code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../types/scalars.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../schema/schemas_and_mutations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../types/scalars.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../schema/schemas_and_mutations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
