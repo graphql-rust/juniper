@@ -580,7 +580,7 @@ mod test {
                 field whatever() -> String {
                     "foo".to_string()
                 }
-                field fizz(buzz: String) -> Option<Sweet> {
+                field fizz(buzz: String as "Buzz description") -> Option<Sweet> {
                     if buzz == "whatever" {
                         Some(Sweet::Cake(Cake::default()))
                     } else {
@@ -593,8 +593,8 @@ mod test {
                 field fruit() -> Fruit {
                     Fruit::Apple
                 }
-                field gluten_free(flavor: String) -> GlutenFree {
-                    if flavor == "savory" {
+                field gluten_free(people = 1: i32 ) -> GlutenFree {
+                    if people > 1 {
                         GlutenFree::Cake(Cake::default())
                     } else {
                         GlutenFree::IceCream(IceCream::default())
@@ -629,10 +629,10 @@ mod test {
                   blah: Boolean!
                   "This is whatever's description."
                   whatever: String!
-                  fizz(buzz: String!): Sweet
+                  fizz("Buzz description" buzz: String!): Sweet
                   arr(stuff: [Coordinate!]!): String
                   fruit: Fruit!
-                  glutenFree(flavor: String!): GlutenFree!
+                  glutenFree(people: Int = 1): GlutenFree!
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
