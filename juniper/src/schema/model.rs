@@ -606,7 +606,7 @@ mod test {
                 fresh: bool,
             };
             #[derive(GraphQLObject, Default)]
-            struct IceCream{
+            struct IceCream {
                 cold: bool,
             };
             enum Sweet {
@@ -627,7 +627,7 @@ mod test {
             #[derive(GraphQLInputObject)]
             struct Coordinate {
                 latitude: f64,
-                longitude: f64
+                longitude: f64,
             }
             struct Query;
             #[juniper::graphql_object]
