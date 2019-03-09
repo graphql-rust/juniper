@@ -614,6 +614,7 @@ mod test {
                 IceCream(IceCream),
             }
             juniper::graphql_interface!(Sweet: () where Scalar = <S> |&self| {
+                field is_brownie() -> bool { false }
                 instance_resolvers: |_| {
                         &Cake => match *self { Sweet::Cake(ref x) => Some(x), _ => None },
                         &IceCream => match *self { Sweet::IceCream(ref x) => Some(x), _ => None },
@@ -673,7 +674,9 @@ mod test {
                     APPLE
                     ORANGE
                 }
-                interface Sweet
+                interface Sweet {
+                    isBrownie: Boolean!
+                }
                 type Cake {
                     fresh: Boolean!
                 }
