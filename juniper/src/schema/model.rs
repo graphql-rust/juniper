@@ -544,11 +544,21 @@ mod test {
                 Cake(Cake),
                 IceCream(IceCream),
             }
+            enum GlutenFree {
+                Cake(Cake),
+                IceCream(IceCream),
+            }
             graphql_interface!(Sweet: () where Scalar = <S> |&self| {
                 field is_brownie() -> bool { false }
                 instance_resolvers: |_| {
                         &Cake => match *self { Sweet::Cake(ref x) => Some(x), _ => None },
                         &IceCream => match *self { Sweet::IceCream(ref x) => Some(x), _ => None },
+                    }
+            });
+            graphql_union!(GlutenFree: () where Scalar = <S> |&self| {
+                instance_resolvers: |_| {
+                        &Cake => match *self { GlutenFree::Cake(ref x) => Some(x), _ => None },
+                        &IceCream => match *self { GlutenFree::IceCream(ref x) => Some(x), _ => None },
                     }
             });
             #[derive(GraphQLEnum)]
@@ -583,6 +593,12 @@ mod test {
                 field fruit() -> Fruit {
                     Fruit::Apple
                 }
+                field gluten_free(flavor: String) -> GlutenFree {
+                    if flavor == "savory" {
+                        GlutenFree::Cake(Cake::default())
+                    } else {
+                        GlutenFree::IceCream(IceCream::default())
+                    }                }
                 #[deprecated]
                 field old() -> i32 {
                     42
@@ -595,6 +611,7 @@ mod test {
             let schema = crate::RootNode::new(Query, EmptyMutation::<()>::new());
             let ast = graphql_parser::parse_schema(
                 r#"
+                union GlutenFree = Cake | IceCream
                 enum Fruit {
                     APPLE
                     ORANGE
@@ -615,6 +632,7 @@ mod test {
                   fizz(buzz: String!): Sweet
                   arr(stuff: [Coordinate!]!): String
                   fruit: Fruit!
+                  glutenFree(flavor: String!): GlutenFree!
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
