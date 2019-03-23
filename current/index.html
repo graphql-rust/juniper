@@ -1,0 +1,227 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Introduction - Juniper - GraphQL Server for Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li class="affix"><a href="index.html">Introduction</a></li><li class="affix"><a href="quickstart.html">Quickstart</a></li><li class="affix"><a href="types/index.html">Type System</a></li><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.1.</strong> Non-struct objects</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.2.</strong> Objects and generics</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.3.</strong> Multiple operations per request</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#juniper" id="juniper"><h1>Juniper</h1></a>
+<p>Juniper is a <a href="http://graphql.org">GraphQL</a> server library for Rust. Build type-safe and fast API
+servers with minimal boilerplate and configuration.</p>
+<p><a href="http://graphql.org">GraphQL</a> is a data query language developed by Facebook intended to
+serve mobile and web application frontends.</p>
+<p><em>Juniper</em> makes it possible to write GraphQL servers in Rust that are
+type-safe and blazingly fast. We also try to make declaring and resolving
+GraphQL schemas as convenient as possible as Rust will allow.</p>
+<p>Juniper does not include a web server - instead it provides building blocks to
+make integration with existing servers straightforward. It optionally provides a
+pre-built integration for the <a href="https://hyper.rs">Hyper</a>, <a href="http://ironframework.io">Iron</a>, <a href="https://rocket.rs">Rocket</a>, and <a href="https://github.com/seanmonstar/warp">Warp</a> frameworks, including
+embedded <a href="https://github.com/graphql/graphiql">Graphiql</a> for easy debugging.</p>
+<ul>
+<li><a href="https://crates.io/crates/juniper">Cargo crate</a></li>
+<li><a href="https://docs.rs/juniper">API Reference</a></li>
+</ul>
+<a class="header" href="#features" id="features"><h2>Features</h2></a>
+<p>Juniper supports the full GraphQL query language according to the
+<a href="http://facebook.github.io/graphql">specification</a>, including interfaces, unions, schema
+introspection, and validations.
+It does not, however, support the schema language.</p>
+<p>As an exception to other GraphQL libraries for other languages, Juniper builds
+non-null types by default. A field of type <code>Vec&lt;Episode&gt;</code> will be converted into
+<code>[Episode!]!</code>. The corresponding Rust type for e.g. <code>[Episode]</code> would be
+<code>Option&lt;Vec&lt;Option&lt;Episode&gt;&gt;&gt;</code>.</p>
+<a class="header" href="#integrations" id="integrations"><h2>Integrations</h2></a>
+<a class="header" href="#data-types" id="data-types"><h3>Data types</h3></a>
+<p>Juniper has automatic integration with some very common Rust crates to make
+building schemas a breeze. The types from these crates will be usable in
+your Schemas automatically.</p>
+<ul>
+<li><a href="https://crates.io/crates/uuid">uuid</a></li>
+<li><a href="https://crates.io/crates/url">url</a></li>
+<li><a href="https://crates.io/crates/chrono">chrono</a></li>
+</ul>
+<a class="header" href="#web-frameworks" id="web-frameworks"><h3>Web Frameworks</h3></a>
+<ul>
+<li><a href="https://hyper.rs">hyper</a></li>
+<li><a href="https://rocket.rs">rocket</a></li>
+<li><a href="http://ironframework.io">iron</a></li>
+<li><a href="https://github.com/seanmonstar/warp">warp</a></li>
+</ul>
+<a class="header" href="#api-stability" id="api-stability"><h2>API Stability</h2></a>
+<p>Juniper has not reached 1.0 yet, thus some API instability should be expected.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
