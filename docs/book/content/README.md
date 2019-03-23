@@ -1,14 +1,7 @@
-<img src="https://github.com/graphql-rust/juniper/raw/master/assets/logo/juniper-dark-word.png" alt="Juniper" width="500" />
+# Juniper
 
-> GraphQL server library for Rust
-
-[![Build Status](https://travis-ci.org/graphql-rust/juniper.svg?branch=master)](https://travis-ci.org/graphql-rust/juniper)
-[![Build Status](https://dev.azure.com/graphql-rust/GraphQL%20Rust/_apis/build/status/graphql-rust.juniper)](https://dev.azure.com/graphql-rust/GraphQL%20Rust/_build/latest?definitionId=1)
-[![codecov](https://codecov.io/gh/graphql-rust/juniper/branch/master/graph/badge.svg)](https://codecov.io/gh/graphql-rust/juniper)
-[![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000)](https://crates.io/crates/juniper)
-[![Gitter chat](https://badges.gitter.im/juniper-graphql/gitter.png)](https://gitter.im/juniper-graphql)
-
----
+Juniper is a [GraphQL] server library for Rust. Build type-safe and fast API
+servers with minimal boilerplate and configuration.
 
 [GraphQL][graphql] is a data query language developed by Facebook intended to
 serve mobile and web application frontends.
@@ -20,30 +13,10 @@ GraphQL schemas as convenient as possible as Rust will allow.
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
 pre-built integration for the [Hyper][hyper], [Iron][iron], [Rocket], and [Warp][warp] frameworks, including
-embedded [Graphiql][graphiql] and [GraphQL Playground][playground] for easy debugging.
+embedded [Graphiql][graphiql] for easy debugging.
 
 - [Cargo crate](https://crates.io/crates/juniper)
 - [API Reference][docsrs]
-- [Book][book]: Guides and Examples
-
-The book is also available for the master branch and older versions published after 0.11.1. See the [book index][book_index].
-
-
-## Getting Started
-
-The best place to get started is the [Juniper Book][book], which contains
-guides with plenty of examples, covering all features of Juniper. (very much WIP)
-
-To get started quickly and get a feel for Juniper, check out the
-[Quickstart][book_quickstart] section.
-
-For specific information about macros, types and the Juniper api, the
-[API Reference][docsrs] is the best place to look.
-
-You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
-schema including polymorphism with traits and interfaces.
-For an example of web framework integration,
-see the [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
 
 ## Features
 
@@ -76,17 +49,12 @@ your Schemas automatically.
 - [iron][iron]
 - [warp][warp]
 
-## Guides & Examples
-
-- [Juniper + actix-web example](https://github.com/actix/examples/tree/master/juniper)
-
 ## API Stability
 
 Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
-[playground]: https://github.com/prisma/graphql-playground
 [iron]: http://ironframework.io
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
@@ -96,9 +64,8 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
 [hyper]: https://hyper.rs
 [rocket]: https://rocket.rs
-[book]: https://graphql-rust.github.io/juniper/current
-[book_index]: https://graphql-rust.github.io/juniper
-[book_quickstart]: https://graphql-rust.github.io/juniper/current/quickstart.html
+[book]: https://graphql-rust.github.io
+[book_quickstart]: https://graphql-rust.github.io/quickstart.html
 [docsrs]: https://docs.rs/juniper
 [warp]: https://github.com/seanmonstar/warp
 [warp_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples

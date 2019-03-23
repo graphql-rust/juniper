@@ -8,6 +8,7 @@ use util::*;
 struct ObjAttrs {
     name: Option<String>,
     description: Option<String>,
+    context: Option<Ident>,
     scalar: Option<Ident>,
 }
 
@@ -44,6 +45,12 @@ impl ObjAttrs {
                     keyed_item_value(&item, "scalar", AttributeValidation::String)
                 {
                     res.scalar = Some(Ident::new(&scalar as &str, Span::call_site()));
+                    continue;
+                }
+                if let Some(AttributeValue::String(ctx)) =
+                    keyed_item_value(&item, "Context", AttributeValidation::String)
+                {
+                    res.context = Some(Ident::new(&ctx as &str, Span::call_site()));
                     continue;
                 }
                 panic!(format!(
@@ -223,13 +230,18 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         .scalar
         .unwrap_or_else(|| Ident::new("__S", Span::call_site()));
 
+    let ctx = attrs
+        .context
+        .map(|ident| quote!( #ident ))
+        .unwrap_or(quote!(()));
+
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let body = quote! {
         impl#impl_generics juniper::GraphQLType<#scalar> for #ident #ty_generics
             #where_clause
         {
-            type Context = ();
+            type Context = #ctx;
             type TypeInfo = ();
 
             fn name(_: &()) -> Option<&str> {
