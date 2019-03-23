@@ -33,11 +33,11 @@ jobs:
   variables:
   - group: github-keys
   steps:
-    - task: InstallSSHKey@0
-      inputs:
-        hostName: $(secret.GHSshKnownHosts)
-        sshPublicKey: $(secret.GHSshPub)
-        sshKeySecureFile: $(secret.GHSshPriv)
+    # - task: InstallSSHKey@0
+    #   inputs:
+    #     hostName: $(secret.GHSshKnownHosts)
+    #     sshPublicKey: $(secret.GHSshPub)
+    #     sshKeySecureFile: $(secret.GHSshPriv)
     - script: |
         ./docs/book/build.sh master
 
