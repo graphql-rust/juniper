@@ -47,7 +47,9 @@ impl ObjAttrs {
                     res.scalar = Some(Ident::new(&scalar as &str, Span::call_site()));
                     continue;
                 }
-                if let Some(AttributeValue::String(ctx)) = keyed_item_value(&item, "Context", AttributeValidation::String) {
+                if let Some(AttributeValue::String(ctx)) =
+                    keyed_item_value(&item, "Context", AttributeValidation::String)
+                {
                     res.context = Some(Ident::new(&ctx as &str, Span::call_site()));
                     continue;
                 }
@@ -228,7 +230,10 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
         .scalar
         .unwrap_or_else(|| Ident::new("__S", Span::call_site()));
 
-    let ctx = attrs.context.map(|ident| quote!( #ident )).unwrap_or(quote!( () ));
+    let ctx = attrs
+        .context
+        .map(|ident| quote!( #ident ))
+        .unwrap_or(quote!(()));
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
