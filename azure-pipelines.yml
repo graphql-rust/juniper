@@ -28,6 +28,8 @@ jobs:
 
 - job: build_book_master
   displayName: Build rendered book on master branch and push to Github
+  pool:
+    vmImage: ubuntu-16.04
   dependsOn: run_book_tests
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   variables:
