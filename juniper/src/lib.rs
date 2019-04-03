@@ -127,6 +127,7 @@ mod value;
 mod macros;
 mod ast;
 mod executor;
+mod introspection;
 pub mod parser;
 pub(crate) mod schema;
 mod types;
@@ -151,6 +152,7 @@ mod executor_tests;
 pub use util::to_camel_case;
 
 use executor::execute_validated_query;
+use introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS};
 use parser::{parse_document_source, ParseError, Spanning};
 use validation::{validate_input_values, visit_all_rules, ValidatorContext};
 
@@ -162,6 +164,7 @@ pub use executor::{
     Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult, FromContext,
     IntoFieldError, IntoResolvable, Registry, Variables,
 };
+pub use introspection::IntrospectionFormat;
 pub use schema::meta;
 pub use schema::model::RootNode;
 pub use types::base::{Arguments, GraphQLType, TypeKind};
@@ -217,6 +220,30 @@ where
     }
 
     execute_validated_query(document, operation_name, root_node, variables, context)
+}
+
+/// Execute the reference introspection query in the provided schema
+pub fn introspect<'a, S, CtxT, QueryT, MutationT>(
+    root_node: &'a RootNode<QueryT, MutationT, S>,
+    context: &CtxT,
+    format: IntrospectionFormat,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+{
+    execute(
+        match format {
+            IntrospectionFormat::All => INTROSPECTION_QUERY,
+            IntrospectionFormat::WithoutDescriptions => INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS,
+        },
+        None,
+        root_node,
+        &Variables::new(),
+        context,
+    )
 }
 
 impl<'a> From<Spanning<ParseError<'a>>> for GraphQLError<'a> {

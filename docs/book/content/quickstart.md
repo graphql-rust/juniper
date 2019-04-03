@@ -33,8 +33,8 @@ use juniper::{FieldResult};
 # struct DatabasePool;
 # impl DatabasePool {
 #     fn get_connection(&self) -> FieldResult<DatabasePool> { Ok(DatabasePool) }
-#     fn find_human(&self, id: &str) -> FieldResult<Human> { Err("")? }
-#     fn insert_human(&self, human: &NewHuman) -> FieldResult<Human> { Err("")? }
+#     fn find_human(&self, _id: &str) -> FieldResult<Human> { Err("")? }
+#     fn insert_human(&self, _human: &NewHuman) -> FieldResult<Human> { Err("")? }
 # }
 
 #[derive(juniper::GraphQLEnum)]
@@ -114,12 +114,14 @@ juniper::graphql_object!(Mutation: Context |&self| {
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode<'static, Query, Mutation>;
 
-# fn main() { }
+# fn main() {
+#   let _ = Schema::new(Query, Mutation{});
+# }
 ```
 
 We now have a very simple but functional schema for a GraphQL server!
 
-To actually serve the schema, see the guides for our various [server integrations](./servers/index.md). 
+To actually serve the schema, see the guides for our various [server integrations](./servers/index.md).
 
 You can also invoke the executor directly to get a result for a query:
 
@@ -129,6 +131,7 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 
 ```rust
 # // Only needed due to 2018 edition because the macro is not accessible.
+# #[macro_use]
 # extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
@@ -172,7 +175,7 @@ fn main() {
     assert_eq!(
         res,
         graphql_value!({
-            "favoriteEpisode": "NEW_HONE",
+            "favoriteEpisode": "NEW_HOPE",
         })
     );
 }
