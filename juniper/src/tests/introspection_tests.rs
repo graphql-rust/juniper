@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
+use super::schema_introspection::*;
 use executor::Variables;
+use introspection::IntrospectionFormat;
 use schema::model::RootNode;
 use tests::model::Database;
 use types::scalars::EmptyMutation;
@@ -228,4 +230,24 @@ fn test_introspection_possible_types() {
         .collect::<HashSet<_>>();
 
     assert_eq!(possible_types, vec!["Human", "Droid"].into_iter().collect());
+}
+
+#[test]
+fn test_builtin_introspection_query() {
+    let database = Database::new();
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+
+    let result = ::introspect(&schema, &database, IntrospectionFormat::default());
+    let expected = schema_introspection_result();
+    assert_eq!(result, Ok((expected, vec![])));
+}
+
+#[test]
+fn test_builtin_introspection_query_without_descriptions() {
+    let database = Database::new();
+    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+
+    let result = ::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions);
+    let expected = schema_introspection_result_without_descriptions();
+    assert_eq!(result, Ok((expected, vec![])));
 }
