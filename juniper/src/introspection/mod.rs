@@ -1,4 +1,4 @@
-/// From <https://github.com/graphql/graphql-js/blob/8c96dc8276f2de27b8af9ffbd71a4597d483523f/src/utilities/introspectionQuery.js#L21>s
+/// From <https://github.com/graphql/graphql-js/blob/8c96dc8276f2de27b8af9ffbd71a4597d483523f/src/utilities/introspectionQuery.js#L21>
 pub(crate) const INTROSPECTION_QUERY: &str = include_str!("./query.graphql");
 pub(crate) const INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS: &str =
     include_str!("./query_without_descriptions.graphql");
