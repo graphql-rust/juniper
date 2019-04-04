@@ -41,7 +41,7 @@ jobs:
     #     sshPublicKey: $(secret.GHSshPub)
     #     sshKeySecureFile: $(secret.GHSshPriv)
     - script: |
-        ./docs/book/build.sh master
+        ./docs/book/ci-build.sh master
 
 - template: _build/azure-pipelines-template.yml
   parameters:
