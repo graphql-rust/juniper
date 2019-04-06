@@ -507,35 +507,40 @@ where
         });
     }
 
-    /// Construct a lookahead selection for the current selection
+    /// Construct a lookahead selection for the current selection.
     ///
-    /// This allows to see the whole selection and preform operations
-    /// affecting the childs
+    /// This allows seeing the whole selection and perform operations
+    /// affecting the children.
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a, S> {
         self.parent_selection_set
             .map(|p| {
                 LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
             })
-            .unwrap_or_else(|| LookAheadSelection {
-                name: self.current_type.innermost_concrete().name().unwrap_or(""),
-                alias: None,
-                arguments: Vec::new(),
-                children: self
-                    .current_selection_set
-                    .map(|s| {
-                        s.iter()
-                            .map(|s| ChildSelection {
-                                inner: LookAheadSelection::build_from_selection(
-                                    s,
-                                    self.variables,
-                                    self.fragments,
-                                ),
-                                applies_for: Applies::All,
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_else(Vec::new),
+            .filter(|s| s.is_some())
+            .unwrap_or_else(|| {
+                Some(LookAheadSelection {
+                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
+                    alias: None,
+                    arguments: Vec::new(),
+                    children: self
+                        .current_selection_set
+                        .map(|s| {
+                            s.iter()
+                                .map(|s| ChildSelection {
+                                    inner: LookAheadSelection::build_from_selection(
+                                        s,
+                                        self.variables,
+                                        self.fragments,
+                                    )
+                                    .expect("a child selection"),
+                                    applies_for: Applies::All,
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_else(Vec::new),
+                })
             })
+            .unwrap_or(LookAheadSelection::default())
     }
 }
 
