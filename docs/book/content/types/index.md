@@ -8,13 +8,13 @@ as painless as possible.
 
 Find out more in the individual chapters below.
 
-- [Defining objects](types/objects/defining_objects.md)
-  - [Complex fields](types/objects/complex_fields.md)
-  - [Using contexts](types/objects/using_contexts.md)
-  - [Error handling](types/objects/error_handling.md)
-- [Other types](types/other-index.md)
-  - [Enums](types/enums.md)
-  - [Interfaces](types/interfaces.md)
-  - [Input objects](types/input_objects.md)
-  - [Scalars](types/scalars.md)
-  - [Unions](types/unions.md)
+- [Defining objects](objects/defining_objects.md)
+  - [Complex fields](objects/complex_fields.md)
+  - [Using contexts](objects/using_contexts.md)
+  - [Error handling](objects/error_handling.md)
+- [Other types](other-index.md)
+  - [Enums](enums.md)
+  - [Interfaces](interfaces.md)
+  - [Input objects](input_objects.md)
+  - [Scalars](scalars.md)
+  - [Unions](unions.md)

@@ -75,8 +75,7 @@ fn main() {
 ## Accessing data from the request
 
 If you want to access e.g. the source IP address of the request from a field
-resolver, you need to pass this data using Juniper's [context
-feature](context.md).
+resolver, you need to pass this data using Juniper's [context feature](../types/objects/using_contexts.md).
 
 ```rust,ignore
 # extern crate juniper;
