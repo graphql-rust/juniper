@@ -14,3 +14,11 @@ condition = { rust_version = { min = "1.31.0" } }
 [tasks.ci-coverage-flow]
 disabled = true
 
+[tasks.release]
+disabled = true
+
+[tasks.release-patch]
+disabled = true
+
+[tasks.release-dry-run]
+disabled = true
