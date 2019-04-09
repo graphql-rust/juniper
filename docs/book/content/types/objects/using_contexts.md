@@ -4,7 +4,7 @@ The context type is a feature in Juniper that lets field resolvers access global
 data, most commonly database connections or authentication information. The
 context is usually created from a _context factory_. How this is defined is
 specific to the framework integration you're using, so check out the
-documentation for either the [Iron](iron.md) or [Rocket](rocket.md)
+documentation for either the [Iron](../../servers/iron.md) or [Rocket](../../servers/rocket.md)
 integration.
 
 In this chapter, we'll show you how to define a context type and use it in field

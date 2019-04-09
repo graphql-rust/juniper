@@ -18,7 +18,7 @@ enum Episode {
 Juniper converts all enum variants to uppercase, so the corresponding string
 values for these variants are `NEWHOPE`, `EMPIRE`, and `JEDI`, respectively. If
 you want to override this, you can use the `graphql` attribute, similar to how
-it works when [defining objects](defining_objects.md):
+it works when [defining objects](objects/defining_objects.md):
 
 ```rust
 #[derive(juniper::GraphQLEnum)]

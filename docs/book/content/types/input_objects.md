@@ -26,7 +26,7 @@ juniper::graphql_object!(Root: () |&self| {
 
 ## Documentation and renaming
 
-Just like the [other](defining_objects.md) [derives](enums.md), you can rename
+Just like the [other](objects/defining_objects.md) [derives](enums.md), you can rename
 and add documentation to both the type and the fields:
 
 ```rust

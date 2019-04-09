@@ -9,8 +9,8 @@ other object in Juniper. The mutation object, however, is optional since schemas
 can be read-only.
 
 In Juniper, the `RootNode` type represents a schema. You usually don't have to
-create this object yourself: see the framework integrations for [Iron](iron.md)
-and [Rocket](rocket.md) how schemas are created together with the handlers
+create this object yourself: see the framework integrations for [Iron](../servers/iron.md)
+and [Rocket](../servers/rocket.md) how schemas are created together with the handlers
 themselves.
 
 When the schema is first created, Juniper will traverse the entire object graph
