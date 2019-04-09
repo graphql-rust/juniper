@@ -1,0 +1,28 @@
+
+[tasks.build-verbose]
+condition = { rust_version = { min = "1.31.0" } }
+
+[tasks.build-verbose.windows]
+condition = { rust_version = { min = "1.31.0" } }
+
+[tasks.test-verbose]
+condition = { rust_version = { min = "1.31.0" } }
+
+[tasks.test-verbose.windows]
+condition = { rust_version = { min = "1.31.0" } }
+
+[tasks.ci-coverage-flow]
+disabled = true
+
+[tasks.release]
+disabled = true
+[tasks.release-some]
+disabled = true
+[tasks.release-local-test]
+disabled = true
+[tasks.release-some-local-test]
+disabled = true
+[tasks.release-dry-run]
+disabled = true
+[tasks.release-some-dry-run]
+disabled = true

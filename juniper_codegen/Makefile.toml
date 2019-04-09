@@ -1,8 +1,4 @@
-[tasks.release]
-args = ["release"]
-
-[tasks.release-patch]
-args = ["release", "patch"]
-
-[tasks.release-dry-run]
-args = ["release", "--dry-run"]
+# This is needed as the release config is at a different path than the top-level
+# release config.
+[tasks.release-local-test-INTERNAL]
+args = ["release", "--config", "release.toml", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]

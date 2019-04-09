@@ -7,9 +7,13 @@ args = ["test", "--verbose"]
 
 [tasks.release]
 disabled = true
-
-[tasks.release-patch]
+[tasks.release-some]
 disabled = true
-
+[tasks.release-local-test]
+disabled = true
+[tasks.release-some-local-test]
+disabled = true
 [tasks.release-dry-run]
+disabled = true
+[tasks.release-some-dry-run]
 disabled = true
