@@ -24,12 +24,14 @@ fi
 VERSION="$1"
 
 # Download mdbook if not found.
-$MDBOOK -h 2>&1 > /dev/null
-if [ $? != 0]; then
+
+if [ $MDBOOK -h ]; then
+    echo "mdbook found..."
+else
     echo "mdbook not found. Downloading..."
     curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.2.0/mdbook-v0.2.0-x86_64-unknown-linux-gnu.tar.gz | tar xzf -    
     mv ./mdbook /tmp/mdbook
-    set MDBOOK="/tmp/mdbook"
+    MDBOOK="/tmp/mdbook"
 fi
 
 $MDBOOK build
