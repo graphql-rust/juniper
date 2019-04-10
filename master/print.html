@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="index.html">Introduction</a></li><li class="affix"><a href="quickstart.html">Quickstart</a></li><li class="affix"><a href="types/index.html">Type System</a></li><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.1.</strong> Non-struct objects</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.2.</strong> Objects and generics</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.3.</strong> Multiple operations per request</a></li></ol></li></ol>
+            <ol class="chapter"><li class="affix"><a href="index.html">Introduction</a></li><li class="affix"><a href="quickstart.html">Quickstart</a></li><li class="affix"><a href="types/index.html">Type System</a></li><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -204,8 +204,8 @@ resolvers, which you will use for the <code>Query</code> and <code>Mutation</cod
 # struct DatabasePool;
 # impl DatabasePool {
 #     fn get_connection(&amp;self) -&gt; FieldResult&lt;DatabasePool&gt; { Ok(DatabasePool) }
-#     fn find_human(&amp;self, id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
-#     fn insert_human(&amp;self, human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+#     fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+#     fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
 # }
 
 #[derive(juniper::GraphQLEnum)]
@@ -285,7 +285,9 @@ juniper::graphql_object!(Mutation: Context |&amp;self| {
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 
-# fn main() { }
+# fn main() {
+#   let _ = Schema::new(Query, Mutation{});
+# }
 </code></pre></pre>
 <p>We now have a very simple but functional schema for a GraphQL server!</p>
 <p>To actually serve the schema, see the guides for our various <a href="./servers/index.html">server integrations</a>.</p>
@@ -293,6 +295,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 <a class="header" href="#executor" id="executor"><h2>Executor</h2></a>
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
 <pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
+# #[macro_use]
 # extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
@@ -336,7 +339,7 @@ fn main() {
     assert_eq!(
         res,
         graphql_value!({
-            &quot;favoriteEpisode&quot;: &quot;NEW_HONE&quot;,
+            &quot;favoriteEpisode&quot;: &quot;NEW_HOPE&quot;,
         })
     );
 }
@@ -348,20 +351,20 @@ GraphQL type system to the Rust types your application uses.</p>
 as painless as possible.</p>
 <p>Find out more in the individual chapters below.</p>
 <ul>
-<li><a href="types/objects/defining_objects.html">Defining objects</a>
+<li><a href="objects/defining_objects.html">Defining objects</a>
 <ul>
-<li><a href="types/objects/complex_fields.html">Complex fields</a></li>
-<li><a href="types/objects/using_contexts.html">Using contexts</a></li>
-<li><a href="types/objects/error_handling.html">Error handling</a></li>
+<li><a href="objects/complex_fields.html">Complex fields</a></li>
+<li><a href="objects/using_contexts.html">Using contexts</a></li>
+<li><a href="objects/error_handling.html">Error handling</a></li>
 </ul>
 </li>
-<li><a href="types/other-index.html">Other types</a>
+<li><a href="other-index.html">Other types</a>
 <ul>
-<li><a href="types/enums.html">Enums</a></li>
-<li><a href="types/interfaces.html">Interfaces</a></li>
-<li><a href="types/input_objects.html">Input objects</a></li>
-<li><a href="types/scalars.html">Scalars</a></li>
-<li><a href="types/unions.html">Unions</a></li>
+<li><a href="enums.html">Enums</a></li>
+<li><a href="interfaces.html">Interfaces</a></li>
+<li><a href="input_objects.html">Input objects</a></li>
+<li><a href="scalars.html">Scalars</a></li>
+<li><a href="unions.html">Unions</a></li>
 </ul>
 </li>
 </ul>
@@ -598,7 +601,7 @@ documentation</a>.</p>
 data, most commonly database connections or authentication information. The
 context is usually created from a <em>context factory</em>. How this is defined is
 specific to the framework integration you're using, so check out the
-documentation for either the <a href="iron.html">Iron</a> or <a href="rocket.html">Rocket</a>
+documentation for either the <a href="../../servers/iron.html">Iron</a> or <a href="../../servers/rocket.html">Rocket</a>
 integration.</p>
 <p>In this chapter, we'll show you how to define a context type and use it in field
 resolvers. Let's say that we have a simple user database in a <code>HashMap</code>:</p>
@@ -806,11 +809,11 @@ juniper::graphql_object!(Example: () |&amp;self| {
 <p>The GraphQL type system provides several types in additon to objects.</p>
 <p>Find out more about each type below:</p>
 <ul>
-<li><a href="./enums.html">Enums</a></li>
-<li><a href="./interfaces.html">Interfaces</a></li>
-<li><a href="./input_objects.html">Input objects</a></li>
-<li><a href="./scalars.html">Scalars</a></li>
-<li><a href="./unions.html">Unions</a></li>
+<li><a href="enums.html">Enums</a></li>
+<li><a href="interfaces.html">Interfaces</a></li>
+<li><a href="input_objects.html">Input objects</a></li>
+<li><a href="scalars.html">Scalars</a></li>
+<li><a href="unions.html">Unions</a></li>
 </ul>
 <a class="header" href="#enums" id="enums"><h1>Enums</h1></a>
 <p>Enums in GraphQL are string constants grouped together to represent a set of
@@ -828,7 +831,7 @@ enum Episode {
 <p>Juniper converts all enum variants to uppercase, so the corresponding string
 values for these variants are <code>NEWHOPE</code>, <code>EMPIRE</code>, and <code>JEDI</code>, respectively. If
 you want to override this, you can use the <code>graphql</code> attribute, similar to how
-it works when <a href="defining_objects.html">defining objects</a>:</p>
+it works when <a href="objects/defining_objects.html">defining objects</a>:</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLEnum)]
 enum Episode {
     #[graphql(name=&quot;NEW_HOPE&quot;)]
@@ -1073,7 +1076,7 @@ juniper::graphql_object!(Root: () |&amp;self| {
 # fn main() {}
 </code></pre></pre>
 <a class="header" href="#documentation-and-renaming" id="documentation-and-renaming"><h2>Documentation and renaming</h2></a>
-<p>Just like the <a href="defining_objects.html">other</a> <a href="enums.html">derives</a>, you can rename
+<p>Just like the <a href="objects/defining_objects.html">other</a> <a href="enums.html">derives</a>, you can rename
 and add documentation to both the type and the fields:</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLInputObject)]
 #[graphql(name=&quot;Coordinate&quot;, description=&quot;A position on the globe&quot;)]
@@ -1312,8 +1315,8 @@ and mutations of the schema, respectively.</p>
 other object in Juniper. The mutation object, however, is optional since schemas
 can be read-only.</p>
 <p>In Juniper, the <code>RootNode</code> type represents a schema. You usually don't have to
-create this object yourself: see the framework integrations for <a href="iron.html">Iron</a>
-and <a href="rocket.html">Rocket</a> how schemas are created together with the handlers
+create this object yourself: see the framework integrations for <a href="../servers/iron.html">Iron</a>
+and <a href="../servers/rocket.html">Rocket</a> how schemas are created together with the handlers
 themselves.</p>
 <p>When the schema is first created, Juniper will traverse the entire object graph
 and register all types it can find. This means that if you define a GraphQL
@@ -1356,15 +1359,16 @@ it does <strong>not</strong> come with a built in HTTP server.</p>
 <p>To actually get a server up and running, there are multiple official and
 third-party integration crates that will get you there.</p>
 <ul>
-<li><a href="servers/official.html">Official Server Integrations</a> - <a href="servers/hyper.html">Hyper</a>
+<li><a href="official.html">Official Server Integrations</a>
 <ul>
-<li><a href="servers/warp.html">Warp</a></li>
-<li><a href="servers/rocket.html">Rocket</a></li>
-<li><a href="servers/iron.html">Iron</a></li>
-<li><a href="servers/hyper.html">Hyper</a></li>
+<li><a href="hyper.html">Hyper</a></li>
+<li><a href="warp.html">Warp</a></li>
+<li><a href="rocket.html">Rocket</a></li>
+<li><a href="iron.html">Iron</a></li>
+<li><a href="hyper.html">Hyper</a></li>
 </ul>
 </li>
-<li><a href="servers/third-party.html">Third Party Integrations</a>
+<li><a href="third-party.html">Third Party Integrations</a>
 <ul>
 <li><a href="https://github.com/actix/examples/tree/master/juniper">Actix-Web</a></li>
 <li><a href="https://github.com/finchers-rs/finchers-juniper">Finchers</a></li>
@@ -1376,10 +1380,10 @@ third-party integration crates that will get you there.</p>
 <p>Juniper provides official integration crates for several popular Rust server
 libraries.</p>
 <ul>
-<li><a href="./hyper.html">Hyper</a></li>
-<li><a href="./warp.html">Warp</a></li>
-<li><a href="./rocket.html">Rocket</a></li>
-<li><a href="./iron.html">Iron</a></li>
+<li><a href="hyper.html">Hyper</a></li>
+<li><a href="warp.html">Warp</a></li>
+<li><a href="rocket.html">Rocket</a></li>
+<li><a href="iron.html">Iron</a></li>
 </ul>
 <a class="header" href="#integrating-with-warp" id="integrating-with-warp"><h1>Integrating with Warp</h1></a>
 <p><a href="https://crates.io/crates/warp">Warp</a> is a super-easy, composable, web server framework for warp speeds.
@@ -1466,8 +1470,7 @@ fn main() {
 </code></pre>
 <a class="header" href="#accessing-data-from-the-request" id="accessing-data-from-the-request"><h2>Accessing data from the request</h2></a>
 <p>If you want to access e.g. the source IP address of the request from a field
-resolver, you need to pass this data using Juniper's <a href="context.html">context
-feature</a>.</p>
+resolver, you need to pass this data using Juniper's <a href="../types/objects/using_contexts.html">context feature</a>.</p>
 <pre><code class="language-rust ignore"># extern crate juniper;
 # extern crate juniper_iron;
 # extern crate iron;
@@ -1533,10 +1536,75 @@ officially maintained by Juniper developers.</p>
 <a class="header" href="#advanced-topics" id="advanced-topics"><h1>Advanced Topics</h1></a>
 <p>The chapters below cover some more advanced scenarios.</p>
 <ul>
-<li><a href="advanced/non_struct_objects.html">Non-struct objects</a></li>
-<li><a href="advanced/objects_and_generics.html">Objects and generics</a></li>
-<li><a href="advanced/multiple_ops_per_request.html">Multiple operations per request</a></li>
+<li><a href="introspection.html">Introspection</a></li>
+<li><a href="non_struct_objects.html">Non-struct objects</a></li>
+<li><a href="objects_and_generics.html">Objects and generics</a></li>
+<li><a href="multiple_ops_per_request.html">Multiple operations per request</a></li>
 </ul>
+<a class="header" href="#introspection" id="introspection"><h1>Introspection</h1></a>
+<p>GraphQL defines a special built-in top-level field called <code>__schema</code>. Querying
+for this field allows one to <a href="https://graphql.org/learn/introspection/">introspect the schema</a>
+at runtime to see what queries and mutations the GraphQL server supports.</p>
+<p>Because introspection queries are just regular GraphQL queries, Juniper supports
+them natively. For example, to get all the names of the types supported one
+could execute the following query against Juniper:</p>
+<pre><code class="language-graphql">{
+  __schema {
+    types {
+      name
+    }
+  }
+}
+</code></pre>
+<a class="header" href="#schema-introspection-output-as-json" id="schema-introspection-output-as-json"><h2>Schema introspection output as JSON</h2></a>
+<p>Many client libraries and tools in the GraphQL ecosystem require a complete
+representation of the server schema. Often this representation is in JSON and
+referred to as <code>schema.json</code>. A complete representation of the schema can be
+produced by issuing a specially crafted introspection query.</p>
+<p>Juniper provides a convenience function to introspect the entire schema. The
+result can then be converted to JSON for use with tools and libraries such as
+<a href="https://github.com/graphql-rust/graphql-client">graphql-client</a>:</p>
+<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
+# extern crate juniper;
+# extern crate serde_json;
+use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
+
+// Define our schema.
+
+#[derive(juniper::GraphQLObject)]
+struct Example {
+  id: String,
+}
+
+struct Context;
+impl juniper::Context for Context {}
+
+struct Query;
+
+juniper::graphql_object!(Query: Context |&amp;self| {
+   field example(&amp;executor, id: String) -&gt; FieldResult&lt;Example&gt; {
+       unimplemented!()
+   }
+});
+
+type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Context&gt;&gt;;
+
+fn main() {
+    // Create a context object.
+    let ctx = Context{};
+
+    // Run the built-in introspection query.
+    let (res, _errors) = juniper::introspect(
+        &amp;Schema::new(Query, EmptyMutation::new()),
+        &amp;ctx,
+        IntrospectionFormat::default(),
+    ).unwrap();
+
+    // Convert introspection result to json.
+    let json_result = serde_json::to_string_pretty(&amp;res);
+    assert!(json_result.is_ok());
+}
+</code></pre></pre>
 <a class="header" href="#non-struct-objects" id="non-struct-objects"><h1>Non-struct objects</h1></a>
 <p>Up until now, we've only looked at mapping structs to GraphQL objects. However,
 any Rust type can be mapped into a GraphQL object. In this chapter, we'll look

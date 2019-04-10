@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="index.html">Introduction</a></li><li class="affix"><a href="quickstart.html" class="active">Quickstart</a></li><li class="affix"><a href="types/index.html">Type System</a></li><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.1.</strong> Non-struct objects</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.2.</strong> Objects and generics</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.3.</strong> Multiple operations per request</a></li></ol></li></ol>
+            <ol class="chapter"><li class="affix"><a href="index.html">Introduction</a></li><li class="affix"><a href="quickstart.html" class="active">Quickstart</a></li><li class="affix"><a href="types/index.html">Type System</a></li><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -160,8 +160,8 @@ resolvers, which you will use for the <code>Query</code> and <code>Mutation</cod
 # struct DatabasePool;
 # impl DatabasePool {
 #     fn get_connection(&amp;self) -&gt; FieldResult&lt;DatabasePool&gt; { Ok(DatabasePool) }
-#     fn find_human(&amp;self, id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
-#     fn insert_human(&amp;self, human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+#     fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+#     fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
 # }
 
 #[derive(juniper::GraphQLEnum)]
@@ -241,7 +241,9 @@ juniper::graphql_object!(Mutation: Context |&amp;self| {
 // Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 
-# fn main() { }
+# fn main() {
+#   let _ = Schema::new(Query, Mutation{});
+# }
 </code></pre></pre>
 <p>We now have a very simple but functional schema for a GraphQL server!</p>
 <p>To actually serve the schema, see the guides for our various <a href="./servers/index.html">server integrations</a>.</p>
@@ -249,6 +251,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 <a class="header" href="#executor" id="executor"><h2>Executor</h2></a>
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
 <pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
+# #[macro_use]
 # extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
@@ -292,7 +295,7 @@ fn main() {
     assert_eq!(
         res,
         graphql_value!({
-            &quot;favoriteEpisode&quot;: &quot;NEW_HONE&quot;,
+            &quot;favoriteEpisode&quot;: &quot;NEW_HOPE&quot;,
         })
     );
 }
