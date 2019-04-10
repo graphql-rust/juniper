@@ -2,10 +2,6 @@
 
 This page will give you a short introduction to the concepts in Juniper.
 
-Once you are done here, head over to the [Tutorial][tutorial] to learn how to
-use Juniper by creating a full setup step by step, or consult the other chapters
-for more detailed information.
-
 ## Installation
 
 !FILENAME Cargo.toml
