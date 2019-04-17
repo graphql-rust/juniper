@@ -44,7 +44,8 @@ git clean -fd
 git checkout gh-pages
 rm -rf $VERSION
 mv /tmp/book-content ./$VERSION
-git config --local user.name "Juniper Doc Bot"
+git remote set-url --push origin git@github.com:graphql-rust/juniper.git
+git config --local user.name "Juniper Bot"
 git config --local user.email "juniper@example.com"
 git add -A $VERSION
 git commit -m "Updated book for $VERSION ***NO_CI***"
