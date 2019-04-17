@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 
 # Usage: ./ci-build.sh VERSION
-# 
-# This script builds the book to HTML with mdbook 
+#
+# This script builds the book to HTML with mdbook
 # commits and pushes the contents to the repo in the "gh-pages" branch.
 #
 # It is only inteded for use on the CI!
@@ -29,7 +29,7 @@ if [ $MDBOOK -h ]; then
     echo "mdbook found..."
 else
     echo "mdbook not found. Downloading..."
-    curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.2.0/mdbook-v0.2.0-x86_64-unknown-linux-gnu.tar.gz | tar xzf -    
+    curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.2.0/mdbook-v0.2.0-x86_64-unknown-linux-gnu.tar.gz | tar xzf -
     mv ./mdbook /tmp/mdbook
     MDBOOK="/tmp/mdbook"
 fi
@@ -44,6 +44,8 @@ git clean -fd
 git checkout gh-pages
 rm -rf $VERSION
 mv /tmp/book-content ./$VERSION
+git config --local user.name "Juniper Doc Bot"
+git config --local user.email "juniper@example.com"
 git add -A $VERSION
-git commit -m "Updated book for $VERSION"
+git commit -m "Updated book for $VERSION ***NO_CI***"
 git push origin gh-pages
