@@ -5,10 +5,10 @@ mod input_object;
 #[allow(unused_imports)]
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
-use executor::Variables;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use value::{ParseScalarResult, ParseScalarValue, Value};
+use crate::executor::Variables;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::value::{ParseScalarResult, ParseScalarValue, Value};
 
 #[derive(GraphQLEnumInternal)]
 #[graphql(name = "SampleEnum")]
@@ -78,7 +78,7 @@ fn test_execution() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -122,7 +122,7 @@ fn enum_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -231,7 +231,7 @@ fn interface_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -378,7 +378,7 @@ fn object_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -585,7 +585,7 @@ fn scalar_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

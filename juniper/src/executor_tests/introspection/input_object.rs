@@ -1,8 +1,8 @@
-use ast::{FromInputValue, InputValue};
-use executor::Variables;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, Value};
+use crate::ast::{FromInputValue, InputValue};
+use crate::executor::Variables;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::value::{DefaultScalarValue, Object, Value};
 
 struct Root;
 
@@ -102,7 +102,7 @@ where
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

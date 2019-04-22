@@ -3,11 +3,11 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use ast::{FromInputValue, InputValue, Type};
-use parser::{ParseError, ScalarToken};
-use schema::model::SchemaType;
-use types::base::TypeKind;
-use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use crate::ast::{FromInputValue, InputValue, Type};
+use crate::parser::{ParseError, ScalarToken};
+use crate::schema::model::SchemaType;
+use crate::types::base::TypeKind;
+use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
 /// Whether an item is deprecated, with context.
 #[derive(Debug, PartialEq, Hash, Clone)]

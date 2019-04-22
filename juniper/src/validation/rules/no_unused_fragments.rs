@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use ast::{Definition, Document, Fragment, FragmentSpread, Operation};
-use parser::Spanning;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::{Definition, Document, Fragment, FragmentSpread, Operation};
+use crate::parser::Spanning;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -109,9 +109,9 @@ fn error_message(frag_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn all_fragment_names_are_used() {

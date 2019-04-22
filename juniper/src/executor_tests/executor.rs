@@ -1,8 +1,8 @@
 mod field_execution {
-    use ast::InputValue;
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::ast::InputValue;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     struct DataType;
     struct DeepDataType;
@@ -65,7 +65,7 @@ mod field_execution {
             .into_iter()
             .collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -132,9 +132,9 @@ mod field_execution {
 }
 
 mod merge_parallel_fragments {
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     struct Type;
 
@@ -161,7 +161,7 @@ mod merge_parallel_fragments {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -205,9 +205,9 @@ mod merge_parallel_fragments {
 }
 
 mod merge_parallel_inline_fragments {
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     struct Type;
     struct Other;
@@ -258,7 +258,7 @@ mod merge_parallel_inline_fragments {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -326,10 +326,10 @@ mod merge_parallel_inline_fragments {
 }
 
 mod threads_context_correctly {
-    use executor::Context;
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::executor::Context;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     struct Schema;
 
@@ -350,7 +350,7 @@ mod threads_context_correctly {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(
+        let (result, errs) = crate::execute(
             doc,
             None,
             &schema,
@@ -379,11 +379,11 @@ mod threads_context_correctly {
 mod dynamic_context_switching {
     use indexmap::IndexMap;
 
-    use executor::{Context, ExecutionError, FieldError, FieldResult};
-    use parser::SourcePosition;
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::executor::{Context, ExecutionError, FieldError, FieldResult};
+    use crate::parser::SourcePosition;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     struct Schema;
 
@@ -457,7 +457,7 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -513,7 +513,7 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, vec![]);
 
@@ -566,7 +566,7 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(
             errs,
@@ -614,7 +614,7 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(
             errs,
@@ -674,7 +674,7 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -699,11 +699,11 @@ mod dynamic_context_switching {
 }
 
 mod propagates_errors_to_nullable_fields {
-    use executor::{ExecutionError, FieldError, FieldResult, IntoFieldError};
-    use parser::SourcePosition;
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::{ScalarValue, Value};
+    use crate::executor::{ExecutionError, FieldError, FieldResult, IntoFieldError};
+    use crate::parser::SourcePosition;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::{ScalarValue, Value};
 
     struct Schema;
     struct Inner;
@@ -749,7 +749,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -775,7 +775,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -798,7 +798,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -821,7 +821,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -847,7 +847,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -870,7 +870,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -896,7 +896,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -919,7 +919,7 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -962,10 +962,10 @@ mod propagates_errors_to_nullable_fields {
 }
 
 mod named_operations {
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
-    use GraphQLError;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
+    use crate::GraphQLError;
 
     struct Schema;
 
@@ -980,7 +980,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -997,7 +997,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -1015,7 +1015,7 @@ mod named_operations {
         let vars = vec![].into_iter().collect();
 
         let (result, errs) =
-            ::execute(doc, Some("OtherExample"), &schema, &vars, &()).expect("Execution failed");
+            crate::execute(doc, Some("OtherExample"), &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -1032,7 +1032,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = ::execute(doc, None, &schema, &vars, &()).unwrap_err();
+        let err = crate::execute(doc, None, &schema, &vars, &()).unwrap_err();
 
         assert_eq!(err, GraphQLError::MultipleOperationsProvided);
     }
@@ -1044,7 +1044,7 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = ::execute(doc, Some("UnknownExample"), &schema, &vars, &()).unwrap_err();
+        let err = crate::execute(doc, Some("UnknownExample"), &schema, &vars, &()).unwrap_err();
 
         assert_eq!(err, GraphQLError::UnknownOperationName);
     }

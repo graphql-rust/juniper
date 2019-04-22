@@ -2,12 +2,12 @@ use std::fmt;
 
 use fnv::FnvHashMap;
 
-use ast::Type;
-use executor::{Context, Registry};
-use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
-use types::base::GraphQLType;
-use types::name::Name;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use crate::ast::Type;
+use crate::executor::{Context, Registry};
+use crate::schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
+use crate::types::base::GraphQLType;
+use crate::types::name::Name;
+use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 /// Root query node of a schema
 ///
@@ -319,7 +319,7 @@ impl<'a, S> SchemaType<'a, S> {
     }
 
     pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
-        use ast::Type::*;
+        use crate::ast::Type::*;
 
         if super_type == sub_type {
             return true;

@@ -6,9 +6,9 @@ use std::vec;
 
 use indexmap::IndexMap;
 
-use executor::Variables;
-use parser::Spanning;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use crate::executor::Variables;
+use crate::parser::Spanning;
+use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 /// A type literal in the syntax tree
 ///
@@ -434,7 +434,7 @@ where
 
     /// Compare equality with another `InputValue` ignoring any source position information.
     pub fn unlocated_eq(&self, other: &Self) -> bool {
-        use InputValue::*;
+        use crate::InputValue::*;
 
         match (self, other) {
             (&Null, &Null) => true,
@@ -533,7 +533,7 @@ impl<'a, S> VariableDefinitions<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::InputValue;
-    use parser::Spanning;
+    use crate::parser::Spanning;
 
     #[test]
     fn test_input_value_fmt() {

@@ -6,6 +6,7 @@ description = "Juniper GraphQL integration with Hyper"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_hyper"
 repository = "https://github.com/graphql-rust/juniper"
+edition = "2018"
 
 [dependencies]
 serde = "1.0"

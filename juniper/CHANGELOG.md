@@ -1,6 +1,7 @@
 # master
 
-- The minimum required Rust version is now `1.30.0`.
+- Refactored all crates to the 2018 editio [#345](https://github.com/graphql-rust/juniper/pull/345)
+- The minimum required Rust version is now `1.31.0`.
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
 - Added built-in support for the canonical schema introspection query via
   `juniper::introspect()`. [#307](https://github.com/graphql-rust/juniper/issues/307)

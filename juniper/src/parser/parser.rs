@@ -1,7 +1,7 @@
 use std::fmt;
 use std::result::Result;
 
-use parser::{Lexer, LexerError, Spanning, Token};
+use crate::parser::{Lexer, LexerError, Spanning, Token};
 
 /// Error while parsing a GraphQL query
 #[derive(Debug, PartialEq)]

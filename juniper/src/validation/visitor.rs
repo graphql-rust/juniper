@@ -1,14 +1,14 @@
 use std::borrow::Cow;
 
-use ast::{
+use crate::ast::{
     Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread, InlineFragment,
     InputValue, Operation, OperationType, Selection, Type, VariableDefinitions,
 };
-use parser::Spanning;
-use schema::meta::Argument;
-use validation::multi_visitor::MultiVisitorCons;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::parser::Spanning;
+use crate::schema::meta::Argument;
+use crate::validation::multi_visitor::MultiVisitorCons;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 #[doc(hidden)]
 pub fn visit<'a, A, B, S>(
@@ -353,7 +353,7 @@ fn enter_input_value<'a, S, V>(
     S: ScalarValue,
     V: Visitor<'a, S>,
 {
-    use InputValue::*;
+    use crate::InputValue::*;
 
     let start = &input_value.start;
     let end = &input_value.end;
@@ -376,7 +376,7 @@ fn exit_input_value<'a, S, V>(
     S: ScalarValue,
     V: Visitor<'a, S>,
 {
-    use InputValue::*;
+    use crate::InputValue::*;
 
     let start = &input_value.start;
     let end = &input_value.end;

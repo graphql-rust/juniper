@@ -1,11 +1,11 @@
 use std::fmt::Debug;
 
-use ast::{Definition, Document, FragmentSpread, InlineFragment};
-use parser::Spanning;
-use schema::meta::MetaType;
+use crate::ast::{Definition, Document, FragmentSpread, InlineFragment};
+use crate::parser::Spanning;
+use crate::schema::meta::MetaType;
 use std::collections::HashMap;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct PossibleFragmentSpreads<'a, S: Debug + 'a> {
     fragment_types: HashMap<&'a str, &'a MetaType<'a, S>>,
@@ -99,9 +99,9 @@ fn error_message(frag_name: Option<&str>, parent_type_name: &str, frag_type: &st
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn of_the_same_object() {

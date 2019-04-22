@@ -1,13 +1,13 @@
-use ast::Selection;
-use executor::{ExecutionResult, Executor, Registry};
-use types::base::{Arguments, GraphQLType, TypeKind};
-use value::{ScalarRefValue, ScalarValue, Value};
+use crate::ast::Selection;
+use crate::executor::{ExecutionResult, Executor, Registry};
+use crate::types::base::{Arguments, GraphQLType, TypeKind};
+use crate::value::{ScalarRefValue, ScalarValue, Value};
 
-use schema::meta::{
+use crate::schema::meta::{
     Argument, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta, MetaType, ObjectMeta,
     UnionMeta,
 };
-use schema::model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType};
+use crate::schema::model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType};
 
 impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
 where
@@ -58,8 +58,8 @@ where
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
     ) -> Value<S> {
-        use types::base::resolve_selection_set_into;
-        use value::Object;
+        use crate::types::base::resolve_selection_set_into;
+        use crate::value::Object;
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {

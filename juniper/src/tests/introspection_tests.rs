@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
 use super::schema_introspection::*;
-use executor::Variables;
-use introspection::IntrospectionFormat;
-use schema::model::RootNode;
-use tests::model::Database;
-use types::scalars::EmptyMutation;
+use crate::executor::Variables;
+use crate::introspection::IntrospectionFormat;
+use crate::schema::model::RootNode;
+use crate::tests::model::Database;
+use crate::types::scalars::EmptyMutation;
 
 #[test]
 fn test_introspection_query_type_name() {
@@ -21,7 +21,7 @@ fn test_introspection_query_type_name() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__schema": {
@@ -48,7 +48,7 @@ fn test_introspection_type_name() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -74,7 +74,7 @@ fn test_introspection_specific_object_type_name_and_kind() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -101,7 +101,7 @@ fn test_introspection_specific_interface_type_name_and_kind() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -128,7 +128,7 @@ fn test_introspection_documentation() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        ::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -201,7 +201,7 @@ fn test_introspection_possible_types() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let result = ::execute(doc, None, &schema, &Variables::new(), &database);
+    let result = crate::execute(doc, None, &schema, &Variables::new(), &database);
 
     let (result, errors) = result.ok().expect("Query returned error");
 

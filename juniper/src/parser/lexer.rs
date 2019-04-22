@@ -4,7 +4,7 @@ use std::iter::{Iterator, Peekable};
 use std::result::Result;
 use std::str::CharIndices;
 
-use parser::{SourcePosition, Spanning};
+use crate::parser::{SourcePosition, Spanning};
 
 #[doc(hidden)]
 #[derive(Debug)]

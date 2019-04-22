@@ -1,9 +1,9 @@
 use std::collections::hash_map::{Entry, HashMap};
 
-use ast::{Operation, VariableDefinition};
-use parser::{SourcePosition, Spanning};
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::{Operation, VariableDefinition};
+use crate::parser::{SourcePosition, Spanning};
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct UniqueVariableNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -54,9 +54,9 @@ fn error_message(var_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn unique_variable_names() {

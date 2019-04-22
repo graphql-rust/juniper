@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 use std::fmt::Debug;
 
-use ast::{Definition, Document, Type};
+use crate::ast::{Definition, Document, Type};
 
-use schema::meta::MetaType;
-use schema::model::SchemaType;
+use crate::schema::meta::MetaType;
+use crate::schema::model::SchemaType;
 
-use parser::SourcePosition;
+use crate::parser::SourcePosition;
 
 /// Query validation error
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]

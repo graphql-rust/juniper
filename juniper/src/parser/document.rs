@@ -1,18 +1,18 @@
 use std::borrow::Cow;
 
-use ast::{
+use crate::ast::{
     Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread, InlineFragment,
     InputValue, Operation, OperationType, Selection, Type, VariableDefinition, VariableDefinitions,
 };
 
-use parser::value::parse_value_literal;
-use parser::{
+use crate::parser::value::parse_value_literal;
+use crate::parser::{
     Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
     UnlocatedParseResult,
 };
-use schema::meta::{Argument, Field as MetaField};
-use schema::model::SchemaType;
-use value::ScalarValue;
+use crate::schema::meta::{Argument, Field as MetaField};
+use crate::schema::model::SchemaType;
+use crate::value::ScalarValue;
 
 #[doc(hidden)]
 pub fn parse_document_source<'a, 'b, S>(

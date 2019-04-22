@@ -1,4 +1,4 @@
-use parser::{ParseError, ScalarToken};
+use crate::parser::{ParseError, ScalarToken};
 use serde::de;
 use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};

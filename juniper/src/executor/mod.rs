@@ -6,23 +6,23 @@ use std::sync::RwLock;
 
 use fnv::FnvHashMap;
 
-use ast::{
+use crate::ast::{
     Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
     ToInputValue, Type,
 };
-use parser::SourcePosition;
-use value::Value;
-use GraphQLError;
+use crate::parser::SourcePosition;
+use crate::value::Value;
+use crate::GraphQLError;
 
-use schema::meta::{
+use crate::schema::meta::{
     Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta,
     ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
 };
-use schema::model::{RootNode, SchemaType, TypeType};
+use crate::schema::model::{RootNode, SchemaType, TypeType};
 
-use types::base::GraphQLType;
-use types::name::Name;
-use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use crate::types::base::GraphQLType;
+use crate::types::name::Name;
+use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
 mod look_ahead;
 
@@ -141,7 +141,7 @@ pub struct FieldError<S = DefaultScalarValue> {
 
 impl<T: Display, S> From<T> for FieldError<S>
 where
-    S: ::value::ScalarValue,
+    S: crate::value::ScalarValue,
 {
     fn from(e: T) -> FieldError<S> {
         FieldError {

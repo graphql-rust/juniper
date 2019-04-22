@@ -1,12 +1,12 @@
 use indexmap::IndexMap;
 
-use ast::{Directive, FromInputValue, InputValue, Selection};
-use executor::Variables;
-use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
+use crate::ast::{Directive, FromInputValue, InputValue, Selection};
+use crate::executor::Variables;
+use crate::value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
 
-use executor::{ExecutionResult, Executor, Registry};
-use parser::Spanning;
-use schema::meta::{Argument, MetaType};
+use crate::executor::{ExecutionResult, Executor, Registry};
+use crate::parser::Spanning;
+use crate::schema::meta::{Argument, MetaType};
 
 /// GraphQL type kind
 ///

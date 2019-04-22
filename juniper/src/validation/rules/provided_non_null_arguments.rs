@@ -1,9 +1,9 @@
-use ast::{Directive, Field};
-use parser::Spanning;
-use schema::meta::Field as FieldType;
-use schema::model::DirectiveType;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::{Directive, Field};
+use crate::parser::Spanning;
+use crate::schema::meta::Field as FieldType;
+use crate::schema::model::DirectiveType;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct ProvidedNonNullArguments;
 
@@ -98,9 +98,9 @@ fn directive_error_message(directive_name: &str, arg_name: &str, type_name: &str
 mod tests {
     use super::{directive_error_message, factory, field_error_message};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn ignores_unknown_arguments() {

@@ -6,6 +6,7 @@ description = "Juniper GraphQL integration with Warp"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_warp"
 repository = "https://github.com/graphql-rust/juniper"
+edition = "2018"
 
 [dependencies]
 warp = "0.1.8"

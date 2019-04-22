@@ -1,4 +1,4 @@
-use parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, Token};
+use crate::parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, Token};
 
 fn tokenize_to_vec<'a>(s: &'a str) -> Vec<Spanning<Token<'a>>> {
     let mut tokens = Vec::new();

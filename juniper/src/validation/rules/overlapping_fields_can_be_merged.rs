@@ -1,13 +1,13 @@
-use ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type};
-use parser::{SourcePosition, Spanning};
-use schema::meta::{Field as FieldType, MetaType};
+use crate::ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type};
+use crate::parser::{SourcePosition, Spanning};
+use crate::schema::meta::{Field as FieldType, MetaType};
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
@@ -740,17 +740,17 @@ mod tests {
     use super::ConflictReasonMessage::*;
     use super::{error_message, factory, ConflictReason};
 
-    use executor::Registry;
-    use schema::meta::MetaType;
-    use types::base::GraphQLType;
-    use types::scalars::{EmptyMutation, ID};
+    use crate::executor::Registry;
+    use crate::schema::meta::MetaType;
+    use crate::types::base::GraphQLType;
+    use crate::types::scalars::{EmptyMutation, ID};
 
-    use parser::SourcePosition;
-    use validation::{
+    use crate::parser::SourcePosition;
+    use crate::validation::{
         expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
         expect_passes_rule_with_schema, RuleError,
     };
-    use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+    use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
     #[test]
     fn unique_fields() {

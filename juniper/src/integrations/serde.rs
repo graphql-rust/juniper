@@ -4,11 +4,11 @@ use serde::{de, ser};
 
 use std::fmt;
 
-use ast::InputValue;
-use executor::ExecutionError;
-use parser::{ParseError, SourcePosition, Spanning};
-use validation::RuleError;
-use {GraphQLError, Object, ScalarValue, Value};
+use crate::ast::InputValue;
+use crate::executor::ExecutionError;
+use crate::parser::{ParseError, SourcePosition, Spanning};
+use crate::validation::RuleError;
+use crate::{GraphQLError, Object, ScalarValue, Value};
 
 #[derive(Serialize)]
 struct SerializeHelper {
@@ -397,11 +397,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::{ExecutionError, GraphQLError};
-    use ast::InputValue;
+    use crate::ast::InputValue;
     use serde_json::from_str;
     use serde_json::to_string;
-    use value::{DefaultScalarValue, Object};
-    use {FieldError, Value};
+    use crate::value::{DefaultScalarValue, Object};
+    use crate::{FieldError, Value};
 
     #[test]
     fn int() {

@@ -1,11 +1,11 @@
-use ast::{FromInputValue, InputValue, Selection, ToInputValue};
+use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use executor::{ExecutionResult, Executor, Registry};
-use schema::meta::MetaType;
-use types::base::{Arguments, GraphQLType};
-use value::{ScalarRefValue, ScalarValue, Value};
+use crate::executor::{ExecutionResult, Executor, Registry};
+use crate::schema::meta::MetaType;
+use crate::types::base::{Arguments, GraphQLType};
+use crate::value::{ScalarRefValue, ScalarValue, Value};
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where

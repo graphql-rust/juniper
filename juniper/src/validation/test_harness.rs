@@ -1,12 +1,12 @@
-use ast::{FromInputValue, InputValue};
-use executor::Registry;
-use parser::parse_document_source;
-use schema::meta::{EnumValue, MetaType};
-use schema::model::{DirectiveLocation, DirectiveType, RootNode};
-use types::base::GraphQLType;
-use types::scalars::ID;
-use validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor};
-use value::{ScalarRefValue, ScalarValue};
+use crate::ast::{FromInputValue, InputValue};
+use crate::executor::Registry;
+use crate::parser::parse_document_source;
+use crate::schema::meta::{EnumValue, MetaType};
+use crate::schema::model::{DirectiveLocation, DirectiveType, RootNode};
+use crate::types::base::GraphQLType;
+use crate::types::scalars::ID;
+use crate::validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor};
+use crate::value::{ScalarRefValue, ScalarValue};
 
 struct Being;
 struct Pet;
