@@ -99,7 +99,7 @@ where
             }
         }
 
-        Arguments { args: args }
+        Arguments { args }
     }
 
     /// Get and convert an argument into the desired type.
@@ -479,16 +479,14 @@ where
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
-                } else {
-                    if !resolve_selection_set_into(
+                } else if !resolve_selection_set_into(
                         instance,
                         info,
                         &fragment.selection_set[..],
                         &sub_exec,
                         result,
-                    ) {
-                        return false;
-                    }
+                ) {
+                    return false;
                 }
             }
         }

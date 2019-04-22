@@ -55,7 +55,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     pub fn new(schema: &'a SchemaType<S>, document: &Document<'a, S>) -> ValidatorContext<'a, S> {
         ValidatorContext {
             errors: Vec::new(),
-            schema: schema,
+            schema,
             type_stack: Vec::new(),
             type_literal_stack: Vec::new(),
             parent_type_stack: Vec::new(),

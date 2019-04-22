@@ -81,8 +81,8 @@ where
                 .entry(current_fragment)
                 .or_insert_with(Vec::new)
                 .push(Spanning::start_end(
-                    &spread.start.clone(),
-                    &spread.end.clone(),
+                    &spread.start,
+                    &spread.end,
                     spread.item.name.item,
                 ));
         }

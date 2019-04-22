@@ -39,25 +39,25 @@ where
     }
 
     /// Construct an integer value.
-    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
+    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
     pub fn int(i: i32) -> Self {
         Self::scalar(i)
     }
 
     /// Construct a floating point value.
-    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
+    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
     pub fn float(f: f64) -> Self {
         Self::scalar(f)
     }
 
     /// Construct a string value.
-    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
+    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
     pub fn string(s: &str) -> Self {
         Self::scalar(s.to_owned())
     }
 
     /// Construct a boolean value.
-    #[deprecated(since = "0.11", note = "Use `Value::scalar` instead")]
+    #[deprecated(since = "0.11.0", note = "Use `Value::scalar` instead")]
     pub fn boolean(b: bool) -> Self {
         Self::scalar(b)
     }
@@ -102,12 +102,12 @@ where
     }
 
     /// View the underlying float value, if present.
-    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
+    #[deprecated(since = "0.11.0", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_float_value(&self) -> Option<f64>
     where
         for<'a> &'a S: ScalarRefValue<'a>,
     {
-        self.as_scalar_value::<f64>().map(|v| *v)
+        self.as_scalar_value::<f64>().cloned()
     }
 
     /// View the underlying object value, if present.
@@ -143,7 +143,7 @@ where
     }
 
     /// View the underlying string value, if present.
-    #[deprecated(since = "0.11", note = "Use `Value::as_scalar_value` instead")]
+    #[deprecated(since = "0.11.0", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         Option<&'a String>: From<&'a S>,

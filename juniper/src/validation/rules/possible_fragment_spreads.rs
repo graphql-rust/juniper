@@ -50,7 +50,7 @@ where
                         parent_type.name().unwrap_or("<unknown>"),
                         frag_type.name().unwrap_or("<unknown>"),
                     ),
-                    &[frag.start.clone()],
+                    &[frag.start],
                 );
             }
         }
@@ -72,7 +72,7 @@ where
                         parent_type.name().unwrap_or("<unknown>"),
                         frag_type.name().unwrap_or("<unknown>"),
                     ),
-                    &[spread.start.clone()],
+                    &[spread.start],
                 );
             }
         }

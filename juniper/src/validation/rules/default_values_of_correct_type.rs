@@ -28,7 +28,7 @@ where
             if var_def.var_type.item.is_non_null() {
                 ctx.report_error(
                     &non_null_error_message(var_name.item, &format!("{}", var_def.var_type.item)),
-                    &[start.clone()],
+                    &[*start],
                 )
             } else {
                 let meta_type = ctx.schema.make_type(&var_def.var_type.item);
@@ -36,7 +36,7 @@ where
                 if !is_valid_literal_value(ctx.schema, &meta_type, var_value) {
                     ctx.report_error(
                         &type_error_message(var_name.item, &format!("{}", var_def.var_type.item)),
-                        &[start.clone()],
+                        &[*start],
                     );
                 }
             }

@@ -39,7 +39,7 @@ where
 
                     context.report_error(
                         &error_message(field_name.item, type_name),
-                        &[field_name.start.clone()],
+                        &[field_name.start],
                     );
                 }
             }

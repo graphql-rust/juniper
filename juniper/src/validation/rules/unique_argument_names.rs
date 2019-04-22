@@ -36,11 +36,11 @@ where
             Entry::Occupied(e) => {
                 ctx.report_error(
                     &error_message(arg_name.item),
-                    &[e.get().clone(), arg_name.start.clone()],
+                    &[e.get().clone(), arg_name.start],
                 );
             }
             Entry::Vacant(e) => {
-                e.insert(arg_name.start.clone());
+                e.insert(arg_name.start);
             }
         }
     }

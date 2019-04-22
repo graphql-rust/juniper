@@ -7,11 +7,11 @@ use std::str::FromStr;
 // stabilise (https://github.com/rust-lang/rust/issues/39658).
 
 fn is_ascii_alphabetic(c: char) -> bool {
-    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
+    c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
 }
 
 fn is_ascii_digit(c: char) -> bool {
-    return c >= '0' && c <= '9';
+    c >= '0' && c <= '9'
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,17 +20,12 @@ pub struct Name(String);
 impl Name {
     pub fn is_valid(input: &str) -> bool {
         for (i, c) in input.chars().enumerate() {
-            if i == 0 {
-                if !is_ascii_alphabetic(c) && c != '_' {
-                    return false;
-                }
-            } else {
-                if !is_ascii_alphabetic(c) && !is_ascii_digit(c) && c != '_' {
-                    return false;
-                }
+            let is_valid = is_ascii_alphabetic(c) || c == '_' || (i > 0 && is_ascii_digit(c));
+            if !is_valid {
+                return false;
             }
         }
-        return !input.is_empty();
+        !input.is_empty()
     }
 }
 

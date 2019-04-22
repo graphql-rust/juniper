@@ -151,7 +151,7 @@ where
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
                                     <&S as Into<Option<&bool>>>::into(s)
-                                        .map(|b| *b)
+                                        .cloned()
                                         .unwrap_or(false)
                                 } else {
                                     false

@@ -63,7 +63,7 @@ where
 
         for fragment in &self.defined_fragments {
             if !reachable.contains(&fragment.item) {
-                ctx.report_error(&error_message(fragment.item), &[fragment.start.clone()]);
+                ctx.report_error(&error_message(fragment.item), &[fragment.start]);
             }
         }
     }
@@ -73,7 +73,7 @@ where
         _: &mut ValidatorContext<'a, S>,
         op: &'a Spanning<Operation<S>>,
     ) {
-        let op_name = op.item.name.as_ref().map(|s| s.item.as_ref());
+        let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
     }
 

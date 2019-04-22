@@ -171,7 +171,7 @@ where
     let value = parse_value_literal(parser, is_const, schema, tpe)?;
 
     Ok(Spanning::start_end(
-        &key.start.clone(),
+        &key.start,
         &value.end.clone(),
         (key.map(|s| s.to_owned()), value),
     ))

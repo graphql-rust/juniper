@@ -123,7 +123,7 @@ where
         } else {
             ctx.report_error(
                 &unknown_error_message(directive_name),
-                &[directive.start.clone()],
+                &[directive.start],
             );
         }
     }

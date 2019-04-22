@@ -22,7 +22,7 @@ where
         if !context.is_known_fragment(spread_name.item) {
             context.report_error(
                 &error_message(spread_name.item),
-                &[spread_name.start.clone()],
+                &[spread_name.start],
             );
         }
     }

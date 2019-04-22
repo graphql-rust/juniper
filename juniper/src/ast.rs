@@ -352,7 +352,7 @@ where
     where
         &'a S: Into<Option<&'a i32>>,
     {
-        self.as_scalar_value().map(|i| *i)
+        self.as_scalar_value().cloned()
     }
 
     /// View the underlying float value, if present.
@@ -361,7 +361,7 @@ where
     where
         &'a S: Into<Option<&'a f64>>,
     {
-        self.as_scalar_value().map(|f| *f)
+        self.as_scalar_value().cloned()
     }
 
     /// View the underlying string value, if present.

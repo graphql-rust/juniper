@@ -22,11 +22,11 @@ where
             match (field_type.is_leaf(), &field.item.selection_set) {
                 (true, &Some(_)) => Some(RuleError::new(
                     &no_allowed_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start.clone()],
+                    &[field.start],
                 )),
                 (false, &None) => Some(RuleError::new(
                     &required_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start.clone()],
+                    &[field.start],
                 )),
                 _ => None,
             }

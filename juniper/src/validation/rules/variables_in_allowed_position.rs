@@ -47,7 +47,7 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
             for &(ref var_name, ref var_type) in usages {
                 if let Some(&&(ref var_def_name, ref var_def)) = var_defs
                     .iter()
-                    .find(|&&&(ref n, _)| &n.item == var_name.item)
+                    .find(|&&&(ref n, _)| n.item == var_name.item)
                 {
                     let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
                         (&Some(_), &Type::List(ref inner)) => Type::NonNullList(inner.clone()),
@@ -64,7 +64,7 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
                                 &format!("{}", expected_type),
                                 &format!("{}", var_type),
                             ),
-                            &[var_def_name.start.clone(), var_name.start.clone()],
+                            &[var_def_name.start, var_name.start],
                         );
                     }
                 }

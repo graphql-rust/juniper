@@ -76,7 +76,7 @@ where
                     .iter()
                     .filter(|var| !used.contains(var.item))
                     .map(|var| {
-                        RuleError::new(&error_message(var.item, *op_name), &[var.start.clone()])
+                        RuleError::new(&error_message(var.item, *op_name), &[var.start])
                     })
                     .collect(),
             );

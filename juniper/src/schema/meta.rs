@@ -1,6 +1,6 @@
 //! Types used to describe a `GraphQL` schema
 
-use std::borrow::Cow;
+use std::borrow::{Cow, ToOwned};
 use std::fmt;
 
 use crate::ast::{FromInputValue, InputValue, Type};
@@ -22,16 +22,16 @@ impl DeprecationStatus {
     /// If this deprecation status indicates the item is deprecated.
     pub fn is_deprecated(&self) -> bool {
         match self {
-            &DeprecationStatus::Current => false,
-            &DeprecationStatus::Deprecated(_) => true,
+            DeprecationStatus::Current => false,
+            DeprecationStatus::Deprecated(_) => true,
         }
     }
 
     /// An optional reason for the deprecation, or none if `Current`.
     pub fn reason(&self) -> Option<&String> {
         match self {
-            &DeprecationStatus::Current => None,
-            &DeprecationStatus::Deprecated(ref reason) => reason.as_ref(),
+            DeprecationStatus::Current => None,
+            DeprecationStatus::Deprecated(ref reason) => reason.as_ref(),
         }
     }
 }
@@ -394,7 +394,7 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         ScalarMeta {
-            name: name,
+            name,
             description: None,
             try_parse_fn: try_parse_fn::<S, T>,
             parse_fn: <T as ParseScalarValue<S>>::from_str,
@@ -418,7 +418,7 @@ where
 impl<'a> ListMeta<'a> {
     /// Build a new list type by wrapping the specified type
     pub fn new(of_type: Type<'a>) -> ListMeta<'a> {
-        ListMeta { of_type: of_type }
+        ListMeta { of_type }
     }
 
     /// Wrap the list in a generic meta type
@@ -430,7 +430,7 @@ impl<'a> ListMeta<'a> {
 impl<'a> NullableMeta<'a> {
     /// Build a new nullable type by wrapping the specified type
     pub fn new(of_type: Type<'a>) -> NullableMeta<'a> {
-        NullableMeta { of_type: of_type }
+        NullableMeta { of_type }
     }
 
     /// Wrap the nullable type in a generic meta type
@@ -446,7 +446,7 @@ where
     /// Build a new object type with the specified name and fields
     pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self {
         ObjectMeta {
-            name: name,
+            name,
             description: None,
             fields: fields.to_vec(),
             interface_names: vec![],
@@ -490,7 +490,7 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         EnumMeta {
-            name: name,
+            name,
             description: None,
             values: values.to_vec(),
             try_parse_fn: try_parse_fn::<S, T>,
@@ -518,7 +518,7 @@ where
     /// Build a new interface type with the specified name and fields
     pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> InterfaceMeta<'a, S> {
         InterfaceMeta {
-            name: name,
+            name,
             description: None,
             fields: fields.to_vec(),
         }
@@ -542,7 +542,7 @@ impl<'a> UnionMeta<'a> {
     /// Build a new union type with the specified name and possible types
     pub fn new(name: Cow<'a, str>, of_types: &[Type]) -> UnionMeta<'a> {
         UnionMeta {
-            name: name,
+            name,
             description: None,
             of_type_names: of_types
                 .iter()
@@ -575,7 +575,7 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         InputObjectMeta {
-            name: name,
+            name,
             description: None,
             input_fields: input_fields.to_vec(),
             try_parse_fn: try_parse_fn::<S, T>,
@@ -648,7 +648,7 @@ impl<'a, S> Field<'a, S> {
     ///
     /// This overwrites the deprecation reason if any was previously set.
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
-        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(|s| s.to_owned()));
+        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
         self
     }
 }
@@ -659,7 +659,7 @@ impl<'a, S> Argument<'a, S> {
         Argument {
             name: name.to_owned(),
             description: None,
-            arg_type: arg_type,
+            arg_type,
             default_value: None,
         }
     }
@@ -724,7 +724,7 @@ impl EnumValue {
     ///
     /// This overwrites the deprecation reason if any was previously set.
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
-        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(|s| s.to_owned()));
+        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
         self
     }
 }
@@ -783,7 +783,7 @@ fn clean_docstring(multiline: &[&str]) -> Option<String> {
                 let new_ln = if !ln
                     .chars()
                     .next()
-                    .map(|ch| ch.is_whitespace())
+                    .map(char::is_whitespace)
                     .unwrap_or(false)
                 {
                     ln.trim_end() // skip trimming the first line

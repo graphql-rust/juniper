@@ -82,7 +82,7 @@ where
                     }
                 };
 
-                ctx.report_error(&message, &[arg_name.start.clone()]);
+                ctx.report_error(&message, &[arg_name.start]);
             }
         }
     }

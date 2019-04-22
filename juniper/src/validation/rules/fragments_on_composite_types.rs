@@ -26,7 +26,7 @@ where
 
                     context.report_error(
                         &error_message(Some(f.item.name.item), type_name),
-                        &[type_cond.start.clone()],
+                        &[type_cond.start],
                     );
                 }
             }

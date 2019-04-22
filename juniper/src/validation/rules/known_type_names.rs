@@ -49,7 +49,7 @@ fn validate_type<'a, S: Debug>(
     location: &SourcePosition,
 ) {
     if ctx.schema.type_by_name(type_name).is_none() {
-        ctx.report_error(&error_message(type_name), &[location.clone()]);
+        ctx.report_error(&error_message(type_name), &[*location]);
     }
 }
 

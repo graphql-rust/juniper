@@ -115,8 +115,8 @@ where
             query_type: query_obj,
             mutation_type: mutation_obj,
             schema: SchemaType::new::<QueryT, MutationT>(&query_info, &mutation_info),
-            query_info: query_info,
-            mutation_info: mutation_info,
+            query_info,
+            mutation_info,
         }
     }
 }
@@ -179,13 +179,13 @@ impl<'a, S> SchemaType<'a, S> {
         }
         SchemaType {
             types: registry.types,
-            query_type_name: query_type_name,
+            query_type_name,
             mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
                 Some(mutation_type_name)
             } else {
                 None
             },
-            directives: directives,
+            directives,
         }
     }
 

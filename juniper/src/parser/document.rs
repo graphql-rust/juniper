@@ -109,8 +109,8 @@ where
             &selection_set.end,
             Operation {
                 operation_type: operation_type.item,
-                name: name,
-                variable_definitions: variable_definitions,
+                name,
+                variable_definitions,
                 directives: directives.map(|s| s.item),
                 selection_set: selection_set.item,
             },
@@ -154,7 +154,7 @@ where
         &start_pos,
         &selection_set.end,
         Fragment {
-            name: name,
+            name,
             type_condition: type_cond,
             directives: directives.map(|s| s.item),
             selection_set: selection_set.item,
@@ -330,9 +330,9 @@ where
             .unwrap_or(&name.end)
             .clone(),
         Field {
-            alias: alias,
-            name: name,
-            arguments: arguments,
+            alias,
+            name,
+            arguments,
             directives: directives.map(|s| s.item),
             selection_set: selection_set.map(|s| s.item),
         },
@@ -449,8 +449,8 @@ where
         (
             Spanning::start_end(&start_pos, &var_name.end, var_name.item),
             VariableDefinition {
-                var_type: var_type,
-                default_value: default_value,
+                var_type,
+                default_value,
             },
         ),
     ))
@@ -499,8 +499,8 @@ where
         &start_pos,
         &arguments.as_ref().map_or(&name.end, |s| &s.end).clone(),
         Directive {
-            name: name,
-            arguments: arguments,
+            name,
+            arguments,
         },
     ))
 }

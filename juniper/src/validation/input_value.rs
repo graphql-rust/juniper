@@ -61,7 +61,7 @@ fn validate_var_defs<S>(
                             name.item,
                             def.var_type.item,
                         ),
-                        &[name.start.clone()],
+                        &[name.start],
                     ));
                 } else if let Some(v) = values.get(name.item) {
                     errors.append(&mut unify_value(name.item, &name.start, v, &ct, schema, Path::Root));
@@ -72,7 +72,7 @@ fn validate_var_defs<S>(
                     r#"Variable "${}" expected value of type "{}" which cannot be used as an input type."#,
                     name.item, def.var_type.item,
                 ),
-                &[ name.start.clone() ],
+                &[ name.start ],
             )),
         }
     }

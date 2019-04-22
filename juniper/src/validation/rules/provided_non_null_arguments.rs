@@ -38,7 +38,7 @@ where
                             &meta_arg.name,
                             &format!("{}", meta_arg.arg_type),
                         ),
-                        &[field.start.clone()],
+                        &[field.start],
                     );
                 }
             }
@@ -72,7 +72,7 @@ where
                             &meta_arg.name,
                             &format!("{}", meta_arg.arg_type),
                         ),
-                        &[directive.start.clone()],
+                        &[directive.start],
                     );
                 }
             }

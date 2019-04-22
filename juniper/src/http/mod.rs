@@ -60,9 +60,9 @@ where
         variables: Option<InputValue<S>>,
     ) -> Self {
         GraphQLRequest {
-            query: query,
-            operation_name: operation_name,
-            variables: variables,
+            query,
+            operation_name,
+            variables,
         }
     }
 
