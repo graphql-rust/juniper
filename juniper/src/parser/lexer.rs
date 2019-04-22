@@ -190,10 +190,9 @@ impl<'a> Lexer<'a> {
 
     fn scan_name(&mut self) -> LexerResult<'a> {
         let start_pos = self.position;
-        let (start_idx, start_ch) = self.next_char().ok_or_else(|| Spanning::zero_width(
-            &self.position,
-            LexerError::UnexpectedEndOfFile,
-        ))?;
+        let (start_idx, start_ch) = self
+            .next_char()
+            .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile))?;
         assert!(is_name_start(start_ch));
 
         let mut end_idx = start_idx;
@@ -216,10 +215,9 @@ impl<'a> Lexer<'a> {
 
     fn scan_string(&mut self) -> LexerResult<'a> {
         let start_pos = self.position;
-        let (start_idx, start_ch) = self.next_char().ok_or_else(|| Spanning::zero_width(
-            &self.position,
-            LexerError::UnexpectedEndOfFile,
-        ))?;
+        let (start_idx, start_ch) = self
+            .next_char()
+            .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile))?;
         if start_ch != '"' {
             return Err(Spanning::zero_width(
                 &self.position,
@@ -279,18 +277,16 @@ impl<'a> Lexer<'a> {
         &mut self,
         start_pos: &SourcePosition,
     ) -> Result<(), Spanning<LexerError>> {
-        let (start_idx, _) = self.peek_char().ok_or_else(|| Spanning::zero_width(
-            &self.position,
-            LexerError::UnterminatedString,
-        ))?;
+        let (start_idx, _) = self
+            .peek_char()
+            .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnterminatedString))?;
         let mut end_idx = start_idx;
         let mut len = 0;
 
         for _ in 0..4 {
-            let (idx, ch) = self.next_char().ok_or_else(|| Spanning::zero_width(
-                &self.position,
-                LexerError::UnterminatedString,
-            ))?;
+            let (idx, ch) = self.next_char().ok_or_else(|| {
+                Spanning::zero_width(&self.position, LexerError::UnterminatedString)
+            })?;
 
             if !ch.is_alphanumeric() {
                 break;
@@ -328,10 +324,9 @@ impl<'a> Lexer<'a> {
 
     fn scan_number(&mut self) -> LexerResult<'a> {
         let start_pos = self.position;
-        let (start_idx, _) = self.peek_char().ok_or_else(|| Spanning::zero_width(
-            &self.position,
-            LexerError::UnexpectedEndOfFile,
-        ))?;
+        let (start_idx, _) = self
+            .peek_char()
+            .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile))?;
 
         let mut last_idx = start_idx;
         let mut last_char = '1';

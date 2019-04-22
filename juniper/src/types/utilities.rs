@@ -1,8 +1,8 @@
 use crate::ast::InputValue;
 use crate::schema::meta::{EnumMeta, InputObjectMeta, MetaType};
 use crate::schema::model::{SchemaType, TypeType};
-use std::collections::HashSet;
 use crate::value::ScalarValue;
+use std::collections::HashSet;
 
 pub fn is_valid_literal_value<S>(
     schema: &SchemaType<S>,

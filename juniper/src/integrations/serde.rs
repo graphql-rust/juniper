@@ -399,10 +399,10 @@ where
 mod tests {
     use super::{ExecutionError, GraphQLError};
     use crate::ast::InputValue;
-    use serde_json::from_str;
-    use serde_json::to_string;
     use crate::value::{DefaultScalarValue, Object};
     use crate::{FieldError, Value};
+    use serde_json::from_str;
+    use serde_json::to_string;
 
     #[test]
     fn int() {

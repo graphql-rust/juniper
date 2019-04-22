@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{self, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta, parse_quote};
+use syn::{self, parse_quote, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta};
 
 use crate::util::*;
 

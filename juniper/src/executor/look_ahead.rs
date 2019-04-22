@@ -391,9 +391,9 @@ mod tests {
     use crate::ast::Document;
     use crate::parser::UnlocatedParseResult;
     use crate::schema::model::SchemaType;
-    use std::collections::HashMap;
     use crate::validation::test_harness::{MutationRoot, QueryRoot};
     use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+    use std::collections::HashMap;
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
     where

@@ -1,8 +1,8 @@
 use crate::ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition};
 use crate::parser::Spanning;
-use std::collections::{HashMap, HashSet};
 use crate::validation::{RuleError, ValidatorContext, Visitor};
 use crate::value::ScalarValue;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -75,9 +75,7 @@ where
                 def_vars
                     .iter()
                     .filter(|var| !used.contains(var.item))
-                    .map(|var| {
-                        RuleError::new(&error_message(var.item, *op_name), &[var.start])
-                    })
+                    .map(|var| RuleError::new(&error_message(var.item, *op_name), &[var.start]))
                     .collect(),
             );
         }

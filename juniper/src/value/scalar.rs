@@ -1,8 +1,8 @@
 use crate::parser::{ParseError, ScalarToken};
+use juniper_codegen::GraphQLScalarValueInternal as GraphQLScalarValue;
 use serde::de;
 use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};
-use juniper_codegen::GraphQLScalarValueInternal as GraphQLScalarValue;
 
 /// The result of converting a string into a scalar value
 pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a>>;

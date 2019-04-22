@@ -60,10 +60,7 @@ impl<T> Spanning<T> {
 
     #[doc(hidden)]
     pub fn spanning(v: Vec<Spanning<T>>) -> Option<Spanning<Vec<Spanning<T>>>> {
-        if let (Some(start), Some(end)) = (
-            v.first().map(|s| s.start),
-            v.last().map(|s| s.end),
-        ) {
+        if let (Some(start), Some(end)) = (v.first().map(|s| s.start), v.last().map(|s| s.end)) {
             Some(Spanning {
                 item: v,
                 start,
@@ -98,11 +95,7 @@ impl SourcePosition {
     pub fn new(index: usize, line: usize, col: usize) -> SourcePosition {
         assert!(index >= line + col);
 
-        SourcePosition {
-            index,
-            line,
-            col,
-        }
+        SourcePosition { index, line, col }
     }
 
     #[doc(hidden)]

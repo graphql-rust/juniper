@@ -480,11 +480,11 @@ where
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else if !resolve_selection_set_into(
-                        instance,
-                        info,
-                        &fragment.selection_set[..],
-                        &sub_exec,
-                        result,
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    &sub_exec,
+                    result,
                 ) {
                     return false;
                 }

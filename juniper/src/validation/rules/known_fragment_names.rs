@@ -20,10 +20,7 @@ where
     ) {
         let spread_name = &spread.item.name;
         if !context.is_known_fragment(spread_name.item) {
-            context.report_error(
-                &error_message(spread_name.item),
-                &[spread_name.start],
-            );
+            context.report_error(&error_message(spread_name.item), &[spread_name.start]);
         }
     }
 }

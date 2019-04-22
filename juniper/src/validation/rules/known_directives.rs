@@ -1,4 +1,6 @@
-use crate::ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType};
+use crate::ast::{
+    Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType,
+};
 use crate::parser::Spanning;
 use crate::schema::model::DirectiveLocation;
 use crate::validation::{ValidatorContext, Visitor};
@@ -121,10 +123,7 @@ where
                 }
             }
         } else {
-            ctx.report_error(
-                &unknown_error_message(directive_name),
-                &[directive.start],
-            );
+            ctx.report_error(&unknown_error_message(directive_name), &[directive.start]);
         }
     }
 }

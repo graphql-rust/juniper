@@ -1,13 +1,15 @@
-use crate::ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type};
+use crate::ast::{
+    Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type,
+};
 use crate::parser::{SourcePosition, Spanning};
 use crate::schema::meta::{Field as FieldType, MetaType};
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);

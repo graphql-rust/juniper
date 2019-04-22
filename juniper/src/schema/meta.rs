@@ -780,12 +780,7 @@ fn clean_docstring(multiline: &[&str]) -> Option<String> {
             .iter()
             .enumerate()
             .flat_map(|(line, ln)| {
-                let new_ln = if !ln
-                    .chars()
-                    .next()
-                    .map(char::is_whitespace)
-                    .unwrap_or(false)
-                {
+                let new_ln = if !ln.chars().next().map(char::is_whitespace).unwrap_or(false) {
                     ln.trim_end() // skip trimming the first line
                 } else if ln.len() >= trim_start {
                     ln[trim_start..].trim_end()

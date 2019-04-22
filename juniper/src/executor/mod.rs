@@ -789,10 +789,8 @@ where
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
         if !self.types.contains_key(&name) {
-            self.types.insert(
-                name,
-                MetaType::Placeholder(PlaceholderMeta { of_type }),
-            );
+            self.types
+                .insert(name, MetaType::Placeholder(PlaceholderMeta { of_type }));
         }
     }
 

@@ -1,9 +1,9 @@
 use crate::ast::{Directive, Field, InputValue};
 use crate::parser::Spanning;
 use crate::schema::meta::Argument;
-use std::fmt::Debug;
 use crate::validation::{ValidatorContext, Visitor};
 use crate::value::ScalarValue;
+use std::fmt::Debug;
 
 #[derive(Debug)]
 enum ArgumentPosition<'a> {

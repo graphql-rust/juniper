@@ -1,9 +1,9 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
 
-use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
-use juniper::GraphQLInputObject;
 use juniper::DefaultScalarValue;
+use juniper::GraphQLInputObject;
+use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
 #[graphql(

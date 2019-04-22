@@ -1,10 +1,10 @@
 use crate::ast::{Directive, Field, InputValue};
 use crate::parser::Spanning;
 use crate::schema::meta::Argument;
-use std::fmt::Debug;
 use crate::types::utilities::is_valid_literal_value;
 use crate::validation::{ValidatorContext, Visitor};
 use crate::value::ScalarValue;
+use std::fmt::Debug;
 
 pub struct ArgumentsOfCorrectType<'a, S: Debug + 'a> {
     current_args: Option<&'a Vec<Argument<'a, S>>>,

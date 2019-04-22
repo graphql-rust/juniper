@@ -29,8 +29,8 @@ graphql_scalar!(Uuid where Scalar = <S> {
 
 #[cfg(test)]
 mod test {
-    use uuid::Uuid;
     use crate::{value::DefaultScalarValue, InputValue};
+    use uuid::Uuid;
 
     #[test]
     fn uuid_from_input_value() {

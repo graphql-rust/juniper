@@ -3,9 +3,9 @@ use std::fmt::Debug;
 use crate::ast::{Definition, Document, FragmentSpread, InlineFragment};
 use crate::parser::Spanning;
 use crate::schema::meta::MetaType;
-use std::collections::HashMap;
 use crate::validation::{ValidatorContext, Visitor};
 use crate::value::ScalarValue;
+use std::collections::HashMap;
 
 pub struct PossibleFragmentSpreads<'a, S: Debug + 'a> {
     fragment_types: HashMap<&'a str, &'a MetaType<'a, S>>,

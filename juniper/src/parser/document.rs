@@ -498,10 +498,7 @@ where
     Ok(Spanning::start_end(
         &start_pos,
         &arguments.as_ref().map_or(&name.end, |s| &s.end).clone(),
-        Directive {
-            name,
-            arguments,
-        },
+        Directive { name, arguments },
     ))
 }
 

@@ -1,8 +1,8 @@
 use crate::ast::{Fragment, InlineFragment, VariableDefinition};
 use crate::parser::{SourcePosition, Spanning};
-use std::fmt::Debug;
 use crate::validation::{ValidatorContext, Visitor};
 use crate::value::ScalarValue;
+use std::fmt::Debug;
 
 pub struct KnownTypeNames;
 

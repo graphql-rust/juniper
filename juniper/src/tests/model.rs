@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 
-use std::collections::HashMap;
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use std::collections::HashMap;
 
 #[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Episode {

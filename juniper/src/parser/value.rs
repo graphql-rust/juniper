@@ -1,6 +1,8 @@
 use crate::ast::InputValue;
 
-use crate::parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token};
+use crate::parser::{
+    ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token,
+};
 use crate::schema::meta::{InputObjectMeta, MetaType};
 use crate::schema::model::SchemaType;
 use crate::value::ScalarValue;

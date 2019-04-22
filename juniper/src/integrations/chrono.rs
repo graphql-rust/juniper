@@ -111,13 +111,14 @@ graphql_scalar!(NaiveDateTime where Scalar = <S> {
 
 #[cfg(test)]
 mod test {
-    use chrono::prelude::*;
     use crate::{value::DefaultScalarValue, InputValue};
+    use chrono::prelude::*;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
         let input: crate::InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
 
-        let parsed: DateTime<FixedOffset> = crate::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: DateTime<FixedOffset> =
+            crate::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw).unwrap();
 
         assert_eq!(parsed, expected);

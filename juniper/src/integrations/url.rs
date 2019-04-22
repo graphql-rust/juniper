@@ -22,8 +22,8 @@ graphql_scalar!(Url where Scalar = <S>{
 
 #[cfg(test)]
 mod test {
-    use url::Url;
     use crate::InputValue;
+    use url::Url;
 
     #[test]
     fn url_from_input_value() {
