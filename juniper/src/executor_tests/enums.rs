@@ -1,3 +1,5 @@
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+
 use crate::ast::InputValue;
 use crate::executor::Variables;
 use crate::parser::SourcePosition;
@@ -7,7 +9,7 @@ use crate::validation::RuleError;
 use crate::value::{DefaultScalarValue, Object, Value};
 use crate::GraphQLError::ValidationError;
 
-#[derive(GraphQLEnumInternal, Debug)]
+#[derive(GraphQLEnum, Debug)]
 enum Color {
     Red,
     Green,

@@ -1,3 +1,5 @@
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+
 use crate::executor::Variables;
 use crate::schema::model::RootNode;
 use crate::types::scalars::EmptyMutation;
@@ -15,33 +17,33 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 enum DefaultName {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 #[graphql(name = "ANamedEnum")]
 enum Named {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 enum NoTrailingComma {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 #[graphql(description = "A description of the enum itself")]
 enum EnumDescription {
     Foo,
     Bar,
 }
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 enum EnumValueDescription {
     #[graphql(description = "The FOO value")]
     Foo,
@@ -49,7 +51,7 @@ enum EnumValueDescription {
     Bar,
 }
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 enum EnumDeprecation {
     #[graphql(deprecated = "Please don't use FOO any more")]
     Foo,

@@ -1,6 +1,7 @@
 use indexmap::IndexMap;
 use serde::ser::SerializeMap;
 use serde::{de, ser};
+use serde_derive::Serialize;
 
 use std::fmt;
 
@@ -130,7 +131,7 @@ where
                 self.0.visit_i64(value).map(InputValue::Scalar)
             }
 
-            serde_if_integer128! {
+            serde::serde_if_integer128! {
                 fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
                 where
                     E: de::Error,
@@ -167,7 +168,7 @@ where
                 self.0.visit_u64(value).map(InputValue::Scalar)
             }
 
-            serde_if_integer128! {
+            serde::serde_if_integer128! {
                 fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
                 where
                     E: de::Error,

@@ -1,3 +1,5 @@
+use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
+
 use crate::ast::{FromInputValue, InputValue};
 use crate::executor::Registry;
 use crate::parser::parse_document_source;
@@ -27,7 +29,7 @@ struct ComplicatedArgs;
 
 pub(crate) struct QueryRoot;
 
-#[derive(Debug, GraphQLInputObjectInternal)]
+#[derive(Debug, GraphQLInputObject)]
 struct TestInput {
     id: i32,
     name: String,

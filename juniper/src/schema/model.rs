@@ -2,6 +2,8 @@ use std::fmt;
 
 use fnv::FnvHashMap;
 
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+
 use crate::ast::Type;
 use crate::executor::{Context, Registry};
 use crate::schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
@@ -57,7 +59,7 @@ pub struct DirectiveType<'a, S> {
     pub arguments: Vec<Argument<'a, S>>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, GraphQLEnumInternal)]
+#[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
 #[graphql(name = "__DirectiveLocation")]
 pub enum DirectiveLocation {
     Query,

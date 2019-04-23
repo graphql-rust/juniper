@@ -17,11 +17,11 @@ possible to use the same syntax as on `graphql_object!` to specify a custom
 representation.
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 # use juniper::{Value, FieldResult, ParseScalarValue, ParseScalarResult};
 struct UserID(String);
 
-graphql_scalar!(UserID {
+juniper::graphql_scalar!(UserID {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {

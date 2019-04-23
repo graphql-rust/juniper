@@ -1,3 +1,5 @@
+use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
+
 use crate::ast::InputValue;
 use crate::executor::Variables;
 use crate::parser::SourcePosition;
@@ -32,7 +34,7 @@ graphql_scalar!(TestComplexScalar {
     }
 });
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(scalar = "DefaultScalarValue")]
 struct TestInputObject {
     a: Option<String>,
@@ -41,20 +43,20 @@ struct TestInputObject {
     d: Option<TestComplexScalar>,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(scalar = "DefaultScalarValue")]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct ExampleInputObject {
     a: Option<String>,
     b: i32,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct InputWithDefaults {
     #[graphql(default = "123")]
     a: i32,

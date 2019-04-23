@@ -2,7 +2,7 @@
 use fnv::FnvHashMap;
 
 use juniper::{self, FromInputValue, GraphQLType, InputValue, ToInputValue};
-
+use juniper::GraphQLInputObject;
 use juniper::DefaultScalarValue;
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
@@ -103,7 +103,7 @@ fn test_derived_input_object() {
 
     // Test default value injection.
 
-    let input_no_defaults: InputValue = ::serde_json::from_value(json!({
+    let input_no_defaults: InputValue = ::serde_json::from_value(serde_json::json!({
         "regularField": "a",
     }))
     .unwrap();
@@ -120,7 +120,7 @@ fn test_derived_input_object() {
 
     // Test with all values supplied.
 
-    let input: InputValue = ::serde_json::from_value(json!({
+    let input: InputValue = ::serde_json::from_value(serde_json::json!({
         "regularField": "a",
         "haha": 55,
         "other": true,

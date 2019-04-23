@@ -1,5 +1,6 @@
 use proc_macro2::TokenStream;
 
+use quote::quote;
 use syn::{self, Data, Fields, Ident, Variant};
 
 pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {

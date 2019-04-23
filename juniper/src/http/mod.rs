@@ -5,6 +5,7 @@ pub mod playground;
 
 use serde::de::Deserialize;
 use serde::ser::{self, Serialize, SerializeMap};
+use serde_derive::{Serialize, Deserialize};
 
 use crate::ast::InputValue;
 use crate::executor::ExecutionError;

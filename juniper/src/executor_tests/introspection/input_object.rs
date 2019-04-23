@@ -1,3 +1,5 @@
+use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
+
 use crate::ast::{FromInputValue, InputValue};
 use crate::executor::Variables;
 use crate::schema::model::RootNode;
@@ -6,47 +8,47 @@ use crate::value::{DefaultScalarValue, Object, Value};
 
 struct Root;
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct DefaultName {
     field_one: String,
     field_two: String,
 }
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct NoTrailingComma {
     field_one: String,
     field_two: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct Derive {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(name = "ANamedInputObject")]
 struct Named {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(description = "Description for the input object")]
 struct Description {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 pub struct Public {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(description = "Description for the input object")]
 pub struct PublicWithDescription {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(
     name = "APublicNamedInputObjectWithDescription",
     description = "Description for the input object"
@@ -55,13 +57,13 @@ pub struct NamedPublicWithDescription {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 #[graphql(name = "APublicNamedInputObject")]
 pub struct NamedPublic {
     field_one: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct FieldDescription {
     #[graphql(description = "The first field")]
     field_one: String,
@@ -69,7 +71,7 @@ struct FieldDescription {
     field_two: String,
 }
 
-#[derive(GraphQLInputObjectInternal, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct FieldWithDefaults {
     #[graphql(default = "123")]
     field_one: i32,

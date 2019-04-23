@@ -1,5 +1,10 @@
 use indexmap::IndexMap;
 
+use juniper_codegen::{
+    GraphQLInputObjectInternal as GraphQLInputObject,
+    GraphQLEnumInternal as GraphQLEnum,
+};
+
 use crate::ast::{FromInputValue, InputValue, Type};
 use crate::parser::value::parse_value_literal;
 use crate::parser::{Lexer, Parser, SourcePosition, Spanning};
@@ -9,17 +14,17 @@ use crate::schema::meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaTy
 use crate::schema::model::SchemaType;
 use crate::types::scalars::EmptyMutation;
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 enum Enum {
     EnumValue,
 }
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct Bar {
     foo: String,
 }
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct Foo {
     key: i32,
     other: Bar,

@@ -23,7 +23,7 @@ the schema on an HTTP endpoint supporting both GET and POST requests:
 
 ```rust,no_run
 extern crate iron;
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 # extern crate juniper_iron;
 # use std::collections::HashMap;
 
@@ -37,7 +37,7 @@ use juniper::{Context, EmptyMutation};
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# graphql_object!(User: Database |&self| {
+# juniper::graphql_object!(User: Database |&self| {
 #     field id() -> FieldResult<&String> {
 #         Ok(&self.id)
 #     }
@@ -53,7 +53,7 @@ use juniper::{Context, EmptyMutation};
 #     }
 # });
 #
-# graphql_object!(QueryRoot: Database |&self| {
+# juniper::graphql_object!(QueryRoot: Database |&self| {
 #     field user(&executor, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
 #     }
@@ -101,18 +101,12 @@ supported.
 
 */
 
-#[macro_use]
-extern crate iron;
 #[cfg(test)]
 extern crate iron_test;
-extern crate juniper;
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 #[cfg(test)]
 extern crate url;
-extern crate urlencoded;
 
+use iron::itry;
 use iron::method;
 use iron::middleware::Handler;
 use iron::mime::Mime;
@@ -130,7 +124,7 @@ use juniper::http;
 use juniper::serde::Deserialize;
 use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
 
-#[derive(Deserialize)]
+#[derive(serde_derive::Deserialize)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLBatchRequest<S = DefaultScalarValue>
@@ -141,7 +135,7 @@ where
     Batch(Vec<http::GraphQLRequest<S>>),
 }
 
-#[derive(Serialize)]
+#[derive(serde_derive::Serialize)]
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where

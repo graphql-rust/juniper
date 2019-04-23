@@ -10,10 +10,10 @@ safety and reduce repetitive declarations.
 The simplest case exposes fields on a struct:
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 struct User { id: String, name: String, group_ids: Vec<String> }
 
-graphql_object!(User: () |&self| {
+juniper::graphql_object!(User: () |&self| {
     field id() -> &String {
         &self.id
     }
@@ -42,10 +42,10 @@ attributes. Alternatively the same syntax as for the type could be
 used
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 struct User { id: String, name: String, group_ids: Vec<String> }
 
-graphql_object!(User: () |&self| {
+juniper::graphql_object!(User: () |&self| {
     description: "A user in the database"
 
 
@@ -77,16 +77,16 @@ You can expose generic or pointer types by prefixing the type with the necessary
 generic parameters:
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 trait SomeTrait { fn id(&self) -> &str; }
 
-graphql_object!(<'a> &'a SomeTrait: () as "SomeTrait" |&self| {
+juniper::graphql_object!(<'a> &'a SomeTrait: () as "SomeTrait" |&self| {
     field id() -> &str { self.id() }
 });
 
 struct GenericType<T> { items: Vec<T> }
 
-graphql_object!(<T> GenericType<T>: () as "GenericType" |&self| {
+juniper::graphql_object!(<T> GenericType<T>: () as "GenericType" |&self| {
     field count() -> i32 { self.items.len() as i32 }
 });
 
@@ -98,14 +98,14 @@ graphql_object!(<T> GenericType<T>: () as "GenericType" |&self| {
 You can use the `interfaces` item to implement interfaces:
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 trait Interface {
     fn id(&self) -> &str;
     fn as_implementor(&self) -> Option<Implementor>;
 }
 struct Implementor { id: String }
 
-graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
+juniper::graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |&context| {
@@ -113,7 +113,7 @@ graphql_interface!(<'a> &'a Interface: () as "Interface" |&self| {
     }
 });
 
-graphql_object!(Implementor: () |&self| {
+juniper::graphql_object!(Implementor: () |&self| {
     field id() -> &str { &self.id }
 
     interfaces: [&Interface]
@@ -140,11 +140,11 @@ automatically via the `?` operator, or you can construct them yourself using
 `FieldError::new`.
 
 ```
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 # use juniper::FieldResult;
 struct User { id: String }
 
-graphql_object!(User: () |&self| {
+juniper::graphql_object!(User: () |&self| {
     field id() -> FieldResult<&String> {
         Ok(&self.id)
     }
@@ -172,10 +172,10 @@ be used as type parameter to the implementing type.
 Example for using a generic scalar value type
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 struct User { id: String }
 
-graphql_object!(User: () where Scalar = <S> |&self| {
+juniper::graphql_object!(User: () where Scalar = <S> |&self| {
     field id() -> &String {
         &self.id
     }

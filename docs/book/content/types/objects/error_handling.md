@@ -129,7 +129,7 @@ impl juniper::IntoFieldError for CustomError {
         match self {
             CustomError::WhateverNotSet => juniper::FieldError::new(
                 "Whatever does not exist",
-                juniper::graphql_value!({
+                graphql_value!({
                     "type": "NO_WHATEVER"
                 }),
             ),

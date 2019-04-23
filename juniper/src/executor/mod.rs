@@ -157,9 +157,10 @@ impl<S> FieldError<S> {
     /// You can use the `graphql_value!` macro to construct an error:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate juniper;
+    /// # extern crate juniper;
     /// use juniper::FieldError;
     /// # use juniper::DefaultScalarValue;
+    /// use juniper::graphql_value;
     ///
     /// # fn sample() {
     /// # let _: FieldError<DefaultScalarValue> =

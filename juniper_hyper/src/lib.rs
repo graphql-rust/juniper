@@ -1,15 +1,5 @@
-#[macro_use]
-extern crate futures;
-extern crate hyper;
-extern crate juniper;
-#[macro_use]
-extern crate serde_derive;
 #[cfg(test)]
 extern crate reqwest;
-extern crate serde_json;
-extern crate tokio;
-extern crate tokio_threadpool;
-extern crate url;
 
 use futures::future::Either;
 use hyper::header::HeaderValue;
@@ -204,7 +194,7 @@ fn new_html_response(code: StatusCode) -> Response<Body> {
     resp
 }
 
-#[derive(Deserialize)]
+#[derive(serde_derive::Deserialize)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLRequest<S = DefaultScalarValue>
@@ -232,7 +222,7 @@ where
     {
         match self {
             GraphQLRequest::Single(request) => Either::A(future::poll_fn(move || {
-                let res = try_ready!(tokio_threadpool::blocking(
+                let res = futures::try_ready!(tokio_threadpool::blocking(
                     || request.execute(&root_node, &context)
                 ));
                 let is_ok = res.is_ok();
@@ -246,7 +236,7 @@ where
                         let root_node = root_node.clone();
                         let context = context.clone();
                         future::poll_fn(move || {
-                            let res = try_ready!(tokio_threadpool::blocking(
+                            let res = futures::try_ready!(tokio_threadpool::blocking(
                                 || request.execute(&root_node, &context)
                             ));
                             let is_ok = res.is_ok();

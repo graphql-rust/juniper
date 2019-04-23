@@ -242,8 +242,8 @@ where
 /// Here are some examples; the resulting JSON will look just like what you
 /// passed in.
 /// ```rust
-/// #[macro_use] extern crate juniper;
-/// # use juniper::{Value, DefaultScalarValue};
+/// extern crate juniper;
+/// # use juniper::{Value, DefaultScalarValue, graphql_value};
 /// # type V = Value<DefaultScalarValue>;
 ///
 /// # fn main() {

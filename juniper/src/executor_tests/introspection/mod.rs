@@ -1,6 +1,8 @@
 mod enums;
 mod input_object;
 
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+
 // This asserts that the input objects defined public actually became public
 #[allow(unused_imports)]
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
@@ -10,7 +12,7 @@ use crate::schema::model::RootNode;
 use crate::types::scalars::EmptyMutation;
 use crate::value::{ParseScalarResult, ParseScalarValue, Value};
 
-#[derive(GraphQLEnumInternal)]
+#[derive(GraphQLEnum)]
 #[graphql(name = "SampleEnum")]
 enum Sample {
     One,

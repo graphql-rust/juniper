@@ -1,3 +1,5 @@
+use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
+
 use crate::executor::Variables;
 use crate::schema::model::RootNode;
 use crate::types::scalars::EmptyMutation;
@@ -19,7 +21,7 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct Point {
     x: i32,
 }

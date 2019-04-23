@@ -91,17 +91,10 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![warn(missing_docs)]
 
 #[doc(hidden)]
-#[macro_use]
 pub extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 
 #[cfg(any(test, feature = "expose-test-schema"))]
 extern crate serde_json;
-
-extern crate fnv;
-
-extern crate indexmap;
 
 #[cfg(any(test, feature = "chrono"))]
 extern crate chrono;
@@ -115,9 +108,6 @@ extern crate uuid;
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
-#[allow(unused_imports)]
-#[macro_use]
-extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
 

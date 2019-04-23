@@ -40,7 +40,7 @@ A simplified extract from the StarWars schema example shows how to use the
 shared context to implement downcasts.
 
 ```rust
-# #[macro_use] extern crate juniper;
+# extern crate juniper;
 # use std::collections::HashMap;
 struct Human { id: String }
 struct Droid { id: String }
@@ -61,16 +61,16 @@ impl Character for Droid {
     fn id(&self) -> &str { &self.id }
 }
 
-graphql_object!(Human: Database as "Human" |&self| {
+juniper::graphql_object!(Human: Database as "Human" |&self| {
     field id() -> &str { &self.id }
 });
 
-graphql_object!(Droid: Database as "Droid" |&self| {
+juniper::graphql_object!(Droid: Database as "Droid" |&self| {
     field id() -> &str { &self.id }
 });
 
 // You can introduce lifetimes or generic parameters by < > before the name.
-graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
+juniper::graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |&context| {
