@@ -1,8 +1,9 @@
 #![allow(missing_docs)]
 
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 use std::collections::HashMap;
 
-#[derive(GraphQLEnumInternal, Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Episode {
     #[graphql(name = "NEW_HOPE")]
     NewHope,

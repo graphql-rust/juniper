@@ -1,18 +1,20 @@
 use indexmap::IndexMap;
 
-use ast::{Directive, FromInputValue, InputValue, Selection};
-use executor::Variables;
-use value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
-use executor::{ExecutionResult, Executor, Registry};
-use parser::Spanning;
-use schema::meta::{Argument, MetaType};
+use crate::ast::{Directive, FromInputValue, InputValue, Selection};
+use crate::executor::Variables;
+use crate::value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
+
+use crate::executor::{ExecutionResult, Executor, Registry};
+use crate::parser::Spanning;
+use crate::schema::meta::{Argument, MetaType};
 
 /// GraphQL type kind
 ///
 /// The GraphQL specification defines a number of type kinds - the meta type
 /// of a type.
-#[derive(Clone, Eq, PartialEq, Debug, GraphQLEnumInternal)]
+#[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
 #[graphql(name = "__TypeKind")]
 pub enum TypeKind {
     /// ## Scalar types
@@ -97,7 +99,7 @@ where
             }
         }
 
-        Arguments { args: args }
+        Arguments { args }
     }
 
     /// Get and convert an argument into the desired type.
@@ -477,16 +479,14 @@ where
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
-                } else {
-                    if !resolve_selection_set_into(
-                        instance,
-                        info,
-                        &fragment.selection_set[..],
-                        &sub_exec,
-                        result,
-                    ) {
-                        return false;
-                    }
+                } else if !resolve_selection_set_into(
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    &sub_exec,
+                    result,
+                ) {
+                    return false;
                 }
             }
         }

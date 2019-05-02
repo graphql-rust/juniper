@@ -1,8 +1,8 @@
 use proc_macro2::{Span, TokenStream};
-use syn;
-use syn::{Data, DeriveInput, Field, Fields, Ident};
+use quote::quote;
+use syn::{self, parse_quote, Data, DeriveInput, Field, Fields, Ident};
 
-use util::*;
+use crate::util::*;
 
 #[derive(Default, Debug)]
 struct ObjAttrs {
@@ -179,7 +179,7 @@ pub fn impl_object(ast: &syn::DeriveInput) -> TokenStream {
             }
             None => {
                 // Note: auto camel casing when no custom name specified.
-                ::util::to_camel_case(&field_ident.to_string())
+                crate::util::to_camel_case(&field_ident.to_string())
             }
         };
         let build_description = match field_attrs.description {

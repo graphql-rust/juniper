@@ -9,6 +9,7 @@ description = "Internal custom derive trait for Juniper GraphQL"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper"
 repository = "https://github.com/graphql-rust/juniper"
+edition = "2018"
 
 [lib]
 proc-macro = true

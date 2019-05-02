@@ -6,23 +6,23 @@ use std::sync::RwLock;
 
 use fnv::FnvHashMap;
 
-use ast::{
+use crate::ast::{
     Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
     ToInputValue, Type,
 };
-use parser::SourcePosition;
-use value::Value;
-use GraphQLError;
+use crate::parser::SourcePosition;
+use crate::value::Value;
+use crate::GraphQLError;
 
-use schema::meta::{
+use crate::schema::meta::{
     Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta,
     ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
 };
-use schema::model::{RootNode, SchemaType, TypeType};
+use crate::schema::model::{RootNode, SchemaType, TypeType};
 
-use types::base::GraphQLType;
-use types::name::Name;
-use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use crate::types::base::GraphQLType;
+use crate::types::name::Name;
+use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
 mod look_ahead;
 
@@ -86,7 +86,7 @@ impl<S> ExecutionError<S> {
         ExecutionError {
             location: SourcePosition::new_origin(),
             path: Vec::new(),
-            error: error,
+            error,
         }
     }
 }
@@ -141,7 +141,7 @@ pub struct FieldError<S = DefaultScalarValue> {
 
 impl<T: Display, S> From<T> for FieldError<S>
 where
-    S: ::value::ScalarValue,
+    S: crate::value::ScalarValue,
 {
     fn from(e: T) -> FieldError<S> {
         FieldError {
@@ -157,9 +157,10 @@ impl<S> FieldError<S> {
     /// You can use the `graphql_value!` macro to construct an error:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate juniper;
+    /// # extern crate juniper;
     /// use juniper::FieldError;
     /// # use juniper::DefaultScalarValue;
+    /// use juniper::graphql_value;
     ///
     /// # fn sample() {
     /// # let _: FieldError<DefaultScalarValue> =
@@ -260,7 +261,7 @@ where
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
-            .map_err(|e| e.into_field_error())
+            .map_err(IntoFieldError::into_field_error)
     }
 }
 
@@ -479,7 +480,7 @@ where
 
     #[doc(hidden)]
     pub fn fragment_by_name(&self, name: &str) -> Option<&'a Fragment<S>> {
-        self.fragments.get(name).map(|f| *f)
+        self.fragments.get(name).cloned()
     }
 
     /// The current location of the executor
@@ -489,8 +490,7 @@ where
 
     /// Add an error to the execution engine at the current executor location
     pub fn push_error(&self, error: FieldError<S>) {
-        let location = self.location().clone();
-        self.push_error_at(error, location);
+        self.push_error_at(error, self.location().clone());
     }
 
     /// Add an error to the execution engine at a specific location
@@ -501,9 +501,9 @@ where
         let mut errors = self.errors.write().unwrap();
 
         errors.push(ExecutionError {
-            location: location,
-            path: path,
-            error: error,
+            location,
+            path,
+            error,
         });
     }
 
@@ -540,7 +540,7 @@ where
                         .unwrap_or_else(Vec::new),
                 })
             })
-            .unwrap_or(LookAheadSelection::default())
+            .unwrap_or_default()
     }
 }
 
@@ -566,9 +566,9 @@ impl<S> ExecutionError<S> {
     #[doc(hidden)]
     pub fn new(location: SourcePosition, path: &[&str], error: FieldError<S>) -> ExecutionError<S> {
         ExecutionError {
-            location: location,
+            location,
             path: path.iter().map(|s| (*s).to_owned()).collect(),
-            error: error,
+            error,
         }
     }
 
@@ -674,7 +674,7 @@ where
             parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
-            context: context,
+            context,
             errors: &errors,
             field_path: FieldPath::Root(op.start),
         };
@@ -699,7 +699,7 @@ where
 {
     /// Construct a new registry
     pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Registry<'r, S> {
-        Registry { types: types }
+        Registry { types }
     }
 
     /// Get the `Type` instance for a given GraphQL type
@@ -789,10 +789,8 @@ where
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
         if !self.types.contains_key(&name) {
-            self.types.insert(
-                name,
-                MetaType::Placeholder(PlaceholderMeta { of_type: of_type }),
-            );
+            self.types
+                .insert(name, MetaType::Placeholder(PlaceholderMeta { of_type }));
         }
     }
 

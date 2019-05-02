@@ -1,9 +1,9 @@
 use std::collections::hash_map::{Entry, HashMap};
 
-use ast::Fragment;
-use parser::{SourcePosition, Spanning};
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::Fragment;
+use crate::parser::{SourcePosition, Spanning};
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct UniqueFragmentNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -28,11 +28,11 @@ where
             Entry::Occupied(e) => {
                 context.report_error(
                     &duplicate_message(f.item.name.item),
-                    &[e.get().clone(), f.item.name.start.clone()],
+                    &[e.get().clone(), f.item.name.start],
                 );
             }
             Entry::Vacant(e) => {
-                e.insert(f.item.name.start.clone());
+                e.insert(f.item.name.start);
             }
         }
     }
@@ -46,9 +46,9 @@ fn duplicate_message(frag_name: &str) -> String {
 mod tests {
     use super::{duplicate_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn no_fragments() {

@@ -127,8 +127,7 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 
 ```rust
 # // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use]
-# extern crate juniper;
+# #[macro_use] extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
 #[derive(juniper::GraphQLEnum, Clone, Copy)]

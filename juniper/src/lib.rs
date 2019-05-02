@@ -91,17 +91,10 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![warn(missing_docs)]
 
 #[doc(hidden)]
-#[macro_use]
 pub extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 
 #[cfg(any(test, feature = "expose-test-schema"))]
 extern crate serde_json;
-
-extern crate fnv;
-
-extern crate indexmap;
 
 #[cfg(any(test, feature = "chrono"))]
 extern crate chrono;
@@ -115,9 +108,6 @@ extern crate uuid;
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
-#[allow(unused_imports)]
-#[macro_use]
-extern crate juniper_codegen;
 #[doc(hidden)]
 pub use juniper_codegen::*;
 
@@ -138,7 +128,7 @@ mod validation;
 pub mod http;
 pub mod integrations;
 // TODO: remove this alias export in 0.10. (breaking change)
-pub use http::graphiql;
+pub use crate::http::graphiql;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
@@ -149,28 +139,28 @@ pub mod tests;
 mod executor_tests;
 
 // Needs to be public because macros use it.
-pub use util::to_camel_case;
+pub use crate::util::to_camel_case;
 
-use executor::execute_validated_query;
-use introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS};
-use parser::{parse_document_source, ParseError, Spanning};
-use validation::{validate_input_values, visit_all_rules, ValidatorContext};
+use crate::executor::execute_validated_query;
+use crate::introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS};
+use crate::parser::{parse_document_source, ParseError, Spanning};
+use crate::validation::{validate_input_values, visit_all_rules, ValidatorContext};
 
-pub use ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
-pub use executor::{
+pub use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
+pub use crate::executor::{
     Applies, LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue,
 };
-pub use executor::{
+pub use crate::executor::{
     Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult, FromContext,
     IntoFieldError, IntoResolvable, Registry, Variables,
 };
-pub use introspection::IntrospectionFormat;
-pub use schema::meta;
-pub use schema::model::RootNode;
-pub use types::base::{Arguments, GraphQLType, TypeKind};
-pub use types::scalars::{EmptyMutation, ID};
-pub use validation::RuleError;
-pub use value::{
+pub use crate::introspection::IntrospectionFormat;
+pub use crate::schema::meta;
+pub use crate::schema::model::RootNode;
+pub use crate::types::base::{Arguments, GraphQLType, TypeKind};
+pub use crate::types::scalars::{EmptyMutation, ID};
+pub use crate::validation::RuleError;
+pub use crate::value::{
     DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
     Value,
 };

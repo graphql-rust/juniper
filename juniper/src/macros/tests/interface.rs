@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use ast::InputValue;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, Value};
+use crate::ast::InputValue;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::value::{DefaultScalarValue, Object, Value};
 
 /*
 
@@ -147,7 +147,7 @@ where
         .into_iter()
         .collect();
 
-    let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

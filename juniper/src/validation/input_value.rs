@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 use std::fmt;
 
-use ast::{Definition, Document, InputValue, VariableDefinitions};
-use executor::Variables;
-use parser::SourcePosition;
-use schema::meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta};
-use schema::model::{SchemaType, TypeType};
-use validation::RuleError;
-use value::{ScalarRefValue, ScalarValue};
+use crate::ast::{Definition, Document, InputValue, VariableDefinitions};
+use crate::executor::Variables;
+use crate::parser::SourcePosition;
+use crate::schema::meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta};
+use crate::schema::model::{SchemaType, TypeType};
+use crate::validation::RuleError;
+use crate::value::{ScalarRefValue, ScalarValue};
 
 #[derive(Debug)]
 enum Path<'a> {
@@ -61,7 +61,7 @@ fn validate_var_defs<S>(
                             name.item,
                             def.var_type.item,
                         ),
-                        &[name.start.clone()],
+                        &[name.start],
                     ));
                 } else if let Some(v) = values.get(name.item) {
                     errors.append(&mut unify_value(name.item, &name.start, v, &ct, schema, Path::Root));
@@ -72,7 +72,7 @@ fn validate_var_defs<S>(
                     r#"Variable "${}" expected value of type "{}" which cannot be used as an input type."#,
                     name.item, def.var_type.item,
                 ),
-                &[ name.start.clone() ],
+                &[ name.start ],
             )),
         }
     }

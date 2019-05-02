@@ -1,25 +1,29 @@
 use indexmap::IndexMap;
 
-use ast::{FromInputValue, InputValue, Type};
-use parser::value::parse_value_literal;
-use parser::{Lexer, Parser, SourcePosition, Spanning};
-use value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use juniper_codegen::{
+    GraphQLEnumInternal as GraphQLEnum, GraphQLInputObjectInternal as GraphQLInputObject,
+};
 
-use schema::meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta};
-use schema::model::SchemaType;
-use types::scalars::EmptyMutation;
+use crate::ast::{FromInputValue, InputValue, Type};
+use crate::parser::value::parse_value_literal;
+use crate::parser::{Lexer, Parser, SourcePosition, Spanning};
+use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
 
-#[derive(GraphQLEnumInternal)]
+use crate::schema::meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta};
+use crate::schema::model::SchemaType;
+use crate::types::scalars::EmptyMutation;
+
+#[derive(GraphQLEnum)]
 enum Enum {
     EnumValue,
 }
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct Bar {
     foo: String,
 }
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct Foo {
     key: i32,
     other: Bar,

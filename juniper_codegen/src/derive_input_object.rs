@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
 use proc_macro2::{Span, TokenStream};
-use quote::ToTokens;
-use syn::{self, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta};
+use quote::{quote, ToTokens};
+use syn::{self, parse_quote, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta};
 
-use util::*;
+use crate::util::*;
 
 #[derive(Default, Debug)]
 struct ObjAttrs {
@@ -170,7 +170,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
             }
             None => {
                 // Note: auto camel casing when no custom name specified.
-                ::util::to_camel_case(&field_ident.to_string())
+                crate::util::to_camel_case(&field_ident.to_string())
             }
         };
         let field_description = match field_attrs.description {
@@ -183,7 +183,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
                 Some(quote! { Default::default() })
             } else {
                 match field_attrs.default_expr {
-                    Some(ref def) => match ::proc_macro::TokenStream::from_str(def) {
+                    Some(ref def) => match proc_macro::TokenStream::from_str(def) {
                         Ok(t) => match syn::parse::<syn::Expr>(t) {
                             Ok(e) => {
                                 let mut tokens = TokenStream::new();

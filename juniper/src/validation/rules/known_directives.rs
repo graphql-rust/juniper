@@ -1,8 +1,10 @@
-use ast::{Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType};
-use parser::Spanning;
-use schema::model::DirectiveLocation;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::{
+    Directive, Field, Fragment, FragmentSpread, InlineFragment, Operation, OperationType,
+};
+use crate::parser::Spanning;
+use crate::schema::model::DirectiveLocation;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct KnownDirectives {
     location_stack: Vec<DirectiveLocation>,
@@ -121,10 +123,7 @@ where
                 }
             }
         } else {
-            ctx.report_error(
-                &unknown_error_message(directive_name),
-                &[directive.start.clone()],
-            );
+            ctx.report_error(&unknown_error_message(directive_name), &[directive.start]);
         }
     }
 }
@@ -144,10 +143,10 @@ fn misplaced_error_message(directive_name: &str, location: &DirectiveLocation) -
 mod tests {
     use super::{factory, misplaced_error_message, unknown_error_message};
 
-    use parser::SourcePosition;
-    use schema::model::DirectiveLocation;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::schema::model::DirectiveLocation;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn with_no_directives() {

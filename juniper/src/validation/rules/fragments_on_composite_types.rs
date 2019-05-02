@@ -1,7 +1,7 @@
-use ast::{Fragment, InlineFragment};
-use parser::Spanning;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::{Fragment, InlineFragment};
+use crate::parser::Spanning;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct FragmentsOnCompositeTypes;
 
@@ -26,7 +26,7 @@ where
 
                     context.report_error(
                         &error_message(Some(f.item.name.item), type_name),
-                        &[type_cond.start.clone()],
+                        &[type_cond.start],
                     );
                 }
             }
@@ -73,9 +73,9 @@ fn error_message(fragment_name: Option<&str>, on_type: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn on_object() {

@@ -9,7 +9,7 @@ use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
 use juniper::{InputValue, ParseScalarResult, ScalarValue, Value};
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, GraphQLScalarValue)]
+#[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
 enum MyScalarValue {
     Int(i32),
     Long(i64),
@@ -126,7 +126,7 @@ impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
     }
 }
 
-graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
+juniper::graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
     resolve(&self) -> Value {
         Value::scalar(*self)
     }
@@ -151,7 +151,7 @@ graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
 
 struct TestType;
 
-graphql_object!(TestType: () where Scalar = MyScalarValue |&self| {
+juniper::graphql_object!(TestType: () where Scalar = MyScalarValue |&self| {
     field long_field()  -> i64 {
         (::std::i32::MAX as i64) + 1
     }

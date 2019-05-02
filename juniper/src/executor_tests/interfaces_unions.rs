@@ -1,7 +1,7 @@
 mod interface {
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     trait Pet {
         fn name(&self) -> &str;
@@ -107,7 +107,8 @@ mod interface {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) =
+            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -145,9 +146,9 @@ mod interface {
 }
 
 mod union {
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {
@@ -241,7 +242,8 @@ mod union {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) = ::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) =
+            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 

@@ -1,6 +1,7 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
 use juniper::DefaultScalarValue;
+use juniper::GraphQLObject;
 #[cfg(test)]
 use juniper::Object;
 
@@ -79,7 +80,7 @@ struct WithCustomContext {
     a: bool,
 }
 
-graphql_object!(Query: () |&self| {
+juniper::graphql_object!(Query: () |&self| {
     field obj() -> Obj {
       Obj{
         regular_field: true,

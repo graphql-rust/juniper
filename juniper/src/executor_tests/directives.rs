@@ -1,7 +1,7 @@
-use executor::Variables;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, Value};
+use crate::executor::Variables;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::value::{DefaultScalarValue, Object, Value};
 
 struct TestType;
 
@@ -21,7 +21,8 @@ where
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(query, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) =
+        crate::execute(query, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

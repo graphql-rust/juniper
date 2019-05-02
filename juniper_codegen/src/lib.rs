@@ -7,14 +7,6 @@
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
-extern crate proc_macro2;
-#[macro_use]
-extern crate quote;
-#[macro_use]
-extern crate syn;
-#[macro_use]
-extern crate lazy_static;
-extern crate regex;
 
 mod derive_enum;
 mod derive_input_object;

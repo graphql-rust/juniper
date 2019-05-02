@@ -1,8 +1,8 @@
-use ast::Field;
-use parser::Spanning;
-use schema::meta::MetaType;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::Field;
+use crate::parser::Spanning;
+use crate::schema::meta::MetaType;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct FieldsOnCorrectType;
 
@@ -39,7 +39,7 @@ where
 
                     context.report_error(
                         &error_message(field_name.item, type_name),
-                        &[field_name.start.clone()],
+                        &[field_name.start],
                     );
                 }
             }
@@ -55,9 +55,9 @@ fn error_message(field: &str, type_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn selection_on_object() {

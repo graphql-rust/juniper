@@ -38,12 +38,6 @@ Check the LICENSE file for details.
 
 #![feature(decl_macro, proc_macro_hygiene)]
 
-extern crate juniper;
-extern crate rocket;
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
-
 use std::error::Error;
 use std::io::{Cursor, Read};
 
@@ -66,7 +60,7 @@ use juniper::RootNode;
 use juniper::ScalarRefValue;
 use juniper::ScalarValue;
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLBatchRequest<S = DefaultScalarValue>
@@ -77,7 +71,7 @@ where
     Batch(Vec<http::GraphQLRequest<S>>),
 }
 
-#[derive(Serialize)]
+#[derive(serde_derive::Serialize)]
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where
@@ -191,7 +185,7 @@ impl GraphQLResponse {
     /// #
     /// # extern crate juniper;
     /// # extern crate juniper_rocket;
-    /// # #[macro_use] extern crate rocket;
+    /// # extern crate rocket;
     /// #
     /// # use rocket::http::Cookies;
     /// # use rocket::request::Form;
@@ -203,7 +197,7 @@ impl GraphQLResponse {
     /// #
     /// # type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
     /// #
-    /// #[get("/graphql?<request..>")]
+    /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
     ///     mut cookies: Cookies,
     ///     context: State<Database>,

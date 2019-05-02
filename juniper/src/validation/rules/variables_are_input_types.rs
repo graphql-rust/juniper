@@ -1,7 +1,7 @@
-use ast::VariableDefinition;
-use parser::Spanning;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::VariableDefinition;
+use crate::parser::Spanning;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct UniqueVariableNames;
 
@@ -25,7 +25,7 @@ where
             if !var_type.is_input() {
                 ctx.report_error(
                     &error_message(var_name.item, &format!("{}", var_def.var_type.item)),
-                    &[var_def.var_type.start.clone()],
+                    &[var_def.var_type.start],
                 );
             }
         }
@@ -43,9 +43,9 @@ fn error_message(var_name: &str, type_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn input_types_are_valid() {

@@ -1,4 +1,5 @@
-use parser::{ParseError, ScalarToken};
+use crate::parser::{ParseError, ScalarToken};
+use juniper_codegen::GraphQLScalarValueInternal as GraphQLScalarValue;
 use serde::de;
 use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};
@@ -18,7 +19,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The main objective of this abstraction is to allow other libraries to
 /// replace the default representation with something that better fits thei
 /// needs.
-/// There is a custom derive (`#[derive(GraphQLScalarValue)]`) available that implements
+/// There is a custom derive (`#[derive(juniper::GraphQLScalarValue)]`) available that implements
 /// most of the required traits automatically for a enum representing a scalar value.
 /// This derives needs a additional annotation of the form
 /// `#[juniper(visitor = "VisitorType")]` to specify a type that implements
@@ -31,14 +32,13 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The following example introduces an new variant that is able to store 64 bit integers.
 ///
 /// ```
-/// # #[macro_use]
 /// # extern crate juniper;
 /// # extern crate serde;
 /// # use serde::{de, Deserialize, Deserializer};
 /// # use juniper::ScalarValue;
 /// # use std::fmt;
 /// #
-/// #[derive(Debug, Clone, PartialEq, GraphQLScalarValue)]
+/// #[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
 /// enum MyScalarValue {
 ///     Int(i32),
 ///     Long(i64),
@@ -252,7 +252,7 @@ where
 /// The default scalar value representation in juniper
 ///
 /// This types closely follows the graphql specification.
-#[derive(Debug, PartialEq, Clone, GraphQLScalarValueInternal)]
+#[derive(Debug, PartialEq, Clone, GraphQLScalarValue)]
 #[allow(missing_docs)]
 pub enum DefaultScalarValue {
     Int(i32),

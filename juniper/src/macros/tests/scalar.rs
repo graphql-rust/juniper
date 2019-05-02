@@ -1,7 +1,7 @@
-use executor::Variables;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value};
+use crate::executor::Variables;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value};
 
 struct DefaultName(i32);
 struct OtherOrder(i32);
@@ -92,7 +92,7 @@ where
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

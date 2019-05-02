@@ -4,12 +4,12 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use std::{char, u32};
 
-use ast::{FromInputValue, InputValue, Selection, ToInputValue};
-use executor::{Executor, Registry};
-use parser::{LexerError, ParseError, ScalarToken, Token};
-use schema::meta::MetaType;
-use types::base::GraphQLType;
-use value::{ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
+use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue};
+use crate::executor::{Executor, Registry};
+use crate::parser::{LexerError, ParseError, ScalarToken, Token};
+use crate::schema::meta::MetaType;
+use crate::types::base::GraphQLType;
+use crate::value::{ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
 
 /// An ID as defined by the GraphQL specification
 ///
@@ -355,8 +355,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::ID;
-    use parser::ScalarToken;
-    use value::{DefaultScalarValue, ParseScalarValue};
+    use crate::parser::ScalarToken;
+    use crate::value::{DefaultScalarValue, ParseScalarValue};
 
     #[test]
     fn test_id_from_string() {

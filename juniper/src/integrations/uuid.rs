@@ -1,8 +1,10 @@
 use uuid::Uuid;
 
-use parser::{ParseError, ScalarToken, Token};
-use value::ParseScalarResult;
-use Value;
+use crate::{
+    parser::{ParseError, ScalarToken, Token},
+    value::ParseScalarResult,
+    Value,
+};
 
 graphql_scalar!(Uuid where Scalar = <S> {
     description: "Uuid"
@@ -27,15 +29,15 @@ graphql_scalar!(Uuid where Scalar = <S> {
 
 #[cfg(test)]
 mod test {
+    use crate::{value::DefaultScalarValue, InputValue};
     use uuid::Uuid;
-    use value::DefaultScalarValue;
 
     #[test]
     fn uuid_from_input_value() {
         let raw = "123e4567-e89b-12d3-a456-426655440000";
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
+        let input: InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
 
-        let parsed: Uuid = ::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: Uuid = crate::FromInputValue::from_input_value(&input).unwrap();
         let id = Uuid::parse_str(raw).unwrap();
 
         assert_eq!(parsed, id);

@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 
-use syn;
-use syn::{Data, DeriveInput, Fields, Variant};
+use quote::quote;
+use syn::{self, Data, DeriveInput, Fields, Variant};
 
-use util::*;
+use crate::util::*;
 
 #[derive(Default, Debug)]
 struct EnumAttrs {
@@ -165,7 +165,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         // Build value.
         let name = var_attrs
             .name
-            .unwrap_or(::util::to_upper_snake_case(&variant.ident.to_string()));
+            .unwrap_or(crate::util::to_upper_snake_case(&variant.ident.to_string()));
         let descr = match var_attrs.description {
             Some(s) => quote! { Some(#s.to_string())  },
             None => quote! { None },

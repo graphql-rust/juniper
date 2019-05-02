@@ -1,9 +1,11 @@
-use ast::InputValue;
+use crate::ast::InputValue;
 
-use parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token};
-use schema::meta::{InputObjectMeta, MetaType};
-use schema::model::SchemaType;
-use value::ScalarValue;
+use crate::parser::{
+    ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token,
+};
+use crate::schema::meta::{InputObjectMeta, MetaType};
+use crate::schema::model::SchemaType;
+use crate::value::ScalarValue;
 
 pub fn parse_value_literal<'a, 'b, S>(
     parser: &mut Parser<'a>,
@@ -171,7 +173,7 @@ where
     let value = parse_value_literal(parser, is_const, schema, tpe)?;
 
     Ok(Spanning::start_end(
-        &key.start.clone(),
+        &key.start,
         &value.end.clone(),
         (key.map(|s| s.to_owned()), value),
     ))

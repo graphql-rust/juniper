@@ -1,7 +1,7 @@
-use ast::Field;
-use parser::Spanning;
-use validation::{RuleError, ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::Field;
+use crate::parser::Spanning;
+use crate::validation::{RuleError, ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct ScalarLeafs;
 
@@ -22,11 +22,11 @@ where
             match (field_type.is_leaf(), &field.item.selection_set) {
                 (true, &Some(_)) => Some(RuleError::new(
                     &no_allowed_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start.clone()],
+                    &[field.start],
                 )),
                 (false, &None) => Some(RuleError::new(
                     &required_error_message(field_name, &format!("{}", field_type_literal)),
-                    &[field.start.clone()],
+                    &[field.start],
                 )),
                 _ => None,
             }
@@ -57,9 +57,9 @@ fn required_error_message(field_name: &str, type_name: &str) -> String {
 mod tests {
     use super::{factory, no_allowed_error_message, required_error_message};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn valid_scalar_selection() {

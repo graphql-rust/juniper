@@ -1,6 +1,6 @@
-use ast::{Directive, Fragment, InputValue, Selection};
-use parser::Spanning;
-use value::{ScalarRefValue, ScalarValue};
+use crate::ast::{Directive, Fragment, InputValue, Selection};
+use crate::parser::Spanning;
+use crate::value::{ScalarRefValue, ScalarValue};
 
 use std::collections::HashMap;
 
@@ -151,7 +151,7 @@ where
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
                                     <&S as Into<Option<&bool>>>::into(s)
-                                        .map(|b| *b)
+                                        .cloned()
                                         .unwrap_or(false)
                                 } else {
                                     false
@@ -388,25 +388,25 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ast::Document;
-    use parser::UnlocatedParseResult;
-    use schema::model::SchemaType;
+    use crate::ast::Document;
+    use crate::parser::UnlocatedParseResult;
+    use crate::schema::model::SchemaType;
+    use crate::validation::test_harness::{MutationRoot, QueryRoot};
+    use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
     use std::collections::HashMap;
-    use validation::test_harness::{MutationRoot, QueryRoot};
-    use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
     where
         S: ScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
-        ::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
+        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
     }
 
     fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {
         let mut fragments = HashMap::new();
         for d in doc {
-            if let ::ast::Definition::Fragment(ref f) = *d {
+            if let crate::ast::Definition::Fragment(ref f) = *d {
                 let f = &f.item;
                 fragments.insert(f.name.item, f);
             }
@@ -429,7 +429,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -483,7 +483,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -541,7 +541,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -623,7 +623,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -683,7 +683,7 @@ query Hero($episode: Episode) {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let mut vars = Variables::default();
             vars.insert("episode".into(), InputValue::Enum("JEDI".into()));
             let look_ahead = LookAheadSelection::build_from_selection(
@@ -790,7 +790,7 @@ fragment commonFields on Character {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -854,7 +854,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -912,7 +912,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -986,7 +986,7 @@ fragment comparisonFields on Character {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let mut vars = Variables::default();
             vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
             // This will normally be there
@@ -1144,7 +1144,7 @@ query Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],
@@ -1293,7 +1293,7 @@ fragment heroFriendNames on Hero {
         .unwrap();
         let fragments = extract_fragments(&docs);
 
-        if let ::ast::Definition::Operation(ref op) = docs[0] {
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
             let vars = Variables::default();
             let look_ahead = LookAheadSelection::build_from_selection(
                 &op.item.selection_set[0],

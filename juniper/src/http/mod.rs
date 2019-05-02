@@ -5,11 +5,12 @@ pub mod playground;
 
 use serde::de::Deserialize;
 use serde::ser::{self, Serialize, SerializeMap};
+use serde_derive::{Deserialize, Serialize};
 
-use ast::InputValue;
-use executor::ExecutionError;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
-use {FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
+use crate::ast::InputValue;
+use crate::executor::ExecutionError;
+use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use crate::{FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -59,9 +60,9 @@ where
         variables: Option<InputValue<S>>,
     ) -> Self {
         GraphQLRequest {
-            query: query,
-            operation_name: operation_name,
-            variables: variables,
+            query,
+            operation_name,
+            variables,
         }
     }
 
@@ -80,7 +81,7 @@ where
         MutationT: GraphQLType<S, Context = CtxT>,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
-        GraphQLResponse(::execute(
+        GraphQLResponse(crate::execute(
             &self.query,
             self.operation_name(),
             root_node,

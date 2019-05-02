@@ -1,15 +1,10 @@
 #![deny(warnings)]
 
-extern crate env_logger;
-#[macro_use]
-extern crate log as irrelevant_log;
-extern crate juniper;
-extern crate juniper_warp;
-extern crate warp;
+extern crate log;
 
 use juniper::tests::model::Database;
 use juniper::{EmptyMutation, RootNode};
-use warp::{http::Response, log, Filter};
+use warp::{http::Response, Filter};
 
 type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
 
@@ -21,7 +16,7 @@ fn main() {
     ::std::env::set_var("RUST_LOG", "warp_server");
     env_logger::init();
 
-    let log = log("warp_server");
+    let log = warp::log("warp_server");
 
     let homepage = warp::path::end().map(|| {
         Response::builder()
@@ -31,7 +26,7 @@ fn main() {
             ))
     });
 
-    info!("Listening on 127.0.0.1:8080");
+    log::info!("Listening on 127.0.0.1:8080");
 
     let state = warp::any().map(move || Database::new());
     let graphql_filter = juniper_warp::make_graphql_filter(schema(), state.boxed());

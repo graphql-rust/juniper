@@ -1,14 +1,15 @@
 use indexmap::IndexMap;
 use serde::ser::SerializeMap;
 use serde::{de, ser};
+use serde_derive::Serialize;
 
 use std::fmt;
 
-use ast::InputValue;
-use executor::ExecutionError;
-use parser::{ParseError, SourcePosition, Spanning};
-use validation::RuleError;
-use {GraphQLError, Object, ScalarValue, Value};
+use crate::ast::InputValue;
+use crate::executor::ExecutionError;
+use crate::parser::{ParseError, SourcePosition, Spanning};
+use crate::validation::RuleError;
+use crate::{GraphQLError, Object, ScalarValue, Value};
 
 #[derive(Serialize)]
 struct SerializeHelper {
@@ -130,7 +131,7 @@ where
                 self.0.visit_i64(value).map(InputValue::Scalar)
             }
 
-            serde_if_integer128! {
+            serde::serde_if_integer128! {
                 fn visit_i128<E>(self, value: i128) -> Result<InputValue<S>, E>
                 where
                     E: de::Error,
@@ -167,7 +168,7 @@ where
                 self.0.visit_u64(value).map(InputValue::Scalar)
             }
 
-            serde_if_integer128! {
+            serde::serde_if_integer128! {
                 fn visit_u128<E>(self, value: u128) -> Result<InputValue<S>, E>
                 where
                     E: de::Error,
@@ -397,11 +398,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::{ExecutionError, GraphQLError};
-    use ast::InputValue;
+    use crate::ast::InputValue;
+    use crate::value::{DefaultScalarValue, Object};
+    use crate::{FieldError, Value};
     use serde_json::from_str;
     use serde_json::to_string;
-    use value::{DefaultScalarValue, Object};
-    use {FieldError, Value};
 
     #[test]
     fn int() {

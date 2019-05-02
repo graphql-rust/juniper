@@ -1,10 +1,10 @@
-use ast::{
+use crate::ast::{
     Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue, Operation,
     Selection, VariableDefinition,
 };
-use parser::Spanning;
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::parser::Spanning;
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 #[doc(hidden)]
 pub struct MultiVisitorNil;

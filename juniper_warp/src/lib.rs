@@ -39,27 +39,13 @@ Check the LICENSE file for details.
 #![deny(missing_docs)]
 #![deny(warnings)]
 
-#[macro_use]
-extern crate failure;
-extern crate futures;
-extern crate juniper;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde;
-extern crate serde_json;
-extern crate tokio_threadpool;
-extern crate warp;
-
-#[cfg(test)]
-extern crate percent_encoding;
-
 use futures::{future::poll_fn, Future};
 use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLBatchRequest<S = DefaultScalarValue>
@@ -98,7 +84,7 @@ where
     }
 }
 
-#[derive(Serialize)]
+#[derive(serde_derive::Serialize)]
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where
@@ -132,7 +118,6 @@ where
 ///
 /// ```
 /// # extern crate juniper_warp;
-/// # #[macro_use]
 /// # extern crate juniper;
 /// # extern crate warp;
 /// #
@@ -149,7 +134,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// graphql_object! (QueryRoot: ExampleContext |&self| {
+/// juniper::graphql_object! (QueryRoot: ExampleContext |&self| {
 ///     field say_hello(&executor) -> String {
 ///         let context = executor.context();
 ///
@@ -226,7 +211,7 @@ where
 
                     let graphql_request = juniper::http::GraphQLRequest::new(
                         request.remove("query").ok_or_else(|| {
-                            format_err!("Missing GraphQL query string in query parameters")
+                            failure::format_err!("Missing GraphQL query string in query parameters")
                         })?,
                         request.get("operation_name").map(|s| s.to_owned()),
                         variables,

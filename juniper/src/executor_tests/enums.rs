@@ -1,13 +1,15 @@
-use ast::InputValue;
-use executor::Variables;
-use parser::SourcePosition;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use validation::RuleError;
-use value::{DefaultScalarValue, Object, Value};
-use GraphQLError::ValidationError;
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
-#[derive(GraphQLEnumInternal, Debug)]
+use crate::ast::InputValue;
+use crate::executor::Variables;
+use crate::parser::SourcePosition;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::validation::RuleError;
+use crate::value::{DefaultScalarValue, Object, Value};
+use crate::GraphQLError::ValidationError;
+
+#[derive(GraphQLEnum, Debug)]
 enum Color {
     Red,
     Green,
@@ -31,7 +33,8 @@ where
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
-    let (result, errs) = ::execute(query, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) =
+        crate::execute(query, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -76,7 +79,7 @@ fn does_not_accept_string_literals() {
     let query = r#"{ toString(color: "RED") }"#;
     let vars = vec![].into_iter().collect();
 
-    let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
+    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
 
     assert_eq!(
         error,
@@ -112,7 +115,7 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
         .into_iter()
         .collect();
 
-    let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
+    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
 
     assert_eq!(
         error,
@@ -132,7 +135,7 @@ fn does_not_accept_incorrect_type_in_variables() {
         .into_iter()
         .collect();
 
-    let error = ::execute(query, None, &schema, &vars, &()).unwrap_err();
+    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
 
     assert_eq!(
         error,

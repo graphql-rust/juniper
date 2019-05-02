@@ -15,9 +15,9 @@
 */
 use chrono::prelude::*;
 
-use parser::{ParseError, ScalarToken, Token};
-use value::{ParseScalarResult, ParseScalarValue};
-use Value;
+use crate::parser::{ParseError, ScalarToken, Token};
+use crate::value::{ParseScalarResult, ParseScalarValue};
+use crate::Value;
 
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
@@ -90,8 +90,8 @@ graphql_scalar!(NaiveDate where Scalar = <S>{
     }
 });
 
-/// JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
-/// datetimes. Values will be truncated to microsecond resolution.
+// JSON numbers (i.e. IEEE doubles) are not precise enough for nanosecond
+// datetimes. Values will be truncated to microsecond resolution.
 graphql_scalar!(NaiveDateTime where Scalar = <S> {
     description: "NaiveDateTime"
 
@@ -111,13 +111,14 @@ graphql_scalar!(NaiveDateTime where Scalar = <S> {
 
 #[cfg(test)]
 mod test {
+    use crate::{value::DefaultScalarValue, InputValue};
     use chrono::prelude::*;
-    use value::DefaultScalarValue;
 
     fn datetime_fixedoffset_test(raw: &'static str) {
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
+        let input: crate::InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
 
-        let parsed: DateTime<FixedOffset> = ::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: DateTime<FixedOffset> =
+            crate::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw).unwrap();
 
         assert_eq!(parsed, expected);
@@ -139,9 +140,9 @@ mod test {
     }
 
     fn datetime_utc_test(raw: &'static str) {
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw.to_string());
+        let input: crate::InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
 
-        let parsed: DateTime<Utc> = ::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: DateTime<Utc> = crate::FromInputValue::from_input_value(&input).unwrap();
         let expected = DateTime::parse_from_rfc3339(raw)
             .unwrap()
             .with_timezone(&Utc);
@@ -166,13 +167,13 @@ mod test {
 
     #[test]
     fn naivedate_from_input_value() {
-        let input: ::InputValue<DefaultScalarValue> =
-            ::InputValue::scalar("1996-12-19".to_string());
+        let input: crate::InputValue<DefaultScalarValue> =
+            InputValue::scalar("1996-12-19".to_string());
         let y = 1996;
         let m = 12;
         let d = 19;
 
-        let parsed: NaiveDate = ::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: NaiveDate = crate::FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveDate::from_ymd(y, m, d);
 
         assert_eq!(parsed, expected);
@@ -185,9 +186,9 @@ mod test {
     #[test]
     fn naivedatetime_from_input_value() {
         let raw = 1_000_000_000_f64;
-        let input: ::InputValue<DefaultScalarValue> = ::InputValue::scalar(raw);
+        let input: InputValue<DefaultScalarValue> = InputValue::scalar(raw);
 
-        let parsed: NaiveDateTime = ::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: NaiveDateTime = crate::FromInputValue::from_input_value(&input).unwrap();
         let expected = NaiveDateTime::from_timestamp_opt(raw as i64, 0).unwrap();
 
         assert_eq!(parsed, expected);
@@ -200,10 +201,10 @@ mod integration_test {
     use chrono::prelude::*;
     use chrono::Utc;
 
-    use executor::Variables;
-    use schema::model::RootNode;
-    use types::scalars::EmptyMutation;
-    use value::Value;
+    use crate::executor::Variables;
+    use crate::schema::model::RootNode;
+    use crate::types::scalars::EmptyMutation;
+    use crate::value::Value;
 
     #[test]
     fn test_serialization() {
@@ -235,7 +236,7 @@ mod integration_test {
         let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
         let (result, errs) =
-            ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+            crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 

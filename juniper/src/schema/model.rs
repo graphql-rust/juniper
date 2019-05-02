@@ -2,12 +2,16 @@ use std::fmt;
 
 use fnv::FnvHashMap;
 
-use ast::Type;
-use executor::{Context, Registry};
-use schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta};
-use types::base::GraphQLType;
-use types::name::Name;
-use value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+
+use crate::ast::Type;
+use crate::executor::{Context, Registry};
+use crate::schema::meta::{
+    Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta,
+};
+use crate::types::base::GraphQLType;
+use crate::types::name::Name;
+use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 /// Root query node of a schema
 ///
@@ -57,7 +61,7 @@ pub struct DirectiveType<'a, S> {
     pub arguments: Vec<Argument<'a, S>>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, GraphQLEnumInternal)]
+#[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
 #[graphql(name = "__DirectiveLocation")]
 pub enum DirectiveLocation {
     Query,
@@ -113,8 +117,8 @@ where
             query_type: query_obj,
             mutation_type: mutation_obj,
             schema: SchemaType::new::<QueryT, MutationT>(&query_info, &mutation_info),
-            query_info: query_info,
-            mutation_info: mutation_info,
+            query_info,
+            mutation_info,
         }
     }
 }
@@ -177,13 +181,13 @@ impl<'a, S> SchemaType<'a, S> {
         }
         SchemaType {
             types: registry.types,
-            query_type_name: query_type_name,
+            query_type_name,
             mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
                 Some(mutation_type_name)
             } else {
                 None
             },
-            directives: directives,
+            directives,
         }
     }
 
@@ -319,7 +323,7 @@ impl<'a, S> SchemaType<'a, S> {
     }
 
     pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
-        use ast::Type::*;
+        use crate::ast::Type::*;
 
         if super_type == sub_type {
             return true;

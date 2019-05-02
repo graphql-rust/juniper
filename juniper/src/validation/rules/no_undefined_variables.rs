@@ -1,8 +1,8 @@
-use ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition};
-use parser::{SourcePosition, Spanning};
+use crate::ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition};
+use crate::parser::{SourcePosition, Spanning};
+use crate::validation::{RuleError, ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 use std::collections::{HashMap, HashSet};
-use validation::{RuleError, ValidatorContext, Visitor};
-use value::ScalarValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -75,10 +75,7 @@ where
                 unused
                     .into_iter()
                     .map(|var| {
-                        RuleError::new(
-                            &error_message(var.item, *op_name),
-                            &[var.start.clone(), pos.clone()],
-                        )
+                        RuleError::new(&error_message(var.item, *op_name), &[var.start, *pos])
                     })
                     .collect(),
             );
@@ -93,7 +90,7 @@ where
         let op_name = op.item.name.as_ref().map(|s| s.item);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables
-            .insert(op_name, (op.start.clone(), HashSet::new()));
+            .insert(op_name, (op.start, HashSet::new()));
     }
 
     fn enter_fragment_definition(
@@ -143,9 +140,7 @@ where
                         .item
                         .referenced_variables()
                         .iter()
-                        .map(|&var_name| {
-                            Spanning::start_end(&value.start.clone(), &value.end.clone(), var_name)
-                        })
+                        .map(|&var_name| Spanning::start_end(&value.start, &value.end, var_name))
                         .collect(),
                 );
         }
@@ -167,9 +162,9 @@ fn error_message(var_name: &str, op_name: Option<&str>) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn all_variables_defined() {

@@ -1,9 +1,9 @@
 use std::collections::hash_map::{Entry, HashMap};
 
-use ast::{Directive, Field, InputValue};
-use parser::{SourcePosition, Spanning};
-use validation::{ValidatorContext, Visitor};
-use value::ScalarValue;
+use crate::ast::{Directive, Field, InputValue};
+use crate::parser::{SourcePosition, Spanning};
+use crate::validation::{ValidatorContext, Visitor};
+use crate::value::ScalarValue;
 
 pub struct UniqueArgumentNames<'a> {
     known_names: HashMap<&'a str, SourcePosition>,
@@ -36,11 +36,11 @@ where
             Entry::Occupied(e) => {
                 ctx.report_error(
                     &error_message(arg_name.item),
-                    &[e.get().clone(), arg_name.start.clone()],
+                    &[e.get().clone(), arg_name.start],
                 );
             }
             Entry::Vacant(e) => {
-                e.insert(arg_name.start.clone());
+                e.insert(arg_name.start);
             }
         }
     }
@@ -54,9 +54,9 @@ fn error_message(arg_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use parser::SourcePosition;
-    use validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use value::DefaultScalarValue;
+    use crate::parser::SourcePosition;
+    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
+    use crate::value::DefaultScalarValue;
 
     #[test]
     fn no_arguments_on_field() {

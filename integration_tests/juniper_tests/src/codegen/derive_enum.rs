@@ -4,7 +4,7 @@ use fnv::FnvHashMap;
 #[cfg(test)]
 use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
-#[derive(GraphQLEnum, Debug, PartialEq)]
+#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
 #[graphql(name = "Some", description = "enum descr")]
 enum SomeEnum {
     Regular,
@@ -13,7 +13,7 @@ enum SomeEnum {
 }
 
 /// Enum doc.
-#[derive(GraphQLEnum)]
+#[derive(juniper::GraphQLEnum)]
 enum DocEnum {
     /// Variant doc.
     Foo,
@@ -23,7 +23,7 @@ enum DocEnum {
 /// Doc 2.
 ///
 /// Doc 4.
-#[derive(GraphQLEnum, Debug, PartialEq)]
+#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
 enum MultiDocEnum {
     /// Variant 1.
     /// Variant 2.
@@ -31,7 +31,7 @@ enum MultiDocEnum {
 }
 
 /// This is not used as the description.
-#[derive(GraphQLEnum, Debug, PartialEq)]
+#[derive(juniper::GraphQLEnum, Debug, PartialEq)]
 #[graphql(description = "enum override")]
 enum OverrideDocEnum {
     /// This is not used as the description.

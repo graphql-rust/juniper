@@ -1,7 +1,9 @@
-use executor::Variables;
-use schema::model::RootNode;
-use types::scalars::EmptyMutation;
-use value::{DefaultScalarValue, Value};
+use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
+
+use crate::executor::Variables;
+use crate::schema::model::RootNode;
+use crate::types::scalars::EmptyMutation;
+use crate::value::{DefaultScalarValue, Value};
 
 struct Root;
 
@@ -19,7 +21,7 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLInputObject)]
 struct Point {
     x: i32,
 }
@@ -109,7 +111,7 @@ where
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        ::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

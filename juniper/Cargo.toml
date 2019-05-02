@@ -12,6 +12,7 @@ repository = "https://github.com/graphql-rust/juniper"
 readme = "../README.md"
 keywords = ["graphql", "server", "web", "rocket"]
 categories = ["web-programming"]
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper" }
