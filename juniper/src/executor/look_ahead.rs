@@ -39,7 +39,13 @@ where
             InputValue::Null => LookAheadValue::Null,
             InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
             InputValue::Enum(ref e) => LookAheadValue::Enum(e),
-            InputValue::Variable(ref v) => Self::from_input_value(vars.get(v).unwrap(), vars),
+            InputValue::Variable(ref name) => {
+                let value = vars
+                    .get(name)
+                    .map(|v| Self::from_input_value(v, vars))
+                    .unwrap_or(LookAheadValue::Null);
+                value
+            }
             InputValue::List(ref l) => LookAheadValue::List(
                 l.iter()
                     .map(|i| LookAheadValue::from_input_value(&i.item, vars))
@@ -720,6 +726,50 @@ query Hero($episode: Episode) {
         }
     }
 
+    #[test]
+    fn check_query_with_optional_variable() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero($episode: Episode) {
+    hero(episode: $episode) {
+        id
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: vec![LookAheadArgument {
+                    name: "episode",
+                    value: LookAheadValue::Null,
+                }],
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
     #[test]
     fn check_query_with_fragment() {
         let docs = parse_document_source::<DefaultScalarValue>(
