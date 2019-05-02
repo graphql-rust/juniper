@@ -292,8 +292,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 <a class="header" href="#executor" id="executor"><h2>Executor</h2></a>
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
 <pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
-# #[macro_use]
-# extern crate juniper;
+# #[macro_use] extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
@@ -768,7 +767,7 @@ impl juniper::IntoFieldError for CustomError {
         match self {
             CustomError::WhateverNotSet =&gt; juniper::FieldError::new(
                 &quot;Whatever does not exist&quot;,
-                juniper::graphql_value!({
+                graphql_value!({
                     &quot;type&quot;: &quot;NO_WHATEVER&quot;
                 }),
             ),
