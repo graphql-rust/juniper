@@ -1,7 +1,40 @@
-use value::{self, Value::Null};
+use crate::value::{self, Value, Value::Null};
+
+// Sort a nested schema Value.
+// In particular, lists are sorted by the "name" key of children, if present.
+// Only needed for comparisons.
+pub(super) fn sort_schema_value(value: &mut Value) {
+    match value {
+        Value::Null | Value::Scalar(_) => {}
+        Value::List(ref mut items) => {
+            items.sort_by(|a, b| {
+                let name_a = a
+                    .as_object_value()
+                    .and_then(|v| v.get_field_value("name"))
+                    .and_then(|v| v.as_scalar_value::<String>())
+                    .map(|x| x.as_str())
+                    .unwrap_or("");
+                let name_b = b
+                    .as_object_value()
+                    .and_then(|v| v.get_field_value("name"))
+                    .and_then(|v| v.as_scalar_value::<String>())
+                    .map(|x| x.as_str())
+                    .unwrap_or("");
+                name_a.cmp(name_b)
+            });
+            for item in items.iter_mut() {
+                sort_schema_value(item);
+            }
+        }
+        Value::Object(ref mut obj) => {
+            obj.iter_mut()
+                .for_each(|(_key, item)| sort_schema_value(item));
+        }
+    }
+}
 
 pub(crate) fn schema_introspection_result() -> value::Value {
-    graphql_value!({
+    let mut v = graphql_value!({
         "__schema": {
           "queryType": {
             "name": "Query"
@@ -1274,11 +1307,13 @@ pub(crate) fn schema_introspection_result() -> value::Value {
             }
           ]
         }
-    })
+    });
+    sort_schema_value(&mut v);
+    v
 }
 
 pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value {
-    graphql_value!({
+    let mut v = graphql_value!({
         "__schema": {
           "queryType": {
             "name": "Query"
@@ -2458,5 +2493,7 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
             }
           ]
         }
-    })
+    });
+    sort_schema_value(&mut v);
+    v
 }

@@ -157,13 +157,14 @@ fn test_introspection_directives() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let result = ::execute(q, None, &schema, &Variables::new(), &database).unwrap();
+    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database).unwrap();
+    sort_schema_value(&mut result.0);
 
-    let expected = graphql_value!({
+    let mut expected = graphql_value!({
         "__schema": {
             "directives": [
                 {
-                    "name": "skip",
+                    "name": "include",
                     "locations": [
                         "FIELD",
                         "FRAGMENT_SPREAD",
@@ -171,7 +172,7 @@ fn test_introspection_directives() {
                     ],
                 },
                 {
-                    "name": "include",
+                    "name": "skip",
                     "locations": [
                         "FIELD",
                         "FRAGMENT_SPREAD",
@@ -181,6 +182,7 @@ fn test_introspection_directives() {
             ],
         },
     });
+    sort_schema_value(&mut expected);
 
     assert_eq!(result, (expected, vec![]));
 }
@@ -200,8 +202,6 @@ fn test_introspection_possible_types() {
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
     let result = ::execute(doc, None, &schema, &Variables::new(), &database);
-
-    println!("Result: {:#?}", result);
 
     let (result, errors) = result.ok().expect("Query returned error");
 
@@ -237,9 +237,10 @@ fn test_builtin_introspection_query() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let result = ::introspect(&schema, &database, IntrospectionFormat::default());
+    let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
+    sort_schema_value(&mut result.0);
     let expected = schema_introspection_result();
-    assert_eq!(result, Ok((expected, vec![])));
+    assert_eq!(result, (expected, vec![]));
 }
 
 #[test]
@@ -247,7 +248,10 @@ fn test_builtin_introspection_query_without_descriptions() {
     let database = Database::new();
     let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
 
-    let result = ::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions);
+    let mut result =
+        crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();
+    sort_schema_value(&mut result.0);
     let expected = schema_introspection_result_without_descriptions();
-    assert_eq!(result, Ok((expected, vec![])));
+
+    assert_eq!(result, (expected, vec![]));
 }
