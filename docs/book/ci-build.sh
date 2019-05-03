@@ -48,5 +48,5 @@ git remote set-url --push origin git@github.com:graphql-rust/juniper.git
 git config --local user.name "Juniper Bot"
 git config --local user.email "juniper@example.com"
 git add -A $VERSION
-git commit -m "Updated book for $VERSION ***NO_CI***"
+git diff-index --quiet HEAD || git commit -m "Updated book for $VERSION ***NO_CI***"
 git push origin gh-pages
