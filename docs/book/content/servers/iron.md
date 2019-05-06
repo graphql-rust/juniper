@@ -47,7 +47,7 @@ fn context_factory(_: &mut Request) -> IronResult<()> {
 
 struct Root;
 
-graphql_object!(Root: () |&self| {
+juniper::graphql_object!(Root: () |&self| {
     field foo() -> String {
         "Bar".to_owned()
     }
@@ -98,7 +98,7 @@ fn context_factory(req: &mut Request) -> IronResult<Context> {
 
 struct Root;
 
-graphql_object!(Root: Context |&self| {
+juniper::graphql_object!(Root: Context |&self| {
     field my_addr(&executor) -> String {
         let context = executor.context();
 
