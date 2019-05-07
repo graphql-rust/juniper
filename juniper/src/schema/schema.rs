@@ -73,52 +73,68 @@ where
     }
 }
 
-graphql_object!(<'a> SchemaType<'a, S>: SchemaType<'a, S> as "__Schema"
-    where Scalar = <S: 'a> |&self|
+#[crate::impl_object_internal(
+    name = "__Schema"
+    Context = SchemaType<'a, S>,
+    Scalar = S,
+)]
+impl<'a, S> SchemaType<'a, S>
+where
+    S: crate::ScalarValue + 'a,
 {
-    field types() -> Vec<TypeType<S>> {
+    fn types(&self) -> Vec<TypeType<S>> {
         self.type_list()
             .into_iter()
-            .filter(|t| t.to_concrete().map(|t| t.name() != Some("_EmptyMutation")).unwrap_or(false))
-            .collect()
+            .filter(|t| {
+                t.to_concrete()
+                    .map(|t| t.name() != Some("_EmptyMutation"))
+                    .unwrap_or(false)
+            })
+            .collect::<Vec<_>>()
     }
 
-    field query_type() -> TypeType<S> {
+    fn query_type(&self) -> TypeType<S> {
         self.query_type()
     }
 
-    field mutation_type() -> Option<TypeType<S>> {
+    fn mutation_type(&self) -> Option<TypeType<S>> {
         self.mutation_type()
     }
 
     // Included for compatibility with the introspection query in GraphQL.js
-    field subscription_type() -> Option<TypeType<S>> {
+    fn subscription_type(&self) -> Option<TypeType<S>> {
         None
     }
 
-    field directives() -> Vec<&DirectiveType<S>> {
+    fn directives(&self) -> Vec<&DirectiveType<S>> {
         self.directive_list()
     }
-});
+}
 
-graphql_object!(<'a> TypeType<'a, S>: SchemaType<'a, S> as "__Type"
-    where Scalar = <S: 'a> |&self|
+#[crate::impl_object_internal(
+    name = "__Type"
+    Context = SchemaType<'a, S>,
+    Scalar = S,
+)]
+impl<'a, S> TypeType<'a, S>
+where
+    S: crate::ScalarValue + 'a,
 {
-    field name() -> Option<&str> {
+    fn name(&self) -> Option<&str> {
         match *self {
             TypeType::Concrete(t) => t.name(),
             _ => None,
         }
     }
 
-    field description() -> Option<&String> {
+    fn description(&self) -> Option<&String> {
         match *self {
             TypeType::Concrete(t) => t.description(),
             _ => None,
         }
     }
 
-    field kind() -> TypeKind {
+    fn kind(&self) -> TypeKind {
         match *self {
             TypeType::Concrete(t) => t.type_kind(),
             TypeType::List(_) => TypeKind::List,
@@ -126,190 +142,242 @@ graphql_object!(<'a> TypeType<'a, S>: SchemaType<'a, S> as "__Type"
         }
     }
 
-    field fields(include_deprecated = false: bool) -> Option<Vec<&Field<S>>> {
+    #[graphql(arguments(include_deprecated(default = false)))]
+    fn fields(&self, include_deprecated: bool) -> Option<Vec<&Field<S>>> {
         match *self {
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. })) |
-            TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) =>
-                Some(fields
-                    .iter()
-                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
-                    .filter(|f| !f.name.starts_with("__"))
-                    .collect()),
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
+            | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => {
+                Some(
+                    fields
+                        .iter()
+                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
+                        .filter(|f| !f.name.starts_with("__"))
+                        .collect(),
+                )
+            }
             _ => None,
         }
     }
 
-    field of_type() -> Option<&Box<TypeType<S>>> {
+    fn of_type(&self) -> Option<&Box<TypeType<S>>> {
         match *self {
             TypeType::Concrete(_) => None,
             TypeType::List(ref l) | TypeType::NonNull(ref l) => Some(l),
         }
     }
 
-    field input_fields() -> Option<&Vec<Argument<S>>> {
+    fn input_fields(&self) -> Option<&Vec<Argument<S>>> {
         match *self {
-            TypeType::Concrete(&MetaType::InputObject(InputObjectMeta { ref input_fields, .. })) =>
-                Some(input_fields),
+            TypeType::Concrete(&MetaType::InputObject(InputObjectMeta {
+                ref input_fields,
+                ..
+            })) => Some(input_fields),
             _ => None,
         }
     }
 
-    field interfaces(&executor) -> Option<Vec<TypeType<S>>> {
+    fn interfaces(&self, schema: &SchemaType<'a, S>) -> Option<Vec<TypeType<S>>> {
         match *self {
-            TypeType::Concrete(&MetaType::Object(ObjectMeta { ref interface_names, .. })) => {
-                let schema = executor.context();
-                Some(interface_names
+            TypeType::Concrete(&MetaType::Object(ObjectMeta {
+                ref interface_names,
+                ..
+            })) => Some(
+                interface_names
                     .iter()
                     .filter_map(|n| schema.type_by_name(n))
-                    .collect())
-            }
+                    .collect(),
+            ),
             _ => None,
         }
     }
 
-    field possible_types(&executor) -> Option<Vec<TypeType<S>>> {
-        let schema = executor.context();
+    fn possible_types(&self, schema: &SchemaType<'a, S>) -> Option<Vec<TypeType<S>>> {
         match *self {
-            TypeType::Concrete(&MetaType::Union(UnionMeta { ref of_type_names, .. })) => {
-                Some(of_type_names
+            TypeType::Concrete(&MetaType::Union(UnionMeta {
+                ref of_type_names, ..
+            })) => Some(
+                of_type_names
                     .iter()
                     .filter_map(|tn| schema.type_by_name(tn))
-                    .collect())
-            }
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta{name: ref iface_name, .. })) => {
-                Some(schema.concrete_type_list()
+                    .collect(),
+            ),
+            TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
+                name: ref iface_name,
+                ..
+            })) => Some(
+                schema
+                    .concrete_type_list()
                     .iter()
-                    .filter_map(|&ct|
-                        if let MetaType::Object(ObjectMeta{
+                    .filter_map(|&ct| {
+                        if let MetaType::Object(ObjectMeta {
                             ref name,
                             ref interface_names,
                             ..
-                        }) = *ct {
+                        }) = *ct
+                        {
                             if interface_names.contains(&iface_name.to_string()) {
                                 schema.type_by_name(name)
-                            } else { None }
-                        } else { None }
-                    )
-                    .collect())
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
+            _ => None,
+        }
+    }
+
+    #[graphql(arguments(include_deprecated(default = false)))]
+    fn enum_values(&self, include_deprecated: bool) -> Option<Vec<&EnumValue>> {
+        match *self {
+            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => {
+                Some(
+                    values
+                        .iter()
+                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
+                        .collect(),
+                )
             }
             _ => None,
         }
     }
+}
 
-    field enum_values(include_deprecated = false: bool) -> Option<Vec<&EnumValue>> {
-        match *self {
-            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) =>
-                Some(values
-                    .iter()
-                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
-                    .collect()),
-            _ => None,
-        }
-    }
-});
-
-graphql_object!(<'a> Field<'a, S>: SchemaType<'a, S> as "__Field"
-    where Scalar = <S: 'a> |&self|
+#[crate::impl_object_internal(
+    name = "__Field",
+    Context = SchemaType<'a, S>,
+    Scalar = S,
+)]
+impl<'a, S> Field<'a, S>
+where
+    S: crate::ScalarValue + 'a,
 {
-    field name() -> &String {
+    fn name(&self) -> &String {
         &self.name
     }
 
-    field description() -> &Option<String> {
+    fn description(&self) -> &Option<String> {
         &self.description
     }
 
-    field args() -> Vec<&Argument<S>> {
-        self.arguments.as_ref().map_or_else(Vec::new, |v| v.iter().collect())
+    fn args(&self) -> Vec<&Argument<S>> {
+        self.arguments
+            .as_ref()
+            .map_or_else(Vec::new, |v| v.iter().collect())
     }
 
-    field type(&executor) -> TypeType<S> {
-        executor.context().make_type(&self.field_type)
+    #[graphql(name = "type")]
+    fn _type(&self, context: &SchemaType<'a, S>) -> TypeType<S> {
+        context.make_type(&self.field_type)
     }
 
-    field is_deprecated() -> bool {
+    fn is_deprecated(&self) -> bool {
         self.deprecation_status.is_deprecated()
     }
 
-    field deprecation_reason() -> Option<&String> {
+    fn deprecation_reason(&self) -> Option<&String> {
         self.deprecation_status.reason()
     }
-});
+}
 
-graphql_object!(<'a> Argument<'a, S>: SchemaType<'a, S> as "__InputValue"
-    where Scalar = <S: 'a> |&self|
+#[crate::impl_object_internal(
+    name = "__InputValue",
+    Context = SchemaType<'a, S>,
+    Scalar = S,
+)]
+impl<'a, S> Argument<'a, S>
+where
+    S: crate::ScalarValue + 'a,
 {
-    field name() -> &String {
+    fn name(&self) -> &String {
         &self.name
     }
 
-    field description() -> &Option<String> {
+    fn description(&self) -> &Option<String> {
         &self.description
     }
 
-    field type(&executor) -> TypeType<S> {
-        executor.context().make_type(&self.arg_type)
+    #[graphql(name = "type")]
+    fn _type(&self, context: &SchemaType<'a, S>) -> TypeType<S> {
+        context.make_type(&self.arg_type)
     }
 
-    field default_value() -> Option<String> {
+    fn default_value(&self) -> Option<String> {
         self.default_value.as_ref().map(|v| format!("{}", v))
     }
-});
+}
 
-graphql_object!(EnumValue: () as "__EnumValue" where Scalar = <S> |&self| {
-    field name() -> &String {
+#[crate::impl_object_internal(
+    name = "__EnumValue",
+    Scalar = S,
+)]
+impl<'a, S> EnumValue
+where
+    S: crate::ScalarValue + 'a,
+{
+    fn name(&self) -> &String {
         &self.name
     }
 
-    field description() -> &Option<String> {
+    fn description(&self) -> &Option<String> {
         &self.description
     }
 
-    field is_deprecated() -> bool {
+    fn is_deprecated(&self) -> bool {
         self.deprecation_status.is_deprecated()
     }
 
-    field deprecation_reason() -> Option<&String> {
+    fn deprecation_reason(&self) -> Option<&String> {
         self.deprecation_status.reason()
     }
-});
+}
 
-graphql_object!(<'a> DirectiveType<'a, S>: SchemaType<'a, S> as "__Directive"
-    where Scalar = <S: 'a> |&self|
+#[crate::impl_object_internal(
+    name = "__Directive",
+    Context = SchemaType<'a, S>,
+    Scalar = S,
+)]
+impl<'a, S> DirectiveType<'a, S>
+where
+    S: crate::ScalarValue + 'a,
 {
-   field name() -> &String {
+    fn name(&self) -> &String {
         &self.name
     }
 
-    field description() -> &Option<String> {
+    fn description(&self) -> &Option<String> {
         &self.description
     }
 
-    field locations() -> &Vec<DirectiveLocation> {
+    fn locations(&self) -> &Vec<DirectiveLocation> {
         &self.locations
     }
 
-    field args() -> &Vec<Argument<S>> {
+    fn args(&self) -> &Vec<Argument<S>> {
         &self.arguments
     }
 
     // Included for compatibility with the introspection query in GraphQL.js
-    field deprecated "Use the locations array instead"
-    on_operation() -> bool {
+    #[graphql(deprecated = "Use the locations array instead")]
+    fn on_operation(&self) -> bool {
         self.locations.contains(&DirectiveLocation::Query)
     }
 
     // Included for compatibility with the introspection query in GraphQL.js
-    field deprecated "Use the locations array instead"
-    on_fragment() -> bool {
-        self.locations.contains(&DirectiveLocation::FragmentDefinition) ||
-            self.locations.contains(&DirectiveLocation::InlineFragment) ||
-            self.locations.contains(&DirectiveLocation::FragmentSpread)
+    #[graphql(deprecated = "Use the locations array instead")]
+    fn on_fragment(&self) -> bool {
+        self.locations
+            .contains(&DirectiveLocation::FragmentDefinition)
+            || self.locations.contains(&DirectiveLocation::InlineFragment)
+            || self.locations.contains(&DirectiveLocation::FragmentSpread)
     }
 
     // Included for compatibility with the introspection query in GraphQL.js
-    field deprecated "Use the locations array instead"
-    on_field() -> bool {
+    #[graphql(deprecated = "Use the locations array instead")]
+    fn on_field(&self) -> bool {
         self.locations.contains(&DirectiveLocation::Field)
     }
-});
+}

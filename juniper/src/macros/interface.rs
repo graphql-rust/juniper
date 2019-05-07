@@ -61,13 +61,18 @@ impl Character for Droid {
     fn id(&self) -> &str { &self.id }
 }
 
-juniper::graphql_object!(Human: Database as "Human" |&self| {
-    field id() -> &str { &self.id }
-});
+#[juniper::impl_object(Context = Database)]
+impl Human {
+    fn id(&self) -> &str { &self.id }
+}
 
-juniper::graphql_object!(Droid: Database as "Droid" |&self| {
-    field id() -> &str { &self.id }
-});
+#[juniper::impl_object(
+    name = "Droid",
+    Context = Database,
+)]
+impl Droid {
+    fn id(&self) -> &str { &self.id }
+}
 
 // You can introduce lifetimes or generic parameters by < > before the name.
 juniper::graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {

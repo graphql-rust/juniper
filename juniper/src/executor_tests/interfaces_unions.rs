@@ -37,12 +37,17 @@ mod interface {
         }
     }
 
-    graphql_object!(Dog: () |&self| {
-        field name() -> &str { &self.name }
-        field woofs() -> bool { self.woofs }
-
-        interfaces: [&Pet]
-    });
+    #[crate::impl_object_internal(
+        interfaces = [&Pet]
+    )]
+    impl Dog {
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn woofs(&self) -> bool {
+            self.woofs
+        }
+    }
 
     struct Cat {
         name: String,
@@ -58,22 +63,28 @@ mod interface {
         }
     }
 
-    graphql_object!(Cat: () |&self| {
-        field name() -> &str { &self.name }
-        field meows() -> bool { self.meows }
-
-        interfaces: [&Pet]
-    });
+    #[crate::impl_object_internal(
+        interfaces = [&Pet]
+    )]
+    impl Cat {
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn meows(&self) -> bool {
+            self.meows
+        }
+    }
 
     struct Schema {
         pets: Vec<Box<Pet>>,
     }
 
-    graphql_object!(Schema: () |&self| {
-        field pets() -> Vec<&Pet> {
+    #[crate::impl_object_internal]
+    impl Schema {
+        fn pets(&self) -> Vec<&Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()
         }
-    });
+    }
 
     #[test]
     fn test() {
@@ -177,10 +188,15 @@ mod union {
         }
     }
 
-    graphql_object!(Dog: () |&self| {
-        field name() -> &str { &self.name }
-        field woofs() -> bool { self.woofs }
-    });
+    #[crate::impl_object_internal]
+    impl Dog {
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn woofs(&self) -> bool {
+            self.woofs
+        }
+    }
 
     struct Cat {
         name: String,
@@ -193,20 +209,26 @@ mod union {
         }
     }
 
-    graphql_object!(Cat: () |&self| {
-        field name() -> &str { &self.name }
-        field meows() -> bool { self.meows }
-    });
+    #[crate::impl_object_internal]
+    impl Cat {
+        fn name(&self) -> &str {
+            &self.name
+        }
+        fn meows(&self) -> bool {
+            self.meows
+        }
+    }
 
     struct Schema {
         pets: Vec<Box<Pet>>,
     }
 
-    graphql_object!(Schema: () |&self| {
-        field pets() -> Vec<&Pet> {
+    #[crate::impl_object_internal]
+    impl Schema {
+        fn pets(&self) -> Vec<&Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()
         }
-    });
+    }
 
     #[test]
     fn test() {

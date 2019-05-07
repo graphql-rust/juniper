@@ -18,41 +18,29 @@ Syntax to validate:
 
  */
 
-struct Interface;
-
 struct CustomName;
+graphql_object!(CustomName: () as "ACustomNamedType" |&self| {
+    field simple() -> i32 { 0 }
+});
 
 #[allow(dead_code)]
 struct WithLifetime<'a> {
     data: PhantomData<&'a i32>,
 }
+graphql_object!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
+    field simple() -> i32 { 0 }
+});
 
 #[allow(dead_code)]
 struct WithGenerics<T> {
     data: T,
 }
-
-struct DescriptionFirst;
-struct FieldsFirst;
-struct InterfacesFirst;
-
-struct CommasWithTrailing;
-struct CommasOnMeta;
-
-struct Root;
-
-graphql_object!(CustomName: () as "ACustomNamedType" |&self| {
-    field simple() -> i32 { 0 }
-});
-
-graphql_object!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
-    field simple() -> i32 { 0 }
-});
-
 graphql_object!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
     field simple() -> i32 { 0 }
 });
 
+struct Interface;
+struct DescriptionFirst;
 graphql_interface!(Interface: () |&self| {
     field simple() -> i32 { 0 }
 
@@ -60,7 +48,6 @@ graphql_interface!(Interface: () |&self| {
         DescriptionFirst => Some(DescriptionFirst {}),
     }
 });
-
 graphql_object!(DescriptionFirst: () |&self| {
     description: "A description"
 
@@ -69,6 +56,7 @@ graphql_object!(DescriptionFirst: () |&self| {
     interfaces: [Interface]
 });
 
+struct FieldsFirst;
 graphql_object!(FieldsFirst: () |&self| {
     field simple() -> i32 { 0 }
 
@@ -77,6 +65,7 @@ graphql_object!(FieldsFirst: () |&self| {
     interfaces: [Interface]
 });
 
+struct InterfacesFirst;
 graphql_object!(InterfacesFirst: ()|&self| {
     interfaces: [Interface]
 
@@ -85,6 +74,7 @@ graphql_object!(InterfacesFirst: ()|&self| {
     description: "A description"
 });
 
+struct CommasWithTrailing;
 graphql_object!(CommasWithTrailing: () |&self| {
     interfaces: [Interface],
 
@@ -93,12 +83,16 @@ graphql_object!(CommasWithTrailing: () |&self| {
     description: "A description",
 });
 
+struct CommasOnMeta;
+
 graphql_object!(CommasOnMeta: () |&self| {
     interfaces: [Interface],
     description: "A description",
 
     field simple() -> i32 { 0 }
 });
+
+struct Root;
 
 struct InnerContext;
 impl Context for InnerContext {}

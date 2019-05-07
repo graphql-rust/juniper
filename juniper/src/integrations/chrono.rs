@@ -209,20 +209,22 @@ mod integration_test {
     #[test]
     fn test_serialization() {
         struct Root;
-        graphql_object!(Root: () |&self| {
-            field exampleNaiveDate() -> NaiveDate {
+
+        #[crate::impl_object_internal]
+        impl Root {
+            fn exampleNaiveDate() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
             }
-            field exampleNaiveDateTime() -> NaiveDateTime {
+            fn exampleNaiveDateTime() -> NaiveDateTime {
                 NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)
             }
-            field exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
-              DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
+            fn exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
+                DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
             }
-            field exampleDateTimeUtc() -> DateTime<Utc> {
-              Utc.timestamp(61, 0)
+            fn exampleDateTimeUtc() -> DateTime<Utc> {
+                Utc.timestamp(61, 0)
             }
-        });
+        }
 
         let doc = r#"
         {

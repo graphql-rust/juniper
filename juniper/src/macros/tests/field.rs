@@ -20,49 +20,77 @@ Syntax to validate:
 
 */
 
-graphql_object!(Root: () |&self| {
-    field simple() -> i32 { 0 }
-
-    field description() -> i32 as "Field description" { 0 }
-
-    field deprecated "Deprecation reason"
-        deprecated() -> i32 { 0 }
-
-    field deprecated "Deprecation reason"
-        deprecated_descr() -> i32 as "Field description" { 0 }
+#[crate::impl_object_internal(
+    interfaces = [&Interface],
+)]
+impl Root {
+    fn simple() -> i32 {
+        0
+    }
 
     /// Field description
-    field attr_description() -> i32 { 0 }
+    fn description() -> i32 {
+        0
+    }
+
+    #[graphql(deprecated = "Deprecation reason")]
+    fn deprecated() -> i32 {
+        0
+    }
+
+    #[graphql(deprecated = "Deprecation reason", description = "Field description")]
+    fn deprecated_descr() -> i32 {
+        0
+    }
+
+    /// Field description
+    fn attr_description() -> i32 {
+        0
+    }
 
     /// Field description
     /// with `collapse_docs` behavior
-    field attr_description_collapse() -> i32 { 0 }
+    fn attr_description_collapse() -> i32 {
+        0
+    }
 
     /// Get the i32 representation of 0.
     ///
     /// - This comment is longer.
     /// - These two lines are rendered as bullets by GraphiQL.
     ///     - subsection
-    field attr_description_long() -> i32 { 0 }
+    fn attr_description_long() -> i32 {
+        0
+    }
 
-    #[deprecated]
-    field attr_deprecated() -> i32 { 0 }
+    #[graphql(deprecated)]
+    fn attr_deprecated() -> i32 {
+        0
+    }
 
-    #[deprecated(note = "Deprecation reason")]
-    field attr_deprecated_reason() -> i32 { 0 }
+    #[graphql(deprecated = "Deprecation reason")]
+    fn attr_deprecated_reason() -> i32 {
+        0
+    }
 
     /// Field description
-    #[deprecated(note = "Deprecation reason")]
-    field attr_deprecated_descr() -> i32 { 0 }
+    #[graphql(deprecated = "Deprecation reason")]
+    fn attr_deprecated_descr() -> i32 {
+        0
+    }
 
-    field with_field_result() -> FieldResult<i32> { Ok(0) }
+    fn with_field_result() -> FieldResult<i32> {
+        Ok(0)
+    }
 
-    field with_return() -> i32 { return 0; }
+    fn with_return() -> i32 {
+        return 0;
+    }
 
-    field with_return_field_result() -> FieldResult<i32> { return Ok(0); }
-
-    interfaces: [Interface]
-});
+    fn with_return_field_result() -> FieldResult<i32> {
+        return Ok(0);
+    }
+}
 
 graphql_interface!(Interface: () |&self| {
     field simple() -> i32 { 0 }

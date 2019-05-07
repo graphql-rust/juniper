@@ -46,23 +46,26 @@ enum ResolversWithTrailingComma {
 
 struct Root;
 
-graphql_object!(Concrete: () |&self| {
-    field simple() -> i32 { 123 }
-});
+#[crate::impl_object_internal]
+impl Concrete {
+    fn simple() -> i32 {
+        123
+    }
+}
 
-graphql_union!(CustomName: () as "ACustomNamedUnion" |&self| {
+graphql_union!(CustomName: ()  as "ACustomNamedUnion"  |&self| {
     instance_resolvers: |&_| {
         &Concrete => match *self { CustomName::Concrete(ref c) => Some(c) }
     }
 });
 
-graphql_union!(<'a> WithLifetime<'a>: () as "WithLifetime" |&self| {
+graphql_union!(<'a> WithLifetime<'a>: () as "WithLifetime"  |&self| {
     instance_resolvers: |&_| {
         Concrete => match *self { WithLifetime::Int(_) => Some(Concrete) }
     }
 });
 
-graphql_union!(<T> WithGenerics<T>: () as "WithGenerics" |&self| {
+graphql_union!(<T> WithGenerics<T>: () as "WithGenerics"  |&self| {
     instance_resolvers: |&_| {
         Concrete => match *self { WithGenerics::Generic(_) => Some(Concrete) }
     }
@@ -96,17 +99,30 @@ graphql_union!(ResolversWithTrailingComma: () |&self| {
     description: "A description"
 });
 
-graphql_object!(<'a> Root: () as "Root" |&self| {
-    field custom_name() -> CustomName { CustomName::Concrete(Concrete) }
-    field with_lifetime() -> WithLifetime<'a> { WithLifetime::Int(PhantomData) }
-    field with_generics() -> WithGenerics<i32> { WithGenerics::Generic(123) }
-    field description_first() -> DescriptionFirst { DescriptionFirst::Concrete(Concrete) }
-    field resolvers_first() -> ResolversFirst { ResolversFirst::Concrete(Concrete) }
-    field commas_with_trailing() -> CommasWithTrailing { CommasWithTrailing::Concrete(Concrete) }
-    field resolvers_with_trailing_comma() -> ResolversWithTrailingComma {
+#[crate::impl_object_internal]
+impl<'a> Root {
+    fn custom_name() -> CustomName {
+        CustomName::Concrete(Concrete)
+    }
+    fn with_lifetime() -> WithLifetime<'a> {
+        WithLifetime::Int(PhantomData)
+    }
+    fn with_generics() -> WithGenerics<i32> {
+        WithGenerics::Generic(123)
+    }
+    fn description_first() -> DescriptionFirst {
+        DescriptionFirst::Concrete(Concrete)
+    }
+    fn resolvers_first() -> ResolversFirst {
+        ResolversFirst::Concrete(Concrete)
+    }
+    fn commas_with_trailing() -> CommasWithTrailing {
+        CommasWithTrailing::Concrete(Concrete)
+    }
+    fn resolvers_with_trailing_comma() -> ResolversWithTrailingComma {
         ResolversWithTrailingComma::Concrete(Concrete)
     }
-});
+}
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where

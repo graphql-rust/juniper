@@ -12,33 +12,33 @@ use crate::schema::meta::{Argument, MetaType};
 
 /// GraphQL type kind
 ///
-/// The GraphQL specification defines a number of type kinds - the meta type
+/// The GraphQL specification defines a number of type kinds - the meta type\
 /// of a type.
 #[derive(Clone, Eq, PartialEq, Debug, GraphQLEnum)]
 #[graphql(name = "__TypeKind")]
 pub enum TypeKind {
     /// ## Scalar types
     ///
-    /// Scalar types appear as the leaf nodes of GraphQL queries. Strings,
-    /// numbers, and booleans are the built in types, and while it's possible
+    /// Scalar types appear as the leaf nodes of GraphQL queries. Strings,\
+    /// numbers, and booleans are the built in types, and while it's possible\
     /// to define your own, it's relatively uncommon.
     Scalar,
 
     /// ## Object types
     ///
-    /// The most common type to be implemented by users. Objects have fields
+    /// The most common type to be implemented by users. Objects have fields\
     /// and can implement interfaces.
     Object,
 
     /// ## Interface types
     ///
-    /// Interface types are used to represent overlapping fields between
+    /// Interface types are used to represent overlapping fields between\
     /// multiple types, and can be queried for their concrete type.
     Interface,
 
     /// ## Union types
     ///
-    /// Unions are similar to interfaces but can not contain any fields on
+    /// Unions are similar to interfaces but can not contain any fields on\
     /// their own.
     Union,
 
@@ -55,14 +55,14 @@ pub enum TypeKind {
 
     /// ## List types
     ///
-    /// Represent lists of other types. This library provides implementations
-    /// for vectors and slices, but other Rust types can be extended to serve
+    /// Represent lists of other types. This library provides implementations\
+    /// for vectors and slices, but other Rust types can be extended to serve\
     /// as GraphQL lists.
     List,
 
     /// ## Non-null types
     ///
-    /// In GraphQL, nullable types are the default. By putting a `!` after a
+    /// In GraphQL, nullable types are the default. By putting a `!` after a\
     /// type, it becomes non-nullable.
     #[graphql(name = "NON_NULL")]
     NonNull,

@@ -1,10 +1,27 @@
 # master
 
-- Refactored all crates to the 2018 edition. [#345](https://github.com/graphql-rust/juniper/pull/345)
+### impl_object macro
+
+The `graphql_object!` macro is deprecated and will be removed in the future. 
+It is replaced by the new [impl_object](https://docs.rs/juniper/latest/juniper/macro.impl_object.html) procedural macro.
+
+[#333](https://github.com/graphql-rust/juniper/pull/333)
+
+### 2018 Edition
+
+All crates were refactored to the Rust 2018 edition.
+
+This should not have any impact on your code, since juniper already was 2018 compatible.
+
+[#345](https://github.com/graphql-rust/juniper/pull/345)
+
+### Other changes
+
 - The minimum required Rust version is now `1.31.0`.
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
 - Added built-in support for the canonical schema introspection query via
-  `juniper::introspect()`. [#307](https://github.com/graphql-rust/juniper/issues/307)
+  `juniper::introspect()`. 
+  [#307](https://github.com/graphql-rust/juniper/issues/307)
 - Fix introspection query validity
   The DirectiveLocation::InlineFragment had an invalid literal value,
   which broke third party tools like apollo cli.
