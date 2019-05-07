@@ -611,7 +611,7 @@ pub struct GraphQLTypeDefiniton {
     // This flag signifies if the type generics need to be
     // included manually.
     pub include_type_generics: bool,
-    // This flag indicates if the generated code should always be 
+    // This flag indicates if the generated code should always be
     // generic over the ScalarValue.
     // If false, the scalar is only generic if a generic parameter
     // is specified manually.
@@ -744,7 +744,7 @@ impl GraphQLTypeDefiniton {
             // A custom scalar type was specified.
             // Therefore, we always insert a where clause that marks the scalar as
             // compatible with ScalarValueRef.
-            // This is done to prevent the user from having to specify this 
+            // This is done to prevent the user from having to specify this
             // manually.
             let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
             where_clause.predicates.push(
@@ -764,9 +764,9 @@ impl GraphQLTypeDefiniton {
             // Insert a where clause that marks the scalar as
             // compatible with ScalarValueRef.
             // Same as in branch above.
-            where_clause.predicates.push(
-                parse_quote!(for<'__b> &'__b __S: #juniper_crate_name::ScalarRefValue<'__b>),
-            );
+            where_clause
+                .predicates
+                .push(parse_quote!(for<'__b> &'__b __S: #juniper_crate_name::ScalarRefValue<'__b>));
         }
 
         let type_generics_tokens = if self.include_type_generics {

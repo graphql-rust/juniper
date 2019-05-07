@@ -146,15 +146,13 @@ where
     fn fields(&self, include_deprecated: bool) -> Option<Vec<&Field<S>>> {
         match *self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
-            | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => {
-                Some(
-                    fields
-                        .iter()
-                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
-                        .filter(|f| !f.name.starts_with("__"))
-                        .collect(),
-                )
-            }
+            | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
+                fields
+                    .iter()
+                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
+                    .filter(|f| !f.name.starts_with("__"))
+                    .collect(),
+            ),
             _ => None,
         }
     }
@@ -233,14 +231,12 @@ where
     #[graphql(arguments(include_deprecated(default = false)))]
     fn enum_values(&self, include_deprecated: bool) -> Option<Vec<&EnumValue>> {
         match *self {
-            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => {
-                Some(
-                    values
-                        .iter()
-                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
-                        .collect(),
-                )
-            }
+            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
+                values
+                    .iter()
+                    .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
+                    .collect(),
+            ),
             _ => None,
         }
     }

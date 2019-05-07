@@ -79,16 +79,16 @@ pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
 The `impl_object` proc macro is the primary way of defining GraphQL resolvers
 that can not be implemented with the GraphQLObject derive.
 
-It enables you to write GraphQL field resolvers for a type by declaring a 
+It enables you to write GraphQL field resolvers for a type by declaring a
 regular Rust `impl` block. Under the hood, the procedural macro implements
 the GraphQLType trait.
 
-`impl_object` comes with many features that allow customization of 
+`impl_object` comes with many features that allow customization of
 your fields, all of which are detailed below.
 
 ### Getting Started
 
-This simple example will show you the most basic use of `impl_object`. 
+This simple example will show you the most basic use of `impl_object`.
 More advanced use cases are introduced step by step.
 
 ```
@@ -105,17 +105,17 @@ impl Query {
 
 
     // This defines a simple, static field which does not require any context.
-    // You can return any value that implements the `GraphQLType` trait. 
+    // You can return any value that implements the `GraphQLType` trait.
     // This trait is implemented for:
     //  - basic scalar types like bool, &str, String, i32, f64
     //  - GraphQL compatible wrappers like Option<_>, Vec<_>.
     //  - types which use the `#derive[juniper::GraphQLObject]`
     //  - `impl_object` structs.
-    // 
-    // An important note regarding naming: 
+    //
+    // An important note regarding naming:
     // By default, field names will be converted to camel case.
     // For your GraphQL queries, the field will be available as `apiVersion`.
-    // 
+    //
     // You can also manually customize the field name if required. (See below)
     fn api_version() -> &'static str {
         "0.1"
@@ -169,7 +169,7 @@ You can specify a context that will be available across
 all your resolvers during query execution.
 
 The Context can be injected into your resolvers by just
-specifying an argument with the same type as the context 
+specifying an argument with the same type as the context
 (but as a reference).
 
 ```
@@ -198,11 +198,11 @@ impl Query {
         context.db.user(id)
     }
 
-    // You can also gain access to the executor, which 
+    // You can also gain access to the executor, which
     // allows you to do look aheads.
     fn with_executor(executor: &Executor) -> bool {
         let info = executor.look_ahead();
-        // ... 
+        // ...
         true
     }
 }

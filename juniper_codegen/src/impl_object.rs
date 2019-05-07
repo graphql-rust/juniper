@@ -148,7 +148,7 @@ pub fn build_impl_object(args: TokenStream, body: TokenStream, is_internal: bool
                             // Check for executor arguments.
                             if util::type_is_identifier_ref(&captured.ty, "Executor") {
                                 resolve_parts.push(quote!(let #arg_ident = executor;));
-                            } 
+                            }
                             // Make sure executor is specified as a reference.
                             else if util::type_is_identifier(&captured.ty, "Executor") {
                                 panic!("Invalid executor argument: to access the Executor, you need to specify the type as a reference.\nDid you mean &Executor?");
@@ -160,16 +160,19 @@ pub fn build_impl_object(args: TokenStream, body: TokenStream, is_internal: bool
                                 .unwrap_or(false)
                             {
                                 resolve_parts.push(quote!( let #arg_ident = executor.context(); ));
-                            } 
+                            }
                             // Make sure the user does not specify the Context
                             //  without a reference. (&Context)
-                            else if context_type.clone().map(|ctx| ctx == &captured.ty).unwrap_or(false) {
+                            else if context_type
+                                .clone()
+                                .map(|ctx| ctx == &captured.ty)
+                                .unwrap_or(false)
+                            {
                                 panic!(
                                     "Invalid context argument: to access the context, you need to specify the type as a reference.\nDid you mean &{}?", 
                                     quote!(captured.ty),
                                 );
-                            }
-                            else {
+                            } else {
                                 let ty = &captured.ty;
                                 // TODO: respect graphql attribute overwrite.
                                 let final_name = util::to_camel_case(&arg_name);
