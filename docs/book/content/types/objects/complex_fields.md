@@ -2,8 +2,8 @@
 
 If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
-the `graphql_object!` macro. This macro lets you define GraphQL objects similar
-to how you define methods in a Rust `impl` block for a type. Continuing with the
+the `impl_object` procedural macro. This macro lets you define GraphQL object
+fields in a Rust `impl` block for a type. Continuing with the
 example from the last chapter, this is how you would define `Person` using the
 macro:
 
@@ -14,15 +14,16 @@ struct Person {
     age: i32,
 }
 
-juniper::graphql_object!(Person: () |&self| {
-    field name() -> &str {
+#[juniper::impl_object]
+impl Person {
+    fn name(&self) -> &str {
         self.name.as_str()
     }
 
-    field age() -> i32 {
+    fn age(&self) -> i32 {
         self.age
     }
-});
+}
 
 # fn main() { }
 ```
@@ -42,12 +43,13 @@ struct House {
     inhabitants: Vec<Person>,
 }
 
-juniper::graphql_object!(House: () |&self| {
+#[juniper::impl_object]
+impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
-    field inhabitant_with_name(name: String) -> Option<&Person> {
+    fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
         self.inhabitants.iter().find(|p| p.name == name)
     }
-});
+}
 
 # fn main() {}
 ```
@@ -68,15 +70,19 @@ struct Person {
     website_url: String,
 }
 
-juniper::graphql_object!(Person: () as "PersonObject" |&self| {
-    field name() -> &str {
+#[juniper::impl_object(
+    // With this attribtue you can change the public GraphQL name of the type.
+    name = "PersonObject",
+)]
+impl Person {
+    fn name(&self) -> &str {
         self.name.as_str()
     }
 
-    field websiteURL() -> &str {
+    fn websiteURL(&self) -> &str {
         self.website_url.as_str()
     }
-});
+}
 
 # fn main() { }
 ```
@@ -90,4 +96,4 @@ GraphQL fields expose more features than Rust's standard method syntax gives us:
 * Per-argument descriptions
 
 These, and more features, are described more thorougly in [the reference
-documentation](https://docs.rs/juniper/0.8.1/juniper/macro.graphql_object.html).
+documentation](https://docs.rs/juniper/latest/juniper/macro.impl_object.html).

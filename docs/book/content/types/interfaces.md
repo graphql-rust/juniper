@@ -49,7 +49,7 @@ impl Character for Droid {
     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
 }
 
-juniper::graphql_interface!(<'a> &'a Character: () as "Character" where Scalar = <S>|&self| {
+juniper::graphql_interface!(<'a> &'a Character: () as "Character" where Scalar = <S> |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |_| {
@@ -79,14 +79,14 @@ we'll use two hashmaps, but this could be two tables and some SQL calls instead:
 ```rust
 # use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
+#[graphql(Context = Database)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
+#[graphql(Context = Database)]
 struct Droid {
     id: String,
     primary_function: String,

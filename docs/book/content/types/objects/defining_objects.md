@@ -154,7 +154,7 @@ attribute:
 struct Person {
     name: String,
     age: i32,
-    #[graphql(deprecation="Please use the name field instead")]
+    #[graphql(deprecated = "Please use the name field instead")]
     first_name: String,
 }
 

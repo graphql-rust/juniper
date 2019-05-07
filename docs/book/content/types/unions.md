@@ -42,7 +42,7 @@ impl Character for Droid {
     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
 }
 
-juniper::graphql_union!(<'a> &'a Character: () as "Character" where Scalar = <S>   |&self| { 
+juniper::graphql_union!(<'a> &'a Character: () as "Character" where Scalar = <S> |&self| { 
     instance_resolvers: |_| {
         // The left hand side indicates the concrete type T, the right hand
         // side should be an expression returning Option<T>
@@ -61,14 +61,14 @@ FIXME: This example does not compile at the moment
 ```rust
 # use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
+#[graphql(Context = Database)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
+#[graphql(Context = Database)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -108,14 +108,14 @@ juniper::graphql_union!(<'a> &'a Character: Database as "Character" where Scalar
 ```rust
 # use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
+#[graphql(Context = Database)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = "Database")]
+#[graphql(Context = Database)]
 struct Droid {
     id: String,
     primary_function: String,

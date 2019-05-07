@@ -20,7 +20,7 @@ naturally map to GraphQL features, such as `Option<T>`, `Vec<T>`, `Box<T>`,
 
 For more advanced mappings, Juniper provides multiple macros to map your Rust
 types to a GraphQL schema. The most important one is the
-[graphql_object!][jp_obj_macro] macro that is used for declaring an object with
+[impl_object][jp_impl_object] procedural macro that is used for declaring an object with
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 ```rust
@@ -60,7 +60,7 @@ struct NewHuman {
 }
 
 // Now, we create our root Query and Mutation types with resolvers by using the
-// graphql_object! macro.
+// impl_object macro.
 // Objects can have contexts that allow accessing shared state like a database
 // pool.
 
@@ -74,17 +74,23 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-juniper::graphql_object!(Query: Context |&self| {
+#[juniper::impl_object(
+    // Here we specify the context type for the object.
+    // We need to do this in every type that
+    // needs access to the context.
+    Context = Context,
+)]
+impl Query {
 
-    field apiVersion() -> &str {
+    fn apiVersion() -> &str {
         "1.0"
     }
 
     // Arguments to resolvers can either be simple types or input objects.
-    // The executor is a special (optional) argument that allows accessing the context.
-    field human(&executor, id: String) -> FieldResult<Human> {
-        // Get the context from the executor.
-        let context = executor.context();
+    // To gain access to the context, we specify a argument
+    // that is a reference to the Context type.
+    // Juniper automatically injects the correct context here.
+    fn human(context: &Context, id: String) -> FieldResult<Human> {
         // Get a db connection.
         let connection = context.pool.get_connection()?;
         // Execute a db query.
@@ -93,18 +99,23 @@ juniper::graphql_object!(Query: Context |&self| {
         // Return the result.
         Ok(human)
     }
-});
+}
+
+// Now, we do the same for our Mutation type.
 
 struct Mutation;
 
-juniper::graphql_object!(Mutation: Context |&self| {
+#[juniper::impl_object(
+    Context = Context,
+)]
+impl Mutation {
 
-    field createHuman(&executor, new_human: NewHuman) -> FieldResult<Human> {
+    fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human> {
         let db = executor.context().pool.get_connection()?;
         let human: Human = db.insert_human(&new_human)?;
         Ok(human)
     }
-});
+}
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
@@ -130,6 +141,7 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 # #[macro_use] extern crate juniper;
 use juniper::{FieldResult, Variables, EmptyMutation};
 
+
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
 enum Episode {
     NewHope,
@@ -137,17 +149,22 @@ enum Episode {
     Jedi,
 }
 
-struct Query;
-
-juniper::graphql_object!(Query: Ctx |&self| {
-    field favoriteEpisode(&executor) -> FieldResult<Episode> {
-        // Use the special &executor argument to fetch our fav episode.
-        Ok(executor.context().0)
-    }
-});
-
 // Arbitrary context data.
 struct Ctx(Episode);
+
+impl juniper::Context for Ctx {}
+
+struct Query;
+
+#[juniper::impl_object(
+    Context = Ctx,
+)]
+impl Query {
+    fn favoriteEpisode(context: &Ctx) -> FieldResult<Episode> {
+        Ok(context.0)
+    }
+}
+
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
@@ -181,4 +198,4 @@ fn main() {
 [rocket]: servers/rocket.md
 [iron]: servers/iron.md
 [tutorial]: ./tutorial.html
-[jp_obj_macro]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html
+[jp_obj_macro]: https://docs.rs/juniper/latest/juniper/macro.impl_object.html
