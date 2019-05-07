@@ -6,8 +6,6 @@
 
 #![recursion_limit = "1024"]
 
-extern crate self as juniper;
-
 extern crate proc_macro;
 
 mod derive_enum;
