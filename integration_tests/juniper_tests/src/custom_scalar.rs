@@ -151,15 +151,18 @@ juniper::graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
 
 struct TestType;
 
-juniper::graphql_object!(TestType: () where Scalar = MyScalarValue |&self| {
-    field long_field()  -> i64 {
+#[juniper::impl_object(
+    Scalar = MyScalarValue
+)]
+impl TestType {
+    fn long_field() -> i64 {
         (::std::i32::MAX as i64) + 1
     }
 
-    field long_with_arg(long_arg: i64) -> i64 {
+    fn long_with_arg(long_arg: i64) -> i64 {
         long_arg
     }
-});
+}
 
 #[cfg(test)]
 fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)

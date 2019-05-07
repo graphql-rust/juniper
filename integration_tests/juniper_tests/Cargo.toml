@@ -4,15 +4,7 @@ version = "0.1.0"
 publish = false
 edition = "2018"
 
-[dependencies]
-juniper = { version = "0.11.0", path = "../../juniper" }
-serde_json = { version = "1" }
-
 [dev-dependencies]
+juniper = { path = "../../juniper" }
+serde_json = { version = "1" }
 fnv = "1.0.3"
-indexmap = "1.0"
-
-[[test]]
-name = "integration_tests"
-path = "src/lib.rs"
-harness = true
