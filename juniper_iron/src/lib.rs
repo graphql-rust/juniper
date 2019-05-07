@@ -37,27 +37,29 @@ use juniper::{Context, EmptyMutation};
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# juniper::graphql_object!(User: Database |&self| {
-#     field id() -> FieldResult<&String> {
+# #[juniper::impl_object( Context = Database )]
+# impl User {
+#     fn id(&self) -> FieldResult<&String> {
 #         Ok(&self.id)
 #     }
 #
-#     field name() -> FieldResult<&String> {
+#     fn name(&self) -> FieldResult<&String> {
 #         Ok(&self.name)
 #     }
 #
-#     field friends(&executor) -> FieldResult<Vec<&User>> {
+#     fn friends(context: &Database) -> FieldResult<Vec<&User>> {
 #         Ok(self.friend_ids.iter()
 #             .filter_map(|id| executor.context().users.get(id))
 #             .collect())
 #     }
-# });
+# }
 #
-# juniper::graphql_object!(QueryRoot: Database |&self| {
-#     field user(&executor, id: String) -> FieldResult<Option<&User>> {
+# #[juniper::impl_object( Context = Database )]
+# impl QueryRoot {
+#     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
 #     }
-# });
+# }
 
 // This function is executed for every request. Here, we would realistically
 // provide a database connection or similar. For this example, we'll be
