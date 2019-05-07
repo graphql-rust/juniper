@@ -134,13 +134,18 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// juniper::graphql_object! (QueryRoot: ExampleContext |&self| {
-///     field say_hello(&executor) -> String {
-///         let context = executor.context();
-///
-///         format!("good morning {}, the app state is {:?}", context.1, context.0)
+/// #[juniper::impl_object(
+///    Context = ExampleContext
+/// )]
+/// impl QueryRoot {
+///     fn say_hello(context: &ExampleContext) -> String {
+///         format!(
+///             "good morning {}, the app state is {:?}",
+///             context.1,
+///             context.0
+///         )
 ///     }
-/// });
+/// }
 ///
 /// let schema = RootNode::new(QueryRoot, EmptyMutation::new());
 ///
