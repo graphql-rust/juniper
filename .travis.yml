@@ -5,9 +5,9 @@ rust:
   - beta
   - nightly
 
+  # TODO: re-enable once new versions are released.
   # Prevent accidentally breaking older Rust versions
-  - 1.32.0
-  - 1.31.0
+  # - 1.33.0
 
 matrix:
   include:
