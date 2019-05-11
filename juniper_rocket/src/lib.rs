@@ -107,6 +107,21 @@ where
             ),
         }
     }
+
+    pub fn operation_name(&self) -> Option<&str> {
+        match self {
+            GraphQLBatchRequest::Single(req) => {
+                req.operation_name()
+            },
+            GraphQLBatchRequest::Batch(reqs) => {
+                if reqs.len() == 1 {
+                    reqs.get(0).and_then(|req| req.operation_name())
+                } else {
+                    None
+                }
+            },
+        }
+    }
 }
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
@@ -172,6 +187,11 @@ where
         let json = serde_json::to_string(&response).unwrap();
 
         GraphQLResponse(status, json)
+    }
+
+    /// Returns the `operation_name` associated with this request.
+    pub fn operation_name(&self) -> Option<&str> {
+        self.0.operation_name()
     }
 }
 
