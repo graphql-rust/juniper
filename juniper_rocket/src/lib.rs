@@ -110,16 +110,14 @@ where
 
     pub fn operation_name(&self) -> Option<&str> {
         match self {
-            GraphQLBatchRequest::Single(req) => {
-                req.operation_name()
-            },
+            GraphQLBatchRequest::Single(req) => req.operation_name(),
             GraphQLBatchRequest::Batch(reqs) => {
                 if reqs.len() == 1 {
                     reqs.get(0).and_then(|req| req.operation_name())
                 } else {
                     None
                 }
-            },
+            }
         }
     }
 }
