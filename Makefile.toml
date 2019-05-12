@@ -27,7 +27,7 @@ run_task = { name = "release-some-INTERNAL", fork = true }
 private = true
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 command = "cargo-release"
-args = ["release", "--config", "./_build/release.toml", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "${RELEASE_LEVEL}"]
 
 
 #
@@ -56,7 +56,7 @@ condition = { env_set = [ "RELEASE_LEVEL" ] }
 env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
 description = "Run `cargo-release --dry-run` for every crate"
 command = "cargo-release"
-args = ["release", "--config", "./_build/release.toml", "--dry-run", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "--dry-run", "${RELEASE_LEVEL}"]
 
 #
 # Run `RELEASE_LEVEL=(patch|major|minor) cargo make release-local-test` to do actually make changes locally but
@@ -85,4 +85,4 @@ private = true
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 description = "Run `cargo-release` for every crate, but only make changes locally"
 command = "cargo-release"
-args = ["release", "--config", "./_build/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
