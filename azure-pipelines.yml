@@ -22,8 +22,10 @@ jobs:
         displayName: Dry run mode
       - script: |
           RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-testl
-          git --no-pager log -p HEAD~25
         displayName: Local test mode
+      - script: |
+          git --no-pager log -p HEAD~25
+        displayName: Show local changes
 
   - job: check_formatting
     displayName: Check formatting
