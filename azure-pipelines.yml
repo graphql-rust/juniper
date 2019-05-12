@@ -21,7 +21,7 @@ jobs:
           RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-dry-run
         displayName: Dry run mode
       - script: |
-          RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-testl
+          RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-test
         displayName: Local test mode
       - script: |
           git --no-pager log -p HEAD~25
