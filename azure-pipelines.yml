@@ -1,4 +1,22 @@
 jobs:
+  - job: check_release_automation
+    displayName: Check release automation
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - script: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+        displayName: Install stable Rust
+      - script: |
+          _build/cargo-make.sh "0.15.3" "x86_64-unknown-linux-musl"
+        displayName: Install cargo-make binary
+      - script: |
+          $HOME/.cargo/bin/cargo install cargo-release
+        displayName: Install cargo-release binary
+      - script: |
+          $HOME/.cargo/bin/cargo-make release-dry-run
+        displayName: Run release automation in dry run mode
+
   - job: check_formatting
     displayName: Check formatting
     pool:
