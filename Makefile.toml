@@ -27,7 +27,7 @@ run_task = { name = "release-some-INTERNAL", fork = true }
 private = true
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 command = "cargo-release"
-args = ["release", "--config", "./_build/release.toml", "minor"]
+args = ["release", "--config", "./_build/release.toml", "${RELEASE_LEVEL}"]
 
 
 #
@@ -85,4 +85,4 @@ private = true
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 description = "Run `cargo-release` for every crate, but only make changes locally"
 command = "cargo-release"
-args = ["release", "--config", "./_build/release.toml", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "./_build/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
