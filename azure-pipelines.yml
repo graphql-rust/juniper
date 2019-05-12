@@ -14,10 +14,15 @@ jobs:
           $HOME/.cargo/bin/cargo install cargo-release
         displayName: Install cargo-release binary
       - script: |
+          git config --local user.name "Release Test Bot"
+          git config --local user.email "juniper@example.com"
+        displayName: Set up git
+      - script: |
           RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-dry-run
         displayName: Dry run mode
       - script: |
-          RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-test
+          RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-testl
+          git --no-pager log -p HEAD~25
         displayName: Local test mode
 
   - job: check_formatting
