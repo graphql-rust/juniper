@@ -12,15 +12,14 @@ CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 workspace = false
 env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
-command = "cargo"
-args = [ "make", "release-INTERNAL" ]
+run_task = { name = "release-INTERNAL", fork = true }
+
 
 [tasks.release-some]
 condition = { env_set = [ "RELEASE_LEVEL", "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" ] }
 workspace = false
 env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
-command = "cargo"
-args = [ "make", "release-INTERNAL" ]
+run_task = { name = "release-some-INTERNAL", fork = true }
 
 # Hack to filter out crates we do not want to release.
 # See <https://github.com/sagiegurari/cargo-make/issues/212#issuecomment-481123564>
@@ -41,14 +40,12 @@ args = ["release", "--config", "../_build/release.toml", "minor"]
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 workspace = false
 env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
-command = "cargo"
-args = [ "make", "release-dry-run-INTERNAL" ]
+run_task = { name = "release-dry-run-INTERNAL", fork = true }
 
 [tasks.release-some-dry-run]
 condition = { env_set = [ "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS", "RELEASE_LEVEL" ] }
 workspace = false
-command = "cargo"
-args = [ "make", "release-dry-run-INTERNAL" ]
+run_task = { name = "release-some-dry-run-INTERNAL", fork = true }
 
 
 # Hack to filter out crates we do not want to release.
@@ -72,14 +69,14 @@ args = ["release", "--config", "../_build/release.toml", "--dry-run", "${RELEASE
 condition = { env_set = [ "RELEASE_LEVEL" ] }
 workspace = false
 env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
-command = "cargo"
-args = [ "make", "release-local-test-INTERNAL" ]
+run_task = { name = "release-local-test-INTERNAL", fork = true }
+
 
 [tasks.release-some-local-test]
 condition = { env_set = [ "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS", "RELEASE_LEVEL" ] }
 workspace = false
-command = "cargo"
-args = [ "make", "release-local-test-INTERNAL" ]
+run_task = { name = "release-some-local-test-INTERNAL", fork = true }
+
 
 # Hack to filter out crates we do not want to release.
 # See <https://github.com/sagiegurari/cargo-make/issues/212#issuecomment-481123564>

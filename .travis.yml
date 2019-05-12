@@ -26,15 +26,15 @@ env:
 before_script:
   - |
       if [ "$TRAVIS_OS_NAME" = 'windows' ]; then
-        powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.15.3" -target "x86_64-pc-windows-msvc"
+        powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.19.1" -target "x86_64-pc-windows-msvc"
       fi
   - |
       if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
-        _build/cargo-make.sh "0.15.3" "x86_64-unknown-linux-musl"
+        _build/cargo-make.sh "0.19.1" "x86_64-unknown-linux-musl"
       fi
   - |
       if [ "$TRAVIS_OS_NAME" = 'osx' ]; then
-        _build/cargo-make.sh "0.15.3" "x86_64-apple-darwin"
+        _build/cargo-make.sh "0.19.1" "x86_64-apple-darwin"
       fi
 script:
   - cargo make workspace-ci-flow --no-workspace
