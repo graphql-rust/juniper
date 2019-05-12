@@ -5,11 +5,10 @@ tag-message = "Release {{crate_name}} {{version}}"
 upload-doc = false
 pre-release-replacements = [
   {file="CHANGELOG.md", search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},
-  {file="../integration_tests/juniper_tests/Cargo.toml", search="juniper = { version = \"0.11.0\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_hyper/Cargo.toml", search="juniper = { version = \"0.11.0\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_iron/Cargo.toml", search="juniper = { version = \"0.11.0\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_rocket/Cargo.toml", search="juniper = { version = \"0.11.0\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_tests/Cargo.toml", search="juniper = { version = \"0.11.0\"", replace="juniper = { version = \"{{version}}\""},
-  {file="../juniper_warp/Cargo.toml", search="juniper = { version = \"0.11.0\"", replace="juniper = { version = \"{{version}}\""},
-  {file="release.toml", search="0.11.0", replace="{{version}}"},
+  {file="../integration_tests/juniper_tests/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_hyper/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_iron/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_rocket/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_tests/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_warp/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
 ]
