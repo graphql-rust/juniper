@@ -1,0 +1,11 @@
+# This is needed as the release config is at a different path than the top-level
+# release config.
+
+[tasks.release-INTERNAL]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "${RELEASE_LEVEL}"]
+
+[tasks.release-dry-run-INTERNAL]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--dry-run", "${RELEASE_LEVEL}"]
+
+[tasks.release-local-test-INTERNAL]
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
