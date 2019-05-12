@@ -24,7 +24,7 @@ jobs:
           RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-test
         displayName: Local test mode
       - script: |
-          git --no-pager log -p HEAD~25
+          git --no-pager log -p HEAD...HEAD~20
         displayName: Show local changes
 
   - job: check_formatting
