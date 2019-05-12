@@ -1,4 +1,8 @@
 jobs:
+  ###################################################
+  # Formatting
+  ###################################################
+
   - job: check_formatting
     displayName: Check formatting
     pool:
@@ -11,6 +15,10 @@ jobs:
       - script: |
           $HOME/.cargo/bin/cargo fmt -- --check
         displayName: Run rustfmt
+
+  ###################################################
+  # Book
+  ###################################################
 
   - job: run_book_tests
     displayName: Book code example tests
@@ -42,6 +50,10 @@ jobs:
       - script: |
           ./docs/book/ci-build.sh master
 
+  ###################################################
+  # Main Builds
+  ###################################################
+
   - template: _build/azure-pipelines-template.yml
     parameters:
       name: Linux
@@ -56,3 +68,38 @@ jobs:
     parameters:
       name: Windows
       vmImage: vs2017-win2016
+
+  ###################################################
+  # Releases
+  ###################################################
+
+  - job: check_release_automation
+    displayName: Check release automation
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - script: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+        displayName: Install stable Rust
+      - script: |
+          _build/cargo-make.sh "0.19.1" "x86_64-unknown-linux-musl"
+        displayName: Install cargo-make binary
+      - script: |
+          $HOME/.cargo/bin/cargo install cargo-release
+        displayName: Install cargo-release binary
+      - script: |
+          git config --local user.name "Release Test Bot"
+          git config --local user.email "juniper@example.com"
+        displayName: Set up git
+      - script: |
+          RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-dry-run
+        displayName: Dry run mode
+      - script: |
+          RELEASE_LEVEL="minor" "$HOME/.cargo/bin/cargo" make release-local-test
+        displayName: Local test mode
+      - script: |
+          git --no-pager log -p HEAD...HEAD~20
+        displayName: Echo local changes
+      - script: |
+          cargo make workspace-ci-flow --no-workspace
+        displayName: Make sure build and tests still work

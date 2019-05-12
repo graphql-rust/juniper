@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Compatibility with the latest `juniper`.
 
 # [0.3.0] 2018-12-17
 

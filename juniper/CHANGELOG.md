@@ -1,6 +1,6 @@
 # master
 
-- Refactored all crates to the 2018 editio [#345](https://github.com/graphql-rust/juniper/pull/345)
+- Refactored all crates to the 2018 edition. [#345](https://github.com/graphql-rust/juniper/pull/345)
 - The minimum required Rust version is now `1.31.0`.
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
 - Added built-in support for the canonical schema introspection query via
@@ -8,10 +8,10 @@
 - Fix introspection query validity
   The DirectiveLocation::InlineFragment had an invalid literal value,
   which broke third party tools like apollo cli.
-- Added GraphQL Playground integration
-  The DirectiveLocation::InlineFragment had an invalid literal value,
+- Added GraphQL Playground integration.
+  The `DirectiveLocation::InlineFragment` had an invalid literal value,
   which broke third party tools like apollo cli.
-- The return type of `value::object::Object::iter/iter_mut` has changed to `impl Iter` [#312](https://github.com/graphql-rust/juniper/pull/312)
+- The return type of `value::object::Object::iter/iter_mut` has changed to `impl Iter`. [#312](https://github.com/graphql-rust/juniper/pull/312)
 - Add `GraphQLRequest::operation_name` [#353](https://github.com/graphql-rust/juniper/pull/353)
 
 # [0.11.1] 2018-12-19
