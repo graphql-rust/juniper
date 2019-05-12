@@ -25,7 +25,10 @@ jobs:
         displayName: Local test mode
       - script: |
           git --no-pager log -p HEAD...HEAD~20
-        displayName: Show local changes
+        displayName: Echo local changes
+      - script: |
+          cargo make workspace-ci-flow --no-workspace
+        displayName: Make sure build and tests still work
 
   - job: check_formatting
     displayName: Check formatting
