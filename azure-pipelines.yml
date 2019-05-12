@@ -14,8 +14,11 @@ jobs:
           $HOME/.cargo/bin/cargo install cargo-release
         displayName: Install cargo-release binary
       - script: |
-          $HOME/.cargo/bin/cargo-make release-dry-run
-        displayName: Run release automation in dry run mode
+          RELEASE_LEVEL="minor "$HOME/.cargo/bin/cargo-make release-dry-run
+        displayName: Dry run mode
+      - script: |
+          RELEASE_LEVEL="minor "$HOME/.cargo/bin/cargo-make release-local-test
+        displayName: Local test mode
 
   - job: check_formatting
     displayName: Check formatting
