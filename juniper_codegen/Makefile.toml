@@ -1,4 +1,4 @@
 # This is needed as the release config is at a different path than the top-level
 # release config.
 [tasks.release-local-test-INTERNAL]
-args = ["release", "--config", "release.toml", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
+args = ["release", "--config", "release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
