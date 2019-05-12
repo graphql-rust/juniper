@@ -36,15 +36,15 @@ jobs:
     displayName: Query rust and cargo versions
   - ${{ if eq(parameters.name, 'Linux') }}:
     # Linux.
-    - script: _build/cargo-make.sh "0.15.3" "x86_64-unknown-linux-musl"
+    - script: _build/cargo-make.sh "0.19.1" "x86_64-unknown-linux-musl"
       displayName: Install cargo-make binary
   - ${{ if eq(parameters.name, 'macOS') }}:
     # Mac.
-    - script: _build/cargo-make.sh "0.15.3" "x86_64-apple-darwin"
+    - script: _build/cargo-make.sh "0.19.1" "x86_64-apple-darwin"
       displayName: Install cargo-make binary
   - ${{ if eq(parameters.name, 'Windows') }}:
     # Windows.
-    - script: powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.15.3" -target "x86_64-pc-windows-msvc"
+    - script: powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.19.1" -target "x86_64-pc-windows-msvc"
       displayName: Install cargo-make binary
   - script: cargo make workspace-ci-flow --no-workspace
     env: { CARGO_MAKE_RUN_CODECOV: true }

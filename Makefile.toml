@@ -2,16 +2,87 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
 
-# Run `cargo make release` to push a new minor release of every crate.
+#
+# Run `RELEASE_LEVEL=(patch|major|minor) cargo make release` to push a new release of every crate.
+# Run `RELEASE_LEVEL=(patch|major|minor) CARGO_MAKE_WORKSPACE_SKIP_MEMBERS="crate1;crate2;" cargo make release`
+# to push a new release of some crates.
+#
+
 [tasks.release]
-args = ["release", "--config", "../_build/release.toml"]
+condition = { env_set = [ "RELEASE_LEVEL" ] }
+workspace = false
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
+run_task = { name = "release-INTERNAL", fork = true }
 
-# Run `cargo make release-patch` to push a new patch release of every crate.
-[tasks.release-patch]
-args = ["release", "--config", "../_build/release.toml", "patch"]
 
-# Run `cargo make release-dry-run` to do a dry run.
+[tasks.release-some]
+condition = { env_set = [ "RELEASE_LEVEL", "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" ] }
+workspace = false
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
+run_task = { name = "release-some-INTERNAL", fork = true }
+
+# Hack to filter out crates we do not want to release.
+# See <https://github.com/sagiegurari/cargo-make/issues/212#issuecomment-481123564>
+[tasks.release-INTERNAL]
+private = true
+condition = { env_set = [ "RELEASE_LEVEL" ] }
+command = "cargo-release"
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "${RELEASE_LEVEL}"]
+
+
+#
+# Run `RELEASE_LEVEL=(patch|major|minor) cargo make release-dry-run` to do a dry run.
+# Run `RELEASE_LEVEL=(patch|major|minor) CARGO_MAKE_WORKSPACE_SKIP_MEMBERS="crate1;crate2;" cargo make release-some-dry-run`
+# to do a dry run with some crates.
+#
+
 [tasks.release-dry-run]
+condition = { env_set = [ "RELEASE_LEVEL" ] }
+workspace = false
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
+run_task = { name = "release-dry-run-INTERNAL", fork = true }
+
+[tasks.release-some-dry-run]
+condition = { env_set = [ "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS", "RELEASE_LEVEL" ] }
+workspace = false
+run_task = { name = "release-some-dry-run-INTERNAL", fork = true }
+
+
+# Hack to filter out crates we do not want to release.
+# See <https://github.com/sagiegurari/cargo-make/issues/212#issuecomment-481123564>
+[tasks.release-dry-run-INTERNAL]
+private = true
+condition = { env_set = [ "RELEASE_LEVEL" ] }
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
 description = "Run `cargo-release --dry-run` for every crate"
-command = "${HOME}/src/cargo-release/target/debug/cargo-release"
-args = ["release", "--config", "../_build/release.toml", "--dry-run"]
+command = "cargo-release"
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "--dry-run", "${RELEASE_LEVEL}"]
+
+#
+# Run `RELEASE_LEVEL=(patch|major|minor) cargo make release-local-test` to do actually make changes locally but
+# not push them up to crates.io or Github.
+# Run `RELEASE_LEVEL=(patch|major|minor) cargo make release-some-local-test` to do actually make changes locally but
+# not push some crates up to crates.io or Github.
+#
+
+[tasks.release-local-test]
+condition = { env_set = [ "RELEASE_LEVEL" ] }
+workspace = false
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "integration_tests/*" }
+run_task = { name = "release-local-test-INTERNAL", fork = true }
+
+
+[tasks.release-some-local-test]
+condition = { env_set = [ "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS", "RELEASE_LEVEL" ] }
+workspace = false
+run_task = { name = "release-some-local-test-INTERNAL", fork = true }
+
+
+# Hack to filter out crates we do not want to release.
+# See <https://github.com/sagiegurari/cargo-make/issues/212#issuecomment-481123564>
+[tasks.release-local-test-INTERNAL]
+private = true
+condition = { env_set = [ "RELEASE_LEVEL" ] }
+description = "Run `cargo-release` for every crate, but only make changes locally"
+command = "cargo-release"
+args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
