@@ -108,15 +108,11 @@ where
         }
     }
 
-    pub fn operation_name(&self) -> Option<&str> {
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
         match self {
-            GraphQLBatchRequest::Single(req) => req.operation_name(),
+            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
             GraphQLBatchRequest::Batch(reqs) => {
-                if reqs.len() == 1 {
-                    reqs.get(0).and_then(|req| req.operation_name())
-                } else {
-                    None
-                }
+                reqs.iter().map(|req| req.operation_name()).collect()
             }
         }
     }
@@ -187,9 +183,11 @@ where
         GraphQLResponse(status, json)
     }
 
-    /// Returns the `operation_name` associated with this request.
-    pub fn operation_name(&self) -> Option<&str> {
-        self.0.operation_name()
+    /// Returns the operation names associated with this request.
+    ///
+    /// For batch requests there will be multiple names.
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        self.0.operation_names()
     }
 }
 

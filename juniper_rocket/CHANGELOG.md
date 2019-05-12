@@ -1,6 +1,6 @@
 # master
 
-- Expose the operation name from `GraphQLRequest`.
+- Expose the operation names from `GraphQLRequest`.
 - Compatibility with the latest `juniper`.
 
 # [0.2.0] 2018-12-17
