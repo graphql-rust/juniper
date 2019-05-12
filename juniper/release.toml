@@ -4,10 +4,21 @@ pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
 upload-doc = false
 pre-release-replacements = [
+  # Juniper's changelog
   {file="CHANGELOG.md", search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},
+  # Tests.
   {file="../integration_tests/juniper_tests/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  # Hyper
   {file="../juniper_hyper/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_hyper/Cargo.toml", search="version = \"[^\"]+\"", replace="version \"{{version}}\""},
+  # Iron
   {file="../juniper_iron/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_iron/Cargo.toml", search="version = \"[^\"]+\"", replace="version \"{{version}}\""},
+  # Rocket
   {file="../juniper_rocket/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_rocket/Cargo.toml", search="version = \"[^\"]+\"", replace="version \"{{version}}\""},
+  # Warp
   {file="../juniper_warp/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
+  {file="../juniper_warp/Cargo.toml", search="version = \"[^\"]+\"", replace="version \"{{version}}\""},
+
 ]
