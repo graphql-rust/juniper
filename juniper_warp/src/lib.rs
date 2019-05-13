@@ -134,7 +134,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::impl_object(
+/// #[juniper::object(
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {

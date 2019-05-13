@@ -2,7 +2,7 @@
 ## DEPRECATION WARNING
 
 The `graphql_object!` macro is deprecated and will be removed soon.
-Use the new[impl_object](https://docs.rs/juniper/latest/juniper/macro.impl_object.html) macro instead.
+Use the new[object](https://docs.rs/juniper/latest/juniper/macro.object.html) macro instead.
 
 Expose GraphQL objects
 

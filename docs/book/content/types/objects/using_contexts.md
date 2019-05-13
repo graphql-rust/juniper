@@ -57,7 +57,7 @@ struct User {
 
 
 // Assign Database as the context type for User
-#[juniper::impl_object(
+#[juniper::object(
     Context = Database,
 )]
 impl User {

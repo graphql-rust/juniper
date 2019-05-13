@@ -37,7 +37,7 @@ mod interface {
         }
     }
 
-    #[crate::impl_object_internal(
+    #[crate::object_internal(
         interfaces = [&Pet]
     )]
     impl Dog {
@@ -63,7 +63,7 @@ mod interface {
         }
     }
 
-    #[crate::impl_object_internal(
+    #[crate::object_internal(
         interfaces = [&Pet]
     )]
     impl Cat {
@@ -79,7 +79,7 @@ mod interface {
         pets: Vec<Box<Pet>>,
     }
 
-    #[crate::impl_object_internal]
+    #[crate::object_internal]
     impl Schema {
         fn pets(&self) -> Vec<&Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()
@@ -188,7 +188,7 @@ mod union {
         }
     }
 
-    #[crate::impl_object_internal]
+    #[crate::object_internal]
     impl Dog {
         fn name(&self) -> &str {
             &self.name
@@ -209,7 +209,7 @@ mod union {
         }
     }
 
-    #[crate::impl_object_internal]
+    #[crate::object_internal]
     impl Cat {
         fn name(&self) -> &str {
             &self.name
@@ -223,7 +223,7 @@ mod union {
         pets: Vec<Box<Pet>>,
     }
 
-    #[crate::impl_object_internal]
+    #[crate::object_internal]
     impl Schema {
         fn pets(&self) -> Vec<&Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()

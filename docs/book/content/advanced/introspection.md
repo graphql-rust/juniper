@@ -44,7 +44,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::impl_object(
+#[juniper::object(
   Context = Context,
 )]
 impl Query {

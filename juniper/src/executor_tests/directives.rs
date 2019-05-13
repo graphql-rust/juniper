@@ -5,7 +5,7 @@ use crate::value::{DefaultScalarValue, Object, Value};
 
 struct TestType;
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl TestType {
     fn a() -> &str {
         "a"

@@ -26,7 +26,7 @@ struct Point {
     x: i32,
 }
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl Root {
     fn simple() -> i32 {
         0

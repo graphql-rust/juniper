@@ -46,7 +46,7 @@ enum ResolversWithTrailingComma {
 
 struct Root;
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl Concrete {
     fn simple() -> i32 {
         123
@@ -99,7 +99,7 @@ graphql_union!(ResolversWithTrailingComma: () |&self| {
     description: "A description"
 });
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)

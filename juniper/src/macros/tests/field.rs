@@ -20,7 +20,7 @@ Syntax to validate:
 
 */
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     interfaces = [&Interface],
 )]
 impl Root {

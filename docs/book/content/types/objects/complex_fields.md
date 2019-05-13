@@ -2,7 +2,7 @@
 
 If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
-the `impl_object` procedural macro. This macro lets you define GraphQL object
+the `object` procedural macro. This macro lets you define GraphQL object
 fields in a Rust `impl` block for a type. Continuing with the
 example from the last chapter, this is how you would define `Person` using the
 macro:
@@ -14,7 +14,7 @@ struct Person {
     age: i32,
 }
 
-#[juniper::impl_object]
+#[juniper::object]
 impl Person {
     fn name(&self) -> &str {
         self.name.as_str()
@@ -43,7 +43,7 @@ struct House {
     inhabitants: Vec<Person>,
 }
 
-#[juniper::impl_object]
+#[juniper::object]
 impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
     fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
@@ -70,7 +70,7 @@ struct Person {
     website_url: String,
 }
 
-#[juniper::impl_object(
+#[juniper::object(
     // With this attribtue you can change the public GraphQL name of the type.
     name = "PersonObject",
 )]
@@ -96,4 +96,4 @@ GraphQL fields expose more features than Rust's standard method syntax gives us:
 * Per-argument descriptions
 
 These, and more features, are described more thorougly in [the reference
-documentation](https://docs.rs/juniper/latest/juniper/macro.impl_object.html).
+documentation](https://docs.rs/juniper/latest/juniper/macro.object.html).

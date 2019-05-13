@@ -80,7 +80,7 @@ struct WithCustomContext {
     a: bool,
 }
 
-#[juniper::impl_object]
+#[juniper::object]
 impl Query {
     fn obj() -> Obj {
         Obj {

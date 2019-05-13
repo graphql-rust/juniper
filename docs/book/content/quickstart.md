@@ -20,7 +20,7 @@ naturally map to GraphQL features, such as `Option<T>`, `Vec<T>`, `Box<T>`,
 
 For more advanced mappings, Juniper provides multiple macros to map your Rust
 types to a GraphQL schema. The most important one is the
-[impl_object][jp_impl_object] procedural macro that is used for declaring an object with
+[object][jp_object] procedural macro that is used for declaring an object with
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 ```rust
@@ -60,7 +60,7 @@ struct NewHuman {
 }
 
 // Now, we create our root Query and Mutation types with resolvers by using the
-// impl_object macro.
+// object macro.
 // Objects can have contexts that allow accessing shared state like a database
 // pool.
 
@@ -74,7 +74,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::impl_object(
+#[juniper::object(
     // Here we specify the context type for the object.
     // We need to do this in every type that
     // needs access to the context.
@@ -105,7 +105,7 @@ impl Query {
 
 struct Mutation;
 
-#[juniper::impl_object(
+#[juniper::object(
     Context = Context,
 )]
 impl Mutation {
@@ -156,7 +156,7 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[juniper::impl_object(
+#[juniper::object(
     Context = Ctx,
 )]
 impl Query {
@@ -198,4 +198,4 @@ fn main() {
 [rocket]: servers/rocket.md
 [iron]: servers/iron.md
 [tutorial]: ./tutorial.html
-[jp_obj_macro]: https://docs.rs/juniper/latest/juniper/macro.impl_object.html
+[jp_obj_macro]: https://docs.rs/juniper/latest/juniper/macro.object.html

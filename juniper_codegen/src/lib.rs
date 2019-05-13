@@ -76,19 +76,19 @@ pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
 }
 
 /**
-The `impl_object` proc macro is the primary way of defining GraphQL resolvers
+The `object` proc macro is the primary way of defining GraphQL resolvers
 that can not be implemented with the GraphQLObject derive.
 
 It enables you to write GraphQL field resolvers for a type by declaring a
 regular Rust `impl` block. Under the hood, the procedural macro implements
 the GraphQLType trait.
 
-`impl_object` comes with many features that allow customization of
+`object` comes with many features that allow customization of
 your fields, all of which are detailed below.
 
 ### Getting Started
 
-This simple example will show you the most basic use of `impl_object`.
+This simple example will show you the most basic use of `object`.
 More advanced use cases are introduced step by step.
 
 ```
@@ -96,7 +96,7 @@ More advanced use cases are introduced step by step.
 struct Query;
 
 // We prefix the impl Block with the procedural macro.
-#[juniper::impl_object]
+#[juniper::object]
 impl Query {
 
     // A **warning**: only GraphQL fields can be specified in this impl block.
@@ -110,7 +110,7 @@ impl Query {
     //  - basic scalar types like bool, &str, String, i32, f64
     //  - GraphQL compatible wrappers like Option<_>, Vec<_>.
     //  - types which use the `#derive[juniper::GraphQLObject]`
-    //  - `impl_object` structs.
+    //  - `object` structs.
     //
     // An important note regarding naming:
     // By default, field names will be converted to camel case.
@@ -147,7 +147,7 @@ impl Person {
     }
 }
 
-#[juniper::impl_object]
+#[juniper::object]
 impl Person {
     fn first_name(&self) -> &str {
         &self.first_name
@@ -187,7 +187,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::impl_object(
+#[juniper::object(
     // Here we specify the context type for this object.
     Context = Context,
 )]
@@ -217,7 +217,7 @@ struct InternalQuery;
 // Doc comments can be used to specify graphql documentation.
 /// GRAPHQL DOCUMENTATION.
 /// More info for GraphQL users....
-#[juniper::impl_object(
+#[juniper::object(
     // You can rename the type for GraphQL by specifying the name here.
     name = "Query",
     // You can also specify a description here.
@@ -280,7 +280,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[juniper::impl_object]
+#[juniper::object]
 impl<'a> WithLifetime<'a> {
     fn value(&self) -> &str {
         self.value
@@ -301,7 +301,7 @@ You can easily specify a custom scalar though.
 
 struct Query;
 
-#[juniper::impl_object(
+#[juniper::object(
     Scalar = MyCustomScalar,
 )]
 impl Query {
@@ -311,15 +311,15 @@ impl Query {
 
 */
 #[proc_macro_attribute]
-pub fn impl_object(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_impl_object(args, input, false);
+pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_object(args, input, false);
     gen.into()
 }
 
 /// A proc macro for defining a GraphQL object.
 #[doc(hidden)]
 #[proc_macro_attribute]
-pub fn impl_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_impl_object(args, input, true);
+pub fn object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_object(args, input, true);
     gen.into()
 }

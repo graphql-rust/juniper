@@ -73,7 +73,7 @@ where
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "__Schema"
     Context = SchemaType<'a, S>,
     Scalar = S,
@@ -111,7 +111,7 @@ where
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "__Type"
     Context = SchemaType<'a, S>,
     Scalar = S,
@@ -242,7 +242,7 @@ where
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "__Field",
     Context = SchemaType<'a, S>,
     Scalar = S,
@@ -279,7 +279,7 @@ where
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "__InputValue",
     Context = SchemaType<'a, S>,
     Scalar = S,
@@ -306,7 +306,7 @@ where
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "__EnumValue",
     Scalar = S,
 )]
@@ -331,7 +331,7 @@ where
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "__Directive",
     Context = SchemaType<'a, S>,
     Scalar = S,

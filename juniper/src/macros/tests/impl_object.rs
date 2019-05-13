@@ -12,7 +12,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[crate::impl_object_internal(Context=Context)]
+#[crate::object_internal(Context=Context)]
 impl<'a> WithLifetime<'a> {
     fn value(&'a self) -> &'a str {
         self.value
@@ -21,7 +21,7 @@ impl<'a> WithLifetime<'a> {
 
 struct WithContext;
 
-#[crate::impl_object_internal(Context=Context)]
+#[crate::object_internal(Context=Context)]
 impl WithContext {
     fn ctx(ctx: &Context) -> bool {
         ctx.flag1
@@ -33,7 +33,7 @@ struct Query {
     b: bool,
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     scalar = crate::DefaultScalarValue,
     name = "Query", 
     context = Context,
@@ -106,7 +106,7 @@ impl<'a> Query {
 #[derive(Default)]
 struct Mutation;
 
-#[crate::impl_object_internal(context = Context)]
+#[crate::object_internal(context = Context)]
 impl Mutation {
     fn empty() -> bool {
         true
@@ -114,7 +114,7 @@ impl Mutation {
 }
 
 #[test]
-fn impl_object_introspect() {
+fn object_introspect() {
     let res = util::run_info_query::<Query, Mutation, Context>("Query");
     assert_eq!(
         res,
@@ -222,7 +222,7 @@ fn impl_object_introspect() {
 }
 
 #[test]
-fn impl_object_query() {
+fn object_query() {
     let doc = r#"
     query {
         withSelf

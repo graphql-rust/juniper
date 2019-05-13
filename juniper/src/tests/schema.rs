@@ -29,7 +29,7 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     }
 });
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     interfaces = [&dyn Character],
@@ -62,7 +62,7 @@ impl<'a> &'a Human {
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     interfaces = [&dyn Character],
@@ -95,7 +95,7 @@ impl<'a> &'a Droid {
     }
 }
 
-#[crate::impl_object_internal(
+#[crate::object_internal(
     name = "Query",
     Context = Database,
     Scalar = crate::DefaultScalarValue,

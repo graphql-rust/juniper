@@ -25,7 +25,7 @@ struct ValidationError {
 # #[allow(dead_code)]
 struct MutationResult<T>(Result<T, Vec<ValidationError>>);
 
-#[juniper::impl_object(
+#[juniper::object(
     name = "UserResult",
 )]
 impl MutationResult<User> {
@@ -38,7 +38,7 @@ impl MutationResult<User> {
     }
 }
 
-#[juniper::impl_object(
+#[juniper::object(
     name = "ForumPostResult",
 )]
 impl MutationResult<ForumPost> {

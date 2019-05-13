@@ -1,9 +1,9 @@
 # master
 
-### impl_object macro
+### object macro
 
 The `graphql_object!` macro is deprecated and will be removed in the future. 
-It is replaced by the new [impl_object](https://docs.rs/juniper/latest/juniper/macro.impl_object.html) procedural macro.
+It is replaced by the new [object](https://docs.rs/juniper/latest/juniper/macro.object.html) procedural macro.
 
 [#333](https://github.com/graphql-rust/juniper/pull/333)
 

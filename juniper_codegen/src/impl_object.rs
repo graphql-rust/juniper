@@ -2,8 +2,8 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
-/// Generate code for the juniper::impl_object macro.
-pub fn build_impl_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
+/// Generate code for the juniper::object macro.
+pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
         Ok(attrs) => attrs,
         Err(e) => {
@@ -62,11 +62,11 @@ pub fn build_impl_object(args: TokenStream, body: TokenStream, is_internal: bool
                     .ident
                     .to_string(),
                 _ => {
-                    panic!("Could not determine a name for the object type: specify one with #[juniper::impl_object(name = \"SomeName\")");
+                    panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
                 }
             },
             _ => {
-                panic!("Could not determine a name for the object type: specify one with #[juniper::impl_object(name = \"SomeName\")");
+                panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
             }
         },
     };

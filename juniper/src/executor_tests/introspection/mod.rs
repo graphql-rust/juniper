@@ -52,7 +52,7 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
 });
 
 /// The root query object in the schema
-#[crate::impl_object_internal(
+#[crate::object_internal(
     interfaces = [&Interface]
     Scalar = crate::DefaultScalarValue,
 )]

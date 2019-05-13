@@ -64,7 +64,7 @@ enum EnumDeprecation {
 
 struct Root;
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName::Foo

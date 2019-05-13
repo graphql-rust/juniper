@@ -508,7 +508,7 @@ pub struct FieldAttributes {
     pub deprecation: Option<DeprecationAttr>,
     // Only relevant for GraphQLObject derive.
     pub skip: bool,
-    /// Only relevant for impl_object macro.
+    /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
 }
 

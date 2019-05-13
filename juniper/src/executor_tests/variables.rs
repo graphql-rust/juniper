@@ -62,7 +62,7 @@ struct InputWithDefaults {
     a: i32,
 }
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)

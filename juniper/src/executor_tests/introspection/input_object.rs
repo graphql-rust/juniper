@@ -79,7 +79,7 @@ struct FieldWithDefaults {
     field_two: i32,
 }
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl Root {
     fn test_field(
         a1: DefaultName,

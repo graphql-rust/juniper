@@ -17,7 +17,7 @@ enum Color {
 }
 struct TestType;
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl TestType {
     fn to_string(color: Color) -> String {
         format!("Color::{:?}", color)

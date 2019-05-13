@@ -78,7 +78,7 @@ graphql_scalar!(ScalarDescription  {
     }
 });
 
-#[crate::impl_object_internal]
+#[crate::object_internal]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName(0)

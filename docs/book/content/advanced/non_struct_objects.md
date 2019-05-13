@@ -23,7 +23,7 @@ enum SignUpResult {
     Error(Vec<ValidationError>),
 }
 
-#[juniper::impl_object]
+#[juniper::object]
 impl SignUpResult {
     fn user(&self) -> Option<&User> {
         match *self {
