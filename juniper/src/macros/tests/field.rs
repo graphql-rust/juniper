@@ -33,6 +33,16 @@ impl Root {
         0
     }
 
+    #[deprecated]
+    fn deprecated_outer() -> bool {
+        true
+    }
+
+    #[deprecated(note = "Deprecation Reason")]
+    fn deprecated_outer_with_reason() -> bool {
+        true
+    }
+
     #[graphql(deprecated = "Deprecation reason")]
     fn deprecated() -> i32 {
         0
@@ -271,6 +281,44 @@ fn introspect_interface_field_description() {
         assert_eq!(
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_deprecated_outer() {
+    run_field_info_query("Root", "deprecatedOuter", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("deprecatedOuter"))
+        );
+        assert_eq!(field.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::null()),
+        );
+    });
+}
+
+#[test]
+fn introspect_object_field_deprecated_outer_with_reason() {
+    run_field_info_query("Root", "deprecatedOuterWithReason", |field| {
+        assert_eq!(
+            field.get_field_value("name"),
+            Some(&Value::scalar("deprecatedOuterWithReason"))
+        );
+        assert_eq!(field.get_field_value("description"), Some(&Value::null()));
+        assert_eq!(
+            field.get_field_value("isDeprecated"),
+            Some(&Value::scalar(true))
+        );
+        assert_eq!(
+            field.get_field_value("deprecationReason"),
+            Some(&Value::scalar("Deprecation Reason")),
         );
     });
 }

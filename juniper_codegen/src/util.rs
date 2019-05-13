@@ -76,14 +76,23 @@ pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
 fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
     for meta in &list.nested {
         match meta {
-            &NestedMeta::Meta(Meta::NameValue(ref nv)) if nv.ident == "note" => match &nv.lit {
-                &Lit::Str(ref strlit) => {
-                    return DeprecationAttr {
-                        reason: Some(strlit.value().to_string()),
-                    };
+            &NestedMeta::Meta(Meta::NameValue(ref nv)) => {
+                if nv.ident == "note" {
+                    match &nv.lit {
+                        &Lit::Str(ref strlit) => {
+                            return DeprecationAttr {
+                                reason: Some(strlit.value()),
+                            };
+                        }
+                        _ => panic!("deprecated attribute note value only has string literal"),
+                    }
+                } else {
+                    panic!(
+                        "Unrecognized setting on #[deprecated(..)] attribute: {}",
+                        nv.ident
+                    );
                 }
-                _ => panic!("deprecated attribute note value only has string literal"),
-            },
+            }
             _ => {}
         }
     }
@@ -434,7 +443,7 @@ pub enum FieldAttributeParseMode {
 enum FieldAttribute {
     Name(syn::LitStr),
     Description(syn::LitStr),
-    Deprecation(Option<syn::LitStr>),
+    Deprecation(DeprecationAttr),
     Skip(syn::Ident),
     Arguments(HashMap<String, FieldAttributeArgument>),
 }
@@ -466,11 +475,13 @@ impl parse::Parse for FieldAttribute {
             "deprecated" | "deprecation" => {
                 let reason = if input.peek(Token![=]) {
                     input.parse::<Token![=]>()?;
-                    Some(input.parse()?)
+                    Some(input.parse::<syn::LitStr>()?.value())
                 } else {
                     None
                 };
-                Ok(FieldAttribute::Deprecation(reason))
+                Ok(FieldAttribute::Deprecation(DeprecationAttr {
+                    reason: reason,
+                }))
             }
             "skip" => Ok(FieldAttribute::Skip(ident)),
             "arguments" => {
@@ -525,10 +536,8 @@ impl parse::Parse for FieldAttributes {
                 FieldAttribute::Description(name) => {
                     output.description = Some(name.value());
                 }
-                FieldAttribute::Deprecation(reason_opt) => {
-                    output.deprecation = Some(DeprecationAttr {
-                        reason: reason_opt.map(|val| val.value()),
-                    });
+                FieldAttribute::Deprecation(attr) => {
+                    output.deprecation = Some(attr);
                 }
                 FieldAttribute::Skip(_) => {
                     output.skip = true;
@@ -553,6 +562,7 @@ impl FieldAttributes {
         _mode: FieldAttributeParseMode,
     ) -> syn::parse::Result<Self> {
         let doc_comment = get_doc_comment(&attrs);
+        let deprecation = get_deprecated(&attrs);
 
         let attr_opt = attrs
             .into_iter()
@@ -562,9 +572,15 @@ impl FieldAttributes {
             Some(attr) => syn::parse(attr.tts.into())?,
             None => Self::default(),
         };
+
+        // Check for regular doc comment.
         if output.description.is_none() {
             output.description = doc_comment;
         }
+        if output.deprecation.is_none() {
+            output.deprecation = deprecation;
+        }
+
         Ok(output)
     }
 
