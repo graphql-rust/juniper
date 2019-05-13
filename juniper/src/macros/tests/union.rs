@@ -53,7 +53,7 @@ impl Concrete {
     }
 }
 
-graphql_union!(CustomName: ()  as "ACustomNamedUnion"  |&self| {
+graphql_union!(CustomName: () as "ACustomNamedUnion" |&self| {
     instance_resolvers: |&_| {
         &Concrete => match *self { CustomName::Concrete(ref c) => Some(c) }
     }

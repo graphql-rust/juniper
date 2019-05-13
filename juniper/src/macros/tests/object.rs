@@ -84,7 +84,6 @@ graphql_object!(CommasWithTrailing: () |&self| {
 });
 
 struct CommasOnMeta;
-
 graphql_object!(CommasOnMeta: () |&self| {
     interfaces: [Interface],
     description: "A description",
