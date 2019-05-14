@@ -24,7 +24,7 @@ embedded [Graphiql][graphiql] and [GraphQL Playground][playground] for easy debu
 
 - [Cargo crate](https://crates.io/crates/juniper)
 - [API Reference][docsrs]
-- [Book][book]: Guides and Examples
+- [Book][book]: Guides and Examples ([current][book] | [master][book_master])
 
 The book is also available for the master branch and older versions published after 0.11.1. See the [book index][book_index].
 
@@ -97,6 +97,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [hyper]: https://hyper.rs
 [rocket]: https://rocket.rs
 [book]: https://graphql-rust.github.io/juniper/current
+[book_master]: https://graphql-rust.github.io/juniper/master
 [book_index]: https://graphql-rust.github.io/juniper
 [book_quickstart]: https://graphql-rust.github.io/juniper/current/quickstart.html
 [docsrs]: https://docs.rs/juniper
