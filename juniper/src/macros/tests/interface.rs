@@ -42,9 +42,12 @@ struct ResolversWithTrailingComma;
 
 struct Root;
 
-graphql_object!(Concrete: () |&self| {
-    field simple() -> i32 { 0 }
-});
+#[crate::object_internal]
+impl Concrete {
+    fn simple() -> i32 {
+        0
+    }
+}
 
 graphql_interface!(CustomName: () as "ACustomNamedInterface" |&self| {
     field simple() -> i32 { 0 }
@@ -108,24 +111,40 @@ graphql_interface!(ResolversWithTrailingComma: () |&self| {
     field simple() -> i32 { 0 }
 });
 
-graphql_object!(<'a> Root: () as "Root" |&self| {
-    field custom_name() -> CustomName { CustomName {} }
-
-    field with_lifetime() -> WithLifetime<'a> { WithLifetime { data: PhantomData } }
-    field with_generics() -> WithGenerics<i32> { WithGenerics { data: 123 } }
-
-    field description_first() -> DescriptionFirst { DescriptionFirst {} }
-    field fields_first() -> FieldsFirst { FieldsFirst {} }
-    field interfaces_first() -> InterfacesFirst { InterfacesFirst {} }
-
-    field commas_with_trailing() -> CommasWithTrailing { CommasWithTrailing {} }
-    field commas_on_meta() -> CommasOnMeta { CommasOnMeta {} }
-
-    field resolvers_with_trailing_comma() -> ResolversWithTrailingComma {
-        ResolversWithTrailingComma {}
+#[crate::object_internal]
+impl<'a> Root {
+    fn custom_name() -> CustomName {
+        CustomName {}
     }
 
-});
+    fn with_lifetime() -> WithLifetime<'a> {
+        WithLifetime { data: PhantomData }
+    }
+    fn with_generics() -> WithGenerics<i32> {
+        WithGenerics { data: 123 }
+    }
+
+    fn description_first() -> DescriptionFirst {
+        DescriptionFirst {}
+    }
+    fn fields_first() -> FieldsFirst {
+        FieldsFirst {}
+    }
+    fn interfaces_first() -> InterfacesFirst {
+        InterfacesFirst {}
+    }
+
+    fn commas_with_trailing() -> CommasWithTrailing {
+        CommasWithTrailing {}
+    }
+    fn commas_on_meta() -> CommasOnMeta {
+        CommasOnMeta {}
+    }
+
+    fn resolvers_with_trailing_comma() -> ResolversWithTrailingComma {
+        ResolversWithTrailingComma {}
+    }
+}
 
 fn run_type_info_query<F>(type_name: &str, f: F)
 where

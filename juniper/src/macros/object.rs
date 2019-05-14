@@ -1,5 +1,11 @@
 /**
+## DEPRECATION WARNING
+
+The `graphql_object!` macro is deprecated and will be removed soon.
+Use the new[object](https://docs.rs/juniper/latest/juniper/macro.object.html) macro instead.
+
 Expose GraphQL objects
+
 
 This is a short-hand macro that implements the `GraphQLType` trait for a given
 type. By using this macro instead of implementing it manually, you gain type
@@ -308,7 +314,6 @@ arg_name: ArgType
 ```
 
 [1]: struct.Executor.html
-
 */
 #[macro_export]
 macro_rules! graphql_object {

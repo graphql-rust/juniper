@@ -30,9 +30,6 @@ result can then be converted to JSON for use with tools and libraries such as
 [graphql-client](https://github.com/graphql-rust/graphql-client):
 
 ```rust
-# // Only needed due to 2018 edition because the macro is not accessible.
-# extern crate juniper;
-# extern crate serde_json;
 use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
 
 // Define our schema.
@@ -47,11 +44,14 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-juniper::graphql_object!(Query: Context |&self| {
-   field example(&executor, id: String) -> FieldResult<Example> {
+#[juniper::object(
+  Context = Context,
+)]
+impl Query {
+   fn example(id: String) -> FieldResult<Example> {
        unimplemented!()
    }
-});
+}
 
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>>;
 

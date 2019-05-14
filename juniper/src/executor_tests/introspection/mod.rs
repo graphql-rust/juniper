@@ -51,22 +51,26 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
     }
 });
 
-graphql_object!(Root: () |&self| {
-    description: "The root query object in the schema"
-
-    interfaces: [Interface]
-
-    field sample_enum() -> Sample {
+/// The root query object in the schema
+#[crate::object_internal(
+    interfaces = [&Interface]
+    Scalar = crate::DefaultScalarValue,
+)]
+impl Root {
+    fn sample_enum() -> Sample {
         Sample::One
     }
 
-    field sample_scalar(
-        first: i32 as "The first number",
-        second = 123: i32 as "The second number"
-    ) -> Scalar as "A sample scalar field on the object" {
+    #[graphql(arguments(
+        first(description = "The first number",),
+        second(description = "The second number", default = 123,),
+    ))]
+
+    /// A sample scalar field on the object
+    fn sample_scalar(first: i32, second: i32) -> Scalar {
         Scalar(first + second)
     }
-});
+}
 
 #[test]
 fn test_execution() {

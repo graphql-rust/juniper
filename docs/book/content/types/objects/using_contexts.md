@@ -31,16 +31,23 @@ We would like a `friends` field on `User` that returns a list of `User` objects.
 In order to write such a field though, the database must be queried.
 
 To solve this, we mark the `Database` as a valid context type and assign it to
-the user object. Then, we use the special `&executor` argument to access the
-current context object:
+the user object. 
+
+To gain access to the context, we need to specify an argument with the same 
+type as the specified `Context` for the type:
+
 
 ```rust
 # use std::collections::HashMap;
 extern crate juniper;
 
+// This struct represents our context.
 struct Database {
     users: HashMap<i32, User>,
 }
+
+// Mark the Database as a valid context type for Juniper
+impl juniper::Context for Database {}
 
 struct User {
     id: i32,
@@ -48,25 +55,33 @@ struct User {
     friend_ids: Vec<i32>,
 }
 
-// 1. Mark the Database as a valid context type for Juniper
-impl juniper::Context for Database {}
 
-// 2. Assign Database as the context type for User
-juniper::graphql_object!(User: Database |&self| {
-    // 3. Use the special executor argument
-    field friends(&executor) -> Vec<&User> {
-        // 4. Use the executor to access the context object
-        let database = executor.context();
+// Assign Database as the context type for User
+#[juniper::object(
+    Context = Database,
+)]
+impl User {
+    // 3. Inject the context by specifying an argument
+    //    with the context type.
+    // Note: 
+    //   - the type must be a reference
+    //   - the name of the argument SHOULD be context
+    fn friends(&self, context: &Database) -> Vec<&User> {
 
         // 5. Use the database to lookup users
         self.friend_ids.iter()
-            .map(|id| database.users.get(id).expect("Could not find user with ID"))
+            .map(|id| context.users.get(id).expect("Could not find user with ID"))
             .collect()
     }
 
-    field name() -> &str { self.name.as_str() }
-    field id() -> i32 { self.id }
-});
+    fn name(&self) -> &str { 
+        self.name.as_str() 
+    }
+
+    fn id(&self) -> i32 { 
+        self.id 
+    }
+}
 
 # fn main() { }
 ```

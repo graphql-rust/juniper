@@ -17,15 +17,16 @@ enum Color {
 }
 struct TestType;
 
-graphql_object!(TestType: () |&self| {
-    field to_string(color: Color) -> String {
+#[crate::object_internal]
+impl TestType {
+    fn to_string(color: Color) -> String {
         format!("Color::{:?}", color)
     }
 
-    field a_color() -> Color {
+    fn a_color() -> Color {
         Color::Red
     }
-});
+}
 
 fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where

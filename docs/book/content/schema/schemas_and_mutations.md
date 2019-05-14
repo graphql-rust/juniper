@@ -20,19 +20,20 @@ object somewhere but never references it, it will not be exposed in a schema.
 ## The query root
 
 The query root is just a GraphQL object. You define it like any other GraphQL
-object in Juniper, most commonly using the `graphql_object!` macro:
+object in Juniper, most commonly using the `object` proc macro:
 
 ```rust
 # use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
 
-juniper::graphql_object!(Root: () |&self| {
-    field userWithUsername(username: String) -> FieldResult<Option<User>> {
+#[juniper::object]
+impl Root {
+    fn userWithUsername(username: String) -> FieldResult<Option<User>> {
         // Look up user in database...
 # unimplemented!()
     }
-});
+}
 
 # fn main() { }
 ```
@@ -47,12 +48,13 @@ usually performs some mutating side-effect, such as updating a database.
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-juniper::graphql_object!(Mutations: () |&self| {
-    field signUpUser(name: String, email: String) -> FieldResult<User> {
+#[juniper::object]
+impl Mutations {
+    fn signUpUser(name: String, email: String) -> FieldResult<User> {
         // Validate inputs and save user in database...
 # unimplemented!()
     }
-});
+}
 
 # fn main() { }
 ```

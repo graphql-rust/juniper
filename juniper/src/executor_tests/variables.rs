@@ -62,59 +62,67 @@ struct InputWithDefaults {
     a: i32,
 }
 
-graphql_object!(TestType: () |&self| {
-    field field_with_object_input(input: Option<TestInputObject>) -> String {
+#[crate::object_internal]
+impl TestType {
+    fn field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)
     }
 
-    field field_with_nullable_string_input(input: Option<String>) -> String {
+    fn field_with_nullable_string_input(input: Option<String>) -> String {
         format!("{:?}", input)
     }
 
-    field field_with_non_nullable_string_input(input: String) -> String {
+    fn field_with_non_nullable_string_input(input: String) -> String {
         format!("{:?}", input)
     }
 
-    field field_with_default_argument_value(input = ("Hello World".to_owned()): String) -> String {
+    #[graphql(
+        arguments(
+            input(
+                default = "Hello World".to_string(),
+            )
+        )
+    )]
+    fn field_with_default_argument_value(input: String) -> String {
         format!("{:?}", input)
     }
 
-    field field_with_nested_object_input(input: Option<TestNestedInputObject>) -> String {
+    fn field_with_nested_object_input(input: Option<TestNestedInputObject>) -> String {
         format!("{:?}", input)
     }
 
-    field list(input: Option<Vec<Option<String>>>) -> String {
+    fn list(input: Option<Vec<Option<String>>>) -> String {
         format!("{:?}", input)
     }
 
-    field nn_list(input: Vec<Option<String>>) -> String {
+    fn nn_list(input: Vec<Option<String>>) -> String {
         format!("{:?}", input)
     }
 
-    field list_nn(input: Option<Vec<String>>) -> String {
+    fn list_nn(input: Option<Vec<String>>) -> String {
         format!("{:?}", input)
     }
 
-    field nn_list_nn(input: Vec<String>) -> String {
+    fn nn_list_nn(input: Vec<String>) -> String {
         format!("{:?}", input)
     }
 
-    field example_input(arg: ExampleInputObject) -> String {
+    fn example_input(arg: ExampleInputObject) -> String {
         format!("a: {:?}, b: {:?}", arg.a, arg.b)
     }
 
-    field input_with_defaults(arg: InputWithDefaults) -> String {
+    fn input_with_defaults(arg: InputWithDefaults) -> String {
         format!("a: {:?}", arg.a)
     }
 
-    field integer_input(value: i32) -> String {
+    fn integer_input(value: i32) -> String {
         format!("value: {}", value)
     }
 
-    field float_input(value: f64) -> String {
+    fn float_input(value: f64) -> String {
         format!("value: {}", value)
     }
-});
+}
 
 fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where

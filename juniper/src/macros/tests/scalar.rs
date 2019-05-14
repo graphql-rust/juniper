@@ -78,12 +78,21 @@ graphql_scalar!(ScalarDescription  {
     }
 });
 
-graphql_object!(Root: () |&self| {
-    field default_name() -> DefaultName { DefaultName(0) }
-    field other_order() -> OtherOrder { OtherOrder(0) }
-    field named() -> Named { Named(0) }
-    field scalar_description() -> ScalarDescription { ScalarDescription(0) }
-});
+#[crate::object_internal]
+impl Root {
+    fn default_name() -> DefaultName {
+        DefaultName(0)
+    }
+    fn other_order() -> OtherOrder {
+        OtherOrder(0)
+    }
+    fn named() -> Named {
+        Named(0)
+    }
+    fn scalar_description() -> ScalarDescription {
+        ScalarDescription(0)
+    }
+}
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where

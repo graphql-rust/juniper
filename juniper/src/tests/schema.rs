@@ -29,80 +29,93 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     }
 });
 
-graphql_object!(<'a> &'a Human: Database as "Human" |&self| {
-    description: "A humanoid creature in the Star Wars universe."
-
-    interfaces: [&Character]
-
-    field id() -> &str as "The id of the human"{
+#[crate::object_internal(
+    Context = Database,
+    Scalar = crate::DefaultScalarValue,
+    interfaces = [&dyn Character],
+)]
+/// A humanoid creature in the Star Wars universe.
+impl<'a> &'a Human {
+    /// The id of the human
+    fn id(&self) -> &str {
         self.id()
     }
 
-    field name() -> Option<&str> as "The name of the human" {
+    /// The name of the human
+    fn name(&self) -> Option<&str> {
         Some(self.name())
     }
 
-    field friends(&executor) -> Vec<&Character>
-    as "The friends of the human" {
-        executor.context().get_friends(self.as_character())
+    /// The friends of the human
+    fn friends(&self, ctx: &Database) -> Vec<&Character> {
+        ctx.get_friends(self.as_character())
     }
 
-    field appears_in() -> &[Episode] as "Which movies they appear in" {
+    /// Which movies they appear in
+    fn appears_in(&self) -> &[Episode] {
         self.appears_in()
     }
 
-    field home_planet() -> &Option<String> as "The home planet of the human" {
+    /// The home planet of the human
+    fn home_planet(&self) -> &Option<String> {
         self.home_planet()
     }
-});
+}
 
-graphql_object!(<'a> &'a Droid: Database as "Droid" |&self| {
-    description: "A mechanical creature in the Star Wars universe."
-
-    interfaces: [&Character]
-
-    field id() -> &str as "The id of the droid" {
+#[crate::object_internal(
+    Context = Database,
+    Scalar = crate::DefaultScalarValue,
+    interfaces = [&dyn Character],
+)]
+/// A mechanical creature in the Star Wars universe.
+impl<'a> &'a Droid {
+    /// The id of the droid
+    fn id(&self) -> &str {
         self.id()
     }
 
-    field name() -> Option<&str> as "The name of the droid" {
+    /// The name of the droid
+    fn name(&self) -> Option<&str> {
         Some(self.name())
     }
 
-    field friends(&executor) -> Vec<&Character>
-    as "The friends of the droid" {
-        executor.context().get_friends(self.as_character())
+    /// The friends of the droid
+    fn friends(&self, ctx: &Database) -> Vec<&Character> {
+        ctx.get_friends(self.as_character())
     }
 
-    field appears_in() -> &[Episode] as "Which movies they appear in" {
+    /// Which movies they appear in
+    fn appears_in(&self) -> &[Episode] {
         self.appears_in()
     }
 
-    field primary_function() -> &Option<String> as "The primary function of the droid" {
+    /// The primary function of the droid
+    fn primary_function(&self) -> &Option<String> {
         self.primary_function()
     }
-});
+}
 
-graphql_object!(Database: Database as "Query" |&self| {
-    description: "The root query object of the schema"
-
-    field human(
-        id: String as "id of the human"
-    ) -> Option<&Human> {
+#[crate::object_internal(
+    name = "Query",
+    Context = Database,
+    Scalar = crate::DefaultScalarValue,
+)]
+/// The root query object of the schema
+impl Database {
+    #[graphql(arguments(id(description = "id of the human")))]
+    fn human(&self, id: String) -> Option<&Human> {
         self.get_human(&id)
     }
 
-    field droid(
-        id: String as "id of the droid"
-    ) -> Option<&Droid> {
+    #[graphql(arguments(id(description = "id of the droid")))]
+    fn droid(&self, id: String) -> Option<&Droid> {
         self.get_droid(&id)
     }
 
-    field hero(
-        episode: Option<Episode> as
-        "If omitted, returns the hero of the whole saga. If provided, returns \
-        the hero of that particular episode"
-    ) -> Option<&Character> {
+    #[graphql(arguments(episode(
+        description = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode"
+    )))]
+    fn hero(&self, episode: Option<Episode>) -> Option<&Character> {
         Some(self.get_hero(episode).as_character())
     }
-});
+}

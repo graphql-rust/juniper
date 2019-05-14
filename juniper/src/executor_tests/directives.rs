@@ -5,15 +5,16 @@ use crate::value::{DefaultScalarValue, Object, Value};
 
 struct TestType;
 
-graphql_object!(TestType: () |&self| {
-    field a() -> &str {
+#[crate::object_internal]
+impl TestType {
+    fn a() -> &str {
         "a"
     }
 
-    field b() -> &str {
+    fn b() -> &str {
         "b"
     }
-});
+}
 
 fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where

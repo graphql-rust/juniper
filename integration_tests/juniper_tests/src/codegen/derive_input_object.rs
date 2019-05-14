@@ -27,7 +27,7 @@ struct DocComment {
     regular_field: bool,
 }
 
-/// Doc 1.
+/// Doc 1.\
 /// Doc 2.
 ///
 /// Doc 4.
@@ -151,7 +151,7 @@ fn test_multi_doc_comment() {
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
         meta.description(),
-        Some(&"Doc 1. Doc 2.\nDoc 4.".to_string())
+        Some(&"Doc 1. Doc 2.\n\nDoc 4.".to_string())
     );
 }
 

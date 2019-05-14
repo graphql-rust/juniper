@@ -26,63 +26,111 @@ struct Point {
     x: i32,
 }
 
-graphql_object!(Root: () |&self| {
-    field simple() -> i32 { 0 }
-    field exec_arg(&executor) -> i32 { 0 }
-    field exec_arg_and_more(&executor, arg: i32) -> i32 { 0 }
+#[crate::object_internal]
+impl Root {
+    fn simple() -> i32 {
+        0
+    }
+    fn exec_arg(executor: &Executor) -> i32 {
+        0
+    }
+    fn exec_arg_and_more(executor: &Executor, arg: i32) -> i32 {
+        0
+    }
 
-    field single_arg(arg: i32) -> i32 { 0 }
-    field multi_args(
-        arg1: i32,
-        arg2: i32
-    ) -> i32 { 0 }
-    field multi_args_trailing_comma(
-        arg1: i32,
-        arg2: i32,
-    ) -> i32 { 0 }
+    fn single_arg(arg: i32) -> i32 {
+        0
+    }
 
-    field single_arg_descr(arg: i32 as "The arg") -> i32 { 0 }
-    field multi_args_descr(
-        arg1: i32 as "The first arg",
-        arg2: i32 as "The second arg"
-    ) -> i32 { 0 }
-    field multi_args_descr_trailing_comma(
-        arg1: i32 as "The first arg",
-        arg2: i32 as "The second arg",
-    ) -> i32 { 0 }
+    fn multi_args(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
 
-    field attr_arg_descr(#[doc = "The arg"] arg: i32) -> i32 { 0 }
-    field attr_arg_descr_collapse(
-        #[doc = "The arg"]
-        #[doc = "and more details"]
-        arg: i32,
-    ) -> i32 { 0 }
+    fn multi_args_trailing_comma(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
 
-    field arg_with_default(arg = 123: i32) -> i32 { 0 }
-    field multi_args_with_default(
-        arg1 = 123: i32,
-        arg2 = 456: i32
-    ) -> i32 { 0 }
-    field multi_args_with_default_trailing_comma(
-        arg1 = 123: i32,
-        arg2 = 456: i32,
-    ) -> i32 { 0 }
+    #[graphql(arguments(arg(description = "The arg")))]
+    fn single_arg_descr(arg: i32) -> i32 {
+        0
+    }
 
-    field arg_with_default_descr(arg = 123: i32 as "The arg") -> i32 { 0 }
-    field multi_args_with_default_descr(
-        arg1 = 123: i32 as "The first arg",
-        arg2 = 456: i32 as "The second arg"
-    ) -> i32 { 0 }
-    field multi_args_with_default_trailing_comma_descr(
-        arg1 = 123: i32 as "The first arg",
-        arg2 = 456: i32 as "The second arg",
-    ) -> i32 { 0 }
+    #[graphql(arguments(
+        arg1(description = "The first arg",),
+        arg2(description = "The second arg")
+    ))]
+    fn multi_args_descr(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
 
-    field args_with_complex_default(
-        arg1 = ("test".to_owned()): String as "A string default argument",
-        arg2 = (Point { x: 1 }): Point as "An input object default argument",
-    ) -> i32 { 0 }
-});
+    #[graphql(arguments(
+        arg1(description = "The first arg",),
+        arg2(description = "The second arg")
+    ))]
+    fn multi_args_descr_trailing_comma(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
+
+    // TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
+    // fn attr_arg_descr(#[doc = "The arg"] arg: i32) -> i32 { 0 }
+    // fn attr_arg_descr_collapse(
+    //     #[doc = "The arg"]
+    //     #[doc = "and more details"]
+    //     arg: i32,
+    // ) -> i32 { 0 }
+
+    #[graphql(arguments(arg(default = 123,),))]
+    fn arg_with_default(arg: i32) -> i32 {
+        0
+    }
+
+    #[graphql(arguments(arg1(default = 123,), arg2(default = 456,)))]
+    fn multi_args_with_default(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
+
+    #[graphql(arguments(arg1(default = 123,), arg2(default = 456,),))]
+    fn multi_args_with_default_trailing_comma(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
+
+    #[graphql(arguments(arg(default = 123, description = "The arg")))]
+    fn arg_with_default_descr(arg: i32) -> i32 {
+        0
+    }
+
+    #[graphql(arguments(
+        arg1(default = 123, description = "The first arg"),
+        arg2(default = 456, description = "The second arg")
+    ))]
+    fn multi_args_with_default_descr(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
+
+    #[graphql(arguments(
+        arg1(default = 123, description = "The first arg",),
+        arg2(default = 456, description = "The second arg",)
+    ))]
+    fn multi_args_with_default_trailing_comma_descr(arg1: i32, arg2: i32) -> i32 {
+        0
+    }
+
+    #[graphql(
+        arguments(
+            arg1(
+                default = "test".to_string(),
+                description = "A string default argument",
+            ),
+            arg2(
+                default = Point{ x: 1 },
+                description = "An input object default argument",
+            )
+        ),
+    )]
+    fn args_with_complex_default(arg1: String, arg2: Point) -> i32 {
+        0
+    }
+}
 
 fn run_args_info_query<F>(field_name: &str, f: F)
 where
@@ -509,71 +557,73 @@ fn introspect_field_multi_args_descr_trailing_comma() {
     });
 }
 
-#[test]
-fn introspect_field_attr_arg_descr() {
-    run_args_info_query("attrArgDescr", |args| {
-        assert_eq!(args.len(), 1);
+// TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
+// #[test]
+// fn introspect_field_attr_arg_descr() {
+//     run_args_info_query("attrArgDescr", |args| {
+//         assert_eq!(args.len(), 1);
 
-        assert!(args.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("arg")),
-                ("description", Value::scalar("The arg")),
-                ("defaultValue", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![
-                            ("name", Value::null()),
-                            (
-                                "ofType",
-                                Value::object(
-                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
-                                ),
-                            ),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-    });
-}
+//         assert!(args.contains(&Value::object(
+//             vec![
+//                 ("name", Value::scalar("arg")),
+//                 ("description", Value::scalar("The arg")),
+//                 ("defaultValue", Value::null()),
+//                 (
+//                     "type",
+//                     Value::object(
+//                         vec![
+//                             ("name", Value::null()),
+//                             (
+//                                 "ofType",
+//                                 Value::object(
+//                                     vec![("name", Value::scalar("Int"))].into_iter().collect(),
+//                                 ),
+//                             ),
+//                         ]
+//                         .into_iter()
+//                         .collect(),
+//                     ),
+//                 ),
+//             ]
+//             .into_iter()
+//             .collect(),
+//         )));
+//     });
+// }
 
-#[test]
-fn introspect_field_attr_arg_descr_collapse() {
-    run_args_info_query("attrArgDescrCollapse", |args| {
-        assert_eq!(args.len(), 1);
+// TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
+// #[test]
+// fn introspect_field_attr_arg_descr_collapse() {
+//     run_args_info_query("attrArgDescrCollapse", |args| {
+//         assert_eq!(args.len(), 1);
 
-        assert!(args.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("arg")),
-                ("description", Value::scalar("The arg\nand more details")),
-                ("defaultValue", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![
-                            ("name", Value::null()),
-                            (
-                                "ofType",
-                                Value::object(
-                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
-                                ),
-                            ),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-    });
-}
+//         assert!(args.contains(&Value::object(
+//             vec![
+//                 ("name", Value::scalar("arg")),
+//                 ("description", Value::scalar("The arg\nand more details")),
+//                 ("defaultValue", Value::null()),
+//                 (
+//                     "type",
+//                     Value::object(
+//                         vec![
+//                             ("name", Value::null()),
+//                             (
+//                                 "ofType",
+//                                 Value::object(
+//                                     vec![("name", Value::scalar("Int"))].into_iter().collect(),
+//                                 ),
+//                             ),
+//                         ]
+//                         .into_iter()
+//                         .collect(),
+//                     ),
+//                 ),
+//             ]
+//             .into_iter()
+//             .collect(),
+//         )));
+//     });
+// }
 
 #[test]
 fn introspect_field_arg_with_default() {

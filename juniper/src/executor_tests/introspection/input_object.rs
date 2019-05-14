@@ -79,8 +79,9 @@ struct FieldWithDefaults {
     field_two: i32,
 }
 
-graphql_object!(Root: () |&self| {
-    field test_field(
+#[crate::object_internal]
+impl Root {
+    fn test_field(
         a1: DefaultName,
         a2: NoTrailingComma,
         a3: Derive,
@@ -95,7 +96,7 @@ graphql_object!(Root: () |&self| {
     ) -> i32 {
         0
     }
-});
+}
 
 fn run_type_info_query<F>(doc: &str, f: F)
 where

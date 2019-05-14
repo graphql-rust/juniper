@@ -47,11 +47,12 @@ fn context_factory(_: &mut Request) -> IronResult<()> {
 
 struct Root;
 
-juniper::graphql_object!(Root: () |&self| {
-    field foo() -> String {
+#[juniper::object]
+impl Root {
+    fn foo() -> String {
         "Bar".to_owned()
     }
-});
+}
 
 # #[allow(unreachable_code, unused_variables)]
 fn main() {
@@ -98,13 +99,14 @@ fn context_factory(req: &mut Request) -> IronResult<Context> {
 
 struct Root;
 
-juniper::graphql_object!(Root: Context |&self| {
-    field my_addr(&executor) -> String {
-        let context = executor.context();
-
+#[juniper::object(
+    Context = Context,
+)]
+impl Root {
+    field my_addr(context: &Context) -> String {
         format!("Hello, you're coming from {}", context.remote_addr)
     }
-});
+}
 
 # fn main() {
 #     let _graphql_endpoint = juniper_iron::GraphQLHandler::new(
@@ -114,10 +116,6 @@ juniper::graphql_object!(Root: Context |&self| {
 #     );
 # }
 ```
-
-## Accessing global data
-
-FIXME: Show how the `persistent` crate works with contexts using e.g. `r2d2`.
 
 [iron]: http://ironframework.io
 [graphiql]: https://github.com/graphql/graphiql
