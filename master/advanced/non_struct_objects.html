@@ -157,21 +157,22 @@ enum SignUpResult {
     Error(Vec&lt;ValidationError&gt;),
 }
 
-juniper::graphql_object!(SignUpResult: () |&amp;self| {
-    field user() -&gt; Option&lt;&amp;User&gt; {
+#[juniper::object]
+impl SignUpResult {
+    fn user(&amp;self) -&gt; Option&lt;&amp;User&gt; {
         match *self {
             SignUpResult::Ok(ref user) =&gt; Some(user),
             SignUpResult::Error(_) =&gt; None,
         }
     }
 
-    field error() -&gt; Option&lt;&amp;Vec&lt;ValidationError&gt;&gt; {
+    fn error(&amp;self) -&gt; Option&lt;&amp;Vec&lt;ValidationError&gt;&gt; {
         match *self {
             SignUpResult::Ok(_) =&gt; None,
             SignUpResult::Error(ref errors) =&gt; Some(errors)
         }
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>

@@ -139,8 +139,8 @@
                         <a class="header" href="#complex-fields" id="complex-fields"><h1>Complex fields</h1></a>
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
-the <code>graphql_object!</code> macro. This macro lets you define GraphQL objects similar
-to how you define methods in a Rust <code>impl</code> block for a type. Continuing with the
+the <code>object</code> procedural macro. This macro lets you define GraphQL object
+fields in a Rust <code>impl</code> block for a type. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
 <pre><pre class="playpen"><code class="language-rust">
@@ -149,15 +149,16 @@ struct Person {
     age: i32,
 }
 
-juniper::graphql_object!(Person: () |&amp;self| {
-    field name() -&gt; &amp;str {
+#[juniper::object]
+impl Person {
+    fn name(&amp;self) -&gt; &amp;str {
         self.name.as_str()
     }
 
-    field age() -&gt; i32 {
+    fn age(&amp;self) -&gt; i32 {
         self.age
     }
-});
+}
 
 # fn main() { }
 </code></pre></pre>
@@ -173,12 +174,13 @@ struct House {
     inhabitants: Vec&lt;Person&gt;,
 }
 
-juniper::graphql_object!(House: () |&amp;self| {
+#[juniper::object]
+impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
-    field inhabitant_with_name(name: String) -&gt; Option&lt;&amp;Person&gt; {
+    fn inhabitant_with_name(&amp;self, name: String) -&gt; Option&lt;&amp;Person&gt; {
         self.inhabitants.iter().find(|p| p.name == name)
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>
@@ -194,15 +196,19 @@ the field. Also, the type name can be changed with an alias:</p>
     website_url: String,
 }
 
-juniper::graphql_object!(Person: () as &quot;PersonObject&quot; |&amp;self| {
-    field name() -&gt; &amp;str {
+#[juniper::object(
+    // With this attribtue you can change the public GraphQL name of the type.
+    name = &quot;PersonObject&quot;,
+)]
+impl Person {
+    fn name(&amp;self) -&gt; &amp;str {
         self.name.as_str()
     }
 
-    field websiteURL() -&gt; &amp;str {
+    fn websiteURL(&amp;self) -&gt; &amp;str {
         self.website_url.as_str()
     }
-});
+}
 
 # fn main() { }
 </code></pre></pre>
@@ -213,7 +219,7 @@ juniper::graphql_object!(Person: () as &quot;PersonObject&quot; |&amp;self| {
 <li>Per-argument default values</li>
 <li>Per-argument descriptions</li>
 </ul>
-<p>These, and more features, are described more thorougly in <a href="https://docs.rs/juniper/0.8.1/juniper/macro.graphql_object.html">the reference
+<p>These, and more features, are described more thorougly in <a href="https://docs.rs/juniper/latest/juniper/macro.object.html">the reference
 documentation</a>.</p>
 
                     </main>

@@ -149,12 +149,14 @@ struct Coordinate {
 struct Root;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 
-juniper::graphql_object!(Root: () |&amp;self| {
-    field users_at_location(coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
+#[juniper::object]
+impl Root {
+    fn users_at_location(coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
         // Send coordinate to database
+        // ...
 # unimplemented!()
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>
@@ -174,12 +176,14 @@ struct WorldCoordinate {
 struct Root;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 
-juniper::graphql_object!(Root: () |&amp;self| {
-    field users_at_location(coordinate: WorldCoordinate, radius: f64) -&gt; Vec&lt;User&gt; {
+#[juniper::object]
+impl Root {
+    fn users_at_location(coordinate: WorldCoordinate, radius: f64) -&gt; Vec&lt;User&gt; {
         // Send coordinate to database
+        // ...
 # unimplemented!()
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>

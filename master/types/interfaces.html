@@ -180,7 +180,7 @@ impl Character for Droid {
     fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { Some(&amp;self) }
 }
 
-juniper::graphql_interface!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot; where Scalar = &lt;S&gt;|&amp;self| {
+juniper::graphql_interface!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot; where Scalar = &lt;S&gt; |&amp;self| {
     field id() -&gt; &amp;str { self.id() }
 
     instance_resolvers: |_| {
@@ -204,14 +204,14 @@ you can do away with the downcast methods and use the context instead. Here,
 we'll use two hashmaps, but this could be two tables and some SQL calls instead:</p>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = &quot;Database&quot;)]
+#[graphql(Context = Database)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = &quot;Database&quot;)]
+#[graphql(Context = Database)]
 struct Droid {
     id: String,
     primary_function: String,

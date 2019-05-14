@@ -159,10 +159,7 @@ produced by issuing a specially crafted introspection query.</p>
 <p>Juniper provides a convenience function to introspect the entire schema. The
 result can then be converted to JSON for use with tools and libraries such as
 <a href="https://github.com/graphql-rust/graphql-client">graphql-client</a>:</p>
-<pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
-# extern crate juniper;
-# extern crate serde_json;
-use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
+<pre><pre class="playpen"><code class="language-rust">use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
 
 // Define our schema.
 
@@ -176,11 +173,14 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-juniper::graphql_object!(Query: Context |&amp;self| {
-   field example(&amp;executor, id: String) -&gt; FieldResult&lt;Example&gt; {
+#[juniper::object(
+  Context = Context,
+)]
+impl Query {
+   fn example(id: String) -&gt; FieldResult&lt;Example&gt; {
        unimplemented!()
    }
-});
+}
 
 type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Context&gt;&gt;;
 

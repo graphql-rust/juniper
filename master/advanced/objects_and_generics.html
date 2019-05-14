@@ -158,25 +158,31 @@ struct ValidationError {
 # #[allow(dead_code)]
 struct MutationResult&lt;T&gt;(Result&lt;T, Vec&lt;ValidationError&gt;&gt;);
 
-juniper::graphql_object!(MutationResult&lt;User&gt;: () as &quot;UserResult&quot; |&amp;self| {
-    field user() -&gt; Option&lt;&amp;User&gt; {
+#[juniper::object(
+    name = &quot;UserResult&quot;,
+)]
+impl MutationResult&lt;User&gt; {
+    fn user(&amp;self) -&gt; Option&lt;&amp;User&gt; {
         self.0.as_ref().ok()
     }
 
-    field error() -&gt; Option&lt;&amp;Vec&lt;ValidationError&gt;&gt; {
+    fn error(&amp;self) -&gt; Option&lt;&amp;Vec&lt;ValidationError&gt;&gt; {
         self.0.as_ref().err()
     }
-});
+}
 
-juniper::graphql_object!(MutationResult&lt;ForumPost&gt;: () as &quot;ForumPostResult&quot; |&amp;self| {
-    field forum_post() -&gt; Option&lt;&amp;ForumPost&gt; {
+#[juniper::object(
+    name = &quot;ForumPostResult&quot;,
+)]
+impl MutationResult&lt;ForumPost&gt; {
+    fn forum_post(&amp;self) -&gt; Option&lt;&amp;ForumPost&gt; {
         self.0.as_ref().ok()
     }
 
-    field error() -&gt; Option&lt;&amp;Vec&lt;ValidationError&gt;&gt; {
+    fn error(&amp;self) -&gt; Option&lt;&amp;Vec&lt;ValidationError&gt;&gt; {
         self.0.as_ref().err()
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>

@@ -152,17 +152,18 @@ and register all types it can find. This means that if you define a GraphQL
 object somewhere but never references it, it will not be exposed in a schema.</p>
 <a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
-object in Juniper, most commonly using the <code>graphql_object!</code> macro:</p>
+object in Juniper, most commonly using the <code>object</code> proc macro:</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
 
-juniper::graphql_object!(Root: () |&amp;self| {
-    field userWithUsername(username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
+#[juniper::object]
+impl Root {
+    fn userWithUsername(username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
         // Look up user in database...
 # unimplemented!()
     }
-});
+}
 
 # fn main() { }
 </code></pre></pre>
@@ -173,12 +174,13 @@ usually performs some mutating side-effect, such as updating a database.</p>
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-juniper::graphql_object!(Mutations: () |&amp;self| {
-    field signUpUser(name: String, email: String) -&gt; FieldResult&lt;User&gt; {
+#[juniper::object]
+impl Mutations {
+    fn signUpUser(name: String, email: String) -&gt; FieldResult&lt;User&gt; {
         // Validate inputs and save user in database...
 # unimplemented!()
     }
-});
+}
 
 # fn main() { }
 </code></pre></pre>

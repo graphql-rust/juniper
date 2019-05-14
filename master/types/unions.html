@@ -173,7 +173,7 @@ impl Character for Droid {
     fn as_droid(&amp;self) -&gt; Option&lt;&amp;Droid&gt; { Some(&amp;self) }
 }
 
-juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot; where Scalar = &lt;S&gt;   |&amp;self| { 
+juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot; where Scalar = &lt;S&gt; |&amp;self| { 
     instance_resolvers: |_| {
         // The left hand side indicates the concrete type T, the right hand
         // side should be an expression returning Option&lt;T&gt;
@@ -188,14 +188,14 @@ juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot
 <p>FIXME: This example does not compile at the moment</p>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = &quot;Database&quot;)]
+#[graphql(Context = Database)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = &quot;Database&quot;)]
+#[graphql(Context = Database)]
 struct Droid {
     id: String,
     primary_function: String,
@@ -232,14 +232,14 @@ juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: Database as &quot;Characte
 <a class="header" href="#placeholder-objects" id="placeholder-objects"><h2>Placeholder objects</h2></a>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = &quot;Database&quot;)]
+#[graphql(Context = Database)]
 struct Human {
     id: String,
     home_planet: String,
 }
 
 #[derive(juniper::GraphQLObject)]
-#[graphql(Context = &quot;Database&quot;)]
+#[graphql(Context = Database)]
 struct Droid {
     id: String,
     primary_function: String,

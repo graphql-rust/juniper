@@ -159,14 +159,16 @@ struct Example {
     filename: PathBuf,
 }
 
-juniper::graphql_object!(Example: () |&amp;self| {
-    field contents() -&gt; FieldResult&lt;String&gt; {
+#[juniper::object]
+impl Example {
+    fn contents() -&gt; FieldResult&lt;String&gt; {
         let mut file = File::open(&amp;self.filename)?;
         let mut contents = String::new();
         file.read_to_string(&amp;mut contents)?;
         Ok(contents)
     }
-    field foo() -&gt; FieldResult&lt;Option&lt;String&gt;&gt; {
+
+    fn foo() -&gt; FieldResult&lt;Option&lt;String&gt;&gt; {
       // Some invalid bytes.
       let invalid = vec![128, 223];
 
@@ -175,7 +177,7 @@ juniper::graphql_object!(Example: () |&amp;self| {
         Err(e) =&gt; Err(e)?,
       }
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>
@@ -255,14 +257,15 @@ struct Example {
     whatever: Option&lt;bool&gt;,
 }
 
-juniper::graphql_object!(Example: () |&amp;self| {
-    field whatever() -&gt; Result&lt;bool, CustomError&gt; {
+#[juniper::object]
+impl Example {
+    fn whatever() -&gt; Result&lt;bool, CustomError&gt; {
       if let Some(value) = self.whatever {
         return Ok(value);
       }
       Err(CustomError::WhateverNotSet)
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>

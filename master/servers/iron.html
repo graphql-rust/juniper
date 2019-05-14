@@ -173,11 +173,12 @@ fn context_factory(_: &amp;mut Request) -&gt; IronResult&lt;()&gt; {
 
 struct Root;
 
-juniper::graphql_object!(Root: () |&amp;self| {
-    field foo() -&gt; String {
+#[juniper::object]
+impl Root {
+    fn foo() -&gt; String {
         &quot;Bar&quot;.to_owned()
     }
-});
+}
 
 # #[allow(unreachable_code, unused_variables)]
 fn main() {
@@ -220,13 +221,14 @@ fn context_factory(req: &amp;mut Request) -&gt; IronResult&lt;Context&gt; {
 
 struct Root;
 
-juniper::graphql_object!(Root: Context |&amp;self| {
-    field my_addr(&amp;executor) -&gt; String {
-        let context = executor.context();
-
+#[juniper::object(
+    Context = Context,
+)]
+impl Root {
+    field my_addr(context: &amp;Context) -&gt; String {
         format!(&quot;Hello, you're coming from {}&quot;, context.remote_addr)
     }
-});
+}
 
 # fn main() {
 #     let _graphql_endpoint = juniper_iron::GraphQLHandler::new(
@@ -236,8 +238,6 @@ juniper::graphql_object!(Root: Context |&amp;self| {
 #     );
 # }
 </code></pre>
-<a class="header" href="#accessing-global-data" id="accessing-global-data"><h2>Accessing global data</h2></a>
-<p>FIXME: Show how the <code>persistent</code> crate works with contexts using e.g. <code>r2d2</code>.</p>
 
                     </main>
 

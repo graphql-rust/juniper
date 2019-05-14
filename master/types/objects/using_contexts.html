@@ -163,14 +163,19 @@ struct User {
 <p>We would like a <code>friends</code> field on <code>User</code> that returns a list of <code>User</code> objects.
 In order to write such a field though, the database must be queried.</p>
 <p>To solve this, we mark the <code>Database</code> as a valid context type and assign it to
-the user object. Then, we use the special <code>&amp;executor</code> argument to access the
-current context object:</p>
+the user object.</p>
+<p>To gain access to the context, we need to specify an argument with the same
+type as the specified <code>Context</code> for the type:</p>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 extern crate juniper;
 
+// This struct represents our context.
 struct Database {
     users: HashMap&lt;i32, User&gt;,
 }
+
+// Mark the Database as a valid context type for Juniper
+impl juniper::Context for Database {}
 
 struct User {
     id: i32,
@@ -178,25 +183,33 @@ struct User {
     friend_ids: Vec&lt;i32&gt;,
 }
 
-// 1. Mark the Database as a valid context type for Juniper
-impl juniper::Context for Database {}
 
-// 2. Assign Database as the context type for User
-juniper::graphql_object!(User: Database |&amp;self| {
-    // 3. Use the special executor argument
-    field friends(&amp;executor) -&gt; Vec&lt;&amp;User&gt; {
-        // 4. Use the executor to access the context object
-        let database = executor.context();
+// Assign Database as the context type for User
+#[juniper::object(
+    Context = Database,
+)]
+impl User {
+    // 3. Inject the context by specifying an argument
+    //    with the context type.
+    // Note: 
+    //   - the type must be a reference
+    //   - the name of the argument SHOULD be context
+    fn friends(&amp;self, context: &amp;Database) -&gt; Vec&lt;&amp;User&gt; {
 
         // 5. Use the database to lookup users
         self.friend_ids.iter()
-            .map(|id| database.users.get(id).expect(&quot;Could not find user with ID&quot;))
+            .map(|id| context.users.get(id).expect(&quot;Could not find user with ID&quot;))
             .collect()
     }
 
-    field name() -&gt; &amp;str { self.name.as_str() }
-    field id() -&gt; i32 { self.id }
-});
+    fn name(&amp;self) -&gt; &amp;str { 
+        self.name.as_str() 
+    }
+
+    fn id(&amp;self) -&gt; i32 { 
+        self.id 
+    }
+}
 
 # fn main() { }
 </code></pre></pre>
