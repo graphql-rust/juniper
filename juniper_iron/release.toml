@@ -4,6 +4,5 @@ pro-release-commit-message = "Bump {{crate_name}} version to {{next_version}}"
 tag-message = "Release {{crate_name}} {{version}}"
 upload-doc = false
 pre-release-replacements = [
-  {file="../juniper/Cargo.toml", search="juniper_codegen = \\{ version = \"[^\"]+\"", replace="juniper_codegen = { version = \"{{version}}\""},
-  {file="src/lib.rs", search="docs.rs/juniper_codegen/[a-z0-9\\.-]+", replace="docs.rs/juniper_codegen/{{version}}"},
+  {file="src/lib.rs", search="docs.rs/juniper_iron/[a-z0-9\\.-]+", replace="docs.rs/juniper_iron/{{version}}"},
 ]
