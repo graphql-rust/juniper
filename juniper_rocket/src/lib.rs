@@ -108,6 +108,15 @@ where
             ),
         }
     }
+
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        match self {
+            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
+            GraphQLBatchRequest::Batch(reqs) => {
+                reqs.iter().map(|req| req.operation_name()).collect()
+            }
+        }
+    }
 }
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
@@ -173,6 +182,13 @@ where
         let json = serde_json::to_string(&response).unwrap();
 
         GraphQLResponse(status, json)
+    }
+
+    /// Returns the operation names associated with this request.
+    ///
+    /// For batch requests there will be multiple names.
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        self.0.operation_names()
     }
 }
 
@@ -519,14 +535,40 @@ mod tests {
         http_tests::run_http_test_suite(&integration);
     }
 
+    #[test]
+    fn test_operation_names() {
+        #[post("/", data = "<request>")]
+        fn post_graphql_assert_operation_name_handler(
+            context: State<Database>,
+            request: super::GraphQLRequest,
+            schema: State<Schema>,
+        ) -> super::GraphQLResponse {
+            assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
+            request.execute(&schema, &context)
+        }
+
+        let rocket = make_rocket_without_routes()
+            .mount("/", routes![post_graphql_assert_operation_name_handler]);
+        let client = Client::new(rocket).expect("valid rocket");
+
+        let req = client
+            .post("/")
+            .header(ContentType::JSON)
+            .body(r#"{"query": "query TestQuery {hero{name}}", "operationName": "TestQuery"}"#);
+        let resp = make_test_response(&req);
+
+        assert_eq!(resp.status_code, 200);
+    }
+
     fn make_rocket() -> Rocket {
-        rocket::ignite()
-            .manage(Database::new())
-            .manage(Schema::new(
-                Database::new(),
-                EmptyMutation::<Database>::new(),
-            ))
-            .mount("/", routes![post_graphql_handler, get_graphql_handler])
+        make_rocket_without_routes().mount("/", routes![post_graphql_handler, get_graphql_handler])
+    }
+
+    fn make_rocket_without_routes() -> Rocket {
+        rocket::ignite().manage(Database::new()).manage(Schema::new(
+            Database::new(),
+            EmptyMutation::<Database>::new(),
+        ))
     }
 
     fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {
