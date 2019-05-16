@@ -1,15 +1,14 @@
 use std::convert::From;
-use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::{char, u32};
 
-use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue};
+use crate::ast::{InputValue, Selection, ToInputValue};
 use crate::executor::{Executor, Registry};
 use crate::parser::{LexerError, ParseError, ScalarToken, Token};
 use crate::schema::meta::MetaType;
 use crate::types::base::GraphQLType;
-use crate::value::{ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue, Value};
+use crate::value::{ParseScalarResult, ScalarRefValue, ScalarValue, Value};
 
 /// An ID as defined by the GraphQL specification
 ///
@@ -274,46 +273,7 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
     }
 });
 
-impl<S> GraphQLType<S> for ()
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
-{
-    type Context = ();
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
-        Some("__Unit")
-    }
-
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        registry.build_scalar_type::<Self>(&()).into_meta()
-    }
-}
-
-impl<S> ParseScalarValue<S> for ()
-where
-    S: ScalarValue,
-{
-    fn from_str<'a>(_value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        Ok(S::from(0))
-    }
-}
-
-impl<S: Debug> FromInputValue<S> for () {
-    fn from_input_value<'a>(_: &'a InputValue<S>) -> Option<()>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        None
-    }
-}
-
-/// Utility type to define read-only schemas
+/// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.

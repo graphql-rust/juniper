@@ -18,6 +18,7 @@ This should not have any impact on your code, since juniper already was 2018 com
 ### Other changes
 
 - The minimum required Rust version is now `1.34.0`.
+- The `GraphQLType` impl for () was removed to improve compile time safefty. [#355](https://github.com/graphql-rust/juniper/pull/355)
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
 - Added built-in support for the canonical schema introspection query via
   `juniper::introspect()`. 
