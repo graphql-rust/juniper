@@ -3,10 +3,10 @@
 # TODO: remove this file completely once the crate compiles again.
 
 [tasks.build-verbose]
-condition = { channels = [] }
+condition = { channels = ["nightly"] }
 
 [tasks.test-verbose]
-condition = { channels = [] }
+condition = { channels = ["nightly"] }
 
 [tasks.ci-coverage-flow]
-condition = { channels = [] }
+condition = { channels = ["nightly"] }
