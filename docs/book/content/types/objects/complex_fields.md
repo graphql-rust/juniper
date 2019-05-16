@@ -65,22 +65,84 @@ to `camelCase`. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:
 
 ```rust
+
 struct Person {
-    name: String,
-    website_url: String,
 }
 
+/// Doc comments are used as descriptions for GraphQL.
 #[juniper::object(
     // With this attribtue you can change the public GraphQL name of the type.
     name = "PersonObject",
+    // You can also specify a description here, which will overwrite 
+    // a doc comment description.
+    description = "...",
 )]
 impl Person {
-    fn name(&self) -> &str {
-        self.name.as_str()
+
+    /// A doc comment on the field will also be used for GraphQL.
+    #[graphql(
+        // Or provide a description here.
+        description = "...",
+    )]
+    fn doc_comment(&self) -> &str {
+        ""
     }
 
-    fn websiteURL(&self) -> &str {
-        self.website_url.as_str()
+    // Fields can also be renamed if required.
+    #[graphql(
+        name = "myCustomFieldName",
+    )]
+    fn renamed_field() -> bool {
+        true
+    }
+
+    // Deprecations also work as you'd expect.
+    // Both the standard Rust syntax and a custom attribute is accepted.
+    #[deprecated(note = "...")]
+    fn deprecated_standard() -> bool {
+        false
+    }
+
+    #[graphql(deprecated = "...")]
+    fn deprecated_graphql() -> bool {
+        true
+    }
+}
+
+# fn main() { }
+```
+
+## Customizing arguments
+
+Method field arguments can also be customized.
+
+They can have custom descriptions and default values.
+
+**Note**: The syntax for this is currently a little awkward. 
+This will become better once the [Rust RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented.
+
+```rust
+
+struct Person {}
+
+#[juniper::object]
+impl Person {
+    #[graphql(
+        arguments(
+            arg1(
+                // Set a default value which will be injected if not present.
+                // The default can be any valid Rust expression, including a function call, etc.
+                default = true,
+                // Set a description.
+                description = "The first argument..."
+            ),
+            arg2(
+                default = 0,
+            )
+        )
+    )]
+    fn field1(&self, arg1: bool, arg2: i32) -> String {
+        format!("{} {}", arg1, arg2)
     }
 }
 
