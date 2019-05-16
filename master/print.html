@@ -585,22 +585,78 @@ chapter: <a href="using_contexts.html">Using contexts</a>.</p>
 <p>Like with the derive attribute, field names will be converted from <code>snake_case</code>
 to <code>camelCase</code>. If you need to override the conversion, you can simply rename
 the field. Also, the type name can be changed with an alias:</p>
-<pre><pre class="playpen"><code class="language-rust">struct Person {
-    name: String,
-    website_url: String,
+<pre><pre class="playpen"><code class="language-rust">
+struct Person {
 }
 
+/// Doc comments are used as descriptions for GraphQL.
 #[juniper::object(
     // With this attribtue you can change the public GraphQL name of the type.
     name = &quot;PersonObject&quot;,
+    // You can also specify a description here, which will overwrite 
+    // a doc comment description.
+    description = &quot;...&quot;,
 )]
 impl Person {
-    fn name(&amp;self) -&gt; &amp;str {
-        self.name.as_str()
+
+    /// A doc comment on the field will also be used for GraphQL.
+    #[graphql(
+        // Or provide a description here.
+        description = &quot;...&quot;,
+    )]
+    fn doc_comment(&amp;self) -&gt; &amp;str {
+        &quot;&quot;
     }
 
-    fn websiteURL(&amp;self) -&gt; &amp;str {
-        self.website_url.as_str()
+    // Fields can also be renamed if required.
+    #[graphql(
+        name = &quot;myCustomFieldName&quot;,
+    )]
+    fn renamed_field() -&gt; bool {
+        true
+    }
+
+    // Deprecations also work as you'd expect.
+    // Both the standard Rust syntax and a custom attribute is accepted.
+    #[deprecated(note = &quot;...&quot;)]
+    fn deprecated_standard() -&gt; bool {
+        false
+    }
+
+    #[graphql(deprecated = &quot;...&quot;)]
+    fn deprecated_graphql() -&gt; bool {
+        true
+    }
+}
+
+# fn main() { }
+</code></pre></pre>
+<a class="header" href="#customizing-arguments" id="customizing-arguments"><h2>Customizing arguments</h2></a>
+<p>Method field arguments can also be customized.</p>
+<p>They can have custom descriptions and default values.</p>
+<p><strong>Note</strong>: The syntax for this is currently a little awkward.
+This will become better once the <a href="https://github.com/rust-lang/rust/issues/60406">Rust RFC 2565</a> is implemented.</p>
+<pre><pre class="playpen"><code class="language-rust">
+struct Person {}
+
+#[juniper::object]
+impl Person {
+    #[graphql(
+        arguments(
+            arg1(
+                // Set a default value which will be injected if not present.
+                // The default can be any valid Rust expression, including a function call, etc.
+                default = true,
+                // Set a description.
+                description = &quot;The first argument...&quot;
+            ),
+            arg2(
+                default = 0,
+            )
+        )
+    )]
+    fn field1(&amp;self, arg1: bool, arg2: i32) -&gt; String {
+        format!(&quot;{} {}&quot;, arg1, arg2)
     }
 }
 
