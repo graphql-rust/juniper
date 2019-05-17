@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.12.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.12.0)
+
 ### object macro
 
 The `graphql_object!` macro is deprecated and will be removed in the future. 
