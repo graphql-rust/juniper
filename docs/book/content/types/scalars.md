@@ -17,7 +17,7 @@ use juniper::Value;
 
 struct UserID(String);
 
-juniper::graphql_scalar!(UserID {
+juniper::graphql_scalar!(UserID where Scalar = <S> {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {
@@ -30,10 +30,16 @@ juniper::graphql_scalar!(UserID {
         v.as_scalar_value::<String>().map(|s| UserID(s.to_owned()))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> juniper::ParseScalarResult<'a, juniper::DefaultScalarValue> {
-        <String as juniper::ParseScalarValue>::from_str(value)
+    from_str<'a>(value: ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {
+        <String as juniper::ParseScalarValue<S>>::from_str(value)
     }
 });
+
+#[derive(juniper::GraphQLObject)]
+struct User {
+    id: UserID,
+    username: String,
+}
 
 # fn main() {}
 ```
