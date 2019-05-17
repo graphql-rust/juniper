@@ -1209,7 +1209,7 @@ this example, we're representing a user ID as a string wrapped in a custom type:
 
 struct UserID(String);
 
-juniper::graphql_scalar!(UserID {
+juniper::graphql_scalar!(UserID where Scalar = &lt;S&gt; {
     description: &quot;An opaque identifier, represented as a string&quot;
 
     resolve(&amp;self) -&gt; Value {
@@ -1222,10 +1222,16 @@ juniper::graphql_scalar!(UserID {
         v.as_scalar_value::&lt;String&gt;().map(|s| UserID(s.to_owned()))
     }
 
-    from_str&lt;'a&gt;(value: ScalarToken&lt;'a&gt;) -&gt; juniper::ParseScalarResult&lt;'a, juniper::DefaultScalarValue&gt; {
-        &lt;String as juniper::ParseScalarValue&gt;::from_str(value)
+    from_str&lt;'a&gt;(value: ScalarToken&lt;'a&gt;) -&gt; juniper::ParseScalarResult&lt;'a, S&gt; {
+        &lt;String as juniper::ParseScalarValue&lt;S&gt;&gt;::from_str(value)
     }
 });
+
+#[derive(juniper::GraphQLObject)]
+struct User {
+    id: UserID,
+    username: String,
+}
 
 # fn main() {}
 </code></pre></pre>
