@@ -2,6 +2,17 @@
 
 ## Prerequisites
 
+It is generally best to start with a clean respository dedicated to a release so that no git weirdness happens:
+
+```
+git clone git@github.com:graphql-rust/juniper.git juniper_release;
+cd juniper_release;
+```
+
+We use the `nightly` toolchain when releasing. This is because some of our crates require nightly:
+
+`rustup default nightly`
+
 We use [`cargo-make`](cargo-make) and [`cargo-release`](cargo-release) to automate crate releases. You will need to install them locally:
 
 - `cargo install -f cargo-make`
@@ -14,6 +25,8 @@ There are two general classes of release and each require running different auto
 1. All public workspace crates should be released and all share the same release level ("patch", "minor", "major"). _These commands take the form `release-[whatever]`._
 
 2. A subset of workspace crates need to be released, or not all crate releases share the same release level. _These commands start with `release-skip-[whatever]`._
+
+**All release commands must be run from the root directory of the repository.**
 
 ## Determine new release level
 
