@@ -1,5 +1,9 @@
 # master
 
+- Compatibility with the latest `juniper`.
+
+# [[0.3.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.3.0)
+
 - Expose the operation names from `GraphQLRequest`.
 - Compatibility with the latest `juniper`.
 
