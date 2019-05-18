@@ -3,13 +3,14 @@
 extern crate log;
 
 use juniper::tests::model::Database;
+use juniper::tests::schema::Query;
 use juniper::{EmptyMutation, RootNode};
 use warp::{http::Response, Filter};
 
-type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
 
 fn schema() -> Schema {
-    Schema::new(Database::new(), EmptyMutation::<Database>::new())
+    Schema::new(Query, EmptyMutation::<Database>::new())
 }
 
 fn main() {

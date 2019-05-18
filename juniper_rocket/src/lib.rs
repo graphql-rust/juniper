@@ -209,10 +209,11 @@ impl GraphQLResponse {
     /// # use rocket::response::content;
     /// # use rocket::State;
     /// #
+    /// # use juniper::tests::schema::Query;
     /// # use juniper::tests::model::Database;
     /// # use juniper::{EmptyMutation, FieldError, RootNode, Value};
     /// #
-    /// # type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
+    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
@@ -487,10 +488,11 @@ mod tests {
 
     use juniper::http::tests as http_tests;
     use juniper::tests::model::Database;
+    use juniper::tests::schema::Query;
     use juniper::EmptyMutation;
     use juniper::RootNode;
 
-    type Schema = RootNode<'static, Database, EmptyMutation<Database>>;
+    type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
 
     #[get("/?<request..>")]
     fn get_graphql_handler(
@@ -565,10 +567,9 @@ mod tests {
     }
 
     fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite().manage(Database::new()).manage(Schema::new(
-            Database::new(),
-            EmptyMutation::<Database>::new(),
-        ))
+        rocket::ignite()
+            .manage(Database::new())
+            .manage(Schema::new(Query, EmptyMutation::<Database>::new()))
     }
 
     fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {

@@ -10,6 +10,7 @@ use hyper::service::service_fn;
 use hyper::Method;
 use hyper::{Body, Response, Server, StatusCode};
 use juniper::tests::model::Database;
+use juniper::tests::schema::Query;
 use juniper::EmptyMutation;
 use juniper::RootNode;
 use std::sync::Arc;
@@ -20,7 +21,7 @@ fn main() {
     let addr = ([127, 0, 0, 1], 3000).into();
 
     let db = Arc::new(Database::new());
-    let root_node = Arc::new(RootNode::new(db.clone(), EmptyMutation::<Database>::new()));
+    let root_node = Arc::new(RootNode::new(Query, EmptyMutation::<Database>::new()));
 
     let new_service = move || {
         let root_node = root_node.clone();

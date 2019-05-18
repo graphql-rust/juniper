@@ -5,7 +5,7 @@ mod introspection_tests;
 pub mod model;
 #[cfg(test)]
 mod query_tests;
-mod schema;
+pub mod schema;
 #[cfg(test)]
 mod schema_introspection;
 #[cfg(test)]

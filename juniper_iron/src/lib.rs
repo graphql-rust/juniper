@@ -442,6 +442,7 @@ mod tests {
 
     use juniper::http::tests as http_tests;
     use juniper::tests::model::Database;
+    use juniper::tests::schema::Query;
     use juniper::EmptyMutation;
 
     use super::GraphQLHandler;
@@ -529,7 +530,7 @@ mod tests {
     fn make_handler() -> Box<Handler> {
         Box::new(GraphQLHandler::new(
             context_factory,
-            Database::new(),
+            Query,
             EmptyMutation::<Database>::new(),
         ))
     }
