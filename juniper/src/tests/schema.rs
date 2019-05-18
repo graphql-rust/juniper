@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::executor::Context;
 use crate::tests::model::{Character, Database, Droid, Episode, Human};
 
@@ -95,27 +97,28 @@ impl<'a> &'a Droid {
     }
 }
 
+pub struct Query;
+
 #[crate::object_internal(
-    name = "Query",
     Context = Database,
     Scalar = crate::DefaultScalarValue,
 )]
 /// The root query object of the schema
-impl Database {
+impl Query {
     #[graphql(arguments(id(description = "id of the human")))]
-    fn human(&self, id: String) -> Option<&Human> {
-        self.get_human(&id)
+    fn human(database: &Database, id: String) -> Option<&Human> {
+        database.get_human(&id)
     }
 
     #[graphql(arguments(id(description = "id of the droid")))]
-    fn droid(&self, id: String) -> Option<&Droid> {
-        self.get_droid(&id)
+    fn droid(database: &Database, id: String) -> Option<&Droid> {
+        database.get_droid(&id)
     }
 
     #[graphql(arguments(episode(
         description = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode"
     )))]
-    fn hero(&self, episode: Option<Episode>) -> Option<&Character> {
-        Some(self.get_hero(episode).as_character())
+    fn hero(database: &Database, episode: Option<Episode>) -> Option<&Character> {
+        Some(database.get_hero(episode).as_character())
     }
 }
