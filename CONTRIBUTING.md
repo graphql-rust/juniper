@@ -9,9 +9,9 @@ To get started, you can look for [issues with the "help wanted" label](https://g
 
 Before submitting a PR, you should follow these steps to prevent redundant churn or CI failures:
 
-[ ] Ensure proper formatting
-[ ] Run all tests
-[ ] Update the CHANGELOG
+- [ ] Ensure proper formatting
+- [ ] Run all tests
+- [ ] Update the CHANGELOG
 
 ### Ensure proper formatting
 
@@ -29,6 +29,7 @@ you can use [cargo-make](https://github.com/sagiegurari/cargo-make).
 
 1. Install cargo-make with `cargo install cargo-make`
 2. Run `cargo make ci-flow` in the root directory
+   (You can do `rustup run nightly cargo make ci-flow` to run all tests when developing on stable)
 
 ### Update the CHANGELOG
 
