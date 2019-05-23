@@ -1,3 +1,4 @@
+use serde_derive::{Deserialize, Serialize};
 use std::convert::From;
 use std::marker::PhantomData;
 use std::ops::Deref;
@@ -13,7 +14,7 @@ use crate::value::{ParseScalarResult, ScalarRefValue, ScalarValue, Value};
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ID(String);
 
 impl From<String> for ID {
