@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- The `ID` scalar now implements Serde's `Serialize` and `Deserialize`
 
 # [[0.12.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.12.0)
 
