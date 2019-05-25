@@ -20,4 +20,4 @@ Included in the source is a [small example][example] which sets up a basic Graph
 [hyper]: https://hyper.rs/
 [warp]: https://crates.io/crates/warp
 [juniper_warp]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp
-[example]: https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples/warp_server
+[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs
