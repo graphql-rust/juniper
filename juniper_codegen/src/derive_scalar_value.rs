@@ -3,25 +3,203 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, Data, Fields, Ident, Variant};
 
+use crate::util;
+
+#[derive(Debug)]
+struct TransparentAttributes {
+    transparent: bool,
+    name: Option<String>,
+    description: Option<String>,
+}
+
+impl syn::parse::Parse for TransparentAttributes {
+    fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
+        let mut output = Self {
+            transparent: false,
+            name: None,
+            description: None,
+        };
+
+        let mut content;
+        syn::parenthesized!(content in input);
+
+        while !content.is_empty() {
+            let ident: syn::Ident = content.parse()?;
+            match ident.to_string().as_str() {
+                "name" => {
+                    content.parse::<syn::Token![=]>()?;
+                    let val = content.parse::<syn::LitStr>()?;
+                    output.name = Some(val.value());
+                }
+                "description" => {
+                    content.parse::<syn::Token![=]>()?;
+                    let val = content.parse::<syn::LitStr>()?;
+                    output.description = Some(val.value());
+                }
+                "transparent" => {
+                    output.transparent = true;
+                }
+                other => {
+                    return Err(content.error(format!("Unknown attribute: {}", other)));
+                }
+            }
+            if content.lookahead1().peek(syn::Token![,]) {
+                content.parse::<syn::Token![,]>()?;
+            }
+        }
+
+        Ok(output)
+    }
+}
+
+impl TransparentAttributes {
+    fn from_attrs(attrs: &Vec<syn::Attribute>) -> syn::parse::Result<Self> {
+        match util::find_graphql_attr(attrs) {
+            Some(attr) => {
+                let mut parsed: TransparentAttributes = syn::parse(attr.tts.clone().into())?;
+                if parsed.description.is_none() {
+                    parsed.description = util::get_doc_comment(attrs);
+                }
+                Ok(parsed)
+            }
+            None => {
+                panic!("Missing required attribute: #[graphql(transparent)]");
+            }
+        }
+    }
+}
+
 pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
     let ident = &ast.ident;
 
-    let variants = match ast.data {
-        Data::Enum(ref enum_data) => &enum_data.variants,
+    match ast.data {
+        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal),
+        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal),
+        Data::Union(_) => {
+            panic!("#[derive(GraphQLScalarValue)] may not be applied to unions");
+        }
+    }
+}
+
+fn impl_scalar_struct(
+    ast: &syn::DeriveInput,
+    data: &syn::DataStruct,
+    is_internal: bool,
+) -> TokenStream {
+    let field = match data.fields {
+        syn::Fields::Unnamed(ref fields) if fields.unnamed.len() == 1 => {
+            fields.unnamed.first().unwrap().into_value()
+        }
         _ => {
-            panic!("#[derive(GraphQLScalarValue)] may only be applied to enums, not to structs");
+            panic!("#[derive(GraphQLScalarValue)] may only be applied to enums or tuple structs with a single field");
         }
     };
+    let ident = &ast.ident;
+    let attrs = match TransparentAttributes::from_attrs(&ast.attrs) {
+        Ok(attrs) => attrs,
+        Err(e) => {
+            panic!("Invalid #[graphql] attribute: {}", e);
+        }
+    };
+    if !(attrs.transparent) {
+        panic!("Deriving GraphQLScalarValue on a tuple struct requires a #[graphql(transparent) attribute");
+    }
+    let inner_ty = &field.ty;
+    let name = attrs.name.unwrap_or(ident.to_string());
 
-    let froms = variants
+    let crate_name = if is_internal {
+        quote!(crate)
+    } else {
+        quote!(juniper)
+    };
+
+    let description = match attrs.description {
+        Some(val) => quote!( .description( #val ) ),
+        None => quote!(),
+    };
+
+    quote!(
+        impl<S> #crate_name::GraphQLType<S> for #ident
+        where
+            S: #crate_name::ScalarValue,
+            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn name(_: &Self::TypeInfo) -> Option<&str> {
+                Some(#name)
+            }
+
+            fn meta<'r>(
+                info: &Self::TypeInfo,
+                registry: &mut #crate_name::Registry<'r, S>,
+            ) -> #crate_name::meta::MetaType<'r, S>
+            where
+                for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
+                S: 'r,
+            {
+                registry.build_scalar_type::<Self>(info)
+                    #description
+                    .into_meta()
+            }
+
+            fn resolve(
+                &self,
+                info: &(),
+                selection: Option<&[#crate_name::Selection<S>]>,
+                executor: &#crate_name::Executor<Self::Context, S>,
+            ) -> #crate_name::Value<S> {
+                #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
+            }
+        }
+
+        impl<S> #crate_name::ToInputValue<S> for #ident
+        where
+            S: #crate_name::ScalarValue,
+            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
+        {
+            fn to_input_value(&self) -> #crate_name::InputValue<S> {
+                #crate_name::ToInputValue::to_input_value(&self.0)
+            }
+        }
+
+        impl<S> #crate_name::FromInputValue<S> for #ident
+        where
+            S: #crate_name::ScalarValue,
+            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
+        {
+            fn from_input_value(v: &#crate_name::InputValue<S>) -> Option<#ident> {
+                let inner: #inner_ty = #crate_name::FromInputValue::from_input_value(v)?;
+                Some(#ident(inner))
+            }
+        }
+
+        impl<S> #crate_name::ParseScalarValue<S> for #ident
+        where
+            S: #crate_name::ScalarValue,
+            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
+        {
+            fn from_str<'a>(
+                value: #crate_name::parser::ScalarToken<'a>,
+            ) -> #crate_name::ParseScalarResult<'a, S> {
+                <#inner_ty as #crate_name::ParseScalarValue<S>>::from_str(value)
+            }
+        }
+    )
+}
+
+fn impl_scalar_enum(ident: &syn::Ident, data: &syn::DataEnum, is_internal: bool) -> TokenStream {
+    let froms = data
+        .variants
         .iter()
         .map(|v| derive_from_variant(v, ident))
         .collect::<Result<Vec<_>, String>>()
         .unwrap_or_else(|s| panic!("{}", s));
 
-    let serialize = derive_serialize(variants.iter(), ident, is_internal);
+    let serialize = derive_serialize(data.variants.iter(), ident, is_internal);
 
-    let display = derive_display(variants.iter(), ident);
+    let display = derive_display(data.variants.iter(), ident);
 
     quote! {
         #(#froms)*
