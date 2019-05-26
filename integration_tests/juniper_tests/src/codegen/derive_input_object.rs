@@ -1,4 +1,3 @@
-#[cfg(test)]
 use fnv::FnvHashMap;
 
 use juniper::DefaultScalarValue;

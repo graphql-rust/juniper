@@ -1,5 +1,23 @@
 # master
 
+### newtype ScalarValue derive
+
+See [#345](https://github.com/graphql-rust/juniper/pull/345).
+
+The newtype pattern can now be used with the `GraphQLScalarValue` custom derive
+to easily implement custom scalar values that just wrap another scalar, 
+similar to serdes `#[transparent]` functionality.
+
+Example:
+
+```rust
+#[derive(juniper::GraphQLScalarValue)]
+#[graphql(transparent)]
+struct UserId(i32);
+```
+
+### Other Changes
+
 - The `ID` scalar now implements Serde's `Serialize` and `Deserialize`
 
 # [[0.12.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.12.0)

@@ -55,7 +55,51 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(GraphQLScalarValue)]
+/// This custom derive macro implements the #[derive(GraphQLScalarValue)]
+/// derive.
+///
+/// This can be used for two purposes.
+///
+/// ## Transparent Newtype Wrapper
+///
+/// Sometimes, you want to create a custerm scalar type by wrapping
+/// an existing type. In Rust, this is often called the "newtype" pattern.
+/// Thanks to this custom derive, this becomes really easy:
+///
+/// ```rust
+/// // Deriving GraphQLScalar is all that is required.
+/// // Note the #[graphql(transparent)] attribute, which is mandatory.
+/// #[derive(juniper::GraphQLScalarValue)]
+/// #[graphql(transparent)]
+/// struct UserId(String);
+///
+/// #[derive(juniper::GraphQLObject)]
+/// struct User {
+///   id: UserId,
+/// }
+/// ```
+///
+/// The type can also be customized.
+///
+/// ```rust
+/// /// Doc comments are used for the GraphQL type description.
+/// #[derive(juniper::GraphQLScalarValue)]
+/// #[graphql(
+///    transparent,
+///    // Set a custom GraphQL name.
+///    name= "MyUserId",
+///    // A description can also specified in the attribute.
+///    // This will the doc comment, if one exists.
+///    description = "...",
+/// )]
+/// struct UserId(String);
+/// ```
+///
+/// ### Base ScalarValue Enum
+///
+/// TODO: write documentation.
+///
+#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, false);
