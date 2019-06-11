@@ -118,6 +118,7 @@ pub use juniper_codegen::{
 use juniper_codegen::{
     object_internal, GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
+use log::{debug, warn};
 
 #[macro_use]
 mod value;
@@ -203,7 +204,9 @@ where
         let errors = validate_input_values(variables, &document, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let err = GraphQLError::ValidationError(errors);
+            warn!("{:#?}", &err);
+            return Err(err);
         }
     }
 
@@ -213,11 +216,21 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            let err = GraphQLError::ValidationError(errors);
+            warn!("{:#?}", &err);
+            return Err(err);
         }
     }
 
-    execute_validated_query(document, operation_name, root_node, variables, context)
+    let (response, errors) =
+        execute_validated_query(document, operation_name, root_node, variables, context)?;
+
+    debug!("resolved response to: {:#?}", &response);
+    if !errors.is_empty() {
+        warn!("{:#?}", &errors);
+    }
+
+    Ok((response, errors))
 }
 
 /// Execute the reference introspection query in the provided schema
