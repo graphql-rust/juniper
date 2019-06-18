@@ -27,7 +27,8 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
     if attrs.interfaces.len() > 0 {
         panic!("Invalid #[graphql(...)] attribute 'interfaces': #[derive(GraphQLObject) does not support 'interfaces'");
     }
-    let name = attrs.name.unwrap_or(ast.ident.to_string());
+    let ident = &ast.ident;
+    let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
     let fields = struct_fields.into_iter().filter_map(|field| {
         let field_attrs = match util::FieldAttributes::from_attrs(
@@ -69,7 +70,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
         scalar: attrs.scalar,
         description: attrs.description,
         fields: fields.collect(),
-        generics: ast.generics.clone(),
+        generics: ast.generics,
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,

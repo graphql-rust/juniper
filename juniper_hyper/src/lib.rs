@@ -39,9 +39,11 @@ where
                     .uri()
                     .query()
                     .map(|q| gql_request_from_get(q).map(GraphQLRequest::Single))
-                    .unwrap_or(Err(GraphQLRequestError::Invalid(
-                        "'query' parameter is missing".to_string(),
-                    ))),
+                    .unwrap_or_else(|| {
+                        Err(GraphQLRequestError::Invalid(
+                            "'query' parameter is missing".to_string(),
+                        ))
+                    }),
             )
             .and_then(move |gql_req| {
                 execute_request(root_node, context, gql_req).map_err(|_| {

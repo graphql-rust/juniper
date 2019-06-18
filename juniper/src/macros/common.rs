@@ -428,7 +428,7 @@ macro_rules! __juniper_parse_field_list {
                     },)*
                 ],
                 $(docstring = $desc,)*
-                deprecated = None$(.unwrap_or(Some($reason)))*,
+                deprecated = None$(.unwrap_or_else(|| Some($reason)))*,
                 $(executor_var = $executor,)*
             },],
             rest = $($rest)*
