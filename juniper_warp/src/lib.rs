@@ -257,7 +257,7 @@ fn build_response(
 }
 
 type Response =
-    Box<Future<Item = warp::http::Response<Vec<u8>>, Error = warp::reject::Rejection> + Send>;
+    Box<dyn Future<Item = warp::http::Response<Vec<u8>>, Error = warp::reject::Rejection> + Send>;
 
 /// Create a filter that replies with an HTML page containing GraphiQL. This does not handle routing, so you can mount it on any endpoint.
 ///
