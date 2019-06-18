@@ -101,9 +101,6 @@ fn impl_scalar_struct(
             panic!("Invalid #[graphql] attribute: {}", e);
         }
     };
-    if !(attrs.transparent) {
-        panic!("Deriving GraphQLScalarValue on a tuple struct requires a #[graphql(transparent) attribute");
-    }
     let inner_ty = &field.ty;
     let name = attrs.name.unwrap_or(ident.to_string());
 
