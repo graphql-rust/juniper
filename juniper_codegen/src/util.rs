@@ -644,7 +644,7 @@ impl GraphQLTypeDefiniton {
             .context
             .as_ref()
             .map(|ctx| quote!( #ctx ))
-            .unwrap_or(quote!(()));
+            .unwrap_or_else(|| quote!(()));
 
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {

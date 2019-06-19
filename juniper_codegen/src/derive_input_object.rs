@@ -145,7 +145,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
     // Parse attributes.
     let ident = &ast.ident;
     let attrs = ObjAttrs::from_input(ast);
-    let name = attrs.name.unwrap_or(ast.ident.to_string());
+    let name = attrs.name.unwrap_or_else(|| ast.ident.to_string());
     let generics = &ast.generics;
 
     let meta_description = match attrs.description {

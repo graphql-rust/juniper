@@ -176,10 +176,11 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 let ty = &captured.ty;
                                 // TODO: respect graphql attribute overwrite.
                                 let final_name = util::to_camel_case(&arg_name);
+                                let expect_text = format!("Internal error: missing argument {} - validation must have failed", &final_name);
                                 resolve_parts.push(quote!(
                                     let #arg_ident = args
                                         .get::<#ty>(#final_name)
-                                        .expect(&format!("Internal error: missing argument {} - validation must have failed", #final_name));
+                                        .expect(#expect_text);
                                 ));
                                 args.push(util::GraphQLTypeDefinitionFieldArg {
                                     description: attrs.argument(&arg_name).and_then(|arg| {
@@ -206,9 +207,10 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     })()
                 );
 
+                let ident = &method.sig.ident;
                 let name = attrs
                     .name
-                    .unwrap_or(util::to_camel_case(&method.sig.ident.to_string()));
+                    .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
 
                 definition.fields.push(util::GraphQLTypeDefinitionField {
                     name,
