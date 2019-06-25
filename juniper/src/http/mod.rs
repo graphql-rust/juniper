@@ -370,7 +370,7 @@ pub mod tests {
 
     fn test_duplicate_keys<T: HTTPIntegration>(integration: &T) {
         // {hero{name}}
-        let response = integration.get("/?query=%7Bhero%7Bblah%7D%7D?query=%7Bhero%7Bblah%7D%7D");
+        let response = integration.get("/?query=%7Bhero%7Bblah%7D%7D&query=%7Bhero%7Bblah%7D%7D");
         assert_eq!(response.status_code, 400);
         let response = integration.post(
             "/",
