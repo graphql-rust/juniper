@@ -1201,40 +1201,14 @@ strings, and booleans. You can create custom scalars to other primitive values,
 but this often requires coordination with the client library intended to consume
 the API you're building.</p>
 <p>Since any value going over the wire is eventually transformed into JSON, you're
-also limited in the data types you can use. Typically, you represent your custom
-scalars as strings.</p>
-<p>In Juniper, you use the <code>graphql_scalar!</code> macro to create a custom scalar. In
-this example, we're representing a user ID as a string wrapped in a custom type:</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::Value;
-
-struct UserID(String);
-
-juniper::graphql_scalar!(UserID where Scalar = &lt;S&gt; {
-    description: &quot;An opaque identifier, represented as a string&quot;
-
-    resolve(&amp;self) -&gt; Value {
-        Value::scalar(self.0.clone())
-    }
-
-    from_input_value(v: &amp;InputValue) -&gt; Option&lt;UserID&gt; {
-        // If there's a parse error here, simply return None. Juniper will
-        // present an error to the client.
-        v.as_scalar_value::&lt;String&gt;().map(|s| UserID(s.to_owned()))
-    }
-
-    from_str&lt;'a&gt;(value: ScalarToken&lt;'a&gt;) -&gt; juniper::ParseScalarResult&lt;'a, S&gt; {
-        &lt;String as juniper::ParseScalarValue&lt;S&gt;&gt;::from_str(value)
-    }
-});
-
-#[derive(juniper::GraphQLObject)]
-struct User {
-    id: UserID,
-    username: String,
-}
-
-# fn main() {}
-</code></pre></pre>
+also limited in the data types you can use.</p>
+<p>There are two ways to define custom scalars.</p>
+<ul>
+<li>For simple scalars that just wrap a primitive type, you can use the newtype pattern with
+a custom derive.</li>
+<li>For more advanced use cases with custom validation, you can use
+the <code>graphql_scalar!</code> macro.</li>
+</ul>
 <a class="header" href="#built-in-scalars" id="built-in-scalars"><h2>Built-in scalars</h2></a>
 <p>Juniper has built-in support for:</p>
 <ul>
@@ -1246,11 +1220,93 @@ struct User {
 spec</a> as a type that is serialized
 as a string but can be parsed from both a string and an integer.</li>
 </ul>
-<a class="header" href="#non-standard-scalars" id="non-standard-scalars"><h3>Non-standard scalars</h3></a>
-<p>Juniper has built-in support for UUIDs from the <a href="https://doc.rust-lang.org/uuid/uuid/index.html">uuid
-crate</a>. This support is enabled
-by default, but can be disabled if you want to reduce the number of dependencies
-in your application.</p>
+<p><strong>Third party types</strong>:</p>
+<p>Juniper has built-in support for a few additional types from common third party
+crates. They are enabled via features that are on by default.</p>
+<ul>
+<li>uuid::Uuid</li>
+<li>chrono::DateTime</li>
+<li>url::Url</li>
+</ul>
+<a class="header" href="#newtype-pattern" id="newtype-pattern"><h2>newtype pattern</h2></a>
+<p>Often, you might need a custom scalar that just wraps an existing type.</p>
+<p>This can be done with the newtype pattern and a custom derive, similar to how
+serde supports this pattern with <code>#[serde(transparent)]</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLScalarValue)]
+pub struct UserId(i32);
+
+#[derive(juniper::GraphQLObject)]
+struct User {
+    id: UserId,
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>That's it, you can now user <code>UserId</code> in your schema.</p>
+<p>The macro also allows for more customization:</p>
+<pre><pre class="playpen"><code class="language-rust">/// You can use a doc comment to specify a description.
+#[derive(juniper::GraphQLScalarValue)]
+#[graphql(
+    transparent,
+    // Overwrite the GraphQL type name.
+    name = &quot;MyUserId&quot;,
+    // Specify a custom description.
+    // A description in the attribute will overwrite a doc comment.
+    description = &quot;My user id description&quot;,
+)]
+pub struct UserId(i32);
+
+# fn main() {}
+</code></pre></pre>
+<a class="header" href="#custom-scalars" id="custom-scalars"><h2>Custom scalars</h2></a>
+<p>For more complex situations where you also need custom parsing or validation,
+you can use the <code>graphql_scalar!</code> macro.</p>
+<p>Typically, you represent your custom scalars as strings.</p>
+<p>The example below implements a custom scalar for a custom <code>Date</code> type.</p>
+<p>Note: juniper already has built-in support for the <code>chrono::DateTime</code> type
+via <code>chrono</code> feature, which is enabled by default and should be used for this
+purpose.</p>
+<p>The example below is used just for illustration.</p>
+<p><strong>Note</strong>: the example assumes that the <code>Date</code> type implements
+<code>std::fmt::Display</code> and <code>std::str::FromStr</code>.</p>
+<pre><pre class="playpen"><code class="language-rust"># mod date { 
+#    pub struct Date; 
+#    impl std::str::FromStr for Date{ 
+#        type Err = String; fn from_str(_value: &amp;str) -&gt; Result&lt;Self, Self::Err&gt; { unimplemented!() }
+#    }
+#    // And we define how to represent date as a string.
+#    impl std::fmt::Display for Date {
+#        fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter) -&gt; std::fmt::Result {
+#            unimplemented!()
+#        }
+#    }
+# }
+
+use juniper::{Value, ParseScalarResult, ParseScalarValue};
+use date::Date;
+
+juniper::graphql_scalar!(Date where Scalar = &lt;S&gt; {
+    description: &quot;Date&quot;
+
+    // Define how to convert your custom scalar into a primitive type.
+    resolve(&amp;self) -&gt; Value {
+        Value::scalar(self.to_string())
+    }
+
+    // Define how to parse a primitive type into your custom scalar.
+    from_input_value(v: &amp;InputValue) -&gt; Option&lt;Date&gt; {
+        v.as_scalar_value::&lt;String&gt;()
+         .and_then(|s| s.parse().ok())
+    }
+
+    // Define how to parse a string value.
+    from_str&lt;'a&gt;(value: ScalarToken&lt;'a&gt;) -&gt; ParseScalarResult&lt;'a, S&gt; {
+        &lt;String as ParseScalarValue&lt;S&gt;&gt;::from_str(value)
+    }
+});
+
+# fn main() {}
+</code></pre></pre>
 <a class="header" href="#unions" id="unions"><h1>Unions</h1></a>
 <p>From a server's point of view, GraphQL unions are similar to interfaces: the
 only exception is that they don't contain fields on their own.</p>
