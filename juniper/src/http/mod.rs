@@ -320,6 +320,36 @@ pub mod tests {
         );
     }
 
+    fn test_post_with_variables<T: HTTPIntegration>(integration: &T) {
+        let response = integration.post("/",
+                                        r#"{
+                                             "query": "query($id: String!){human(id: $id){id,name,appearsIn,homePlanet}}",
+                                             "variables":{"id":"1000"}}
+                                        "#);
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.content_type, "application/json");
+        assert_eq!(
+            unwrap_json_response(&response),
+            serde_json::from_str::<serde_json::Value>(
+                r#"{
+                    "data": {
+                        "human": {
+                            "appearsIn": [
+                                "NEW_HOPE",
+                                "EMPIRE",
+                                "JEDI"
+                                ],
+                                "homePlanet": "Tatooine",
+                                "name": "Luke Skywalker",
+                                "id": "1000"
+                            }
+                        }
+                    }"#
+            )
+                .expect("Invalid JSON constant in test")
+        );
+    }
+
     fn test_invalid_json<T: HTTPIntegration>(integration: &T) {
         let response = integration.get("/?query=blah");
         assert_eq!(response.status_code, 400);
@@ -337,7 +367,7 @@ pub mod tests {
 
     fn test_duplicate_keys<T: HTTPIntegration>(integration: &T) {
         // {hero{name}}
-        let response = integration.get("/?query=%7B%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%2C%20%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%7D");
+        let response = integration.get("/?query=%7Bhero%7Bblah%7D%7D?query=%7Bhero%7Bblah%7D%7D");
         assert_eq!(response.status_code, 400);
         let response = integration.post(
             "/",
