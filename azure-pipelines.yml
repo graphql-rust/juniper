@@ -9,6 +9,7 @@ jobs:
       vmImage: ubuntu-16.04
     steps:
       - script: |
+          export CARGO_HOME="$HOME/.cargo"
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           $HOME/.cargo/bin/rustup component add rustfmt
         displayName: Install stable Rust
@@ -26,6 +27,7 @@ jobs:
       vmImage: ubuntu-16.04
     steps:
       - script: |
+          export CARGO_HOME="$HOME/.cargo"
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           $HOME/.cargo/bin/rustup component add rustfmt
         displayName: Install stable Rust
@@ -79,6 +81,7 @@ jobs:
       vmImage: ubuntu-16.04
     steps:
       - script: |
+          export CARGO_HOME="$HOME/.cargo"
           curl https://sh.rustup.rs -sSf | sh -s -- -y
         displayName: Install stable Rust
       - script: |
