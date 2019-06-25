@@ -41,11 +41,10 @@ crates. They are enabled via features that are on by default.
 Often, you might need a custom scalar that just wraps an existing type. 
 
 This can be done with the newtype pattern and a custom derive, similar to how
-serde supports this pattern with `#[transparent]`.
+serde supports this pattern with `#[serde(transparent)]`.
 
 ```rust
 #[derive(juniper::GraphQLScalarValue)]
-#[graphql(transparent)]
 pub struct UserId(i32);
 
 #[derive(juniper::GraphQLObject)]

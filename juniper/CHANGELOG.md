@@ -6,13 +6,12 @@ See [#345](https://github.com/graphql-rust/juniper/pull/345).
 
 The newtype pattern can now be used with the `GraphQLScalarValue` custom derive
 to easily implement custom scalar values that just wrap another scalar, 
-similar to serdes `#[transparent]` functionality.
+similar to serdes `#[serde(transparent)]` functionality.
 
 Example:
 
 ```rust
 #[derive(juniper::GraphQLScalarValue)]
-#[graphql(transparent)]
 struct UserId(i32);
 ```
 
