@@ -194,6 +194,9 @@ pub mod tests {
         println!("  - test_batched_post");
         test_batched_post(integration);
 
+        println!("  - test_post_with_variables");
+        test_post_with_variables(integration);
+
         println!("  - test_invalid_json");
         test_invalid_json(integration);
 
