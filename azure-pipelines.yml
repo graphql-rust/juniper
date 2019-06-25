@@ -82,7 +82,7 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y
         displayName: Install stable Rust
       - script: |
-          _build/cargo-make.sh "0.19.1" "x86_64-unknown-linux-musl"
+          _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
         displayName: Install cargo-make binary
       - script: |
           $HOME/.cargo/bin/cargo install cargo-release
