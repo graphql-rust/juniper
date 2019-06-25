@@ -68,9 +68,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// // Deriving GraphQLScalar is all that is required.
-/// // Note the #[graphql(transparent)] attribute, which is mandatory.
 /// #[derive(juniper::GraphQLScalarValue)]
-/// #[graphql(transparent)]
 /// struct UserId(String);
 ///
 /// #[derive(juniper::GraphQLObject)]

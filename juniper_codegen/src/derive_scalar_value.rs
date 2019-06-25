@@ -5,9 +5,9 @@ use syn::{self, Data, Fields, Ident, Variant};
 
 use crate::util;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct TransparentAttributes {
-    transparent: bool,
+    transparent: Option<bool>,
     name: Option<String>,
     description: Option<String>,
 }
@@ -15,7 +15,7 @@ struct TransparentAttributes {
 impl syn::parse::Parse for TransparentAttributes {
     fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
         let mut output = Self {
-            transparent: false,
+            transparent: None,
             name: None,
             description: None,
         };
@@ -37,7 +37,7 @@ impl syn::parse::Parse for TransparentAttributes {
                     output.description = Some(val.value());
                 }
                 "transparent" => {
-                    output.transparent = true;
+                    output.transparent = Some(true);
                 }
                 other => {
                     return Err(content.error(format!("Unknown attribute: {}", other)));
@@ -62,9 +62,7 @@ impl TransparentAttributes {
                 }
                 Ok(parsed)
             }
-            None => {
-                panic!("Missing required attribute: #[graphql(transparent)]");
-            }
+            None => Ok(Default::default()),
         }
     }
 }
