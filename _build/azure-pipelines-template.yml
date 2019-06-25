@@ -20,6 +20,7 @@ jobs:
     # Linux and macOS.
     - script: |
         curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $RUSTUP_TOOLCHAIN
+        source /usr/local/cargo/env;
         echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
       displayName: Install rust
   - ${{ if eq(parameters.name, 'Windows') }}:
@@ -37,19 +38,32 @@ jobs:
     displayName: Query rust and cargo versions
   - ${{ if eq(parameters.name, 'Linux') }}:
     # Linux.
-    - script: _build/cargo-make.sh "0.19.1" "x86_64-unknown-linux-musl"
+    - script: _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
       displayName: Install cargo-make binary
   - ${{ if eq(parameters.name, 'macOS') }}:
     # Mac.
-    - script: _build/cargo-make.sh "0.19.1" "x86_64-apple-darwin"
+    - script: _build/cargo-make.sh "0.20.0" "x86_64-apple-darwin"
       displayName: Install cargo-make binary
   - ${{ if eq(parameters.name, 'Windows') }}:
     # Windows.
-    - script: powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.19.1" -target "x86_64-pc-windows-msvc"
+    - script: powershell -executionpolicy bypass -file _build/cargo-make.ps1 -version "0.20.0" -target "x86_64-pc-windows-msvc"
       displayName: Install cargo-make binary
-  - script: cargo make workspace-ci-flow --no-workspace
-    env: { CARGO_MAKE_RUN_CODECOV: true }
-    displayName: Build and run tests
+  - ${{ if eq(parameters.name, 'Windows') }}:
+    # Windows.
+    - script: |
+        set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+        cargo make workspace-ci-flow --no-workspace
+      env: { CARGO_MAKE_RUN_CODECOV: true }
+      displayName: Build and run tests
+  - ${{ if ne(parameters.name, 'Windows') }}:
+    # Not Windows.
+    - script: |
+        export PATH="$PATH:$HOME/.cargo/bin";
+        source /usr/local/cargo/env;
+        cargo make workspace-ci-flow --no-workspace
+      env: { CARGO_MAKE_RUN_CODECOV: true }
+      displayName: Build and run tests
+
   - script: |
       rustup target add wasm32-unknown-unknown
       cargo check --target wasm32-unknown-unknown --package juniper --package juniper_codegen
