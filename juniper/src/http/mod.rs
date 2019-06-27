@@ -343,13 +343,13 @@ pub mod tests {
                                 "JEDI"
                                 ],
                                 "homePlanet": "Tatooine",
-                                "name": "Luke Skywalker",
+                                "name": "Luke Skywalkerz",
                                 "id": "1000"
                             }
                         }
                     }"#
             )
-                .expect("Invalid JSON constant in test")
+            .expect("Invalid JSON constant in test")
         );
     }
 
