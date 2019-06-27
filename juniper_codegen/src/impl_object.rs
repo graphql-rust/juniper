@@ -52,19 +52,23 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 .unwrap()
                 .ident
                 .to_string(),
-            syn::Type::Reference(ref reference) => match &*reference.elem {
-                syn::Type::Path(ref type_path) => type_path
-                    .path
-                    .segments
-                    .iter()
-                    .last()
-                    .unwrap()
-                    .ident
-                    .to_string(),
-                _ => {
-                    panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
-                }
-            },
+            syn::Type::Reference(ref reference) => {
+                let path = match &*reference.elem {
+                    syn::Type::Path(ref type_path) => &type_path.path,
+                    syn::Type::TraitObject(ref trait_obj) => {
+                        match trait_obj.bounds.iter().nth(0).unwrap() {
+                            syn::TypeParamBound::Trait(ref trait_bound) => &trait_bound.path,
+                            _ => {
+                                panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+                            }
+                        }
+                    }
+                    _ => {
+                        panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+                    }
+                };
+                path.segments.iter().last().unwrap().ident.to_string()
+            }
             _ => {
                 panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
             }
@@ -169,7 +173,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 .unwrap_or(false)
                             {
                                 panic!(
-                                    "Invalid context argument: to access the context, you need to specify the type as a reference.\nDid you mean &{}?", 
+                                    "Invalid context argument: to access the context, you need to specify the type as a reference.\nDid you mean &{}?",
                                     quote!(captured.ty),
                                 );
                             } else {

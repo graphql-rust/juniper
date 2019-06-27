@@ -18,6 +18,7 @@ struct UserId(i32);
 ### Other Changes
 
 - The `ID` scalar now implements Serde's `Serialize` and `Deserialize`
+- Add support for `dyn` trait object syntax to procedural macros
 
 # [[0.12.0] 2019-05-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.12.0)
 

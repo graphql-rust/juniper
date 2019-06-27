@@ -5,7 +5,7 @@ use crate::tests::model::{Character, Database, Droid, Episode, Human};
 
 impl Context for Database {}
 
-graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
+graphql_interface!(<'a> &'a dyn Character: Database as "Character" |&self| {
     description: "A character in the Star Wars Trilogy"
 
     field id() -> &str as "The id of the character" {
@@ -16,7 +16,7 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
         Some(self.name())
     }
 
-    field friends(&executor) -> Vec<&Character>
+    field friends(&executor) -> Vec<&dyn Character>
     as "The friends of the character" {
         executor.context().get_friends(self.as_character())
     }
@@ -26,8 +26,8 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     }
 
     instance_resolvers: |&context| {
-        &Human => context.get_human(&self.id()),
-        &Droid => context.get_droid(&self.id()),
+        &dyn Human => context.get_human(&self.id()),
+        &dyn Droid => context.get_droid(&self.id()),
     }
 });
 
@@ -37,7 +37,7 @@ graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
     interfaces = [&dyn Character],
 )]
 /// A humanoid creature in the Star Wars universe.
-impl<'a> &'a Human {
+impl<'a> &'a dyn Human {
     /// The id of the human
     fn id(&self) -> &str {
         self.id()
@@ -49,7 +49,7 @@ impl<'a> &'a Human {
     }
 
     /// The friends of the human
-    fn friends(&self, ctx: &Database) -> Vec<&Character> {
+    fn friends(&self, ctx: &Database) -> Vec<&dyn Character> {
         ctx.get_friends(self.as_character())
     }
 
@@ -70,7 +70,7 @@ impl<'a> &'a Human {
     interfaces = [&dyn Character],
 )]
 /// A mechanical creature in the Star Wars universe.
-impl<'a> &'a Droid {
+impl<'a> &'a dyn Droid {
     /// The id of the droid
     fn id(&self) -> &str {
         self.id()
@@ -82,7 +82,7 @@ impl<'a> &'a Droid {
     }
 
     /// The friends of the droid
-    fn friends(&self, ctx: &Database) -> Vec<&Character> {
+    fn friends(&self, ctx: &Database) -> Vec<&dyn Character> {
         ctx.get_friends(self.as_character())
     }
 
@@ -106,19 +106,19 @@ pub struct Query;
 /// The root query object of the schema
 impl Query {
     #[graphql(arguments(id(description = "id of the human")))]
-    fn human(database: &Database, id: String) -> Option<&Human> {
+    fn human(database: &Database, id: String) -> Option<&dyn Human> {
         database.get_human(&id)
     }
 
     #[graphql(arguments(id(description = "id of the droid")))]
-    fn droid(database: &Database, id: String) -> Option<&Droid> {
+    fn droid(database: &Database, id: String) -> Option<&dyn Droid> {
         database.get_droid(&id)
     }
 
     #[graphql(arguments(episode(
         description = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode"
     )))]
-    fn hero(database: &Database, episode: Option<Episode>) -> Option<&Character> {
+    fn hero(database: &Database, episode: Option<Episode>) -> Option<&dyn Character> {
         Some(database.get_hero(episode).as_character())
     }
 }
