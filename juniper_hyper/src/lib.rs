@@ -294,7 +294,7 @@ impl Error for GraphQLRequestError {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
             GraphQLRequestError::BodyHyper(ref err) => Some(err),
             GraphQLRequestError::BodyUtf8(ref err) => Some(err),

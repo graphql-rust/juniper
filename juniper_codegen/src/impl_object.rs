@@ -61,6 +61,23 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     .unwrap()
                     .ident
                     .to_string(),
+                syn::Type::TraitObject(ref trait_obj) => match trait_obj
+                    .bounds
+                    .iter()
+                    .nth(0)
+                    .unwrap() {
+                    syn::TypeParamBound::Trait(ref trait_bound) => trait_bound
+                        .path
+                        .segments
+                        .iter()
+                        .last()
+                        .unwrap()
+                        .ident
+                        .to_string(),
+                    _ => {
+                        panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+                    }
+                },
                 _ => {
                     panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
                 }

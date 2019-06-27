@@ -416,7 +416,7 @@ impl Error for GraphQLIronError {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
             GraphQLIronError::Serde(ref err) => Some(err),
             GraphQLIronError::Url(ref err) => Some(err),
