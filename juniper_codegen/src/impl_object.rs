@@ -43,36 +43,26 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
     let name = match impl_attrs.name.as_ref() {
         Some(type_name) => type_name.clone(),
-        None => match &*_impl.self_ty {
-            syn::Type::Path(ref type_path) => type_path
-                .path
-                .segments
-                .iter()
-                .last()
-                .unwrap()
-                .ident
-                .to_string(),
-            syn::Type::Reference(ref reference) => {
-                let path = match &*reference.elem {
+        None => {
+            let error_msg = "Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")";
+
+            let path = match &*_impl.self_ty {
+                syn::Type::Path(ref type_path) => &type_path.path,
+                syn::Type::Reference(ref reference) => match &*reference.elem {
                     syn::Type::Path(ref type_path) => &type_path.path,
                     syn::Type::TraitObject(ref trait_obj) => {
                         match trait_obj.bounds.iter().nth(0).unwrap() {
                             syn::TypeParamBound::Trait(ref trait_bound) => &trait_bound.path,
-                            _ => {
-                                panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
-                            }
+                            _ => panic!(error_msg),
                         }
                     }
-                    _ => {
-                        panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
-                    }
-                };
-                path.segments.iter().last().unwrap().ident.to_string()
-            }
-            _ => {
-                panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
-            }
-        },
+                    _ => panic!(error_msg),
+                },
+                _ => panic!(error_msg),
+            };
+
+            path.segments.iter().last().unwrap().ident.to_string()
+        }
     };
 
     let target_type = *_impl.self_ty.clone();
