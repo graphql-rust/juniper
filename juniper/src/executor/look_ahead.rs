@@ -961,6 +961,73 @@ query Hero {
     }
 
     #[test]
+    fn check_query_with_multiple() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query HeroAndHuman {
+    hero {
+        id
+    }
+    human {
+        name
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[1],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "human",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "name",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
     fn check_complex_query() {
         let docs = parse_document_source(
             "

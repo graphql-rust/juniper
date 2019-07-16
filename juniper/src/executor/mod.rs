@@ -512,9 +512,28 @@ where
     /// This allows seeing the whole selection and perform operations
     /// affecting the children.
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a, S> {
+        let field_name = match self.field_path {
+            FieldPath::Field(x, ..) => x,
+            FieldPath::Root(_) => unreachable!(),
+        };
         self.parent_selection_set
             .map(|p| {
-                LookAheadSelection::build_from_selection(&p[0], self.variables, self.fragments)
+                let p = p
+                    .iter()
+                    .find(|&x| {
+                        match *x {
+                            Selection::Field(ref field) => {
+                                let field = &field.item;
+                                // TODO: support excludes.
+                                let name = field.name.item;
+                                let alias = field.alias.as_ref().map(|a| a.item);
+                                alias.unwrap_or(name) == field_name
+                            }
+                            _ => false,
+                        }
+                    })
+                    .expect("lookahead to find the field");
+                LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
             })
             .filter(|s| s.is_some())
             .unwrap_or_else(|| {
