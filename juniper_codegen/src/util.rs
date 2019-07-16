@@ -307,7 +307,7 @@ impl syn::parse::Parse for ObjectAttributes {
         // Skip potential parantheses which are present for regular attributes but not for proc macro
         // attributes.
         let inner = (|| {
-            let mut content;
+            let content;
             syn::parenthesized!(content in input);
             Ok(content)
         })();
@@ -348,7 +348,7 @@ impl syn::parse::Parse for ObjectAttributes {
                 }
                 "interfaces" => {
                     input.parse::<syn::Token![=]>()?;
-                    let mut content;
+                    let content;
                     syn::bracketed!(content in input);
                     output.interfaces =
                         syn::punctuated::Punctuated::<syn::Type, syn::Token![,]>::parse_terminated(
@@ -407,7 +407,7 @@ impl parse::Parse for FieldAttributeArgument {
             description: None,
         };
 
-        let mut content;
+        let content;
         syn::parenthesized!(content in input);
 
         while !content.is_empty() {
@@ -485,7 +485,7 @@ impl parse::Parse for FieldAttribute {
             }
             "skip" => Ok(FieldAttribute::Skip(ident)),
             "arguments" => {
-                let mut arg_content;
+                let arg_content;
                 syn::parenthesized!(arg_content in input);
                 let args = Punctuated::<FieldAttributeArgument, Token![,]>::parse_terminated(
                     &arg_content,
@@ -515,7 +515,7 @@ pub struct FieldAttributes {
 impl parse::Parse for FieldAttributes {
     fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
         // Remove wrapping parantheses.
-        let mut content;
+        let content;
         syn::parenthesized!(content in input);
 
         let items = Punctuated::<FieldAttribute, Token![,]>::parse_terminated(&content)?;

@@ -20,7 +20,7 @@ impl syn::parse::Parse for TransparentAttributes {
             description: None,
         };
 
-        let mut content;
+        let content;
         syn::parenthesized!(content in input);
 
         while !content.is_empty() {
