@@ -31,7 +31,7 @@ default = [
 ]
 
 [dependencies]
-juniper_codegen = { version = "0.12.0", path = "../juniper_codegen"  }
+juniper_codegen = { version = "0.13.0", path = "../juniper_codegen"  }
 
 fnv = "1.0.3"
 indexmap = { version = "1.0.0", features = ["serde-1"] }
