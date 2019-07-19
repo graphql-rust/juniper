@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.13.0] 2019-07-19](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.13.0)
+
 ### newtype ScalarValue derive
 
 See [#345](https://github.com/graphql-rust/juniper/pull/345).
