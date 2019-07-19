@@ -50,7 +50,7 @@ see the [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples
 Juniper supports the full GraphQL query language according to the
 [specification][graphql_spec], including interfaces, unions, schema
 introspection, and validations.
-It does not, however, support the schema language.
+It does not, however, support the schema language. Consider using [juniper-from-schema][] for generating code from a schema file.
 
 As an exception to other GraphQL libraries for other languages, Juniper builds
 non-null types by default. A field of type `Vec<Episode>` will be converted into
@@ -106,3 +106,4 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [uuid]: https://crates.io/crates/uuid
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
+[juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
