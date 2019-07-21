@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Give `IntoFieldError::into_field_error` access to the context [#397](https://github.com/graphql-rust/juniper/pull/397)
 
 - Allow `mut` arguments for resolver functions in `#[object]` macros [#402](https://github.com/graphql-rust/juniper/pull/402)
 
