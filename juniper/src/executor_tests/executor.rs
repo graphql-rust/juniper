@@ -785,11 +785,11 @@ mod propagates_errors_to_nullable_fields {
         NotFound,
     }
 
-    impl<S> IntoFieldError<S> for CustomError
+    impl<Ctx, S> IntoFieldError<Ctx, S> for CustomError
     where
         S: ScalarValue,
     {
-        fn into_field_error(self) -> FieldError<S> {
+        fn into_field_error(self, _: &Ctx) -> FieldError<S> {
             match self {
                 CustomError::NotFound => {
                     let v: Value<S> = graphql_value!({

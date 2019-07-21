@@ -219,13 +219,13 @@ pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 /// as return value.
 ///
 /// Any custom error type should implement this trait to convert it to `FieldError`.
-pub trait IntoFieldError<S = DefaultScalarValue> {
+pub trait IntoFieldError<Ctx, S = DefaultScalarValue> {
     #[doc(hidden)]
-    fn into_field_error(self) -> FieldError<S>;
+    fn into_field_error(self, context: &Ctx) -> FieldError<S>;
 }
 
-impl<S> IntoFieldError<S> for FieldError<S> {
-    fn into_field_error(self) -> FieldError<S> {
+impl<Ctx, S> IntoFieldError<Ctx, S> for FieldError<S> {
+    fn into_field_error(self, _: &Ctx) -> FieldError<S> {
         self
     }
 }
@@ -252,16 +252,17 @@ where
     }
 }
 
-impl<'a, S, T, C, E: IntoFieldError<S>> IntoResolvable<'a, S, T, C> for Result<T, E>
+impl<'a, S, T, C, E> IntoResolvable<'a, S, T, C> for Result<T, E>
 where
     S: ScalarValue,
     T: GraphQLType<S>,
     T::Context: FromContext<C>,
     for<'b> &'b S: ScalarRefValue<'b>,
+    E: IntoFieldError<C, S>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
-            .map_err(IntoFieldError::into_field_error)
+            .map_err(|err| err.into_field_error(ctx))
     }
 }
 
