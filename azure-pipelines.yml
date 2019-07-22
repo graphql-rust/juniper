@@ -89,7 +89,7 @@ jobs:
           _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
         displayName: Install cargo-make binary
       - script: |
-         cargo install --debug cargo-release
+         cargo install --debug --version=0.11.2 cargo-release
         displayName: Install cargo-release binary
       - script: |
           git config --local user.name "Release Test Bot"
