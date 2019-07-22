@@ -129,8 +129,10 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             );
                         }
                         syn::FnArg::Captured(ref captured) => {
-                            let arg_ident = match &captured.pat {
-                                syn::Pat::Ident(ref pat_ident) => &pat_ident.ident,
+                            let (arg_ident, is_mut) = match &captured.pat {
+                                syn::Pat::Ident(ref pat_ident) => {
+                                    (&pat_ident.ident, pat_ident.mutability.is_some())
+                                }
                                 _ => {
                                     panic!("Invalid token for function argument");
                                 }
@@ -147,7 +149,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             else if util::type_is_identifier(&captured.ty, "Executor") {
                                 panic!("Invalid executor argument: to access the Executor, you need to specify the type as a reference.\nDid you mean &Executor?");
                             }
-                            // Check for executor arg.
+                            // Check for context arg.
                             else if context_type
                                 .clone()
                                 .map(|ctx| util::type_is_ref_of(&captured.ty, ctx))
@@ -167,12 +169,15 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                     quote!(captured.ty),
                                 );
                             } else {
+                                // Regular argument.
+
                                 let ty = &captured.ty;
                                 // TODO: respect graphql attribute overwrite.
                                 let final_name = util::to_camel_case(&arg_name);
                                 let expect_text = format!("Internal error: missing argument {} - validation must have failed", &final_name);
+                                let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
                                 resolve_parts.push(quote!(
-                                    let #arg_ident = args
+                                    let #mut_modifier #arg_ident = args
                                         .get::<#ty>(#final_name)
                                         .expect(#expect_text);
                                 ));

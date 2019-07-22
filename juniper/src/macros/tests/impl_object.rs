@@ -101,6 +101,13 @@ impl<'a> Query {
     fn with_lifetime_child(&self) -> WithLifetime<'a> {
         WithLifetime { value: "blub" }
     }
+
+    fn with_mut_arg(mut arg: bool) -> bool {
+        if arg {
+            arg = !arg;
+        }
+        arg
+    }
 }
 
 #[derive(Default)]
@@ -216,6 +223,19 @@ fn object_introspect() {
                     "description": None,
                     "args": [],
                 },
+                {
+                    "name": "withMutArg",
+                    "description": None,
+                    "args": [
+                        {
+                            "name": "arg",
+                            "description": None,
+                            "type": {
+                                "name": None,
+                            },
+                        }
+                    ],
+                },
             ]
         })
     );
@@ -241,6 +261,7 @@ fn object_query() {
         withLifetimeChild {
             value
         }
+        withMutArg(arg: true)
     }
     "#;
     let schema = RootNode::new(Query { b: true }, EmptyMutation::<Context>::new());
@@ -264,6 +285,7 @@ fn object_query() {
             "argWithDescription": true,
             "withContextChild": { "ctx": true },
             "withLifetimeChild": { "value": "blub" },
+            "withMutArg": false,
         })
     );
 }

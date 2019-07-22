@@ -2,6 +2,8 @@
 
 - No changes yet
 
+- Allow `mut` arguments for resolver functions in `#[object]` macros [#402](https://github.com/graphql-rust/juniper/pull/402)
+
 # [[0.13.0] 2019-07-19](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.13.0)
 
 ### newtype ScalarValue derive
