@@ -518,22 +518,23 @@ where
         };
         self.parent_selection_set
             .map(|p| {
-                let p = p
-                    .iter()
-                    .find(|&x| {
-                        match *x {
-                            Selection::Field(ref field) => {
-                                let field = &field.item;
-                                // TODO: support excludes.
-                                let name = field.name.item;
-                                let alias = field.alias.as_ref().map(|a| a.item);
-                                alias.unwrap_or(name) == field_name
-                            }
-                            _ => false,
+                let found_field = p.iter().find(|&x| {
+                    match *x {
+                        Selection::Field(ref field) => {
+                            let field = &field.item;
+                            // TODO: support excludes.
+                            let name = field.name.item;
+                            let alias = field.alias.as_ref().map(|a| a.item);
+                            alias.unwrap_or(name) == field_name
                         }
-                    })
-                    .expect("lookahead to find the field");
-                LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
+                        _ => false,
+                    }
+                });
+                if let Some(p) = found_field {
+                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
+                } else {
+                    None
+                }
             })
             .filter(|s| s.is_some())
             .unwrap_or_else(|| {
