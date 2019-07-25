@@ -43,7 +43,7 @@ impl Country {
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>>;
 
 #[test]
-fn it_works() {
+fn test_lookahead_from_fragment_with_nested_type() {
     let _ = juniper::execute(
         r#"
             query Query {
