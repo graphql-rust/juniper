@@ -1,6 +1,6 @@
 [package]
 name = "juniper_codegen"
-version = "0.13.1"
+version = "0.13.2"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
