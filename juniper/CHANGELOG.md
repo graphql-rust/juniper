@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.13.1] 2019-07-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.13.1)
+
 - Fix a regression when using lookaheads with fragments containing nested types [#404](https://github.com/graphql-rust/juniper/pull/404)	
 
 - Allow `mut` arguments for resolver functions in `#[object]` macros [#402](https://github.com/graphql-rust/juniper/pull/402)
