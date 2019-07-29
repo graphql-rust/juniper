@@ -4,6 +4,7 @@ version = "0.13.1"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
+    "Christian Legnitto <christian@legnitto.com>",
 ]
 description = "GraphQL server library"
 license = "BSD-2-Clause"
