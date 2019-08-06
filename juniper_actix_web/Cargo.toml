@@ -1,0 +1,26 @@
+[package]
+name = "juniper_actix_web"
+version = "0.1.0"
+authors = ["Eric Mark Martin <ericmarkmartin@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+juniper = { version = "0.13.1" , default-features = false, path = "../juniper"}
+
+futures = "0.1"
+actix-web = "1.0"
+actix-http = "0.2.8"
+
+[dev-dependencies]
+pretty_env_logger = "0.2"
+reqwest = "0.9"
+
+[dev-dependencies.juniper]
+version = "0.13.1"
+features = ["expose-test-schema", "serde_json"]
+path = "../juniper"
