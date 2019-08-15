@@ -25,7 +25,7 @@ juniper::graphql_scalar!(UserID {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {
-        Value::string(&self.0)
+        Value::as_scalar_value<String>(&self.0)
     }
 
     from_input_value(v: &InputValue) -> Option<UserID> {
