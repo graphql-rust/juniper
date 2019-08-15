@@ -17,7 +17,8 @@ serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
 juniper = { version = "0.13.1" , default-features = false, path = "../juniper"}
 
-rocket = { version = "0.4.0" }
+futures-preview = { version = "0.3.0-alpha.18", features = ["compat"] }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
 
 [dev-dependencies.juniper]
 version = "0.13.1"

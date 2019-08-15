@@ -37,7 +37,7 @@ Check the LICENSE file for details.
 */
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
-#![feature(decl_macro, proc_macro_hygiene)]
+#![feature(decl_macro, proc_macro_hygiene, async_await)]
 
 use std::{
     error::Error,
@@ -45,10 +45,10 @@ use std::{
 };
 
 use rocket::{
-    data::{FromDataSimple, Outcome as FromDataOutcome},
+    data::{FromDataFuture, FromDataSimple},
     http::{ContentType, RawStr, Status},
     request::{FormItems, FromForm, FromFormValue},
-    response::{content, Responder, Response},
+    response::{content, Responder, Response, ResultFuture},
     Data,
     Outcome::{Failure, Forward, Success},
     Request,
@@ -331,38 +331,47 @@ where
     }
 }
 
+const BODY_LIMIT: u64 = 1024 * 100;
+
 impl<S> FromDataSimple for GraphQLRequest<S>
 where
     S: ScalarValue,
 {
     type Error = String;
 
-    fn from_data(request: &Request, data: Data) -> FromDataOutcome<Self, Self::Error> {
+    fn from_data(request: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
+        use futures::io::AsyncReadExt;
+        use rocket::AsyncReadExt as _;
         if !request.content_type().map_or(false, |ct| ct.is_json()) {
-            return Forward(data);
+            return Box::pin(async move { Forward(data) });
         }
 
-        let mut body = String::new();
-        if let Err(e) = data.open().read_to_string(&mut body) {
-            return Failure((Status::InternalServerError, format!("{:?}", e)));
-        }
+        Box::pin(async move {
+            let mut body = String::new();
+            let mut reader = data.open().take(BODY_LIMIT);
+            if let Err(e) = reader.read_to_string(&mut body).await {
+                return Failure((Status::InternalServerError, format!("{:?}", e)));
+            }
 
-        match serde_json::from_str(&body) {
-            Ok(value) => Success(GraphQLRequest(value)),
-            Err(failure) => return Failure((Status::BadRequest, format!("{}", failure))),
-        }
+            match serde_json::from_str(&body) {
+                Ok(value) => Success(GraphQLRequest(value)),
+                Err(failure) => Failure((Status::BadRequest, format!("{}", failure))),
+            }
+        })
     }
 }
 
 impl<'r> Responder<'r> for GraphQLResponse {
-    fn respond_to(self, _: &Request) -> Result<Response<'r>, Status> {
+    fn respond_to(self, _: &Request) -> ResultFuture<'r> {
         let GraphQLResponse(status, body) = self;
 
-        Ok(Response::build()
-            .header(ContentType::new("application", "json"))
-            .status(status)
-            .sized_body(Cursor::new(body))
-            .finalize())
+        Box::pin(async move {
+            Ok(Response::build()
+                .header(ContentType::new("application", "json"))
+                .status(status)
+                .sized_body(Cursor::new(body))
+                .finalize())
+        })
     }
 }
 
