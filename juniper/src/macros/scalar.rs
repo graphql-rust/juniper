@@ -21,7 +21,7 @@ representation.
 # use juniper::{Value, FieldResult, ParseScalarValue, ParseScalarResult};
 struct UserID(String);
 
-juniper::graphql_scalar!(UserID {
+juniper::graphql_scalar!(UserID where Scalar = <S> {
     description: "An opaque identifier, represented as a string"
 
     resolve(&self) -> Value {
