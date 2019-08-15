@@ -29,7 +29,7 @@ juniper::graphql_scalar!(UserID {
     }
 
     from_input_value(v: &InputValue) -> Option<UserID> {
-        v.as_scalar_value().map(|s| UserID(s.to_owned()))
+        v.as_scalar_value<String>().map(|s| UserID(s.to_owned()))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
