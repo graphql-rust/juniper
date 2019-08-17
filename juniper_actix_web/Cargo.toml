@@ -18,7 +18,8 @@ actix-http = "0.2.8"
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
-reqwest = "0.9"
+reqwest = "0.9.19"
+url = "2.1.0"
 
 [dev-dependencies.juniper]
 version = "0.13.1"

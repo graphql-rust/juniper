@@ -27,7 +27,7 @@ use juniper::{
     ScalarValue,
     ScalarRefValue,
     DefaultScalarValue,
-    InputValue
+    InputValue,
 };
 
 use serde::{Deserializer, de};
@@ -99,9 +99,9 @@ where
         match self {
             GraphQLBatchRequest::Single(request) => vec![request.operation_name()],
             GraphQLBatchRequest::Batch(requests) => requests
-                    .iter()
-                    .map(|req| req.operation_name())
-                    .collect(),
+                .iter()
+                .map(|req| req.operation_name())
+                .collect(),
         }
     }
 }
@@ -195,6 +195,43 @@ impl GraphQLResponse {
     }
 }
 
+use serde::de::DeserializeOwned;
+
+fn deserialize_from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error> 
+where
+    D: Deserializer<'de>,
+    T: DeserializeOwned,
+{
+    // let s: &'de str = Deserialize::deserialize(deserializer)?;
+    let data: String = Deserialize::deserialize(deserializer)?;
+    serde_json::from_str(&data).map_err(de::Error::custom)
+}
+
+#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Clone, PartialEq, Debug)]
+pub struct StrictGraphQLRequest<S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
+    query: String,
+    #[serde(rename = "operationName")]
+    operation_name: Option<String>,
+    #[serde(bound(deserialize = "InputValue<S>: DeserializeOwned"))]
+    // #[serde(default = "default_none")]
+    #[serde(default = "Option::default")]
+    #[serde(deserialize_with = "deserialize_from_str")]
+    variables: Option<InputValue<S>>,
+}
+
+impl<S> Into<JuniperGraphQLRequest<S>> for StrictGraphQLRequest<S>
+where
+    S: ScalarValue,
+{
+    fn into(self) -> JuniperGraphQLRequest<S> {
+        JuniperGraphQLRequest::<S>::new(self.query, self.operation_name, self.variables)
+    }
+}
+
 impl<S> FromRequest for GraphQLRequest<S>
 where
     S: ScalarValue + 'static
@@ -206,10 +243,10 @@ where
     fn from_request(req: &HttpRequest, payload: &mut dev::Payload) -> Self::Future {
         match req.method() {
             &Method::GET => Box::new(future::result(
-                web::Query::<JuniperGraphQLRequest<S>>::from_query(req.query_string())
+                web::Query::<StrictGraphQLRequest<S>>::from_query(req.query_string())
                     .map_err(Error::from)
                     .map(|gql_request| GraphQLRequest(
-                        GraphQLBatchRequest::Single(gql_request.into_inner())
+                        GraphQLBatchRequest::Single(gql_request.into_inner().into())
                     ))
             )),
             &Method::POST => Box::new(
@@ -238,7 +275,6 @@ impl Responder for GraphQLResponse {
 #[cfg(test)]
 mod fromrequest_tests {
     use super::*;
-    use juniper::InputValue;
     use actix_web::test::TestRequest;
     use actix_web::http::header;
 
@@ -251,7 +287,7 @@ mod fromrequest_tests {
     }
 
     // Get tests
-    const URI_PREFIX: &'static str =  "http://example.com";
+    const URI_PREFIX: &'static str =  "http://test.com";
 
     #[test]
     fn test_empty_get() {
@@ -267,7 +303,7 @@ mod fromrequest_tests {
     #[test]
     fn test_no_query() {
         let (req, mut payload) = TestRequest::get()
-            .uri("http://example.com?operation_name=foo&variables={}")
+            .uri("http://example.com?operationName=foo&variables={}")
             .to_http_parts();
 
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
@@ -276,15 +312,75 @@ mod fromrequest_tests {
     }
 
     #[test]
-    fn test_get() {
+    fn test_normal_get() {
         let query = "{foo{bar,baz}}";
         let (req, mut payload) = TestRequest::get()
-            .uri(&format!("{}?query={}&operationName=cheese&foo=bar", URI_PREFIX, query))
+            .uri(&format!("{}?query={}&operationName=rust", URI_PREFIX, query))
             .to_http_parts();
 
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
         assert!(result.is_ok());
         assert!(req_is_single(&result.unwrap()));
+    }
+
+    #[test]
+    fn test_get_all_fields() {
+        use url::form_urlencoded;
+        let query = "query a($qux: Qux) { foo(qux: $qux) { bar } } query b { foo { baz } }";
+        let operation_name = "b";
+        let variables = r#"{
+            "qux": "quux"
+        }"#;
+
+        let encoded: String = form_urlencoded::Serializer::new(String::new())
+            .append_pair("query", query)
+            .append_pair("operationName", operation_name)
+            .append_pair("variables", variables)
+            .finish();
+
+        let (req, mut payload) = TestRequest::get()
+            .uri(&format!("{}?{}", URI_PREFIX, encoded))
+            .to_http_parts();
+        
+        let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        assert!(result.is_ok());
+        assert!(req_is_single(&result.unwrap()));
+    }
+
+    #[test]
+    fn test_get_extra_fields() {
+        let query = "{foo{bar,baz}}";
+        let (req, mut payload) = TestRequest::get()
+            .uri(&format!("{}?query={}&operationName=rust&foo=bar", URI_PREFIX, query))
+            .to_http_parts();
+        
+        let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().starts_with("Query deserialize error: unknown field `foo`"))
+    }
+
+    #[test]
+    fn test_get_duplicate_query() {
+        let query = "{foo{bar,baz}}";
+        let (req, mut payload) = TestRequest::get()
+            .uri(&format!("{}?query={}&operationName=rust&query=bar", URI_PREFIX, query))
+            .to_http_parts();
+        
+        let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Query deserialize error: duplicate field `query`");
+    }
+
+    #[test]
+    fn test_get_duplicate_operation_name() {
+        let query = "{foo{bar,baz}}";
+        let (req, mut payload) = TestRequest::get()
+            .uri(&format!("{}?query={}&operationName=rust&operationName=bar", URI_PREFIX, query))
+            .to_http_parts();
+
+        let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Query deserialize error: duplicate field `operationName`");
     }
 
     // Post tests
@@ -329,7 +425,7 @@ mod fromrequest_tests {
         let (req, mut payload) = TestRequest::post()
             .set_payload(r#"[
                 {
-                    "query": "{foo { bar }}"
+                    "query": "{ foo { bar } }"
                 }
             ]"#)
             .header(header::CONTENT_TYPE, "content/json")
@@ -338,6 +434,20 @@ mod fromrequest_tests {
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
         assert!(result.is_ok());
         assert!(!req_is_single(&result.unwrap()));
+    }
+
+    #[test]
+    fn test_post_duplicate_field() {
+        let (req, mut payload) = TestRequest::post()
+            .set_payload(r#"{
+                "query": "foo",
+                "query": "bar"
+            }"#)
+            .header(header::CONTENT_TYPE, "content/json")
+            .to_http_parts();
+
+        let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        assert!(result.is_err());
     }
 
 }
