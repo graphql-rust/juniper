@@ -7,12 +7,26 @@ macro_rules! __juniper_impl_trait {
         }
     ) => {
         impl<$($other,)*> $crate::$impl_trait<$crate::DefaultScalarValue> for $name {
-            $($body)+
+            $($body)*
         }
     };
     (
-        impl< <$generic:tt $(: $bound: tt)*> $(, $other: tt)* > $impl_trait:tt for $name:ty {
+        impl< < DefaultScalarValue > $(, $other: tt)* > $impl_trait:tt for $name:ty
+            where ( $($where:tt)* )
+        {
             $($body:tt)+
+        }
+    ) => {
+        impl<$($other,)*> $crate::$impl_trait<$crate::DefaultScalarValue> for $name
+            where $($where)*
+        {
+            $($body)*
+        }
+    };
+
+    (
+        impl< <$generic:tt $(: $bound: tt)*> $(, $other: tt)* > $impl_trait:tt for $name:ty {
+            $($body:tt)*
         }
     ) => {
        impl<$($other,)* $generic $(: $bound)*> $crate::$impl_trait<$generic> for $name
@@ -20,16 +34,46 @@ macro_rules! __juniper_impl_trait {
             $generic: $crate::ScalarValue,
             for<'__b> &'__b $generic: $crate::ScalarRefValue<'__b>,
        {
-           $($body)+
+           $($body)*
        }
     };
     (
+        impl< <$generic:tt $(: $bound: tt)*> $(, $other: tt)* > $impl_trait:tt for $name:ty
+            where ( $($where:tt)* )
+        {
+            $($body:tt)*
+        }
+    ) => {
+       impl<$($other,)* $generic $(: $bound)*> $crate::$impl_trait<$generic> for $name
+        where
+            $($where)*
+            $generic: $crate::ScalarValue,
+            for<'__b> &'__b $generic: $crate::ScalarRefValue<'__b>,
+       {
+           $($body)*
+       }
+    };
+
+    (
         impl<$scalar:ty $(, $other: tt )*> $impl_trait:tt for $name:ty {
-            $($body:tt)+
+            $($body:tt)*
         }
     ) => {
         impl<$($other, )*> $crate::$impl_trait<$scalar> for $name {
-            $($body)+
+            $($body)*
+        }
+    };
+    (
+        impl<$scalar:ty $(, $other: tt )*> $impl_trait:tt for $name:ty
+            where ( $($where:tt)* )
+        {
+            $($body:tt)*
+        }
+    ) => {
+        impl<$($other, )*> $crate::$impl_trait<$scalar> for $name
+            where $($where)*
+        {
+            $($body)*
         }
     };
 }
@@ -39,6 +83,25 @@ macro_rules! __juniper_impl_trait {
 macro_rules! __juniper_insert_generic {
     (<DefaultScalarValue>) => {
         $crate::DefaultScalarValue
+    };
+    (
+        <$generic:tt $(: $bound: tt)*>
+    ) => {
+        $generic
+    };
+    (
+        $scalar: ty
+    ) => {
+        $scalar
+    };
+}
+
+// TODO: remove me.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __juniper_extract_generic {
+    (<$name:ident>) => {
+        $name
     };
     (
         <$generic:tt $(: $bound: tt)*>

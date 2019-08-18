@@ -196,6 +196,23 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
+where
+    S: ScalarValue + Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> futures::future::BoxFuture<'a, crate::Value<S>> {
+        use futures::future;
+        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
+    }
+}
+
 impl<'a, S> ToInputValue<S> for &'a str
 where
     S: ScalarValue,

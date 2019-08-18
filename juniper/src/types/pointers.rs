@@ -85,7 +85,7 @@ where
     }
 }
 
-impl<'a, S, T, CtxT> GraphQLType<S> for &'a T
+impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
 where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
@@ -133,6 +133,35 @@ where
         executor: &Executor<CtxT, S>,
     ) -> Value<S> {
         (**self).resolve(info, selection_set, executor)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'e, S, T> crate::GraphQLTypeAsync<S> for &'e T
+where
+    S: ScalarValue + Send + Sync,
+    T: crate::GraphQLTypeAsync<S>,
+    T::TypeInfo: Send + Sync,
+    T::Context: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_field_async<'b>(
+        &'b self,
+        info: &'b Self::TypeInfo,
+        field_name: &'b str,
+        arguments: &'b Arguments<S>,
+        executor: &'b Executor<Self::Context, S>,
+    ) -> futures::future::BoxFuture<'b, ExecutionResult<S>> {
+        crate::GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
+    }
+
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> futures::future::BoxFuture<'a, Value<S>> {
+        crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
     }
 }
 

@@ -8,15 +8,20 @@ documentation = "https://docs.rs/juniper_warp"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+async = [ "juniper/async", "futures03" ]
+
 [dependencies]
 warp = "0.1.8"
-juniper = { version = "0.13.1", path = "../juniper", default-features = false  }
+juniper = { version = "0.13.1", path = "../juniper" }
 serde_json = "1.0.24"
 serde_derive = "1.0.75"
 failure = "0.1.2"
 futures = "0.1.23"
 serde = "1.0.75"
 tokio-threadpool = "0.1.7"
+
+futures03 = { version = "0.3.0-alpha.18", optional = true, package = "futures-preview" }
 
 [dev-dependencies]
 juniper = { version = "0.13.1", path = "../juniper", features = ["expose-test-schema", "serde_json"] }
