@@ -91,7 +91,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     for item in _impl.items {
         match item {
             syn::ImplItem::Method(method) => {
-                let _type = match &method.sig.decl.output {
+                let _type = match &method.sig.output {
                     syn::ReturnType::Type(_, ref t) => (**t).clone(),
                     syn::ReturnType::Default => {
                         panic!(
@@ -115,21 +115,18 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 let mut args = Vec::new();
                 let mut resolve_parts = Vec::new();
 
-                for arg in method.sig.decl.inputs {
+                for arg in method.sig.inputs {
                     match arg {
-                        _self @ syn::FnArg::SelfRef(_) => {
-                            // Can be ignored.
-                            // "self" will already be in scope.
-                            // resolve_args.push(quote!(self));
+                        syn::FnArg::Receiver(rec) => {
+                            if rec.reference.is_none() || rec.mutability.is_some() {
+                                panic!(
+                                    "Invalid method receiver {}(self, ...): did you mean '&self'?",
+                                    method.sig.ident
+                                );
+                            }
                         }
-                        syn::FnArg::SelfValue(_) => {
-                            panic!(
-                                "Invalid method receiver {}(self, ...): did you mean '&self'?",
-                                method.sig.ident
-                            );
-                        }
-                        syn::FnArg::Captured(ref captured) => {
-                            let (arg_ident, is_mut) = match &captured.pat {
+                        syn::FnArg::Typed(ref captured) => {
+                            let (arg_ident, is_mut) = match &*captured.pat {
                                 syn::Pat::Ident(ref pat_ident) => {
                                     (&pat_ident.ident, pat_ident.mutability.is_some())
                                 }
@@ -161,7 +158,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             //  without a reference. (&Context)
                             else if context_type
                                 .clone()
-                                .map(|ctx| ctx == &captured.ty)
+                                .map(|ctx| ctx == &*captured.ty)
                                 .unwrap_or(false)
                             {
                                 panic!(
@@ -193,12 +190,11 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 })
                             }
                         }
-                        _ => panic!("Invalid argument type in method {}", method.sig.ident),
                     }
                 }
 
                 let body = &method.block;
-                let return_ty = &method.sig.decl.output;
+                let return_ty = &method.sig.output;
                 let resolver_code = quote!(
                     (|| #return_ty {
                         #( #resolve_parts )*
