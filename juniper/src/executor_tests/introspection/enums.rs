@@ -1,4 +1,4 @@
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use juniper_codegen::EnumInternal as GraphQLEnum;
 
 use crate::executor::Variables;
 use crate::schema::model::RootNode;

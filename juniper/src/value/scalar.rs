@@ -1,5 +1,5 @@
 use crate::parser::{ParseError, ScalarToken};
-use juniper_codegen::GraphQLScalarValueInternal as GraphQLScalarValue;
+use juniper_codegen::ScalarValueInternal as GraphQLScalarValue;
 use serde::de;
 use serde::ser::Serialize;
 use std::fmt::{self, Debug, Display};

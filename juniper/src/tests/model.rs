@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use juniper_codegen::EnumInternal as GraphQLEnum;
 use std::collections::HashMap;
 
 #[derive(GraphQLEnum, Copy, Clone, Eq, PartialEq, Debug)]

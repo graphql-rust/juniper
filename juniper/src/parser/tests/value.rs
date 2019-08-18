@@ -1,8 +1,6 @@
 use indexmap::IndexMap;
 
-use juniper_codegen::{
-    GraphQLEnumInternal as GraphQLEnum, GraphQLInputObjectInternal as GraphQLInputObject,
-};
+use juniper_codegen::{EnumInternal as GraphQLEnum, InputObjectInternal as GraphQLInputObject};
 
 use crate::ast::{FromInputValue, InputValue, Type};
 use crate::parser::value::parse_value_literal;

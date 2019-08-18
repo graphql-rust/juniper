@@ -18,14 +18,20 @@ mod util;
 
 use proc_macro::TokenStream;
 
-#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
+#[proc_macro_derive(Enum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_enum::impl_enum(&ast, false);
     gen.into()
 }
 
-#[proc_macro_derive(GraphQLEnumInternal, attributes(graphql))]
+#[proc_macro_derive(GraphQLEnum, attributes(graphql))]
+#[deprecated(note = "GraphQLEnum has been renamed to Enum")]
+pub fn derive_enum_deprecated(input: TokenStream) -> TokenStream {
+    derive_enum(input)
+}
+
+#[proc_macro_derive(EnumInternal, attributes(graphql))]
 #[doc(hidden)]
 pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
@@ -33,14 +39,20 @@ pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
+#[proc_macro_derive(InputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_input_object::impl_input_object(&ast, false);
     gen.into()
 }
 
-#[proc_macro_derive(GraphQLInputObjectInternal, attributes(graphql))]
+#[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
+#[deprecated(note = "GraphQLInputObject has been renamed to InputObject")]
+pub fn derive_input_object_deprecated(input: TokenStream) -> TokenStream {
+    derive_input_object(input)
+}
+
+#[proc_macro_derive(InputObjectInternal, attributes(graphql))]
 #[doc(hidden)]
 pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
@@ -48,11 +60,17 @@ pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+#[proc_macro_derive(Object, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::build_derive_object(ast, false);
     gen.into()
+}
+
+#[proc_macro_derive(GraphQLObject, attributes(graphql))]
+#[deprecated(note = "GraphQLObject has been renamed to Object")]
+pub fn derive_object_deprecated(input: TokenStream) -> TokenStream {
+    derive_object(input)
 }
 
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
@@ -97,20 +115,20 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 ///
 /// TODO: write documentation.
 ///
-#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
+#[proc_macro_derive(ScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, false);
     gen.into()
 }
 
-#[deprecated(note = "ScalarValue has been renamed to GraphQLScalarValue")]
-#[proc_macro_derive(ScalarValue)]
+#[deprecated(note = "GraphQLScalarValue has been renamed to ScalarValue")]
+#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
 pub fn derive_scalar_value_deprecated(input: TokenStream) -> TokenStream {
     derive_scalar_value(input)
 }
 
-#[proc_macro_derive(GraphQLScalarValueInternal)]
+#[proc_macro_derive(ScalarValueInternal)]
 #[doc(hidden)]
 pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();

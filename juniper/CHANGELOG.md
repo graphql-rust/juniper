@@ -1,6 +1,7 @@
 # master
 
-- No changes yet
+- Rename all derive macros by removing the `GraphQL` prefix.
+  The old names are supported by deprecated fallbacks.
 
 # [[0.13.1] 2019-07-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.13.1)
 

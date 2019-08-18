@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use juniper_codegen::EnumInternal as GraphQLEnum;
 
 use crate::ast::{Directive, FromInputValue, InputValue, Selection};
 use crate::executor::Variables;

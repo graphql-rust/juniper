@@ -1,4 +1,4 @@
-use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
+use juniper_codegen::InputObjectInternal as GraphQLInputObject;
 
 use crate::ast::InputValue;
 use crate::executor::Variables;

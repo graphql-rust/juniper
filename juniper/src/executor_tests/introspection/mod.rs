@@ -1,7 +1,7 @@
 mod enums;
 mod input_object;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use juniper_codegen::EnumInternal as GraphQLEnum;
 
 // This asserts that the input objects defined public actually became public
 #[allow(unused_imports)]

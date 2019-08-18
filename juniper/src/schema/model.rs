@@ -2,7 +2,7 @@ use std::fmt;
 
 use fnv::FnvHashMap;
 
-use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
+use juniper_codegen::EnumInternal as GraphQLEnum;
 
 use crate::ast::Type;
 use crate::executor::{Context, Registry};
