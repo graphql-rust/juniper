@@ -76,6 +76,19 @@ impl<S> Object<S> {
             .find(|&&(ref k, _)| (k as &str) == key)
             .map(|&(_, ref value)| value)
     }
+
+    pub fn sort_by_field(&mut self) {
+        self.key_value_list
+            .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
+        for (_, ref mut value) in &mut self.key_value_list {
+            match value {
+                Value::Object(ref mut o) => {
+                    o.sort_by_field();
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 impl<S> IntoIterator for Object<S> {

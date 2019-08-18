@@ -343,7 +343,7 @@ where
     }
 }
 
-pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
+pub fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection<S>],
@@ -499,7 +499,10 @@ where
     true
 }
 
-fn is_excluded<S>(directives: &Option<Vec<Spanning<Directive<S>>>>, vars: &Variables<S>) -> bool
+pub(super) fn is_excluded<S>(
+    directives: &Option<Vec<Spanning<Directive<S>>>>,
+    vars: &Variables<S>,
+) -> bool
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -528,7 +531,7 @@ where
     false
 }
 
-fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
+pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
     if let Some(&mut (_, ref mut e)) = result
         .iter_mut()
         .find(|&&mut (ref key, _)| key == response_name)

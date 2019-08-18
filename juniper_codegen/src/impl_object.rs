@@ -86,6 +86,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         },
         include_type_generics: false,
         generic_scalar: false,
+        no_async: impl_attrs.no_async,
     };
 
     for item in _impl.items {
@@ -100,6 +101,8 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         );
                     }
                 };
+
+                let is_async = method.sig.asyncness.is_some();
 
                 let attrs = match util::FieldAttributes::from_attrs(
                     method.attrs,
@@ -195,12 +198,28 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let body = &method.block;
                 let return_ty = &method.sig.output;
-                let resolver_code = quote!(
-                    (|| #return_ty {
-                        #( #resolve_parts )*
-                        #body
-                    })()
-                );
+
+                let (resolver_code, resolver_code_async) = if is_async {
+                    (
+                        quote!(),
+                        Some(quote!(
+                            (async move || #return_ty {
+                                #( #resolve_parts )*
+                                #body
+                            })()
+                        )),
+                    )
+                } else {
+                    (
+                        quote!(
+                            (|| #return_ty {
+                                #( #resolve_parts )*
+                                #body
+                            })()
+                        ),
+                        None,
+                    )
+                };
 
                 let ident = &method.sig.ident;
                 let name = attrs
@@ -214,6 +233,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,
+                    resolver_code_async,
                 });
             }
             _ => {
