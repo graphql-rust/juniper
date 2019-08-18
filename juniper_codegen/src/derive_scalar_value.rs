@@ -20,31 +20,28 @@ impl syn::parse::Parse for TransparentAttributes {
             description: None,
         };
 
-        let content;
-        syn::parenthesized!(content in input);
-
-        while !content.is_empty() {
-            let ident: syn::Ident = content.parse()?;
+        while !input.is_empty() {
+            let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
                 "name" => {
-                    content.parse::<syn::Token![=]>()?;
-                    let val = content.parse::<syn::LitStr>()?;
+                    input.parse::<syn::Token![=]>()?;
+                    let val = input.parse::<syn::LitStr>()?;
                     output.name = Some(val.value());
                 }
                 "description" => {
-                    content.parse::<syn::Token![=]>()?;
-                    let val = content.parse::<syn::LitStr>()?;
+                    input.parse::<syn::Token![=]>()?;
+                    let val = input.parse::<syn::LitStr>()?;
                     output.description = Some(val.value());
                 }
                 "transparent" => {
                     output.transparent = Some(true);
                 }
                 other => {
-                    return Err(content.error(format!("Unknown attribute: {}", other)));
+                    return Err(input.error(format!("Unknown attribute: {}", other)));
                 }
             }
-            if content.lookahead1().peek(syn::Token![,]) {
-                content.parse::<syn::Token![,]>()?;
+            if input.lookahead1().peek(syn::Token![,]) {
+                input.parse::<syn::Token![,]>()?;
             }
         }
 
@@ -56,7 +53,7 @@ impl TransparentAttributes {
     fn from_attrs(attrs: &Vec<syn::Attribute>) -> syn::parse::Result<Self> {
         match util::find_graphql_attr(attrs) {
             Some(attr) => {
-                let mut parsed: TransparentAttributes = syn::parse(attr.tts.clone().into())?;
+                let mut parsed: TransparentAttributes = attr.parse_args()?;
                 if parsed.description.is_none() {
                     parsed.description = util::get_doc_comment(attrs);
                 }
@@ -86,7 +83,7 @@ fn impl_scalar_struct(
 ) -> TokenStream {
     let field = match data.fields {
         syn::Fields::Unnamed(ref fields) if fields.unnamed.len() == 1 => {
-            fields.unnamed.first().unwrap().into_value()
+            fields.unnamed.first().unwrap()
         }
         _ => {
             panic!("#[derive(GraphQLScalarValue)] may only be applied to enums or tuple structs with a single field");
@@ -254,7 +251,7 @@ where
 
 fn derive_from_variant(variant: &Variant, ident: &Ident) -> Result<TokenStream, String> {
     let ty = match variant.fields {
-        Fields::Unnamed(ref u) if u.unnamed.len() == 1 => &u.unnamed.first().unwrap().value().ty,
+        Fields::Unnamed(ref u) if u.unnamed.len() == 1 => &u.unnamed.first().unwrap().ty,
 
         _ => {
             return Err(String::from(

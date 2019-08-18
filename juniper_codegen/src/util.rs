@@ -60,11 +60,11 @@ pub fn find_graphql_attr(attrs: &Vec<Attribute>) -> Option<&Attribute> {
 
 pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
     for attr in attrs {
-        match attr.interpret_meta() {
-            Some(Meta::List(ref list)) if list.ident == "deprecated" => {
+        match attr.parse_meta() {
+            Ok(Meta::List(ref list)) if list.path.is_ident("deprecated") => {
                 return Some(get_deprecated_meta_list(list));
             }
-            Some(Meta::Word(ref ident)) if ident == "deprecated" => {
+            Ok(Meta::Path(ref path)) if path.is_ident("deprecated") => {
                 return Some(DeprecationAttr { reason: None });
             }
             _ => {}
@@ -77,7 +77,7 @@ fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
     for meta in &list.nested {
         match meta {
             &NestedMeta::Meta(Meta::NameValue(ref nv)) => {
-                if nv.ident == "note" {
+                if nv.path.is_ident("note") {
                     match &nv.lit {
                         &Lit::Str(ref strlit) => {
                             return DeprecationAttr {
@@ -88,8 +88,8 @@ fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
                     }
                 } else {
                     panic!(
-                        "Unrecognized setting on #[deprecated(..)] attribute: {}",
-                        nv.ident
+                        "Unrecognized setting on #[deprecated(..)] attribute: {:?}",
+                        nv.path,
                     );
                 }
             }
@@ -147,7 +147,7 @@ fn get_doc_strings(items: &Vec<MetaNameValue>) -> Option<Vec<String>> {
     let comments = items
         .iter()
         .filter_map(|item| {
-            if item.ident == "doc" {
+            if item.path.is_ident("doc") {
                 match item.lit {
                     Lit::Str(ref strlit) => Some(strlit.value().to_string()),
                     _ => panic!("doc attributes only have string literal"),
@@ -168,8 +168,8 @@ fn get_doc_strings(items: &Vec<MetaNameValue>) -> Option<Vec<String>> {
 fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
     let mut docs = Vec::new();
     for attr in attrs {
-        match attr.interpret_meta() {
-            Some(Meta::NameValue(ref nv)) if nv.ident == "doc" => docs.push(nv.clone()),
+        match attr.parse_meta() {
+            Ok(Meta::NameValue(ref nv)) if nv.path.is_ident("doc") => docs.push(nv.clone()),
             _ => {}
         }
     }
@@ -182,8 +182,8 @@ fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
 // Get the nested items of a a #[graphql(...)] attribute.
 pub fn get_graphql_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
     for attr in attrs {
-        match attr.interpret_meta() {
-            Some(Meta::List(ref list)) if list.ident == "graphql" => {
+        match attr.parse_meta() {
+            Ok(Meta::List(ref list)) if list.path.is_ident("graphql") => {
                 return Some(list.nested.iter().map(|x| x.clone()).collect());
             }
             _ => {}
@@ -199,7 +199,7 @@ pub fn keyed_item_value(
 ) -> Option<AttributeValue> {
     match item {
         // Attributes in the form of `#[graphql(name = "value")]`.
-        &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.ident == name => {
+        &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.path.is_ident(name) => {
             match &nameval.lit {
                 // We have a string attribute value.
                 &Lit::Str(ref strlit) => match validation {
@@ -215,7 +215,7 @@ pub fn keyed_item_value(
             }
         }
         // Attributes in the form of `#[graphql(name)]`.
-        &NestedMeta::Meta(Meta::Word(ref ident)) if ident.to_string() == name => match validation {
+        &NestedMeta::Meta(Meta::Path(ref path)) if path.is_ident(name) => match validation {
             AttributeValidation::String => {
                 panic!(format!(
                     "Invalid format for attribute \"{:?}\": expected a string value",
@@ -304,18 +304,6 @@ impl syn::parse::Parse for ObjectAttributes {
             interfaces: Vec::new(),
         };
 
-        // Skip potential parantheses which are present for regular attributes but not for proc macro
-        // attributes.
-        let inner = (|| {
-            let content;
-            syn::parenthesized!(content in input);
-            Ok(content)
-        })();
-        let input = match inner.as_ref() {
-            Ok(content) => content,
-            Err(_) => input,
-        };
-
         while !input.is_empty() {
             let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
@@ -377,7 +365,7 @@ impl ObjectAttributes {
             // Need to unwrap  outer (), which are not present for proc macro attributes,
             // but are present for regular ones.
 
-            let mut a = syn::parse::<Self>(attr.tts.clone().into())?;
+            let mut a: Self = attr.parse_args()?;
             if a.description.is_none() {
                 a.description = get_doc_comment(attrs);
             }
@@ -409,7 +397,6 @@ impl parse::Parse for FieldAttributeArgument {
 
         let content;
         syn::parenthesized!(content in input);
-
         while !content.is_empty() {
             let name = content.parse::<syn::Ident>()?;
             content.parse::<Token![=]>()?;
@@ -514,11 +501,7 @@ pub struct FieldAttributes {
 
 impl parse::Parse for FieldAttributes {
     fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
-        // Remove wrapping parantheses.
-        let content;
-        syn::parenthesized!(content in input);
-
-        let items = Punctuated::<FieldAttribute, Token![,]>::parse_terminated(&content)?;
+        let items = Punctuated::<FieldAttribute, Token![,]>::parse_terminated(&input)?;
 
         let mut output = Self {
             name: None,
@@ -548,8 +531,8 @@ impl parse::Parse for FieldAttributes {
             }
         }
 
-        if !content.is_empty() {
-            Err(content.error("Unexpected input"))
+        if !input.is_empty() {
+            Err(input.error("Unexpected input"))
         } else {
             Ok(output)
         }
@@ -564,12 +547,10 @@ impl FieldAttributes {
         let doc_comment = get_doc_comment(&attrs);
         let deprecation = get_deprecated(&attrs);
 
-        let attr_opt = attrs
-            .into_iter()
-            .find(|attr| path_eq_single(&attr.path, "graphql"));
+        let attr_opt = attrs.into_iter().find(|attr| attr.path.is_ident("graphql"));
 
         let mut output = match attr_opt {
-            Some(attr) => syn::parse(attr.tts.into())?,
+            Some(attr) => attr.parse_args()?,
             None => Self::default(),
         };
 
@@ -594,7 +575,7 @@ pub struct GraphQLTypeDefinitionFieldArg {
     pub name: String,
     pub description: Option<String>,
     pub default: Option<syn::Expr>,
-    pub _type: syn::Type,
+    pub _type: Box<syn::Type>,
 }
 
 #[derive(Debug)]
@@ -864,7 +845,7 @@ mod test {
     }
 
     fn ident(s: &str) -> Ident {
-        Ident::new(s, Span::call_site())
+        quote::format_ident!("{}", s)
     }
 
     mod test_get_doc_strings {
@@ -873,7 +854,7 @@ mod test {
         #[test]
         fn test_single() {
             let result = get_doc_strings(&vec![MetaNameValue {
-                ident: ident("doc").into(),
+                path: ident("doc").into(),
                 eq_token: Default::default(),
                 lit: litstr("foo"),
             }]);
@@ -887,17 +868,17 @@ mod test {
         fn test_many() {
             let result = get_doc_strings(&vec![
                 MetaNameValue {
-                    ident: ident("doc").into(),
+                    path: ident("doc").into(),
                     eq_token: Default::default(),
                     lit: litstr("foo"),
                 },
                 MetaNameValue {
-                    ident: ident("doc").into(),
+                    path: ident("doc").into(),
                     eq_token: Default::default(),
                     lit: litstr("\n"),
                 },
                 MetaNameValue {
-                    ident: ident("doc").into(),
+                    path: ident("doc").into(),
                     eq_token: Default::default(),
                     lit: litstr("bar"),
                 },
@@ -911,7 +892,7 @@ mod test {
         #[test]
         fn test_not_doc() {
             let result = get_doc_strings(&vec![MetaNameValue {
-                ident: ident("blah").into(),
+                path: ident("blah").into(),
                 eq_token: Default::default(),
                 lit: litstr("foo"),
             }]);

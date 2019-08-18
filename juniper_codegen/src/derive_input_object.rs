@@ -103,8 +103,8 @@ impl ObjFieldAttrs {
                 }
 
                 match item {
-                    NestedMeta::Meta(Meta::Word(ref ident)) => {
-                        if ident == "default" {
+                    NestedMeta::Meta(Meta::Path(ref path)) => {
+                        if path.is_ident("default") {
                             res.default = true;
                             continue;
                         }
@@ -294,7 +294,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
                 where #scalar: 'r
             {
                 let fields = &[
-                    #(#meta_fields)*
+                    #meta_fields
                 ];
                 let meta = registry.build_input_object_type::<#ident>(&(), fields);
                 #meta_description
@@ -311,7 +311,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
             {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {
-                        #(#from_inputs)*
+                        #from_inputs
                     };
                     Some(item)
                 }
@@ -326,7 +326,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
         {
             fn to_input_value(&self) -> #juniper_path::InputValue<#scalar> {
                 #juniper_path::InputValue::object(vec![
-                    #(#to_inputs)*
+                    #to_inputs
                 ].into_iter().collect())
             }
         }
