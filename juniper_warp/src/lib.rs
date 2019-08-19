@@ -40,10 +40,15 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
+#![cfg_attr(feature = "async", feature(async_await, async_closure))]
+
 use futures::{future::poll_fn, Future};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
+
+#[cfg(feature = "async")]
+use futures03::future::{FutureExt, TryFutureExt};
 
 use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 
@@ -82,6 +87,37 @@ where
                     .map(|request| request.execute(root_node, context))
                     .collect(),
             ),
+        }
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a juniper::RootNode<'a, QueryT, MutationT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
+                let res = request.execute_async(root_node, context).await;
+                GraphQLBatchResponse::Single(res)
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => {
+                let futures = requests
+                    .iter()
+                    .map(|request| request.execute_async(root_node, context))
+                    .collect::<Vec<_>>();
+                let responses =  futures03::future::join_all(futures).await;
+
+                GraphQLBatchResponse::Batch(responses)
+            }
         }
     }
 }
@@ -242,6 +278,7 @@ where
 }
 
 /// FIXME: docs
+#[cfg(feature = "async")]
 pub fn make_graphql_filter_async<Query, Mutation, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, S>,
     context_extractor: BoxedFilter<(Context,)>,
@@ -261,16 +298,17 @@ where
     let handle_post_request =
         move |context: Context, request: GraphQLBatchRequest<S>| -> Response {
             let schema = post_schema.clone();
-            Box::new(
-                poll_fn(move || {
-                    tokio_threadpool::blocking(|| {
-                        let response = request.execute(&schema, &context);
-                        Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                    })
-                })
-                .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
-            )
+
+            let f = async move {
+                let res = request.execute_async(&schema, &context).await;
+
+                match serde_json::to_vec(&res) {
+                    Ok(json) => Ok(build_response(Ok((json, res.is_ok())))),
+                    Err(e) => Err(warp::reject::custom(e)),
+                }
+            };
+
+            Box::new(f.boxed().compat())
         };
 
     let post_filter = warp::post2()
