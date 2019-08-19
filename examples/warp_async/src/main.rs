@@ -13,8 +13,16 @@ struct Context {
 }
 impl juniper::Context for Context {}
 
+#[derive(juniper::GraphQLEnum, Clone, Copy)]
+enum UserKind {
+    Admin,
+    User,
+    Guest,
+}
+
 struct User {
     id: i32,
+    kind: UserKind,
     name: String,
 }
 
@@ -22,6 +30,10 @@ struct User {
 impl User {
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn kind(&self) -> UserKind {
+        self.kind
     }
 
     fn name(&self) -> &str {
@@ -41,6 +53,7 @@ impl Query {
         vec![
             User{
                 id: 1,
+                kind: UserKind::Admin,
                 name: "user1".into(),
             },
         ]

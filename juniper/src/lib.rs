@@ -91,6 +91,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 #![doc(html_root_url = "https://docs.rs/juniper/0.13.1")]
 #![warn(missing_docs)]
+
 #![cfg_attr(feature = "async", feature(async_await, async_closure))]
 
 #[doc(hidden)]
