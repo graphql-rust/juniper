@@ -77,6 +77,7 @@ impl<S> Object<S> {
             .map(|&(_, ref value)| value)
     }
 
+    /// Recursively sort all keys by field.
     pub fn sort_by_field(&mut self) {
         self.key_value_list
             .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));

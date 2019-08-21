@@ -270,7 +270,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, Value<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
         futures::future::FutureExt::boxed(f)
     }
@@ -290,7 +290,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, Value<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
         futures::future::FutureExt::boxed(f)
     }
@@ -310,7 +310,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, Value<S>> {
         let f = async move {
             match *self {
                 Some(ref obj) => executor.resolve_into_value_async(info, obj).await,

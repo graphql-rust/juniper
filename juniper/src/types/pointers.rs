@@ -151,7 +151,7 @@ where
         field_name: &'b str,
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'b, ExecutionResult<S>> {
+    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
         crate::GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
     }
 
@@ -160,7 +160,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, Value<S>> {
         crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
     }
 }
