@@ -1,9 +1,11 @@
 use std::collections::hash_map::{Entry, HashMap};
 
-use crate::ast::Fragment;
-use crate::parser::{SourcePosition, Spanning};
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::Fragment,
+    parser::{SourcePosition, Spanning},
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 pub struct UniqueFragmentNames<'a> {
     names: HashMap<&'a str, SourcePosition>,
@@ -46,9 +48,11 @@ fn duplicate_message(frag_name: &str) -> String {
 mod tests {
     use super::{duplicate_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn no_fragments() {

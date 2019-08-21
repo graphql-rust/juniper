@@ -1,14 +1,17 @@
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
-use crate::ast::{FromInputValue, InputValue};
-use crate::executor::Registry;
-use crate::parser::parse_document_source;
-use crate::schema::meta::{EnumValue, MetaType};
-use crate::schema::model::{DirectiveLocation, DirectiveType, RootNode};
-use crate::types::base::GraphQLType;
-use crate::types::scalars::ID;
-use crate::validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor};
-use crate::value::{ScalarRefValue, ScalarValue};
+use crate::{
+    ast::{FromInputValue, InputValue},
+    executor::Registry,
+    parser::parse_document_source,
+    schema::{
+        meta::{EnumValue, MetaType},
+        model::{DirectiveLocation, DirectiveType, RootNode},
+    },
+    types::{base::GraphQLType, scalars::ID},
+    validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
+    value::{ScalarRefValue, ScalarValue},
+};
 
 struct Being;
 struct Pet;

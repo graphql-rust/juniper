@@ -1,10 +1,12 @@
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
-use crate::ast::{FromInputValue, InputValue};
-use crate::executor::Variables;
-use crate::schema::model::RootNode;
-use crate::types::scalars::EmptyMutation;
-use crate::value::{DefaultScalarValue, Object, Value};
+use crate::{
+    ast::{FromInputValue, InputValue},
+    executor::Variables,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    value::{DefaultScalarValue, Object, Value},
+};
 
 struct Root;
 

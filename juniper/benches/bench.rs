@@ -4,8 +4,7 @@ extern crate juniper;
 
 use bencher::Bencher;
 
-use juniper::tests::model::Database;
-use juniper::{execute, EmptyMutation, RootNode, Variables};
+use juniper::{execute, tests::model::Database, EmptyMutation, RootNode, Variables};
 
 fn query_type_name(b: &mut Bencher) {
     let database = Database::new();

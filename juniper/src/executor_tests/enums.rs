@@ -1,13 +1,15 @@
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
-use crate::ast::InputValue;
-use crate::executor::Variables;
-use crate::parser::SourcePosition;
-use crate::schema::model::RootNode;
-use crate::types::scalars::EmptyMutation;
-use crate::validation::RuleError;
-use crate::value::{DefaultScalarValue, Object, Value};
-use crate::GraphQLError::ValidationError;
+use crate::{
+    ast::InputValue,
+    executor::Variables,
+    parser::SourcePosition,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    validation::RuleError,
+    value::{DefaultScalarValue, Object, Value},
+    GraphQLError::ValidationError,
+};
 
 #[derive(GraphQLEnum, Debug)]
 enum Color {

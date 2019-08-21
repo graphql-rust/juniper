@@ -4,14 +4,13 @@ use fnv::FnvHashMap;
 
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
-use crate::ast::Type;
-use crate::executor::{Context, Registry};
-use crate::schema::meta::{
-    Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta,
+use crate::{
+    ast::Type,
+    executor::{Context, Registry},
+    schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
+    types::{base::GraphQLType, name::Name},
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
 };
-use crate::types::base::GraphQLType;
-use crate::types::name::Name;
-use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 /// Root query node of a schema
 ///

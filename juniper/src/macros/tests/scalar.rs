@@ -1,7 +1,9 @@
-use crate::executor::Variables;
-use crate::schema::model::RootNode;
-use crate::types::scalars::EmptyMutation;
-use crate::value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value};
+use crate::{
+    executor::Variables,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
+};
 
 struct DefaultName(i32);
 struct OtherOrder(i32);

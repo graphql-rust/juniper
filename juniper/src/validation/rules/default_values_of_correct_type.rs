@@ -1,8 +1,10 @@
-use crate::ast::VariableDefinition;
-use crate::parser::Spanning;
-use crate::types::utilities::is_valid_literal_value;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::VariableDefinition,
+    parser::Spanning,
+    types::utilities::is_valid_literal_value,
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 pub struct DefaultValuesOfCorrectType;
 
@@ -62,9 +64,11 @@ fn non_null_error_message(arg_name: &str, type_name: &str) -> String {
 mod tests {
     use super::{factory, non_null_error_message, type_error_message};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn variables_with_no_default_values() {
@@ -189,5 +193,4 @@ mod tests {
             )],
         );
     }
-
 }

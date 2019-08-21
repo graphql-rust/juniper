@@ -308,8 +308,7 @@ fn playground_response(graphql_endpoint_url: &'static str) -> warp::http::Respon
 #[cfg(test)]
 mod tests {
     use super::*;
-    use warp::http;
-    use warp::test::request;
+    use warp::{http, test::request};
 
     #[test]
     fn graphiql_response_does_not_panic() {
@@ -390,9 +389,10 @@ mod tests {
 
     #[test]
     fn graphql_handler_works_json_post() {
-        use juniper::tests::model::Database;
-        use juniper::tests::schema::Query;
-        use juniper::{EmptyMutation, RootNode};
+        use juniper::{
+            tests::{model::Database, schema::Query},
+            EmptyMutation, RootNode,
+        };
 
         type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
 
@@ -422,9 +422,10 @@ mod tests {
 
     #[test]
     fn batch_requests_work() {
-        use juniper::tests::model::Database;
-        use juniper::tests::schema::Query;
-        use juniper::{EmptyMutation, RootNode};
+        use juniper::{
+            tests::{model::Database, schema::Query},
+            EmptyMutation, RootNode,
+        };
 
         type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
 
@@ -469,13 +470,12 @@ mod tests {
 #[cfg(test)]
 mod tests_http_harness {
     use super::*;
-    use juniper::http::tests::{run_http_test_suite, HTTPIntegration, TestResponse};
-    use juniper::tests::model::Database;
-    use juniper::tests::schema::Query;
-    use juniper::EmptyMutation;
-    use juniper::RootNode;
-    use warp;
-    use warp::Filter;
+    use juniper::{
+        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, RootNode,
+    };
+    use warp::{self, Filter};
 
     type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
 

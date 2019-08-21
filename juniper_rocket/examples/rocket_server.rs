@@ -1,11 +1,11 @@
 #![feature(decl_macro, proc_macro_hygiene)]
 
-use rocket::response::content;
-use rocket::State;
+use rocket::{response::content, State};
 
-use juniper::tests::model::Database;
-use juniper::tests::schema::Query;
-use juniper::{EmptyMutation, RootNode};
+use juniper::{
+    tests::{model::Database, schema::Query},
+    EmptyMutation, RootNode,
+};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
 

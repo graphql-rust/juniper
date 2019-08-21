@@ -1,11 +1,13 @@
 use crate::ast::InputValue;
 
-use crate::parser::{
-    ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token,
+use crate::{
+    parser::{ParseError, ParseResult, Parser, ScalarToken, SourcePosition, Spanning, Token},
+    schema::{
+        meta::{InputObjectMeta, MetaType},
+        model::SchemaType,
+    },
+    value::ScalarValue,
 };
-use crate::schema::meta::{InputObjectMeta, MetaType};
-use crate::schema::model::SchemaType;
-use crate::value::ScalarValue;
 
 pub fn parse_value_literal<'a, 'b, S>(
     parser: &mut Parser<'a>,

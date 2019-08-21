@@ -2,11 +2,13 @@ extern crate serde_json;
 
 #[cfg(test)]
 use juniper::parser::Spanning;
-use juniper::parser::{ParseError, ScalarToken, Token};
-use juniper::serde::de;
 #[cfg(test)]
 use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
-use juniper::{InputValue, ParseScalarResult, ScalarValue, Value};
+use juniper::{
+    parser::{ParseError, ScalarToken, Token},
+    serde::de,
+    InputValue, ParseScalarResult, ScalarValue, Value,
+};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]

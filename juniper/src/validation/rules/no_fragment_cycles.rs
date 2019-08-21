@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::ast::{Document, Fragment, FragmentSpread};
-use crate::parser::Spanning;
-use crate::validation::{RuleError, ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Document, Fragment, FragmentSpread},
+    parser::Spanning,
+    validation::{RuleError, ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 pub struct NoFragmentCycles<'a> {
     current_fragment: Option<&'a str>,
@@ -133,9 +135,11 @@ fn error_message(frag_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn single_reference_is_valid() {

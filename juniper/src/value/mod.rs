@@ -1,5 +1,7 @@
-use crate::ast::{InputValue, ToInputValue};
-use crate::parser::Spanning;
+use crate::{
+    ast::{InputValue, ToInputValue},
+    parser::Spanning,
+};
 mod object;
 mod scalar;
 

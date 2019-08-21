@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 
 use super::schema_introspection::*;
-use crate::executor::Variables;
-use crate::introspection::IntrospectionFormat;
-use crate::schema::model::RootNode;
-use crate::tests::model::Database;
-use crate::tests::schema::Query;
-use crate::types::scalars::EmptyMutation;
+use crate::{
+    executor::Variables,
+    introspection::IntrospectionFormat,
+    schema::model::RootNode,
+    tests::{model::Database, schema::Query},
+    types::scalars::EmptyMutation,
+};
 
 #[test]
 fn test_introspection_query_type_name() {

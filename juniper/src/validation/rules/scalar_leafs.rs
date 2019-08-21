@@ -1,7 +1,9 @@
-use crate::ast::Field;
-use crate::parser::Spanning;
-use crate::validation::{RuleError, ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::Field,
+    parser::Spanning,
+    validation::{RuleError, ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 pub struct ScalarLeafs;
 
@@ -57,9 +59,11 @@ fn required_error_message(field_name: &str, type_name: &str) -> String {
 mod tests {
     use super::{factory, no_allowed_error_message, required_error_message};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn valid_scalar_selection() {
@@ -196,5 +200,4 @@ mod tests {
             )],
         );
     }
-
 }

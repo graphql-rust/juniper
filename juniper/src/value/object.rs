@@ -1,5 +1,4 @@
-use std::iter::FromIterator;
-use std::vec::IntoIter;
+use std::{iter::FromIterator, vec::IntoIter};
 
 use super::Value;
 

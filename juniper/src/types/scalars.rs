@@ -1,15 +1,14 @@
 use serde_derive::{Deserialize, Serialize};
-use std::convert::From;
-use std::marker::PhantomData;
-use std::ops::Deref;
-use std::{char, u32};
+use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
-use crate::ast::{InputValue, Selection, ToInputValue};
-use crate::executor::{Executor, Registry};
-use crate::parser::{LexerError, ParseError, ScalarToken, Token};
-use crate::schema::meta::MetaType;
-use crate::types::base::GraphQLType;
-use crate::value::{ParseScalarResult, ScalarRefValue, ScalarValue, Value};
+use crate::{
+    ast::{InputValue, Selection, ToInputValue},
+    executor::{Executor, Registry},
+    parser::{LexerError, ParseError, ScalarToken, Token},
+    schema::meta::MetaType,
+    types::base::GraphQLType,
+    value::{ParseScalarResult, ScalarRefValue, ScalarValue, Value},
+};
 
 /// An ID as defined by the GraphQL specification
 ///
@@ -316,8 +315,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::ID;
-    use crate::parser::ScalarToken;
-    use crate::value::{DefaultScalarValue, ParseScalarValue};
+    use crate::{
+        parser::ScalarToken,
+        value::{DefaultScalarValue, ParseScalarValue},
+    };
 
     #[test]
     fn test_id_from_string() {

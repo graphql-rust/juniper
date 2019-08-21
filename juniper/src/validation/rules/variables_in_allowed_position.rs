@@ -1,11 +1,15 @@
-use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
+use std::{
+    borrow::Cow,
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+};
 
-use crate::ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition};
-use crate::parser::Spanning;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition},
+    parser::Spanning,
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
@@ -161,9 +165,11 @@ fn error_message(var_name: &str, type_name: &str, expected_type_name: &str) -> S
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn boolean_into_boolean() {

@@ -1,4 +1,7 @@
-use crate::value::{self, Value, Value::Null};
+use crate::value::{
+    self,
+    Value::{self, Null},
+};
 
 // Sort a nested schema Value.
 // In particular, lists are sorted by the "name" key of children, if present.

@@ -7,10 +7,12 @@ use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 #[allow(unused_imports)]
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
-use crate::executor::Variables;
-use crate::schema::model::RootNode;
-use crate::types::scalars::EmptyMutation;
-use crate::value::{ParseScalarResult, ParseScalarValue, Value};
+use crate::{
+    executor::Variables,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    value::{ParseScalarResult, ParseScalarValue, Value},
+};
 
 #[derive(GraphQLEnum)]
 #[graphql(name = "SampleEnum")]

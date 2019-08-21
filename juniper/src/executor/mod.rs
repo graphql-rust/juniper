@@ -1,28 +1,29 @@
-use std::borrow::Cow;
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::fmt::Display;
-use std::sync::RwLock;
+use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
 
 use fnv::FnvHashMap;
 
-use crate::ast::{
-    Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
-    ToInputValue, Type,
+use crate::{
+    ast::{
+        Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
+        ToInputValue, Type,
+    },
+    parser::SourcePosition,
+    value::Value,
+    GraphQLError,
 };
-use crate::parser::SourcePosition;
-use crate::value::Value;
-use crate::GraphQLError;
 
-use crate::schema::meta::{
-    Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta,
-    ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
+use crate::schema::{
+    meta::{
+        Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta,
+        ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
+    },
+    model::{RootNode, SchemaType, TypeType},
 };
-use crate::schema::model::{RootNode, SchemaType, TypeType};
 
-use crate::types::base::GraphQLType;
-use crate::types::name::Name;
-use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use crate::{
+    types::{base::GraphQLType, name::Name},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+};
 
 mod look_ahead;
 
