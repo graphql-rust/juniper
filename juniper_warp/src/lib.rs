@@ -39,7 +39,6 @@ Check the LICENSE file for details.
 #![deny(missing_docs)]
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
-
 #![cfg_attr(feature = "async", feature(async_await, async_closure))]
 
 use futures::{future::poll_fn, Future};
@@ -114,7 +113,7 @@ where
                     .iter()
                     .map(|request| request.execute_async(root_node, context))
                     .collect::<Vec<_>>();
-                let responses =  futures03::future::join_all(futures).await;
+                let responses = futures03::future::join_all(futures).await;
 
                 GraphQLBatchResponse::Batch(responses)
             }
