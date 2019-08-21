@@ -1,4 +1,3 @@
-use futures::future::BoxFuture;
 
 use crate::ast::{Directive, FromInputValue, InputValue, Selection};
 use crate::value::{Object, ScalarRefValue, ScalarValue, Value};
@@ -21,7 +20,7 @@ where
         field_name: &'a str,
         arguments: &'a Arguments<S>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, ExecutionResult<S>> {
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
@@ -30,7 +29,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, Value<S>> {
+    ) -> BoxFuture<'a, Value<S>> {
         if let Some(selection_set) = selection_set {
             resolve_selection_set_into_async(self, info, selection_set, executor)
         } else {
@@ -47,7 +46,7 @@ pub(crate) fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
     executor: &'e Executor<'e, CtxT, S>,
-) -> futures::future::BoxFuture<'a, Value<S>>
+) -> BoxFuture<'a, Value<S>>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
     T::TypeInfo: Send + Sync,
@@ -70,8 +69,6 @@ enum AsyncValue<S> {
     Field(AsyncField<S>),
     Nested(Value<S>),
 }
-
-// type ResolveFuture<'a, S> = BoxFuture<'a, AsyncResolve<S>>;
 
 #[cfg(feature = "async")]
 pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(

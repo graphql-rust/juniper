@@ -120,6 +120,9 @@ where
         }
     }
 
+    /// Convert this value into an Object.
+    ///
+    /// Returns None if value is not an Object.
     pub fn into_object(self) -> Option<Object<S>> {
         match self {
             Value::Object(o) => Some(o),

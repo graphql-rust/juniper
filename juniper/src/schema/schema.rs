@@ -94,7 +94,7 @@ where
         field_name: &'b str,
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'b, ExecutionResult<S>> {
+    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
         use futures::future::{ready, FutureExt};
         match field_name {
             "__schema" | "__type" => {

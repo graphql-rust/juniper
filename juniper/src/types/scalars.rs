@@ -207,7 +207,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> futures::future::BoxFuture<'a, crate::Value<S>> {
+    ) -> crate::BoxFuture<'a, crate::Value<S>> {
         use futures::future;
         future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
     }
