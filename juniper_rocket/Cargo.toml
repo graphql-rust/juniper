@@ -11,13 +11,16 @@ documentation = "https://docs.rs/juniper_rocket"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+async = [ "juniper/async", "futures03" ]
+
 [dependencies]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
 juniper = { version = "0.14.0", default-features = false, path = "../juniper"}
 
-futures-preview = { version = "0.3.0-alpha.18", features = ["compat"] }
+futures03 = { version = "0.3.0-alpha.18", optional = true, package = "futures-preview", features = ["compat"] }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
 
 [dev-dependencies.juniper]

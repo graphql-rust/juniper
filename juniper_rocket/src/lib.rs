@@ -37,7 +37,9 @@ Check the LICENSE file for details.
 */
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
-#![feature(decl_macro, proc_macro_hygiene, async_await)]
+#![feature(decl_macro, proc_macro_hygiene)]
+
+#![cfg_attr(feature = "async", feature(async_await, async_closure))]
 
 use std::{
     error::Error,
@@ -60,6 +62,9 @@ use juniper::{
     serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarRefValue,
     ScalarValue,
 };
+
+#[cfg(feature = "async")]
+use futures03::future::{FutureExt, TryFutureExt};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -105,6 +110,31 @@ where
                     .iter()
                     .map(|request| request.execute(root_node, context))
                     .collect(),
+            ),
+        }
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a RootNode<QueryT, MutationT, S>,
+        context: &CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: GraphQLType<S, Context = CtxT>,
+        MutationT: GraphQLType<S, Context = CtxT>,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
+                GraphQLBatchResponse::Single(request.execute_async(root_node, context).await)
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+                let futures = requests
+                    .iter()
+                    .map(|request| request.execute(root_node, context))
+                    .collect::<Vec<_>>(),
+
+                let responses =  futures03::future::join_all(futures).await;
             ),
         }
     }
@@ -174,6 +204,28 @@ where
         MutationT: GraphQLType<S, Context = CtxT>,
     {
         let response = self.0.execute(root_node, context);
+        let status = if response.is_ok() {
+            Status::Ok
+        } else {
+            Status::BadRequest
+        };
+        let json = serde_json::to_string(&response).unwrap();
+
+        GraphQLResponse(status, json)
+    }
+
+    /// Asynchronously execute an incoming GraphQL query
+    #[cfg(feature = "async")]
+    pub async fn execute_async<CtxT, QueryT, MutationT>(
+        &self,
+        root_node: &RootNode<QueryT, MutationT, S>,
+        context: &CtxT,
+    ) -> GraphQLResponse
+    where
+        QueryT: GraphQLType<S, Context = CtxT>,
+        MutationT: GraphQLType<S, Context = CtxT>,
+    {
+        let response = self.0.execute_async(root_node, context).await;
         let status = if response.is_ok() {
             Status::Ok
         } else {
@@ -340,7 +392,7 @@ where
     type Error = String;
 
     fn from_data(request: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
-        use futures::io::AsyncReadExt;
+        use futures03::io::AsyncReadExt;
         use rocket::AsyncReadExt as _;
         if !request.content_type().map_or(false, |ct| ct.is_json()) {
             return Box::pin(async move { Forward(data) });
