@@ -117,7 +117,7 @@ where
     #[cfg(feature = "async")]
     pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<'_, QueryT, MutationT, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
@@ -128,14 +128,14 @@ where
             &GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute_async(root_node, context).await)
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            &GraphQLBatchRequest::Batch(ref requests) => {
                 let futures = requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect::<Vec<_>>(),
+                    .map(|request| request.execute_async(root_node, context))
+                    .collect::<Vec<_>>();
 
-                let responses =  futures03::future::join_all(futures).await;
-            ),
+                GraphQLBatchResponse::Batch(futures03::future::join_all(futures).await)
+            },
         }
     }
 
@@ -218,7 +218,7 @@ where
     #[cfg(feature = "async")]
     pub async fn execute_async<CtxT, QueryT, MutationT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, S>,
+        root_node: &RootNode<'_, QueryT, MutationT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
