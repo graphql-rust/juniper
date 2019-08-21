@@ -1,7 +1,9 @@
 #![allow(missing_docs)]
 
-use crate::executor::Context;
-use crate::tests::model::{Character, Database, Droid, Episode, Human};
+use crate::{
+    executor::Context,
+    tests::model::{Character, Database, Droid, Episode, Human},
+};
 
 impl Context for Database {}
 

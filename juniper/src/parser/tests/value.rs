@@ -4,14 +4,19 @@ use juniper_codegen::{
     GraphQLEnumInternal as GraphQLEnum, GraphQLInputObjectInternal as GraphQLInputObject,
 };
 
-use crate::ast::{FromInputValue, InputValue, Type};
-use crate::parser::value::parse_value_literal;
-use crate::parser::{Lexer, Parser, SourcePosition, Spanning};
-use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use crate::{
+    ast::{FromInputValue, InputValue, Type},
+    parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+};
 
-use crate::schema::meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta};
-use crate::schema::model::SchemaType;
-use crate::types::scalars::EmptyMutation;
+use crate::{
+    schema::{
+        meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
+        model::SchemaType,
+    },
+    types::scalars::EmptyMutation,
+};
 
 #[derive(GraphQLEnum)]
 enum Enum {

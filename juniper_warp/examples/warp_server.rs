@@ -2,9 +2,10 @@
 
 extern crate log;
 
-use juniper::tests::model::Database;
-use juniper::tests::schema::Query;
-use juniper::{EmptyMutation, RootNode};
+use juniper::{
+    tests::{model::Database, schema::Query},
+    EmptyMutation, RootNode,
+};
 use warp::{http::Response, Filter};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>>;

@@ -1,7 +1,9 @@
 use url::Url;
 
-use crate::value::{ParseScalarResult, ParseScalarValue};
-use crate::Value;
+use crate::{
+    value::{ParseScalarResult, ParseScalarValue},
+    Value,
+};
 
 graphql_scalar!(Url where Scalar = <S>{
     description: "Url"

@@ -39,27 +39,27 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
 
-use std::error::Error;
-use std::io::{Cursor, Read};
+use std::{
+    error::Error,
+    io::{Cursor, Read},
+};
 
-use rocket::data::{FromDataSimple, Outcome as FromDataOutcome};
-use rocket::http::{ContentType, RawStr, Status};
-use rocket::request::{FormItems, FromForm, FromFormValue};
-use rocket::response::{content, Responder, Response};
-use rocket::Data;
-use rocket::Outcome::{Failure, Forward, Success};
-use rocket::Request;
+use rocket::{
+    data::{FromDataSimple, Outcome as FromDataOutcome},
+    http::{ContentType, RawStr, Status},
+    request::{FormItems, FromForm, FromFormValue},
+    response::{content, Responder, Response},
+    Data,
+    Outcome::{Failure, Forward, Success},
+    Request,
+};
 
-use juniper::http;
-use juniper::InputValue;
+use juniper::{http, InputValue};
 
-use juniper::serde::Deserialize;
-use juniper::DefaultScalarValue;
-use juniper::FieldError;
-use juniper::GraphQLType;
-use juniper::RootNode;
-use juniper::ScalarRefValue;
-use juniper::ScalarValue;
+use juniper::{
+    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarRefValue,
+    ScalarValue,
+};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -479,18 +479,20 @@ mod fromform_tests {
 #[cfg(test)]
 mod tests {
 
-    use rocket::http::ContentType;
-    use rocket::local::{Client, LocalRequest};
-    use rocket::request::Form;
-    use rocket::Rocket;
-    use rocket::State;
-    use rocket::{self, get, post, routes};
+    use rocket::{
+        self, get,
+        http::ContentType,
+        local::{Client, LocalRequest},
+        post,
+        request::Form,
+        routes, Rocket, State,
+    };
 
-    use juniper::http::tests as http_tests;
-    use juniper::tests::model::Database;
-    use juniper::tests::schema::Query;
-    use juniper::EmptyMutation;
-    use juniper::RootNode;
+    use juniper::{
+        http::tests as http_tests,
+        tests::{model::Database, schema::Query},
+        EmptyMutation, RootNode,
+    };
 
     type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
 

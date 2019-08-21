@@ -1,7 +1,9 @@
-use crate::ast::{Fragment, InlineFragment, VariableDefinition};
-use crate::parser::{SourcePosition, Spanning};
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Fragment, InlineFragment, VariableDefinition},
+    parser::{SourcePosition, Spanning},
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 use std::fmt::Debug;
 
 pub struct KnownTypeNames;
@@ -61,9 +63,11 @@ fn error_message(type_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn known_type_names_are_valid() {

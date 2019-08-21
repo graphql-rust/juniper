@@ -1,10 +1,8 @@
-use std::collections::HashSet;
-use std::fmt::Debug;
+use std::{collections::HashSet, fmt::Debug};
 
 use crate::ast::{Definition, Document, Type};
 
-use crate::schema::meta::MetaType;
-use crate::schema::model::SchemaType;
+use crate::schema::{meta::MetaType, model::SchemaType};
 
 use crate::parser::SourcePosition;
 

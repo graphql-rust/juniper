@@ -110,23 +110,17 @@ extern crate iron_test;
 #[cfg(test)]
 extern crate url;
 
-use iron::itry;
-use iron::method;
-use iron::middleware::Handler;
-use iron::mime::Mime;
-use iron::prelude::*;
-use iron::status;
+use iron::{itry, method, middleware::Handler, mime::Mime, prelude::*, status};
 use urlencoded::{UrlDecodingError, UrlEncodedQuery};
 
-use std::error::Error;
-use std::fmt;
-use std::io::Read;
+use std::{error::Error, fmt, io::Read};
 
 use serde_json::error::Error as SerdeError;
 
-use juniper::http;
-use juniper::serde::Deserialize;
-use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
+use juniper::{
+    http, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode,
+    ScalarRefValue, ScalarValue,
+};
 
 #[derive(serde_derive::Deserialize)]
 #[serde(untagged)]
@@ -435,15 +429,15 @@ impl From<GraphQLIronError> for IronError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use iron::Url;
-    use iron::{Handler, Headers};
+    use iron::{Handler, Headers, Url};
     use iron_test::{request, response};
     use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 
-    use juniper::http::tests as http_tests;
-    use juniper::tests::model::Database;
-    use juniper::tests::schema::Query;
-    use juniper::EmptyMutation;
+    use juniper::{
+        http::tests as http_tests,
+        tests::{model::Database, schema::Query},
+        EmptyMutation,
+    };
 
     use super::GraphQLHandler;
 

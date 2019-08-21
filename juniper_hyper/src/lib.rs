@@ -4,17 +4,17 @@
 extern crate reqwest;
 
 use futures::future::Either;
-use hyper::header::HeaderValue;
-use hyper::rt::Stream;
-use hyper::{header, Body, Method, Request, Response, StatusCode};
-use juniper::http::GraphQLRequest as JuniperGraphQLRequest;
-use juniper::serde::Deserialize;
-use juniper::{DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue};
+use hyper::{
+    header::{self, HeaderValue},
+    rt::Stream,
+    Body, Method, Request, Response, StatusCode,
+};
+use juniper::{
+    http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue,
+    GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue,
+};
 use serde_json::error::Error as SerdeError;
-use std::error::Error;
-use std::fmt;
-use std::string::FromUtf8Error;
-use std::sync::Arc;
+use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use tokio::prelude::*;
 use url::form_urlencoded;
 
@@ -307,20 +307,18 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
-    use futures::{future, future::Either, Future};
-    use hyper::service::service_fn;
-    use hyper::Method;
-    use hyper::{Body, Response, Server, StatusCode};
-    use juniper::http::tests as http_tests;
-    use juniper::tests::model::Database;
-    use juniper::tests::schema::Query;
-    use juniper::EmptyMutation;
-    use juniper::RootNode;
-    use reqwest;
-    use reqwest::Response as ReqwestResponse;
-    use std::sync::Arc;
-    use std::thread;
-    use std::time;
+    use futures::{
+        future::{self, Either},
+        Future,
+    };
+    use hyper::{service::service_fn, Body, Method, Response, Server, StatusCode};
+    use juniper::{
+        http::tests as http_tests,
+        tests::{model::Database, schema::Query},
+        EmptyMutation, RootNode,
+    };
+    use reqwest::{self, Response as ReqwestResponse};
+    use std::{sync::Arc, thread, time};
     use tokio::runtime::Runtime;
 
     struct TestHyperIntegration;

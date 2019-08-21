@@ -1,10 +1,11 @@
-use crate::ast::InputValue;
-use crate::executor::Variables;
-use crate::schema::model::RootNode;
-use crate::tests::model::Database;
-use crate::tests::schema::Query;
-use crate::types::scalars::EmptyMutation;
-use crate::value::Value;
+use crate::{
+    ast::InputValue,
+    executor::Variables,
+    schema::model::RootNode,
+    tests::{model::Database, schema::Query},
+    types::scalars::EmptyMutation,
+    value::Value,
+};
 
 #[test]
 fn test_hero_name() {

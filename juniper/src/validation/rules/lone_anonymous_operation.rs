@@ -1,7 +1,9 @@
-use crate::ast::{Definition, Document, Operation};
-use crate::parser::Spanning;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Definition, Document, Operation},
+    parser::Spanning,
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 pub struct LoneAnonymousOperation {
     operation_count: Option<usize>,
@@ -49,9 +51,11 @@ fn error_message() -> &'static str {
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn no_operations() {

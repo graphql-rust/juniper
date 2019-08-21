@@ -1,8 +1,7 @@
 mod field_execution {
-    use crate::ast::InputValue;
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
+    use crate::{
+        ast::InputValue, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+    };
 
     struct DataType;
     struct DeepDataType;
@@ -156,9 +155,7 @@ mod field_execution {
 }
 
 mod merge_parallel_fragments {
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
+    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value};
 
     struct Type;
 
@@ -239,9 +236,7 @@ mod merge_parallel_fragments {
 }
 
 mod merge_parallel_inline_fragments {
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
+    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value};
 
     struct Type;
     struct Other;
@@ -383,10 +378,9 @@ mod merge_parallel_inline_fragments {
 }
 
 mod threads_context_correctly {
-    use crate::executor::Context;
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
+    use crate::{
+        executor::Context, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+    };
 
     struct Schema;
 
@@ -441,11 +435,13 @@ mod threads_context_correctly {
 mod dynamic_context_switching {
     use indexmap::IndexMap;
 
-    use crate::executor::{Context, ExecutionError, FieldError, FieldResult};
-    use crate::parser::SourcePosition;
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
+    use crate::{
+        executor::{Context, ExecutionError, FieldError, FieldResult},
+        parser::SourcePosition,
+        schema::model::RootNode,
+        types::scalars::EmptyMutation,
+        value::Value,
+    };
 
     struct Schema;
 
@@ -772,11 +768,13 @@ mod dynamic_context_switching {
 }
 
 mod propagates_errors_to_nullable_fields {
-    use crate::executor::{ExecutionError, FieldError, FieldResult, IntoFieldError};
-    use crate::parser::SourcePosition;
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::{ScalarValue, Value};
+    use crate::{
+        executor::{ExecutionError, FieldError, FieldResult, IntoFieldError},
+        parser::SourcePosition,
+        schema::model::RootNode,
+        types::scalars::EmptyMutation,
+        value::{ScalarValue, Value},
+    };
 
     struct Schema;
     struct Inner;
@@ -1061,10 +1059,9 @@ mod propagates_errors_to_nullable_fields {
 }
 
 mod named_operations {
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
-    use crate::GraphQLError;
+    use crate::{
+        schema::model::RootNode, types::scalars::EmptyMutation, value::Value, GraphQLError,
+    };
 
     struct Schema;
 

@@ -1,15 +1,19 @@
 use indexmap::IndexMap;
-use serde::ser::SerializeMap;
-use serde::{de, ser};
+use serde::{
+    de,
+    ser::{self, SerializeMap},
+};
 use serde_derive::Serialize;
 
 use std::fmt;
 
-use crate::ast::InputValue;
-use crate::executor::ExecutionError;
-use crate::parser::{ParseError, SourcePosition, Spanning};
-use crate::validation::RuleError;
-use crate::{GraphQLError, Object, ScalarValue, Value};
+use crate::{
+    ast::InputValue,
+    executor::ExecutionError,
+    parser::{ParseError, SourcePosition, Spanning},
+    validation::RuleError,
+    GraphQLError, Object, ScalarValue, Value,
+};
 
 #[derive(Serialize)]
 struct SerializeHelper {
@@ -398,11 +402,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::{ExecutionError, GraphQLError};
-    use crate::ast::InputValue;
-    use crate::value::{DefaultScalarValue, Object};
-    use crate::{FieldError, Value};
-    use serde_json::from_str;
-    use serde_json::to_string;
+    use crate::{
+        ast::InputValue,
+        value::{DefaultScalarValue, Object},
+        FieldError, Value,
+    };
+    use serde_json::{from_str, to_string};
 
     #[test]
     fn int() {

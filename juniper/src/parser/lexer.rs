@@ -1,8 +1,9 @@
-use std::char;
-use std::fmt;
-use std::iter::{Iterator, Peekable};
-use std::result::Result;
-use std::str::CharIndices;
+use std::{
+    char, fmt,
+    iter::{Iterator, Peekable},
+    result::Result,
+    str::CharIndices,
+};
 
 use crate::parser::{SourcePosition, Spanning};
 

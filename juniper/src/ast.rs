@@ -1,14 +1,12 @@
-use std::borrow::Cow;
-use std::fmt;
-use std::hash::Hash;
-use std::slice;
-use std::vec;
+use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
 use indexmap::IndexMap;
 
-use crate::executor::Variables;
-use crate::parser::Spanning;
-use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+use crate::{
+    executor::Variables,
+    parser::Spanning,
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+};
 
 /// A type literal in the syntax tree
 ///

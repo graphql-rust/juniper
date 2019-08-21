@@ -1,9 +1,11 @@
-use crate::ast::{Directive, Field, InputValue};
-use crate::parser::Spanning;
-use crate::schema::meta::Argument;
-use crate::types::utilities::is_valid_literal_value;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Directive, Field, InputValue},
+    parser::Spanning,
+    schema::meta::Argument,
+    types::utilities::is_valid_literal_value,
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 use std::fmt::Debug;
 
 pub struct ArgumentsOfCorrectType<'a, S: Debug + 'a> {
@@ -76,9 +78,11 @@ fn error_message(arg_name: &str, type_name: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn good_null_value() {

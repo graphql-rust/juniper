@@ -1,7 +1,9 @@
-use crate::ast::{Fragment, InlineFragment};
-use crate::parser::Spanning;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Fragment, InlineFragment},
+    parser::Spanning,
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 
 pub struct FragmentsOnCompositeTypes;
 
@@ -73,9 +75,11 @@ fn error_message(fragment_name: Option<&str>, on_type: &str) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn on_object() {

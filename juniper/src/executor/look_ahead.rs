@@ -1,6 +1,8 @@
-use crate::ast::{Directive, Fragment, InputValue, Selection};
-use crate::parser::Spanning;
-use crate::value::{ScalarRefValue, ScalarValue};
+use crate::{
+    ast::{Directive, Fragment, InputValue, Selection},
+    parser::Spanning,
+    value::{ScalarRefValue, ScalarValue},
+};
 
 use std::collections::HashMap;
 
@@ -388,11 +390,13 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::Document;
-    use crate::parser::UnlocatedParseResult;
-    use crate::schema::model::SchemaType;
-    use crate::validation::test_harness::{MutationRoot, QueryRoot};
-    use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+    use crate::{
+        ast::Document,
+        parser::UnlocatedParseResult,
+        schema::model::SchemaType,
+        validation::test_harness::{MutationRoot, QueryRoot},
+        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    };
     use std::collections::HashMap;
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
@@ -1395,5 +1399,4 @@ fragment heroFriendNames on Hero {
             panic!("No Operation found");
         }
     }
-
 }

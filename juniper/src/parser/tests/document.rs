@@ -1,11 +1,12 @@
-use crate::ast::{
-    Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
+use crate::{
+    ast::{
+        Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
+    },
+    parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
+    schema::model::SchemaType,
+    validation::test_harness::{MutationRoot, QueryRoot},
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
 };
-use crate::parser::document::parse_document_source;
-use crate::parser::{ParseError, SourcePosition, Spanning, Token};
-use crate::schema::model::SchemaType;
-use crate::validation::test_harness::{MutationRoot, QueryRoot};
-use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
 
 fn parse_document<S>(s: &str) -> Document<S>
 where

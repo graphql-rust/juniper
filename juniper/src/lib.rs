@@ -149,28 +149,31 @@ mod executor_tests;
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;
 
-use crate::executor::execute_validated_query;
-use crate::introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS};
-use crate::parser::{parse_document_source, ParseError, Spanning};
-use crate::validation::{validate_input_values, visit_all_rules, ValidatorContext};
+use crate::{
+    executor::execute_validated_query,
+    introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
+    parser::{parse_document_source, ParseError, Spanning},
+    validation::{validate_input_values, visit_all_rules, ValidatorContext},
+};
 
-pub use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue, Type};
-pub use crate::executor::{
-    Applies, LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue,
-};
-pub use crate::executor::{
-    Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult, FromContext,
-    IntoFieldError, IntoResolvable, Registry, Variables,
-};
-pub use crate::introspection::IntrospectionFormat;
-pub use crate::schema::meta;
-pub use crate::schema::model::RootNode;
-pub use crate::types::base::{Arguments, GraphQLType, TypeKind};
-pub use crate::types::scalars::{EmptyMutation, ID};
-pub use crate::validation::RuleError;
-pub use crate::value::{
-    DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
-    Value,
+pub use crate::{
+    ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
+    executor::{
+        Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
+        FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
+        LookAheadSelection, LookAheadValue, Registry, Variables,
+    },
+    introspection::IntrospectionFormat,
+    schema::{meta, model::RootNode},
+    types::{
+        base::{Arguments, GraphQLType, TypeKind},
+        scalars::{EmptyMutation, ID},
+    },
+    validation::RuleError,
+    value::{
+        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
+        ScalarValue, Value,
+    },
 };
 
 /// An error that prevented query execution

@@ -1,9 +1,8 @@
 #[cfg(test)]
 use fnv::FnvHashMap;
-use juniper::DefaultScalarValue;
-use juniper::GraphQLObject;
 #[cfg(test)]
 use juniper::Object;
+use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
 use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};

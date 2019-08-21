@@ -1,5 +1,4 @@
-use std::fmt;
-use std::result::Result;
+use std::{fmt, result::Result};
 
 use crate::parser::{Lexer, LexerError, Spanning, Token};
 

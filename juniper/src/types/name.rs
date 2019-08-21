@@ -1,7 +1,9 @@
-use std::borrow::Borrow;
-use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::str::FromStr;
+use std::{
+    borrow::Borrow,
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+    str::FromStr,
+};
 
 // Helper functions until the corresponding AsciiExt methods
 // stabilise (https://github.com/rust-lang/rust/issues/39658).

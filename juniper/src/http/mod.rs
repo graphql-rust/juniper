@@ -3,14 +3,18 @@
 pub mod graphiql;
 pub mod playground;
 
-use serde::de::Deserialize;
-use serde::ser::{self, Serialize, SerializeMap};
+use serde::{
+    de::Deserialize,
+    ser::{self, Serialize, SerializeMap},
+};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::ast::InputValue;
-use crate::executor::ExecutionError;
-use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
-use crate::{FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables};
+use crate::{
+    ast::InputValue,
+    executor::ExecutionError,
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
+};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -156,8 +160,7 @@ where
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {
-    use serde_json;
-    use serde_json::Value as Json;
+    use serde_json::{self, Value as Json};
 
     /// Normalized response content we expect to get back from
     /// the http framework integration we are testing.

@@ -1,7 +1,6 @@
 use crate::parser::{ParseError, ScalarToken};
 use juniper_codegen::GraphQLScalarValueInternal as GraphQLScalarValue;
-use serde::de;
-use serde::ser::Serialize;
+use serde::{de, ser::Serialize};
 use std::fmt::{self, Debug, Display};
 
 /// The result of converting a string into a scalar value

@@ -23,9 +23,11 @@ mod unique_variable_names;
 mod variables_are_input_types;
 mod variables_in_allowed_position;
 
-use crate::ast::Document;
-use crate::validation::{visit, MultiVisitorNil, ValidatorContext};
-use crate::value::ScalarValue;
+use crate::{
+    ast::Document,
+    validation::{visit, MultiVisitorNil, ValidatorContext},
+    value::ScalarValue,
+};
 use std::fmt::Debug;
 
 pub(crate) fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)

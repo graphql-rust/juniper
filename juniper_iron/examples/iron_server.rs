@@ -8,9 +8,10 @@ extern crate serde;
 use std::env;
 
 use iron::prelude::*;
-use juniper::tests::model::Database;
-use juniper::tests::schema::Query;
-use juniper::EmptyMutation;
+use juniper::{
+    tests::{model::Database, schema::Query},
+    EmptyMutation,
+};
 use juniper_iron::{GraphQLHandler, GraphiQLHandler};
 use logger::Logger;
 use mount::Mount;

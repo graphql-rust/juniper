@@ -1,14 +1,15 @@
 use std::borrow::Cow;
 
-use crate::ast::{
-    Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread, InlineFragment,
-    InputValue, Operation, OperationType, Selection, Type, VariableDefinitions,
+use crate::{
+    ast::{
+        Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
+        InlineFragment, InputValue, Operation, OperationType, Selection, Type, VariableDefinitions,
+    },
+    parser::Spanning,
+    schema::meta::Argument,
+    validation::{multi_visitor::MultiVisitorCons, ValidatorContext, Visitor},
+    value::ScalarValue,
 };
-use crate::parser::Spanning;
-use crate::schema::meta::Argument;
-use crate::validation::multi_visitor::MultiVisitorCons;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
 
 #[doc(hidden)]
 pub fn visit<'a, A, B, S>(

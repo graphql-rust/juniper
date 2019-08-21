@@ -1,8 +1,10 @@
-use crate::ast::{Directive, Field, InputValue};
-use crate::parser::Spanning;
-use crate::schema::meta::Argument;
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Directive, Field, InputValue},
+    parser::Spanning,
+    schema::meta::Argument,
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 use std::fmt::Debug;
 
 #[derive(Debug)]
@@ -106,9 +108,11 @@ fn directive_error_message(arg_name: &str, directive_name: &str) -> String {
 mod tests {
     use super::{directive_error_message, factory, field_error_message};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn single_arg_is_known() {

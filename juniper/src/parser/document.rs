@@ -5,14 +5,17 @@ use crate::ast::{
     InputValue, Operation, OperationType, Selection, Type, VariableDefinition, VariableDefinitions,
 };
 
-use crate::parser::value::parse_value_literal;
-use crate::parser::{
-    Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
-    UnlocatedParseResult,
+use crate::{
+    parser::{
+        value::parse_value_literal, Lexer, OptionParseResult, ParseError, ParseResult, Parser,
+        Spanning, Token, UnlocatedParseResult,
+    },
+    schema::{
+        meta::{Argument, Field as MetaField},
+        model::SchemaType,
+    },
+    value::ScalarValue,
 };
-use crate::schema::meta::{Argument, Field as MetaField};
-use crate::schema::model::SchemaType;
-use crate::value::ScalarValue;
 
 #[doc(hidden)]
 pub fn parse_document_source<'a, 'b, S>(

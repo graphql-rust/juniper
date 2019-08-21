@@ -1,15 +1,11 @@
-use crate::ast::{
-    Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type,
+use crate::{
+    ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type},
+    parser::{SourcePosition, Spanning},
+    schema::meta::{Field as FieldType, MetaType},
+    validation::{ValidatorContext, Visitor},
+    value::ScalarValue,
 };
-use crate::parser::{SourcePosition, Spanning};
-use crate::schema::meta::{Field as FieldType, MetaType};
-use crate::validation::{ValidatorContext, Visitor};
-use crate::value::ScalarValue;
-use std::borrow::Borrow;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
 
 #[derive(Debug)]
 struct Conflict(ConflictReason, Vec<SourcePosition>, Vec<SourcePosition>);
@@ -739,20 +735,25 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::ConflictReasonMessage::*;
-    use super::{error_message, factory, ConflictReason};
+    use super::{error_message, factory, ConflictReason, ConflictReasonMessage::*};
 
-    use crate::executor::Registry;
-    use crate::schema::meta::MetaType;
-    use crate::types::base::GraphQLType;
-    use crate::types::scalars::{EmptyMutation, ID};
-
-    use crate::parser::SourcePosition;
-    use crate::validation::{
-        expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
-        expect_passes_rule_with_schema, RuleError,
+    use crate::{
+        executor::Registry,
+        schema::meta::MetaType,
+        types::{
+            base::GraphQLType,
+            scalars::{EmptyMutation, ID},
+        },
     };
-    use crate::value::{DefaultScalarValue, ScalarRefValue, ScalarValue};
+
+    use crate::{
+        parser::SourcePosition,
+        validation::{
+            expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+            expect_passes_rule_with_schema, RuleError,
+        },
+        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    };
 
     #[test]
     fn unique_fields() {

@@ -1,13 +1,17 @@
 //! Types used to describe a `GraphQL` schema
 
-use std::borrow::{Cow, ToOwned};
-use std::fmt;
+use std::{
+    borrow::{Cow, ToOwned},
+    fmt,
+};
 
-use crate::ast::{FromInputValue, InputValue, Type};
-use crate::parser::{ParseError, ScalarToken};
-use crate::schema::model::SchemaType;
-use crate::types::base::TypeKind;
-use crate::value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue};
+use crate::{
+    ast::{FromInputValue, InputValue, Type},
+    parser::{ParseError, ScalarToken},
+    schema::model::SchemaType,
+    types::base::TypeKind,
+    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+};
 
 /// Whether an item is deprecated, with context.
 #[derive(Debug, PartialEq, Hash, Clone)]

@@ -5,14 +5,15 @@ extern crate juniper_hyper;
 extern crate pretty_env_logger;
 
 use futures::future;
-use hyper::rt::{self, Future};
-use hyper::service::service_fn;
-use hyper::Method;
-use hyper::{Body, Response, Server, StatusCode};
-use juniper::tests::model::Database;
-use juniper::tests::schema::Query;
-use juniper::EmptyMutation;
-use juniper::RootNode;
+use hyper::{
+    rt::{self, Future},
+    service::service_fn,
+    Body, Method, Response, Server, StatusCode,
+};
+use juniper::{
+    tests::{model::Database, schema::Query},
+    EmptyMutation, RootNode,
+};
 use std::sync::Arc;
 
 fn main() {

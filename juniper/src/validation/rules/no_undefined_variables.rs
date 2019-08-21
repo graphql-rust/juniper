@@ -1,7 +1,9 @@
-use crate::ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition};
-use crate::parser::{SourcePosition, Spanning};
-use crate::validation::{RuleError, ValidatorContext, Visitor};
-use crate::value::ScalarValue;
+use crate::{
+    ast::{Document, Fragment, FragmentSpread, InputValue, Operation, VariableDefinition},
+    parser::{SourcePosition, Spanning},
+    validation::{RuleError, ValidatorContext, Visitor},
+    value::ScalarValue,
+};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -162,9 +164,11 @@ fn error_message(var_name: &str, op_name: Option<&str>) -> String {
 mod tests {
     use super::{error_message, factory};
 
-    use crate::parser::SourcePosition;
-    use crate::validation::{expect_fails_rule, expect_passes_rule, RuleError};
-    use crate::value::DefaultScalarValue;
+    use crate::{
+        parser::SourcePosition,
+        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        value::DefaultScalarValue,
+    };
 
     #[test]
     fn all_variables_defined() {

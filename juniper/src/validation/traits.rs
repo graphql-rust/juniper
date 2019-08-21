@@ -1,10 +1,12 @@
-use crate::ast::{
-    Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue, Operation,
-    Selection, VariableDefinition,
+use crate::{
+    ast::{
+        Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
+        Operation, Selection, VariableDefinition,
+    },
+    parser::Spanning,
+    validation::ValidatorContext,
+    value::ScalarValue,
 };
-use crate::parser::Spanning;
-use crate::validation::ValidatorContext;
-use crate::value::ScalarValue;
 
 #[doc(hidden)]
 pub trait Visitor<'a, S>

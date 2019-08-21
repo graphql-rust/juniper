@@ -15,9 +15,11 @@
 */
 use chrono::prelude::*;
 
-use crate::parser::{ParseError, ScalarToken, Token};
-use crate::value::{ParseScalarResult, ParseScalarValue};
-use crate::Value;
+use crate::{
+    parser::{ParseError, ScalarToken, Token},
+    value::{ParseScalarResult, ParseScalarValue},
+    Value,
+};
 
 #[doc(hidden)]
 pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
@@ -198,13 +200,11 @@ mod test {
 
 #[cfg(test)]
 mod integration_test {
-    use chrono::prelude::*;
-    use chrono::Utc;
+    use chrono::{prelude::*, Utc};
 
-    use crate::executor::Variables;
-    use crate::schema::model::RootNode;
-    use crate::types::scalars::EmptyMutation;
-    use crate::value::Value;
+    use crate::{
+        executor::Variables, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+    };
 
     #[test]
     fn test_serialization() {

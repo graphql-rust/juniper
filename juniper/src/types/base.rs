@@ -2,13 +2,17 @@ use indexmap::IndexMap;
 
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
-use crate::ast::{Directive, FromInputValue, InputValue, Selection};
-use crate::executor::Variables;
-use crate::value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value};
+use crate::{
+    ast::{Directive, FromInputValue, InputValue, Selection},
+    executor::Variables,
+    value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
+};
 
-use crate::executor::{ExecutionResult, Executor, Registry};
-use crate::parser::Spanning;
-use crate::schema::meta::{Argument, MetaType};
+use crate::{
+    executor::{ExecutionResult, Executor, Registry},
+    parser::Spanning,
+    schema::meta::{Argument, MetaType},
+};
 
 /// GraphQL type kind
 ///
