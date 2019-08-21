@@ -42,14 +42,14 @@ Check the LICENSE file for details.
 
 use std::{
     error::Error,
-    io::Cursor,
+    io::{Cursor, Read},
 };
 
 use rocket::{
-    data::{FromDataFuture, FromDataSimple},
+    data::{FromDataSimple, Outcome as FromDataOutcome},
     http::{ContentType, RawStr, Status},
     request::{FormItems, FromForm, FromFormValue},
-    response::{content, Responder, Response, ResultFuture},
+    response::{content, Responder, Response},
     Data,
     Outcome::{Failure, Forward, Success},
     Request,
