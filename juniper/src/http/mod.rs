@@ -111,13 +111,7 @@ where
     {
         let op = self.operation_name();
         let vars = &self.variables();
-        let res = crate::execute_async(
-            &self.query,
-            op,
-            root_node,
-            vars,
-            context,
-        ).await;
+        let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
         GraphQLResponse(res)
     }
 }
