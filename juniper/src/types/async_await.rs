@@ -1,9 +1,12 @@
+use crate::{
+    ast::{Directive, FromInputValue, InputValue, Selection},
+    value::{Object, ScalarRefValue, ScalarValue, Value},
+};
 
-use crate::ast::{Directive, FromInputValue, InputValue, Selection};
-use crate::value::{Object, ScalarRefValue, ScalarValue, Value};
-
-use crate::executor::{ExecutionResult, Executor};
-use crate::parser::Spanning;
+use crate::{
+    executor::{ExecutionResult, Executor},
+    parser::Spanning,
+};
 
 use crate::BoxFuture;
 
