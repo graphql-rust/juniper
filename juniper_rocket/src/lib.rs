@@ -38,12 +38,11 @@ Check the LICENSE file for details.
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
-
 #![cfg_attr(feature = "async", feature(async_await, async_closure))]
 
 use std::{
     error::Error,
-    io::{Cursor, Read},
+    io::Cursor,
 };
 
 use rocket::{
@@ -64,6 +63,9 @@ use juniper::{
 };
 
 #[cfg(feature = "async")]
+use juniper::GraphQLTypeAsync;
+
+#[cfg(feature = "async")]
 use futures03::future::{FutureExt, TryFutureExt};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
@@ -71,7 +73,7 @@ use futures03::future::{FutureExt, TryFutureExt};
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLBatchRequest<S = DefaultScalarValue>
 where
-    S: ScalarValue,
+    S: ScalarValue + Sync + Send,
 {
     Single(http::GraphQLRequest<S>),
     Batch(Vec<http::GraphQLRequest<S>>),
@@ -81,7 +83,7 @@ where
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where
-    S: ScalarValue,
+    S: ScalarValue + Sync + Send,
 {
     Single(http::GraphQLResponse<'a, S>),
     Batch(Vec<http::GraphQLResponse<'a, S>>),
@@ -89,7 +91,7 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
@@ -118,11 +120,14 @@ where
     pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, S>,
-        context: &CtxT,
+        context: &'a CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
@@ -135,7 +140,7 @@ where
                     .collect::<Vec<_>>();
 
                 GraphQLBatchResponse::Batch(futures03::future::join_all(futures).await)
-            },
+            }
         }
     }
 
@@ -151,7 +156,7 @@ where
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     fn is_ok(&self) -> bool {
         match self {
@@ -171,7 +176,7 @@ where
 #[derive(Debug, PartialEq)]
 pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
 where
-    S: ScalarValue;
+    S: ScalarValue + Send + Sync;
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
@@ -190,7 +195,7 @@ pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Sync + Send,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Execute an incoming GraphQL query
@@ -222,8 +227,11 @@ where
         context: &CtxT,
     ) -> GraphQLResponse
     where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
     {
         let response = self.0.execute_async(root_node, context).await;
         let status = if response.is_ok() {
@@ -301,7 +309,7 @@ impl GraphQLResponse {
 
 impl<'f, S> FromForm<'f> for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     type Error = String;
 
@@ -372,7 +380,7 @@ where
 
 impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     type Error = String;
 
@@ -387,7 +395,7 @@ const BODY_LIMIT: u64 = 1024 * 100;
 
 impl<S> FromDataSimple for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     type Error = String;
 
