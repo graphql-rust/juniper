@@ -5,6 +5,8 @@ use crate::value::{Object, ScalarRefValue, ScalarValue, Value};
 use crate::executor::{ExecutionResult, Executor};
 use crate::parser::Spanning;
 
+use crate::BoxFuture;
+
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
