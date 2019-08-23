@@ -70,5 +70,30 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
     );
 }
 
-criterion_group!(benches, bench_sync_vs_async_single_user_flat_instant);
-criterion_main!(benches);
+fn bench_sync_vs_async_introspection_query_instant(c: &mut Criterion) {
+    c.bench(
+        "Sync vs Async - Introspection Query - Instant",
+        ParameterizedBenchmark::new("Sync", |b, _| b.iter(|| j::introspect()), vec![1, 10])
+            .with_function("Async - Single Thread", |b, _| {
+                let mut rt = tokio::runtime::current_thread::Runtime::new().unwrap();
+                b.iter(|| {
+                    let f = j::introspect_async();
+                    rt.block_on(f)
+                })
+            })
+            .with_function("Async - Threadpool", |b, _| {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                b.iter(|| {
+                    let f = j::introspect_async();
+                    rt.block_on(f)
+                })
+            }),
+    );
+}
+
+criterion_group!(
+    query_benches,
+    bench_sync_vs_async_single_user_flat_instant,
+    bench_sync_vs_async_introspection_query_instant,
+);
+criterion_main!(query_benches);

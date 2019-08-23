@@ -1,7 +1,8 @@
 #![feature(async_await, async_closure)]
 
 use juniper::{
-    object, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, Value, Variables,
+    object, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, IntrospectionFormat,
+    Value, Variables,
 };
 
 pub type QueryResult = Result<
@@ -111,6 +112,20 @@ pub async fn execute_async(query: &str, vars: Variables) -> QueryResult {
     let root = new_schema();
     let ctx = Context::new();
     juniper::execute_async(query, None, &root, &vars, &ctx)
+        .await
+        .map_err(|e| format!("{:?}", e))
+}
+
+pub fn introspect() -> QueryResult {
+    let root = new_schema();
+    let ctx = Context::new();
+    juniper::introspect(&root, &ctx, IntrospectionFormat::All).map_err(|e| format!("{:?}", e))
+}
+
+pub async fn introspect_async() -> QueryResult {
+    let root = new_schema();
+    let ctx = Context::new();
+    juniper::introspect_async(&root, &ctx, IntrospectionFormat::All)
         .await
         .map_err(|e| format!("{:?}", e))
 }
