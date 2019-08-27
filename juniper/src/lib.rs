@@ -203,7 +203,7 @@ impl<'a> fmt::Display for GraphQLError<'a> {
                 write!(f, "{}", msgs)
             }
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
-            GraphQLError::MultipleOperationsProvided => write!(f, "No operation provided"),
+            GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
             GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
             GraphQLError::IsSubscription => write!(f, "Subscription are not currently supported"),
         }
