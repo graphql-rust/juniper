@@ -272,7 +272,7 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, Value<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }
 
@@ -292,7 +292,7 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, Value<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }
 
@@ -317,6 +317,6 @@ where
                 None => Value::null(),
             }
         };
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }

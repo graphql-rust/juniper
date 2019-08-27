@@ -1,9 +1,12 @@
+use crate::{
+    ast::{Directive, FromInputValue, InputValue, Selection},
+    value::{Object, ScalarRefValue, ScalarValue, Value},
+};
 
-use crate::ast::{Directive, FromInputValue, InputValue, Selection};
-use crate::value::{Object, ScalarRefValue, ScalarValue, Value};
-
-use crate::executor::{ExecutionResult, Executor};
-use crate::parser::Spanning;
+use crate::{
+    executor::{ExecutionResult, Executor},
+    parser::Spanning,
+};
 
 use crate::BoxFuture;
 
@@ -57,9 +60,12 @@ where
     'e: 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::future::FutureExt;
-
-    resolve_selection_set_into_async_recursive(instance, info, selection_set, executor).boxed()
+    Box::pin(resolve_selection_set_into_async_recursive(
+        instance,
+        info,
+        selection_set,
+        executor,
+    ))
 }
 
 struct AsyncField<S> {
@@ -86,10 +92,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::{
-        future::FutureExt,
-        stream::{FuturesOrdered, StreamExt},
-    };
+    use futures::stream::{FuturesOrdered, StreamExt};
 
     let mut object = Object::with_capacity(selection_set.len());
 
@@ -180,7 +183,7 @@ where
                         value,
                     })
                 };
-                async_values.push(field_future.boxed());
+                async_values.push(Box::pin(field_future));
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread, ..
@@ -203,7 +206,7 @@ where
                     .await;
                     AsyncValue::Nested(value)
                 };
-                async_values.push(f.boxed());
+                async_values.push(Box::pin(f));
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
@@ -247,7 +250,7 @@ where
                         .await;
                         AsyncValue::Nested(value)
                     };
-                    async_values.push(f.boxed());
+                    async_values.push(Box::pin(f));
                 }
             }
         }

@@ -181,7 +181,7 @@ pub use crate::{
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
 #[cfg(feature = "async")]
-pub use crate::types::async_await::{GraphQLTypeAsync};
+pub use crate::types::async_await::GraphQLTypeAsync;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
