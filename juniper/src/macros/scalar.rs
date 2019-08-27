@@ -432,7 +432,7 @@ macro_rules! graphql_scalar {
                     use $crate::GraphQLType;
                     use futures::future;
                     let v = self.resolve(info, selection_set, executor);
-                    future::FutureExt::boxed(future::ready(v))
+                    Box::pin(future::ready(v))
                 }
             }
         );

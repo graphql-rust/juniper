@@ -99,7 +99,7 @@ where
         match field_name {
             "__schema" | "__type" => {
                 let v = self.resolve_field(info, field_name, arguments, executor);
-                ready(v).boxed()
+                Box::pin(ready(v))
             }
             _ => self
                 .query_type
