@@ -1,0 +1,10 @@
+{
+  "line-length": false,
+  "no-inline-html": false,
+  "single-title": false,
+  "no-duplicate-heading": false,
+  "no-emphasis-as-heading": false,
+  "no-trailing-punctuation": false,
+  "commands-show-output": false
+}
+  

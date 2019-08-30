@@ -1,0 +1,3 @@
+* linguist-language=Markdown
+*.md linguist-detectable=true
+docs/* linguist-documentation
