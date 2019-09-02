@@ -1,0 +1,349 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>定义对象 - Juniper - Rust 语言的 GraphQL 服务器</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content=" Juniper 中文手册，一个用于 Rust 语言的 GraphQL 服务器库。">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+        <!-- MathJax -->
+        <script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../";
+            var default_theme = "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li><a href="../../index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="../../quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="../../types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="../../types/objects/defining_objects.html" class="active"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="../../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="../../types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="../../types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="../../types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="../../types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="../../types/interfaces.html"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="../../types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="../../types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="../../types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="../../schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="../../servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="../../servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="../../servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="../../servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="../../servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="../../servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="../../servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="../../advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="../../advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="../../advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="../../advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="../../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="../../rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1>
+
+                        <div class="right-buttons">
+                            <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#定义对象" id="定义对象">定义对象</a></h1>
+<blockquote>
+<p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/objects/defining_objects.md">types/objects/defining_objects.md</a>
+<br />
+commit 693405afa5a86df3a2277065696e7c42306ff630</p>
+</blockquote>
+<p>尽管 Rust 中的任何类型都可以暴露为 GraphQL 对象，但最常见的类型是结构体（struct）。</p>
+<p>Juniper 中，有两种方式创建 GraphQL对象：如果想要暴露一个简单结构体（struct），最简单的方式是自定义派生属性；另外一种方式将在<a href="complex_fields.html">复杂字段</a>章节中介绍。</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>上述代码将创建一个名为 <code>Person</code> 的 GraphQL 对象，有两个字段：<code>String!</code> 类型的 <code>name</code>，<code>Int!</code> 类型的  <code>age</code>。Rust 语言类型系统中，变量绑定默认为非空（non-null）。若你需要可空（nullable）字段，可以使用 <code>Option&lt;T&gt;</code>。</p>
+<p>我们应当利用 GraphQL 是自文档化（self-documenting）的特点，向类型和字段添加描述。Juniper 将自动使用关联的 Rust 文档注释作为 GraphQL 描述：</p>
+<p>!文件名 通过 Rust 文档注释作为 GraphQL 描述</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+/// 个人信息
+struct Person {
+    /// 个人全名，包括姓氏和名字
+    name: String,
+    /// 个人年龄，以年为单位，按月份四舍五入
+    age: i32,
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>Rust 中不能使用文档注释的对象和字段，可通过 <code>graphql</code> 属性设置<code>描述</code>。如下示例和上述代码等价：</p>
+<p>!文件名 通过 graphql 属性设置描述</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+#[graphql(description=&quot;个人信息&quot;)]
+struct Person {
+    #[graphql(description=&quot;个人全名，包括姓氏和名字&quot;)]
+    name: String,
+    #[graphql(description=&quot;个人年龄，以年为单位，按月份四舍五入&quot;)]
+    age: i32,
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>通过 <code>graphql</code> 属性设置的描述优先于 Rust 文档注释，这使得内部 Rust 文档和外部 GraphQL 文档能够不同：</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+#[graphql(description=&quot;这段描述展示在 GraphQL&quot;)]
+/// 这段描述展示在 RustDoc
+struct Person {
+    #[graphql(description=&quot;这段描述展示在 GraphQL&quot;)]
+    /// 这段描述展示在 RustDoc
+    name: String,
+    /// 这段描述在 RustDoc 和 GraphQL 中都展示
+    age: i32,
+}
+
+# fn main() {}
+</code></pre></pre>
+<h2><a class="header" href="#关系" id="关系">关系</a></h2>
+<p>如下情形，只能使用自定义派生属性：</p>
+<ul>
+<li>注解类型是<code>结构体（struct）</code>,</li>
+<li>结构体的字段符合以下情形——
+<ul>
+<li>简单类型（<code>i32</code>, <code>f64</code>, <code>bool</code>, <code>String</code>, <code>juniper::ID</code>）；或者</li>
+<li>有效的自定义 GraphQL 类型，如使用此属性标记了其他结构体字段；或者</li>
+<li>容器/引用包含以上情形之一，如 <code>Vec&lt;T&gt;</code>、<code>Box&lt;T&gt;</code>、<code>Option&lt;T&gt;</code>。</li>
+</ul>
+</li>
+</ul>
+<p>让我们看看这对于对象之间的构建关系意味着什么：</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+}
+
+#[derive(juniper::GraphQLObject)]
+struct House {
+    address: Option&lt;String&gt;, // 转换为字符串（可空）
+    inhabitants: Vec&lt;Person&gt;, // 转换为 [Person!]!
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>因为 <code>Person</code> 是一个有效的 GraphQL 类型，所以可以在另一个结构体中使用 <code>Vec&lt;Person&gt;</code>，它将自动转换为 <code>非空 Person 对象</code> 的列表。</p>
+<h2><a class="header" href="#字段重命名" id="字段重命名">字段重命名</a></h2>
+<p>默认地，结构体字段由 Rust 标准命名约定<code>蛇形命名法（snake_case）</code>被转换为 GraphQL 约定的<code>驼峰命名法（snake_case）</code>：</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Person {
+    first_name: String, // GraphQL 模式中将被暴露为 firstName
+    last_name: String, // GraphQL 模式中将被暴露为 lastName
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>可以在某个结构体字段上使用 <code>graphql</code> 属性指定名称：</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(name=&quot;websiteURL&quot;)]
+    website_url: Option&lt;String&gt;, // GraphQL 模式中将被暴露为 websiteURL
+}
+
+# fn main() {}
+</code></pre></pre>
+<h2><a class="header" href="#字段弃用" id="字段弃用">字段弃用</a></h2>
+<p>要弃用字段，可使用 <code>graphql</code> 属性指定弃用原因：</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(deprecated = &quot;请使用 name 字段代替&quot;)]
+    first_name: String,
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>当然，<code>名称（name）</code>、<code>描述(description)</code>和<code>deprecation（弃用）</code>参数可以组合使用。不过 GraphQL 规范中的一些限制依然存在，<code>deprecation（弃用）</code>参数只能用于对象字段和枚举值。</p>
+<h2><a class="header" href="#字段忽略" id="字段忽略">字段忽略</a></h2>
+<p>默认地，<code>GraphQLObject</code> 中的所有字段都包含在生成的 GraphQL 类型中。若要不包含特定字段，请使用注解 <code>#[graphql(skip)]</code>：</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(skip)]
+    # #[allow(dead_code)]
+    password_hash: String, // 此字段不能从 GraphQL 查询或修改
+}
+
+# fn main() {}
+</code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../../types/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../../types/objects/complex_fields.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../../types/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../../types/objects/complex_fields.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        <script src="../../ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../editor.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../mode-rust.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../theme-dawn.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../theme-tomorrow_night.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        
+        <script src="../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

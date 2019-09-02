@@ -1,0 +1,388 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>快速入门 - Juniper - Rust 语言的 GraphQL 服务器</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content=" Juniper 中文手册，一个用于 Rust 语言的 GraphQL 服务器库。">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+        <!-- MathJax -->
+        <script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li><a href="index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="quickstart.html" class="active"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#快速入门" id="快速入门">快速入门</a></h1>
+<blockquote>
+<p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/quickstart.md">quickstart.md</a>
+<br />
+commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
+</blockquote>
+<p>简要介绍 Juniper 中的概念。</p>
+<h2><a class="header" href="#安装" id="安装">安装</a></h2>
+<p>!文件名 Cargo.toml</p>
+<pre><code class="language-toml">[dependencies]
+juniper = &quot;^0.13.1&quot;
+</code></pre>
+<h2><a class="header" href="#模式示例" id="模式示例">模式示例</a></h2>
+<p>要将 Rust 语言的 <code>enums</code> 和 <code>structs</code> 暴露为 GraphQL，仅需向其增加一个自定义<code>派生属性</code>。Juniper 支持将 Rust 语言基本类型轻而易举地映射到 GraphQL 特性，诸如：<code>Option&lt;T&gt;</code>、<code>Vec&lt;T&gt;</code>、<code>Box&lt;T&gt;</code>、<code>String</code>、<code>f64</code> 和 <code>i32</code>、<code>引用</code>和<code>切片（slice）</code>.</p>
+<p>对于更高级的映射，Juniper 提供了多种<code>宏（macro）</code>来将 Rust 类型映射到 GraphQL 模式。<a href="https://docs.rs/juniper/latest/juniper/macro.object.html">过程宏对象</a>是最重要的宏对象之一，其用于声明解析器对象，你将使用解析器对象来 <code>查询（Query）</code> 和 <code>变更（Mutation）</code> 根（roots）。</p>
+<pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult};
+
+# struct DatabasePool;
+# impl DatabasePool {
+#     fn get_connection(&amp;self) -&gt; FieldResult&lt;DatabasePool&gt; { Ok(DatabasePool) }
+#     fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+#     fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+# }
+
+#[derive(juniper::GraphQLEnum)]
+enum Episode {
+    NewHope,
+    Empire,
+    Jedi,
+}
+
+#[derive(juniper::GraphQLObject)]
+#[graphql(description=&quot;星球大战中的类人生物&quot;)]
+struct Human {
+    id: String,
+    name: String,
+    appears_in: Vec&lt;Episode&gt;,
+    home_planet: String,
+}
+
+// 另一个用于映射 GraphQL 输入对象的自定义派生。
+
+#[derive(juniper::GraphQLInputObject)]
+#[graphql(description=&quot;星球大战中的类人生物&quot;)]
+struct NewHuman {
+    name: String,
+    appears_in: Vec&lt;Episode&gt;,
+    home_planet: String,
+}
+
+// 使用宏对象创建带有解析器的根查询和根变更。
+// 对象可以拥有类似数据库池一样的允许访问共享状态的上下文。
+
+struct Context {
+    // 这里使用真实数据池
+    pool: DatabasePool,
+}
+
+// 要让 Juniper 使用上下文，必须实现标注特性（trait）
+impl juniper::Context for Context {}
+
+struct Query;
+
+#[juniper::object(
+    // 指定对象的上下文类型。
+    // 需要访问上下文的每种类型都需如此。
+    Context = Context,
+)]
+impl Query {
+
+    fn apiVersion() -&gt; &amp;str {
+        &quot;1.0&quot;
+    }
+
+    // 解析器的参数可以是简单类型，也可以是输入对象。
+    // 为了访问上下文，我们指定了一个引用上下文类型的参数。
+    // Juniper 会自动注入正确的上下文。
+    fn human(context: &amp;Context, id: String) -&gt; FieldResult&lt;Human&gt; {
+        // 获取数据库连接
+        let connection = context.pool.get_connection()?;
+        // 执行查询
+        // 注意 `?` 的用法，进行错误传播。
+        // 译者注：上一章“特点”中提到，Juniper 默认构建非空类型
+        let human = connection.find_human(&amp;id)?;
+        // 返回结果集
+        Ok(human)
+    }
+}
+
+// 下面对变更类型做同样的事情
+
+struct Mutation;
+
+#[juniper::object(
+    Context = Context,
+)]
+impl Mutation {
+
+    fn createHuman(context: &amp;Context, new_human: NewHuman) -&gt; FieldResult&lt;Human&gt; {
+        let db = executor.context().pool.get_connection()?;
+        let human: Human = db.insert_human(&amp;new_human)?;
+        Ok(human)
+    }
+}
+
+// 根模式由查询和变更组成，故查询请求可以执行于 RootNode。
+type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
+
+# fn main() {
+#   let _ = Schema::new(Query, Mutation{});
+# }
+</code></pre></pre>
+<p>现在，我们有了一个非常简单，但模式功能齐全的 GraphQL服务器。</p>
+<p>要让此模式在服务器端起作用，查阅各类<a href="./servers/index.html">服务器集成</a>指南。</p>
+<p>也可以直接调用执行器（executor）来获取查询结果集：</p>
+<h2><a class="header" href="#执行器executor" id="执行器executor">执行器（executor）</a></h2>
+<p>可以直接调用 <code>juniper::execute</code> 来运行 GraphQL 查询：</p>
+<pre><pre class="playpen"><code class="language-rust"># // 由于宏（macro）不可访问，如下代码仅 Rust-2018 版需要
+# #[macro_use] extern crate juniper;
+use juniper::{FieldResult, Variables, EmptyMutation};
+
+
+#[derive(juniper::GraphQLEnum, Clone, Copy)]
+enum Episode {
+    NewHope,
+    Empire,
+    Jedi,
+}
+
+// 上下文（context）数据
+struct Ctx(Episode);
+
+impl juniper::Context for Ctx {}
+
+struct Query;
+
+#[juniper::object(
+    Context = Ctx,
+)]
+impl Query {
+    fn favoriteEpisode(context: &amp;Ctx) -&gt; FieldResult&lt;Episode&gt; {
+        Ok(context.0)
+    }
+}
+
+
+// 根模式由查询和变更组成，故查询请求可以执行于 RootNode。
+type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Ctx&gt;&gt;;
+
+fn main() {
+    // 创建上下文对象
+    let ctx = Ctx(Episode::NewHope);
+
+    // 运行执行器
+    let (res, _errors) = juniper::execute(
+        &quot;query { favoriteEpisode }&quot;,
+        None,
+        &amp;Schema::new(Query, EmptyMutation::new()),
+        &amp;Variables::new(),
+        &amp;ctx,
+    ).unwrap();
+
+    // 确保查询结果值匹配
+    assert_eq!(
+        res,
+        graphql_value!({
+            &quot;favoriteEpisode&quot;: &quot;NEW_HOPE&quot;,
+        })
+    );
+}
+</code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="types/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="types/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        <script src="ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="editor.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mode-rust.js" type="text/javascript" charset="utf-8"></script>
+        <script src="theme-dawn.js" type="text/javascript" charset="utf-8"></script>
+        <script src="theme-tomorrow_night.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
