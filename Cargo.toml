@@ -11,4 +11,5 @@ members = [
 ]
 exclude = [
   "docs/book/tests",
+  "docs/book-zh/tests",
 ]

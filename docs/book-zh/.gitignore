@@ -2,4 +2,6 @@
 *~
 *.swp
 
-book
+Cargo.lock
+
+docs
