@@ -13,7 +13,7 @@ theme = "src/theme"
 # default-theme = "rust"
 curly-quotes = true
 mathjax-support = true
-# git_repository_url = "https://github.com/zzy/juniper-book-zh"
+git_repository_url = "https://github.com/graphql-rs/juniper"
 
 [output.html.playpen]
 editable = true
