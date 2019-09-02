@@ -4,10 +4,6 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Juniper - Rust 语言的 GraphQL 服务器</title>
-        
-        <meta name="robots" content="noindex" />
-        
-
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content=" Juniper 中文手册，一个用于 Rust 语言的 GraphQL 服务器库。">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,10 +35,7 @@
     </head>
     <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
-            var path_to_root = "";
-            var default_theme = "light";
-        </script>
+        <script type="text/javascript">var path_to_root = "";</script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -63,8 +56,8 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
             document.body.className = theme;
             document.querySelector('html').className = theme + ' js';
         </script>
@@ -82,10 +75,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li><a href="index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
-            </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <ol class="chapter"><li><a href="index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -102,7 +92,7 @@
                                 <i class="fa fa-paint-brush"></i>
                             </button>
                             <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -115,13 +105,12 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1>
+                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1> 
 
                         <div class="right-buttons">
                             <a href="print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
-                            
                         </div>
                     </div>
                 </div>
@@ -150,7 +139,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#juniper" id="juniper">Juniper</a></h1>
+                        <a class="header" href="#juniper" id="juniper"><h1>Juniper</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/README.md">README.md</a>
 <br />
@@ -165,39 +154,39 @@ commit 9623e4d32694118e68ce8706f29e2cfbc6c5b6dc</p>
 <li><a href="https://crates.io/crates/juniper">Cargo crate</a></li>
 <li><a href="https://docs.rs/juniper">API Reference</a></li>
 </ul>
-<h2><a class="header" href="#特点" id="特点">特点</a></h2>
+<a class="header" href="#a特点" id="a特点"><h2>特点</h2></a>
 <p>Juniper 根据 <a href="http://facebook.github.io/graphql">GraphQL 规范定义</a>支持完整的 GraphQL 查询语言，包括：接口、联合、模式内省，以及验证。但是不支持模式语言。</p>
 <p>Juniper 作为 Rust 语言的 GraphQL 库，默认构建非空类型。类型为 <code>Vec&lt;Episode&gt;</code> 的字段将被转换为 <code>[Episode!]!</code>，相应的 Rust 语言类型则为 <code>Option&lt;Vec&lt;Option&lt;Episode&gt;&gt;&gt;</code>。</p>
-<h2><a class="header" href="#集成" id="集成">集成</a></h2>
-<h3><a class="header" href="#数据类型" id="数据类型">数据类型</a></h3>
+<a class="header" href="#a集成" id="a集成"><h2>集成</h2></a>
+<a class="header" href="#a数据类型" id="a数据类型"><h3>数据类型</h3></a>
 <p>Juniper 与一些较常见的 Rust 库进行了自动集成，使构建模式变得简单，被集成的 Rust 库中的类型将在 GraphQL 模式中自动可用。</p>
 <ul>
 <li><a href="https://crates.io/crates/uuid">uuid</a></li>
 <li><a href="https://crates.io/crates/url">url</a></li>
 <li><a href="https://crates.io/crates/chrono">chrono</a></li>
 </ul>
-<h3><a class="header" href="#web-框架" id="web-框架">Web 框架</a></h3>
+<a class="header" href="#web-框架" id="web-框架"><h3>Web 框架</h3></a>
 <ul>
 <li><a href="https://hyper.rs">hyper</a></li>
 <li><a href="https://rocket.rs">rocket</a></li>
 <li><a href="http://ironframework.io">iron</a></li>
 <li><a href="https://github.com/seanmonstar/warp">warp</a></li>
 </ul>
-<h2><a class="header" href="#api-稳定性" id="api-稳定性">API 稳定性</a></h2>
+<a class="header" href="#api-稳定性" id="api-稳定性"><h2>API 稳定性</h2></a>
 <p>Juniper 还未发布 1.0 版本，部分 API 稳定性可能不够成熟。</p>
-<h1><a class="header" href="#快速入门" id="快速入门">快速入门</a></h1>
+<a class="header" href="#a快速入门" id="a快速入门"><h1>快速入门</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/quickstart.md">quickstart.md</a>
 <br />
 commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
 </blockquote>
 <p>简要介绍 Juniper 中的概念。</p>
-<h2><a class="header" href="#安装" id="安装">安装</a></h2>
+<a class="header" href="#a安装" id="a安装"><h2>安装</h2></a>
 <p>!文件名 Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
 juniper = &quot;^0.13.1&quot;
 </code></pre>
-<h2><a class="header" href="#模式示例" id="模式示例">模式示例</a></h2>
+<a class="header" href="#a模式示例" id="a模式示例"><h2>模式示例</h2></a>
 <p>要将 Rust 语言的 <code>enums</code> 和 <code>structs</code> 暴露为 GraphQL，仅需向其增加一个自定义<code>派生属性</code>。Juniper 支持将 Rust 语言基本类型轻而易举地映射到 GraphQL 特性，诸如：<code>Option&lt;T&gt;</code>、<code>Vec&lt;T&gt;</code>、<code>Box&lt;T&gt;</code>、<code>String</code>、<code>f64</code> 和 <code>i32</code>、<code>引用</code>和<code>切片（slice）</code>.</p>
 <p>对于更高级的映射，Juniper 提供了多种<code>宏（macro）</code>来将 Rust 类型映射到 GraphQL 模式。<a href="https://docs.rs/juniper/latest/juniper/macro.object.html">过程宏对象</a>是最重要的宏对象之一，其用于声明解析器对象，你将使用解析器对象来 <code>查询（Query）</code> 和 <code>变更（Mutation）</code> 根（roots）。</p>
 <pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult};
@@ -300,7 +289,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 <p>现在，我们有了一个非常简单，但模式功能齐全的 GraphQL服务器。</p>
 <p>要让此模式在服务器端起作用，查阅各类<a href="./servers/index.html">服务器集成</a>指南。</p>
 <p>也可以直接调用执行器（executor）来获取查询结果集：</p>
-<h2><a class="header" href="#执行器executor" id="执行器executor">执行器（executor）</a></h2>
+<a class="header" href="#a执行器executor" id="a执行器executor"><h2>执行器（executor）</h2></a>
 <p>可以直接调用 <code>juniper::execute</code> 来运行 GraphQL 查询：</p>
 <pre><pre class="playpen"><code class="language-rust"># // 由于宏（macro）不可访问，如下代码仅 Rust-2018 版需要
 # #[macro_use] extern crate juniper;
@@ -356,7 +345,7 @@ fn main() {
     );
 }
 </code></pre></pre>
-<h1><a class="header" href="#类型系统" id="类型系统">类型系统</a></h1>
+<a class="header" href="#a类型系统" id="a类型系统"><h1>类型系统</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/index.md">types/index.md</a>
 <br />
@@ -366,31 +355,31 @@ commit a75396846d9f8930d1e07e972a91ff59308e77cf</p>
 <p>Juniper提供了一些恰当方便的抽象，力图使这个过程尽可能地简单。</p>
 <p>下面的章节可以查阅更多信息。</p>
 <ul>
-<li><a href="types/objects/defining_objects.html">对象定义</a>
+<li><a href="objects/defining_objects.html">对象定义</a>
 <ul>
-<li><a href="types/objects/complex_fields.html">复杂字段</a></li>
-<li><a href="types/objects/using_contexts.html">上下文</a></li>
-<li><a href="types/objects/error_handling.html">错误处理</a></li>
+<li><a href="objects/complex_fields.html">复杂字段</a></li>
+<li><a href="objects/using_contexts.html">上下文</a></li>
+<li><a href="objects/error_handling.html">错误处理</a></li>
 </ul>
 </li>
-<li><a href="types/other-index.html">其他类型</a>
+<li><a href="other-index.html">其他类型</a>
 <ul>
-<li><a href="types/enums.html">枚举</a></li>
-<li><a href="types/interfaces.html">接口</a></li>
-<li><a href="types/input_objects.html">输入对象</a></li>
-<li><a href="types/scalars.html">标量</a></li>
-<li><a href="types/unions.html">联合</a></li>
+<li><a href="enums.html">枚举</a></li>
+<li><a href="interfaces.html">接口</a></li>
+<li><a href="input_objects.html">输入对象</a></li>
+<li><a href="scalars.html">标量</a></li>
+<li><a href="unions.html">联合</a></li>
 </ul>
 </li>
 </ul>
-<h1><a class="header" href="#定义对象" id="定义对象">定义对象</a></h1>
+<a class="header" href="#a定义对象" id="a定义对象"><h1>定义对象</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/objects/defining_objects.md">types/objects/defining_objects.md</a>
 <br />
 commit 693405afa5a86df3a2277065696e7c42306ff630</p>
 </blockquote>
 <p>尽管 Rust 中的任何类型都可以暴露为 GraphQL 对象，但最常见的类型是结构体（struct）。</p>
-<p>Juniper 中，有两种方式创建 GraphQL对象：如果想要暴露一个简单结构体（struct），最简单的方式是自定义派生属性；另外一种方式将在<a href="types/objects/complex_fields.html">复杂字段</a>章节中介绍。</p>
+<p>Juniper 中，有两种方式创建 GraphQL对象：如果想要暴露一个简单结构体（struct），最简单的方式是自定义派生属性；另外一种方式将在<a href="complex_fields.html">复杂字段</a>章节中介绍。</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {
     name: String,
@@ -440,7 +429,7 @@ struct Person {
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#关系" id="关系">关系</a></h2>
+<a class="header" href="#a关系" id="a关系"><h2>关系</h2></a>
 <p>如下情形，只能使用自定义派生属性：</p>
 <ul>
 <li>注解类型是<code>结构体（struct）</code>,</li>
@@ -468,7 +457,7 @@ struct House {
 # fn main() {}
 </code></pre></pre>
 <p>因为 <code>Person</code> 是一个有效的 GraphQL 类型，所以可以在另一个结构体中使用 <code>Vec&lt;Person&gt;</code>，它将自动转换为 <code>非空 Person 对象</code> 的列表。</p>
-<h2><a class="header" href="#字段重命名" id="字段重命名">字段重命名</a></h2>
+<a class="header" href="#a字段重命名" id="a字段重命名"><h2>字段重命名</h2></a>
 <p>默认地，结构体字段由 Rust 标准命名约定<code>蛇形命名法（snake_case）</code>被转换为 GraphQL 约定的<code>驼峰命名法（snake_case）</code>：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {
@@ -489,7 +478,7 @@ struct Person {
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#字段弃用" id="字段弃用">字段弃用</a></h2>
+<a class="header" href="#a字段弃用" id="a字段弃用"><h2>字段弃用</h2></a>
 <p>要弃用字段，可使用 <code>graphql</code> 属性指定弃用原因：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {
@@ -502,7 +491,7 @@ struct Person {
 # fn main() {}
 </code></pre></pre>
 <p>当然，<code>名称（name）</code>、<code>描述(description)</code>和<code>deprecation（弃用）</code>参数可以组合使用。不过 GraphQL 规范中的一些限制依然存在，<code>deprecation（弃用）</code>参数只能用于对象字段和枚举值。</p>
-<h2><a class="header" href="#字段忽略" id="字段忽略">字段忽略</a></h2>
+<a class="header" href="#a字段忽略" id="a字段忽略"><h2>字段忽略</h2></a>
 <p>默认地，<code>GraphQLObject</code> 中的所有字段都包含在生成的 GraphQL 类型中。若要不包含特定字段，请使用注解 <code>#[graphql(skip)]</code>：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {
@@ -515,7 +504,7 @@ struct Person {
 
 # fn main() {}
 </code></pre></pre>
-<h1><a class="header" href="#复杂字段" id="复杂字段">复杂字段</a></h1>
+<a class="header" href="#a复杂字段" id="a复杂字段"><h1>复杂字段</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/objects/complex_fields.md">types/objects/complex_fields.md</a>
 <br />
@@ -562,8 +551,8 @@ impl House {
 
 # fn main() {}
 </code></pre></pre>
-<p>要访问诸如数据库连接或身份验证信息之类的全局数据，需要使用 <em>上下文（context）</em>。更多关于 <em>上下文（context）</em> 的信息，将在下一章介绍：<a href="types/objects/using_contexts.html">上下文</a>。</p>
-<h2><a class="header" href="#描述重命名以及弃用" id="描述重命名以及弃用">描述、重命名，以及弃用</a></h2>
+<p>要访问诸如数据库连接或身份验证信息之类的全局数据，需要使用 <em>上下文（context）</em>。更多关于 <em>上下文（context）</em> 的信息，将在下一章介绍：<a href="using_contexts.html">上下文</a>。</p>
+<a class="header" href="#a描述重命名以及弃用" id="a描述重命名以及弃用"><h2>描述、重命名，以及弃用</h2></a>
 <p>与派生属性一样，字段名将从命名约定 <code>snake_case</code> 转换为 <code>camelCase</code>。若需重写转换，可以简单地重命名字段。此外，可以使用别名更换类型名称：</p>
 <pre><pre class="playpen"><code class="language-rust">
 struct Person {
@@ -610,7 +599,7 @@ impl Person {
 
 # fn main() { }
 </code></pre></pre>
-<h2><a class="header" href="#自定义参数" id="自定义参数">自定义参数</a></h2>
+<a class="header" href="#a自定义参数" id="a自定义参数"><h2>自定义参数</h2></a>
 <p>方法的字段参数也是可以定制的，可以指定自定义描述和默认值。</p>
 <p><strong>注意</strong>：此语法目前有点别扭。一旦实现了 <a href="https://github.com/rust-lang/rust/issues/60406">Rust RFC 2565</a>，将会变得好用。</p>
 <pre><pre class="playpen"><code class="language-rust">
@@ -639,7 +628,7 @@ impl Person {
 
 # fn main() { }
 </code></pre></pre>
-<h2><a class="header" href="#更多功能" id="更多功能">更多功能</a></h2>
+<a class="header" href="#a更多功能" id="a更多功能"><h2>更多功能</h2></a>
 <p>GraphQL 字段提供了比 Rust 标准方法提供了更多的功能：</p>
 <ul>
 <li>字段的描述和弃用消息；</li>
@@ -647,13 +636,13 @@ impl Person {
 <li>参数描述</li>
 </ul>
 <p>更多的特性在<a href="https://docs.rs/juniper/latest/juniper/macro.object.html">参考文档</a>中有详细的描述。</p>
-<h1><a class="header" href="#上下文" id="上下文">上下文</a></h1>
+<a class="header" href="#a上下文" id="a上下文"><h1>上下文</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/objects/using_contexts.md">types/objects/using_contexts.md</a>
 <br />
 commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
 </blockquote>
-<p>上下文类型是 Juniper 中的一个特性，它允许字段解析器访问全局数据，最常见的是数据库连接或身份验证信息。上下文通常由 <em>上下文工厂（context factory）</em> 方法创建。上下文的定义，与你正在使用的框架如何集成有关，请查阅 <a href="types/objects/../../servers/iron.html">Iron</a> 或 <a href="types/objects/../../servers/rocket.html">Rocket</a> 等框架的集成文档。</p>
+<p>上下文类型是 Juniper 中的一个特性，它允许字段解析器访问全局数据，最常见的是数据库连接或身份验证信息。上下文通常由 <em>上下文工厂（context factory）</em> 方法创建。上下文的定义，与你正在使用的框架如何集成有关，请查阅 <a href="../../servers/iron.html">Iron</a> 或 <a href="../../servers/rocket.html">Rocket</a> 等框架的集成文档。</p>
 <p>本章中，将向你展示如何定义上下文类型，以及如何在字段解析器中使用它。假定有一个简单的用户资料库封装在 <code>HashMap</code> 中：</p>
 <pre><pre class="playpen"><code class="language-rust"># #![allow(dead_code)]
 # use std::collections::HashMap;
@@ -721,7 +710,7 @@ impl User {
 </code></pre></pre>
 <p>你仅获得对上下文的不可变引用，因此，如果你想要执行更改操作，你将需要利用<a href="https://doc.rust-lang.org/book/first-edition/mutability.html#interior-vs-exterior-mutability">内部可变性（interior
 mutability）</a>，例如：<code>RwLock</code> 或 <code>RefCell</code>。</p>
-<h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
+<a class="header" href="#a错误处理" id="a错误处理"><h1>错误处理</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/objects/error_handling.md">types/objects/error_handling.md</a>
 <br />
@@ -805,7 +794,7 @@ impl Example {
   ]
 }
 </code></pre>
-<h2><a class="header" href="#结构化错误" id="结构化错误">结构化错误</a></h2>
+<a class="header" href="#a结构化错误" id="a结构化错误"><h2>结构化错误</h2></a>
 <p>有些情况下，有必要向客户端返回附加的结构化错误信息。可以通过实现 <a href="https://docs.rs/juniper/latest/juniper/trait.IntoFieldError.html"><code>IntoFieldError</code></a> 来解决：</p>
 <pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
 enum CustomError {
@@ -852,7 +841,7 @@ impl Example {
   ]
 }
 </code></pre>
-<h1><a class="header" href="#其他类型" id="其他类型">其他类型</a></h1>
+<a class="header" href="#a其他类型" id="a其他类型"><h1>其他类型</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/other-index.md">types/other-index.md</a>
 <br />
@@ -860,13 +849,13 @@ commit a75396846d9f8930d1e07e972a91ff59308e77cf</p>
 </blockquote>
 <p>除了对象外，GraphQL 类型系统还提供了如下类型：</p>
 <ul>
-<li><a href="types/enums.html">枚举</a></li>
-<li><a href="types/interfaces.html">接口</a></li>
-<li><a href="types/input_objects.html">输入对象</a></li>
-<li><a href="types/scalars.html">标量</a></li>
-<li><a href="types/unions.html">联合</a></li>
+<li><a href="enums.html">枚举</a></li>
+<li><a href="interfaces.html">接口</a></li>
+<li><a href="input_objects.html">输入对象</a></li>
+<li><a href="scalars.html">标量</a></li>
+<li><a href="unions.html">联合</a></li>
 </ul>
-<h1><a class="header" href="#枚举" id="枚举">枚举</a></h1>
+<a class="header" href="#a枚举" id="a枚举"><h1>枚举</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/enums.md">types/enums.md</a>
 <br />
@@ -882,7 +871,7 @@ enum Episode {
 
 # fn main() {}
 </code></pre></pre>
-<p>Juniper 会将枚举变量转换为大写，因此这些变量对应的字符串值分别是 <code>NEWHOPE</code>、<code>EMPIRE</code>、<code>JEDI</code>。如果你想要重写，可使用 <code>graphql</code> 属性，如同我们在<a href="types/objects/defining_objects.html">对象定义</a>学习的那样：</p>
+<p>Juniper 会将枚举变量转换为大写，因此这些变量对应的字符串值分别是 <code>NEWHOPE</code>、<code>EMPIRE</code>、<code>JEDI</code>。如果你想要重写，可使用 <code>graphql</code> 属性，如同我们在<a href="objects/defining_objects.html">对象定义</a>学习的那样：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLEnum)]
 enum Episode {
     #[graphql(name=&quot;NEW_HOPE&quot;)]
@@ -893,7 +882,7 @@ enum Episode {
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#文档化和弃用" id="文档化和弃用">文档化和弃用</a></h2>
+<a class="header" href="#a文档化和弃用" id="a文档化和弃用"><h2>文档化和弃用</h2></a>
 <p>就像定义对象一样，类型自身可以重命名和文档化。同样地，枚举变量可以重命名、文档化，以及弃用：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLEnum)]
 #[graphql(name=&quot;Episode&quot;, description=&quot;星球大战4：新希望&quot;)]
@@ -911,7 +900,7 @@ enum StarWarsEpisode {
 
 # fn main() {}
 </code></pre></pre>
-<h1><a class="header" href="#接口" id="接口">接口</a></h1>
+<a class="header" href="#a接口" id="a接口"><h1>接口</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/interfaces.md">types/interfaces.md</a>
 <br />
@@ -919,9 +908,9 @@ commit 693405afa5a86df3a2277065696e7c42306ff630</p>
 </blockquote>
 <p>GraphQL 接口能够正确地映射到常见的面向对象语言接口，如 Java 或 C#。但很不幸，Rust 并无与 GraphQL 接口正确映射的概念。因此，Juniper 中定义接口需要一点点范例代码；另一方面，可以做到让你完全控制所支持接口的类型。</p>
 <p>为了突出展示在 Rust 中实现接口的不同方式，让我们看看不同实现方式所实现的相同结果：</p>
-<h2><a class="header" href="#特性traits" id="特性traits">特性（Traits）</a></h2>
+<a class="header" href="#a特性traits" id="a特性traits"><h2>特性（Traits）</h2></a>
 <p>特性（Traits）或许是你在 Rust 语言构建 GraphQL 接口时想使用的最明显概念。但是因为 GraphQL 支持<code>向下转型（downcasting）</code>而 Rust 却不支持，所以你必须手动实现如何将特性（trait）转换为具体类型。可以通过如下方式：</p>
-<h3><a class="header" href="#通过存取器方法向下转型" id="通过存取器方法向下转型">通过存取器方法向下转型</a></h3>
+<a class="header" href="#a通过存取器方法向下转型" id="a通过存取器方法向下转型"><h3>通过存取器方法向下转型</h3></a>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
@@ -966,7 +955,7 @@ juniper::graphql_interface!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&
 </code></pre></pre>
 <p><code>instance_resolvers 闭包</code>列出了给定接口的所有实现，以及如何解析接口。</p>
 <p>如所看到的，使用特性（traits）意义不大：你需要列出 trait 自身的所有具体类型，且会有一些重复，啰里啰唆。</p>
-<h3><a class="header" href="#使用数据库查找" id="使用数据库查找">使用数据库查找</a></h3>
+<a class="header" href="#a使用数据库查找" id="a使用数据库查找"><h3>使用数据库查找</h3></a>
 <p>当具体类被请求时，如果你可以提供额外的数据库查询，则可以废弃向下转型方法，转而使用上下文。如下示例代码，我们将使用两个哈希表，你可以用两张表和一些 SQL 调用来代替：</p>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
@@ -1014,7 +1003,7 @@ juniper::graphql_interface!(&lt;'a&gt; &amp;'a Character: Database as &quot;Char
 # fn main() {}
 </code></pre></pre>
 <p>虽移除了向下转型方法，但代码仍有点啰嗦。</p>
-<h2><a class="header" href="#占位符placeholder对象" id="占位符placeholder对象">占位符（placeholder）对象</a></h2>
+<a class="header" href="#a占位符placeholder对象" id="a占位符placeholder对象"><h2>占位符（placeholder）对象</h2></a>
 <p>继续上段示例代码，trait 自身似乎没有必要，也许它可以仅是一个包含 ID 的结构体（struct）？</p>
 <p>Continuing on from the last example, the trait itself seems a bit unneccesary.
 Maybe it can just be a struct containing the ID?</p>
@@ -1056,7 +1045,7 @@ juniper::graphql_interface!(Character: Database where Scalar = &lt;S&gt; |&amp;s
 # fn main() {}
 </code></pre></pre>
 <p>减少了不少重复，但如果接口数据较多的情况下，此种做法不符合实际。</p>
-<h2><a class="header" href="#枚举-1" id="枚举-1">枚举</a></h2>
+<a class="header" href="#a枚举-1" id="a枚举-1"><h2>枚举</h2></a>
 <p>使用枚举和模式匹配介于使用特性（trait）和使用占位符（placeholder）对象之间。本例中，我们无需额外的数据库调用，因此移除。</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
@@ -1092,7 +1081,7 @@ juniper::graphql_interface!(Character: () where Scalar = &lt;S&gt; |&amp;self| {
 
 # fn main() {}
 </code></pre></pre>
-<h1><a class="header" href="#输入对象" id="输入对象">输入对象</a></h1>
+<a class="header" href="#a输入对象" id="a输入对象"><h1>输入对象</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/input_objects.md">types/input_objects.md</a>
 <br />
@@ -1119,8 +1108,8 @@ impl Root {
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#文档化和重命名" id="文档化和重命名">文档化和重命名</a></h2>
-<p>类似于<a href="types/objects/defining_objects.html">定义对象</a>、<a href="types/enums.html">派生枚举对象</a>，对类型和字段，既可以重命名，也可以添加文档：</p>
+<a class="header" href="#a文档化和重命名" id="a文档化和重命名"><h2>文档化和重命名</h2></a>
+<p>类似于<a href="objects/defining_objects.html">定义对象</a>、<a href="enums.html">派生枚举对象</a>，对类型和字段，既可以重命名，也可以添加文档：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLInputObject)]
 #[graphql(name=&quot;Coordinate&quot;, description=&quot;地球某一处&quot;)]
 struct WorldCoordinate {
@@ -1145,7 +1134,7 @@ impl Root {
 
 # fn main() {}
 </code></pre></pre>
-<h1><a class="header" href="#标量" id="标量">标量</a></h1>
+<a class="header" href="#a标量" id="a标量"><h1>标量</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/scalars.md">types/scalars.md</a>
 <br />
@@ -1158,7 +1147,7 @@ commit 97e1005178b4bd4d96d85ffb7c82cd36b66380b3</p>
 <li>对于只封装基本类型的简单标量，可以使用自定义派生对象的新类型（newtype）方式。</li>
 <li>对于有自定义验证的高级用例标量，可以使用 <code>graphql_scalar!</code> 宏。</li>
 </ul>
-<h2><a class="header" href="#内建标量" id="内建标量">内建标量</a></h2>
+<a class="header" href="#a内建标量" id="a内建标量"><h2>内建标量</h2></a>
 <p>Juniper 内建支持的标量有：</p>
 <ul>
 <li><code>i32</code> 表示 <code>Int</code>：有符号 32 位整数；</li>
@@ -1174,7 +1163,7 @@ commit 97e1005178b4bd4d96d85ffb7c82cd36b66380b3</p>
 <li>chrono::DateTime</li>
 <li>url::Url</li>
 </ul>
-<h2><a class="header" href="#新类型newtype方式" id="新类型newtype方式">新类型（newtype）方式</a></h2>
+<a class="header" href="#a新类型newtype方式" id="a新类型newtype方式"><h2>新类型（newtype）方式</h2></a>
 <p>通常情况下，你可能仅需要只包装已有类型的自定义标量。</p>
 <p>这可以通过新类型（newtype）方式和自定义派生来实现，类似于 serde 的方式 <code>#[serde(transparent)]</code>。</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLScalarValue)]
@@ -1203,7 +1192,7 @@ pub struct UserId(i32);
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#自定义标量" id="自定义标量">自定义标量</a></h2>
+<a class="header" href="#a自定义标量" id="a自定义标量"><h2>自定义标量</h2></a>
 <p>对于需要自定义解析或验证的复杂情况，可以使用 <code>graphql_scalar!</code> 宏。</p>
 <p>通常，将自定义标量表示为字符串。</p>
 <p>下面的例子中，为自定义 <code>Date</code> 类型实现自定义标量。</p>
@@ -1248,18 +1237,18 @@ juniper::graphql_scalar!(Date where Scalar = &lt;S&gt; {
 
 # fn main() {}
 </code></pre></pre>
-<h1><a class="header" href="#联合" id="联合">联合</a></h1>
+<a class="header" href="#a联合" id="a联合"><h1>联合</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/unions.md">types/unions.md</a>
 <br />
 commit 693405afa5a86df3a2277065696e7c42306ff630</p>
 </blockquote>
 <p>从服务器视觉看，GraphQL 联合类似于接口：唯一的例外是联合自身不包含字段。</p>
-<p>在Juniper中，<code>graphql_union!</code> 与<a href="types/interfaces.html">接口宏（interface
+<p>在Juniper中，<code>graphql_union!</code> 与<a href="interfaces.html">接口宏（interface
 macro）</a>具有相同的语法，但不支持定义字段。因此，接口中关于特性、占位符类型，或枚举使用，同样适用于联合。</p>
-<p>如果查阅和<a href="types/interfaces.html">接口章节</a>相同的示例，我们将看到相似性和折衷性：</p>
-<h2><a class="header" href="#特性traits-1" id="特性traits-1">特性（Traits）</a></h2>
-<h3><a class="header" href="#通过存取器方法向下转型-1" id="通过存取器方法向下转型-1">通过存取器方法向下转型</a></h3>
+<p>如果查阅和<a href="interfaces.html">接口章节</a>相同的示例，我们将看到相似性和折衷性：</p>
+<a class="header" href="#a特性traits-1" id="a特性traits-1"><h2>特性（Traits）</h2></a>
+<a class="header" href="#a通过存取器方法向下转型-1" id="a通过存取器方法向下转型-1"><h3>通过存取器方法向下转型</h3></a>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
@@ -1296,7 +1285,7 @@ juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&quot
 
 # fn main() {}
 </code></pre></pre>
-<h3><a class="header" href="#使用数据库查找-1" id="使用数据库查找-1">使用数据库查找</a></h3>
+<a class="header" href="#a使用数据库查找-1" id="a使用数据库查找-1"><h3>使用数据库查找</h3></a>
 <p>有毛病：此例代码还不能编译</p>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
@@ -1341,7 +1330,7 @@ juniper::graphql_union!(&lt;'a&gt; &amp;'a Character: Database as &quot;Characte
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#占位符placeholder对象-1" id="占位符placeholder对象-1">占位符（placeholder）对象</a></h2>
+<a class="header" href="#a占位符placeholder对象-1" id="a占位符placeholder对象-1"><h2>占位符（placeholder）对象</h2></a>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
 #[graphql(Context = Database)]
@@ -1377,7 +1366,7 @@ juniper::graphql_union!(Character: Database where Scalar = &lt;S&gt; |&amp;self|
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#枚举-2" id="枚举-2">枚举</a></h2>
+<a class="header" href="#a枚举-2" id="a枚举-2"><h2>枚举</h2></a>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
@@ -1405,7 +1394,7 @@ juniper::graphql_union!(Character: () where Scalar = &lt;S&gt; |&amp;self| {
 
 # fn main() {}
 </code></pre></pre>
-<h1><a class="header" href="#模式schemas" id="模式schemas">模式（Schemas）</a></h1>
+<a class="header" href="#a模式schemas" id="a模式schemas"><h1>模式（Schemas）</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/schema/schemas_and_mutations.md">schema/schemas_and_mutations.md</a>
 <br />
@@ -1413,9 +1402,9 @@ commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
 </blockquote>
 <p>模式由两种类型组成：查询对象和变更对象（Juniper 还不支持订阅），分别定义了字段查询和模式变更。</p>
 <p>查询和变更都是常规的 GraphQL 对象，其定义类似于 Juniper 中的其它对象。不过变更对象是可选的，因为模式可以是只读性的。</p>
-<p>Juniper 中，<code>RootNode</code> 类型表示一个模式。通常不需要你自己创建此对象：请参阅 <a href="schema/../servers/iron.html">Iron</a> 和 <a href="schema/../servers/rocket.html">Rocket</a> 的框架集成，了解模式与框架处理程序是如何被一起创建的。</p>
+<p>Juniper 中，<code>RootNode</code> 类型表示一个模式。通常不需要你自己创建此对象：请参阅 <a href="../servers/iron.html">Iron</a> 和 <a href="../servers/rocket.html">Rocket</a> 的框架集成，了解模式与框架处理程序是如何被一起创建的。</p>
 <p>模式首次创建时，Juniper 将遍历整个对象图，并注册所有类型。这意味着，如果定义了 GraphQL 对象但从未引用，那么此对象就不会暴露在模式中。</p>
-<h2><a class="header" href="#查询根query-root" id="查询根query-root">查询根（query root）</a></h2>
+<a class="header" href="#a查询根query-root" id="a查询根query-root"><h2>查询根（query root）</h2></a>
 <p>查询根（query root）也是 GraphQL 对象。其定义类似于 Juniper 中的其它对象，通常使用<code>过程宏对象</code>定义查询根：</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
@@ -1431,7 +1420,7 @@ impl Root {
 
 # fn main() { }
 </code></pre></pre>
-<h2><a class="header" href="#变更" id="变更">变更</a></h2>
+<a class="header" href="#a变更" id="a变更"><h2>变更</h2></a>
 <p>变更同样是 GraphQL 对象。变更是字段发生一些改变，如更新数据库。</p>
 <pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
@@ -1447,7 +1436,7 @@ impl Mutations {
 
 # fn main() { }
 </code></pre></pre>
-<h1><a class="header" href="#服务器集成" id="服务器集成">服务器集成</a></h1>
+<a class="header" href="#a服务器集成" id="a服务器集成"><h1>服务器集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/index.md">servers/index.md</a>
 <br />
@@ -1456,21 +1445,21 @@ commit a75396846d9f8930d1e07e972a91ff59308e77cf</p>
 <p>为了能够让 Juniper 与你自己选择的 HTTP 服务器一起使用，因此 Juniper <strong>没有</strong>内建 HTTP 服务器。</p>
 <p>第三方团队和 Juniper 官方提供了多个服务器集成的支持，供你结合实际场景来选择。</p>
 <ul>
-<li><a href="servers/official.html">官方支持集成</a>
+<li><a href="official.html">官方支持集成</a>
 <ul>
-<li><a href="servers/hyper.html">Hyper</a></li>
-<li><a href="servers/warp.html">Warp</a></li>
-<li><a href="servers/rocket.html">Rocket</a></li>
-<li><a href="servers/iron.html">Iron</a></li>
-<li><a href="servers/hyper.html">Hyper</a></li>
+<li><a href="hyper.html">Hyper</a></li>
+<li><a href="warp.html">Warp</a></li>
+<li><a href="rocket.html">Rocket</a></li>
+<li><a href="iron.html">Iron</a></li>
+<li><a href="hyper.html">Hyper</a></li>
 </ul>
 </li>
-<li><a href="servers/third-party.html">第三方集成</a><!-- - [Actix-Web](https://github.com/actix/examples/tree/master/juniper)
+<li><a href="third-party.html">第三方集成</a><!-- - [Actix-Web](https://github.com/actix/examples/tree/master/juniper)
 - [Finchers](https://github.com/finchers-rs/finchers/tree/master/examples/juniper)
 - [Tsukuyomi](https://github.com/tsukuyomi-rs/tsukuyomi/tree/master/examples/juniper) -->
 </li>
 </ul>
-<h1><a class="header" href="#官方支持集成" id="官方支持集成">官方支持集成</a></h1>
+<a class="header" href="#a官方支持集成" id="a官方支持集成"><h1>官方支持集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/official.md">servers/official.md</a>
 <br />
@@ -1479,12 +1468,12 @@ commit a75396846d9f8930d1e07e972a91ff59308e77cf</p>
 <p>Juniper 提供了几种较受欢迎的 Rust 服务器的集成包。
 libraries.</p>
 <ul>
-<li><a href="servers/hyper.html">Hyper</a></li>
-<li><a href="servers/warp.html">Warp</a></li>
-<li><a href="servers/rocket.html">Rocket</a></li>
-<li><a href="servers/iron.html">Iron</a></li>
+<li><a href="hyper.html">Hyper</a></li>
+<li><a href="warp.html">Warp</a></li>
+<li><a href="rocket.html">Rocket</a></li>
+<li><a href="iron.html">Iron</a></li>
 </ul>
-<h1><a class="header" href="#hyper-集成" id="hyper-集成">Hyper 集成</a></h1>
+<a class="header" href="#hyper-集成" id="hyper-集成"><h1>Hyper 集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/hyper.md">servers/hyper.md</a>
 <br />
@@ -1499,7 +1488,7 @@ juniper = &quot;0.10&quot;
 juniper_hyper = &quot;0.1.0&quot;
 </code></pre>
 <p><a href="https://github.com/graphql/graphiql">GraphiQL</a> 基本设定和<a href="https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/examples/hyper_server.rs">源码实例</a>。</p>
-<h1><a class="header" href="#warp-集成" id="warp-集成">Warp 集成</a></h1>
+<a class="header" href="#warp-集成" id="warp-集成"><h1>Warp 集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/warp.md">servers/warp.md</a>
 <br />
@@ -1513,7 +1502,7 @@ juniper = &quot;0.10&quot;
 juniper_warp = &quot;0.1.0&quot;
 </code></pre>
 <p><a href="https://github.com/graphql/graphiql">GraphiQL</a> 基本设定和<a href="https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs">源码实例</a>。</p>
-<h1><a class="header" href="#rocket-集成" id="rocket-集成">Rocket 集成</a></h1>
+<a class="header" href="#rocket-集成" id="rocket-集成"><h1>Rocket 集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/rocket.md">servers/rocket.md</a>
 <br />
@@ -1527,21 +1516,21 @@ juniper = &quot;0.10&quot;
 juniper_rocket = &quot;0.2.0&quot;
 </code></pre>
 <p><a href="https://github.com/graphql/graphiql">GraphiQL</a> 基本设定和<a href="https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/rocket_server.rs">源码实例</a>。</p>
-<h1><a class="header" href="#iron-集成" id="iron-集成">Iron 集成</a></h1>
+<a class="header" href="#iron-集成" id="iron-集成"><h1>Iron 集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/iron.md">servers/iron.md</a>
 <br />
 commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
 </blockquote>
 <p><a href="http://ironframework.io">Iron</a> 是在 Rust 领域已存在一段时间的可靠的库，具有常见的请求（request）/响应（response）/中间件（middleware）等体系结构，运行于 Rust 稳定版。</p>
-<p>Juniper 的 Iron 集成包为 <a href="servers/(https://github.com/graphql-rust/juniper/tree/master/juniper_iron)"><code>juniper_iron</code></a>：</p>
+<p>Juniper 的 Iron 集成包为 <a href="(https://github.com/graphql-rust/juniper/tree/master/juniper_iron)"><code>juniper_iron</code></a>：</p>
 <p>!文件名 Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
 juniper = &quot;0.10&quot;
 juniper_iron = &quot;0.2.0&quot;
 </code></pre>
 <p><a href="https://github.com/graphql/graphiql">GraphiQL</a> 基本设定和<a href="https://github.com/graphql-rust/juniper/blob/master/juniper_iron/examples/iron_server.rs">源码实例</a>。</p>
-<h1><a class="header" href="#第三方集成" id="第三方集成">第三方集成</a></h1>
+<a class="header" href="#a第三方集成" id="a第三方集成"><h1>第三方集成</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/servers/third-party.md">servers/third-party.md</a>
 <br />
@@ -1553,7 +1542,7 @@ commit 9623e4d32694118e68ce8706f29e2cfbc6c5b6dc</p>
 <li><a href="https://github.com/finchers-rs/finchers-juniper">Finchers</a>；</li>
 <li><a href="https://github.com/tsukuyomi-rs/tsukuyomi/tree/master/examples/juniper">Tsukuyomi</a>。</li>
 </ul>
-<h1><a class="header" href="#高阶应用" id="高阶应用">高阶应用</a></h1>
+<a class="header" href="#a高阶应用" id="a高阶应用"><h1>高阶应用</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/advanced/index.md">advanced/index.md</a>
 <br />
@@ -1561,12 +1550,12 @@ commit a75396846d9f8930d1e07e972a91ff59308e77cf</p>
 </blockquote>
 <p>如下章节将介绍 Juniper 高阶应用场景。</p>
 <ul>
-<li><a href="advanced/introspection.html">内省</a></li>
-<li><a href="advanced/non_struct_objects.html">非结构体对象</a></li>
-<li><a href="advanced/objects_and_generics.html">对象和泛型</a></li>
-<li><a href="advanced/multiple_ops_per_request.html">批量操作</a></li>
+<li><a href="introspection.html">内省</a></li>
+<li><a href="non_struct_objects.html">非结构体对象</a></li>
+<li><a href="objects_and_generics.html">对象和泛型</a></li>
+<li><a href="multiple_ops_per_request.html">批量操作</a></li>
 </ul>
-<h1><a class="header" href="#内省" id="内省">内省</a></h1>
+<a class="header" href="#a内省" id="a内省"><h1>内省</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/advanced/introspection.md">advanced/introspection.md</a>
 <br />
@@ -1582,7 +1571,7 @@ commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
   }
 }
 </code></pre>
-<h2><a class="header" href="#模式内省输出为-json" id="模式内省输出为-json">模式内省输出为 JSON</a></h2>
+<a class="header" href="#a模式内省输出为-json" id="a模式内省输出为-json"><h2>模式内省输出为 JSON</h2></a>
 <p>GraphQL 生态中，许多客户端库和工具都需要完整的服务器模式描述。通常，描述是 JSON 格式的，被称为 <code>schema.json</code>。可以通过特别设计的内省查询生成模式的完整描述。</p>
 <p>Juniper 提供函数来内省整个模式，将结果转换为 JSON，以便与 <a href="https://github.com/graphql-rust/graphql-client">graphql-client</a> 之类的工具和库一起使用：</p>
 <pre><pre class="playpen"><code class="language-rust">use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
@@ -1626,7 +1615,7 @@ fn main() {
     assert!(json_result.is_ok());
 }
 </code></pre></pre>
-<h1><a class="header" href="#非结构化对象" id="非结构化对象">非结构化对象</a></h1>
+<a class="header" href="#a非结构化对象" id="a非结构化对象"><h1>非结构化对象</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/advanced/non_struct_objects.md">advanced/non_struct_objects.md</a>
 <br />
@@ -1669,7 +1658,7 @@ impl SignUpResult {
 </code></pre></pre>
 <p>我们使用枚举来决定用户输入的数据是否有效，枚举可以作为返回结果。例如，注册（GraphQL 变更）的结果信息。</p>
 <p>虽然这是关于如何使用结构化数据之外的 Rust 类型来描述 GraphQL 对象的示例，但同时也是一个关于如何为<code>“预期”错误</code>(如验证错误)实现错误处理的示例。对于如何在 GraphQL 中描述错误，Juniper 并没有严格的规则。对如何设计“硬”字段错误以及如何进行预期错误建模，GraphQL 的一位作者提出了一些意见：<a href="https://github.com/facebook/graphql/issues/117#issuecomment-170180628">客户端错误验证</a>、<a href="https://github.com/graphql/graphql-js/issues/560#issuecomment-259508214">管理自定义用户错误的最佳方法</a>。</p>
-<h1><a class="header" href="#对象和泛型" id="对象和泛型">对象和泛型</a></h1>
+<a class="header" href="#a对象和泛型" id="a对象和泛型"><h1>对象和泛型</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/advanced/objects_and_generics.md">advanced/objects_and_generics.md</a>
 <br />
@@ -1677,7 +1666,7 @@ commit 29025e6cae4a249fa56017dcf16b95ee4e89363e</p>
 </blockquote>
 <p>GraphQL 和 Rust 的另一个差异是泛型。Rust 中，几乎任何类型都可以是泛型的——即接受类型参数。GraphQL 中，只有两种泛型类型：列表（lists）和非空值（non-nullables）。</p>
 <p>这对从 Rust 向 GraphQL 暴露内容造成了限制：不能暴露泛型结构，而必须绑定类型参数。例如，你不能将 <code>Result&lt;T, E&gt;</code> 转换为 GraphQL 类型，但你<strong>能够</strong>将 <code>Result&lt;User, String&gt;</code> 转换为 GraphQL 类型。</p>
-<p>让我们对<a href="advanced/non_struct_objects.html">非结构化对象</a>中的示例做一些细小紧凑的改动，来进行泛型实现：</p>
+<p>让我们对<a href="non_struct_objects.html">非结构化对象</a>中的示例做一些细小紧凑的改动，来进行泛型实现：</p>
 <pre><pre class="playpen"><code class="language-rust"># #[derive(juniper::GraphQLObject)] struct User { name: String }
 # #[derive(juniper::GraphQLObject)] struct ForumPost { title: String }
 
@@ -1720,7 +1709,7 @@ impl MutationResult&lt;ForumPost&gt; {
 </code></pre></pre>
 <p>我们对 <code>Result</code> 做了包装，并暴露 <code>Result&lt;T, E&gt;</code> 的具体实例为不同的 GraphQL 对象。我们需要包装的原因是 Rust 具有派生特性的规则——本例中，<code>Result</code> 和 Juniper 的内部 GraphQL 特性都来自第三方。</p>
 <p>因为我们使用泛型，所以还需要为实例化的类型指定一个名字。即使 Juniper <strong>能够</strong>找出名字，<code>MutationResult&lt;User&gt;</code> 也不是有效的 GraphQL 类型名。</p>
-<h1><a class="header" href="#批量操作请求" id="批量操作请求">批量操作请求</a></h1>
+<a class="header" href="#a批量操作请求" id="a批量操作请求"><h1>批量操作请求</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/advanced/multiple_ops_per_request.md">advanced/multiple_ops_per_request.md</a>
 <br />
@@ -1779,397 +1768,397 @@ commit 9623e4d32694118e68ce8706f29e2cfbc6c5b6dc</p>
   }
 ]
 </code></pre>
-<h1><a class="header" href="#rust-语言术语中英文对照表" id="rust-语言术语中英文对照表">Rust 语言术语中英文对照表</a></h1>
+<a class="header" href="#rust-语言术语中英文对照表" id="rust-语言术语中英文对照表"><h1>Rust 语言术语中英文对照表</h1></a>
 <blockquote>
 <p>引用自 <a href="https://github.com/rust-lang-cn/english-chinese-glossary-of-rust/blob/master/rust-glossary.md">Rust 中文翻译项目组 - Rust 语言术语中英文对照表</a>。</p>
 </blockquote>
-<table><thead><tr><th>English 英文</th><th>Chinese 中文</th><th>Note 备注</th></tr></thead><tbody>
-<tr><td><strong>A</strong></td><td></td><td></td></tr>
-<tr><td>Abstract Syntax Tree</td><td>抽象语法树</td><td></td></tr>
-<tr><td>ABI</td><td>应用程序二进制接口</td><td>Application Binary Interface 缩写</td></tr>
-<tr><td>accumulator</td><td>累加器</td><td></td></tr>
-<tr><td>accumulator variable</td><td>累加器变量</td><td></td></tr>
-<tr><td>ahead-of-time compiled</td><td>预编译</td><td></td></tr>
-<tr><td>ahead-of-time compiled language</td><td>预编译语言</td><td></td></tr>
-<tr><td>alias</td><td>别名</td><td></td></tr>
-<tr><td>aliasing</td><td>别名使用</td><td>参见 <a href="https://en.wikipedia.org/wiki/Pointer_aliasing">Wikipedia</a></td></tr>
-<tr><td>angle brackets</td><td>尖括号，“&lt;”和“&gt;”</td><td></td></tr>
-<tr><td>annotate</td><td>标注，注明（动词）</td><td></td></tr>
-<tr><td>annotation</td><td>标注，注明（名词）</td><td></td></tr>
-<tr><td>ARC</td><td>原子引用计数器</td><td>Atomic Referecne Counter</td></tr>
-<tr><td>anonymity</td><td>匿名</td><td></td></tr>
-<tr><td>argument</td><td>参数，实参，实际参数</td><td>不严格区分的话， argument（参数）和 <br> parameter（参量）可以互换地使用</td></tr>
-<tr><td>argument type</td><td>参数类型</td><td></td></tr>
-<tr><td>assignment</td><td>赋值</td><td></td></tr>
-<tr><td>associated functions</td><td>关联函数</td><td></td></tr>
-<tr><td>associated items</td><td>关联项</td><td></td></tr>
-<tr><td>associated types</td><td>关联类型</td><td></td></tr>
-<tr><td>asterisk</td><td>星号（*)</td><td></td></tr>
-<tr><td>atomic</td><td>原子的</td><td></td></tr>
-<tr><td>attribute</td><td>属性</td><td></td></tr>
-<tr><td>automated building</td><td>自动构建</td><td></td></tr>
-<tr><td>automated test</td><td>自动测试，自动化测试</td><td></td></tr>
-<tr><td><strong>B</strong></td><td></td><td></td></tr>
-<tr><td>baroque macro</td><td>巴洛克宏</td><td></td></tr>
-<tr><td>benchmark</td><td>基准</td><td></td></tr>
-<tr><td>binary</td><td>二进制的</td><td></td></tr>
-<tr><td>binary excutable</td><td>二进制的可执行文件</td><td></td></tr>
-<tr><td>bind</td><td>绑定</td><td></td></tr>
-<tr><td>block</td><td>语句块，代码块</td><td></td></tr>
-<tr><td>boolean</td><td>布尔型，布尔值</td><td></td></tr>
-<tr><td>borrow check</td><td>借用检查</td><td></td></tr>
-<tr><td>borrower</td><td>借用者，借入者</td><td></td></tr>
-<tr><td>borrowing</td><td>借用</td><td></td></tr>
-<tr><td>bound</td><td>约束，限定，限制</td><td>此词和 constraint 意思相近，<br>constraint 在 C# 语言中翻译成“约束”</td></tr>
-<tr><td>box</td><td>箱子，盒子，装箱类型</td><td>一般不译，作动词时翻译成“装箱”，<br>具有所有权的智能指针</td></tr>
-<tr><td>boxed</td><td>装箱，装包</td><td></td></tr>
-<tr><td>boxing</td><td>装箱，装包</td><td></td></tr>
-<tr><td>brace</td><td>大括号，“{”或“}”</td><td></td></tr>
-<tr><td>buffer</td><td>缓冲，缓冲区，缓冲器，缓存</td><td></td></tr>
-<tr><td>build</td><td>构建</td><td></td></tr>
-<tr><td>builder pattern</td><td>创建者模式</td><td></td></tr>
-<tr><td><strong>C</strong></td><td></td><td></td></tr>
-<tr><td>call</td><td>调用</td><td></td></tr>
-<tr><td>caller</td><td>调用者</td><td></td></tr>
-<tr><td>capacity</td><td>容器</td><td></td></tr>
-<tr><td>capture</td><td>捕获</td><td></td></tr>
-<tr><td>cargo</td><td>(Rust 包管理器，不译)</td><td>该词作名词时意思是“货物”，<br>作动词时意思是“装载货物”</td></tr>
-<tr><td>cargo-fy</td><td>Cargo 化，使用 Cargo 创建项目</td><td></td></tr>
-<tr><td>case analysis</td><td>事例分析</td><td></td></tr>
-<tr><td>cast</td><td>类型转换，转型</td><td></td></tr>
-<tr><td>casting</td><td>类型转换</td><td></td></tr>
-<tr><td>chaining method call</td><td>链式方法调用</td><td></td></tr>
-<tr><td>channel</td><td>信道，通道</td><td></td></tr>
-<tr><td>closure</td><td>闭包</td><td></td></tr>
-<tr><td>coercion</td><td>强制类型转换，强制转换</td><td>coercion 原意是“强制，胁迫”</td></tr>
-<tr><td>collection</td><td>集合</td><td>参见 <a href="https://zh.wikipedia.org/wiki/%E9%9B%86%E5%90%88_(%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6)">Wikipedia</a></td></tr>
-<tr><td>combinator</td><td>组合算子，组合器</td><td></td></tr>
-<tr><td>comma</td><td>逗号，“,”</td><td></td></tr>
-<tr><td>command</td><td>命令</td><td></td></tr>
-<tr><td>command line</td><td>命令行</td><td></td></tr>
-<tr><td>comment</td><td>注释</td><td></td></tr>
-<tr><td>compile</td><td>编译（动词）</td><td></td></tr>
-<tr><td>compile time</td><td>编译期，编译期间，编译时</td><td></td></tr>
-<tr><td>compilation</td><td>编译（名词）</td><td></td></tr>
-<tr><td>compilation unit</td><td>编译单元</td><td></td></tr>
-<tr><td>compiler</td><td>编译器</td><td></td></tr>
-<tr><td>compiler intrinsics</td><td>编译器固有功能</td><td></td></tr>
-<tr><td>compound</td><td>复合（类型，数据）</td><td></td></tr>
-<tr><td>concurrency</td><td>并发</td><td></td></tr>
-<tr><td>conditional compilation</td><td>条件编译</td><td></td></tr>
-<tr><td>configuration</td><td>配置</td><td></td></tr>
-<tr><td>constructor</td><td>构造器</td><td></td></tr>
-<tr><td>consumer</td><td>消费者</td><td></td></tr>
-<tr><td>container</td><td>容器</td><td></td></tr>
-<tr><td>container type</td><td>容器类型</td><td></td></tr>
-<tr><td>convert</td><td>转换，转化，转</td><td></td></tr>
-<tr><td>copy</td><td>复制，拷贝</td><td></td></tr>
-<tr><td>crate</td><td>包，包装箱，装包</td><td>一般不译，crate 是 Rust 的基本编译单元</td></tr>
-<tr><td>curly braces</td><td>大括号，包含“{”和“}”</td><td></td></tr>
-<tr><td>custom type</td><td>自定义类型</td><td></td></tr>
-<tr><td><strong>D</strong></td><td></td><td></td></tr>
-<tr><td>dangling pointer</td><td>悬垂指针</td><td>use after free 在释放后使用</td></tr>
-<tr><td>data race</td><td>数据竞争</td><td></td></tr>
-<tr><td>dead code</td><td>死代码，无效代码，不可达代码</td><td></td></tr>
-<tr><td>deallocate</td><td>释放，重新分配</td><td></td></tr>
-<tr><td>declare</td><td>声明</td><td></td></tr>
-<tr><td>dependency</td><td>依赖</td><td></td></tr>
-<tr><td>deref coercions</td><td>强制多态</td><td></td></tr>
-<tr><td>dereference</td><td>解引用</td><td>Rust  文章中有时简写为 Deref</td></tr>
-<tr><td>derive</td><td>派生</td><td></td></tr>
-<tr><td>designator</td><td>指示符</td><td></td></tr>
-<tr><td>destruction</td><td>销毁，毁灭</td><td></td></tr>
-<tr><td>destructor</td><td>析构器，析构函数</td><td></td></tr>
-<tr><td>destructure</td><td>解构</td><td></td></tr>
-<tr><td>destructuring</td><td>解构，解构赋值</td><td></td></tr>
-<tr><td>desugar</td><td>脱糖</td><td></td></tr>
-<tr><td>diverge function</td><td>发散函数</td><td></td></tr>
-<tr><td>device drive</td><td>设备驱动</td><td></td></tr>
-<tr><td>directory</td><td>目录</td><td></td></tr>
-<tr><td>dispatch</td><td>分发</td><td></td></tr>
-<tr><td>diverging functions</td><td>发散函数</td><td></td></tr>
-<tr><td>documentation</td><td>文档</td><td></td></tr>
-<tr><td>dot operator</td><td>点运算符</td><td></td></tr>
-<tr><td>DST</td><td>动态大小类型</td><td>dynamic sized type，一般不译，<br>使用英文缩写形式</td></tr>
-<tr><td>dynamic language</td><td>动态类型语言</td><td></td></tr>
-<tr><td>dynamic trait type</td><td>动态 trait 类型</td><td></td></tr>
-<tr><td><strong>E</strong></td><td></td><td></td></tr>
-<tr><td>encapsulation</td><td>封装</td><td></td></tr>
-<tr><td>equality test</td><td>相等测试</td><td></td></tr>
-<tr><td>elision</td><td>省略</td><td></td></tr>
-<tr><td>exhaustiveness checking</td><td>穷尽性检查，无遗漏检查</td><td></td></tr>
-<tr><td>expression</td><td>表达式</td><td></td></tr>
-<tr><td>expression-oriented language</td><td>面向表达式的语言</td><td></td></tr>
-<tr><td>explicit</td><td>显式</td><td></td></tr>
-<tr><td>explicit discriminator</td><td>显式的辨别值</td><td></td></tr>
-<tr><td>explicit type conversion</td><td>显式类型转换</td><td></td></tr>
-<tr><td>extension</td><td>扩展名</td><td></td></tr>
-<tr><td>extern</td><td>外，外部</td><td>作关键字时不译</td></tr>
-<tr><td><strong>F</strong></td><td></td><td></td></tr>
-<tr><td>fat pointer</td><td>胖指针</td><td></td></tr>
-<tr><td>feature gate</td><td>功能开关</td><td></td></tr>
-<tr><td>field</td><td>字段</td><td></td></tr>
-<tr><td>field-level mutability</td><td>字段级别可变性</td><td></td></tr>
-<tr><td>file</td><td>文件</td><td></td></tr>
-<tr><td>fmt</td><td>格式化，是 format 的缩写</td><td></td></tr>
-<tr><td>formatter</td><td>格式化程序，格式化工具，格式器</td><td></td></tr>
-<tr><td>floating-point number</td><td>浮点数</td><td></td></tr>
-<tr><td>flow control</td><td>流程控制</td><td></td></tr>
-<tr><td>Foreign Function Interface（FFI）</td><td>外部语言函数接口</td><td></td></tr>
-<tr><td>fragment specifier</td><td>片段分类符</td><td></td></tr>
-<tr><td>free variables</td><td>自由变量</td><td></td></tr>
-<tr><td>freeze</td><td>冻结</td><td></td></tr>
-<tr><td>function</td><td>函数</td><td></td></tr>
-<tr><td>function declaration</td><td>函数声明</td><td></td></tr>
-<tr><td>functional</td><td>函数式</td><td></td></tr>
-<tr><td><strong>G</strong></td><td></td><td></td></tr>
-<tr><td>garbage collector</td><td>垃圾回收</td><td></td></tr>
-<tr><td>generalize</td><td>泛化，泛型化</td><td></td></tr>
-<tr><td>generator</td><td>生成器</td><td></td></tr>
-<tr><td>genericf</td><td>泛型</td><td></td></tr>
-<tr><td>generic type</td><td>泛型类型</td><td></td></tr>
-<tr><td>growable</td><td>可增长的</td><td></td></tr>
-<tr><td>guard</td><td>守卫</td><td></td></tr>
-<tr><td><strong>H</strong></td><td></td><td></td></tr>
-<tr><td>handle error</td><td>句柄错误</td><td></td></tr>
-<tr><td>hash</td><td>哈希，哈希值，散列</td><td></td></tr>
-<tr><td>hash map</td><td>散列映射，哈希表</td><td></td></tr>
-<tr><td>heap</td><td>堆</td><td></td></tr>
-<tr><td>hierarchy</td><td>层次，分层，层次结构</td><td></td></tr>
-<tr><td>higher rank lifetime</td><td>高阶生命周期</td><td></td></tr>
-<tr><td>higher rank trait bound</td><td>高阶 trait 约束</td><td></td></tr>
-<tr><td>higher tank type</td><td>高阶类型</td><td></td></tr>
-<tr><td>hygiene</td><td>卫生</td><td></td></tr>
-<tr><td>hygienic macro system</td><td>卫生宏系统</td><td></td></tr>
-<tr><td><strong>I</strong></td><td></td><td></td></tr>
-<tr><td>ICE</td><td>编译内部错误</td><td>internal comppiler error 的缩写</td></tr>
-<tr><td>immutable</td><td>不可变的</td><td></td></tr>
-<tr><td>implement</td><td>实现</td><td></td></tr>
-<tr><td>implementor</td><td>实现者</td><td></td></tr>
-<tr><td>implicit</td><td>隐式</td><td></td></tr>
-<tr><td>implicit discriminator</td><td>隐式的辨别值</td><td></td></tr>
-<tr><td>implicit type conversion</td><td>隐式类型转换</td><td></td></tr>
-<tr><td>import</td><td>导入</td><td></td></tr>
-<tr><td>in assignment</td><td>在赋值（语句）</td><td></td></tr>
-<tr><td>index</td><td>索引</td><td>英语复数形式：indices</td></tr>
-<tr><td>infer</td><td>推导（动词）</td><td></td></tr>
-<tr><td>inference</td><td>推导（名词）</td><td></td></tr>
-<tr><td>inherited mutability</td><td>承袭可变性</td><td></td></tr>
-<tr><td>inheritance</td><td>继承</td><td></td></tr>
-<tr><td>integrated development <br>environment(IDE)</td><td>集成开发环境</td><td>中文著作中通常直接写成 IDE</td></tr>
-<tr><td>integration-style test</td><td>集成测试</td><td></td></tr>
-<tr><td>interior mutablity</td><td>内部可变性</td><td></td></tr>
-<tr><td>installer</td><td>安装程序，安装器</td><td></td></tr>
-<tr><td>instance</td><td>实例</td><td></td></tr>
-<tr><td>instance method</td><td>实例方法</td><td></td></tr>
-<tr><td>integer</td><td>整型，整数</td><td></td></tr>
-<tr><td>interact</td><td>相互作用，相互影响</td><td></td></tr>
-<tr><td>interior mutability</td><td>内部可变性</td><td></td></tr>
-<tr><td>intrinsic</td><td>固有的</td><td></td></tr>
-<tr><td>invoke</td><td>调用</td><td></td></tr>
-<tr><td>item</td><td>项，条目，项目</td><td></td></tr>
-<tr><td>iterate</td><td>重复</td><td></td></tr>
-<tr><td>iteration</td><td>迭代</td><td></td></tr>
-<tr><td>iterator</td><td>迭代器</td><td></td></tr>
-<tr><td>iterator adaptors</td><td>迭代器适配器</td><td></td></tr>
-<tr><td>iterator invalidation</td><td>迭代器失效</td><td></td></tr>
-<tr><td><strong>L</strong></td><td></td><td></td></tr>
-<tr><td>LHS</td><td>左操作数</td><td>left-hand side 的非正式缩写，<br>与 RHS 相对</td></tr>
-<tr><td>lender</td><td>借出者</td><td></td></tr>
-<tr><td>library</td><td>库</td><td></td></tr>
-<tr><td>lifetime</td><td>生存时间，寿命，生命周期</td><td></td></tr>
-<tr><td>lifetime elision</td><td>生命周期省略</td><td></td></tr>
-<tr><td>link</td><td>链接</td><td></td></tr>
-<tr><td>linked-list</td><td>链表</td><td></td></tr>
-<tr><td>lint</td><td>（不译）</td><td>lint 英文本义是“纱布，绒毛”，此词在<br>计算机领域中表示程序代码中可疑和<br>不具结构性的片段，参见 <a href="https://en.wikipedia.org/wiki/Lint_%28software%29">Wikipedia</a></td></tr>
-<tr><td>list</td><td>表</td><td></td></tr>
-<tr><td>literal</td><td>数据，常量数据，字面值，字面量，<br>字面常量，字面上的</td><td>英文意思：字面意义的（内容）</td></tr>
-<tr><td>LLVM</td><td>（不译）</td><td>Low Level Virtual Machine 的缩写，<br>是构建编译器的系统</td></tr>
-<tr><td>loop</td><td>循环</td><td>作关键字时不译</td></tr>
-<tr><td>low-level code</td><td>底层代码</td><td></td></tr>
-<tr><td>low-level language</td><td>底层语言</td><td></td></tr>
-<tr><td>l-value</td><td>左值</td><td></td></tr>
-<tr><td><strong>M</strong></td><td></td><td></td></tr>
-<tr><td>main function</td><td>main 函数，主函数</td><td></td></tr>
-<tr><td>macro</td><td>宏</td><td></td></tr>
-<tr><td>map</td><td>映射</td><td>一般不译</td></tr>
-<tr><td>match guard</td><td>匹配守卫</td><td></td></tr>
-<tr><td>memory</td><td>内存</td><td></td></tr>
-<tr><td>memory leak</td><td>内存泄露</td><td></td></tr>
-<tr><td>memory safe</td><td>内存安全</td><td></td></tr>
-<tr><td>meta</td><td>原则，元</td><td></td></tr>
-<tr><td>metadata</td><td>元数据</td><td></td></tr>
-<tr><td>metaprogramming</td><td>元编程</td><td></td></tr>
-<tr><td>metavariable</td><td>元变量</td><td></td></tr>
-<tr><td>method call syntax</td><td>方法调用语法</td><td></td></tr>
-<tr><td>method chaining</td><td>方法链</td><td></td></tr>
-<tr><td>method definition</td><td>方法定义</td><td></td></tr>
-<tr><td>modifier</td><td>修饰符</td><td></td></tr>
-<tr><td>module</td><td>模块</td><td></td></tr>
-<tr><td>monomorphization</td><td>单态</td><td>mono: one, morph: form</td></tr>
-<tr><td>move</td><td>移动，转移</td><td>按照 Rust 所规定的内容，<br>英语单词 transfer 的意思<br>比 move 更贴合实际描述<br>参考：<a href="http://rustwiki.org/rust-by-example/scope/move.html">Rust by Example</a></td></tr>
-<tr><td>move semantics</td><td>移动语义</td><td></td></tr>
-<tr><td>mutability</td><td>可变性</td><td></td></tr>
-<tr><td>mutable</td><td>可变</td><td></td></tr>
-<tr><td>mutable reference</td><td>可变引用</td><td></td></tr>
-<tr><td>multiple bounds</td><td>多重约束</td><td></td></tr>
-<tr><td>mutiple patterns</td><td>多重模式</td><td></td></tr>
-<tr><td><strong>N</strong></td><td></td><td></td></tr>
-<tr><td>nest</td><td>嵌套</td><td></td></tr>
-<tr><td>Nightly Rust</td><td>Rust 开发版</td><td>nightly本意是“每夜，每天晚上”，<br>指代码每天都更新</td></tr>
-<tr><td>NLL</td><td>非词法生命周期</td><td>non lexecal lifetime 的缩写，<br>一般不译</td></tr>
-<tr><td>non-copy type</td><td>非复制类型</td><td></td></tr>
-<tr><td>non-generic</td><td>非泛型</td><td></td></tr>
-<tr><td>no-op</td><td>空操作，空运算</td><td>(此词出现在类型转换章节中）</td></tr>
-<tr><td>non-commutative</td><td>非交换的</td><td></td></tr>
-<tr><td>non-scalar cast</td><td>非标量转换</td><td></td></tr>
-<tr><td>notation</td><td>符号，记号</td><td></td></tr>
-<tr><td>numeric</td><td>数值，数字</td><td></td></tr>
-<tr><td><strong>O</strong></td><td></td><td></td></tr>
-<tr><td>optimization</td><td>优化</td><td></td></tr>
-<tr><td>out-of-bounds accessing</td><td>越界访问</td><td></td></tr>
-<tr><td>orphan rule</td><td>孤儿规则</td><td></td></tr>
-<tr><td>overflow</td><td>溢出，越界</td><td></td></tr>
-<tr><td>own</td><td>占有，拥有</td><td></td></tr>
-<tr><td>owner</td><td>所有者，拥有者</td><td></td></tr>
-<tr><td>ownership</td><td>所有权</td><td></td></tr>
-<tr><td><strong>P</strong></td><td></td><td></td></tr>
-<tr><td>package manager</td><td>包管理器，软件包管理器</td><td></td></tr>
-<tr><td>panic</td><td>（不译）</td><td>此单词直接翻译是“恐慌”，<br>在 Rust 中用于不可恢复的错误处理</td></tr>
-<tr><td>parameter</td><td>参量，形参，形式参量</td><td>不严格区分的话， argument（参数）和 <br> parameter（参量）可以互换地使用</td></tr>
-<tr><td>parametric polymorphism</td><td>参数多态</td><td></td></tr>
-<tr><td>parent scope</td><td>父级作用域</td><td></td></tr>
-<tr><td>parentheses</td><td>小括号，包括“(”和“)”</td><td></td></tr>
-<tr><td>parse</td><td>分析，解析</td><td></td></tr>
-<tr><td>parser</td><td>（语法）分析器，解析器</td><td></td></tr>
-<tr><td>pattern</td><td>模式</td><td></td></tr>
-<tr><td>pattern match</td><td>模式匹配</td><td></td></tr>
-<tr><td>phantom type</td><td>虚类型，虚位类型</td><td>phantom 相关的专有名词：<br>phantom bug 幻影指令<br>phantom power 幻象电源<br>参见：<a href="https://wiki.haskell.org/Phantom_type">Haskell</a>、<a href="https://en.wikibooks.org/wiki/Haskell/Phantom_types">Haskell/Phantom_type</a>、<br><a href="http://rustwiki.org/rust-by-example/generics/phantom.html">Rust/Phantom</a>、<a href="https://doc.rust-lang.org/std/marker/struct.PhantomData.html">stdlib/PhantomData</a></td></tr>
-<tr><td>platform</td><td>平台</td><td></td></tr>
-<tr><td>polymorphism</td><td>多态</td><td></td></tr>
-<tr><td>powershell</td><td>（不译）</td><td>Windows 系统的一种命令行外壳程序<br>和脚本环境</td></tr>
-<tr><td>possibility of absence</td><td>不存在的可能性</td><td></td></tr>
-<tr><td>precede</td><td>预先？，在...发生（或出现）</td><td></td></tr>
-<tr><td>prelude</td><td>（不译）</td><td>预先导入模块，英文本意：序曲，前奏</td></tr>
-<tr><td>primitive types</td><td>原生类型，基本类型，简单类型</td><td></td></tr>
-<tr><td>print</td><td>打印</td><td></td></tr>
-<tr><td>process</td><td>进程</td><td></td></tr>
-<tr><td>procedural macros</td><td>过程宏，程序宏</td><td></td></tr>
-<tr><td>project</td><td>项目，工程</td><td></td></tr>
-<tr><td>prototype</td><td>原型</td><td></td></tr>
-<tr><td><strong>R</strong></td><td></td><td></td></tr>
-<tr><td>race condition</td><td>竞态条件</td><td></td></tr>
-<tr><td>RAII</td><td>资源获取即初始化（一般不译）</td><td>resource acquisition is initialization 的缩写</td></tr>
-<tr><td>range</td><td>区间，范围</td><td></td></tr>
-<tr><td>raw identifier</td><td>原始标识符</td><td></td></tr>
-<tr><td>raw pointer</td><td>原始指针，裸指针</td><td></td></tr>
-<tr><td>RC</td><td>引用计数</td><td>reference counted</td></tr>
-<tr><td>Reader</td><td>读取器</td><td></td></tr>
-<tr><td>recursive macro</td><td>递归宏</td><td></td></tr>
-<tr><td>reference</td><td>引用</td><td></td></tr>
-<tr><td>release</td><td>发布</td><td></td></tr>
-<tr><td>resource</td><td>资源</td><td></td></tr>
-<tr><td>resource leak</td><td>资源泄露</td><td></td></tr>
-<tr><td>RHS</td><td>右操作数</td><td>right-hand side 的非正式缩写，<br>与 LHS 相对</td></tr>
-<tr><td>root directory</td><td>根目录</td><td></td></tr>
-<tr><td>runtime</td><td>运行时</td><td></td></tr>
-<tr><td>runtime behavior</td><td>运行时行为</td><td></td></tr>
-<tr><td>runtime overhead</td><td>运行时开销</td><td></td></tr>
-<tr><td>Rust</td><td>（不译）</td><td>一种编程语言</td></tr>
-<tr><td>Rustacean</td><td>（不译）</td><td>编写 Rust 的程序员或爱好者的通称</td></tr>
-<tr><td>rustc</td><td>（不译）</td><td>Rust 语言编译器</td></tr>
-<tr><td>r-value</td><td>右值</td><td></td></tr>
-<tr><td><strong>S</strong></td><td></td><td></td></tr>
-<tr><td>scalar</td><td>标量，数量</td><td></td></tr>
-<tr><td>schedule</td><td>调度</td><td></td></tr>
-<tr><td>scope</td><td>作用域</td><td></td></tr>
-<tr><td>screen</td><td>屏幕</td><td></td></tr>
-<tr><td>script</td><td>脚本</td><td></td></tr>
-<tr><td>semicolon</td><td>分号，“;”</td><td></td></tr>
-<tr><td>self</td><td>自身，作关键字时不译</td><td></td></tr>
-<tr><td>shadowing</td><td>遮敝，隐蔽，隐藏，覆盖</td><td></td></tr>
-<tr><td>signature</td><td>标记</td><td></td></tr>
-<tr><td>slice</td><td>切片</td><td></td></tr>
-<tr><td>snake case</td><td>蛇形命名</td><td>参见：<a href="https://en.wikipedia.org/wiki/Snake_case">Snake case</a></td></tr>
-<tr><td>source file</td><td>源文件</td><td></td></tr>
-<tr><td>source code</td><td>源代码</td><td></td></tr>
-<tr><td>specialization</td><td>泛型特化</td><td></td></tr>
-<tr><td>square</td><td>平方，二次方，二次幂</td><td></td></tr>
-<tr><td>square brackets</td><td>中括号，“[”和“]”</td><td></td></tr>
-<tr><td>src</td><td>（不译）</td><td>source 的缩写，指源代码</td></tr>
-<tr><td>stack</td><td>栈</td><td></td></tr>
-<tr><td>stack unwind</td><td>栈中国</td><td></td></tr>
-<tr><td>statement</td><td>语句</td><td></td></tr>
-<tr><td>statically allocated</td><td>静态分配</td><td></td></tr>
-<tr><td>statically allocated string</td><td>静态分配的字符串</td><td></td></tr>
-<tr><td>statically dispatch</td><td>静态分发</td><td></td></tr>
-<tr><td>static method</td><td>静态方法</td><td></td></tr>
-<tr><td>string</td><td>字符串</td><td></td></tr>
-<tr><td>string literal</td><td>字符串常量</td><td></td></tr>
-<tr><td>string slices</td><td>字符串片段</td><td></td></tr>
-<tr><td>stringify</td><td>字符串化</td><td></td></tr>
-<tr><td>subscript notation</td><td>下标</td><td></td></tr>
-<tr><td>sugar</td><td>糖</td><td></td></tr>
-<tr><td>super</td><td>父级，作关键字时不译</td><td></td></tr>
-<tr><td>syntax context</td><td>语法上下文</td><td></td></tr>
-<tr><td>systems programming language</td><td>系统级编程语言</td><td></td></tr>
-<tr><td><strong>T</strong></td><td></td><td></td></tr>
-<tr><td>tagged union</td><td>标记联合</td><td></td></tr>
-<tr><td>target triple</td><td>多层次指标，三层/重 指标/目标</td><td>triple 本义是“三”，但此处虚指“多”，<br>此词翻译需要更多讨论</td></tr>
-<tr><td>terminal</td><td>终端</td><td></td></tr>
-<tr><td>testing</td><td>测试</td><td></td></tr>
-<tr><td>testsuit</td><td>测试套件</td><td></td></tr>
-<tr><td>the least significant bit (LSB)</td><td>最低数字位</td><td></td></tr>
-<tr><td>the most significant bit (MSB)</td><td>最高数字位</td><td></td></tr>
-<tr><td>thread</td><td>线程</td><td></td></tr>
-<tr><td>TOML</td><td>（不译）</td><td>Tom’s Obvious, Minimal Language <br>的缩写，一种配置语言</td></tr>
-<tr><td>token tree</td><td>令牌树？</td><td>待进一步斟酌</td></tr>
-<tr><td>trait</td><td>（不译）</td><td>其字面上有“特性，特征”之意，不作翻译</td></tr>
-<tr><td>trait bound</td><td>trait 约束</td><td>bound 有“约束，限制，限定”之意</td></tr>
-<tr><td>trait object</td><td>trait 对象</td><td></td></tr>
-<tr><td>transmute</td><td>（不译）</td><td>其字面上有“变化，变形，变异”之意，<br>不作翻译</td></tr>
-<tr><td>trivial</td><td>平凡的</td><td></td></tr>
-<tr><td>troubleshooting</td><td>疑难解答，故障诊断，<br>故障排除，故障分析</td><td></td></tr>
-<tr><td>tuple</td><td>元组</td><td></td></tr>
-<tr><td>two’s complement</td><td>补码，二补数</td><td></td></tr>
-<tr><td>two-word object</td><td>双字对象</td><td></td></tr>
-<tr><td>type annotation</td><td>类型标注</td><td></td></tr>
-<tr><td>type erasure</td><td>类型擦除</td><td></td></tr>
-<tr><td>type inference</td><td>类型推导</td><td></td></tr>
-<tr><td>type inference engine</td><td>类型推导引擎</td><td></td></tr>
-<tr><td>type parameter</td><td>类型参量</td><td></td></tr>
-<tr><td>type placeholder</td><td>类型占位符</td><td></td></tr>
-<tr><td>type signature</td><td>类型标记</td><td></td></tr>
-<tr><td><strong>U</strong></td><td></td><td></td></tr>
-<tr><td>undefined behavior</td><td>未定义行为</td><td></td></tr>
-<tr><td>uninstall</td><td>卸载</td><td></td></tr>
-<tr><td>unit-like struct</td><td>类单元结构体</td><td></td></tr>
-<tr><td>unit struct</td><td>单元结构体</td><td></td></tr>
-<tr><td>“unit-style” tests</td><td>单元测试</td><td></td></tr>
-<tr><td>unit test</td><td>单元测试</td><td></td></tr>
-<tr><td>unit type</td><td>单元类型</td><td></td></tr>
-<tr><td>universal function call syntax <br>(UFCS)</td><td>通用函数调用语法</td><td></td></tr>
-<tr><td>unsized types</td><td>不定长类型</td><td></td></tr>
-<tr><td>unwind</td><td>展开</td><td></td></tr>
-<tr><td>unwrap</td><td>解包</td><td>暂译！</td></tr>
-<tr><td><strong>V</strong></td><td></td><td></td></tr>
-<tr><td>variable binding</td><td>变量绑定</td><td></td></tr>
-<tr><td>variable shadowing</td><td>变量遮蔽，变量隐蔽,<br>变量隐藏，变量覆盖</td><td></td></tr>
-<tr><td>variable capture</td><td>变量捕获</td><td></td></tr>
-<tr><td>variant</td><td>变量</td><td></td></tr>
-<tr><td>vector</td><td>（动态数组，一般不译）</td><td>vector 本义是“向量”</td></tr>
-<tr><td>visibility</td><td>可见性</td><td></td></tr>
-<tr><td>vtable</td><td>虚表</td><td></td></tr>
-<tr><td><strong>W</strong></td><td></td><td></td></tr>
-<tr><td>where clause</td><td>where 子句，where 从句，where 分句</td><td>在数据库的官方手册中多翻译成“子句”，英语语法中翻译成“从句”</td></tr>
-<tr><td>wrap</td><td>包裹</td><td>暂译！</td></tr>
-<tr><td>wrapped</td><td>装包</td><td></td></tr>
-<tr><td>wrapper</td><td>装包</td><td></td></tr>
-<tr><td><strong>Y</strong></td><td></td><td></td></tr>
-<tr><td>yield</td><td>产生(收益、效益等)，产出，提供</td><td></td></tr>
-<tr><td><strong>Z</strong></td><td></td><td></td></tr>
-<tr><td>zero-cost abstractions</td><td>零开销抽象</td><td></td></tr>
-<tr><td>zero-width space(ZWSP)</td><td>零宽空格</td><td></td></tr>
+<table><thead><tr><th>English 英文                     </th><th> Chinese 中文                  </th><th> Note 备注</th></tr></thead><tbody>
+<tr><td><strong>A</strong>                            </td><td>                               </td></tr>
+<tr><td>Abstract Syntax Tree             </td><td> 抽象语法树                    </td></tr>
+<tr><td>ABI                              </td><td> 应用程序二进制接口            </td><td> Application Binary Interface 缩写</td></tr>
+<tr><td>accumulator                      </td><td> 累加器                        </td></tr>
+<tr><td>accumulator variable             </td><td> 累加器变量                    </td></tr>
+<tr><td>ahead-of-time compiled           </td><td> 预编译                        </td></tr>
+<tr><td>ahead-of-time compiled language  </td><td> 预编译语言                    </td></tr>
+<tr><td>alias                            </td><td> 别名                          </td></tr>
+<tr><td>aliasing                         </td><td> 别名使用                      </td><td> 参见 <a href="https://en.wikipedia.org/wiki/Pointer_aliasing">Wikipedia</a></td></tr>
+<tr><td>angle brackets                   </td><td> 尖括号，“&lt;”和“&gt;”        </td></tr>
+<tr><td>annotate                         </td><td> 标注，注明（动词）            </td></tr>
+<tr><td>annotation                       </td><td> 标注，注明（名词）            </td></tr>
+<tr><td>ARC                              </td><td> 原子引用计数器                </td><td> Atomic Referecne Counter</td></tr>
+<tr><td>anonymity                        </td><td> 匿名                          </td></tr>
+<tr><td>argument                         </td><td> 参数，实参，实际参数          </td><td> 不严格区分的话， argument（参数）和 <br> parameter（参量）可以互换地使用</td></tr>
+<tr><td>argument type                    </td><td> 参数类型                      </td></tr>
+<tr><td>assignment                       </td><td> 赋值                          </td></tr>
+<tr><td>associated functions             </td><td> 关联函数                      </td></tr>
+<tr><td>associated items                 </td><td> 关联项                        </td></tr>
+<tr><td>associated types                 </td><td> 关联类型                      </td></tr>
+<tr><td>asterisk                         </td><td> 星号（*)                     </td></tr>
+<tr><td>atomic                           </td><td> 原子的                        </td></tr>
+<tr><td>attribute                        </td><td> 属性                          </td></tr>
+<tr><td>automated building               </td><td> 自动构建                      </td></tr>
+<tr><td>automated test                   </td><td> 自动测试，自动化测试          </td></tr>
+<tr><td><strong>B</strong>                            </td><td>                               </td></tr>
+<tr><td>baroque macro                    </td><td> 巴洛克宏                      </td></tr>
+<tr><td>benchmark                        </td><td> 基准                          </td></tr>
+<tr><td>binary                           </td><td> 二进制的                      </td></tr>
+<tr><td>binary excutable                 </td><td> 二进制的可执行文件            </td></tr>
+<tr><td>bind                             </td><td> 绑定                          </td></tr>
+<tr><td>block                            </td><td> 语句块，代码块                </td></tr>
+<tr><td>boolean                          </td><td> 布尔型，布尔值                </td></tr>
+<tr><td>borrow check                     </td><td> 借用检查                      </td></tr>
+<tr><td>borrower                         </td><td> 借用者，借入者                </td></tr>
+<tr><td>borrowing                        </td><td> 借用                          </td></tr>
+<tr><td>bound                            </td><td> 约束，限定，限制              </td><td> 此词和 constraint 意思相近，<br>constraint 在 C# 语言中翻译成“约束”</td></tr>
+<tr><td>box                              </td><td> 箱子，盒子，装箱类型          </td><td> 一般不译，作动词时翻译成“装箱”，<br>具有所有权的智能指针</td></tr>
+<tr><td>boxed                            </td><td> 装箱，装包                    </td></tr>
+<tr><td>boxing                           </td><td> 装箱，装包                    </td></tr>
+<tr><td>brace                            </td><td> 大括号，“{”或“}”              </td></tr>
+<tr><td>buffer                           </td><td> 缓冲，缓冲区，缓冲器，缓存    </td></tr>
+<tr><td>build                            </td><td> 构建                          </td></tr>
+<tr><td>builder pattern                  </td><td> 创建者模式                    </td></tr>
+<tr><td><strong>C</strong>                            </td><td>                               </td></tr>
+<tr><td>call                             </td><td> 调用                          </td></tr>
+<tr><td>caller                           </td><td> 调用者                        </td></tr>
+<tr><td>capacity                         </td><td> 容器                          </td></tr>
+<tr><td>capture                          </td><td> 捕获                          </td></tr>
+<tr><td>cargo                            </td><td> (Rust 包管理器，不译)         </td><td> 该词作名词时意思是“货物”，<br>作动词时意思是“装载货物”</td></tr>
+<tr><td>cargo-fy                         </td><td> Cargo 化，使用 Cargo 创建项目 </td></tr>
+<tr><td>case analysis                    </td><td> 事例分析                      </td></tr>
+<tr><td>cast                             </td><td> 类型转换，转型                </td></tr>
+<tr><td>casting                          </td><td> 类型转换                      </td></tr>
+<tr><td>chaining method call             </td><td> 链式方法调用                  </td></tr>
+<tr><td>channel                          </td><td> 信道，通道                    </td></tr>
+<tr><td>closure                          </td><td> 闭包                          </td></tr>
+<tr><td>coercion                         </td><td> 强制类型转换，强制转换        </td><td> coercion 原意是“强制，胁迫”</td></tr>
+<tr><td>collection                       </td><td> 集合                          </td><td> 参见 <a href="https://zh.wikipedia.org/wiki/%E9%9B%86%E5%90%88_(%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6)">Wikipedia</a> </td></tr>
+<tr><td>combinator                       </td><td> 组合算子，组合器              </td></tr>
+<tr><td>comma                            </td><td> 逗号，“,”                     </td></tr>
+<tr><td>command                          </td><td> 命令                          </td></tr>
+<tr><td>command line                     </td><td> 命令行                        </td></tr>
+<tr><td>comment                          </td><td> 注释                          </td></tr>
+<tr><td>compile                          </td><td> 编译（动词）                  </td></tr>
+<tr><td>compile time                     </td><td> 编译期，编译期间，编译时      </td></tr>
+<tr><td>compilation                      </td><td> 编译（名词）                  </td></tr>
+<tr><td>compilation unit                 </td><td> 编译单元                      </td></tr>
+<tr><td>compiler                         </td><td> 编译器                        </td></tr>
+<tr><td>compiler intrinsics              </td><td> 编译器固有功能                </td></tr>
+<tr><td>compound                         </td><td> 复合（类型，数据）            </td></tr>
+<tr><td>concurrency                      </td><td> 并发                          </td></tr>
+<tr><td>conditional compilation          </td><td> 条件编译                      </td></tr>
+<tr><td>configuration                    </td><td> 配置                          </td></tr>
+<tr><td>constructor                      </td><td> 构造器                        </td></tr>
+<tr><td>consumer                         </td><td> 消费者                        </td></tr>
+<tr><td>container                        </td><td> 容器                          </td></tr>
+<tr><td>container type                   </td><td> 容器类型                      </td></tr>
+<tr><td>convert                          </td><td> 转换，转化，转                </td></tr>
+<tr><td>copy                             </td><td> 复制，拷贝                    </td></tr>
+<tr><td>crate                            </td><td> 包，包装箱，装包              </td><td> 一般不译，crate 是 Rust 的基本编译单元</td></tr>
+<tr><td>curly braces                     </td><td> 大括号，包含“{”和“}”          </td></tr>
+<tr><td>custom type                      </td><td> 自定义类型                    </td></tr>
+<tr><td><strong>D</strong>                            </td><td>                               </td></tr>
+<tr><td>dangling pointer                 </td><td> 悬垂指针                      </td><td> use after free 在释放后使用</td></tr>
+<tr><td>data race                        </td><td> 数据竞争                      </td></tr>
+<tr><td>dead code                        </td><td> 死代码，无效代码，不可达代码  </td></tr>
+<tr><td>deallocate                       </td><td> 释放，重新分配                </td></tr>
+<tr><td>declare                          </td><td> 声明                          </td></tr>
+<tr><td>dependency                       </td><td> 依赖                          </td></tr>
+<tr><td>deref coercions                  </td><td> 强制多态                      </td></tr>
+<tr><td>dereference                      </td><td> 解引用                        </td><td> Rust  文章中有时简写为 Deref</td></tr>
+<tr><td>derive                           </td><td> 派生                          </td></tr>
+<tr><td>designator                       </td><td> 指示符                        </td></tr>
+<tr><td>destruction                      </td><td> 销毁，毁灭                    </td></tr>
+<tr><td>destructor                       </td><td> 析构器，析构函数              </td></tr>
+<tr><td>destructure                      </td><td> 解构                          </td></tr>
+<tr><td>destructuring                    </td><td> 解构，解构赋值                </td></tr>
+<tr><td>desugar                          </td><td> 脱糖                          </td></tr>
+<tr><td>diverge function                 </td><td> 发散函数                      </td></tr>
+<tr><td>device drive                     </td><td> 设备驱动                      </td></tr>
+<tr><td>directory                        </td><td> 目录                          </td></tr>
+<tr><td>dispatch                         </td><td> 分发                          </td></tr>
+<tr><td>diverging functions              </td><td> 发散函数                      </td></tr>
+<tr><td>documentation                    </td><td> 文档                          </td></tr>
+<tr><td>dot operator                     </td><td> 点运算符                      </td></tr>
+<tr><td>DST                              </td><td> 动态大小类型                  </td><td> dynamic sized type，一般不译，<br>使用英文缩写形式</td></tr>
+<tr><td>dynamic language                 </td><td> 动态类型语言                  </td></tr>
+<tr><td>dynamic trait type               </td><td> 动态 trait 类型               </td></tr>
+<tr><td><strong>E</strong>                            </td><td>                               </td></tr>
+<tr><td>encapsulation                    </td><td> 封装                          </td></tr>
+<tr><td>equality test                    </td><td> 相等测试                      </td></tr>
+<tr><td>elision                          </td><td> 省略                          </td></tr>
+<tr><td>exhaustiveness checking          </td><td> 穷尽性检查，无遗漏检查        </td></tr>
+<tr><td>expression                       </td><td> 表达式                        </td></tr>
+<tr><td>expression-oriented language     </td><td> 面向表达式的语言              </td></tr>
+<tr><td>explicit                         </td><td> 显式                          </td></tr>
+<tr><td>explicit discriminator           </td><td> 显式的辨别值                  </td></tr>
+<tr><td>explicit type conversion         </td><td> 显式类型转换                  </td></tr>
+<tr><td>extension                        </td><td> 扩展名                        </td></tr>
+<tr><td>extern                           </td><td> 外，外部                      </td><td> 作关键字时不译</td></tr>
+<tr><td><strong>F</strong>                            </td><td>                               </td></tr>
+<tr><td>fat pointer                      </td><td> 胖指针                        </td></tr>
+<tr><td>feature gate                     </td><td> 功能开关                      </td></tr>
+<tr><td>field                            </td><td> 字段                          </td></tr>
+<tr><td>field-level mutability           </td><td> 字段级别可变性                </td></tr>
+<tr><td>file                             </td><td> 文件                          </td></tr>
+<tr><td>fmt                              </td><td> 格式化，是 format 的缩写      </td></tr>
+<tr><td>formatter                        </td><td> 格式化程序，格式化工具，格式器</td></tr>
+<tr><td>floating-point number            </td><td> 浮点数                        </td></tr>
+<tr><td>flow control                     </td><td> 流程控制                      </td></tr>
+<tr><td>Foreign Function Interface（FFI）</td><td> 外部语言函数接口              </td></tr>
+<tr><td>fragment specifier               </td><td> 片段分类符                    </td></tr>
+<tr><td>free variables                   </td><td> 自由变量                      </td></tr>
+<tr><td>freeze                           </td><td> 冻结                          </td></tr>
+<tr><td>function                         </td><td> 函数                          </td></tr>
+<tr><td>function declaration             </td><td> 函数声明                      </td></tr>
+<tr><td>functional                       </td><td> 函数式                        </td></tr>
+<tr><td><strong>G</strong>                            </td><td>                               </td></tr>
+<tr><td>garbage collector                </td><td> 垃圾回收                      </td></tr>
+<tr><td>generalize                       </td><td> 泛化，泛型化                  </td></tr>
+<tr><td>generator                        </td><td> 生成器                        </td></tr>
+<tr><td>genericf                         </td><td> 泛型                          </td></tr>
+<tr><td>generic type                     </td><td> 泛型类型                      </td></tr>
+<tr><td>growable                         </td><td> 可增长的                      </td></tr>
+<tr><td>guard                            </td><td> 守卫                          </td></tr>
+<tr><td><strong>H</strong>                            </td><td>                               </td></tr>
+<tr><td>handle error                     </td><td> 句柄错误                      </td></tr>
+<tr><td>hash                             </td><td> 哈希，哈希值，散列            </td></tr>
+<tr><td>hash map                         </td><td> 散列映射，哈希表              </td></tr>
+<tr><td>heap                             </td><td> 堆                            </td></tr>
+<tr><td>hierarchy                        </td><td> 层次，分层，层次结构          </td></tr>
+<tr><td>higher rank lifetime             </td><td> 高阶生命周期                  </td></tr>
+<tr><td>higher rank trait bound          </td><td> 高阶 trait 约束               </td></tr>
+<tr><td>higher tank type                 </td><td> 高阶类型                      </td></tr>
+<tr><td>hygiene                          </td><td> 卫生                          </td></tr>
+<tr><td>hygienic macro system            </td><td> 卫生宏系统                    </td></tr>
+<tr><td><strong>I</strong>                            </td><td>                               </td></tr>
+<tr><td>ICE                              </td><td> 编译内部错误                  </td><td> internal comppiler error 的缩写</td></tr>
+<tr><td>immutable                        </td><td> 不可变的                      </td></tr>
+<tr><td>implement                        </td><td> 实现                          </td></tr>
+<tr><td>implementor                      </td><td> 实现者                        </td></tr>
+<tr><td>implicit                         </td><td> 隐式                          </td></tr>
+<tr><td>implicit discriminator           </td><td> 隐式的辨别值                  </td></tr>
+<tr><td>implicit type conversion         </td><td> 隐式类型转换                  </td></tr>
+<tr><td>import                           </td><td> 导入                          </td></tr>
+<tr><td>in assignment                    </td><td> 在赋值（语句）                </td></tr>
+<tr><td>index                            </td><td> 索引                          </td><td> 英语复数形式：indices</td></tr>
+<tr><td>infer                            </td><td> 推导（动词）                  </td></tr>
+<tr><td>inference                        </td><td> 推导（名词）                  </td></tr>
+<tr><td>inherited mutability             </td><td> 承袭可变性                    </td></tr>
+<tr><td>inheritance                      </td><td> 继承                          </td></tr>
+<tr><td>integrated development <br>environment(IDE) </td><td> 集成开发环境       </td><td> 中文著作中通常直接写成 IDE</td></tr>
+<tr><td>integration-style test           </td><td> 集成测试                      </td></tr>
+<tr><td>interior mutablity               </td><td> 内部可变性                    </td></tr>
+<tr><td>installer                        </td><td> 安装程序，安装器              </td></tr>
+<tr><td>instance                         </td><td> 实例                          </td></tr>
+<tr><td>instance method                  </td><td> 实例方法                      </td></tr>
+<tr><td>integer                          </td><td> 整型，整数                    </td></tr>
+<tr><td>interact                         </td><td> 相互作用，相互影响            </td></tr>
+<tr><td>interior mutability              </td><td> 内部可变性                    </td></tr>
+<tr><td>intrinsic                        </td><td> 固有的                        </td></tr>
+<tr><td>invoke                           </td><td> 调用                          </td></tr>
+<tr><td>item                             </td><td> 项，条目，项目                </td></tr>
+<tr><td>iterate                          </td><td> 重复                          </td></tr>
+<tr><td>iteration                        </td><td> 迭代                          </td></tr>
+<tr><td>iterator                         </td><td> 迭代器                        </td></tr>
+<tr><td>iterator adaptors                </td><td> 迭代器适配器                  </td></tr>
+<tr><td>iterator invalidation            </td><td> 迭代器失效                    </td></tr>
+<tr><td><strong>L</strong>                            </td><td>                               </td></tr>
+<tr><td>LHS                              </td><td> 左操作数                      </td><td> left-hand side 的非正式缩写，<br>与 RHS 相对</td></tr>
+<tr><td>lender                           </td><td> 借出者                        </td></tr>
+<tr><td>library                          </td><td> 库                            </td></tr>
+<tr><td>lifetime                         </td><td> 生存时间，寿命，生命周期      </td></tr>
+<tr><td>lifetime elision                 </td><td> 生命周期省略                  </td></tr>
+<tr><td>link                             </td><td> 链接                          </td></tr>
+<tr><td>linked-list                      </td><td> 链表                          </td></tr>
+<tr><td>lint                             </td><td> （不译）                      </td><td> lint 英文本义是“纱布，绒毛”，此词在<br>计算机领域中表示程序代码中可疑和<br>不具结构性的片段，参见 <a href="https://en.wikipedia.org/wiki/Lint_%28software%29">Wikipedia</a> </td></tr>
+<tr><td>list                             </td><td> 表                            </td></tr>
+<tr><td>literal                          </td><td> 数据，常量数据，字面值，字面量，<br>字面常量，字面上的 </td><td> 英文意思：字面意义的（内容）</td></tr>
+<tr><td>LLVM                             </td><td> （不译）                      </td><td> Low Level Virtual Machine 的缩写，<br>是构建编译器的系统</td></tr>
+<tr><td>loop                             </td><td> 循环                          </td><td> 作关键字时不译</td></tr>
+<tr><td>low-level code                   </td><td> 底层代码                      </td></tr>
+<tr><td>low-level language               </td><td> 底层语言                      </td></tr>
+<tr><td>l-value                          </td><td> 左值                          </td></tr>
+<tr><td><strong>M</strong>                            </td><td>                               </td></tr>
+<tr><td>main function                    </td><td> main 函数，主函数             </td></tr>
+<tr><td>macro                            </td><td> 宏                            </td></tr>
+<tr><td>map                              </td><td> 映射                          </td><td> 一般不译</td></tr>
+<tr><td>match guard                      </td><td> 匹配守卫                      </td></tr>
+<tr><td>memory                           </td><td> 内存                          </td></tr>
+<tr><td>memory leak                      </td><td> 内存泄露                      </td></tr>
+<tr><td>memory safe                      </td><td> 内存安全                      </td></tr>
+<tr><td>meta                             </td><td> 原则，元                      </td></tr>
+<tr><td>metadata                         </td><td> 元数据                        </td></tr>
+<tr><td>metaprogramming                  </td><td> 元编程                        </td></tr>
+<tr><td>metavariable                     </td><td> 元变量                        </td></tr>
+<tr><td>method call syntax               </td><td> 方法调用语法                  </td></tr>
+<tr><td>method chaining                  </td><td> 方法链                        </td></tr>
+<tr><td>method definition                </td><td> 方法定义                      </td></tr>
+<tr><td>modifier                         </td><td> 修饰符                        </td></tr>
+<tr><td>module                           </td><td> 模块                          </td></tr>
+<tr><td>monomorphization                 </td><td> 单态                          </td><td> mono: one, morph: form</td></tr>
+<tr><td>move                             </td><td> 移动，转移                    </td><td> 按照 Rust 所规定的内容，<br>英语单词 transfer 的意思<br>比 move 更贴合实际描述<br>参考：<a href="http://rustwiki.org/rust-by-example/scope/move.html">Rust by Example</a></td></tr>
+<tr><td>move semantics                   </td><td> 移动语义                      </td></tr>
+<tr><td>mutability                       </td><td> 可变性                        </td></tr>
+<tr><td>mutable                          </td><td> 可变                          </td></tr>
+<tr><td>mutable reference                </td><td> 可变引用                      </td></tr>
+<tr><td>multiple bounds                  </td><td> 多重约束                      </td></tr>
+<tr><td>mutiple patterns                 </td><td> 多重模式                      </td></tr>
+<tr><td><strong>N</strong>                            </td><td>                               </td></tr>
+<tr><td>nest                             </td><td> 嵌套                          </td></tr>
+<tr><td>Nightly Rust                     </td><td> Rust 开发版                   </td><td> nightly本意是“每夜，每天晚上”，<br>指代码每天都更新</td></tr>
+<tr><td>NLL                              </td><td> 非词法生命周期                </td><td> non lexecal lifetime 的缩写，<br>一般不译</td></tr>
+<tr><td>non-copy type                    </td><td> 非复制类型                    </td></tr>
+<tr><td>non-generic                      </td><td> 非泛型                        </td></tr>
+<tr><td>no-op                            </td><td> 空操作，空运算                </td><td> (此词出现在类型转换章节中）</td></tr>
+<tr><td>non-commutative                  </td><td> 非交换的                      </td></tr>
+<tr><td>non-scalar cast                  </td><td> 非标量转换                    </td></tr>
+<tr><td>notation                         </td><td> 符号，记号                    </td></tr>
+<tr><td>numeric                          </td><td> 数值，数字                    </td></tr>
+<tr><td><strong>O</strong>                            </td><td>                               </td></tr>
+<tr><td>optimization                     </td><td> 优化                          </td></tr>
+<tr><td>out-of-bounds accessing          </td><td> 越界访问                      </td></tr>
+<tr><td>orphan rule                      </td><td> 孤儿规则                      </td></tr>
+<tr><td>overflow                         </td><td> 溢出，越界                    </td></tr>
+<tr><td>own                              </td><td> 占有，拥有                    </td></tr>
+<tr><td>owner                            </td><td> 所有者，拥有者                </td></tr>
+<tr><td>ownership                        </td><td> 所有权                        </td></tr>
+<tr><td><strong>P</strong>                            </td><td>                               </td></tr>
+<tr><td>package manager                  </td><td> 包管理器，软件包管理器        </td></tr>
+<tr><td>panic                            </td><td> （不译）                      </td><td> 此单词直接翻译是“恐慌”，<br>在 Rust 中用于不可恢复的错误处理</td></tr>
+<tr><td>parameter                        </td><td> 参量，形参，形式参量          </td><td> 不严格区分的话， argument（参数）和 <br> parameter（参量）可以互换地使用</td></tr>
+<tr><td>parametric polymorphism          </td><td> 参数多态                      </td></tr>
+<tr><td>parent scope                     </td><td> 父级作用域                    </td></tr>
+<tr><td>parentheses                      </td><td> 小括号，包括“(”和“)”          </td></tr>
+<tr><td>parse                            </td><td> 分析，解析                    </td></tr>
+<tr><td>parser                           </td><td> （语法）分析器，解析器        </td></tr>
+<tr><td>pattern                          </td><td> 模式                          </td></tr>
+<tr><td>pattern match                    </td><td> 模式匹配                      </td></tr>
+<tr><td>phantom type                     </td><td> 虚类型，虚位类型              </td><td> phantom 相关的专有名词：<br>phantom bug 幻影指令<br>phantom power 幻象电源<br>参见：<a href="https://wiki.haskell.org/Phantom_type">Haskell</a>、<a href="https://en.wikibooks.org/wiki/Haskell/Phantom_types">Haskell/Phantom_type</a>、<br><a href="http://rustwiki.org/rust-by-example/generics/phantom.html">Rust/Phantom</a>、<a href="https://doc.rust-lang.org/std/marker/struct.PhantomData.html">stdlib/PhantomData</a></td></tr>
+<tr><td>platform                         </td><td> 平台                          </td></tr>
+<tr><td>polymorphism                     </td><td> 多态                          </td></tr>
+<tr><td>powershell                       </td><td>（不译）                       </td><td> Windows 系统的一种命令行外壳程序<br>和脚本环境</td></tr>
+<tr><td>possibility of absence           </td><td> 不存在的可能性                </td></tr>
+<tr><td>precede                          </td><td> 预先？，在...发生（或出现）   </td></tr>
+<tr><td>prelude                          </td><td>（不译）                       </td><td> 预先导入模块，英文本意：序曲，前奏</td></tr>
+<tr><td>primitive types                  </td><td> 原生类型，基本类型，简单类型  </td></tr>
+<tr><td>print                            </td><td> 打印                          </td></tr>
+<tr><td>process                          </td><td> 进程                          </td></tr>
+<tr><td>procedural macros                </td><td> 过程宏，程序宏                </td></tr>
+<tr><td>project                          </td><td> 项目，工程                    </td></tr>
+<tr><td>prototype                        </td><td> 原型                          </td></tr>
+<tr><td><strong>R</strong>                            </td><td>                               </td></tr>
+<tr><td>race condition                   </td><td> 竞态条件                      </td></tr>
+<tr><td>RAII                             </td><td> 资源获取即初始化（一般不译）  </td><td> resource acquisition is initialization 的缩写</td></tr>
+<tr><td>range                            </td><td> 区间，范围                    </td></tr>
+<tr><td>raw identifier                   </td><td> 原始标识符                    </td></tr>
+<tr><td>raw pointer                      </td><td> 原始指针，裸指针              </td></tr>
+<tr><td>RC                               </td><td> 引用计数                      </td><td> reference counted</td></tr>
+<tr><td>Reader                           </td><td> 读取器                        </td></tr>
+<tr><td>recursive macro                  </td><td> 递归宏                        </td></tr>
+<tr><td>reference                        </td><td> 引用                          </td></tr>
+<tr><td>release                          </td><td> 发布                          </td></tr>
+<tr><td>resource                         </td><td> 资源                          </td></tr>
+<tr><td>resource leak                    </td><td> 资源泄露                      </td></tr>
+<tr><td>RHS                              </td><td> 右操作数                      </td><td> right-hand side 的非正式缩写，<br>与 LHS 相对</td></tr>
+<tr><td>root directory                   </td><td> 根目录                        </td></tr>
+<tr><td>runtime                          </td><td> 运行时                        </td></tr>
+<tr><td>runtime behavior                 </td><td> 运行时行为                    </td></tr>
+<tr><td>runtime overhead                 </td><td> 运行时开销                    </td></tr>
+<tr><td>Rust                             </td><td> （不译）                      </td><td> 一种编程语言</td></tr>
+<tr><td>Rustacean                        </td><td> （不译）                      </td><td> 编写 Rust 的程序员或爱好者的通称</td></tr>
+<tr><td>rustc                            </td><td> （不译）                      </td><td> Rust 语言编译器</td></tr>
+<tr><td>r-value                          </td><td> 右值                          </td></tr>
+<tr><td><strong>S</strong>                            </td><td>                               </td></tr>
+<tr><td>scalar                           </td><td> 标量，数量                    </td></tr>
+<tr><td>schedule                         </td><td> 调度                          </td></tr>
+<tr><td>scope                            </td><td> 作用域                        </td></tr>
+<tr><td>screen                           </td><td> 屏幕                          </td></tr>
+<tr><td>script                           </td><td> 脚本                          </td></tr>
+<tr><td>semicolon                        </td><td> 分号，“;”                     </td></tr>
+<tr><td>self                             </td><td> 自身，作关键字时不译          </td></tr>
+<tr><td>shadowing                        </td><td> 遮敝，隐蔽，隐藏，覆盖        </td></tr>
+<tr><td>signature                        </td><td> 标记                          </td></tr>
+<tr><td>slice                            </td><td> 切片                          </td></tr>
+<tr><td>snake case                       </td><td> 蛇形命名                      </td><td> 参见：<a href="https://en.wikipedia.org/wiki/Snake_case">Snake case</a></td></tr>
+<tr><td>source file                      </td><td> 源文件                        </td></tr>
+<tr><td>source code                      </td><td> 源代码                        </td></tr>
+<tr><td>specialization                   </td><td> 泛型特化                      </td></tr>
+<tr><td>square                           </td><td> 平方，二次方，二次幂          </td></tr>
+<tr><td>square brackets                  </td><td> 中括号，“[”和“]”              </td></tr>
+<tr><td>src                              </td><td> （不译）                      </td><td> source 的缩写，指源代码</td></tr>
+<tr><td>stack                            </td><td> 栈                            </td></tr>
+<tr><td>stack unwind                     </td><td> 栈中国                        </td></tr>
+<tr><td>statement                        </td><td> 语句                          </td></tr>
+<tr><td>statically allocated             </td><td> 静态分配                      </td></tr>
+<tr><td>statically allocated string      </td><td> 静态分配的字符串              </td></tr>
+<tr><td>statically dispatch              </td><td> 静态分发                      </td></tr>
+<tr><td>static method                    </td><td> 静态方法                      </td></tr>
+<tr><td>string                           </td><td> 字符串                        </td></tr>
+<tr><td>string literal                   </td><td> 字符串常量                    </td></tr>
+<tr><td>string slices                    </td><td> 字符串片段                    </td></tr>
+<tr><td>stringify                        </td><td> 字符串化                      </td></tr>
+<tr><td>subscript notation               </td><td> 下标                          </td></tr>
+<tr><td>sugar                            </td><td> 糖                            </td></tr>
+<tr><td>super                            </td><td> 父级，作关键字时不译          </td></tr>
+<tr><td>syntax context                   </td><td> 语法上下文                    </td></tr>
+<tr><td>systems programming language     </td><td> 系统级编程语言                </td></tr>
+<tr><td><strong>T</strong>                            </td><td>                               </td></tr>
+<tr><td>tagged union                     </td><td> 标记联合                      </td></tr>
+<tr><td>target triple                    </td><td> 多层次指标，三层/重 指标/目标 </td><td> triple 本义是“三”，但此处虚指“多”，<br>此词翻译需要更多讨论</td></tr>
+<tr><td>terminal                         </td><td> 终端                          </td></tr>
+<tr><td>testing                          </td><td> 测试                          </td></tr>
+<tr><td>testsuit                         </td><td> 测试套件                      </td></tr>
+<tr><td>the least significant bit (LSB)  </td><td> 最低数字位                    </td></tr>
+<tr><td>the most significant bit (MSB)   </td><td> 最高数字位                    </td></tr>
+<tr><td>thread                           </td><td> 线程                          </td></tr>
+<tr><td>TOML                             </td><td> （不译）                      </td><td> Tom’s Obvious, Minimal Language <br>的缩写，一种配置语言</td></tr>
+<tr><td>token tree                       </td><td> 令牌树？                      </td><td> 待进一步斟酌</td></tr>
+<tr><td>trait                            </td><td> （不译）                      </td><td> 其字面上有“特性，特征”之意，不作翻译</td></tr>
+<tr><td>trait bound                      </td><td> trait 约束                    </td><td> bound 有“约束，限制，限定”之意</td></tr>
+<tr><td>trait object                     </td><td> trait 对象                    </td></tr>
+<tr><td>transmute                        </td><td> （不译）                      </td><td> 其字面上有“变化，变形，变异”之意，<br>不作翻译</td></tr>
+<tr><td>trivial                          </td><td> 平凡的                        </td></tr>
+<tr><td>troubleshooting                  </td><td> 疑难解答，故障诊断，<br>故障排除，故障分析 </td></tr>
+<tr><td>tuple                            </td><td> 元组                          </td></tr>
+<tr><td>two’s complement                 </td><td> 补码，二补数                  </td></tr>
+<tr><td>two-word object                  </td><td> 双字对象                      </td></tr>
+<tr><td>type annotation                  </td><td> 类型标注                      </td></tr>
+<tr><td>type erasure                     </td><td> 类型擦除                      </td></tr>
+<tr><td>type inference                   </td><td> 类型推导                      </td></tr>
+<tr><td>type inference engine            </td><td> 类型推导引擎                  </td></tr>
+<tr><td>type parameter                   </td><td> 类型参量                      </td></tr>
+<tr><td>type placeholder                 </td><td> 类型占位符                    </td></tr>
+<tr><td>type signature                   </td><td> 类型标记                      </td></tr>
+<tr><td><strong>U</strong>                            </td><td>                               </td></tr>
+<tr><td>undefined behavior               </td><td> 未定义行为                    </td></tr>
+<tr><td>uninstall                        </td><td> 卸载                          </td></tr>
+<tr><td>unit-like struct                 </td><td> 类单元结构体                  </td></tr>
+<tr><td>unit struct                     </td><td> 单元结构体                    </td></tr>
+<tr><td>“unit-style” tests               </td><td> 单元测试                      </td></tr>
+<tr><td>unit test                        </td><td> 单元测试                      </td></tr>
+<tr><td>unit type                        </td><td> 单元类型                      </td></tr>
+<tr><td>universal function call syntax <br>(UFCS)  </td><td> 通用函数调用语法    </td></tr>
+<tr><td>unsized types                    </td><td> 不定长类型                    </td></tr>
+<tr><td>unwind                           </td><td> 展开                          </td></tr>
+<tr><td>unwrap                           </td><td> 解包                          </td><td> 暂译！</td></tr>
+<tr><td><strong>V</strong>                            </td><td>                               </td></tr>
+<tr><td>variable binding                 </td><td> 变量绑定                      </td></tr>
+<tr><td>variable shadowing               </td><td> 变量遮蔽，变量隐蔽,<br>变量隐藏，变量覆盖 </td></tr>
+<tr><td>variable capture                 </td><td> 变量捕获                      </td></tr>
+<tr><td>variant                          </td><td> 变量                          </td></tr>
+<tr><td>vector                           </td><td> （动态数组，一般不译）        </td><td> vector 本义是“向量”</td></tr>
+<tr><td>visibility                       </td><td> 可见性                        </td></tr>
+<tr><td>vtable                           </td><td> 虚表                          </td></tr>
+<tr><td><strong>W</strong>                            </td><td>                               </td></tr>
+<tr><td>where clause                     </td><td> where 子句，where 从句，where 分句 </td><td> 在数据库的官方手册中多翻译成“子句”，英语语法中翻译成“从句”</td></tr>
+<tr><td>wrap                             </td><td> 包裹                          </td><td> 暂译！</td></tr>
+<tr><td>wrapped                          </td><td> 装包                          </td></tr>
+<tr><td>wrapper                          </td><td> 装包                          </td></tr>
+<tr><td><strong>Y</strong>                            </td><td>                               </td></tr>
+<tr><td>yield                            </td><td> 产生(收益、效益等)，产出，提供</td></tr>
+<tr><td><strong>Z</strong>                            </td><td>                               </td></tr>
+<tr><td>zero-cost abstractions           </td><td> 零开销抽象                    </td></tr>
+<tr><td>zero-width space(ZWSP)           </td><td> 零宽空格                      </td></tr>
 </tbody></table>
 
                     </main>

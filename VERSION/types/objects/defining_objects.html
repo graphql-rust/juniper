@@ -4,8 +4,6 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>定义对象 - Juniper - Rust 语言的 GraphQL 服务器</title>
-        
-
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content=" Juniper 中文手册，一个用于 Rust 语言的 GraphQL 服务器库。">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,10 +35,7 @@
     </head>
     <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
-            var path_to_root = "../../";
-            var default_theme = "light";
-        </script>
+        <script type="text/javascript">var path_to_root = "../../";</script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -61,8 +56,8 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
             document.body.className = theme;
             document.querySelector('html').className = theme + ' js';
         </script>
@@ -80,10 +75,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li><a href="../../index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="../../quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="../../types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="../../types/objects/defining_objects.html" class="active"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="../../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="../../types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="../../types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="../../types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="../../types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="../../types/interfaces.html"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="../../types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="../../types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="../../types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="../../schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="../../servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="../../servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="../../servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="../../servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="../../servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="../../servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="../../servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="../../advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="../../advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="../../advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="../../advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="../../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="../../rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
-            </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <ol class="chapter"><li><a href="../../index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="../../quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="../../types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="../../types/objects/defining_objects.html" class="active"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="../../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="../../types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="../../types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="../../types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="../../types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="../../types/interfaces.html"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="../../types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="../../types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="../../types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="../../schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="../../servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="../../servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="../../servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="../../servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="../../servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="../../servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="../../servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="../../advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="../../advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="../../advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="../../advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="../../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="../../rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -100,7 +92,7 @@
                                 <i class="fa fa-paint-brush"></i>
                             </button>
                             <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -113,13 +105,12 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1>
+                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1> 
 
                         <div class="right-buttons">
                             <a href="../../print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
-                            
                         </div>
                     </div>
                 </div>
@@ -148,7 +139,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#定义对象" id="定义对象">定义对象</a></h1>
+                        <a class="header" href="#a定义对象" id="a定义对象"><h1>定义对象</h1></a>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/objects/defining_objects.md">types/objects/defining_objects.md</a>
 <br />
@@ -205,7 +196,7 @@ struct Person {
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#关系" id="关系">关系</a></h2>
+<a class="header" href="#a关系" id="a关系"><h2>关系</h2></a>
 <p>如下情形，只能使用自定义派生属性：</p>
 <ul>
 <li>注解类型是<code>结构体（struct）</code>,</li>
@@ -233,7 +224,7 @@ struct House {
 # fn main() {}
 </code></pre></pre>
 <p>因为 <code>Person</code> 是一个有效的 GraphQL 类型，所以可以在另一个结构体中使用 <code>Vec&lt;Person&gt;</code>，它将自动转换为 <code>非空 Person 对象</code> 的列表。</p>
-<h2><a class="header" href="#字段重命名" id="字段重命名">字段重命名</a></h2>
+<a class="header" href="#a字段重命名" id="a字段重命名"><h2>字段重命名</h2></a>
 <p>默认地，结构体字段由 Rust 标准命名约定<code>蛇形命名法（snake_case）</code>被转换为 GraphQL 约定的<code>驼峰命名法（snake_case）</code>：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {
@@ -254,7 +245,7 @@ struct Person {
 
 # fn main() {}
 </code></pre></pre>
-<h2><a class="header" href="#字段弃用" id="字段弃用">字段弃用</a></h2>
+<a class="header" href="#a字段弃用" id="a字段弃用"><h2>字段弃用</h2></a>
 <p>要弃用字段，可使用 <code>graphql</code> 属性指定弃用原因：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {
@@ -267,7 +258,7 @@ struct Person {
 # fn main() {}
 </code></pre></pre>
 <p>当然，<code>名称（name）</code>、<code>描述(description)</code>和<code>deprecation（弃用）</code>参数可以组合使用。不过 GraphQL 规范中的一些限制依然存在，<code>deprecation（弃用）</code>参数只能用于对象字段和枚举值。</p>
-<h2><a class="header" href="#字段忽略" id="字段忽略">字段忽略</a></h2>
+<a class="header" href="#a字段忽略" id="a字段忽略"><h2>字段忽略</h2></a>
 <p>默认地，<code>GraphQLObject</code> 中的所有字段都包含在生成的 GraphQL 类型中。若要不包含特定字段，请使用注解 <code>#[graphql(skip)]</code>：</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Person {

@@ -30,14 +30,14 @@ h4, h5 { margin-top: 2em; }
 
 .header + .header h3,
 .header + .header h4,
-.header + .header h5 {
+.header + .header h5 { 
     margin-top: 1em;
 }
 
-h1 a.header:target::before,
-h2 a.header:target::before,
-h3 a.header:target::before,
-h4 a.header:target::before {
+a.header:target h1:before,
+a.header:target h2:before,
+a.header:target h3:before,
+a.header:target h4:before {
     display: inline-block;
     content: "»";
     margin-left: -30px;
@@ -51,7 +51,7 @@ h4 a.header:target::before {
 .page-wrapper {
     box-sizing: border-box;
 }
-.js:not(.sidebar-resizing) .page-wrapper {
+.js .page-wrapper {
     transition: margin-left 0.3s ease, transform 0.3s ease; /* Animation: slide away */
 }
 
@@ -141,3 +141,4 @@ blockquote {
 .tooltipped .tooltiptext {
     visibility: visible;
 }
+  
