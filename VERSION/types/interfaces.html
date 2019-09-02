@@ -4,6 +4,8 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>接口 - Juniper - Rust 语言的 GraphQL 服务器</title>
+        
+
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content=" Juniper 中文手册，一个用于 Rust 语言的 GraphQL 服务器库。">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -35,7 +37,10 @@
     </head>
     <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">var path_to_root = "../";</script>
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = "light";
+        </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -56,8 +61,8 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
-            if (theme === null || theme === undefined) { theme = 'light'; }
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
             document.body.className = theme;
             document.querySelector('html').className = theme + ' js';
         </script>
@@ -75,7 +80,10 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="../index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="../types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="../types/interfaces.html" class="active"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="../servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="../servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="../rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li><a href="../index.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> 快速入门</a></li><li><a href="../types/index.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">3.1.</strong> 定义对象</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> 复杂字段</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">3.1.2.</strong> 上下文</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">3.1.3.</strong> 错误处理</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">3.2.</strong> 其他类型</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">3.2.1.</strong> 枚举</a></li><li><a href="../types/interfaces.html" class="active"><strong aria-hidden="true">3.2.2.</strong> 接口</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">3.2.3.</strong> 输入对象</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">3.2.4.</strong> 标量</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">3.2.5.</strong> 联合</a></li></ol></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">4.</strong> 模式和变更</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">5.</strong> 服务器集成</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">5.1.</strong> 官方支持集成</a></li><li><ol class="section"><li><a href="../servers/hyper.html"><strong aria-hidden="true">5.1.1.</strong> Hyper</a></li><li><a href="../servers/warp.html"><strong aria-hidden="true">5.1.2.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">5.1.3.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">5.1.4.</strong> Iron</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">5.2.</strong> 第三方集成</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> 高阶应用</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">6.1.</strong> 内省</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">6.2.</strong> 非结构体对象</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">6.3.</strong> 对象和泛型</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">6.4.</strong> 批量操作请求</a></li><li class="spacer"></li></ol></li><li><a href="../rust-glossary.html">附录 Rust 语言术语中英文对照表</a></li><li class="spacer"></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -92,7 +100,7 @@
                                 <i class="fa fa-paint-brush"></i>
                             </button>
                             <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -105,12 +113,13 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1> 
+                        <h1 class="menu-title">Juniper - Rust 语言的 GraphQL 服务器</h1>
 
                         <div class="right-buttons">
                             <a href="../print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
+                            
                         </div>
                     </div>
                 </div>
@@ -139,7 +148,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#a接口" id="a接口"><h1>接口</h1></a>
+                        <h1><a class="header" href="#接口" id="接口">接口</a></h1>
 <blockquote>
 <p><a href="https://github.com/graphql-rust/juniper/blob/master/docs/book/content/types/interfaces.md">types/interfaces.md</a>
 <br />
@@ -147,9 +156,9 @@ commit 693405afa5a86df3a2277065696e7c42306ff630</p>
 </blockquote>
 <p>GraphQL 接口能够正确地映射到常见的面向对象语言接口，如 Java 或 C#。但很不幸，Rust 并无与 GraphQL 接口正确映射的概念。因此，Juniper 中定义接口需要一点点范例代码；另一方面，可以做到让你完全控制所支持接口的类型。</p>
 <p>为了突出展示在 Rust 中实现接口的不同方式，让我们看看不同实现方式所实现的相同结果：</p>
-<a class="header" href="#a特性traits" id="a特性traits"><h2>特性（Traits）</h2></a>
+<h2><a class="header" href="#特性traits" id="特性traits">特性（Traits）</a></h2>
 <p>特性（Traits）或许是你在 Rust 语言构建 GraphQL 接口时想使用的最明显概念。但是因为 GraphQL 支持<code>向下转型（downcasting）</code>而 Rust 却不支持，所以你必须手动实现如何将特性（trait）转换为具体类型。可以通过如下方式：</p>
-<a class="header" href="#a通过存取器方法向下转型" id="a通过存取器方法向下转型"><h3>通过存取器方法向下转型</h3></a>
+<h3><a class="header" href="#通过存取器方法向下转型" id="通过存取器方法向下转型">通过存取器方法向下转型</a></h3>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
@@ -194,7 +203,7 @@ juniper::graphql_interface!(&lt;'a&gt; &amp;'a Character: () as &quot;Character&
 </code></pre></pre>
 <p><code>instance_resolvers 闭包</code>列出了给定接口的所有实现，以及如何解析接口。</p>
 <p>如所看到的，使用特性（traits）意义不大：你需要列出 trait 自身的所有具体类型，且会有一些重复，啰里啰唆。</p>
-<a class="header" href="#a使用数据库查找" id="a使用数据库查找"><h3>使用数据库查找</h3></a>
+<h3><a class="header" href="#使用数据库查找" id="使用数据库查找">使用数据库查找</a></h3>
 <p>当具体类被请求时，如果你可以提供额外的数据库查询，则可以废弃向下转型方法，转而使用上下文。如下示例代码，我们将使用两个哈希表，你可以用两张表和一些 SQL 调用来代替：</p>
 <pre><pre class="playpen"><code class="language-rust"># use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
@@ -242,7 +251,7 @@ juniper::graphql_interface!(&lt;'a&gt; &amp;'a Character: Database as &quot;Char
 # fn main() {}
 </code></pre></pre>
 <p>虽移除了向下转型方法，但代码仍有点啰嗦。</p>
-<a class="header" href="#a占位符placeholder对象" id="a占位符placeholder对象"><h2>占位符（placeholder）对象</h2></a>
+<h2><a class="header" href="#占位符placeholder对象" id="占位符placeholder对象">占位符（placeholder）对象</a></h2>
 <p>继续上段示例代码，trait 自身似乎没有必要，也许它可以仅是一个包含 ID 的结构体（struct）？</p>
 <p>Continuing on from the last example, the trait itself seems a bit unneccesary.
 Maybe it can just be a struct containing the ID?</p>
@@ -284,7 +293,7 @@ juniper::graphql_interface!(Character: Database where Scalar = &lt;S&gt; |&amp;s
 # fn main() {}
 </code></pre></pre>
 <p>减少了不少重复，但如果接口数据较多的情况下，此种做法不符合实际。</p>
-<a class="header" href="#a枚举" id="a枚举"><h2>枚举</h2></a>
+<h2><a class="header" href="#枚举" id="枚举">枚举</a></h2>
 <p>使用枚举和模式匹配介于使用特性（trait）和使用占位符（placeholder）对象之间。本例中，我们无需额外的数据库调用，因此移除。</p>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
