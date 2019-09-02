@@ -48,5 +48,5 @@ git remote set-url --push origin git@github.com:zzy/juniper.git
 git config --local user.name "zzy"
 git config --local user.email "9809920@qq.com"
 git add -A $VERSION
-git diff-index --quiet HEAD || git commit -m "Updated book for $VERSION ***NO_CI***"
+git diff-index --quiet HEAD || git commit -m "Chinese documentation, run the tests on CI"
 git push origin book-zh
