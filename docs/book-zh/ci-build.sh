@@ -44,9 +44,9 @@ git clean -fd
 git checkout book-zh
 rm -rf $VERSION
 mv /tmp/book-content ./$VERSION
-git remote set-url --push origin git@github.com:graphql-rust/juniper.git
-git config --local user.name "Juniper Bot"
-git config --local user.email "juniper@example.com"
+git remote set-url --push origin git@github.com:zzy/juniper.git
+git config --local user.name "zzy"
+git config --local user.email "9809920@qq.com"
 git add -A $VERSION
 git diff-index --quiet HEAD || git commit -m "Updated book for $VERSION ***NO_CI***"
 git push origin book-zh
