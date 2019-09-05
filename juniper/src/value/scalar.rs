@@ -260,8 +260,6 @@ pub enum DefaultScalarValue {
     Boolean(bool),
 }
 
-trait S: Send + Sync {}
-
 impl ScalarValue for DefaultScalarValue {
     type Visitor = DefaultScalarValueVisitor;
 
