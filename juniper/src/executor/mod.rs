@@ -390,7 +390,7 @@ where
     #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        T: crate::GraphQLTypeAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -408,7 +408,7 @@ where
         value: &T,
     ) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = NewCtxT> + Send + Sync,
+        T: crate::GraphQLTypeAsync<S, Context = NewCtxT>,
         T::TypeInfo: Send + Sync,
         S: Send + Sync,
         NewCtxT: FromContext<CtxT> + Send + Sync,

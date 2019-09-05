@@ -428,7 +428,7 @@ macro_rules! graphql_scalar {
                     info: &'a Self::TypeInfo,
                     selection_set: Option<&'a [$crate::Selection<$crate::__juniper_insert_generic!($($scalar)+)>]>,
                     executor: &'a $crate::Executor<Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>,
-                ) -> futures::future::BoxFuture<'a, $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)>> {
+                ) -> futures::future::LocalBoxFuture<'a, $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)>> {
                     use $crate::GraphQLType;
                     use futures::future;
                     let v = self.resolve(info, selection_set, executor);

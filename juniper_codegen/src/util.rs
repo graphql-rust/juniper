@@ -828,7 +828,7 @@ impl GraphQLTypeDefiniton {
                                             Err(e) => Err(e),
                                         }
                                     };
-                                    future::FutureExt::boxed(f)
+                                    future::FutureExt::boxed_local(f)
                                 },
                             )
                         } else {
@@ -846,7 +846,7 @@ impl GraphQLTypeDefiniton {
                                             Err(e) => Err(e),
                                         }
                                     };
-                                    future::FutureExt::boxed(f)
+                                    future::FutureExt::boxed_local(f)
                                 )
                             } else {
                                 quote!(
@@ -855,7 +855,7 @@ impl GraphQLTypeDefiniton {
                                         Ok(None) => Ok(#juniper_crate_name::Value::null()),
                                         Err(e) => Err(e),
                                     };
-                                    future::FutureExt::boxed(future::ready(v))
+                                    future::FutureExt::boxed_local(future::ready(v))
                                 )
                             };
 
@@ -891,8 +891,7 @@ impl GraphQLTypeDefiniton {
                         field: &'b str,
                         args: &'b #juniper_crate_name::Arguments<#scalar>,
                         executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> futures::future::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
-                        where #scalar: Send + Sync,
+                    ) -> futures::future::LocalBoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
                     {
                         use futures::future;
                         use #juniper_crate_name::GraphQLType;
