@@ -74,15 +74,16 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
         S: ScalarValue,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(crate::execute(

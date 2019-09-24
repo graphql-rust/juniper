@@ -609,10 +609,10 @@ impl<S> ExecutionError<S> {
     }
 }
 
-pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
+pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT, S>,
+    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -620,6 +620,7 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
