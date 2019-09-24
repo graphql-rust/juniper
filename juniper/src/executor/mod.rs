@@ -711,9 +711,7 @@ where
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
             },
             OperationType::Subscription => {
-                //todo not pretend that subscription is a mutation
-                executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
-//                executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
+                executor.resolve_into_value(&root_node.subscription_info, &root_node.subscription_type)
             }
         };
     }
