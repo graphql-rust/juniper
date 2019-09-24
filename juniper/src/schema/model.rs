@@ -119,7 +119,7 @@ where
     pub fn new_with_info(
         query_obj: QueryT,
         mutation_obj: MutationT,
-        subscription_obj: MutationT,
+        subscription_obj: SubscriptionT,
         query_info: QueryT::TypeInfo,
         mutation_info: MutationT::TypeInfo,
         subscription_info: SubscriptionT::TypeInfo,
@@ -131,7 +131,7 @@ where
             query_type: query_obj,
             mutation_type: mutation_obj,
             subscription_type: subscription_obj,
-            schema: SchemaType::new::<QueryT, MutationT>
+            schema: SchemaType::new::<QueryT, MutationT, SubscriptionT>
                 (
                     &query_info,
                     &mutation_info,

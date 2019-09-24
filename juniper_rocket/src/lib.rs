@@ -87,14 +87,15 @@ where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
@@ -164,14 +165,15 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Execute an incoming GraphQL query
-    pub fn execute<CtxT, QueryT, MutationT>(
+    pub fn execute<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         let response = self.0.execute(root_node, context);
         let status = if response.is_ok() {
