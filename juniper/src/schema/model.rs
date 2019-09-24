@@ -280,12 +280,22 @@ impl<'a, S> SchemaType<'a, S> {
 
     pub fn subscription_type(&self) -> Option<TypeType<S>> {
         println!("subscription_type() called");
-        None
+        if let Some(ref subscription_type_name) = self.subscription_type_name {
+            Some(
+                self.type_by_name(subscription_type_name)
+                    .expect("Subscription type does not exist in schema"),
+            )
+        } else {
+            None
+        }
     }
 
     pub fn concrete_subscription_type(&self) -> Option<&MetaType<S>> {
         println!("concrete_subscription_type() called");
-        None
+        self.subscription_type_name.as_ref().map(|name| {
+            self.concrete_type_by_name(name)
+                .expect("Subscription type does not exist in schema")
+        })
     }
 
     pub fn type_list(&self) -> Vec<TypeType<S>> {
