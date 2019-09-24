@@ -17,7 +17,12 @@ use crate::{
 /// This brings the mutation and query types together, and provides the
 /// predefined metadata fields.
 #[derive(Debug)]
-pub struct RootNode<'a, QueryT: GraphQLType<S>, MutationT: GraphQLType<S>, S = DefaultScalarValue>
+pub struct RootNode<
+    'a,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S>,
+    SubscriptionT: GraphQLType<S>,
+    S = DefaultScalarValue>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -31,6 +36,10 @@ where
     #[doc(hidden)]
     pub mutation_info: MutationT::TypeInfo,
     #[doc(hidden)]
+    pub subscription_type: SubscriptionT,
+    #[doc(hidden)]
+    pub subscription_info: SubscriptionT::TypeInfo,
+    #[doc(hidden)]
     pub schema: SchemaType<'a, S>,
 }
 
@@ -40,6 +49,7 @@ pub struct SchemaType<'a, S> {
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
     query_type_name: String,
     mutation_type_name: Option<String>,
+    subscription_type_name: Option<String>,
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
@@ -65,6 +75,7 @@ pub struct DirectiveType<'a, S> {
 pub enum DirectiveLocation {
     Query,
     Mutation,
+    Subscription,
     Field,
     #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
@@ -74,29 +85,31 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
-impl<'a, QueryT, MutationT, S> RootNode<'a, QueryT, MutationT, S>
+impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + 'a,
     QueryT: GraphQLType<S, TypeInfo = ()>,
     MutationT: GraphQLType<S, TypeInfo = ()>,
+    SubscriptionT: GraphQLType<S, TypeInfo = ()>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Construct a new root node from query and mutation nodes
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
-    pub fn new(query_obj: QueryT, mutation_obj: MutationT) -> Self
+    pub fn new(query_obj: QueryT, mutation_obj: MutationT, subscription_obj: SubscriptionT) -> Self
     where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
-        RootNode::new_with_info(query_obj, mutation_obj, (), ())
+        RootNode::new_with_info(query_obj, mutation_obj, subscription_obj, (), (), ())
     }
 }
 
-impl<'a, S, QueryT, MutationT> RootNode<'a, QueryT, MutationT, S>
+impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
+    SubscriptionT: GraphQLType<S>,
     S: ScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -106,8 +119,10 @@ where
     pub fn new_with_info(
         query_obj: QueryT,
         mutation_obj: MutationT,
+        subscription_obj: SubscriptionT,
         query_info: QueryT::TypeInfo,
         mutation_info: MutationT::TypeInfo,
+        subscription_info: SubscriptionT::TypeInfo,
     ) -> Self
     where
         for<'b> &'b S: ScalarRefValue<'b>,
@@ -115,27 +130,37 @@ where
         RootNode {
             query_type: query_obj,
             mutation_type: mutation_obj,
-            schema: SchemaType::new::<QueryT, MutationT>(&query_info, &mutation_info),
+            subscription_type: subscription_obj,
+            schema: SchemaType::new::<QueryT, MutationT, SubscriptionT>
+                (
+                    &query_info,
+                    &mutation_info,
+                    &subscription_info
+                ),
             query_info,
             mutation_info,
+            subscription_info
         }
     }
 }
 
 impl<'a, S> SchemaType<'a, S> {
-    pub fn new<QueryT, MutationT>(
+    pub fn new<QueryT, MutationT, SubscriptionT>(
         query_info: &QueryT::TypeInfo,
         mutation_info: &MutationT::TypeInfo,
+        subscription_info: &SubscriptionT::TypeInfo,
     ) -> Self
     where
         S: ScalarValue + 'a,
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S>,
+        SubscriptionT: GraphQLType<S>,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         let mut directives = FnvHashMap::default();
         let query_type_name: String;
         let mutation_type_name: String;
+        let subscription_type_name: String;
 
         let mut registry = Registry::new(FnvHashMap::default());
         query_type_name = registry
@@ -145,6 +170,11 @@ impl<'a, S> SchemaType<'a, S> {
 
         mutation_type_name = registry
             .get_type::<MutationT>(mutation_info)
+            .innermost_name()
+            .to_owned();
+
+        subscription_type_name = registry
+            .get_type::<SubscriptionT>(subscription_info)
             .innermost_name()
             .to_owned();
 
@@ -183,6 +213,11 @@ impl<'a, S> SchemaType<'a, S> {
             query_type_name,
             mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
                 Some(mutation_type_name)
+            } else {
+                None
+            },
+            subscription_type_name: if &subscription_type_name != "_EmptyMutation" {
+                Some(subscription_type_name)
             } else {
                 None
             },
@@ -240,6 +275,26 @@ impl<'a, S> SchemaType<'a, S> {
         self.mutation_type_name.as_ref().map(|name| {
             self.concrete_type_by_name(name)
                 .expect("Mutation type does not exist in schema")
+        })
+    }
+
+    pub fn subscription_type(&self) -> Option<TypeType<S>> {
+        println!("subscription_type() called");
+        if let Some(ref subscription_type_name) = self.subscription_type_name {
+            Some(
+                self.type_by_name(subscription_type_name)
+                    .expect("Subscription type does not exist in schema"),
+            )
+        } else {
+            None
+        }
+    }
+
+    pub fn concrete_subscription_type(&self) -> Option<&MetaType<S>> {
+        println!("concrete_subscription_type() called");
+        self.subscription_type_name.as_ref().map(|name| {
+            self.concrete_type_by_name(name)
+                .expect("Subscription type does not exist in schema")
         })
     }
 
@@ -452,6 +507,7 @@ impl fmt::Display for DirectiveLocation {
         f.write_str(match *self {
             DirectiveLocation::Query => "query",
             DirectiveLocation::Mutation => "mutation",
+            DirectiveLocation::Subscription => "subscription",
             DirectiveLocation::Field => "field",
             DirectiveLocation::FragmentDefinition => "fragment definition",
             DirectiveLocation::FragmentSpread => "fragment spread",

@@ -674,10 +674,10 @@ impl<S> ExecutionError<S> {
     }
 }
 
-pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
+pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT, S>,
+    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -685,6 +685,7 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
@@ -748,6 +749,10 @@ where
                 .schema
                 .mutation_type()
                 .expect("No mutation type found"),
+            OperationType::Subscription => root_node
+                .schema
+                .subscription_type()
+                .expect("No subscription type found")
         };
 
         let executor = Executor {
@@ -769,6 +774,9 @@ where
             OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
+            },
+            OperationType::Subscription => {
+                executor.resolve_into_value(&root_node.subscription_info, &root_node.subscription_type)
             }
         };
     }
@@ -780,10 +788,10 @@ where
 }
 
 #[cfg(feature = "async")]
-pub async fn execute_validated_query_async<'a, QueryT, MutationT, CtxT, S>(
+pub async fn execute_validated_query_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<'a, QueryT, MutationT, S>,
+    root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -793,6 +801,8 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -857,6 +867,10 @@ where
                 .schema
                 .mutation_type()
                 .expect("No mutation type found"),
+            OperationType::Subscription => root_node
+                .schema
+                .subscription_type()
+                .expect("No mutation type found"),
         };
 
         let executor = Executor {
@@ -883,6 +897,11 @@ where
             OperationType::Mutation => {
                 executor
                     .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
+                    .await
+            },
+            OperationType::Subscription => {
+                executor
+                    .resolve_into_value_async(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             }
         };

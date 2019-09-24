@@ -953,7 +953,6 @@ impl GraphQLTypeDefiniton {
                     }
                 }
 
-
                 fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
                     #name.to_string()
                 }
