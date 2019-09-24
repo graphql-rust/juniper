@@ -116,6 +116,7 @@ pub struct Directive<'a, S> {
 pub enum OperationType {
     Query,
     Mutation,
+    Subscription,
 }
 
 #[derive(Clone, PartialEq, Debug)]

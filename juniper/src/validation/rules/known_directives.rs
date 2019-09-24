@@ -28,6 +28,7 @@ where
         self.location_stack.push(match op.item.operation_type {
             OperationType::Query => DirectiveLocation::Query,
             OperationType::Mutation => DirectiveLocation::Mutation,
+            OperationType::Subscription => DirectiveLocation::Subscription,
         });
     }
 

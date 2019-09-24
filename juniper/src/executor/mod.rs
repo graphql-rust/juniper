@@ -683,6 +683,10 @@ where
                 .schema
                 .mutation_type()
                 .expect("No mutation type found"),
+            OperationType::Subscription => root_node
+                .schema
+                .subscription_type()
+                .expect("No subscription type found")
         };
 
         let executor = Executor {
@@ -704,6 +708,11 @@ where
             OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
+            },
+            OperationType::Subscription => {
+                //todo not pretend that subscription is a mutation
+                executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
+//                executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
             }
         };
     }

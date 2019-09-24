@@ -56,7 +56,8 @@ where
     S: ScalarValue,
 {
     match parser.peek().item {
-        Token::CurlyOpen | Token::Name("query") | Token::Name("mutation") => Ok(
+        Token::CurlyOpen | Token::Name("query") |
+        Token::Name("mutation") | Token::Name("subscription") => Ok(
             Definition::Operation(parse_operation_definition(parser, schema)?),
         ),
         Token::Name("fragment") => Ok(Definition::Fragment(parse_fragment_definition(
@@ -95,6 +96,7 @@ where
         let op = match operation_type.item {
             OperationType::Query => Some(schema.concrete_query_type()),
             OperationType::Mutation => schema.concrete_mutation_type(),
+            OperationType::Subscription => schema.concrete_subscription_type(),
         };
         let fields = op.and_then(|m| m.fields(schema));
         let fields = fields.as_ref().map(|c| c as &[_]);
@@ -394,6 +396,7 @@ fn parse_operation_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, Operatio
     match parser.peek().item {
         Token::Name("query") => Ok(parser.next()?.map(|_| OperationType::Query)),
         Token::Name("mutation") => Ok(parser.next()?.map(|_| OperationType::Mutation)),
+        Token::Name("subscription") => Ok(parser.next()?.map(|_| OperationType::Subscription)),
         _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
     }
 }
