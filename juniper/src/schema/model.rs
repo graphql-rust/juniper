@@ -245,10 +245,14 @@ impl<'a, S> SchemaType<'a, S> {
     }
 
     pub fn subscription_type(&self) -> Option<TypeType<S>> {
+        // subscription is not yet in `RootNode`,
+        // so return `None` for now
         None
     }
 
     pub fn concrete_subscription_type(&self) -> Option<&MetaType<S>> {
+        // subscription is not yet in `RootNode`,
+        // so return `None` for now
         None
     }
 

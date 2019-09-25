@@ -7,7 +7,7 @@ use crate::{
         Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
         ToInputValue, Type,
     },
-    parser::SourcePosition,
+    parser::{SourcePosition, Spanning},
     value::Value,
     GraphQLError,
 };
@@ -31,7 +31,6 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::parser::Spanning;
 
 /// A type registry used to build schemas
 ///
@@ -710,7 +709,7 @@ where
             OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
-            },
+            }
             OperationType::Subscription => unreachable!(),
         };
     }

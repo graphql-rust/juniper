@@ -56,10 +56,12 @@ where
     S: ScalarValue,
 {
     match parser.peek().item {
-        Token::CurlyOpen | Token::Name("query") |
-        Token::Name("mutation") | Token::Name("subscription") => Ok(
-            Definition::Operation(parse_operation_definition(parser, schema)?),
-        ),
+        Token::CurlyOpen
+        | Token::Name("query")
+        | Token::Name("mutation")
+        | Token::Name("subscription") => Ok(Definition::Operation(parse_operation_definition(
+            parser, schema,
+        )?)),
         Token::Name("fragment") => Ok(Definition::Fragment(parse_fragment_definition(
             parser, schema,
         )?)),

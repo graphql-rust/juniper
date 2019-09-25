@@ -5,7 +5,7 @@
 
 use rocket::{response::content, State};
 
-use juniper::{RootNode, FieldResult};
+use juniper::{FieldResult, RootNode};
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
