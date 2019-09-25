@@ -136,7 +136,7 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.subscribe_async(root_node, context).await)
+                GraphQLBatchResponse::Single(request.execute_async(root_node, context).await)
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 let futures = requests

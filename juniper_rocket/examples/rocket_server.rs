@@ -7,6 +7,7 @@ use rocket::{response::content, State};
 
 use juniper::{RootNode, FieldResult};
 use juniper_rocket::GraphQLResponse;
+use std::sync::Arc;
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
@@ -78,17 +79,30 @@ fn post_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    use futures::FutureExt;
-    use futures1::Future as Future1;
+    use futures::Future;
     use futures::compat::Compat;
-    let mut x: Box<dyn Future1<Item = GraphQLResponse, Error = ()>> = Box::new(Compat::new(
-        async {
-            let x = request.execute_async(&schema, &()).await;
-            x
+    use rocket::http::Status;
+    use std::sync::mpsc::channel;
+//    use futures1::Future;
+
+    let cloned_schema = Arc::new(schema);
+
+    let (sender, receiver) = channel();
+
+    let mut x = futures::executor::block_on(
+        async move {
+            let x = request.execute_async(&cloned_schema.clone(), &()).await;
+            sender.send(x);
         }
-            .map(|x| Ok(x))
-    ));
-    x.wait().unwrap()
+    );
+
+    let res = receiver.recv().unwrap();
+
+//    GraphQLResponse(Status {
+//        code: 200,
+//        reason: "because"
+//    }, "it compiles".to_string());
+    res
 }
 
 fn main() {
