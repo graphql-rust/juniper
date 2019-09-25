@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Add ability to parse 'subscription'
 
 # [[0.13.1] 2019-07-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.13.1)
 
