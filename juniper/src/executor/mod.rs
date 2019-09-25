@@ -31,6 +31,7 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
+use crate::parser::Spanning;
 
 /// A type registry used to build schemas
 ///
@@ -609,10 +610,10 @@ impl<S> ExecutionError<S> {
     }
 }
 
-pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
     document: Document<S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
+    root_node: &RootNode<QueryT, MutationT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -620,7 +621,6 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
@@ -688,10 +688,7 @@ where
                 .schema
                 .mutation_type()
                 .expect("No mutation type found"),
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No subscription type found")
+            OperationType::Subscription => unreachable!(),
         };
 
         let executor = Executor {
@@ -714,9 +711,7 @@ where
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
             },
-            OperationType::Subscription => {
-                executor.resolve_into_value(&root_node.subscription_info, &root_node.subscription_type)
-            }
+            OperationType::Subscription => unreachable!(),
         };
     }
 

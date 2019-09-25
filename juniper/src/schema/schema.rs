@@ -13,12 +13,11 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;

@@ -57,7 +57,7 @@ impl MySubscription {
     }
 }
 
-type Schema = RootNode<'static, MyQuery, MyMutation, MySubscription>;
+type Schema = RootNode<'static, MyQuery, MyMutation>;
 
 #[rocket::get("/")]
 fn graphiql() -> content::Html<String> {
@@ -82,7 +82,7 @@ fn post_graphql_handler(
 
 fn main() {
     rocket::ignite()
-        .manage(Schema::new(MyQuery, MyMutation, MySubscription))
+        .manage(Schema::new(MyQuery, MyMutation))
         .mount(
             "/",
             rocket::routes![graphiql, get_graphql_handler, post_graphql_handler],

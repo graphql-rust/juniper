@@ -189,10 +189,10 @@ pub enum GraphQLError<'a> {
 }
 
 /// Execute a query in a provided schema
-pub fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+pub fn execute<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -201,7 +201,6 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -226,8 +225,8 @@ where
 }
 
 /// Execute the reference introspection query in the provided schema
-pub fn introspect<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+pub fn introspect<'a, S, CtxT, QueryT, MutationT>(
+    root_node: &'a RootNode<QueryT, MutationT, S>,
     context: &CtxT,
     format: IntrospectionFormat,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -236,7 +235,6 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
     execute(
         match format {
