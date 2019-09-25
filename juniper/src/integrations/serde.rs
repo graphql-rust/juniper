@@ -70,6 +70,10 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
                 message: "Unknown operation",
             }]
             .serialize(serializer),
+            GraphQLError::IsSubscription => [SerializeHelper {
+                message: "Expected query, got subscription",
+            }]
+            .serialize(serializer),
         }
     }
 }
