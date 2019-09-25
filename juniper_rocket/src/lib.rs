@@ -96,11 +96,11 @@ where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute(root_node, context))
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
                     .map(|request| request.execute(root_node, context))
@@ -124,9 +124,9 @@ where
     S: ScalarValue,
 {
     fn is_ok(&self) -> bool {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses
+        match *self {
+            GraphQLBatchResponse::Single(ref response) => response.is_ok(),
+            GraphQLBatchResponse::Batch(ref responses) => responses
                 .iter()
                 .fold(true, |ok, response| ok && response.is_ok()),
         }
@@ -349,7 +349,7 @@ where
 
         match serde_json::from_str(&body) {
             Ok(value) => Success(GraphQLRequest(value)),
-            Err(failure) => return Failure((Status::BadRequest, format!("{}", failure))),
+            Err(failure) => Failure((Status::BadRequest, format!("{}", failure))),
         }
     }
 }

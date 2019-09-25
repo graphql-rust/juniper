@@ -7,7 +7,7 @@ use crate::{
         Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
         ToInputValue, Type,
     },
-    parser::{SourcePosition, Spanning},
+    parser::SourcePosition,
     value::Value,
     GraphQLError,
 };
