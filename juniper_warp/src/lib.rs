@@ -71,11 +71,11 @@ where
         QueryT: juniper::GraphQLType<S, Context = CtxT>,
         MutationT: juniper::GraphQLType<S, Context = CtxT>,
     {
-        match *self {
-            GraphQLBatchRequest::Single(ref request) => {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute(root_node, context))
             }
-            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
                     .map(|request| request.execute(root_node, context))

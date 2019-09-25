@@ -515,7 +515,7 @@ mod tests {
         let body = response::extract_body_to_string(response);
 
         http_tests::TestResponse {
-            status_code,
+            status_code: status_code,
             body: Some(body),
             content_type: content_type,
         }

@@ -254,6 +254,5 @@ fn test_builtin_introspection_query_without_descriptions() {
         crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();
     sort_schema_value(&mut result.0);
     let expected = schema_introspection_result_without_descriptions();
-
     assert_eq!(result, (expected, vec![]));
 }
