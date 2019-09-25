@@ -192,6 +192,7 @@ pub enum GraphQLError<'a> {
     NoOperationProvided,
     MultipleOperationsProvided,
     UnknownOperationName,
+    IsSubscription,
 }
 
 /// Execute a query in a provided schema
@@ -230,6 +231,42 @@ where
 
     executor::execute_validated_query(document, operation_name, root_node, variables, context)
 }
+
+//pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+//    document_source: &'a str,
+//    operation_name: Option<&str>,
+//    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+//    variables: &Variables<S>,
+//    context: &CtxT,
+//) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+//    where
+//        S: ScalarValue,
+//        for<'b> &'b S: ScalarRefValue<'b>,
+//        QueryT: GraphQLType<S, Context = CtxT>,
+//        MutationT: GraphQLType<S, Context = CtxT>,
+//        SubscriptionT: GraphQLType<S, Context = CtxT>,
+//{
+//    let document = parse_document_source(document_source, &root_node.schema)?;
+//    {
+//        let errors = validate_input_values(variables, &document, &root_node.schema);
+//
+//        if !errors.is_empty() {
+//            return Err(GraphQLError::ValidationError(errors));
+//        }
+//    }
+//
+//    {
+//        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+//        visit_all_rules(&mut ctx, &document);
+//
+//        let errors = ctx.into_errors();
+//        if !errors.is_empty() {
+//            return Err(GraphQLError::ValidationError(errors));
+//        }
+//    }
+//
+//    executor::execute_validated_query(document, operation_name, root_node, variables, context)
+//}
 
 /// Execute a query in a provided schema
 #[cfg(feature = "async")]

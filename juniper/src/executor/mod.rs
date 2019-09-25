@@ -714,6 +714,10 @@ where
         None => return Err(GraphQLError::UnknownOperationName),
     };
 
+    if op.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+
     let default_variable_values = op.item.variable_definitions.map(|defs| {
         defs.item
             .items
@@ -831,6 +835,10 @@ where
         Some(op) => op,
         None => return Err(GraphQLError::UnknownOperationName),
     };
+
+    if op.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
 
     let default_variable_values = op.item.variable_definitions.map(|defs| {
         defs.item
