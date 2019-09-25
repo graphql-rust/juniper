@@ -62,11 +62,11 @@ use juniper::{
     ScalarValue,
 };
 
-#[cfg(feature = "async")]
+
 use juniper::GraphQLTypeAsync;
 
-#[cfg(feature = "async")]
-use futures03::future::{FutureExt, TryFutureExt};
+
+use futures::future::{FutureExt, TryFutureExt};
 use rocket::data::FromDataFuture;
 use rocket::response::ResultFuture;
 
@@ -119,7 +119,7 @@ where
         }
     }
 
-    #[cfg(feature = "async")]
+    
     pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
@@ -136,7 +136,7 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_async(root_node, context).await)
+                GraphQLBatchResponse::Single(request.subscribe_async(root_node, context).await)
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 let futures = requests
@@ -144,7 +144,7 @@ where
                     .map(|request| request.execute_async(root_node, context))
                     .collect::<Vec<_>>();
 
-                GraphQLBatchResponse::Batch(futures03::future::join_all(futures).await)
+                GraphQLBatchResponse::Batch(futures::future::join_all(futures).await)
             }
         }
     }
@@ -226,7 +226,7 @@ where
     }
 
     /// Asynchronously execute an incoming GraphQL query
-    #[cfg(feature = "async")]
+    
     pub async fn execute_async<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
         root_node: &RootNode<'_, QueryT, MutationT, SubscriptionT, S>,

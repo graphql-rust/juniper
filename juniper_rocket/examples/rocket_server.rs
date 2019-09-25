@@ -6,6 +6,7 @@
 use rocket::{response::content, State};
 
 use juniper::{RootNode, FieldResult};
+use juniper_rocket::GraphQLResponse;
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
@@ -77,7 +78,17 @@ fn post_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &())
+    use futures::FutureExt;
+    use futures1::Future as Future1;
+    use futures::compat::Compat;
+    let mut x: Box<dyn Future1<Item = GraphQLResponse, Error = ()>> = Box::new(Compat::new(
+        async {
+            let x = request.execute_async(&schema, &()).await;
+            x
+        }
+            .map(|x| Ok(x))
+    ));
+    x.wait().unwrap()
 }
 
 fn main() {
