@@ -80,11 +80,14 @@ where
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+        SubscriptionT::Context: Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
+        CtxT: Send + Sync,
     {
         GraphQLResponse(crate::execute(
             &self.query,
@@ -107,7 +110,7 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
@@ -125,12 +128,12 @@ where
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
