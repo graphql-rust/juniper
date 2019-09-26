@@ -5,7 +5,7 @@
 
 use rocket::{response::content, State};
 
-use juniper::{RootNode, FieldResult, Selection, Executor, BoxFuture, Value};
+use juniper::{RootNode, FieldResult, Selection, Executor, BoxFuture, Value, DefaultScalarValue};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
 
@@ -19,6 +19,9 @@ struct Human {
 
 struct MyQuery;
 
+//todo: panics:
+//             thread 'tokio-runtime-worker-1' panicked at 'Field __schema not found on type Mutation', juniper_rocket/examples/rocket_server.rs:22:1
+//             thread 'tokio-runtime-worker-0' panicked at 'TODO.async: sender was dropped, error instead: Canceled', src/libcore/result.rs:1165:5
 #[juniper::object]
 impl MyQuery {
     fn human(id: String) -> FieldResult<Human> {
@@ -59,26 +62,24 @@ impl MySubscription {
     }
 }
 
-impl<S> juniper::SubscriptionHandlerAsync<S> for MySubscription
+impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
 where
-    MySubscription: juniper::GraphQLType<S>,
+    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
-    S: juniper::ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: juniper::ScalarRefValue<'b>,
 {
     fn resolve_into_stream_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
+        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+        executor: &'a Executor<Self::Context, DefaultScalarValue>,
     ) -> BoxFuture<'a, std::pin::Pin<
-        Box<dyn futures::Stream<Item = Value<S>>>
+        Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>
     >>
     {
-        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>> = Box::pin(
+        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
             futures::stream::once(futures::future::ready(
-                Value::<S>::Null
+                Value::Scalar(DefaultScalarValue::Int(32))
             ))
         );
 
@@ -90,7 +91,7 @@ where
     }
 }
 
-type Schema = RootNode<'static, MyQuery, MyMutation, MySubscription>;
+type Schema = RootNode<'static, MyQuery, MyMutation, MySubscription, DefaultScalarValue>;
 
 #[rocket::get("/")]
 fn graphiql() -> content::Html<String> {
