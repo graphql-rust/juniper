@@ -226,7 +226,6 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
-pub type SubscriptionResult<S = DefaultScalarValue> = Result<std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>, FieldError<S>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -401,24 +400,19 @@ where
             .await)
     }
 
-    /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
-    pub async fn resolve_stream_async<T>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T
-    ) -> SubscriptionResult<S>
-        where
-            T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync,
+    pub async fn subscribe_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
+    where
+        T: crate::GraphQLTypeAsync<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
     {
-        Ok(
-            value
-                .resolve_into_stream_async(info, self.current_selection_set, self)
-                .await
-        )
+//        Ok(value
+//            .subscribe_async(info, self.current_selection_set, self)
+//            .await)
+        //todo: add handler here
+        unreachable!()
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
@@ -474,24 +468,19 @@ where
         }
     }
 
-    #[cfg(feature = "async")]
-    pub async fn resolve_into_stream_async<T>(&self, info: &T::TypeInfo, value: &T)
-        -> std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>
-        where
-            T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync + 'static,
+
+    pub async fn resolve_into_subscription_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
+    where
+        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
     {
-        match self.resolve_stream_async(info, value).await {
+        match self.subscribe_async(info, value).await {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
-                Box::pin(
-                    futures::stream::once(futures::future::ready(
-                        Value::null()
-                    ))
-                )
+                Value::null()
             }
         }
     }
@@ -725,13 +714,11 @@ pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-    SubscriptionT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
-    CtxT: Send + Sync,
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -850,7 +837,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -944,7 +931,7 @@ where
         value = match op.item.operation_type {
             OperationType::Query => {
                 executor
-                    .resolve_into_value_async(&root_node.query_info, &root_node.query_type)
+                    .resolve_into_value_async(&root_node.query_info, &root_node)
                     .await
             }
             OperationType::Mutation => {
@@ -953,7 +940,9 @@ where
                     .await
             },
             OperationType::Subscription => {
-               unreachable!();
+                executor
+                    .resolve_into_value_async(&root_node.subscription_info, &root_node.subscription_type)
+                    .await
             }
         };
     }
@@ -964,27 +953,20 @@ where
     Ok((value, errors))
 }
 
-#[cfg(feature = "async")]
-pub async fn add_validated_subscription_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+pub async fn execute_subscribe_validated_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
     operation_name: Option<&str>,
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<
-        (
-            std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>,
-            Vec<ExecutionError<S>>
-        ),
-        GraphQLError<'a>
-    >
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -1033,6 +1015,7 @@ where
 
     let errors = RwLock::new(Vec::new());
     let value;
+
     {
         let mut all_vars;
         let mut final_vars = variables;
@@ -1048,11 +1031,15 @@ where
         }
 
         let root_type = match op.item.operation_type {
+            OperationType::Query => root_node.schema.query_type(),
+            OperationType::Mutation => root_node
+                .schema
+                .mutation_type()
+                .expect("No mutation type found"),
             OperationType::Subscription => root_node
                 .schema
                 .subscription_type()
                 .expect("No mutation type found"),
-            _ => unreachable!()
         };
 
         let executor = Executor {
@@ -1073,7 +1060,7 @@ where
         value = match op.item.operation_type {
             OperationType::Subscription => {
                 executor
-                    .resolve_into_stream_async(&root_node.subscription_info, &root_node.subscription_type)
+                    .resolve_into_subscription_async(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             },
             _ => unreachable!(),

@@ -87,12 +87,10 @@ pub enum DirectiveLocation {
 
 impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue + Send + Sync + 'a,
+    S: ScalarValue + 'a,
     QueryT: GraphQLType<S, TypeInfo = ()>,
     MutationT: GraphQLType<S, TypeInfo = ()>,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, TypeInfo = ()>,
-    SubscriptionT::Context: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLType<S, TypeInfo = ()>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Construct a new root node from query and mutation nodes
@@ -111,10 +109,8 @@ impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, Su
 where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S>,
-    SubscriptionT::Context: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync + 'a,
+    SubscriptionT: GraphQLType<S>,
+    S: ScalarValue + 'a,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Construct a new root node from query and mutation nodes,

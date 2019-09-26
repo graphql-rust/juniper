@@ -15,7 +15,6 @@ use crate::{
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
 };
-use futures::stream::Map;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -108,7 +107,7 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
@@ -124,33 +123,23 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
-    ) -> Result<
-            Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>>>,
-            GraphQLError<'a>
-         >
+    ) -> GraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync,
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         let op = self.operation_name();
         let vars = &self.variables();
-
-        use futures::stream::{self, Stream, StreamExt};
-
-//        let (res, err) = crate::subscribe_async(&self.query, op, root_node, vars, context)
-//            .await?;
-
-//        Box::pin(res).map(|y| {
-//            GraphQLResponse(y)
-//        })
-        unreachable!()
+        let res = crate::subscribe_async(&self.query, op, root_node, vars, context).await;
+        unimplemented!()
+//        GraphQLResponse(res)
     }
 }
 
