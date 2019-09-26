@@ -43,6 +43,24 @@ where
     }
 }
 
+pub trait SubscriptionHandlerAsync<S>: GraphQLType<S> + Send + Sync
+where
+    Self::Context: Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_into_stream_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>>
+    {
+        panic!("resolve() must be implemented by non-object output types");
+    }
+}
+
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
 #[cfg(feature = "async")]

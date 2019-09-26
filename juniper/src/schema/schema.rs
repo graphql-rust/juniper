@@ -15,10 +15,12 @@ use crate::schema::{
 
 impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+    SubscriptionT::Context: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
@@ -86,8 +88,9 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Send + Sync,
+    SubscriptionT::Context: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
