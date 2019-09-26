@@ -74,7 +74,15 @@ where
         executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>>
     {
-        unimplemented!();
+        Box::pin(
+            futures::future::ready(
+                Box::pin(
+                    futures::stream::once(futures::future::ready(
+                        Value::<S>::Null
+                    ))
+                )
+            )
+        )
     }
 }
 
