@@ -5,7 +5,7 @@
 
 use rocket::{response::content, State};
 
-use juniper::{RootNode, FieldResult};
+use juniper::{RootNode, FieldResult, Selection, Executor, BoxFuture, Value};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
 
@@ -56,6 +56,25 @@ impl MySubscription {
             home_planet: "Subscription Human Home Planet".to_string(),
         };
         Ok(human)
+    }
+}
+
+impl<S> juniper::SubscriptionHandlerAsync<S> for MySubscription
+where
+    MySubscription: juniper::GraphQLType<S>,
+    Self::Context: Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    S: juniper::ScalarValue + Send + Sync,
+    for<'b> &'b S: juniper::ScalarRefValue<'b>,
+{
+    fn resolve_into_stream_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>>
+    {
+        unimplemented!();
     }
 }
 

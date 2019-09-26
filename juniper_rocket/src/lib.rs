@@ -104,7 +104,11 @@ where
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
+        SubscriptionT::TypeInfo: Send + Sync,
+        SubscriptionT::Context: Send + Sync,
+        S: 'static,
+        CtxT: Send + Sync,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
@@ -130,21 +134,17 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context=CtxT>,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
+        S: 'static,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.subscribe_async(root_node, context).await)
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute_async(root_node, context))
-                    .collect::<Vec<_>>();
-
-                GraphQLBatchResponse::Batch(futures::future::join_all(futures).await)
+                panic!("Batch requests are not supported in this demo!");
             }
         }
     }
@@ -212,7 +212,10 @@ where
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
+        SubscriptionT::TypeInfo: Send + Sync,
+        SubscriptionT::Context: Send + Sync,
+        S: 'static,
     {
         let response = self.0.execute(root_node, context);
         let status = if response.is_ok() {
@@ -237,9 +240,10 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
+        S: 'static,
     {
         let response = self.0.execute_async(root_node, context).await;
         let status = if response.is_ok() {
