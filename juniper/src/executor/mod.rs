@@ -413,7 +413,7 @@ where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        S: Send + Sync,
+        S: Send + Sync + 'static,
     {
         Ok(value
             .resolve_into_stream_async(info, self.current_selection_set, self)
@@ -844,7 +844,7 @@ pub async fn execute_validated_query_async<'a, QueryT, MutationT, SubscriptionT,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

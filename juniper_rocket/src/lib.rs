@@ -69,6 +69,8 @@ use juniper::GraphQLTypeAsync;
 use futures::future::{FutureExt, TryFutureExt};
 use rocket::data::FromDataFuture;
 use rocket::response::ResultFuture;
+use futures::StreamExt;
+
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -141,7 +143,17 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.subscribe_async(root_node, context).await)
+                let (response_stream, err) = request.subscribe_async(root_node, context)
+                    .await
+                    .0
+                    .unwrap();
+                    let mut values: Vec<juniper::Value<S>> = response_stream.collect().await;
+                    let x = values[0].clone();
+                    println!("Output: {:?}", x);
+                GraphQLBatchResponse::Single(
+                    juniper::http::GraphQLResponse(
+                        Ok((x, vec![]))
+                    ))
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 panic!("Batch requests are not supported in this demo!");

@@ -64,7 +64,7 @@ where
     MySubscription: juniper::GraphQLType<S>,
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
-    S: juniper::ScalarValue + Send + Sync,
+    S: juniper::ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: juniper::ScalarRefValue<'b>,
 {
     fn resolve_into_stream_async<'a>(
@@ -72,15 +72,19 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>>
+    ) -> BoxFuture<'a, std::pin::Pin<
+        Box<dyn futures::Stream<Item = Value<S>>>
+    >>
     {
+        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>> = Box::pin(
+            futures::stream::once(futures::future::ready(
+                Value::<S>::Null
+            ))
+        );
+
         Box::pin(
             futures::future::ready(
-                Box::pin(
-                    futures::stream::once(futures::future::ready(
-                        Value::<S>::Null
-                    ))
-                )
+                x
             )
         )
     }

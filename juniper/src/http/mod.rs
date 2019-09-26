@@ -105,7 +105,7 @@ where
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -126,7 +126,7 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
-    ) -> GraphQLResponse<'a, S>
+    ) -> StreamGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -141,8 +141,10 @@ where
         let op = self.operation_name();
         let vars = &self.variables();
         let res = crate::subscribe_async(&self.query, op, root_node, vars, context).await;
-        unimplemented!()
-//        GraphQLResponse(res)
+
+        StreamGraphQLResponse(
+            res
+        )
     }
 }
 
@@ -152,7 +154,19 @@ where
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    //todo: remove pub
+    pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+);
+
+pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
+    //todo remove pub (?)
+    pub Result<
+        (
+            crate::executor::SubscriptionType<S>,
+            Vec<ExecutionError<S>>
+        ),
+        GraphQLError<'a>
+    >,
 );
 
 impl<'a, S> GraphQLResponse<'a, S>

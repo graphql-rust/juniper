@@ -47,7 +47,7 @@ pub trait SubscriptionHandlerAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn resolve_into_stream_async<'a>(
@@ -55,7 +55,9 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>>
+    ) -> BoxFuture<'a, std::pin::Pin<
+        Box<dyn futures::Stream<Item = Value<S>>>
+    >>
     {
         panic!("resolve() must be implemented by non-object output types");
     }
