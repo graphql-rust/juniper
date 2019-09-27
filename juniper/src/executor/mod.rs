@@ -31,6 +31,8 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
+use crate::parser::Spanning;
+use crate::ast::Operation;
 
 /// A type registry used to build schemas
 ///
@@ -404,8 +406,7 @@ where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
     {
         Ok(value
-            .resolve_into_stream(info, self.current_selection_set, self)
-        )
+                .resolve_into_stream(info, self.current_selection_set, self))
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
@@ -772,23 +773,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     let mut fragments = vec![];
     let mut operation = None;
 
-    for def in document {
-        match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    operation = Some(op);
-                }
-            }
-            Definition::Fragment(f) => fragments.push(f),
-        };
-    }
+    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -889,23 +874,7 @@ where
     let mut fragments = vec![];
     let mut operation = None;
 
-    for def in document {
-        match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    operation = Some(op);
-                }
-            }
-            Definition::Fragment(f) => fragments.push(f),
-        };
-    }
+    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -1004,23 +973,7 @@ where
     let mut fragments = vec![];
     let mut operation = None;
 
-    for def in document {
-        match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    operation = Some(op);
-                }
-            }
-            Definition::Fragment(f) => fragments.push(f),
-        };
-    }
+    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -1132,23 +1085,7 @@ where
     let mut fragments = vec![];
     let mut operation = None;
 
-    for def in document {
-        match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    operation = Some(op);
-                }
-            }
-            Definition::Fragment(f) => fragments.push(f),
-        };
-    }
+    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -1224,6 +1161,33 @@ where
     errors.sort();
 
     Ok((value, errors))
+}
+
+fn parse_document_definitions<'a, 'b, S>(
+    document: Document<'b, S>,
+    operation_name: Option<&str>,
+    fragments: &mut Vec<Spanning<Fragment<'b, S>>>,
+    operation: &mut Option<Spanning<Operation<'b, S>>>,
+) -> Result<(), GraphQLError<'a>> {
+    for def in document {
+        match def {
+            Definition::Operation(op) => {
+                if operation_name.is_none() && operation.is_some() {
+                    return Err(GraphQLError::MultipleOperationsProvided);
+                }
+
+                let move_op = operation_name.is_none()
+                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
+
+                if move_op {
+                    *operation = Some(op);
+                }
+            }
+            Definition::Fragment(f) => fragments.push(f),
+        };
+    }
+
+    Ok(())
 }
 
 impl<'r, S> Registry<'r, S>
