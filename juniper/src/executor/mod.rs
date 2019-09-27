@@ -232,7 +232,7 @@ pub type SubscriptionResult<S = DefaultScalarValue> = Result<SubscriptionType<S>
 #[cfg(feature = "async")]
 pub type AsyncSubscriptionType<S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 
-pub type SubscriptionType<S = DefaultScalarValue> = std::pin::Pin<Box<dyn Iterator<Item = Value<S>> + 'static>>;
+pub type SubscriptionType<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'static>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -485,7 +485,7 @@ where
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
-                Box::pin(
+                Box::new(
                     std::iter::once(Value::null())
                 )
             }

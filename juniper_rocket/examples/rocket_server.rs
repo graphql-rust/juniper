@@ -91,6 +91,24 @@ where
     }
 }
 
+impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription
+{
+    fn resolve_into_stream<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+    ) -> juniper::SubscriptionType<DefaultScalarValue>
+    {
+        Box::new(
+            std::iter::once(
+                Value::Scalar(DefaultScalarValue::Int(32))
+            )
+        )
+    }
+}
+
+
 type Schema = RootNode<'static, MyQuery, MyMutation, MySubscription, DefaultScalarValue>;
 
 #[rocket::get("/")]
@@ -98,43 +116,42 @@ fn graphiql() -> content::Html<String> {
     juniper_rocket::graphiql_source("/graphql")
 }
 
-#[rocket::get("/graphql?<request>")]
-fn get_graphql_handler(
-    request: juniper_rocket::GraphQLRequest,
-    schema: State<Schema>,
-) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &())
-}
-
 #[rocket::post("/graphql", data = "<request>")]
 fn post_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    use futures::Future;
-    use futures::compat::Compat;
-    use rocket::http::Status;
-    use std::sync::mpsc::channel;
-//    use futures1::Future;
+    let is_async = false;
 
-    let cloned_schema = Arc::new(schema);
+    if is_async {
+        use futures::Future;
+        use futures::compat::Compat;
+        use rocket::http::Status;
+        use std::sync::mpsc::channel;
 
-    let (sender, receiver) = channel();
+        let cloned_schema = Arc::new(schema);
 
-    let mut x = futures::executor::block_on(
-        async move {
-            let x = request.execute_async(&cloned_schema.clone(), &()).await;
-            sender.send(x);
-        }
-    );
+        let (sender, receiver) = channel();
 
-    let res = receiver.recv().unwrap();
+        let mut x = futures::executor::block_on(
+            async move {
+                let x = request.execute_async(&cloned_schema.clone(), &()).await;
+                sender.send(x);
+            }
+        );
+
+        let res = receiver.recv().unwrap();
+        res
+    }
+    else {
+        request.execute(&schema, &())
+    }
 
 //    GraphQLResponse(Status {
 //        code: 200,
 //        reason: "because"
 //    }, "it compiles".to_string());
-    res
+
 }
 
 fn main() {
@@ -142,7 +159,7 @@ fn main() {
         .manage(Schema::new(MyQuery, MyMutation, MySubscription))
         .mount(
             "/",
-            rocket::routes![graphiql, get_graphql_handler, post_graphql_handler],
+            rocket::routes![graphiql, post_graphql_handler],
         )
         .launch();
 }

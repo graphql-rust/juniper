@@ -185,7 +185,11 @@ pub use crate::types::async_await::GraphQLTypeAsync;
 
 pub use crate::types::base::SubscriptionHandler;
 pub use crate::types::async_await::SubscriptionHandlerAsync;
+
 use crate::executor::SubscriptionResultAsync;
+
+// todo: Remove (?)
+pub use crate::executor::SubscriptionType;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]

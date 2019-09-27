@@ -112,8 +112,11 @@ where
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
                 let (res, err) = request.execute(root_node, context).0.unwrap();
-                let response: Vec<juniper::Value<S>> = res.collect();
-                GraphQLBatchResponse::Single(response[0].clone())
+                let response: Vec<_> = res.collect();
+                let x = response[0].clone();
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(
+                    Ok((x, vec![]))
+                ))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 unimplemented!()
