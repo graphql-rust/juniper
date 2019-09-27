@@ -471,8 +471,7 @@ where
         }
     }
 
-    //todo: rename to `resolve_into_iterator`
-    pub fn resolve_into_subscription<T>(
+    pub fn resolve_into_iterator<T>(
         &self,
         info: &T::TypeInfo,
         value: &T
@@ -513,8 +512,8 @@ where
     }
 
 
-    pub async fn resolve_into_subscription_async<T>(&self, info: &T::TypeInfo, value: &T)
-        -> AsyncSubscriptionType<S>
+    pub async fn resolve_into_iterator_async<T>(&self, info: &T::TypeInfo, value: &T)
+                                                -> AsyncSubscriptionType<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -970,7 +969,7 @@ where
 
         value = match op.item.operation_type {
             OperationType::Subscription => {
-                executor.resolve_into_subscription(&root_node.subscription_info, &root_node.subscription_type)
+                executor.resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type)
             },
             _ => unreachable!(),
         };
@@ -1212,7 +1211,7 @@ where
         value = match op.item.operation_type {
             OperationType::Subscription => {
                 executor
-                    .resolve_into_subscription_async(&root_node.subscription_info, &root_node.subscription_type)
+                    .resolve_into_iterator_async(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             },
             _ => unreachable!(),

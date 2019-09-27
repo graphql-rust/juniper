@@ -74,7 +74,7 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
@@ -95,7 +95,7 @@ where
         ))
     }
 
-    pub fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,

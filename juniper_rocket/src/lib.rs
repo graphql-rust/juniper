@@ -111,7 +111,7 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                let (res, err) = request.execute(root_node, context).0.unwrap();
+                let (res, err) = request.subscribe(root_node, context).0.unwrap();
                 let response: Vec<_> = res.take(5).collect();
                 println!("Got syncronous response: {:?}", response);
                 let x = response[0].clone();
@@ -120,7 +120,7 @@ where
                 ))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                unimplemented!()
+                unimplemented!();
 //                requests
 //                    .iter()
 //                    .map(|request| request.execute(root_node, context))
