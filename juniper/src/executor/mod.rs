@@ -226,8 +226,9 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
-pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<AsyncSubscriptionType<S>, FieldError<S>>;
 pub type SubscriptionResult<S = DefaultScalarValue> = Result<SubscriptionType<S>, FieldError<S>>;
+#[cfg(feature = "async")]
+pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<AsyncSubscriptionType<S>, FieldError<S>>;
 
 #[cfg(feature = "async")]
 pub type AsyncSubscriptionType<S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
@@ -511,7 +512,7 @@ where
         }
     }
 
-
+    #[cfg(feature = "async")]
     pub async fn resolve_into_iterator_async<T>(&self, info: &T::TypeInfo, value: &T)
                                                 -> AsyncSubscriptionType<S>
     where
@@ -1109,7 +1110,8 @@ where
     Ok((value, errors))
 }
 
-pub async fn execute_subscribe_validated_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+#[cfg(feature = "async")]
+pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
     operation_name: Option<&str>,
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,

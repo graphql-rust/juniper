@@ -184,7 +184,7 @@ pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
     >
 );
 
-
+#[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo remove pub (?)
     pub Result<

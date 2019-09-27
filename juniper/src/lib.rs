@@ -184,8 +184,9 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 pub use crate::types::async_await::GraphQLTypeAsync;
 
 pub use crate::types::base::SubscriptionHandler;
+#[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
-
+#[cfg(feature = "async")]
 use crate::executor::SubscriptionResultAsync;
 
 // todo: Remove (?)
@@ -321,6 +322,7 @@ where
         .await
 }
 
+#[cfg(feature = "async")]
 pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -359,7 +361,7 @@ where
     }
 
     executor::
-        execute_subscribe_validated_async(document, operation_name, root_node, variables, context)
+    execute_validated_subscription_async(document, operation_name, root_node, variables, context)
         .await
 }
 
