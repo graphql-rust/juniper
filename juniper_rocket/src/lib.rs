@@ -106,21 +106,21 @@ where
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
-        SubscriptionT::TypeInfo: Send + Sync,
-        SubscriptionT::Context: Send + Sync,
+        SubscriptionT: juniper::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
-        CtxT: Send + Sync,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                let (res, err) = request.execute(root_node, context).0.unwrap();
+                let response: Vec<juniper::Value<S>> = res.collect();
+                GraphQLBatchResponse::Single(response[0].clone())
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect(),
+                unimplemented!()
+//                requests
+//                    .iter()
+//                    .map(|request| request.execute(root_node, context))
+//                    .collect(),
             ),
         }
     }
@@ -224,9 +224,7 @@ where
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
-        SubscriptionT::TypeInfo: Send + Sync,
-        SubscriptionT::Context: Send + Sync,
+        SubscriptionT: juniper::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
     {
         let response = self.0.execute(root_node, context);

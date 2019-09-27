@@ -182,7 +182,10 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 
 #[cfg(feature = "async")]
 pub use crate::types::async_await::GraphQLTypeAsync;
+
+pub use crate::types::base::SubscriptionHandler;
 pub use crate::types::async_await::SubscriptionHandlerAsync;
+use crate::executor::SubscriptionResultAsync;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -209,9 +212,7 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-    SubscriptionT::Context: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -233,6 +234,44 @@ where
     }
 
     executor::execute_validated_query(document, operation_name, root_node, variables, context)
+}
+
+
+pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &CtxT,
+    // todo: I STOPPED HERE TRYING TO IMPLEMENT SYNCRONOUS SUBSCRIPTIONS
+) -> Result<(crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+{
+    let document = parse_document_source(document_source, &root_node.schema)?;
+    {
+        let errors = validate_input_values(variables, &document, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
+
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    executor::execute_validated_subcription(document, operation_name, root_node, variables, context)
 }
 
 /// Execute a query in a provided schema
@@ -284,7 +323,7 @@ pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::executor::AsyncSubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -331,9 +370,7 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-    SubscriptionT::Context: Send + Sync,
-    SubscriptionT ::TypeInfo: Send + Sync,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
     execute(
         match format {

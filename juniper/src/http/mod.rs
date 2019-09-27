@@ -78,16 +78,34 @@ where
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
+    ) -> IteratorGraphQLResponse<'a, S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        QueryT: GraphQLType<S, Context = CtxT>,
+        MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        IteratorGraphQLResponse(crate::subscribe(
+            &self.query,
+            self.operation_name(),
+            root_node,
+            &self.variables(),
+            context,
+        ))
+    }
+
+    pub fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-        SubscriptionT::Context: Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
         for<'b> &'b S: ScalarRefValue<'b>,
-        CtxT: Send + Sync,
     {
         GraphQLResponse(crate::execute(
             &self.query,
@@ -158,11 +176,20 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
+//todo private fields
+pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
+    pub Result<
+        (crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>),
+        GraphQLError<'a>
+    >
+);
+
+
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo remove pub (?)
     pub Result<
         (
-            crate::executor::SubscriptionType<S>,
+            crate::executor::AsyncSubscriptionType<S>,
             Vec<ExecutionError<S>>
         ),
         GraphQLError<'a>

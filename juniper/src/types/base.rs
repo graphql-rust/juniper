@@ -343,6 +343,23 @@ where
     }
 }
 
+pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_into_stream<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::executor::SubscriptionType<S>
+    {
+        panic!("resolve() must be implemented by non-object output types");
+    }
+}
+
+
 pub fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
