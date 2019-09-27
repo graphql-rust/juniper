@@ -1,4 +1,4 @@
-// This file is used for testing implementantions
+// This module is used for testing implementantions
 //_!! All changes should be reset before merging to master !!__
 
 #![feature(decl_macro, proc_macro_hygiene)]
@@ -78,9 +78,11 @@ where
     >>
     {
         let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
-            futures::stream::once(futures::future::ready(
-                Value::Scalar(DefaultScalarValue::Int(32))
-            ))
+            futures::stream::repeat(
+//                futures::future::ready(
+                    Value::Scalar(DefaultScalarValue::Int(32))
+//                )
+            )
         );
 
         Box::pin(
@@ -101,8 +103,8 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription
     ) -> juniper::SubscriptionType<DefaultScalarValue>
     {
         Box::new(
-            std::iter::once(
-                Value::Scalar(DefaultScalarValue::Int(32))
+            std::iter::repeat(
+                Value::Scalar(DefaultScalarValue::Int(99))
             )
         )
     }
@@ -121,7 +123,8 @@ fn post_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    let is_async = false;
+    let mut is_async = false;
+    is_async = true;
 
     if is_async {
         use futures::Future;

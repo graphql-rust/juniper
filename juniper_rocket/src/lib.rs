@@ -112,7 +112,8 @@ where
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
                 let (res, err) = request.execute(root_node, context).0.unwrap();
-                let response: Vec<_> = res.collect();
+                let response: Vec<_> = res.take(5).collect();
+                println!("Got syncronous response: {:?}", response);
                 let x = response[0].clone();
                 GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(
                     Ok((x, vec![]))
@@ -150,12 +151,11 @@ where
                     .await
                     .0
                     .unwrap();
-                    let mut values: Vec<juniper::Value<S>> = response_stream.collect().await;
-                    let x = values[0].clone();
-                    println!("Output: {:?}", x);
+                    let mut values: Vec<_> = response_stream.take(5).collect().await;
+                    println!("Got asyncronous response: {:?}", values);
                 GraphQLBatchResponse::Single(
                     juniper::http::GraphQLResponse(
-                        Ok((x, vec![]))
+                        Ok((values[0].clone(), vec![]))
                     ))
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
