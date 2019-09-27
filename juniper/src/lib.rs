@@ -202,6 +202,7 @@ pub enum GraphQLError<'a> {
     MultipleOperationsProvided,
     UnknownOperationName,
     IsSubscription,
+    NotSubscription,
 }
 
 /// Execute a query in a provided schema
@@ -219,6 +220,7 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
+    //todo: prepare_validated_query
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
         let errors = validate_input_values(variables, &document, &root_node.schema);
@@ -248,7 +250,6 @@ pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-    // todo: I STOPPED HERE TRYING TO IMPLEMENT SYNCRONOUS SUBSCRIPTIONS
 ) -> Result<(crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,

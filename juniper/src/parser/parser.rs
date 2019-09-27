@@ -13,8 +13,6 @@ pub enum ParseError<'a> {
 
     /// An error during tokenization occurred
     LexerError(LexerError),
-
-    IsASubscription,
 }
 
 #[doc(hidden)]
@@ -198,8 +196,6 @@ impl<'a> fmt::Display for ParseError<'a> {
             ParseError::UnexpectedToken(ref token) => write!(f, "Unexpected \"{}\"", token),
             ParseError::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
             ParseError::LexerError(ref err) => err.fmt(f),
-            //todo: better descripion
-            ParseError::IsASubscription => write!(f, "Expected query, got subscription"),
         }
     }
 }

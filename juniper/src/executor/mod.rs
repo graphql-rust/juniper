@@ -913,7 +913,7 @@ where
     };
 
     if op.item.operation_type != OperationType::Subscription {
-        return Err(GraphQLError::UnknownOperationName);
+        return Err(GraphQLError::NotSubscription);
     }
 
     let default_variable_values = op.item.variable_definitions.map(|defs| {
