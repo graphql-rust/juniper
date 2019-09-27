@@ -984,78 +984,15 @@ where
         return Err(GraphQLError::IsSubscription);
     }
 
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|&(ref name, ref def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
     let errors = RwLock::new(Vec::new());
-    let value;
-
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = &all_vars;
-        }
-
-        let root_type = match op.item.operation_type {
-            OperationType::Query => root_node.schema.query_type(),
-            OperationType::Mutation => root_node
-                .schema
-                .mutation_type()
-                .expect("No mutation type found"),
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No mutation type found"),
-        };
-
-        let executor = Executor {
-            fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
-                .collect(),
-            variables: final_vars,
-            current_selection_set: Some(&op.item.selection_set[..]),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: &errors,
-            field_path: FieldPath::Root(op.start),
-        };
-
-        value = match op.item.operation_type {
-            OperationType::Query => {
-                executor
-                    .resolve_into_value_async(&root_node.query_info, &root_node.query_type)
-                    .await
-            }
-            OperationType::Mutation => {
-                executor
-                    .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
-                    .await
-            },
-            OperationType::Subscription => {
-               unreachable!();
-            }
-        };
-    }
+    let value = execute_helper_async(
+        &variables,
+        op,
+        &root_node,
+        &fragments,
+        &context,
+        &errors,
+    ).await;
 
     let mut errors = errors.into_inner().unwrap();
     errors.sort();
@@ -1188,6 +1125,95 @@ fn parse_document_definitions<'a, 'b, S>(
     }
 
     Ok(())
+}
+
+//todo: better name
+pub async fn execute_helper_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+    variables: &Variables<S>,
+    op: Spanning<Operation<'_, S>>,
+    root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    fragments: &Vec<Spanning<Fragment<'_, S>>>,
+    context: &CtxT,
+    errors: &RwLock<Vec<ExecutionError<S>>>,
+) -> Value<S>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    let default_variable_values = op.item.variable_definitions.map(|defs| {
+        defs.item
+            .items
+            .iter()
+            .filter_map(|&(ref name, ref def)| {
+                def.default_value
+                    .as_ref()
+                    .map(|i| (name.item.to_owned(), i.item.clone()))
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
+    });
+
+    let mut all_vars;
+    let mut final_vars = variables;
+
+    if let Some(defaults) = default_variable_values {
+        all_vars = variables.clone();
+
+        for (name, value) in defaults {
+            all_vars.entry(name).or_insert(value);
+        }
+
+        final_vars = &all_vars;
+    }
+
+    let root_type = match op.item.operation_type {
+        OperationType::Query => root_node.schema.query_type(),
+        OperationType::Mutation => root_node
+            .schema
+            .mutation_type()
+            .expect("No mutation type found"),
+        OperationType::Subscription => root_node
+            .schema
+            .subscription_type()
+            .expect("No mutation type found"),
+    };
+
+    let executor = Executor {
+        fragments: &fragments
+            .iter()
+            .map(|f| (f.item.name.item, &f.item))
+            .collect(),
+        variables: final_vars,
+        current_selection_set: Some(&op.item.selection_set[..]),
+        parent_selection_set: None,
+        current_type: root_type,
+        schema: &root_node.schema,
+        context,
+        errors: &errors,
+        field_path: FieldPath::Root(op.start),
+    };
+
+    match op.item.operation_type {
+        OperationType::Query => {
+            executor
+                .resolve_into_value_async(&root_node.query_info, &root_node.query_type)
+                .await
+        },
+        OperationType::Mutation => {
+            executor
+                .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
+                .await
+        },
+        OperationType::Subscription => {
+            unreachable!();
+        }
+    }
 }
 
 impl<'r, S> Registry<'r, S>
