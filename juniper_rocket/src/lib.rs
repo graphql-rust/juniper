@@ -120,7 +120,7 @@ where
                 ))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                unimplemented!();
+                unimplemented!()
 //                requests
 //                    .iter()
 //                    .map(|request| request.execute(root_node, context))
