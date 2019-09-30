@@ -31,8 +31,9 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::parser::Spanning;
-use crate::ast::Operation;
+use crate::{
+    parser::Spanning, ast::Operation,
+};
 
 /// A type registry used to build schemas
 ///

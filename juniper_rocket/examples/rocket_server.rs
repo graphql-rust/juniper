@@ -22,7 +22,9 @@ struct MyQuery;
 //todo: panics:
 //             thread 'tokio-runtime-worker-1' panicked at 'Field __schema not found on type Mutation', juniper_rocket/examples/rocket_server.rs:22:1
 //             thread 'tokio-runtime-worker-0' panicked at 'TODO.async: sender was dropped, error instead: Canceled', src/libcore/result.rs:1165:5
-#[juniper::object]
+#[juniper::object(
+    context = MyContext
+)]
 impl MyQuery {
     fn human(id: String) -> FieldResult<Human> {
         let human = Human {
@@ -36,7 +38,9 @@ impl MyQuery {
 
 struct MyMutation;
 
-#[juniper::object]
+#[juniper::object(
+    context = MyContext
+)]
 impl MyMutation {
     fn human(id: String) -> FieldResult<Human> {
         let human = Human {
@@ -50,15 +54,18 @@ impl MyMutation {
 
 struct MySubscription;
 
-#[juniper::object]
+#[juniper::object(
+    context = MyContext
+)]
 impl MySubscription {
     fn human(id: String) -> FieldResult<Human> {
-        let human = Human {
-            id: "subscription".to_string(),
-            name: "Subscription Human Name".to_string(),
-            home_planet: "Subscription Human Home Planet".to_string(),
-        };
-        Ok(human)
+//        let human = Human {
+//            id: "subscription".to_string(),
+//            name: "Subscription Human Name".to_string(),
+//            home_planet: "Subscription Human Home Planet".to_string(),
+//        };
+//        Ok(human)
+        unreachable!()
     }
 }
 
@@ -102,14 +109,19 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
     ) -> juniper::SubscriptionType<DefaultScalarValue>
     {
+        let ctx = executor.context();
+        println!("context: {:?}", ctx);
         Box::new(
             std::iter::repeat(
-                Value::Scalar(DefaultScalarValue::Int(99))
+                Value::Scalar(DefaultScalarValue::Int(ctx.0))
             )
         )
     }
 }
 
+#[derive(Debug)]
+pub struct MyContext(i32);
+impl juniper::Context for MyContext {}
 
 type Schema = RootNode<'static, MyQuery, MyMutation, MySubscription, DefaultScalarValue>;
 
@@ -126,29 +138,29 @@ fn post_graphql_handler(
     let mut is_async = false;
     is_async = true;
 
-    if is_async {
-        use futures::Future;
-        use futures::compat::Compat;
-        use rocket::http::Status;
-        use std::sync::mpsc::channel;
-
-        let cloned_schema = Arc::new(schema);
-
-        let (sender, receiver) = channel();
-
-        let mut x = futures::executor::block_on(
-            async move {
-                let x = request.execute_async(&cloned_schema.clone(), &()).await;
-                sender.send(x);
-            }
-        );
-
-        let res = receiver.recv().unwrap();
-        res
-    }
-    else {
-        request.execute(&schema, &())
-    }
+//    if is_async {
+//        use futures::Future;
+//        use futures::compat::Compat;
+//        use rocket::http::Status;
+//        use std::sync::mpsc::channel;
+//
+//        let cloned_schema = Arc::new(schema);
+//
+//        let (sender, receiver) = channel();
+//
+//        let mut x = futures::executor::block_on(
+//            async move {
+//                let x = request.execute_async(&cloned_schema.clone(), &()).await;
+//                sender.send(x);
+//            }
+//        );
+//
+//        let res = receiver.recv().unwrap();
+//        res
+//    }
+//    else {
+        request.execute(&schema, &MyContext(1234))
+//    }
 
 //    GraphQLResponse(Status {
 //        code: 200,

@@ -173,11 +173,11 @@ where
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
-    //todo: remove pub
+    //todo: remove pub (pub was used in playground to access result)
     pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
-//todo private fields
+//todo: remove pub (pub was used in playground to access result)
 pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
     pub Result<
         (crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>),
@@ -187,7 +187,7 @@ pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
 
 #[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    //todo remove pub (?)
+    //todo: remove pub (pub was used in playground to access result)
     pub Result<
         (
             crate::executor::SubscriptionTypeAsync<S>,
