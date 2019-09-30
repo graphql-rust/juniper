@@ -345,9 +345,9 @@ where
 
 /// Trait to be implemented by Subscription handlers
 pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
-    where
-        S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Stream resolving logic.
     /// Default implementantion panics.
@@ -357,12 +357,10 @@ pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::executor::SubscriptionType<S>
-    {
+    ) -> crate::executor::SubscriptionType<S> {
         panic!("resolve_into_stream() must be implemented");
     }
 }
-
 
 pub fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,

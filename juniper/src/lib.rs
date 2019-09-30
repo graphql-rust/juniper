@@ -183,9 +183,9 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 #[cfg(feature = "async")]
 pub use crate::types::async_await::GraphQLTypeAsync;
 
-pub use crate::types::base::SubscriptionHandler;
 #[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
+pub use crate::types::base::SubscriptionHandler;
 
 pub use crate::executor::SubscriptionType;
 #[cfg(feature = "async")]
@@ -209,12 +209,12 @@ fn parse_and_validate_document<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
 ) -> Result<Vec<crate::ast::Definition<'a, S>>, GraphQLError<'a>>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        for<'b> &'b S: ScalarRefValue<'b>,
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -243,17 +243,17 @@ fn parse_and_validate_document_async<'a, QueryT, MutationT, SubscriptionT, CtxT,
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
 ) -> Result<Vec<crate::ast::Definition<'a, S>>, GraphQLError<'a>>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        for<'b> &'b S: ScalarRefValue<'b>,
-        QueryT: GraphQLTypeAsync<S, Context = CtxT>,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT>,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-        SubscriptionT::Context: Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+    SubscriptionT::Context: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -292,15 +292,10 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
-    let document = parse_and_validate_document(
-        document_source,
-        root_node,
-        variables,
-    )?;
+    let document = parse_and_validate_document(document_source, root_node, variables)?;
 
     executor::execute_validated_query(document, operation_name, root_node, variables, context)
 }
-
 
 pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
@@ -316,11 +311,7 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
-    let document = parse_and_validate_document(
-        document_source,
-        root_node,
-        variables,
-    )?;
+    let document = parse_and_validate_document(document_source, root_node, variables)?;
 
     executor::execute_validated_subcription(document, operation_name, root_node, variables, context)
 }
@@ -345,11 +336,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    let document = parse_and_validate_document_async(
-        document_source,
-        root_node,
-        variables,
-    )?;
+    let document = parse_and_validate_document_async(document_source, root_node, variables)?;
 
     executor::execute_validated_query_async(document, operation_name, root_node, variables, context)
         .await
@@ -362,7 +349,13 @@ pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::executor::SubscriptionTypeAsync<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<
+    (
+        crate::executor::SubscriptionTypeAsync<S>,
+        Vec<ExecutionError<S>>,
+    ),
+    GraphQLError<'a>,
+>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -374,15 +367,16 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    let document = parse_and_validate_document_async(
-        document_source,
+    let document = parse_and_validate_document_async(document_source, root_node, variables)?;
+
+    executor::execute_validated_subscription_async(
+        document,
+        operation_name,
         root_node,
         variables,
-    )?;
-
-    executor::
-    execute_validated_subscription_async(document, operation_name, root_node, variables, context)
-        .await
+        context,
+    )
+    .await
 }
 
 /// Execute the reference introspection query in the provided schema

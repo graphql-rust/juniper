@@ -4,10 +4,10 @@ use fnv::FnvHashMap;
 
 use crate::{
     ast::{
-        Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
-        ToInputValue, Type,
+        Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
+        Selection, ToInputValue, Type,
     },
-    parser::SourcePosition,
+    parser::{SourcePosition, Spanning},
     value::Value,
     GraphQLError,
 };
@@ -30,9 +30,6 @@ mod look_ahead;
 pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
-};
-use crate::{
-    parser::Spanning, ast::Operation,
 };
 
 /// A type registry used to build schemas
@@ -231,11 +228,13 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 pub type SubscriptionResult<S = DefaultScalarValue> = Result<SubscriptionType<S>, FieldError<S>>;
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<SubscriptionTypeAsync<S>, FieldError<S>>;
+pub type SubscriptionResultAsync<S = DefaultScalarValue> =
+    Result<SubscriptionTypeAsync<S>, FieldError<S>>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
-pub type SubscriptionTypeAsync<S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
+pub type SubscriptionTypeAsync<S = DefaultScalarValue> =
+    std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 
 /// The type returned from subscription handler
 pub type SubscriptionType<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'static>;
@@ -400,23 +399,22 @@ where
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T
-    ) -> SubscriptionResult<S>
+    pub fn subscribe<T>(&self, info: &T::TypeInfo, value: &T) -> SubscriptionResult<S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
     {
-        Ok(value
-                .resolve_into_stream(info, self.current_selection_set, self))
+        Ok(value.resolve_into_stream(info, self.current_selection_set, self))
     }
 
     /// Resolve a value into iterator, mapping the context to a new type
-    pub fn subscribe_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> SubscriptionResult<S>
-        where
-            NewCtxT: FromContext<CtxT>,
-            T: crate::SubscriptionHandler<S, Context = NewCtxT>,
+    pub fn subscribe_with_ctx<NewCtxT, T>(
+        &self,
+        info: &T::TypeInfo,
+        value: &T,
+    ) -> SubscriptionResult<S>
+    where
+        NewCtxT: FromContext<CtxT>,
+        T: crate::SubscriptionHandler<S, Context = NewCtxT>,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .subscribe(info, value)
@@ -427,13 +425,13 @@ where
     pub async fn subscribe_async<T>(
         &self,
         info: &T::TypeInfo,
-        value: &T)
-        -> SubscriptionResultAsync<S>
-        where
-            T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync + 'static,
+        value: &T,
+    ) -> SubscriptionResultAsync<S>
+    where
+        T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
     {
         Ok(value
             .resolve_into_stream_async(info, self.current_selection_set, self)
@@ -448,16 +446,15 @@ where
         info: &T::TypeInfo,
         value: &T,
     ) -> SubscriptionResultAsync<S>
-        where
-            T: crate::SubscriptionHandlerAsync<S, Context = NewCtxT>,
-            T::TypeInfo: Send + Sync,
-            S: Send + Sync + 'static,
-            NewCtxT: FromContext<CtxT> + Send + Sync,
+    where
+        T: crate::SubscriptionHandlerAsync<S, Context = NewCtxT>,
+        T::TypeInfo: Send + Sync,
+        S: Send + Sync + 'static,
+        NewCtxT: FromContext<CtxT> + Send + Sync,
     {
         let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
         e.subscribe_async(info, value).await
     }
-
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
@@ -480,11 +477,11 @@ where
         info: &T::TypeInfo,
         value: &T,
     ) -> ExecutionResult<S>
-        where
-            T: crate::GraphQLTypeAsync<S, Context = NewCtxT>,
-            T::TypeInfo: Send + Sync,
-            S: Send + Sync,
-            NewCtxT: FromContext<CtxT> + Send + Sync,
+    where
+        T: crate::GraphQLTypeAsync<S, Context = NewCtxT>,
+        T::TypeInfo: Send + Sync,
+        S: Send + Sync,
+        NewCtxT: FromContext<CtxT> + Send + Sync,
     {
         let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
         e.resolve_async(info, value).await
@@ -494,8 +491,8 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     pub fn resolve_into_value<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
-        where
-            T: GraphQLType<S, Context = CtxT>,
+    where
+        T: GraphQLType<S, Context = CtxT>,
     {
         match self.resolve(info, value) {
             Ok(v) => v,
@@ -513,7 +510,7 @@ where
     pub fn resolve_into_iterator<T>(
         &self,
         info: &T::TypeInfo,
-        value: &T
+        value: &T,
     ) -> crate::executor::SubscriptionType<S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
@@ -523,9 +520,7 @@ where
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
-                Box::new(
-                    std::iter::once(Value::null())
-                )
+                Box::new(std::iter::once(Value::null()))
             }
         }
     }
@@ -555,8 +550,11 @@ where
     /// If the field fails to resolve, iterator with one `null`
     /// will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_iterator_async<T>(&self, info: &T::TypeInfo, value: &T)
-                                                -> SubscriptionTypeAsync<S>
+    pub async fn resolve_into_iterator_async<T>(
+        &self,
+        info: &T::TypeInfo,
+        value: &T,
+    ) -> SubscriptionTypeAsync<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -567,11 +565,7 @@ where
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
-                Box::pin(
-                    futures::stream::once(futures::future::ready(
-                        Value::null()
-                    ))
-                )
+                Box::pin(futures::stream::once(futures::future::ready(Value::null())))
             }
         }
     }
@@ -804,12 +798,12 @@ pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -863,7 +857,7 @@ pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
             OperationType::Subscription => root_node
                 .schema
                 .subscription_type()
-                .expect("No subscription type found")
+                .expect("No subscription type found"),
         };
 
         let executor = Executor {
@@ -885,10 +879,9 @@ pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
             OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
-            },
-            OperationType::Subscription => {
-                executor.resolve_into_value(&root_node.subscription_info, &root_node.subscription_type)
             }
+            OperationType::Subscription => executor
+                .resolve_into_value(&root_node.subscription_info, &root_node.subscription_type),
         };
     }
 
@@ -979,9 +972,8 @@ where
         };
 
         value = match op.item.operation_type {
-            OperationType::Subscription => {
-                executor.resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type)
-            },
+            OperationType::Subscription => executor
+                .resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type),
             _ => unreachable!(),
         };
     }
@@ -1091,9 +1083,9 @@ where
                 executor
                     .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
                     .await
-            },
+            }
             OperationType::Subscription => {
-               unreachable!();
+                unreachable!();
             }
         };
     }
@@ -1170,7 +1162,7 @@ where
                 .schema
                 .subscription_type()
                 .expect("No mutation type found"),
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         let executor = Executor {
@@ -1191,9 +1183,12 @@ where
         value = match op.item.operation_type {
             OperationType::Subscription => {
                 executor
-                    .resolve_into_iterator_async(&root_node.subscription_info, &root_node.subscription_type)
+                    .resolve_into_iterator_async(
+                        &root_node.subscription_info,
+                        &root_node.subscription_type,
+                    )
                     .await
-            },
+            }
             _ => unreachable!(),
         };
     }

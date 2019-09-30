@@ -60,8 +60,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, crate::SubscriptionTypeAsync<S>>
-    {
+    ) -> BoxFuture<'a, crate::SubscriptionTypeAsync<S>> {
         panic!("resolve_into_stream_async() must be implemented");
     }
 }

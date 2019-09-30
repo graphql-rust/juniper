@@ -22,8 +22,8 @@ pub struct RootNode<
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
     SubscriptionT: GraphQLType<S>,
-    S = DefaultScalarValue>
-where
+    S = DefaultScalarValue,
+> where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -135,15 +135,14 @@ where
             query_type: query_obj,
             mutation_type: mutation_obj,
             subscription_type: subscription_obj,
-            schema: SchemaType::new::<QueryT, MutationT, SubscriptionT>
-                (
-                    &query_info,
-                    &mutation_info,
-                    &subscription_info
-                ),
+            schema: SchemaType::new::<QueryT, MutationT, SubscriptionT>(
+                &query_info,
+                &mutation_info,
+                &subscription_info,
+            ),
             query_info,
             mutation_info,
-            subscription_info
+            subscription_info,
         }
     }
 }

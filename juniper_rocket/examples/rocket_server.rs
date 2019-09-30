@@ -5,7 +5,7 @@
 
 use rocket::{response::content, State};
 
-use juniper::{RootNode, FieldResult, Selection, Executor, BoxFuture, Value, DefaultScalarValue};
+use juniper::{BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode, Selection, Value};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
 
@@ -78,38 +78,27 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> BoxFuture<'a, juniper::SubscriptionTypeAsync>
-    {
+    ) -> BoxFuture<'a, juniper::SubscriptionTypeAsync> {
         let ctx = executor.context();
         let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
-            futures::stream::repeat(
-                    Value::Scalar(DefaultScalarValue::Int(ctx.0))
-            )
+            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
         );
 
-        Box::pin(
-            futures::future::ready(
-                x
-            )
-        )
+        Box::pin(futures::future::ready(x))
     }
 }
 
-impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription
-{
+impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
     fn resolve_into_stream<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> juniper::SubscriptionType<DefaultScalarValue>
-    {
+    ) -> juniper::SubscriptionType<DefaultScalarValue> {
         let ctx = executor.context();
-        Box::new(
-            std::iter::repeat(
-                Value::Scalar(DefaultScalarValue::Int(ctx.0))
-            )
-        )
+        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(
+            ctx.0,
+        ))))
     }
 }
 
@@ -133,41 +122,36 @@ fn post_graphql_handler(
     is_async = true;
 
     if is_async {
-        use futures::Future;
         use futures::compat::Compat;
+        use futures::Future;
         use rocket::http::Status;
         use std::sync::mpsc::channel;
 
         let cloned_schema = Arc::new(schema);
 
         let (sender, receiver) = channel();
-        let mut x = futures::executor::block_on(
-            async move {
-                let x = request.execute_async(&cloned_schema.clone(), &MyContext(1234)).await;
-                sender.send(x);
-            }
-        );
+        let mut x = futures::executor::block_on(async move {
+            let x = request
+                .execute_async(&cloned_schema.clone(), &MyContext(1234))
+                .await;
+            sender.send(x);
+        });
 
         let res = receiver.recv().unwrap();
         res
-    }
-    else {
+    } else {
         request.execute(&schema, &MyContext(1234))
     }
 
-//    GraphQLResponse(Status {
-//        code: 200,
-//        reason: "because"
-//    }, "it compiles".to_string());
-
+    //    GraphQLResponse(Status {
+    //        code: 200,
+    //        reason: "because"
+    //    }, "it compiles".to_string());
 }
 
 fn main() {
     rocket::ignite()
         .manage(Schema::new(MyQuery, MyMutation, MySubscription))
-        .mount(
-            "/",
-            rocket::routes![graphiql, post_graphql_handler],
-        )
+        .mount("/", rocket::routes![graphiql, post_graphql_handler])
         .launch();
 }

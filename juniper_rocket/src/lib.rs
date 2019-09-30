@@ -62,15 +62,12 @@ use juniper::{
     ScalarValue,
 };
 
-
 use juniper::GraphQLTypeAsync;
 
-
 use futures::future::{FutureExt, TryFutureExt};
+use futures::StreamExt;
 use rocket::data::FromDataFuture;
 use rocket::response::ResultFuture;
-use futures::StreamExt;
-
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -115,9 +112,7 @@ where
                 let response: Vec<_> = res.take(5).collect();
                 println!("Got syncronous response: {:?}", response);
                 let x = response[0].clone();
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(
-                    Ok((x, vec![]))
-                ))
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((x, vec![]))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 unimplemented!()
@@ -129,7 +124,6 @@ where
         }
     }
 
-    
     pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
@@ -140,23 +134,21 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context=CtxT>,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: 'static,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                let (response_stream, err) = request.subscribe_async(root_node, context)
-                    .await
-                    .0
-                    .unwrap();
-                    let mut values: Vec<_> = response_stream.take(5).collect().await;
-                    println!("Got asyncronous response: {:?}", values);
-                GraphQLBatchResponse::Single(
-                    juniper::http::GraphQLResponse(
-                        Ok((values[0].clone(), vec![]))
-                    ))
+                let (response_stream, err) =
+                    request.subscribe_async(root_node, context).await.0.unwrap();
+                let mut values: Vec<_> = response_stream.take(5).collect().await;
+                println!("Got asyncronous response: {:?}", values);
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((
+                    values[0].clone(),
+                    vec![],
+                ))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 panic!("Batch requests are not supported in this demo!");
@@ -242,7 +234,7 @@ where
     }
 
     /// Asynchronously execute an incoming GraphQL query
-    
+
     pub async fn execute_async<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
         root_node: &RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
