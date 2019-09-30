@@ -25,7 +25,8 @@ iron-test = "0.6"
 router = "0.6"
 mount = "0.4"
 logger = "0.4"
-url = "1.7.1"
+url = "2"
+percent-encoding = "2"
 
 [dev-dependencies.juniper]
 version = "0.13.1"

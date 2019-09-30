@@ -1,5 +1,6 @@
 # master
 
+- Require `url` 2.x if `url` feature is enabled.
 - Improve lookahead visitability.
 - Add ability to parse 'subscription'.
 
