@@ -28,6 +28,7 @@ where
         self.location_stack.push(match op.item.operation_type {
             OperationType::Query => DirectiveLocation::Query,
             OperationType::Mutation => DirectiveLocation::Mutation,
+            OperationType::Subscription => DirectiveLocation::Subscription,
         });
     }
 
@@ -37,7 +38,11 @@ where
         _: &'a Spanning<Operation<S>>,
     ) {
         let top = self.location_stack.pop();
-        assert!(top == Some(DirectiveLocation::Query) || top == Some(DirectiveLocation::Mutation));
+        assert!(
+            top == Some(DirectiveLocation::Query)
+                || top == Some(DirectiveLocation::Mutation)
+                || top == Some(DirectiveLocation::Subscription)
+        );
     }
 
     fn enter_field(&mut self, _: &mut ValidatorContext<'a, S>, _: &'a Spanning<Field<S>>) {
