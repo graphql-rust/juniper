@@ -431,7 +431,7 @@ mod tests {
     use super::*;
     use iron::{Handler, Headers, Url};
     use iron_test::{request, response};
-    use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
+    use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
     use juniper::{
         http::tests as http_tests,
@@ -440,6 +440,9 @@ mod tests {
     };
 
     use super::GraphQLHandler;
+
+    /// https://url.spec.whatwg.org/#query-state
+    const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
 
     // This is ugly but it works. `iron_test` just dumps the path/url in headers
     // and newer `hyper` doesn't allow unescaped "{" or "}".
@@ -454,7 +457,7 @@ mod tests {
         format!(
             "http://localhost:3000{}?{}",
             path,
-            utf8_percent_encode(url.query().unwrap_or(""), DEFAULT_ENCODE_SET)
+            utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
         )
     }
 
@@ -521,7 +524,7 @@ mod tests {
         }
     }
 
-    fn make_handler() -> Box<Handler> {
+    fn make_handler() -> Box<dyn Handler> {
         Box::new(GraphQLHandler::new(
             context_factory,
             Query,
