@@ -411,6 +411,15 @@ where
                 .resolve_into_stream(info, self.current_selection_set, self))
     }
 
+    pub fn subscribe_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> SubscriptionResult<S>
+        where
+            NewCtxT: FromContext<CtxT>,
+            T: crate::SubscriptionHandler<S, Context = NewCtxT>,
+    {
+        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
+            .subscribe(info, value)
+    }
+
     /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -425,7 +434,6 @@ where
             .await)
     }
 
-    // todo: add subscribe and subscribe with ctx async
     #[cfg(feature = "async")]
     pub async fn subscribe_async<T>(
         &self,
@@ -441,6 +449,23 @@ where
         Ok(value
             .resolve_into_stream_async(info, self.current_selection_set, self)
             .await)
+    }
+
+    /// Resolve a single arbitrary value, mapping the context to a new type
+    #[cfg(feature = "async")]
+    pub async fn subscribe_with_ctx_async<NewCtxT, T>(
+        &self,
+        info: &T::TypeInfo,
+        value: &T,
+    ) -> SubscriptionResultAsync<S>
+        where
+            T: crate::SubscriptionHandlerAsync<S, Context = NewCtxT>,
+            T::TypeInfo: Send + Sync,
+            S: Send + Sync + 'static,
+            NewCtxT: FromContext<CtxT> + Send + Sync,
+    {
+        let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
+        e.subscribe_async(info, value).await
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
