@@ -104,9 +104,8 @@ where
         self.mutation_type()
     }
 
-    // Included for compatibility with the introspection query in GraphQL.js
     fn subscription_type(&self) -> Option<TypeType<S>> {
-        None
+        self.subscription_type()
     }
 
     fn directives(&self) -> Vec<&DirectiveType<S>> {

@@ -648,6 +648,10 @@ where
         None => return Err(GraphQLError::UnknownOperationName),
     };
 
+    if op.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+
     let default_variable_values = op.item.variable_definitions.map(|defs| {
         defs.item
             .items
@@ -683,6 +687,7 @@ where
                 .schema
                 .mutation_type()
                 .expect("No mutation type found"),
+            OperationType::Subscription => unreachable!(),
         };
 
         let executor = Executor {
@@ -705,6 +710,7 @@ where
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
             }
+            OperationType::Subscription => unreachable!(),
         };
     }
 

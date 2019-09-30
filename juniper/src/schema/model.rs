@@ -65,6 +65,7 @@ pub struct DirectiveType<'a, S> {
 pub enum DirectiveLocation {
     Query,
     Mutation,
+    Subscription,
     Field,
     #[graphql(name = "FRAGMENT_DEFINITION")]
     FragmentDefinition,
@@ -241,6 +242,18 @@ impl<'a, S> SchemaType<'a, S> {
             self.concrete_type_by_name(name)
                 .expect("Mutation type does not exist in schema")
         })
+    }
+
+    pub fn subscription_type(&self) -> Option<TypeType<S>> {
+        // subscription is not yet in `RootNode`,
+        // so return `None` for now
+        None
+    }
+
+    pub fn concrete_subscription_type(&self) -> Option<&MetaType<S>> {
+        // subscription is not yet in `RootNode`,
+        // so return `None` for now
+        None
     }
 
     pub fn type_list(&self) -> Vec<TypeType<S>> {
@@ -452,6 +465,7 @@ impl fmt::Display for DirectiveLocation {
         f.write_str(match *self {
             DirectiveLocation::Query => "query",
             DirectiveLocation::Mutation => "mutation",
+            DirectiveLocation::Subscription => "subscription",
             DirectiveLocation::Field => "field",
             DirectiveLocation::FragmentDefinition => "fragment definition",
             DirectiveLocation::FragmentSpread => "fragment spread",

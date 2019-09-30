@@ -185,6 +185,7 @@ pub enum GraphQLError<'a> {
     NoOperationProvided,
     MultipleOperationsProvided,
     UnknownOperationName,
+    IsSubscription,
 }
 
 /// Execute a query in a provided schema
