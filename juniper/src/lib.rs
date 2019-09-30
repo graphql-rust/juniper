@@ -187,8 +187,9 @@ pub use crate::types::base::SubscriptionHandler;
 #[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
 
-// todo: Remove (?)
 pub use crate::executor::SubscriptionType;
+#[cfg(feature = "async")]
+pub use crate::executor::SubscriptionTypeAsync;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
