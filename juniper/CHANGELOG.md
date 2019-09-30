@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.14.0] 2019-09-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.0)
+
 - Require `url` 2.x if `url` feature is enabled.
 - Improve lookahead visitability.
 - Add ability to parse 'subscription'.

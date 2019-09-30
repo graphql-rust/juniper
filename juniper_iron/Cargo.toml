@@ -15,7 +15,7 @@ edition = "2018"
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { version = "0.13.1", path = "../juniper" }
+juniper = { version = "0.14.0", path = "../juniper" }
 
 urlencoded = { version = ">= 0.5, < 0.7" }
 iron = ">= 0.5, < 0.7"
@@ -29,6 +29,6 @@ url = "2"
 percent-encoding = "2"
 
 [dev-dependencies.juniper]
-version = "0.13.1"
+version = "0.14.0"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"
