@@ -348,6 +348,7 @@ pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
         S: ScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
 {
+    #[allow(unused_variables)]
     fn resolve_into_stream<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -355,7 +356,7 @@ pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::executor::SubscriptionType<S>
     {
-        panic!("resolve() must be implemented by non-object output types");
+        panic!("resolve_into_stream() must be implemented");
     }
 }
 

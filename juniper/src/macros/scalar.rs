@@ -345,6 +345,8 @@ macro_rules! graphql_scalar {
     }
 }
 
+/// Same as graphql_scalar without async feature,
+/// but this one implements [`GraphQLTypeAsync`] trait
 // FIXME: prevent duplicating the whole macro for async.
 #[cfg(feature = "async")]
 #[macro_export]

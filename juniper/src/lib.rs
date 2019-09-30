@@ -91,7 +91,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
 #![doc(html_root_url = "https://docs.rs/juniper/0.13.1")]
 #![warn(missing_docs)]
-#![cfg_attr(feature = "async", feature(async_await, async_closure))]
+#![cfg_attr(feature = "async", feature(async_closure))]
 
 #[doc(hidden)]
 pub extern crate serde;
@@ -186,8 +186,6 @@ pub use crate::types::async_await::GraphQLTypeAsync;
 pub use crate::types::base::SubscriptionHandler;
 #[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
-#[cfg(feature = "async")]
-use crate::executor::SubscriptionResultAsync;
 
 // todo: Remove (?)
 pub use crate::executor::SubscriptionType;

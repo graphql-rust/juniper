@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Directive, FromInputValue, InputValue, Selection},
+    ast::Selection,
     value::{Object, ScalarRefValue, ScalarValue, Value},
 };
 
@@ -19,6 +19,7 @@ where
     S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    #[allow(unused_variables)]
     fn resolve_field_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -50,6 +51,7 @@ where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    #[allow(unused_variables)]
     fn resolve_into_stream_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -59,7 +61,7 @@ where
         Box<dyn futures::Stream<Item = Value<S>>>
     >>
     {
-        panic!("resolve() must be implemented by non-object output types");
+        panic!("resolve_into_stream() must be implemented");
     }
 }
 
