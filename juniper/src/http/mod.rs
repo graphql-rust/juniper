@@ -95,6 +95,32 @@ where
         ))
     }
 
+    #[cfg(feature = "async")]
+    pub async fn subscribe_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
+    ) -> StreamGraphQLResponse<'a, S>
+        where
+            S: ScalarValue + Send + Sync + 'static,
+            QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+            QueryT::TypeInfo: Send + Sync,
+            MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+            MutationT::TypeInfo: Send + Sync,
+            SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+            SubscriptionT::TypeInfo: Send + Sync,
+            CtxT: Send + Sync,
+            for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        let op = self.operation_name();
+        let vars = &self.variables();
+        let res = crate::subscribe_async(&self.query, op, root_node, vars, context).await;
+
+        StreamGraphQLResponse(
+            res
+        )
+    }
+
     pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
@@ -139,31 +165,6 @@ where
         GraphQLResponse(res)
     }
 
-    #[cfg(feature = "async")]
-    pub async fn subscribe_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-        context: &'a CtxT,
-    ) -> StreamGraphQLResponse<'a, S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        let op = self.operation_name();
-        let vars = &self.variables();
-        let res = crate::subscribe_async(&self.query, op, root_node, vars, context).await;
-
-        StreamGraphQLResponse(
-            res
-        )
-    }
 }
 
 /// Simple wrapper around the result from executing a GraphQL query
@@ -189,7 +190,7 @@ pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo remove pub (?)
     pub Result<
         (
-            crate::executor::AsyncSubscriptionType<S>,
+            crate::executor::SubscriptionTypeAsync<S>,
             Vec<ExecutionError<S>>
         ),
         GraphQLError<'a>

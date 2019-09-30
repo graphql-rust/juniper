@@ -230,11 +230,11 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 pub type SubscriptionResult<S = DefaultScalarValue> = Result<SubscriptionType<S>, FieldError<S>>;
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<AsyncSubscriptionType<S>, FieldError<S>>;
+pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<SubscriptionTypeAsync<S>, FieldError<S>>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
-pub type AsyncSubscriptionType<S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
+pub type SubscriptionTypeAsync<S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 
 /// The type returned from subscription handler
 pub type SubscriptionType<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'static>;
@@ -420,31 +420,17 @@ where
             .subscribe(info, value)
     }
 
-    /// Resolve a single arbitrary value into an `ExecutionResult`
-    #[cfg(feature = "async")]
-    pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
-    where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync,
-    {
-        Ok(value
-            .resolve_async(info, self.current_selection_set, self)
-            .await)
-    }
-
     #[cfg(feature = "async")]
     pub async fn subscribe_async<T>(
         &self,
         info: &T::TypeInfo,
         value: &T)
         -> SubscriptionResultAsync<S>
-    where
-        T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
+        where
+            T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+            T::TypeInfo: Send + Sync,
+            CtxT: Send + Sync,
+            S: Send + Sync + 'static,
     {
         Ok(value
             .resolve_into_stream_async(info, self.current_selection_set, self)
@@ -468,6 +454,21 @@ where
         e.subscribe_async(info, value).await
     }
 
+
+    /// Resolve a single arbitrary value into an `ExecutionResult`
+    #[cfg(feature = "async")]
+    pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
+    where
+        T: crate::GraphQLTypeAsync<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        Ok(value
+            .resolve_async(info, self.current_selection_set, self)
+            .await)
+    }
+
     /// Resolve a single arbitrary value, mapping the context to a new type
     #[cfg(feature = "async")]
     pub async fn resolve_with_ctx_async<NewCtxT, T>(
@@ -475,11 +476,11 @@ where
         info: &T::TypeInfo,
         value: &T,
     ) -> ExecutionResult<S>
-    where
-        T: crate::GraphQLTypeAsync<S, Context = NewCtxT>,
-        T::TypeInfo: Send + Sync,
-        S: Send + Sync,
-        NewCtxT: FromContext<CtxT> + Send + Sync,
+        where
+            T: crate::GraphQLTypeAsync<S, Context = NewCtxT>,
+            T::TypeInfo: Send + Sync,
+            S: Send + Sync,
+            NewCtxT: FromContext<CtxT> + Send + Sync,
     {
         let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
         e.resolve_async(info, value).await
@@ -489,8 +490,8 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     pub fn resolve_into_value<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
-    where
-        T: GraphQLType<S, Context = CtxT>,
+        where
+            T: GraphQLType<S, Context = CtxT>,
     {
         match self.resolve(info, value) {
             Ok(v) => v,
@@ -500,6 +501,7 @@ where
             }
         }
     }
+
 
     pub fn resolve_into_iterator<T>(
         &self,
@@ -543,7 +545,7 @@ where
 
     #[cfg(feature = "async")]
     pub async fn resolve_into_iterator_async<T>(&self, info: &T::TypeInfo, value: &T)
-                                                -> AsyncSubscriptionType<S>
+                                                -> SubscriptionTypeAsync<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -1098,7 +1100,7 @@ pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, Subscri
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(AsyncSubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(SubscriptionTypeAsync<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

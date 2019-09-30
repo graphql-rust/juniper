@@ -51,6 +51,8 @@ where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    /// Stream resolving logic.
+    /// __Default implementantion panics.__
     #[allow(unused_variables)]
     fn resolve_into_stream_async<'a>(
         &'a self,
@@ -61,7 +63,7 @@ where
         Box<dyn futures::Stream<Item = Value<S>>>
     >>
     {
-        panic!("resolve_into_stream() must be implemented");
+        panic!("resolve_into_stream_async() must be implemented");
     }
 }
 
