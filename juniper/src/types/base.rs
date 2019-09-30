@@ -343,6 +343,7 @@ where
     }
 }
 
+/// Trait to be implemented by Subscription handlers
 pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
     where
         S: ScalarValue,

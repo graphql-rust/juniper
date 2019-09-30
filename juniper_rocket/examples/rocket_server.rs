@@ -84,11 +84,10 @@ where
         Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>
     >>
     {
+        let ctx = executor.context();
         let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
             futures::stream::repeat(
-//                futures::future::ready(
-                    Value::Scalar(DefaultScalarValue::Int(32))
-//                )
+                    Value::Scalar(DefaultScalarValue::Int(ctx.0))
             )
         );
 
@@ -110,7 +109,6 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription
     ) -> juniper::SubscriptionType<DefaultScalarValue>
     {
         let ctx = executor.context();
-        println!("context: {:?}", ctx);
         Box::new(
             std::iter::repeat(
                 Value::Scalar(DefaultScalarValue::Int(ctx.0))
@@ -138,29 +136,29 @@ fn post_graphql_handler(
     let mut is_async = false;
     is_async = true;
 
-//    if is_async {
-//        use futures::Future;
-//        use futures::compat::Compat;
-//        use rocket::http::Status;
-//        use std::sync::mpsc::channel;
-//
-//        let cloned_schema = Arc::new(schema);
-//
-//        let (sender, receiver) = channel();
-//
-//        let mut x = futures::executor::block_on(
-//            async move {
-//                let x = request.execute_async(&cloned_schema.clone(), &()).await;
-//                sender.send(x);
-//            }
-//        );
-//
-//        let res = receiver.recv().unwrap();
-//        res
-//    }
-//    else {
+    if is_async {
+        use futures::Future;
+        use futures::compat::Compat;
+        use rocket::http::Status;
+        use std::sync::mpsc::channel;
+
+        let cloned_schema = Arc::new(schema);
+
+        let (sender, receiver) = channel();
+
+        let mut x = futures::executor::block_on(
+            async move {
+                let x = request.execute_async(&cloned_schema.clone(), &MyContext(1234)).await;
+                sender.send(x);
+            }
+        );
+
+        let res = receiver.recv().unwrap();
+        res
+    }
+    else {
         request.execute(&schema, &MyContext(1234))
-//    }
+    }
 
 //    GraphQLResponse(Status {
 //        code: 200,

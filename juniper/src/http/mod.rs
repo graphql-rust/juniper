@@ -70,9 +70,9 @@ where
         }
     }
 
-    /// Execute a GraphQL request using the specified schema and context
+    /// Execute a GraphQL subscription using the specified schema and context
     ///
-    /// This is a simple wrapper around the `execute` function exposed at the
+    /// This is a simple wrapper around the `subscribe` function exposed at the
     /// top level of this crate.
     pub fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -95,6 +95,10 @@ where
         ))
     }
 
+    /// Execute a GraphQL subscription using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `subscribe_async` function exposed at the
+    /// top level of this crate.
     #[cfg(feature = "async")]
     pub async fn subscribe_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,

@@ -12,6 +12,7 @@ use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
+/// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,

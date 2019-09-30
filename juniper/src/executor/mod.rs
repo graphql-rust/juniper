@@ -399,7 +399,7 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
-
+    /// Resolve a single arbitrary value into an `SubscriptionResult`
     pub fn subscribe<T>(
         &self,
         info: &T::TypeInfo,
@@ -412,6 +412,7 @@ where
                 .resolve_into_stream(info, self.current_selection_set, self))
     }
 
+    /// Resolve a value into iterator, mapping the context to a new type
     pub fn subscribe_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> SubscriptionResult<S>
         where
             NewCtxT: FromContext<CtxT>,
@@ -421,6 +422,7 @@ where
             .subscribe(info, value)
     }
 
+    /// Resolve a single arbitrary value into an `SubscriptionResultAsync`
     #[cfg(feature = "async")]
     pub async fn subscribe_async<T>(
         &self,
@@ -438,7 +440,8 @@ where
             .await)
     }
 
-    /// Resolve a single arbitrary value, mapping the context to a new type
+    /// Resolve a value into iterator asynchronously,
+    /// mapping the context to a new type
     #[cfg(feature = "async")]
     pub async fn subscribe_with_ctx_async<NewCtxT, T>(
         &self,
@@ -503,7 +506,10 @@ where
         }
     }
 
-
+    /// Resolve a single arbitrary value into a return `SubscriptionType`.
+    ///
+    /// If the field fails to resolve, iterator with one `null`
+    /// will be returned.
     pub fn resolve_into_iterator<T>(
         &self,
         info: &T::TypeInfo,
@@ -544,6 +550,10 @@ where
         }
     }
 
+    /// Resolve a single arbitrary value into a return `SubscriptionType`.
+    ///
+    /// If the field fails to resolve, iterator with one `null`
+    /// will be returned.
     #[cfg(feature = "async")]
     pub async fn resolve_into_iterator_async<T>(&self, info: &T::TypeInfo, value: &T)
                                                 -> SubscriptionTypeAsync<S>
