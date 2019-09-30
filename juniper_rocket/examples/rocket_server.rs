@@ -59,12 +59,10 @@ struct MySubscription;
 )]
 impl MySubscription {
     fn human(id: String) -> FieldResult<Human> {
-//        let human = Human {
-//            id: "subscription".to_string(),
-//            name: "Subscription Human Name".to_string(),
-//            home_planet: "Subscription Human Home Planet".to_string(),
-//        };
-//        Ok(human)
+        unreachable!()
+    }
+
+    fn nothuman(id: String) -> FieldResult<Human> {
         unreachable!()
     }
 }
@@ -80,9 +78,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> BoxFuture<'a, std::pin::Pin<
-        Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>
-    >>
+    ) -> BoxFuture<'a, juniper::SubscriptionTypeAsync>
     {
         let ctx = executor.context();
         let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
@@ -145,7 +141,6 @@ fn post_graphql_handler(
         let cloned_schema = Arc::new(schema);
 
         let (sender, receiver) = channel();
-
         let mut x = futures::executor::block_on(
             async move {
                 let x = request.execute_async(&cloned_schema.clone(), &MyContext(1234)).await;
