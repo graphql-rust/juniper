@@ -1,10 +1,11 @@
 # master
 
-- Add ability to parse 'subscription'
+- Improve lookahead visitability.
+- Add ability to parse 'subscription'.
 
 # [[0.13.1] 2019-07-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.13.1)
 
-- Fix a regression when using lookaheads with fragments containing nested types [#404](https://github.com/graphql-rust/juniper/pull/404)	
+- Fix a regression when using lookaheads with fragments containing nested types [#404](https://github.com/graphql-rust/juniper/pull/404)
 
 - Allow `mut` arguments for resolver functions in `#[object]` macros [#402](https://github.com/graphql-rust/juniper/pull/402)
 
@@ -15,7 +16,7 @@
 See [#345](https://github.com/graphql-rust/juniper/pull/345).
 
 The newtype pattern can now be used with the `GraphQLScalarValue` custom derive
-to easily implement custom scalar values that just wrap another scalar, 
+to easily implement custom scalar values that just wrap another scalar,
 similar to serdes `#[serde(transparent)]` functionality.
 
 Example:
@@ -34,7 +35,7 @@ struct UserId(i32);
 
 ### object macro
 
-The `graphql_object!` macro is deprecated and will be removed in the future. 
+The `graphql_object!` macro is deprecated and will be removed in the future.
 It is replaced by the new [object](https://docs.rs/juniper/latest/juniper/macro.object.html) procedural macro.
 
 [#333](https://github.com/graphql-rust/juniper/pull/333)
@@ -53,7 +54,7 @@ This should not have any impact on your code, since juniper already was 2018 com
 - The `GraphQLType` impl for () was removed to improve compile time safefty. [#355](https://github.com/graphql-rust/juniper/pull/355)
 - The `ScalarValue` custom derive has been renamed to `GraphQLScalarValue`.
 - Added built-in support for the canonical schema introspection query via
-  `juniper::introspect()`. 
+  `juniper::introspect()`.
   [#307](https://github.com/graphql-rust/juniper/issues/307)
 - Fix introspection query validity
   The DirectiveLocation::InlineFragment had an invalid literal value,
