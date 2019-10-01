@@ -73,7 +73,7 @@ where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
 {
-    fn resolve_into_stream_async<'a>(
+    fn resolve_into_stream<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<DefaultScalarValue>]>,

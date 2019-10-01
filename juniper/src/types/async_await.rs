@@ -55,7 +55,7 @@ where
     /// Stream resolving logic.
     /// __Default implementantion panics.__
     #[allow(unused_variables)]
-    fn resolve_into_stream_async<'a>(
+    fn resolve_into_stream<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,

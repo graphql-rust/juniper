@@ -434,7 +434,7 @@ where
         S: Send + Sync + 'static,
     {
         Ok(value
-            .resolve_into_stream_async(info, self.current_selection_set, self)
+            .resolve_into_stream(info, self.current_selection_set, self)
             .await)
     }
 
