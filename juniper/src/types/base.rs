@@ -352,7 +352,7 @@ where
     /// Stream resolving logic.
     /// Default implementantion panics.
     #[allow(unused_variables)]
-    fn resolve_into_stream<'a>(
+    fn resolve_into_iterator<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,

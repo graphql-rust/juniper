@@ -403,7 +403,7 @@ where
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
     {
-        Ok(value.resolve_into_stream(info, self.current_selection_set, self))
+        Ok(value.resolve_into_iterator(info, self.current_selection_set, self))
     }
 
     /// Resolve a value into iterator, mapping the context to a new type
