@@ -96,6 +96,7 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
     ) -> juniper::SubscriptionType<DefaultScalarValue> {
         println!("Selection: {:#?}", selection_set);
+        unimplemented!()
 //        match field {
 //            "human" => {
 //                {

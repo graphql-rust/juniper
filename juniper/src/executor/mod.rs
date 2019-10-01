@@ -565,6 +565,7 @@ where
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
+                //todo: this to constant or macro
                 Box::pin(futures::stream::once(futures::future::ready(Value::null())))
             }
         }

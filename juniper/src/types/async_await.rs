@@ -1,6 +1,7 @@
 use crate::{
     ast::Selection,
     value::{Object, ScalarRefValue, ScalarValue, Value},
+    SubscriptionTypeAsync,
 };
 
 use crate::{
@@ -52,6 +53,17 @@ where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    #[allow(unused_variables)]
+    fn resolve_field_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        field_name: &'a str,
+        arguments: &'a Arguments<S>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, SubscriptionTypeAsync<S>> {
+        panic!("resolve_field_async must be implemented by object types");
+    }
+
     /// Stream resolving logic.
     /// __Default implementantion panics.__
     #[allow(unused_variables)]
@@ -60,7 +72,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, crate::SubscriptionTypeAsync<S>> {
+    ) -> BoxFuture<'a, SubscriptionTypeAsync<S>> {
         panic!("resolve_into_stream_async() must be implemented");
     }
 }
@@ -288,6 +300,249 @@ where
                 }
             }
             AsyncValue::Nested(obj) => match obj {
+                v @ Value::Null => {
+                    return v;
+                }
+                Value::Object(obj) => {
+                    for (k, v) in obj {
+                        merge_key_into(&mut object, &k, v);
+                    }
+                }
+                _ => unreachable!(),
+            },
+        }
+    }
+
+    Value::Object(object)
+}
+
+// TODO: prevent duplicating the whole code on the top for stream resolving
+
+struct AsyncStreamField<S> {
+    name: String,
+    value: Option<SubscriptionTypeAsync<S>>,
+}
+
+enum AsyncStreamValue<S> {
+    Field(AsyncStreamField<S>),
+    Nested(SubscriptionTypeAsync<S>),
+}
+
+// Wrapper function around resolve_selection_set_into_stream_recursive.
+// This wrapper is necessary because async fns can not be recursive.
+#[cfg(feature = "async")]
+pub(crate) fn resolve_selection_set_into_stream<'a, 'e, T, CtxT, S>(
+    instance: &'a T,
+    info: &'a T::TypeInfo,
+    selection_set: &'e [Selection<'e, S>],
+    executor: &'e Executor<'e, CtxT, S>,
+) -> BoxFuture<'a, SubscriptionTypeAsync<S>>
+    where
+        T: SubscriptionHandlerAsync<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        S: ScalarValue + Send + Sync,
+        CtxT: Send + Sync,
+        'e: 'a,
+        for<'b> &'b S: ScalarRefValue<'b>,
+{
+    Box::pin(resolve_selection_set_into_stream_recursive(
+        instance,
+        info,
+        selection_set,
+        executor,
+    ))
+}
+
+
+#[cfg(feature = "async")]
+pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
+    instance: &'a T,
+    info: &'a T::TypeInfo,
+    selection_set: &'a [Selection<'a, S>],
+    executor: &'a Executor<'a, CtxT, S>,
+) -> SubscriptionTypeAsync<S>
+where
+    T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    use futures::stream::{FuturesOrdered, StreamExt};
+
+    let mut object = Object::with_capacity(selection_set.len());
+
+    let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncStreamValue<S>>>::new();
+
+    let meta_type = executor
+        .schema()
+        .concrete_type_by_name(
+            T::name(info)
+                .expect("Resolving named type's selection set")
+                .as_ref(),
+        )
+        .expect("Type not found in schema");
+
+    for selection in selection_set {
+        match *selection {
+            Selection::Field(Spanning {
+                item: ref f,
+                start: ref start_pos,
+                ..
+            }) => {
+                if is_excluded(&f.directives, executor.variables()) {
+                    continue;
+                }
+
+                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
+
+                if f.name.item == "__typename" {
+                    object.add_field(
+                        response_name,
+                        Value::scalar(instance.concrete_type_name(executor.context(), info)),
+                    );
+                    continue;
+                }
+
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
+                });
+
+                let exec_vars = executor.variables();
+
+                let sub_exec = executor.field_sub_executor(
+                    &response_name,
+                    f.name.item,
+                    start_pos.clone(),
+                    f.selection_set.as_ref().map(|v| &v[..]),
+                );
+                let args = Arguments::new(
+                    f.arguments.as_ref().map(|m| {
+                        m.item
+                            .iter()
+                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
+                            .collect()
+                    }),
+                    &meta_field.arguments,
+                );
+
+                let pos = start_pos.clone();
+                let is_non_null = meta_field.field_type.is_non_null();
+
+                let response_name = response_name.to_string();
+                let field_future = async move {
+                    // TODO: implement custom future type instead of
+                    // two-level boxing.
+                    let res = instance
+                        .resolve_field_async(info, f.name.item, &args, &sub_exec)
+                        .await;
+
+                        let value = Some(res);
+//                    let value = match res {
+//                        Ok(Value::Null) if is_non_null => None,
+//                        Ok(v) => Some(v),
+//                        Err(e) => {
+//                            sub_exec.push_error_at(e, pos);
+//
+//                            if is_non_null {
+//                                None
+//                            } else {
+//                                Some(Box::pin(futures::stream::once(futures::future::ready(Value::null()))))
+//                            }
+//                        }
+//                    };
+                    AsyncStreamValue::Field(AsyncStreamField {
+                        name: response_name,
+                        value,
+                    })
+                };
+                async_values.push(Box::pin(field_future));
+            }
+            Selection::FragmentSpread(Spanning {
+                item: ref spread, ..
+            }) => {
+                if is_excluded(&spread.directives, executor.variables()) {
+                    continue;
+                }
+
+                // TODO: prevent duplicate boxing.
+                let f = async move {
+                    let fragment = &executor
+                        .fragment_by_name(spread.name.item)
+                        .expect("Fragment could not be found");
+                    let value = resolve_selection_set_into_stream(
+                        instance,
+                        info,
+                        &fragment.selection_set[..],
+                        executor,
+                    )
+                    .await;
+                    AsyncStreamValue::Nested(value)
+                };
+                async_values.push(Box::pin(f));
+            }
+            Selection::InlineFragment(Spanning {
+                item: ref fragment,
+                start: ref start_pos,
+                ..
+            }) => {
+                if is_excluded(&fragment.directives, executor.variables()) {
+                    continue;
+                }
+
+                let sub_exec = executor.type_sub_executor(
+                    fragment.type_condition.as_ref().map(|c| c.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                if let Some(ref type_condition) = fragment.type_condition {
+                    // FIXME: implement async version.
+
+                    let sub_result = instance.resolve_into_type(
+                        info,
+                        type_condition.item,
+                        Some(&fragment.selection_set[..]),
+                        &sub_exec,
+                    );
+
+                    if let Ok(Value::Object(obj)) = sub_result {
+                        for (k, v) in obj {
+                            merge_key_into(&mut object, &k, v);
+                        }
+                    } else if let Err(e) = sub_result {
+                        sub_exec.push_error_at(e, start_pos.clone());
+                    }
+                } else {
+                    let f = async move {
+                        let value = resolve_selection_set_into_stream(
+                            instance,
+                            info,
+                            &fragment.selection_set[..],
+                            &sub_exec,
+                        )
+                        .await;
+                        AsyncStreamValue::Nested(value)
+                    };
+                    async_values.push(Box::pin(f));
+                }
+            }
+        }
+    }
+
+    while let Some(item) = async_values.next().await {
+        match item {
+            AsyncStreamValue::Field(AsyncStreamField { name, value }) => {
+                if let Some(value) = value {
+                    object.add_field(&name, value);
+                } else {
+                    return Value::null();
+                }
+            }
+            AsyncStreamValue::Nested(obj) => match obj {
                 v @ Value::Null => {
                     return v;
                 }
