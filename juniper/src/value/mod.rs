@@ -4,8 +4,10 @@ use crate::{
 };
 mod object;
 mod scalar;
+mod stream_object;
 
 pub use self::object::Object;
+pub use self::stream_object::StreamObject;
 
 pub use self::scalar::{
     DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
@@ -27,6 +29,7 @@ pub enum Value<S = DefaultScalarValue> {
     Scalar(S),
     List(Vec<Value<S>>),
     Object(Object<S>),
+    StreamObject(StreamObject<S>),
 }
 
 impl<S> Value<S>
@@ -184,6 +187,8 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
                     })
                     .collect(),
             ),
+            //todo: implement to_input_value() for StreamObject
+            Value::StreamObject(ref o) => unimplemented!()
         }
     }
 }
