@@ -84,12 +84,31 @@ where
     {
         println!("field name: {}", field_name);
 
-        let ctx = executor.context();
-        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
-            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
-        );
+        match field_name {
+            "human" => {
+                {
+                    let ctx = executor.context();
+                    let x: std::pin::Pin<Box<dyn futures::Stream<Item=Value<DefaultScalarValue>>>> = Box::pin(
+                        futures::stream::once( async {
+                            Value::Scalar(DefaultScalarValue::String("human".to_owned()))
+                        }),
+                    );
 
-        Box::pin(futures::future::ready( Ok(x) ))
+                    Box::pin(futures::future::ready(Ok(x)))
+                }
+            }
+            "nothuman" => {
+                let ctx = executor.context();
+                let x: std::pin::Pin<Box<dyn futures::Stream<Item=Value<DefaultScalarValue>>>> = Box::pin(
+                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
+                );
+
+                Box::pin(futures::future::ready(Ok(x)))
+            },
+            _ => {
+                panic!("field not found");
+            }
+        }
     }
 
 //    fn resolve_into_stream<'a>(
@@ -116,62 +135,6 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
 //    ) -> juniper::ValuesIterator<DefaultScalarValue> {
 //        println!("Selection: {:#?}", selection_set);
 //        unimplemented!()
-////        match field {
-////            "human" => {
-////                {
-////                    (|| -> FieldResult<Human> {
-////                        let id = args.get::<String>("id").expect(
-////                            "Internal error: missing argument id - validation must have failed",
-////                        );
-////                        {
-////                            let ctx = executor.context();
-////                            Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(
-////                                ctx.0,
-////                            ))))
-////                        }
-////                    })()
-////                }
-////            }
-////            "nothuman" => {
-////                let res = {
-////                    (|| -> FieldResult<Human> {
-////                        let id = args.get::<String>("id").expect(
-////                            "Internal error: missing argument id - validation must have failed",
-////                        );
-////                        {
-////                            {
-////                                {
-////                                    ::std::rt::begin_panic(
-////                                        "internal error: entered unreachable code",
-////                                        &("juniper_rocket/examples/rocket_server.rs", 66u32, 9u32),
-////                                    )
-////                                }
-////                            }
-////                        }
-////                    })()
-////                };
-////                juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
-////                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-////                    None => Ok(juniper::Value::null()),
-////                })
-////            }
-////            _ => {
-////                {
-////                    ::std::rt::begin_panic_fmt(
-////                        &::core::fmt::Arguments::new_v1(
-////                            &["Field ", " not found on type "],
-////                            &match (&field, &"Mutation") {
-////                                (arg0, arg1) => [
-////                                    ::core::fmt::ArgumentV1::new(arg0, ::core::fmt::Display::fmt),
-////                                    ::core::fmt::ArgumentV1::new(arg1, ::core::fmt::Display::fmt),
-////                                ],
-////                            },
-////                        ),
-////                        &("juniper_rocket/examples/rocket_server.rs", 57u32, 1u32),
-////                    )
-////                };
-////            }
-////        }
 //    }
 }
 
