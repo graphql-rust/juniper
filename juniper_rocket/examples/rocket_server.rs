@@ -98,11 +98,25 @@ where
                 }
             }
             "nothuman" => {
-                let ctx = executor.context();
-                let x: std::pin::Pin<Box<dyn futures::Stream<Item=Value<DefaultScalarValue>>>> = Box::pin(
-                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
-                );
+                use futures::channel::mpsc;
+                use futures::future::FutureExt;
+                use futures::stream::StreamExt;
+                use std::thread;
+                use std::time;
 
+                let (tx1, rx1) = mpsc::unbounded();
+
+                thread::spawn(move || {
+                    tx1.unbounded_send(1).unwrap();
+                    thread::sleep(time::Duration::from_millis(1000));
+                    tx1.unbounded_send(2).unwrap();
+                });
+
+
+                let x: std::pin::Pin<Box<dyn futures::Stream<Item=Value<DefaultScalarValue>>>> = Box::pin(
+//                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
+                    rx1.map(|x| Value::Scalar(DefaultScalarValue::Int(x)))
+                );
                 Box::pin(futures::future::ready(Ok(x)))
             },
             _ => {

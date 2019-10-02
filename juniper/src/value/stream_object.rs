@@ -111,11 +111,14 @@ where
 //    }
 
     pub fn into_joined_stream(self) -> ValuesStream<S> {
-        use futures::stream::StreamExt;
-        Box::pin(
-            futures::stream::iter(self.key_value_list)
+        let streams =
+            self.key_value_list
+                .into_iter()
                 .map(|(_, stream)| stream)
-                .flatten()
+                .collect::<Vec<_>>();
+
+        Box::pin(
+            futures::stream::select_all(streams)
         )
     }
 }

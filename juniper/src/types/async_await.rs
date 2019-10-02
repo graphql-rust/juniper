@@ -75,7 +75,6 @@ where
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ValuesStream<S>> {
-//        println!("selection set: {:#?}", selection_set);
         if let Some(selection_set) = selection_set {
             resolve_selection_set_into_stream(self, info, selection_set, executor)
         } else {
