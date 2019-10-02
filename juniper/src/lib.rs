@@ -185,6 +185,9 @@ pub use crate::types::async_await::GraphQLTypeAsync;
 
 #[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
+#[cfg(feature = "async")]
+pub use crate::executor::SubscriptionResultAsync;
+
 pub use crate::types::base::SubscriptionHandler;
 
 pub use crate::executor::ValuesIterator;

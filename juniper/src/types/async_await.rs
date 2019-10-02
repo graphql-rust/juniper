@@ -75,8 +75,11 @@ where
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ValuesStream<S>> {
-        //todo: implement default stream parser (?)
-        panic!("resolve_into_stream_async() must be implemented");
+        if let Some(selection_set) = selection_set {
+            resolve_selection_set_into_stream(self, info, selection_set, executor)
+        } else {
+            panic!("resolve_into_stream_async() must be implemented");
+        }
     }
 }
 
@@ -547,29 +550,29 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                 if let Some(value) = value {
                     object.add_field(&name, value);
                 } else {
-                    //todo: return null
-                    unimplemented!()
-//                    return Box::pin(futures::stream::once(
-//                        futures::future::ready(
-//                            Value::null()
-//                        )
-//                    ));
+                    let null_stream: ValuesStream<S> = Box::pin(futures::stream::once(
+                        futures::future::ready(
+                            Value::null()
+                        )
+                    ));
+                    return null_stream;
                 }
             }
             StreamValue::Nested(obj) => {
-                //todo: implement for nested objects
-                unimplemented!();
+                //todo: deal with nested values
+                unimplemented!()
 //                match obj {
 //                    v @ Value::Null => {
 //                        return v;
-//                    }
+//                        // if iterator is null
+//                    },
 //                    Value::Object(obj) => {
 //                        for (k, v) in obj {
 //                            merge_key_into(&mut object, &k, v);
 //                        }
-//                    }
+//                    },
 //                    _ => unreachable!(),
-//                },
+//                }
             }
         }
     }

@@ -5,7 +5,7 @@
 
 use rocket::{response::content, State};
 
-use juniper::{BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode, Selection, Value};
+use juniper::{BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode, Selection, Value, Arguments};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
 use juniper::parser::Spanning;
@@ -74,87 +74,105 @@ where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
 {
-    fn resolve_into_stream<'a>(
+    fn resolve_field_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+        field_name: &'a str,
+        arguments: &'a Arguments<DefaultScalarValue>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> BoxFuture<'a, juniper::ValuesStream> {
+    ) -> BoxFuture<'a, juniper::SubscriptionResultAsync<DefaultScalarValue>>
+    {
+        println!("field name: {}", field_name);
+
         let ctx = executor.context();
         let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
             futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
         );
 
-        Box::pin(futures::future::ready(x))
+        Box::pin(futures::future::ready( Ok(x) ))
     }
+
+//    fn resolve_into_stream<'a>(
+//        &'a self,
+//        info: &'a Self::TypeInfo,
+//        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+//        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+//    ) -> BoxFuture<'a, juniper::ValuesStream> {
+//        let ctx = executor.context();
+//        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
+//            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
+//        );
+//
+//        Box::pin(futures::future::ready(x))
+//    }
 }
 
 impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
-    fn resolve_into_iterator<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> juniper::ValuesIterator<DefaultScalarValue> {
-        println!("Selection: {:#?}", selection_set);
-        unimplemented!()
-//        match field {
-//            "human" => {
-//                {
-//                    (|| -> FieldResult<Human> {
-//                        let id = args.get::<String>("id").expect(
-//                            "Internal error: missing argument id - validation must have failed",
-//                        );
-//                        {
-//                            let ctx = executor.context();
-//                            Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(
-//                                ctx.0,
-//                            ))))
-//                        }
-//                    })()
-//                }
-//            }
-//            "nothuman" => {
-//                let res = {
-//                    (|| -> FieldResult<Human> {
-//                        let id = args.get::<String>("id").expect(
-//                            "Internal error: missing argument id - validation must have failed",
-//                        );
-//                        {
-//                            {
-//                                {
-//                                    ::std::rt::begin_panic(
-//                                        "internal error: entered unreachable code",
-//                                        &("juniper_rocket/examples/rocket_server.rs", 66u32, 9u32),
-//                                    )
-//                                }
-//                            }
-//                        }
-//                    })()
-//                };
-//                juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
-//                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-//                    None => Ok(juniper::Value::null()),
-//                })
-//            }
-//            _ => {
-//                {
-//                    ::std::rt::begin_panic_fmt(
-//                        &::core::fmt::Arguments::new_v1(
-//                            &["Field ", " not found on type "],
-//                            &match (&field, &"Mutation") {
-//                                (arg0, arg1) => [
-//                                    ::core::fmt::ArgumentV1::new(arg0, ::core::fmt::Display::fmt),
-//                                    ::core::fmt::ArgumentV1::new(arg1, ::core::fmt::Display::fmt),
-//                                ],
-//                            },
-//                        ),
-//                        &("juniper_rocket/examples/rocket_server.rs", 57u32, 1u32),
-//                    )
-//                };
-//            }
-//        }
-    }
+//    fn resolve_into_iterator<'a>(
+//        &'a self,
+//        info: &'a Self::TypeInfo,
+//        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+//        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+//    ) -> juniper::ValuesIterator<DefaultScalarValue> {
+//        println!("Selection: {:#?}", selection_set);
+//        unimplemented!()
+////        match field {
+////            "human" => {
+////                {
+////                    (|| -> FieldResult<Human> {
+////                        let id = args.get::<String>("id").expect(
+////                            "Internal error: missing argument id - validation must have failed",
+////                        );
+////                        {
+////                            let ctx = executor.context();
+////                            Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(
+////                                ctx.0,
+////                            ))))
+////                        }
+////                    })()
+////                }
+////            }
+////            "nothuman" => {
+////                let res = {
+////                    (|| -> FieldResult<Human> {
+////                        let id = args.get::<String>("id").expect(
+////                            "Internal error: missing argument id - validation must have failed",
+////                        );
+////                        {
+////                            {
+////                                {
+////                                    ::std::rt::begin_panic(
+////                                        "internal error: entered unreachable code",
+////                                        &("juniper_rocket/examples/rocket_server.rs", 66u32, 9u32),
+////                                    )
+////                                }
+////                            }
+////                        }
+////                    })()
+////                };
+////                juniper::IntoResolvable::into(res, executor.context()).and_then(|res| match res {
+////                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+////                    None => Ok(juniper::Value::null()),
+////                })
+////            }
+////            _ => {
+////                {
+////                    ::std::rt::begin_panic_fmt(
+////                        &::core::fmt::Arguments::new_v1(
+////                            &["Field ", " not found on type "],
+////                            &match (&field, &"Mutation") {
+////                                (arg0, arg1) => [
+////                                    ::core::fmt::ArgumentV1::new(arg0, ::core::fmt::Display::fmt),
+////                                    ::core::fmt::ArgumentV1::new(arg1, ::core::fmt::Display::fmt),
+////                                ],
+////                            },
+////                        ),
+////                        &("juniper_rocket/examples/rocket_server.rs", 57u32, 1u32),
+////                    )
+////                };
+////            }
+////        }
+//    }
 }
 
 #[derive(Debug)]
@@ -174,7 +192,7 @@ fn post_graphql_handler(
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
     let mut is_async = false;
-//    is_async = true;
+    is_async = true;
 
     if is_async {
         use futures::compat::Compat;
