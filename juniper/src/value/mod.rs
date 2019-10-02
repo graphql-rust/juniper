@@ -6,8 +6,7 @@ mod object;
 mod scalar;
 mod stream_object;
 
-pub use self::object::Object;
-pub use self::stream_object::StreamObject;
+pub use self::{object::Object, stream_object::StreamObject};
 
 pub use self::scalar::{
     DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,

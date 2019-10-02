@@ -186,13 +186,7 @@ pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
 #[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
-    pub  Result<
-        (
-            crate::executor::ValuesStream<S>,
-            Vec<ExecutionError<S>>,
-        ),
-        GraphQLError<'a>,
-    >,
+    pub Result<(crate::executor::ValuesStream<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
 impl<'a, S> GraphQLResponse<'a, S>

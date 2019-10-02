@@ -18,7 +18,10 @@ where
     S: 'static,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "StreamObject {{ key_value_list: Vec<(String, SubscriptionTypeAsync)> }}")
+        write!(
+            f,
+            "StreamObject {{ key_value_list: Vec<(String, SubscriptionTypeAsync)> }}"
+        )
     }
 }
 
@@ -96,30 +99,28 @@ where
 
     //todo: implement if needed
     //      or think about how to implement it later
-//    /// Recursively sort all keys by field.
-//    pub fn sort_by_field(&mut self) {
-//        self.key_value_list
-//            .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
-//        for (_, ref mut value) in &mut self.key_value_list {
-//            match value {
-//                Value::Object(ref mut o) => {
-//                    o.sort_by_field();
-//                }
-//                _ => {}
-//            }
-//        }
-//    }
+    //    /// Recursively sort all keys by field.
+    //    pub fn sort_by_field(&mut self) {
+    //        self.key_value_list
+    //            .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
+    //        for (_, ref mut value) in &mut self.key_value_list {
+    //            match value {
+    //                Value::Object(ref mut o) => {
+    //                    o.sort_by_field();
+    //                }
+    //                _ => {}
+    //            }
+    //        }
+    //    }
 
     pub fn into_joined_stream(self) -> ValuesStream<S> {
-        let streams =
-            self.key_value_list
-                .into_iter()
-                .map(|(_, stream)| stream)
-                .collect::<Vec<_>>();
+        let streams = self
+            .key_value_list
+            .into_iter()
+            .map(|(_, stream)| stream)
+            .collect::<Vec<_>>();
 
-        Box::pin(
-            futures::stream::select_all(streams)
-        )
+        Box::pin(futures::stream::select_all(streams))
     }
 }
 

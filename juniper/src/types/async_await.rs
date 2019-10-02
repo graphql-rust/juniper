@@ -12,8 +12,7 @@ use crate::{
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
-use crate::value::StreamObject;
-use crate::executor::SubscriptionResultAsync;
+use crate::{executor::SubscriptionResultAsync, value::StreamObject};
 
 /// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
@@ -333,12 +332,12 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
 ) -> BoxFuture<'a, ValuesStream<S>>
-    where
-        T: SubscriptionHandlerAsync<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        S: ScalarValue + Send + Sync + 'static,
-        CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    T: SubscriptionHandlerAsync<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance,
@@ -365,19 +364,18 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
 ) -> ValuesStream<S>
-    where
-        T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
-        S: ScalarValue + Send + Sync + 'static,
-        CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     use futures::stream::{FuturesOrdered, StreamExt};
 
     let mut object = StreamObject::with_capacity(selection_set.len());
 
-    let mut stream_values =
-        FuturesOrdered::<BoxFuture<'a, StreamValue<S>>>::new();
+    let mut stream_values = FuturesOrdered::<BoxFuture<'a, StreamValue<S>>>::new();
 
     let meta_type = executor
         .schema()
@@ -391,10 +389,10 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     for selection in selection_set {
         match *selection {
             Selection::Field(Spanning {
-                                 item: ref f,
-                                 start: ref start_pos,
-                                 ..
-                             }) => {
+                item: ref f,
+                start: ref start_pos,
+                ..
+            }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
@@ -405,20 +403,18 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                     object.add_field(
                         response_name,
                         Box::pin(futures::stream::once(futures::future::ready(
-                            Value::scalar(instance.concrete_type_name(executor.context(), info))
-                    ))),
+                            Value::scalar(instance.concrete_type_name(executor.context(), info)),
+                        ))),
                     );
                     continue;
                 }
 
-                let meta_field = meta_type.field_by_name(f.name.item)
-                    .unwrap_or_else(|| {
-                        panic!(format!(
-                            "Field {} not found on type {:?}",
-                            f.name.item,
-                            meta_type.name()
-                        )
-                    )
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
                 });
 
                 let exec_vars = executor.variables();
@@ -452,17 +448,17 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
 
                     // todo
                     let value = match res {
-//                        Ok(Value::Null) if is_non_null => None,
+                        //                        Ok(Value::Null) if is_non_null => None,
                         Ok(v) => Some(v),
                         Err(e) => {
                             sub_exec.push_error_at(e, pos);
 
                             None
-//                            if is_non_null {
-//                                None
-//                            } else {
-//                                Some(Value::null())
-//                            }
+                            //                            if is_non_null {
+                            //                                None
+                            //                            } else {
+                            //                                Some(Value::null())
+                            //                            }
                         }
                     };
 
@@ -474,8 +470,8 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                 stream_values.push(Box::pin(field_future));
             }
             Selection::FragmentSpread(Spanning {
-                                          item: ref spread, ..
-                                      }) => {
+                item: ref spread, ..
+            }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
@@ -491,16 +487,16 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                         &fragment.selection_set[..],
                         executor,
                     )
-                        .await;
+                    .await;
                     StreamValue::Nested(value)
                 };
                 stream_values.push(Box::pin(f));
             }
             Selection::InlineFragment(Spanning {
-                                          item: ref fragment,
-                                          start: ref start_pos,
-                                          ..
-                                      }) => {
+                item: ref fragment,
+                start: ref start_pos,
+                ..
+            }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }
@@ -513,20 +509,20 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                 if let Some(ref type_condition) = fragment.type_condition {
                     // FIXME: implement stream version.
                     unimplemented!()
-//                    let sub_result = instance.resolve_into_type(
-//                        info,
-//                        type_condition.item,
-//                        Some(&fragment.selection_set[..]),
-//                        &sub_exec,
-//                    );
-//
-//                    if let Ok(Value::Object(obj)) = sub_result {
-//                        for (k, v) in obj {
-//                            merge_key_into(&mut object, &k, v);
-//                        }
-//                    } else if let Err(e) = sub_result {
-//                        sub_exec.push_error_at(e, start_pos.clone());
-//                    }
+                //                    let sub_result = instance.resolve_into_type(
+                //                        info,
+                //                        type_condition.item,
+                //                        Some(&fragment.selection_set[..]),
+                //                        &sub_exec,
+                //                    );
+                //
+                //                    if let Ok(Value::Object(obj)) = sub_result {
+                //                        for (k, v) in obj {
+                //                            merge_key_into(&mut object, &k, v);
+                //                        }
+                //                    } else if let Err(e) = sub_result {
+                //                        sub_exec.push_error_at(e, start_pos.clone());
+                //                    }
                 } else {
                     let f = async move {
                         let value = resolve_selection_set_into_stream(
@@ -535,7 +531,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                             &fragment.selection_set[..],
                             &sub_exec,
                         )
-                            .await;
+                        .await;
                         StreamValue::Nested(value)
                     };
                     stream_values.push(Box::pin(f));
@@ -550,29 +546,26 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                 if let Some(value) = value {
                     object.add_field(&name, value);
                 } else {
-                    let null_stream: ValuesStream<S> = Box::pin(futures::stream::once(
-                        futures::future::ready(
-                            Value::null()
-                        )
-                    ));
+                    let null_stream: ValuesStream<S> =
+                        Box::pin(futures::stream::once(futures::future::ready(Value::null())));
                     return null_stream;
                 }
             }
             StreamValue::Nested(obj) => {
                 //todo: deal with nested values
                 unimplemented!()
-//                match obj {
-//                    v @ Value::Null => {
-//                        return v;
-//                        // if iterator is null
-//                    },
-//                    Value::Object(obj) => {
-//                        for (k, v) in obj {
-//                            merge_key_into(&mut object, &k, v);
-//                        }
-//                    },
-//                    _ => unreachable!(),
-//                }
+                //                match obj {
+                //                    v @ Value::Null => {
+                //                        return v;
+                //                        // if iterator is null
+                //                    },
+                //                    Value::Object(obj) => {
+                //                        for (k, v) in obj {
+                //                            merge_key_into(&mut object, &k, v);
+                //                        }
+                //                    },
+                //                    _ => unreachable!(),
+                //                }
             }
         }
     }

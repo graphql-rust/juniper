@@ -5,10 +5,12 @@
 
 use rocket::{response::content, State};
 
-use juniper::{BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode, Selection, Value, Arguments};
+use juniper::{
+    parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode,
+    Selection, Value,
+};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
-use juniper::parser::Spanning;
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
@@ -80,29 +82,22 @@ where
         field_name: &'a str,
         arguments: &'a Arguments<DefaultScalarValue>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> BoxFuture<'a, juniper::SubscriptionResultAsync<DefaultScalarValue>>
-    {
+    ) -> BoxFuture<'a, juniper::SubscriptionResultAsync<DefaultScalarValue>> {
         println!("field name: {}", field_name);
 
         match field_name {
             "human" => {
-                {
-                    let ctx = executor.context();
-                    let x: std::pin::Pin<Box<dyn futures::Stream<Item=Value<DefaultScalarValue>>>> = Box::pin(
-                        futures::stream::once( async {
-                            Value::Scalar(DefaultScalarValue::String("human".to_owned()))
-                        }),
-                    );
+                let ctx = executor.context();
+                let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> =
+                    Box::pin(futures::stream::once(async {
+                        Value::Scalar(DefaultScalarValue::String("human".to_owned()))
+                    }));
 
-                    Box::pin(futures::future::ready(Ok(x)))
-                }
+                Box::pin(futures::future::ready(Ok(x)))
             }
             "nothuman" => {
-                use futures::channel::mpsc;
-                use futures::future::FutureExt;
-                use futures::stream::StreamExt;
-                use std::thread;
-                use std::time;
+                use futures::{channel::mpsc, future::FutureExt, stream::StreamExt};
+                use std::{thread, time};
 
                 let (tx1, rx1) = mpsc::unbounded();
 
@@ -112,44 +107,44 @@ where
                     tx1.unbounded_send(2).unwrap();
                 });
 
-
-                let x: std::pin::Pin<Box<dyn futures::Stream<Item=Value<DefaultScalarValue>>>> = Box::pin(
-//                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
-                    rx1.map(|x| Value::Scalar(DefaultScalarValue::Int(x)))
-                );
+                let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> =
+                    Box::pin(
+                        //                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
+                        rx1.map(|x| Value::Scalar(DefaultScalarValue::Int(x))),
+                    );
                 Box::pin(futures::future::ready(Ok(x)))
-            },
+            }
             _ => {
                 panic!("field not found");
             }
         }
     }
 
-//    fn resolve_into_stream<'a>(
-//        &'a self,
-//        info: &'a Self::TypeInfo,
-//        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-//        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-//    ) -> BoxFuture<'a, juniper::ValuesStream> {
-//        let ctx = executor.context();
-//        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
-//            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
-//        );
-//
-//        Box::pin(futures::future::ready(x))
-//    }
+    //    fn resolve_into_stream<'a>(
+    //        &'a self,
+    //        info: &'a Self::TypeInfo,
+    //        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+    //        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+    //    ) -> BoxFuture<'a, juniper::ValuesStream> {
+    //        let ctx = executor.context();
+    //        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
+    //            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
+    //        );
+    //
+    //        Box::pin(futures::future::ready(x))
+    //    }
 }
 
 impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
-//    fn resolve_into_iterator<'a>(
-//        &'a self,
-//        info: &'a Self::TypeInfo,
-//        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-//        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-//    ) -> juniper::ValuesIterator<DefaultScalarValue> {
-//        println!("Selection: {:#?}", selection_set);
-//        unimplemented!()
-//    }
+    //    fn resolve_into_iterator<'a>(
+    //        &'a self,
+    //        info: &'a Self::TypeInfo,
+    //        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+    //        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+    //    ) -> juniper::ValuesIterator<DefaultScalarValue> {
+    //        println!("Selection: {:#?}", selection_set);
+    //        unimplemented!()
+    //    }
 }
 
 #[derive(Debug)]
@@ -172,8 +167,7 @@ fn post_graphql_handler(
     is_async = true;
 
     if is_async {
-        use futures::compat::Compat;
-        use futures::Future;
+        use futures::{compat::Compat, Future};
         use rocket::http::Status;
         use std::sync::mpsc::channel;
 

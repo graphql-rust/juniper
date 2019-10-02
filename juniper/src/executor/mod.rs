@@ -228,8 +228,7 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 pub type SubscriptionResult<S = DefaultScalarValue> = Result<ValuesIterator<S>, FieldError<S>>;
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<S = DefaultScalarValue> =
-    Result<ValuesStream<S>, FieldError<S>>;
+pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<ValuesStream<S>, FieldError<S>>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler

@@ -872,7 +872,7 @@ impl GraphQLTypeDefiniton {
                         }
                     });
 
-            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));;
+            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
 
             where_async
                 .predicates

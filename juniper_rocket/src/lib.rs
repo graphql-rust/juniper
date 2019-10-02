@@ -64,10 +64,11 @@ use juniper::{
 
 use juniper::GraphQLTypeAsync;
 
-use futures::future::{FutureExt, TryFutureExt};
-use futures::StreamExt;
-use rocket::data::FromDataFuture;
-use rocket::response::ResultFuture;
+use futures::{
+    future::{FutureExt, TryFutureExt},
+    StreamExt,
+};
+use rocket::{data::FromDataFuture, response::ResultFuture};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
