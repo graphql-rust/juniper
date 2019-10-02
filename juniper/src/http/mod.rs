@@ -188,7 +188,7 @@ pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
     pub  Result<
         (
-            crate::executor::SubscriptionTypeAsync<S>,
+            crate::executor::StreamOfValues<S>,
             Vec<ExecutionError<S>>,
         ),
         GraphQLError<'a>,

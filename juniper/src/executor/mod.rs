@@ -229,12 +229,12 @@ pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S
 pub type SubscriptionResult<S = DefaultScalarValue> = Result<SubscriptionType<S>, FieldError<S>>;
 #[cfg(feature = "async")]
 pub type SubscriptionResultAsync<S = DefaultScalarValue> =
-    Result<SubscriptionTypeAsync<S>, FieldError<S>>;
+    Result<StreamOfValues<S>, FieldError<S>>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
 // todo: rename to subscription value async
-pub type SubscriptionTypeAsync<S = DefaultScalarValue> =
+pub type StreamOfValues<S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 
 /// The type returned from subscription handler
@@ -555,7 +555,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> SubscriptionTypeAsync<S>
+    ) -> StreamOfValues<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -1105,7 +1105,7 @@ pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, Subscri
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(SubscriptionTypeAsync<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(StreamOfValues<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

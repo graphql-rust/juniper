@@ -189,7 +189,7 @@ pub use crate::types::base::SubscriptionHandler;
 
 pub use crate::executor::SubscriptionType;
 #[cfg(feature = "async")]
-pub use crate::executor::SubscriptionTypeAsync;
+pub use crate::executor::StreamOfValues;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -351,7 +351,7 @@ pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     context: &CtxT,
 ) -> Result<
     (
-        crate::executor::SubscriptionTypeAsync<S>,
+        crate::executor::StreamOfValues<S>,
         Vec<ExecutionError<S>>,
     ),
     GraphQLError<'a>,

@@ -79,7 +79,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> BoxFuture<'a, juniper::SubscriptionTypeAsync> {
+    ) -> BoxFuture<'a, juniper::StreamOfValues> {
         let ctx = executor.context();
         let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
             futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
