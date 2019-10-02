@@ -1,7 +1,7 @@
 use crate::{
     ast::Selection,
     value::{Object, ScalarRefValue, ScalarValue, Value},
-    StreamOfValues,
+    ValuesStream,
 };
 
 use crate::{
@@ -74,7 +74,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, StreamOfValues<S>> {
+    ) -> BoxFuture<'a, ValuesStream<S>> {
         //todo: implement default stream parser (?)
         panic!("resolve_into_stream_async() must be implemented");
     }
@@ -329,7 +329,7 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> BoxFuture<'a, StreamOfValues<S>>
+) -> BoxFuture<'a, ValuesStream<S>>
     where
         T: SubscriptionHandlerAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
@@ -347,12 +347,12 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
 
 struct StreamField<S> {
     name: String,
-    value: Option<StreamOfValues<S>>,
+    value: Option<ValuesStream<S>>,
 }
 
 enum StreamValue<S> {
     Field(StreamField<S>),
-    Nested(StreamOfValues<S>),
+    Nested(ValuesStream<S>),
 }
 
 #[cfg(feature = "async")]
@@ -361,7 +361,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> StreamOfValues<S>
+) -> ValuesStream<S>
     where
         T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,

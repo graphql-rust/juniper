@@ -187,9 +187,9 @@ pub use crate::types::async_await::GraphQLTypeAsync;
 pub use crate::types::async_await::SubscriptionHandlerAsync;
 pub use crate::types::base::SubscriptionHandler;
 
-pub use crate::executor::SubscriptionType;
+pub use crate::executor::ValuesIterator;
 #[cfg(feature = "async")]
-pub use crate::executor::StreamOfValues;
+pub use crate::executor::ValuesStream;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -303,7 +303,7 @@ pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::executor::ValuesIterator<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -351,7 +351,7 @@ pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     context: &CtxT,
 ) -> Result<
     (
-        crate::executor::StreamOfValues<S>,
+        crate::executor::ValuesStream<S>,
         Vec<ExecutionError<S>>,
     ),
     GraphQLError<'a>,

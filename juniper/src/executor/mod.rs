@@ -226,19 +226,19 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
-pub type SubscriptionResult<S = DefaultScalarValue> = Result<SubscriptionType<S>, FieldError<S>>;
+pub type SubscriptionResult<S = DefaultScalarValue> = Result<ValuesIterator<S>, FieldError<S>>;
 #[cfg(feature = "async")]
 pub type SubscriptionResultAsync<S = DefaultScalarValue> =
-    Result<StreamOfValues<S>, FieldError<S>>;
+    Result<ValuesStream<S>, FieldError<S>>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
 // todo: rename to subscription value async
-pub type StreamOfValues<S = DefaultScalarValue> =
+pub type ValuesStream<S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 
 /// The type returned from subscription handler
-pub type SubscriptionType<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'static>;
+pub type ValuesIterator<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'static>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -512,7 +512,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> crate::executor::SubscriptionType<S>
+    ) -> crate::executor::ValuesIterator<S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -555,7 +555,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> StreamOfValues<S>
+    ) -> ValuesStream<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -899,7 +899,7 @@ pub fn execute_validated_subcription<'a, QueryT, MutationT, SubscriptionT, CtxT,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::executor::ValuesIterator<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT>,
@@ -1105,7 +1105,7 @@ pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, Subscri
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(StreamOfValues<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(ValuesStream<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

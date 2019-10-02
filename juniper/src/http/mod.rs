@@ -180,7 +180,7 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
 
 //todo: remove pub (pub is used in playground to access result)
 pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
-    pub Result<(crate::executor::SubscriptionType<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    pub Result<(crate::executor::ValuesIterator<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
 #[cfg(feature = "async")]
@@ -188,7 +188,7 @@ pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
     pub  Result<
         (
-            crate::executor::StreamOfValues<S>,
+            crate::executor::ValuesStream<S>,
             Vec<ExecutionError<S>>,
         ),
         GraphQLError<'a>,

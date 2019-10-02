@@ -357,7 +357,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::executor::SubscriptionType<S> {
+    ) -> crate::executor::ValuesIterator<S> {
         panic!("resolve_into_stream() must be implemented");
     }
 }
