@@ -1,14 +1,31 @@
 use std::{iter::FromIterator, vec::IntoIter};
 
 use super::Value;
+use crate::SubscriptionTypeAsync;
 
-/// A StreamObject value
-#[derive(Debug, Clone, PartialEq)]
-pub struct StreamObject<S> {
-    key_value_list: Vec<(String, Value<S>)>,
+// todo: clone, PartialEq
+//#[derive()]
+pub struct StreamObject<S>
+where
+    S: 'static,
+{
+    key_value_list: Vec<(String, SubscriptionTypeAsync<S>)>,
 }
 
-impl<S> StreamObject<S> {
+// todo: better debug
+impl<S> std::fmt::Debug for StreamObject<S>
+where
+    S: 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "StreamObject {{ key_value_list: Vec<(String, SubscriptionTypeAsync)> }}")
+    }
+}
+
+impl<S> StreamObject<S>
+where
+    S: 'static,
+{
     /// Create a new StreamObject value with a fixed number of
     /// preallocated slots for field-value pairs
     pub fn with_capacity(size: usize) -> Self {
@@ -21,7 +38,7 @@ impl<S> StreamObject<S> {
     ///
     /// If there is already a field with the same name the old value
     /// is returned
-    pub fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
+    pub fn add_field<K>(&mut self, k: K, value: SubscriptionTypeAsync<S>) -> Option<SubscriptionTypeAsync<S>>
     where
         K: Into<String>,
         for<'a> &'a str: PartialEq<K>,
@@ -48,14 +65,14 @@ impl<S> StreamObject<S> {
     }
 
     /// Get a iterator over all field value pairs
-    pub fn iter(&self) -> impl Iterator<Item = &(String, Value<S>)> {
+    pub fn iter(&self) -> impl Iterator<Item = &(String, SubscriptionTypeAsync<S>)> {
         FieldIter {
             inner: self.key_value_list.iter(),
         }
     }
 
     /// Get a iterator over all mutable field value pairs
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, Value<S>)> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, SubscriptionTypeAsync<S>)> {
         FieldIterMut {
             inner: self.key_value_list.iter_mut(),
         }
@@ -67,7 +84,7 @@ impl<S> StreamObject<S> {
     }
 
     /// Get the value for a given field
-    pub fn get_field_value<K>(&self, key: K) -> Option<&Value<S>>
+    pub fn get_field_value<K>(&self, key: K) -> Option<&SubscriptionTypeAsync<S>>
     where
         for<'a> &'a str: PartialEq<K>,
     {
@@ -77,23 +94,34 @@ impl<S> StreamObject<S> {
             .map(|&(_, ref value)| value)
     }
 
-    /// Recursively sort all keys by field.
-    pub fn sort_by_field(&mut self) {
-        self.key_value_list
-            .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
-        for (_, ref mut value) in &mut self.key_value_list {
-            match value {
-                Value::StreamObject(ref mut o) => {
-                    o.sort_by_field();
-                }
-                _ => {}
-            }
-        }
+    //todo: implement if needed
+    //      or think about how to implement it later
+//    /// Recursively sort all keys by field.
+//    pub fn sort_by_field(&mut self) {
+//        self.key_value_list
+//            .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
+//        for (_, ref mut value) in &mut self.key_value_list {
+//            match value {
+//                Value::Object(ref mut o) => {
+//                    o.sort_by_field();
+//                }
+//                _ => {}
+//            }
+//        }
+//    }
+
+    pub fn into_joined_stream(self) -> SubscriptionTypeAsync<S> {
+        use futures::stream::StreamExt;
+        Box::pin(
+            futures::stream::iter(self.key_value_list)
+                .map(|(_, stream)| stream)
+                .flatten()
+        )
     }
 }
 
 impl<S> IntoIterator for StreamObject<S> {
-    type Item = (String, Value<S>);
+    type Item = (String, SubscriptionTypeAsync<S>);
     type IntoIter = IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -101,20 +129,22 @@ impl<S> IntoIterator for StreamObject<S> {
     }
 }
 
-impl<S> From<StreamObject<S>> for Value<S> {
-    fn from(o: StreamObject<S>) -> Self {
-        Value::StreamObject(o)
-    }
-}
+//todo: from that async type
+//impl<S> From<StreamObject<S>> for Value<S> {
+//    fn from(o: StreamObject<S>) -> Self {
+//        Value::StreamObject(o)
+//    }
+//}
 
-impl<K, S> FromIterator<(K, Value<S>)> for StreamObject<S>
+impl<K, S> FromIterator<(K, SubscriptionTypeAsync<S>)> for StreamObject<S>
 where
     K: Into<String>,
+    S: 'static,
     for<'a> &'a str: PartialEq<K>,
 {
     fn from_iter<I>(iter: I) -> Self
     where
-        I: IntoIterator<Item = (K, Value<S>)>,
+        I: IntoIterator<Item = (K, SubscriptionTypeAsync<S>)>,
     {
         let iter = iter.into_iter();
         let mut ret = Self {
@@ -129,11 +159,11 @@ where
 
 #[doc(hidden)]
 pub struct FieldIter<'a, S: 'a> {
-    inner: ::std::slice::Iter<'a, (String, Value<S>)>,
+    inner: ::std::slice::Iter<'a, (String, SubscriptionTypeAsync<S>)>,
 }
 
 impl<'a, S> Iterator for FieldIter<'a, S> {
-    type Item = &'a (String, Value<S>);
+    type Item = &'a (String, SubscriptionTypeAsync<S>);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
@@ -142,11 +172,11 @@ impl<'a, S> Iterator for FieldIter<'a, S> {
 
 #[doc(hidden)]
 pub struct FieldIterMut<'a, S: 'a> {
-    inner: ::std::slice::IterMut<'a, (String, Value<S>)>,
+    inner: ::std::slice::IterMut<'a, (String, SubscriptionTypeAsync<S>)>,
 }
 
 impl<'a, S> Iterator for FieldIterMut<'a, S> {
-    type Item = &'a mut (String, Value<S>);
+    type Item = &'a mut (String, SubscriptionTypeAsync<S>);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()

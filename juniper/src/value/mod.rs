@@ -29,7 +29,6 @@ pub enum Value<S = DefaultScalarValue> {
     Scalar(S),
     List(Vec<Value<S>>),
     Object(Object<S>),
-    StreamObject(StreamObject<S>),
 }
 
 impl<S> Value<S>
@@ -187,8 +186,6 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
                     })
                     .collect(),
             ),
-            //todo: implement to_input_value() for StreamObject
-            Value::StreamObject(ref o) => unimplemented!()
         }
     }
 }

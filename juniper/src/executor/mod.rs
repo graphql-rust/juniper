@@ -233,6 +233,7 @@ pub type SubscriptionResultAsync<S = DefaultScalarValue> =
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
+// todo: rename to subscription value async
 pub type SubscriptionTypeAsync<S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 

@@ -8,6 +8,7 @@ use rocket::{response::content, State};
 use juniper::{BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode, Selection, Value};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
+use juniper::parser::Spanning;
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]

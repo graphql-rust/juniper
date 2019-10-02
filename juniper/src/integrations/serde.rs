@@ -403,8 +403,6 @@ where
             Value::Scalar(ref s) => s.serialize(serializer),
             Value::List(ref v) => v.serialize(serializer),
             Value::Object(ref v) => v.serialize(serializer),
-            //todo: serialize StreamObject
-            Value::StreamObject(ref v) => unimplemented!(),
         }
     }
 }
