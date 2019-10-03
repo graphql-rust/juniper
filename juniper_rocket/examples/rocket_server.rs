@@ -3,7 +3,7 @@
 
 // For now, decided to do the following:
 //   [ ] Implement field resolvers for subscriptions
-//       [ ] Sync
+//       [✔] Sync
 //       [±] Async TODO: check resolver
 //   [ ] Group field resolvers to avoid code duplication
 //       [ ] Sync
@@ -149,15 +149,41 @@ where
 }
 
 impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
-    fn resolve_into_iterator<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> juniper::ValuesIterator<DefaultScalarValue> {
-        println!("Selection: {:#?}", selection_set);
-        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(32))))
+    fn resolve_field_into_iterator(
+        &self,
+        info: &Self::TypeInfo,
+        field_name: &str,
+        arguments: &Arguments<DefaultScalarValue>,
+        executor: &Executor<Self::Context, DefaultScalarValue>,
+    ) -> juniper::SubscriptionResult<DefaultScalarValue> {
+
+        match field_name {
+            "human" => {
+                Ok(
+                    Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(22))))
+                )
+            }
+            "nothuman" => {
+                Ok(
+                    Box::new(std::iter::once(Value::Scalar(DefaultScalarValue::Int(32))))
+                )
+            }
+            _ => {
+                panic!("field not found");
+            }
+        }
     }
+
+
+//    fn resolve_into_iterator<'a>(
+//        &'a self,
+//        info: &'a Self::TypeInfo,
+//        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+//        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+//    ) -> juniper::ValuesIterator<DefaultScalarValue> {
+//        println!("Selection: {:#?}", selection_set);
+//        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(32))))
+//    }
 }
 
 #[derive(Debug)]

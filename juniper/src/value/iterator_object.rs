@@ -4,7 +4,7 @@ use super::Value;
 use crate::ValuesIterator;
 
 // todo: clone, PartialEq
-//#[derive()]
+//#[derive(Debug)]
 pub struct IterObject<S>
 where
     S: 'static,
@@ -20,7 +20,9 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "IterObject {{ key_value_list: Vec<(String, SubscriptionType)> }}"
+            "IterObject: {:?}", self.key_value_list.iter().map(|(string, obj)| {
+                string
+            }).collect::<Vec<_>>()
         )
     }
 }
@@ -115,7 +117,7 @@ where
     //        }
     //    }
 
-    pub fn into_joined_stream(self) -> ValuesIterator<S> {
+    pub fn into_joined_iterator(self) -> ValuesIterator<S> {
         use std::iter::Iterator;
 
         let iterators = self
@@ -127,6 +129,10 @@ where
         Box::new(iterators)
     }
 
+    //todo: more functions for return type
+    pub fn into_key_value_list(self) -> Vec<(String, ValuesIterator<S>)> {
+        self.key_value_list
+    }
 }
 
 impl<S> IntoIterator for IterObject<S> {

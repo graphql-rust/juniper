@@ -190,6 +190,8 @@ pub use crate::value::StreamObject;
 
 #[cfg(feature = "async")]
 pub use crate::executor::SubscriptionResultAsync;
+
+pub use crate::executor::SubscriptionResult;
 #[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
 
