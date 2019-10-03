@@ -399,7 +399,11 @@ where
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(&self, info: &T::TypeInfo, value: &T) -> SubscriptionResult<S>
+    pub fn subscribe<T>(
+        &self,
+        info: &T::TypeInfo,
+        value: &T
+    ) -> Result<crate::IterObject<S>, FieldError<S>>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
     {
@@ -411,7 +415,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> SubscriptionResult<S>
+    ) -> Result<crate::IterObject<S>, FieldError<S>>
     where
         NewCtxT: FromContext<CtxT>,
         T: crate::SubscriptionHandler<S, Context = NewCtxT>,
@@ -511,7 +515,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> crate::executor::ValuesIterator<S>
+    ) -> crate::IterObject<S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -520,7 +524,9 @@ where
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
-                Box::new(std::iter::once(Value::null()))
+                unimplemented!()
+                //todo: return null iter object
+//                Box::new(std::iter::once(Value::null()))
             }
         }
     }
@@ -898,9 +904,9 @@ pub fn execute_validated_subcription<'a, QueryT, MutationT, SubscriptionT, CtxT,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::executor::ValuesIterator<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::IterObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,

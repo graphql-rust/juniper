@@ -20,7 +20,7 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "IterObject {{ key_value_list: Vec<(String, SubscriptionTypeAsync)> }}"
+            "IterObject {{ key_value_list: Vec<(String, SubscriptionType)> }}"
         )
     }
 }

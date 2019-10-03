@@ -4,13 +4,13 @@
 // For now, decided to do the following:
 //   [ ] Implement field resolvers for subscriptions
 //       [ ] Sync
-//       [x] Async; TODO: check resolver
+//       [±] Async TODO: check resolver
 //   [ ] Group field resolvers to avoid code duplication
 //       [ ] Sync
 //       [ ] Async
 //   [ ] Start implementing FragmentSpread and InlineFragment
 //   [ ] after all that push changes to GitHub
-//   [ ] consider doing unions and other stuff
+//   [ ] consider doing unions, nested selections and other stuff
 //   [ ] consider checking schema resolver and moving metadata to a different base type
 //
 

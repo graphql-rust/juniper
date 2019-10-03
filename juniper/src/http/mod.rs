@@ -179,9 +179,11 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
 );
 
 //todo: remove pub (pub is used in playground to access result)
-pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
-    pub Result<(crate::executor::ValuesIterator<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
-);
+pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>
+(
+    pub Result<(crate::IterObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+)
+    where S: 'static;
 
 #[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(

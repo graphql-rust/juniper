@@ -10,6 +10,7 @@ use crate::{
     schema::meta::{Argument, MetaType},
 };
 use crate::executor::SubscriptionResult;
+use crate::value::IterObject;
 
 /// GraphQL type kind
 ///
@@ -354,12 +355,19 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::executor::ValuesIterator<S> {
-//        if let Some(selection_set) = selection_set {
-//            resolve_selection_set_into_iterator(self, info, selection_set, executor)
-//        } else {
+    // todo: return object of iterators
+    ) -> IterObject<S> {
+        if let Some(selection_set) = selection_set {
+            // init our **local** object `object` where we will collect stuff into
+            let mut object = IterObject::with_capacity(selection_set.len());
+
+            resolve_selection_set_into_iterator(self, info, selection_set, executor, &mut object);
+            //at this point `O` should be an object which could be transformed to a list of string/ValuesIterator
+            object
+
+        } else {
             panic!("resolve_into_iterator() must be implemented");
-//        }
+        }
     }
     #[allow(unused_variables)]
     fn resolve_field_into_iterator(
@@ -374,107 +382,110 @@ where
 
 }
 
-//pub fn resolve_selection_set_into_iterator<T, CtxT, S>(
-//    instance: &T,
-//    info: &T::TypeInfo,
-//    selection_set: &[Selection<S>],
-//    executor: &Executor<CtxT, S>,
-//) -> ValuesIterator<S>
-//where
-//    T: SubscriptionHandler<S, Context = CtxT>,
-//    S: ScalarValue,
-//    for<'b> &'b S: ScalarRefValue<'b>,
-//{
-//    use crate::value::IterObject;
-//    let mut object = IterObject::with_capacity(selection_set.len());
-//
-////    let mut stream_values = FuturesOrdered::<BoxFuture<'a, StreamValue<S>>>::new();
-//
-//    let meta_type = executor
-//        .schema()
-//        .concrete_type_by_name(
-//            T::name(info)
-//                .expect("Resolving named type's selection set")
-//                .as_ref(),
-//        )
-//        .expect("Type not found in schema");
-//
-//    for selection in selection_set {
-//        match *selection {
-//            Selection::Field(Spanning {
-//                item: ref f,
-//                start: ref start_pos,
-//                ..
-//            }) => {
-//                if is_excluded(&f.directives, executor.variables()) {
-//                    continue;
-//                }
-//
-//                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
-//
-//                if f.name.item == "__typename" {
-//                    object.add_field(
-//                        response_name,
-//                        Box::new(std::iter::once(
-//                            Value::scalar(instance.concrete_type_name(executor.context(), info))
-//                        )),
-//                    );
-//                    continue;
-//                }
-//
-//                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
-//                    panic!(format!(
-//                        "Field {} not found on type {:?}",
-//                        f.name.item,
-//                        meta_type.name()
-//                    ))
-//                });
-//
-//                let exec_vars = executor.variables();
-//
-//                let sub_exec = executor.field_sub_executor(
-//                    response_name,
-//                    f.name.item,
-//                    start_pos.clone(),
-//                    f.selection_set.as_ref().map(|v| &v[..]),
-//                );
-//
-//                let field_result = instance.resolve_field_into_iterator(
-//                    info,
-//                    f.name.item,
-//                    &Arguments::new(
-//                        f.arguments.as_ref().map(|m| {
-//                            m.item
-//                                .iter()
-//                                .map(|&(ref k, ref v)| {
-//                                    (k.item, v.item.clone().into_const(exec_vars))
-//                                })
-//                                .collect()
-//                        }),
-//                        &meta_field.arguments,
-//                    ),
-//                    &sub_exec,
-//                );
-//
-//                match field_result {
-////                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
-//                    Ok(v) => v,
-////                        merge_key_into(object, response_name, v),
-//                    Err(e) => {
-//                        sub_exec.push_error_at(e, start_pos.clone());
-//
-////                        if meta_field.field_type.is_non_null() {
-////                            return false;
-////                        }
-//
-////                        object.add_field(response_name, Value::null());
-//                        Box::new(std::iter::once(Value::null()))
-//                    }
-//                }
-//            }
-//            Selection::FragmentSpread(Spanning {
-//                item: ref spread, ..
-//            }) => {
+// todo: make this function generic over object type
+//todo: add non-null fields support
+pub fn resolve_selection_set_into_iterator<T, CtxT, S>(
+    instance: &T,
+    info: &T::TypeInfo,
+    selection_set: &[Selection<S>],
+    executor: &Executor<CtxT, S>,
+    object: &mut IterObject<S>,
+)
+where
+    T: SubscriptionHandler<S, Context = CtxT>,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    let meta_type = executor
+        .schema()
+        .concrete_type_by_name(
+            T::name(info)
+                .expect("Resolving named type's selection set")
+                .as_ref(),
+        )
+        .expect("Type not found in schema");
+
+    // for each top-level selection (which is field name's selection)
+    for selection in selection_set {
+        match *selection {
+            Selection::Field(Spanning {
+                item: ref f,
+                start: ref start_pos,
+                ..
+            }) => {
+                if is_excluded(&f.directives, executor.variables()) {
+                    continue;
+                }
+
+                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
+
+                if f.name.item == "__typename" {
+                    object.add_field(
+                        response_name,
+                        Box::new(std::iter::once(
+                            Value::scalar(instance.concrete_type_name(executor.context(), info))
+                        )),
+                    );
+                    continue;
+                }
+
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
+                });
+
+                let exec_vars = executor.variables();
+
+                let sub_exec = executor.field_sub_executor(
+                    response_name,
+                    f.name.item,
+                    start_pos.clone(),
+                    f.selection_set.as_ref().map(|v| &v[..]),
+                );
+
+                let field_result = instance.resolve_field_into_iterator(
+                    info,
+                    f.name.item,
+                    &Arguments::new(
+                        f.arguments.as_ref().map(|m| {
+                            m.item
+                                .iter()
+                                .map(|&(ref k, ref v)| {
+                                    (k.item, v.item.clone().into_const(exec_vars))
+                                })
+                                .collect()
+                        }),
+                        &meta_field.arguments,
+                    ),
+                    &sub_exec,
+                );
+
+                object.add_field(
+                    response_name,
+                    match field_result {
+                        Ok(v) => v,
+                        Err(e) => {
+                            sub_exec.push_error_at(e, start_pos.clone());
+
+    //                        if meta_field.field_type.is_non_null() {
+    //                            return false;
+    //                        }
+
+    //                        object.add_field(response_name, Value::null());
+                            //todo: consider using repeat instead of once
+                            Box::new(std::iter::once(Value::null()))
+                        }
+                    }
+                );
+            }
+            Selection::FragmentSpread(Spanning {
+                item: ref spread, ..
+            }) => {
+                // todo: implement subscription parsing for FragmentSpread
+                unimplemented!()
 //                if is_excluded(&spread.directives, executor.variables()) {
 //                    continue;
 //                }
@@ -493,12 +504,14 @@ where
 //                    Box::new(std::iter::once(Value::null()))
 ////                    return false;
 //                }
-//            }
-//            Selection::InlineFragment(Spanning {
-//                item: ref fragment,
-//                start: ref start_pos,
-//                ..
-//            }) => {
+            }
+            Selection::InlineFragment(Spanning {
+                item: ref fragment,
+                start: ref start_pos,
+                ..
+            }) => {
+                //todo: implement inline fragment for subscriptions
+                unimplemented!()
 //                if is_excluded(&fragment.directives, executor.variables()) {
 //                    continue;
 //                }
@@ -532,10 +545,10 @@ where
 //                ) {
 //                    return false;
 //                }
-//            }
-//        }
-//    }
-//}
+            }
+        }
+    }
+}
 
 pub fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
