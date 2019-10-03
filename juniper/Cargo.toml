@@ -45,7 +45,7 @@ serde_json = { version="1.0.2", optional = true }
 url = { version = "1.5.1", optional = true }
 uuid = { version = "0.7", optional = true }
 
-futures-preview = { version = "0.3.0-alpha.18", optional = true, features = ["nightly", "async-await"] }
+futures-preview = { version = "0.3.0-alpha.19", optional = true, features = ["async-await"] }
 
 [dev-dependencies]
 bencher = "0.1.2"

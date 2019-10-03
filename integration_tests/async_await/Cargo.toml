@@ -8,5 +8,5 @@ edition = "2018"
 
 [dependencies]
 juniper = { path = "../../juniper", features = ["async"] }
-futures-preview = "0.3.0-alpha.18"
+futures-preview = "0.3.0-alpha.19"
 tokio = "0.2.0-alpha.2"

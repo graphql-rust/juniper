@@ -10,7 +10,7 @@ edition = "2018"
 log = "0.4.8"
 env_logger = "0.6.2"
 warp = "0.1.19"
-futures-preview = { version = "0.3.0-alpha.18", features = ["nightly", "async-await", "compat"] }
+futures-preview = { version = "0.3.0-alpha.19", features = ["nightly", "async-await", "compat"] }
 reqwest = "0.9.19"
 
 juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }

@@ -419,7 +419,7 @@ where
 
     fn from_data(request: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
         use futures::io::AsyncReadExt;
-        use rocket::AsyncReadExt as _;
+        use tokio_io::AsyncReadExt as _;
         if !request.content_type().map_or(false, |ct| ct.is_json()) {
             return Box::pin(async move { Forward(data) });
         }
