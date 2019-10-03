@@ -1056,7 +1056,7 @@ where
             OperationType::Subscription => root_node
                 .schema
                 .subscription_type()
-                .expect("No mutation type found"),
+                .expect("No subscription type found"),
         };
 
         let executor = Executor {
