@@ -136,15 +136,15 @@ where
 }
 
 impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
-    //    fn resolve_into_iterator<'a>(
-    //        &'a self,
-    //        info: &'a Self::TypeInfo,
-    //        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-    //        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    //    ) -> juniper::ValuesIterator<DefaultScalarValue> {
-    //        println!("Selection: {:#?}", selection_set);
-    //        unimplemented!()
-    //    }
+    fn resolve_into_iterator<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+    ) -> juniper::ValuesIterator<DefaultScalarValue> {
+        println!("Selection: {:#?}", selection_set);
+        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(32))))
+    }
 }
 
 #[derive(Debug)]
@@ -164,7 +164,7 @@ fn post_graphql_handler(
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
     let mut is_async = false;
-    is_async = true;
+//    is_async = true;
 
     if is_async {
         use futures::{compat::Compat, Future};

@@ -5,6 +5,7 @@ use crate::{
 mod object;
 mod scalar;
 mod stream_object;
+mod iterator_object;
 
 pub use self::{object::Object, stream_object::StreamObject};
 

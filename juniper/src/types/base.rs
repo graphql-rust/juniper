@@ -362,7 +362,7 @@ where
     }
 }
 
-pub fn resolve_selection_set_into<T, CtxT, S>(
+pub fn resolve_selection_set_into_iterator<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection<S>],
@@ -370,7 +370,7 @@ pub fn resolve_selection_set_into<T, CtxT, S>(
     result: &mut Object<S>,
 ) -> bool
 where
-    T: GraphQLType<S, Context = CtxT>,
+    T: SubscriptionHandler<S, Context = CtxT>,
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -478,6 +478,162 @@ where
                 start: ref start_pos,
                 ..
             }) => {
+                if is_excluded(&fragment.directives, executor.variables()) {
+                    continue;
+                }
+
+                let sub_exec = executor.type_sub_executor(
+                    fragment.type_condition.as_ref().map(|c| c.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                if let Some(ref type_condition) = fragment.type_condition {
+                    let sub_result = instance.resolve_into_type(
+                        info,
+                        type_condition.item,
+                        Some(&fragment.selection_set[..]),
+                        &sub_exec,
+                    );
+
+                    if let Ok(Value::Object(object)) = sub_result {
+                        for (k, v) in object {
+                            merge_key_into(result, &k, v);
+                        }
+                    } else if let Err(e) = sub_result {
+                        sub_exec.push_error_at(e, start_pos.clone());
+                    }
+                } else if !resolve_selection_set_into(
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    &sub_exec,
+                    result,
+                ) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    true
+}
+
+pub fn resolve_selection_set_into<T, CtxT, S>(
+    instance: &T,
+    info: &T::TypeInfo,
+    selection_set: &[Selection<S>],
+    executor: &Executor<CtxT, S>,
+    result: &mut Object<S>,
+) -> bool
+    where
+        T: GraphQLType<S, Context = CtxT>,
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+{
+    let meta_type = executor
+        .schema()
+        .concrete_type_by_name(
+            T::name(info)
+                .expect("Resolving named type's selection set")
+                .as_ref(),
+        )
+        .expect("Type not found in schema");
+
+    for selection in selection_set {
+        match *selection {
+            Selection::Field(Spanning {
+                                 item: ref f,
+                                 start: ref start_pos,
+                                 ..
+                             }) => {
+                if is_excluded(&f.directives, executor.variables()) {
+                    continue;
+                }
+
+                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
+
+                if f.name.item == "__typename" {
+                    result.add_field(
+                        response_name,
+                        Value::scalar(instance.concrete_type_name(executor.context(), info)),
+                    );
+                    continue;
+                }
+
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
+                });
+
+                let exec_vars = executor.variables();
+
+                let sub_exec = executor.field_sub_executor(
+                    response_name,
+                    f.name.item,
+                    start_pos.clone(),
+                    f.selection_set.as_ref().map(|v| &v[..]),
+                );
+
+                let field_result = instance.resolve_field(
+                    info,
+                    f.name.item,
+                    &Arguments::new(
+                        f.arguments.as_ref().map(|m| {
+                            m.item
+                                .iter()
+                                .map(|&(ref k, ref v)| {
+                                    (k.item, v.item.clone().into_const(exec_vars))
+                                })
+                                .collect()
+                        }),
+                        &meta_field.arguments,
+                    ),
+                    &sub_exec,
+                );
+
+                match field_result {
+                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
+                    Ok(v) => merge_key_into(result, response_name, v),
+                    Err(e) => {
+                        sub_exec.push_error_at(e, start_pos.clone());
+
+                        if meta_field.field_type.is_non_null() {
+                            return false;
+                        }
+
+                        result.add_field(response_name, Value::null());
+                    }
+                }
+            }
+            Selection::FragmentSpread(Spanning {
+                                          item: ref spread, ..
+                                      }) => {
+                if is_excluded(&spread.directives, executor.variables()) {
+                    continue;
+                }
+
+                let fragment = &executor
+                    .fragment_by_name(spread.name.item)
+                    .expect("Fragment could not be found");
+
+                if !resolve_selection_set_into(
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    executor,
+                    result,
+                ) {
+                    return false;
+                }
+            }
+            Selection::InlineFragment(Spanning {
+                                          item: ref fragment,
+                                          start: ref start_pos,
+                                          ..
+                                      }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;
                 }

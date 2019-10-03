@@ -237,7 +237,7 @@ pub type ValuesStream<S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>>>>;
 
 /// The type returned from subscription handler
-pub type ValuesIterator<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'static>;
+pub type ValuesIterator<S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
