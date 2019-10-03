@@ -110,9 +110,20 @@ where
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
                 let (res, err) = request.subscribe(root_node, context).0.unwrap();
-                let response: Vec<_> = res.take(5).collect();
-                println!("Got syncronous response: {:?}", response);
-                let x = response[0].clone();
+//                let response: Vec<_> = res.take(5).collect();
+                println!("Got response: ");
+                let response: Vec<_> = res.into_key_value_list().into_iter()
+                    .map(|(name, val)| {
+                        print!(" {:?} ", name);
+                        let vector: Vec<_> = val
+                            .take(5)
+                            .collect();
+                        vector
+                    })
+                    .collect();
+                println!("");
+                println!("Syncronous response values: {:#?}", response);
+                let x = response[0][0].clone();
                 GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((x, vec![]))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(

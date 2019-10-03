@@ -73,9 +73,13 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, ValuesStream<S>> {
+    ) -> BoxFuture<'a, StreamObject<S>> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_stream(self, info, selection_set, executor)
+            Box::pin(async {
+                let mut object = StreamObject::with_capacity(selection_set.len());
+                resolve_selection_set_into_stream(self, info, selection_set, executor, &mut object).await;
+                object
+            })
         } else {
             panic!("resolve_into_stream_async() must be implemented");
         }
@@ -331,7 +335,8 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> BoxFuture<'a, ValuesStream<S>>
+    object: &'a mut crate::StreamObject<S>
+) -> BoxFuture<'a, ()>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT>,
     T::TypeInfo: Send + Sync,
@@ -339,23 +344,26 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    Box::pin(resolve_selection_set_into_stream_recursive(
-        instance,
-        info,
-        selection_set,
-        executor,
-    ))
+    Box::pin(async {
+        resolve_selection_set_into_stream_recursive(
+            instance,
+            info,
+            selection_set,
+            executor,
+            object
+        ).await
+    })
 }
 
-struct StreamField<S> {
-    name: String,
-    value: Option<ValuesStream<S>>,
-}
-
-enum StreamValue<S> {
-    Field(StreamField<S>),
-    Nested(ValuesStream<S>),
-}
+//struct StreamField<S> {
+//    name: String,
+//    value: Option<ValuesStream<S>>,
+//}
+//
+//enum StreamValue<S> {
+//    Field(StreamField<S>),
+//    Nested(ValuesStream<S>),
+//}
 
 #[cfg(feature = "async")]
 pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
@@ -363,7 +371,8 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> ValuesStream<S>
+    object: &mut StreamObject<S>,
+)
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
@@ -374,8 +383,6 @@ where
     use futures::stream::{FuturesOrdered, StreamExt};
 
     let mut object = StreamObject::with_capacity(selection_set.len());
-
-    let mut stream_values = FuturesOrdered::<BoxFuture<'a, StreamValue<S>>>::new();
 
     let meta_type = executor
         .schema()
@@ -402,6 +409,7 @@ where
                 if f.name.item == "__typename" {
                     object.add_field(
                         response_name,
+                        //todo: consider doing that not once
                         Box::pin(futures::stream::once(futures::future::ready(
                             Value::scalar(instance.concrete_type_name(executor.context(), info)),
                         ))),
@@ -436,139 +444,95 @@ where
                 );
 
                 let pos = start_pos.clone();
+                // todo: consider that
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                let field_future = async move {
-                    // TODO: implement custom future type instead of
-                    // two-level boxing.
-                    let res = instance
+                let res = match instance
                         .resolve_field_async(info, f.name.item, &args, &sub_exec)
-                        .await;
-
-                    // todo
-                    let value = match res {
-                        //                        Ok(Value::Null) if is_non_null => None,
-                        Ok(v) => Some(v),
+                        .await
+                    {
+                        Ok(v) => v,
                         Err(e) => {
                             sub_exec.push_error_at(e, pos);
 
-                            None
-                            //                            if is_non_null {
-                            //                                None
-                            //                            } else {
-                            //                                Some(Value::null())
-                            //                            }
+                            Box::pin(futures::stream::once(async {
+                                Value::null()
+                            }))
                         }
                     };
 
-                    StreamValue::Field(StreamField {
-                        name: response_name,
-                        value,
-                    })
-                };
-                stream_values.push(Box::pin(field_future));
+                object.add_field(response_name, res);
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread, ..
             }) => {
-                if is_excluded(&spread.directives, executor.variables()) {
-                    continue;
-                }
-
-                // TODO: prevent duplicate boxing.
-                let f = async move {
-                    let fragment = &executor
-                        .fragment_by_name(spread.name.item)
-                        .expect("Fragment could not be found");
-                    let value = resolve_selection_set_into_stream(
-                        instance,
-                        info,
-                        &fragment.selection_set[..],
-                        executor,
-                    )
-                    .await;
-                    StreamValue::Nested(value)
-                };
-                stream_values.push(Box::pin(f));
+                unimplemented!()
+//                if is_excluded(&spread.directives, executor.variables()) {
+//                    continue;
+//                }
+//
+//                // TODO: prevent duplicate boxing.
+//                let f = async move {
+//                    let fragment = &executor
+//                        .fragment_by_name(spread.name.item)
+//                        .expect("Fragment could not be found");
+//                    let value = resolve_selection_set_into_stream(
+//                        instance,
+//                        info,
+//                        &fragment.selection_set[..],
+//                        executor,
+//                    )
+//                    .await;
+//                    StreamValue::Nested(value)
+//                };
+//                stream_values.push(Box::pin(f));
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
                 start: ref start_pos,
                 ..
             }) => {
-                if is_excluded(&fragment.directives, executor.variables()) {
-                    continue;
-                }
-
-                let sub_exec = executor.type_sub_executor(
-                    fragment.type_condition.as_ref().map(|c| c.item),
-                    Some(&fragment.selection_set[..]),
-                );
-
-                if let Some(ref type_condition) = fragment.type_condition {
-                    // FIXME: implement stream version.
-                    unimplemented!()
-                //                    let sub_result = instance.resolve_into_type(
-                //                        info,
-                //                        type_condition.item,
-                //                        Some(&fragment.selection_set[..]),
-                //                        &sub_exec,
-                //                    );
-                //
-                //                    if let Ok(Value::Object(obj)) = sub_result {
-                //                        for (k, v) in obj {
-                //                            merge_key_into(&mut object, &k, v);
-                //                        }
-                //                    } else if let Err(e) = sub_result {
-                //                        sub_exec.push_error_at(e, start_pos.clone());
-                //                    }
-                } else {
-                    let f = async move {
-                        let value = resolve_selection_set_into_stream(
-                            instance,
-                            info,
-                            &fragment.selection_set[..],
-                            &sub_exec,
-                        )
-                        .await;
-                        StreamValue::Nested(value)
-                    };
-                    stream_values.push(Box::pin(f));
-                }
-            }
-        }
-    }
-
-    while let Some(item) = stream_values.next().await {
-        match item {
-            StreamValue::Field(StreamField { name, value }) => {
-                if let Some(value) = value {
-                    object.add_field(&name, value);
-                } else {
-                    let null_stream: ValuesStream<S> =
-                        Box::pin(futures::stream::once(futures::future::ready(Value::null())));
-                    return null_stream;
-                }
-            }
-            StreamValue::Nested(obj) => {
-                //todo: deal with nested values
                 unimplemented!()
-                //                match obj {
-                //                    v @ Value::Null => {
-                //                        return v;
-                //                        // if iterator is null
-                //                    },
-                //                    Value::Object(obj) => {
-                //                        for (k, v) in obj {
-                //                            merge_key_into(&mut object, &k, v);
-                //                        }
-                //                    },
-                //                    _ => unreachable!(),
-                //                }
+//                if is_excluded(&fragment.directives, executor.variables()) {
+//                    continue;
+//                }
+//
+//                let sub_exec = executor.type_sub_executor(
+//                    fragment.type_condition.as_ref().map(|c| c.item),
+//                    Some(&fragment.selection_set[..]),
+//                );
+//
+//                if let Some(ref type_condition) = fragment.type_condition {
+//                    // FIXME: implement stream version.
+//                //                    let sub_result = instance.resolve_into_type(
+//                //                        info,
+//                //                        type_condition.item,
+//                //                        Some(&fragment.selection_set[..]),
+//                //                        &sub_exec,
+//                //                    );
+//                //
+//                //                    if let Ok(Value::Object(obj)) = sub_result {
+//                //                        for (k, v) in obj {
+//                //                            merge_key_into(&mut object, &k, v);
+//                //                        }
+//                //                    } else if let Err(e) = sub_result {
+//                //                        sub_exec.push_error_at(e, start_pos.clone());
+//                //                    }
+//                } else {
+//                    let f = async move {
+//                        let value = resolve_selection_set_into_stream(
+//                            instance,
+//                            info,
+//                            &fragment.selection_set[..],
+//                            &sub_exec,
+//                        )
+//                        .await;
+//                        StreamValue::Nested(value)
+//                    };
+//                    stream_values.push(Box::pin(f));
+//                }
             }
         }
     }
-
-    object.into_joined_stream()
 }

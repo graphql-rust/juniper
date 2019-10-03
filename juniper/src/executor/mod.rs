@@ -430,16 +430,16 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> SubscriptionResultAsync<S>
+    ) -> crate::StreamObject<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        Ok(value
+        value
             .resolve_into_stream(info, self.current_selection_set, self)
-            .await)
+            .await
     }
 
     /// Resolve a value into iterator asynchronously,
@@ -449,7 +449,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> SubscriptionResultAsync<S>
+    ) -> crate::StreamObject<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = NewCtxT>,
         T::TypeInfo: Send + Sync,
@@ -560,21 +560,23 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> ValuesStream<S>
+    ) -> crate::StreamObject<S>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        match self.subscribe_async(info, value).await {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                //todo: this to constant or macro
-                Box::pin(futures::stream::once(futures::future::ready(Value::null())))
-            }
-        }
+//        match
+            self.subscribe_async(info, value).await
+//        {
+//            Ok(v) => v,
+//            Err(e) => {
+//                self.push_error(e);
+//               // todo: this to constant or macro
+//                Box::pin(futures::stream::once(futures::future::ready(Value::null())))
+//            }
+//        }
     }
 
     /// Derive a new executor by replacing the context
@@ -1107,7 +1109,7 @@ pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, Subscri
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(ValuesStream<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::StreamObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -1192,7 +1194,7 @@ where
                         &root_node.subscription_type,
                     )
                     .await
-            }
+            },
             _ => unreachable!(),
         };
     }
