@@ -9,7 +9,7 @@ use serde::{
 };
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{ast::InputValue, executor::ExecutionError, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables, ValuesIterator};
+use crate::{ast::InputValue, executor::ExecutionError, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables, ValuesIterator, ValuesStream};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -183,7 +183,7 @@ pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>
 #[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
-    pub Result<(crate::StreamObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    pub Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 )
 where S: 'static;
 

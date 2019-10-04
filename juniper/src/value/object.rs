@@ -1,7 +1,6 @@
 use std::{iter::FromIterator, vec::IntoIter};
 
 use super::Value;
-use crate::value::base_object::{FieldIter, FieldIterMut, SyncObject};
 
 /// A Object value
 #[derive(Debug, Clone, PartialEq)]
@@ -61,10 +60,8 @@ impl<S> Object<S> {
     pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
         self.key_value_list
     }
-}
 
-impl<S> SyncObject<Value<S>> for Object<S> {
-    fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
+    pub fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
         where
             K: Into<String>,
             for<'a> &'a str: PartialEq<K>,
@@ -80,13 +77,13 @@ impl<S> SyncObject<Value<S>> for Object<S> {
         None
     }
 
-    fn iter(&self) -> FieldIter<Value<S>> {
+    pub fn iter(&self) -> FieldIter<Value<S>> {
         FieldIter {
             inner: self.key_value_list.iter(),
         }
     }
 
-    fn iter_mut(&mut self) -> FieldIterMut<Value<S>> {
+    pub fn iter_mut(&mut self) -> FieldIterMut<Value<S>> {
         FieldIterMut {
             inner: self.key_value_list.iter_mut(),
         }
@@ -128,4 +125,28 @@ where
     }
 }
 
+#[doc(hidden)]
+pub struct FieldIter<'a, S: 'a> {
+    pub inner: ::std::slice::Iter<'a, (String, S)>,
+}
 
+impl<'a, S> Iterator for FieldIter<'a, S> {
+    type Item = &'a (String, S);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+#[doc(hidden)]
+pub struct FieldIterMut<'a, S: 'a> {
+    pub inner: ::std::slice::IterMut<'a, (String, S)>,
+}
+
+impl<'a, S> Iterator for FieldIterMut<'a, S> {
+    type Item = &'a mut (String, S);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}

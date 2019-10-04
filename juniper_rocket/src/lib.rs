@@ -159,17 +159,27 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                let (response_stream, err) =
+                let (response_value, err) =
                     request.subscribe_async(root_node, context).await.0.unwrap();
-                println!("Got response: ");
                 let mut response = Vec::new();
-                for (name, val) in response_stream.into_key_value_list().into_iter() {
-                    print!(" {:?} ", name);
-                    let vector: Vec<_> = val
-                        .take(5)
-                        .collect()
-                        .await;
-                    response.push(vector);
+                println!("Got response: ");
+                match response_value {
+                    juniper::Value::Object(response_stream) => {
+                        for (name, val) in response_stream.into_key_value_list().into_iter() {
+                            print!(" {:?} ", name);
+                            match val {
+                                juniper::Value::Scalar(s) => {
+                                    let vector: Vec<_> = s
+                                        .take(5)
+                                        .collect()
+                                        .await;
+                                    response.push(vector);
+                                },
+                                _ => {panic!("juniper object didnt have scalar value!")},
+                            }
+                        }
+                    },
+                    _ => { panic!("Test server does not support streams everywhere") },
                 }
                 println!("");
                 println!("Asyncronous response values: {:#?}", response);

@@ -31,6 +31,7 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
+use std::pin::Pin;
 
 /// A type registry used to build schemas
 ///
@@ -432,7 +433,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> crate::StreamObject<S>
+    ) -> Value<ValuesStream<S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
@@ -451,7 +452,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> crate::StreamObject<S>
+    ) -> Value<ValuesStream<S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = NewCtxT>,
         T::TypeInfo: Send + Sync,
@@ -562,7 +563,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> crate::StreamObject<S>
+    ) -> Value<ValuesStream<S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -575,8 +576,13 @@ where
 //            Ok(v) => v,
 //            Err(e) => {
 //                self.push_error(e);
-//               // todo: this to constant or macro
-//                Box::pin(futures::stream::once(futures::future::ready(Value::null())))
+//                unimplemented!()
+                //todo: return null value
+//                Value::Scalar(Box::pin(
+//                    futures::stream::repeat(
+//                        Value::Null
+//                    )
+//                ))
 //            }
 //        }
     }
@@ -1111,7 +1117,7 @@ pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, Subscri
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::StreamObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

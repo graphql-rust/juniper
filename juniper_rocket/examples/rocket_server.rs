@@ -6,12 +6,13 @@
 //       [✔] Sync
 //       [✔] Async
 //   [ ] Group field resolvers to avoid code duplication
-//       [ ] Sync
-//       [ ] Async
+//       [±] Sync
+//       [±] Async
 //   [ ] after all that push changes to GitHub
 //   [ ] Start implementing FragmentSpread and InlineFragment
 //   [ ] consider doing unions, nested selections and other stuff
 //   [ ] consider checking schema resolver and moving metadata to a different base type
+//   [ ] typename is not added when resolve_field is called
 //
 // todo: discuss what to do with stream/iterator of null values
 
@@ -19,10 +20,7 @@
 
 use rocket::{response::content, State};
 
-use juniper::{
-    parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode,
-    Selection, Value,
-};
+use juniper::{parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldResult, RootNode, Selection, Value, ValuesStream, FieldError};
 use juniper_rocket::GraphQLResponse;
 use std::sync::Arc;
 
@@ -96,7 +94,10 @@ where
         field_name: &'a str,
         arguments: &'a Arguments<DefaultScalarValue>,
         executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    ) -> BoxFuture<'a, juniper::SubscriptionResultAsync<DefaultScalarValue>> {
+    ) -> BoxFuture<'a, Result<
+                Value<ValuesStream<DefaultScalarValue>>,
+                FieldError<DefaultScalarValue>>
+         > {
         println!("field name: {}", field_name);
 
         match field_name {
@@ -107,7 +108,7 @@ where
                         Value::Scalar(DefaultScalarValue::String("human".to_owned()))
                     }));
 
-                Box::pin(futures::future::ready(Ok(x)))
+                Box::pin(futures::future::ready(Ok(Value::Scalar(x))))
             }
             "nothuman" => {
                 use futures::{channel::mpsc, future::FutureExt, stream::StreamExt};
@@ -126,7 +127,7 @@ where
                         //                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
                         rx1.map(|x| Value::Scalar(DefaultScalarValue::Int(x))),
                     );
-                Box::pin(futures::future::ready(Ok(x)))
+                Box::pin(futures::future::ready(Ok(Value::Scalar(x))))
             }
             _ => {
                 panic!("field not found");
