@@ -1,12 +1,19 @@
+use crate::Value;
 
 pub trait SyncObject<Val> {
     /// Add a new field with a value
     ///
     /// If there is already a field with the same name the old value
     /// is returned
-    fn add_field<K>(&mut self, k: K, value: Val) -> Option<Val>
+    fn add_field<S, K>(&mut self, k: K, value: Val) -> Option<Val>
     where
         K: Into<String>,
+        for<'a> &'a str: PartialEq<K>;
+
+    fn add_field_from_value<K, V>(&mut self, k: K, value: V) -> Option<Val>
+    where
+        K: Into<String>,
+        V: Into<Value<S>>,
         for<'a> &'a str: PartialEq<K>;
 
     /// Get a iterator over all field value pairs

@@ -361,7 +361,7 @@ where
             // init our **local** object `object` where we will collect stuff into
             let mut object = IterObject::with_capacity(selection_set.len());
 
-            resolve_selection_set_into_iterator(self, info, selection_set, executor, &mut object);
+            resolve_selection_set_into(self, info, selection_set, executor, &mut object);
             //at this point `O` should be an object which could be transformed to a list of string/ValuesIterator
             object
 
@@ -369,6 +369,7 @@ where
             panic!("resolve_into_iterator() must be implemented");
         }
     }
+
     #[allow(unused_variables)]
     fn resolve_field_into_iterator(
         &self,
@@ -376,7 +377,7 @@ where
         field_name: &str,
         arguments: &Arguments<S>,
         executor: &Executor<Self::Context, S>,
-    ) -> SubscriptionResult<S> {
+    ) -> Result<ValuesIterator<S>, FieldError<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
@@ -420,11 +421,9 @@ where
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    object.add_field(
+                    object.add_field_by_value(
                         response_name,
-                        Box::new(std::iter::once(
-                            Value::scalar(instance.concrete_type_name(executor.context(), info))
-                        )),
+                        Value::scalar(instance.concrete_type_name(executor.context(), info)),
                     );
                     continue;
                 }
@@ -550,16 +549,17 @@ where
     }
 }
 
-pub fn resolve_selection_set_into<T, CtxT, S>(
+pub fn resolve_selection_set_into<T, CtxT, S, ObjT>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection<S>],
     executor: &Executor<CtxT, S>,
-    result: &mut Object<S>,
+    result: &mut ObjT,
 ) -> bool
     where
         T: GraphQLType<S, Context = CtxT>,
         S: ScalarValue,
+        ObjT: SyncObject<S>,
         for<'b> &'b S: ScalarRefValue<'b>,
 {
     let meta_type = executor
@@ -585,7 +585,7 @@ pub fn resolve_selection_set_into<T, CtxT, S>(
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    result.add_field(
+                    result.add_field_by_value(
                         response_name,
                         Value::scalar(instance.concrete_type_name(executor.context(), info)),
                     );
@@ -627,7 +627,8 @@ pub fn resolve_selection_set_into<T, CtxT, S>(
                 );
 
                 match field_result {
-                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
+                    // todo: check for null value in iterator
+                    // Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
                         sub_exec.push_error_at(e, start_pos.clone());
@@ -636,7 +637,7 @@ pub fn resolve_selection_set_into<T, CtxT, S>(
                             return false;
                         }
 
-                        result.add_field(response_name, Value::null());
+                        result.add_field_from_value(response_name, Value::null());
                     }
                 }
             }

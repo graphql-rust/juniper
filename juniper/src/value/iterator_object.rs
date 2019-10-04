@@ -5,13 +5,18 @@ use crate::ValuesIterator;
 
 use crate::value::base_object::{FieldIter, FieldIterMut, SyncObject};
 
+pub enum IterValue<S>{
+    Object(IterObject<S>),
+    Iterator(ValuesIterator<S>)
+}
+
 // todo: clone, PartialEq
 //#[derive(Debug)]
 pub struct IterObject<S>
 where
     S: 'static,
 {
-    key_value_list: Vec<(String, ValuesIterator<S>)>,
+    key_value_list: Vec<(String, IterValue<S>)>,
 }
 
 // todo: better debug
@@ -129,6 +134,17 @@ impl<S> SyncObject<ValuesIterator<S>> for IterObject<S> {
       FieldIterMut {
             inner: self.key_value_list.iter_mut(),
         }
+    }
+
+    fn add_field_from_value<K, V>(&mut self, k: K, value: V) -> Option<ValuesIterator<S>>
+    where
+        K: Into<String>,
+        V: Into<Value<S>>,
+        for<'a> &'a str: PartialEq<K>
+    {
+        //Box::new(std::iter::once(
+        //todo: implement adding field from value
+        unimplemented!()
     }
 }
 

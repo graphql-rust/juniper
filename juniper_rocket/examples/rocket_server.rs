@@ -8,11 +8,12 @@
 //   [ ] Group field resolvers to avoid code duplication
 //       [ ] Sync
 //       [ ] Async
-//   [ ] Start implementing FragmentSpread and InlineFragment
 //   [ ] after all that push changes to GitHub
+//   [ ] Start implementing FragmentSpread and InlineFragment
 //   [ ] consider doing unions, nested selections and other stuff
 //   [ ] consider checking schema resolver and moving metadata to a different base type
 //
+// todo: discuss what to do with stream/iterator of null values
 
 #![feature(decl_macro, proc_macro_hygiene)]
 
