@@ -1,4 +1,5 @@
 /*!
+#![feature(async_closure)]
 
 # juniper_rocket
 
@@ -155,10 +156,21 @@ where
             &GraphQLBatchRequest::Single(ref request) => {
                 let (response_stream, err) =
                     request.subscribe_async(root_node, context).await.0.unwrap();
-                let mut values: Vec<_> = response_stream.take(5).collect().await;
-                println!("Got asyncronous response: {:?}", values);
+                println!("Got response: ");
+                let mut response = Vec::new();
+                for (name, val) in response_stream.into_key_value_list().into_iter() {
+                    print!(" {:?} ", name);
+                    let vector: Vec<_> = val
+                        .take(5)
+                        .collect()
+                        .await;
+                    response.push(vector);
+                }
+                println!("");
+                println!("Asyncronous response values: {:#?}", response);
+
                 GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((
-                    values[0].clone(),
+                    response[0][0].clone(),
                     vec![],
                 ))))
             }

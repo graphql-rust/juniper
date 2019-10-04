@@ -122,6 +122,10 @@ where
 
         Box::pin(futures::stream::select_all(streams))
     }
+
+    pub fn into_key_value_list(self) -> Vec<(String, ValuesStream<S>)> {
+        self.key_value_list
+    }
 }
 
 impl<S> IntoIterator for StreamObject<S> {

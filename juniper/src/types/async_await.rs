@@ -73,13 +73,9 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, StreamObject<S>> {
+    ) -> BoxFuture<'a, crate::StreamObject<S>> {
         if let Some(selection_set) = selection_set {
-            Box::pin(async {
-                let mut object = StreamObject::with_capacity(selection_set.len());
-                resolve_selection_set_into_stream(self, info, selection_set, executor, &mut object).await;
-                object
-            })
+            resolve_selection_set_into_stream(self, info, selection_set, executor)
         } else {
             panic!("resolve_into_stream_async() must be implemented");
         }
@@ -335,8 +331,7 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-    object: &'a mut crate::StreamObject<S>
-) -> BoxFuture<'a, ()>
+) -> BoxFuture<'a, crate::StreamObject<S>>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT>,
     T::TypeInfo: Send + Sync,
@@ -344,26 +339,23 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    Box::pin(async {
-        resolve_selection_set_into_stream_recursive(
-            instance,
-            info,
-            selection_set,
-            executor,
-            object
-        ).await
-    })
+    Box::pin(resolve_selection_set_into_stream_recursive(
+        instance,
+        info,
+        selection_set,
+        executor,
+    ))
 }
 
-//struct StreamField<S> {
-//    name: String,
-//    value: Option<ValuesStream<S>>,
-//}
-//
-//enum StreamValue<S> {
-//    Field(StreamField<S>),
-//    Nested(ValuesStream<S>),
-//}
+struct StreamField<S> {
+    name: String,
+    value: Option<ValuesStream<S>>,
+}
+
+enum StreamValue<S> {
+    Field(StreamField<S>),
+    Nested(ValuesStream<S>),
+}
 
 #[cfg(feature = "async")]
 pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
@@ -371,8 +363,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-    object: &mut StreamObject<S>,
-)
+) -> crate::StreamObject<S>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
@@ -381,6 +372,8 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     use futures::stream::{FuturesOrdered, StreamExt};
+
+    let mut stream_values = FuturesOrdered::<BoxFuture<'a, StreamValue<S>>>::new();
 
     let mut object = StreamObject::with_capacity(selection_set.len());
 
@@ -409,7 +402,6 @@ where
                 if f.name.item == "__typename" {
                     object.add_field(
                         response_name,
-                        //todo: consider doing that not once
                         Box::pin(futures::stream::once(futures::future::ready(
                             Value::scalar(instance.concrete_type_name(executor.context(), info)),
                         ))),
@@ -444,30 +436,37 @@ where
                 );
 
                 let pos = start_pos.clone();
-                // todo: consider that
+                //todo: consider non null
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                let res = match instance
+                let field_future = async move {
+                    // TODO: implement custom future type instead of
+                    //       two-level boxing.
+                    let res = instance
                         .resolve_field_async(info, f.name.item, &args, &sub_exec)
-                        .await
-                    {
-                        Ok(v) => v,
+                        .await;
+
+                    let value = match res {
+                        Ok(v) => Some(v),
                         Err(e) => {
                             sub_exec.push_error_at(e, pos);
-
-                            Box::pin(futures::stream::once(async {
-                                Value::null()
-                            }))
+                            None
                         }
                     };
 
-                object.add_field(response_name, res);
+                    StreamValue::Field(StreamField {
+                        name: response_name,
+                        value,
+                    })
+                };
+                stream_values.push(Box::pin(field_future));
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread, ..
             }) => {
-                unimplemented!()
+                unimplemented!();
+                //todo: async fragment
 //                if is_excluded(&spread.directives, executor.variables()) {
 //                    continue;
 //                }
@@ -493,7 +492,8 @@ where
                 start: ref start_pos,
                 ..
             }) => {
-                unimplemented!()
+                unimplemented!();
+                //todo: async fragment
 //                if is_excluded(&fragment.directives, executor.variables()) {
 //                    continue;
 //                }
@@ -505,6 +505,7 @@ where
 //
 //                if let Some(ref type_condition) = fragment.type_condition {
 //                    // FIXME: implement stream version.
+//                    unimplemented!()
 //                //                    let sub_result = instance.resolve_into_type(
 //                //                        info,
 //                //                        type_condition.item,
@@ -535,4 +536,36 @@ where
             }
         }
     }
+
+    while let Some(item) = stream_values.next().await {
+        match item {
+            StreamValue::Field(StreamField { name, value }) => {
+                if let Some(value) = value {
+                    object.add_field(&name, value);
+                } else {
+                    let null_stream: ValuesStream<S> =
+                        Box::pin(futures::stream::once(futures::future::ready(Value::null())));
+                    object.add_field(&name, null_stream);
+                }
+            }
+            StreamValue::Nested(obj) => {
+                //todo: deal with nested values
+                unimplemented!()
+                //                match obj {
+                //                    v @ Value::Null => {
+                //                        return v;
+                //                        // if iterator is null
+                //                    },
+                //                    Value::Object(obj) => {
+                //                        for (k, v) in obj {
+                //                            merge_key_into(&mut object, &k, v);
+                //                        }
+                //                    },
+                //                    _ => unreachable!(),
+                //                }
+            }
+        }
+    }
+
+    object
 }
