@@ -2,6 +2,7 @@ use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
 };
+mod base_object;
 mod object;
 mod scalar;
 mod stream_object;

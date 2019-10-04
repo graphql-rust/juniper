@@ -3,6 +3,8 @@ use std::{iter::FromIterator, vec::IntoIter};
 use super::Value;
 use crate::ValuesIterator;
 
+use crate::value::base_object::{FieldIter, FieldIterMut};
+
 // todo: clone, PartialEq
 //#[derive(Debug)]
 pub struct IterObject<S>
@@ -169,31 +171,5 @@ where
             ret.add_field(k, v);
         }
         ret
-    }
-}
-
-#[doc(hidden)]
-pub struct FieldIter<'a, S: 'a> {
-    inner: ::std::slice::Iter<'a, (String, ValuesIterator<S>)>,
-}
-
-impl<'a, S> Iterator for FieldIter<'a, S> {
-    type Item = &'a (String, ValuesIterator<S>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-}
-
-#[doc(hidden)]
-pub struct FieldIterMut<'a, S: 'a> {
-    inner: ::std::slice::IterMut<'a, (String, ValuesIterator<S>)>,
-}
-
-impl<'a, S> Iterator for FieldIterMut<'a, S> {
-    type Item = &'a mut (String, ValuesIterator<S>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
     }
 }

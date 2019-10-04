@@ -1,6 +1,7 @@
 use std::{iter::FromIterator, vec::IntoIter};
 
 use super::Value;
+use crate::value::base_object::{FieldIter, FieldIterMut};
 
 /// A Object value
 #[derive(Debug, Clone, PartialEq)]
@@ -127,28 +128,4 @@ where
     }
 }
 
-#[doc(hidden)]
-pub struct FieldIter<'a, S: 'a> {
-    inner: ::std::slice::Iter<'a, (String, Value<S>)>,
-}
 
-impl<'a, S> Iterator for FieldIter<'a, S> {
-    type Item = &'a (String, Value<S>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-}
-
-#[doc(hidden)]
-pub struct FieldIterMut<'a, S: 'a> {
-    inner: ::std::slice::IterMut<'a, (String, Value<S>)>,
-}
-
-impl<'a, S> Iterator for FieldIterMut<'a, S> {
-    type Item = &'a mut (String, Value<S>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-}

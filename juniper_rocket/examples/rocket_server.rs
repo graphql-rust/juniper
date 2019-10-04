@@ -2,9 +2,9 @@
 //_!! All changes should be reset before merging to master !!__
 
 // For now, decided to do the following:
-//   [ ] Implement field resolvers for subscriptions
+//   [✔] Implement field resolvers for subscriptions
 //       [✔] Sync
-//       [±] Async TODO: check resolver
+//       [✔] Async
 //   [ ] Group field resolvers to avoid code duplication
 //       [ ] Sync
 //       [ ] Async
