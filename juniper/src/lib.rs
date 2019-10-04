@@ -313,7 +313,7 @@ pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::IterObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::Object<ValuesIterator<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,

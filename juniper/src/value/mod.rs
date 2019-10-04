@@ -33,24 +33,6 @@ pub enum Value<S = DefaultScalarValue> {
     Object(Object<S>),
 }
 
-
-//pub enum Value<S = Iterator> {
-//    Null,
-//    Scalar(S),
-//    List(Vec<Value<S>>),
-//    Object(Object<S> {
-//              String: Value<S>
-//              String: Value<S>
-//              String: Value<Object<s> {
-//                          String: Value<S>
-//                          String: Value<S>
-//                          String: Value<S>
-//                          String: Value<S>
-//                      }>
-//              String: Value<S>
-//           }),
-//}
-
 impl<S> Value<S>
 where
     S: ScalarValue,

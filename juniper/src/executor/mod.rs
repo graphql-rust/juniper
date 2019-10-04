@@ -403,9 +403,10 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T
-    ) -> Result<crate::IterObject<S>, FieldError<S>>
+    ) -> Result<crate::Object<ValuesIterator<S>>, FieldError<S>>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
+        S: 'static,
     {
         Ok(value.resolve_into_iterator(info, self.current_selection_set, self))
     }
@@ -415,10 +416,11 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> Result<crate::IterObject<S>, FieldError<S>>
+    ) -> Result<crate::Object<ValuesIterator<S>>, FieldError<S>>
     where
         NewCtxT: FromContext<CtxT>,
         T: crate::SubscriptionHandler<S, Context = NewCtxT>,
+        S: 'static,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .subscribe(info, value)
@@ -515,7 +517,7 @@ where
         &self,
         info: &T::TypeInfo,
         value: &T,
-    ) -> crate::IterObject<S>
+    ) -> crate::Object<ValuesIterator<S>>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -906,9 +908,9 @@ pub fn execute_validated_subcription<'a, QueryT, MutationT, SubscriptionT, CtxT,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
-) -> Result<(crate::IterObject<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(crate::Object<ValuesIterator<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,

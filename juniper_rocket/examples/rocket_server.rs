@@ -156,17 +156,24 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
         field_name: &str,
         arguments: &Arguments<DefaultScalarValue>,
         executor: &Executor<Self::Context, DefaultScalarValue>,
-    ) -> juniper::SubscriptionResult<DefaultScalarValue> {
+    ) -> Result<
+            Value<juniper::ValuesIterator<DefaultScalarValue>>,
+            juniper::FieldError<DefaultScalarValue>
+        > {
 
         match field_name {
             "human" => {
                 Ok(
-                    Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(22))))
+                    Value::Scalar(
+                        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(22))))
+                    )
                 )
             }
             "nothuman" => {
                 Ok(
-                    Box::new(std::iter::once(Value::Scalar(DefaultScalarValue::Int(32))))
+                    Value::Scalar(
+                        Box::new(std::iter::once(Value::Scalar(DefaultScalarValue::Int(32))))
+                    )
                 )
             }
             _ => {

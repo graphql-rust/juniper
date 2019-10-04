@@ -116,9 +116,14 @@ where
                 let response: Vec<_> = res.into_key_value_list().into_iter()
                     .map(|(name, val)| {
                         print!(" {:?} ", name);
-                        let vector: Vec<_> = val
-                            .take(5)
-                            .collect();
+                        let mut vector = Vec::new();
+                        match val {
+                            juniper::Value::Scalar(s) => {
+                                vector = s.take(5)
+                                    .collect();
+                            }
+                            _ => {},
+                        }
                         vector
                     })
                     .collect();

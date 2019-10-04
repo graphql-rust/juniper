@@ -57,6 +57,10 @@ impl<S> Object<S> {
             }
         }
     }
+
+    pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
+        self.key_value_list
+    }
 }
 
 impl<S> SyncObject<Value<S>> for Object<S> {
