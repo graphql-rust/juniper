@@ -13,6 +13,7 @@ use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 use crate::{executor::SubscriptionResultAsync, value::StreamObject};
+use crate::value::base_object::SyncObject;
 
 /// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync

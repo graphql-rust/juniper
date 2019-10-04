@@ -3,7 +3,7 @@ use std::{iter::FromIterator, vec::IntoIter};
 use super::Value;
 use crate::ValuesIterator;
 
-use crate::value::base_object::{FieldIter, FieldIterMut};
+use crate::value::base_object::{FieldIter, FieldIterMut, SyncObject};
 
 // todo: clone, PartialEq
 //#[derive(Debug)]
@@ -41,26 +41,6 @@ where
         }
     }
 
-    /// Add a new field with a value
-    ///
-    /// If there is already a field with the same name the old value
-    /// is returned
-    pub fn add_field<K>(&mut self, k: K, value: ValuesIterator<S>) -> Option<ValuesIterator<S>>
-    where
-        K: Into<String>,
-        for<'a> &'a str: PartialEq<K>,
-    {
-        if let Some(item) = self
-            .key_value_list
-            .iter_mut()
-            .find(|&&mut (ref key, _)| (key as &str) == k)
-        {
-            return Some(::std::mem::replace(&mut item.1, value));
-        }
-        self.key_value_list.push((k.into(), value));
-        None
-    }
-
     /// Check if the object already contains a field with the given name
     pub fn contains_field<K>(&self, f: K) -> bool
     where
@@ -69,22 +49,6 @@ where
         self.key_value_list
             .iter()
             .any(|&(ref key, _)| (key as &str) == f)
-    }
-
-    /// Get a iterator over all field value pairs
-    pub fn iter(&self) -> impl Iterator<Item = &(String, ValuesIterator<S>)> {
-        //todo: we have 3 `FieldIter`s in different modules
-        FieldIter {
-            inner: self.key_value_list.iter(),
-        }
-    }
-
-    /// Get a iterator over all mutable field value pairs
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, ValuesIterator<S>)> {
-         //todo: we have 3 `FieldIterMut`s in different modules
-         FieldIterMut {
-            inner: self.key_value_list.iter_mut(),
-        }
     }
 
     /// Get the current number of fields
@@ -134,6 +98,37 @@ where
     //todo: more functions for return type
     pub fn into_key_value_list(self) -> Vec<(String, ValuesIterator<S>)> {
         self.key_value_list
+    }
+}
+
+impl<S> SyncObject<ValuesIterator<S>> for IterObject<S> {
+
+    fn add_field<K>(&mut self, k: K, value: ValuesIterator<S>) -> Option<ValuesIterator<S>>
+        where
+            K: Into<String>,
+            for<'a> &'a str: PartialEq<K>,
+    {
+        if let Some(item) = self
+            .key_value_list
+            .iter_mut()
+            .find(|&&mut (ref key, _)| (key as &str) == k)
+        {
+            return Some(::std::mem::replace(&mut item.1, value));
+        }
+        self.key_value_list.push((k.into(), value));
+        None
+    }
+
+    fn iter(&self) -> FieldIter<ValuesIterator<S>> {
+        FieldIter {
+            inner: self.key_value_list.iter(),
+        }
+    }
+
+    fn iter_mut(&mut self) -> FieldIterMut<ValuesIterator<S>> {
+      FieldIterMut {
+            inner: self.key_value_list.iter_mut(),
+        }
     }
 }
 

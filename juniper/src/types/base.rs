@@ -11,6 +11,7 @@ use crate::{
 };
 use crate::executor::SubscriptionResult;
 use crate::value::IterObject;
+use crate::value::base_object::SyncObject;
 
 /// GraphQL type kind
 ///
@@ -231,7 +232,6 @@ impl GraphQLType for User
     }
 }
 ```
-
 */
 pub trait GraphQLType<S = DefaultScalarValue>: Sized
 where

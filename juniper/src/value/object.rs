@@ -1,7 +1,7 @@
 use std::{iter::FromIterator, vec::IntoIter};
 
 use super::Value;
-use crate::value::base_object::{FieldIter, FieldIterMut};
+use crate::value::base_object::{FieldIter, FieldIterMut, SyncObject};
 
 /// A Object value
 #[derive(Debug, Clone, PartialEq)]
@@ -18,26 +18,6 @@ impl<S> Object<S> {
         }
     }
 
-    /// Add a new field with a value
-    ///
-    /// If there is already a field with the same name the old value
-    /// is returned
-    pub fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
-    where
-        K: Into<String>,
-        for<'a> &'a str: PartialEq<K>,
-    {
-        if let Some(item) = self
-            .key_value_list
-            .iter_mut()
-            .find(|&&mut (ref key, _)| (key as &str) == k)
-        {
-            return Some(::std::mem::replace(&mut item.1, value));
-        }
-        self.key_value_list.push((k.into(), value));
-        None
-    }
-
     /// Check if the object already contains a field with the given name
     pub fn contains_field<K>(&self, f: K) -> bool
     where
@@ -46,20 +26,6 @@ impl<S> Object<S> {
         self.key_value_list
             .iter()
             .any(|&(ref key, _)| (key as &str) == f)
-    }
-
-    /// Get a iterator over all field value pairs
-    pub fn iter(&self) -> impl Iterator<Item = &(String, Value<S>)> {
-        FieldIter {
-            inner: self.key_value_list.iter(),
-        }
-    }
-
-    /// Get a iterator over all mutable field value pairs
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (String, Value<S>)> {
-        FieldIterMut {
-            inner: self.key_value_list.iter_mut(),
-        }
     }
 
     /// Get the current number of fields
@@ -89,6 +55,36 @@ impl<S> Object<S> {
                 }
                 _ => {}
             }
+        }
+    }
+}
+
+impl<S> SyncObject<Value<S>> for Object<S> {
+    fn add_field<K>(&mut self, k: K, value: Value<S>) -> Option<Value<S>>
+        where
+            K: Into<String>,
+            for<'a> &'a str: PartialEq<K>,
+    {
+        if let Some(item) = self
+            .key_value_list
+            .iter_mut()
+            .find(|&&mut (ref key, _)| (key as &str) == k)
+        {
+            return Some(::std::mem::replace(&mut item.1, value));
+        }
+        self.key_value_list.push((k.into(), value));
+        None
+    }
+
+    fn iter(&self) -> FieldIter<Value<S>> {
+        FieldIter {
+            inner: self.key_value_list.iter(),
+        }
+    }
+
+    fn iter_mut(&mut self) -> FieldIterMut<Value<S>> {
+        FieldIterMut {
+            inner: self.key_value_list.iter_mut(),
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
 };
-mod base_object;
+pub mod base_object;
 mod object;
 mod scalar;
 mod stream_object;
@@ -13,6 +13,7 @@ pub use self::{object::Object, stream_object::StreamObject, iterator_object::Ite
 pub use self::scalar::{
     DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
 };
+use crate::value::base_object::SyncObject;
 
 /// Serializable value returned from query and field execution.
 ///
