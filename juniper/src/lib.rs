@@ -184,7 +184,6 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 pub use crate::types::async_await::GraphQLTypeAsync;
 
 
-pub use crate::value::IterObject;
 #[cfg(feature = "async")]
 pub use crate::value::StreamObject;
 

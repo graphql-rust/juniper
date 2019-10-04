@@ -159,7 +159,7 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
     ) -> Result<
             Value<juniper::ValuesIterator<DefaultScalarValue>>,
             juniper::FieldError<DefaultScalarValue>
-        > {
+    >{
 
         match field_name {
             "human" => {

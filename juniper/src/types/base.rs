@@ -10,7 +10,6 @@ use crate::{
     schema::meta::{Argument, MetaType},
 };
 use crate::executor::SubscriptionResult;
-use crate::value::IterObject;
 use crate::value::base_object::SyncObject;
 
 /// GraphQL type kind
