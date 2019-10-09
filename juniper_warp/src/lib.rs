@@ -39,7 +39,7 @@ Check the LICENSE file for details.
 #![deny(missing_docs)]
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
-#![cfg_attr(feature = "async", feature(async_await, async_closure))]
+#![cfg_attr(feature = "async", feature(async_closure))]
 
 use futures::{future::poll_fn, Future};
 use serde::Deserialize;
