@@ -2,8 +2,6 @@
 //! This example demonstrates async/await usage with warp.
 //! NOTE: this uses tokio 0.1 , not the alpha tokio 0.2.
 
-#![feature(async_closure)]
-
 use juniper::{EmptyMutation, RootNode, FieldError};
 use warp::{http::Response, Filter};
 

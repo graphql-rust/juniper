@@ -197,29 +197,10 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 }
 
                 let body = &method.block;
-                let return_ty = &method.sig.output;
-
-                let (resolver_code, resolver_code_async) = if is_async {
-                    (
-                        quote!(),
-                        Some(quote!(
-                            (async move || #return_ty {
-                                #( #resolve_parts )*
-                                #body
-                            })()
-                        )),
-                    )
-                } else {
-                    (
-                        quote!(
-                            (|| #return_ty {
-                                #( #resolve_parts )*
-                                #body
-                            })()
-                        ),
-                        None,
-                    )
-                };
+                let resolver_code = quote!(
+                    #( #resolve_parts )*
+                    #body
+                );
 
                 let ident = &method.sig.ident;
                 let name = attrs
@@ -233,7 +214,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,
-                    resolver_code_async,
+                    is_async,
                 });
             }
             _ => {

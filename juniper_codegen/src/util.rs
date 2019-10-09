@@ -592,14 +592,7 @@ pub struct GraphQLTypeDefinitionField {
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
     pub resolver_code: proc_macro2::TokenStream,
-    pub resolver_code_async: Option<proc_macro2::TokenStream>,
-}
-
-impl GraphQLTypeDefinitionField {
-    #[inline]
-    fn is_async(&self) -> bool {
-        self.resolver_code_async.is_some()
-    }
+    pub is_async: bool,
 }
 
 /// Definition of a graphql type based on information extracted
@@ -633,7 +626,7 @@ pub struct GraphQLTypeDefiniton {
 
 impl GraphQLTypeDefiniton {
     fn has_async_field(&self) -> bool {
-        self.fields.iter().any(|field| field.is_async())
+        self.fields.iter().any(|field| field.is_async)
     }
 
     pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
@@ -706,7 +699,7 @@ impl GraphQLTypeDefiniton {
             let name = &field.name;
             let code = &field.resolver_code;
 
-            if field.is_async() {
+            if field.is_async {
                 // TODO: better error message with field/type name.
                 quote!(
                     #name => {
@@ -714,9 +707,10 @@ impl GraphQLTypeDefiniton {
                     },
                 )
             } else {
+                let _type = &field._type;
                 quote!(
                     #name => {
-                        let res = { #code };
+                        let res: #_type = { #code };
                         #juniper_crate_name::IntoResolvable::into(
                             res,
                             executor.context()
@@ -805,74 +799,74 @@ impl GraphQLTypeDefiniton {
         #[cfg(feature = "async")]
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
-                        let name = &field.name;
+                let name = &field.name;
+                let _type = &field._type;
+                let code = &field.resolver_code;
 
-                        if let Some(code) = field.resolver_code_async.as_ref() {
-                            quote!(
-                                #name => {
-                                    let f = async move {
-                                        let res = { #code }.await;
+                if field.is_async {
+                    quote!(
+                        #name => {
+                            let f = async move {
+                                let res: #_type = async move { #code }.await;
 
-                                        let inner_res = #juniper_crate_name::IntoResolvable::into(
-                                            res,
-                                            executor.context()
-                                        );
-                                        match inner_res {
-                                            Ok(Some((ctx, r))) => {
-                                                let subexec = executor
-                                                    .replaced_context(ctx);
-                                                subexec.resolve_with_ctx_async(&(), &r)
-                                                    .await
-                                            },
-                                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                            Err(e) => Err(e),
-                                        }
-                                    };
-                                    future::FutureExt::boxed(f)
-                                },
-                            )
-                        } else {
-                            let code = &field.resolver_code;
-
-                            let inner = if !self.no_async {
-                                quote!(
-                                    let f = async move {
-                                        match res2 {
-                                            Ok(Some((ctx, r))) => {
-                                                let sub = executor.replaced_context(ctx);
-                                                sub.resolve_with_ctx_async(&(), &r).await
-                                            },
-                                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                            Err(e) => Err(e),
-                                        }
-                                    };
-                                    future::FutureExt::boxed(f)
-                                )
-                            } else {
-                                quote!(
-                                    let v = match res2 {
-                                        Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                        Err(e) => Err(e),
-                                    };
-                                    future::FutureExt::boxed(future::ready(v))
-                                )
+                                let inner_res = #juniper_crate_name::IntoResolvable::into(
+                                    res,
+                                    executor.context()
+                                );
+                                match inner_res {
+                                    Ok(Some((ctx, r))) => {
+                                        let subexec = executor
+                                            .replaced_context(ctx);
+                                        subexec.resolve_with_ctx_async(&(), &r)
+                                            .await
+                                    },
+                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                    Err(e) => Err(e),
+                                }
                             };
+                            future::FutureExt::boxed(f)
+                        },
+                    )
+                } else {
+                    let inner = if !self.no_async {
+                        quote!(
+                            let f = async move {
+                                match res2 {
+                                    Ok(Some((ctx, r))) => {
+                                        let sub = executor.replaced_context(ctx);
+                                        sub.resolve_with_ctx_async(&(), &r).await
+                                    },
+                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                    Err(e) => Err(e),
+                                }
+                            };
+                            future::FutureExt::boxed(f)
+                        )
+                    } else {
+                        quote!(
+                            let v = match res2 {
+                                Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                                Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                Err(e) => Err(e),
+                            };
+                            future::FutureExt::boxed(future::ready(v))
+                        )
+                    };
 
-                            quote!(
-                                #name => {
-                                    let res = { #code };
-                                    let res2 = #juniper_crate_name::IntoResolvable::into(
-                                        res,
-                                        executor.context()
-                                    );
-                                    #inner
-                                },
-                            )
-                        }
-                    });
+                    quote!(
+                        #name => {
+                            let res: #_type = { #code };
+                            let res2 = #juniper_crate_name::IntoResolvable::into(
+                                res,
+                                executor.context()
+                            );
+                            #inner
+                        },
+                    )
+                }
+            });
 
-            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));;
+            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
 
             where_async
                 .predicates

@@ -59,7 +59,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
                 description: field_attrs.description,
                 deprecation: field_attrs.deprecation,
                 resolver_code,
-                resolver_code_async: None,
+                is_async: false,
             })
         }
     });

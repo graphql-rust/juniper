@@ -1,5 +1,3 @@
-#![feature(async_closure)]
-
 use juniper::{
     object, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, Value, Variables,
 };
