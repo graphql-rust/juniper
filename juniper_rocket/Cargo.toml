@@ -1,6 +1,6 @@
 [package]
 name = "juniper_rocket"
-version = "0.4.1"
+version = "0.5.0"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -18,13 +18,13 @@ async = [ "juniper/async" ]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { version = "0.13.1" , default-features = false, path = "../juniper"}
+juniper = { version = "0.14.0", default-features = false, path = "../juniper"}
 
 futures03 = { version = "=0.3.0-alpha.19", package = "futures-preview", features = ["compat"] }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
 tokio = "=0.2.0-alpha.6"
 
 [dev-dependencies.juniper]
-version = "0.13.1"
+version = "0.14.0"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"

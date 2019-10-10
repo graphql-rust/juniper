@@ -88,8 +88,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [chrono]: https://crates.io/crates/chrono
 
 */
-
-#![doc(html_root_url = "https://docs.rs/juniper/0.13.1")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.14.0")]
 #![warn(missing_docs)]
 #![cfg_attr(feature = "async", feature(async_closure))]
 
@@ -192,6 +191,7 @@ pub enum GraphQLError<'a> {
     NoOperationProvided,
     MultipleOperationsProvided,
     UnknownOperationName,
+    IsSubscription,
 }
 
 /// Execute a query in a provided schema

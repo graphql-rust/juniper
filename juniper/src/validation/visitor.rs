@@ -64,6 +64,17 @@ fn visit_definitions<'a, S, V>(
                 .schema
                 .concrete_mutation_type()
                 .map(|t| Type::NonNullNamed(Cow::Borrowed(t.name().unwrap()))),
+            Definition::Operation(Spanning {
+                item:
+                    Operation {
+                        operation_type: OperationType::Subscription,
+                        ..
+                    },
+                ..
+            }) => ctx
+                .schema
+                .concrete_subscription_type()
+                .map(|t| Type::NonNullNamed(Cow::Borrowed(t.name().unwrap()))),
         };
 
         ctx.with_pushed_type(def_type.as_ref(), |ctx| {

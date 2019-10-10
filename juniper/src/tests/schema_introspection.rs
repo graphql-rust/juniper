@@ -998,6 +998,12 @@ pub(crate) fn schema_introspection_result() -> value::Value {
                   "deprecationReason": Null
                 },
                 {
+                  "name": "SUBSCRIPTION",
+                  "description": Null,
+                  "isDeprecated": false,
+                  "deprecationReason": Null
+                },
+                {
                   "name": "FIELD",
                   "description": Null,
                   "isDeprecated": false,
@@ -2201,6 +2207,11 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> value::Value
                 },
                 {
                   "name": "MUTATION",
+                  "isDeprecated": false,
+                  "deprecationReason": Null
+                },
+                {
+                  "name": "SUBSCRIPTION",
                   "isDeprecated": false,
                   "deprecationReason": Null
                 },

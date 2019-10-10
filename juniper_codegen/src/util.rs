@@ -1,5 +1,4 @@
 use quote::quote;
-use regex::Regex;
 use std::collections::HashMap;
 use syn::{
     parse, parse_quote, punctuated::Punctuated, Attribute, Lit, Meta, MetaList, MetaNameValue,
@@ -279,10 +278,16 @@ pub(crate) fn to_upper_snake_case(s: &str) -> String {
 
 #[doc(hidden)]
 pub fn is_valid_name(field_name: &str) -> bool {
-    lazy_static::lazy_static! {
-        static ref GRAPHQL_NAME_SPEC: Regex = Regex::new("^[_A-Za-z][_0-9A-Za-z]*$").unwrap();
-    }
-    GRAPHQL_NAME_SPEC.is_match(field_name)
+    let mut chars = field_name.chars();
+
+    match chars.next() {
+        // first char can't be a digit
+        Some(c) if c.is_ascii_alphabetic() || c == '_' => (),
+        // can't be an empty string or any other character
+        _ => return false,
+    };
+
+    chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 #[derive(Default, Debug)]
