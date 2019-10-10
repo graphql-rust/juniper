@@ -1,5 +1,3 @@
-#![feature(async_closure)]
-
 use juniper::{graphql_value, RootNode, Value};
 
 #[derive(juniper::GraphQLEnum)]
