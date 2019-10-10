@@ -27,7 +27,7 @@ fn main() {
     let new_service = move || {
         let root_node = root_node.clone();
         let ctx = db.clone();
-        service_fn(move |req| -> Box<Future<Item = _, Error = _> + Send> {
+        service_fn(move |req| -> Box<dyn Future<Item = _, Error = _> + Send> {
             let root_node = root_node.clone();
             let ctx = ctx.clone();
             match (req.method(), req.uri().path()) {

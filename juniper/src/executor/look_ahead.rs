@@ -88,6 +88,11 @@ where
         }
     }
 
+    /// The argument's name
+    pub fn name(&'a self) -> &str {
+        &self.name
+    }
+
     /// The value of the argument
     pub fn value(&'a self) -> &LookAheadValue<'a, S> {
         &self.value
@@ -347,6 +352,12 @@ pub trait LookAheadMethods<S> {
         self.select_child(name).is_some()
     }
 
+    /// Does the current node have any arguments?
+    fn has_arguments(&self) -> bool;
+
+    /// Does the current node have any children?
+    fn has_children(&self) -> bool;
+
     /// Get the top level arguments for the current selection
     fn arguments(&self) -> &[LookAheadArgument<S>];
 
@@ -354,6 +365,9 @@ pub trait LookAheadMethods<S> {
     fn argument(&self, name: &str) -> Option<&LookAheadArgument<S>> {
         self.arguments().iter().find(|a| a.name == name)
     }
+
+    /// Get the top level children for the current selection
+    fn child_names(&self) -> Vec<&str>;
 }
 
 impl<'a, S> LookAheadMethods<S> for ConcreteLookAheadSelection<'a, S> {
@@ -367,6 +381,21 @@ impl<'a, S> LookAheadMethods<S> for ConcreteLookAheadSelection<'a, S> {
 
     fn arguments(&self) -> &[LookAheadArgument<S>] {
         &self.arguments
+    }
+
+    fn child_names(&self) -> Vec<&str> {
+        self.children
+            .iter()
+            .map(|c| c.alias.unwrap_or(c.name))
+            .collect()
+    }
+
+    fn has_arguments(&self) -> bool {
+        !self.arguments.is_empty()
+    }
+
+    fn has_children(&self) -> bool {
+        !self.children.is_empty()
     }
 }
 
@@ -384,6 +413,21 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 
     fn arguments(&self) -> &[LookAheadArgument<S>] {
         &self.arguments
+    }
+
+    fn child_names(&self) -> Vec<&str> {
+        self.children
+            .iter()
+            .map(|c| c.inner.alias.unwrap_or(c.inner.name))
+            .collect()
+    }
+
+    fn has_arguments(&self) -> bool {
+        !self.arguments.is_empty()
+    }
+
+    fn has_children(&self) -> bool {
+        !self.children.is_empty()
     }
 }
 
@@ -1395,6 +1439,61 @@ fragment heroFriendNames on Hero {
                 }],
             };
             assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_visitability() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero(episode: EMPIRE) {
+        name
+        friends {
+            name
+        }
+    }
+}
+            ",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+
+            assert_eq!(look_ahead.field_name(), "hero");
+
+            assert!(look_ahead.has_arguments());
+            let args = look_ahead.arguments();
+            assert_eq!(args[0].name(), "episode");
+            assert_eq!(args[0].value(), &LookAheadValue::Enum("EMPIRE"));
+
+            assert!(look_ahead.has_children());
+            assert_eq!(look_ahead.child_names(), vec!["name", "friends"]);
+
+            let child0 = look_ahead.select_child("name").unwrap();
+            assert_eq!(child0.field_name(), "name");
+            assert!(!child0.has_arguments());
+            assert!(!child0.has_children());
+
+            let child1 = look_ahead.select_child("friends").unwrap();
+            assert_eq!(child1.field_name(), "friends");
+            assert!(!child1.has_arguments());
+            assert!(child1.has_children());
+            assert_eq!(child1.child_names(), vec!["name"]);
+
+            let child2 = child1.select_child("name").unwrap();
+            assert!(!child2.has_arguments());
+            assert!(!child2.has_children());
         } else {
             panic!("No Operation found");
         }
