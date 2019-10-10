@@ -38,18 +38,15 @@ Check the LICENSE file for details.
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
-#![cfg_attr(feature = "async", feature(async_await, async_closure))]
+#![cfg_attr(feature = "async", feature(async_closure))]
 
-use std::{
-    error::Error,
-    io::{Cursor, Read},
-};
+use std::{error::Error, io::Cursor};
 
 use rocket::{
-    data::{FromDataSimple, Outcome as FromDataOutcome},
+    data::{FromDataFuture, FromDataSimple},
     http::{ContentType, RawStr, Status},
     request::{FormItems, FromForm, FromFormValue},
-    response::{content, Responder, Response},
+    response::{content, Responder, Response, ResultFuture},
     Data,
     Outcome::{Failure, Forward, Success},
     Request,
@@ -400,8 +397,8 @@ where
     type Error = String;
 
     fn from_data(request: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
-        use futures03::io::AsyncReadExt;
-        use rocket::AsyncReadExt as _;
+        use tokio::io::AsyncReadExt as _;
+
         if !request.content_type().map_or(false, |ct| ct.is_json()) {
             return Box::pin(async move { Forward(data) });
         }

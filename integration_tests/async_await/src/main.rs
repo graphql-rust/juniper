@@ -1,4 +1,4 @@
-#![feature(async_await, async_closure)]
+#![feature(async_closure)]
 
 use juniper::{graphql_value, RootNode, Value};
 
@@ -38,7 +38,7 @@ impl User {
 
     async fn delayed() -> bool {
         let when = tokio::clock::now() + std::time::Duration::from_millis(100);
-        tokio::timer::Delay::new(when).await;
+        tokio::timer::delay(when).await;
         true
     }
 }
@@ -65,7 +65,7 @@ impl Query {
 
     async fn delayed() -> bool {
         let when = tokio::clock::now() + std::time::Duration::from_millis(100);
-        tokio::timer::Delay::new(when).await;
+        tokio::timer::delay(when).await;
         true
     }
 }
