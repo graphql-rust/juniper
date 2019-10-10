@@ -214,6 +214,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,
+                    is_type_inferred: false,
                     is_async,
                 });
             }

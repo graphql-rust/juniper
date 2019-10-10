@@ -597,6 +597,7 @@ pub struct GraphQLTypeDefinitionField {
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
     pub resolver_code: proc_macro2::TokenStream,
+    pub is_type_inferred: bool,
     pub is_async: bool,
 }
 
@@ -712,10 +713,15 @@ impl GraphQLTypeDefiniton {
                     },
                 )
             } else {
-                let _type = &field._type;
+                let _type = if field.is_type_inferred {
+                    quote!()
+                } else {
+                    let _type = &field._type;
+                    quote!(: #_type)
+                };
                 quote!(
                     #name => {
-                        let res: #_type = { #code };
+                        let res #_type = { #code };
                         #juniper_crate_name::IntoResolvable::into(
                             res,
                             executor.context()
@@ -805,14 +811,19 @@ impl GraphQLTypeDefiniton {
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
                 let name = &field.name;
-                let _type = &field._type;
                 let code = &field.resolver_code;
+                let _type = if field.is_type_inferred {
+                    quote!()
+                } else {
+                    let _type = &field._type;
+                    quote!(: #_type)
+                };
 
                 if field.is_async {
                     quote!(
                         #name => {
                             let f = async move {
-                                let res: #_type = async move { #code }.await;
+                                let res #_type = async move { #code }.await;
 
                                 let inner_res = #juniper_crate_name::IntoResolvable::into(
                                     res,
@@ -860,7 +871,7 @@ impl GraphQLTypeDefiniton {
 
                     quote!(
                         #name => {
-                            let res: #_type = { #code };
+                            let res #_type = { #code };
                             let res2 = #juniper_crate_name::IntoResolvable::into(
                                 res,
                                 executor.context()
