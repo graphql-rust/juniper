@@ -218,7 +218,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 info: &'a Self::TypeInfo,
                 selection_set: Option<&'a [#juniper_path::Selection<__S>]>,
                 executor: &'a #juniper_path::Executor<Self::Context, __S>,
-            ) -> futures::future::BoxFuture<'a, #juniper_path::Value<__S>> {
+            ) -> futures::future::LocalBoxFuture<'a, #juniper_path::Value<__S>> {
                 use #juniper_path::GraphQLType;
                 use futures::future;
                 let v = self.resolve(info, selection_set, executor);
