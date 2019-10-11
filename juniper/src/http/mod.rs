@@ -14,7 +14,9 @@ use crate::{
     executor::ExecutionError,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
+    ValuesIterator, ValuesStream,
 };
+use crate::executor::OwnedExecutor;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -70,19 +72,75 @@ where
         }
     }
 
-    /// Execute a GraphQL request using the specified schema and context
+    /// Execute a GraphQL subscription using the specified schema and context
     ///
-    /// This is a simple wrapper around the `execute` function exposed at the
+    /// This is a simple wrapper around the `subscribe` function exposed at the
     /// top level of this crate.
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
+        executor_variables: &'a mut OwnedExecutor<'a, CtxT, S>,
+        fragments: &'a mut Vec<crate::parser::Spanning<crate::ast::Fragment<'a, S>>>,
+        executor: &'a mut crate::executor::OptionalExecutor<'a, CtxT, S>,
+    ) -> IteratorGraphQLResponse<'a, S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        QueryT: GraphQLType<S, Context = CtxT>,
+        MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        IteratorGraphQLResponse(crate::subscribe(
+            &self.query,
+            self.operation_name(),
+            root_node,
+            self.variables(),
+            context,
+            executor_variables,
+            fragments,
+            executor,
+        ))
+    }
+
+    /// Execute a GraphQL subscription using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `subscribe_async` function exposed at the
+    /// top level of this crate.
+    #[cfg(feature = "async")]
+    pub async fn subscribe_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
+    ) -> StreamGraphQLResponse<'a, S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        let op = self.operation_name();
+        let vars = &self.variables();
+        let res = crate::subscribe_async(&self.query, op, root_node, vars, context).await;
+
+        StreamGraphQLResponse(res)
+    }
+
+    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(crate::execute(
@@ -95,17 +153,19 @@ where
     }
 
     #[cfg(feature = "async")]
-    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
@@ -122,8 +182,24 @@ where
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    //todo: remove pub (pub is used in playground to access result)
+    pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
+
+//todo: remove pub (pub is used in playground to access result)
+pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
+    pub Result<(Value<ValuesIterator<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+)
+where
+    S: 'static;
+
+#[cfg(feature = "async")]
+pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
+    //todo: remove pub (pub is used in playground to access result)
+    pub Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+)
+where
+    S: 'static;
 
 impl<'a, S> GraphQLResponse<'a, S>
 where

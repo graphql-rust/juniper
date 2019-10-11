@@ -90,6 +90,14 @@ impl<S> Object<S> {
             }
         }
     }
+
+    pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
+        self.key_value_list
+    }
+
+    pub fn len(&self) -> usize {
+        self.key_value_list.len()
+    }
 }
 
 impl<S> IntoIterator for Object<S> {
@@ -129,7 +137,7 @@ where
 
 #[doc(hidden)]
 pub struct FieldIter<'a, S: 'a> {
-    inner: ::std::slice::Iter<'a, (String, Value<S>)>,
+   pub inner: ::std::slice::Iter<'a, (String, Value<S>)>,
 }
 
 impl<'a, S> Iterator for FieldIter<'a, S> {
@@ -142,7 +150,7 @@ impl<'a, S> Iterator for FieldIter<'a, S> {
 
 #[doc(hidden)]
 pub struct FieldIterMut<'a, S: 'a> {
-    inner: ::std::slice::IterMut<'a, (String, Value<S>)>,
+   pub inner: ::std::slice::IterMut<'a, (String, Value<S>)>,
 }
 
 impl<'a, S> Iterator for FieldIterMut<'a, S> {

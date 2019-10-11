@@ -74,6 +74,10 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
                 message: "Expected query, got subscription",
             }]
             .serialize(serializer),
+            GraphQLError::NotSubscription => [SerializeHelper {
+                message: "Expected subscription, got query",
+            }]
+            .serialize(serializer),
         }
     }
 }
@@ -408,7 +412,7 @@ mod tests {
     use super::{ExecutionError, GraphQLError};
     use crate::{
         ast::InputValue,
-        value::{DefaultScalarValue, Object},
+        value::{base_object::SyncObject, DefaultScalarValue, Object},
         FieldError, Value,
     };
     use serde_json::{from_str, to_string};
