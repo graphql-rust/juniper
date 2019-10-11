@@ -14,7 +14,6 @@ use crate::{
     validation::RuleError,
     GraphQLError, Object, ScalarValue, Value,
 };
-use crate::value::base_object::SyncObject;
 
 #[derive(Serialize)]
 struct SerializeHelper {
@@ -417,7 +416,6 @@ mod tests {
         FieldError, Value,
     };
     use serde_json::{from_str, to_string};
-    use crate::value::base_object::SyncObject;
 
     #[test]
     fn int() {
