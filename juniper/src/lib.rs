@@ -138,8 +138,6 @@ pub mod integrations;
 // TODO: remove this alias export in 0.10. (breaking change)
 pub use crate::http::graphiql;
 
-pub use crate::executor::OptionalExecutor;
-
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
@@ -178,7 +176,7 @@ pub use crate::{
     },
 };
 
-pub use executor::OwnedExecutor;
+pub use executor::SubscriptionsExecutor;
 
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
@@ -311,9 +309,7 @@ pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'a CtxT,
-    executor_variables: &'a mut OwnedExecutor<'a, CtxT, S>,
-    fragments: &'a mut Vec<Spanning<crate::ast::Fragment<'a, S>>>,
-    executor: &'a mut crate::executor::OptionalExecutor<'a, CtxT, S>,
+    executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
 ) -> Result<(Value<ValuesIterator<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -324,7 +320,7 @@ where
 {
     let document = parse_and_validate_document(document_source, root_node, &variables)?;
 
-    executor::execute_validated_subcription(document, operation_name, root_node, variables, context, executor_variables, fragments, executor)
+    executor::execute_validated_subscription(document, operation_name, root_node, variables, context, executor)
 }
 
 /// Execute a query in a provided schema

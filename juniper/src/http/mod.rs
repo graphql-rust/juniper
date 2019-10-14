@@ -16,7 +16,6 @@ use crate::{
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
     ValuesIterator, ValuesStream,
 };
-use crate::executor::OwnedExecutor;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -80,9 +79,7 @@ where
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
-        executor_variables: &'a mut OwnedExecutor<'a, CtxT, S>,
-        fragments: &'a mut Vec<crate::parser::Spanning<crate::ast::Fragment<'a, S>>>,
-        executor: &'a mut crate::executor::OptionalExecutor<'a, CtxT, S>,
+        executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
     ) -> IteratorGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -97,8 +94,6 @@ where
             root_node,
             self.variables(),
             context,
-            executor_variables,
-            fragments,
             executor,
         ))
     }

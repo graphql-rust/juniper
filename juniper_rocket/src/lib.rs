@@ -110,14 +110,10 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                let mut executor_variables = juniper::OwnedExecutor::new();
-                let mut fragments = vec![];
-                let mut executor = juniper::OptionalExecutor::new();
+                let mut executor = juniper::SubscriptionsExecutor::new();
                 let (res, err) = request.subscribe(
                     root_node,
                     context,
-                    &mut executor_variables,
-                    &mut fragments,
                     &mut executor
                 ).0.unwrap();
                 //                let response: Vec<_> = res.take(5).collect();

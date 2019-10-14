@@ -52,7 +52,7 @@ pub enum FieldPath<'a> {
     Field(&'a str, SourcePosition, &'a FieldPath<'a>),
 }
 
-pub struct OwnedExecutorData<'a, CtxT, S = DefaultScalarValue>
+pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: 'a,
@@ -68,7 +68,7 @@ where
     field_path: FieldPath<'a>,
 }
 
-impl<'a, CtxT, S> OwnedExecutorData<'a, CtxT, S>
+impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
 where S: Clone {
 
     pub fn get_executor(
@@ -94,37 +94,18 @@ where S: Clone {
             field_path: self_ty.field_path.clone()
         }
 
-//        Executor {
-//            fragments: self_ty.fragments_vec.as_ref().unwrap(),
-//            variables: &selt_ty.as_ref().unwrap().variables,
-//            current_selection_set: if let Some(s) = &selt_ty._data.as_ref().unwrap().current_selection_set{
-//                Some(&s[..])
-//            }
-//            else {None},
-//            parent_selection_set: if let Some(s) = &selt_ty._data.as_ref().unwrap().current_selection_set{
-//                Some(&s[..])
-//            }
-//            else {None},
-//            current_type: selt_ty._data.as_ref().unwrap().current_type.clone(),
-//            schema: selt_ty._data.as_ref().unwrap().schema,
-//            context: selt_ty._data.as_ref().unwrap().context,
-//            errors: &selt_ty._data.as_ref().unwrap().errors,
-//            field_path: self._data.as_ref().unwrap().field_path.clone(),
-//        }
-
     }
 }
 
-pub struct OwnedExecutor<'a, CtxT, S = DefaultScalarValue>
+struct ExecutorData<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: Clone + 'a,
 {
-    _data: Option<OwnedExecutorData<'a, CtxT, S>>,
-//    fragments_vec: Option<HashMap<&'a str, &'a Fragment<'a, S>>>,
+    _data: Option<ExecutorDataVariables<'a, CtxT, S>>,
 }
 
-impl<'a, CtxT, S> OwnedExecutor<'a, CtxT, S>
+impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
 where
     CtxT: 'a,
     S: Clone + 'a,
@@ -132,56 +113,24 @@ where
     pub fn new() -> Self {
         Self {
             _data: None,
-//            fragments_vec: None,
         }
     }
 
-    pub fn set_data(&mut self, data: OwnedExecutorData<'a, CtxT, S>) {
+    pub fn set_data(&mut self, data: ExecutorDataVariables<'a, CtxT, S>) {
         self._data = Some(data);
     }
 
-    pub fn get_executor(&'a self) -> Executor<'a, CtxT, S> {
+    pub fn get_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
         if let Some(ref s) = self._data {
-            OwnedExecutorData::get_executor(s)
+            Ok(ExecutorDataVariables::get_executor(s))
         }
         else {
-            unimplemented!()
+            Err(())
         }
     }
-
-
-//    pub fn new(data: OwnedExecutorData<'a, CtxT, S>) -> Self {
-//        let mut owned_executor: OwnedExecutor<'a, CtxT, S> = Self {
-//            _data: data,
-//            executor: Mutex::new(None),
-//        };
-//
-//        owned_executor
-//    }
-
-//    pub fn init_executor(&'a self) {
-//        let mut executor = self.executor.lock().unwrap();
-//        *executor = Some(Executor {
-//            fragments: &self._data.fragments,
-//            variables: &self._data.variables,
-//            current_selection_set: if let Some(s) = &self._data.current_selection_set{
-//                Some(&s[..])
-//            }
-//            else {None},
-//            parent_selection_set: if let Some(s) = &self._data.current_selection_set{
-//                Some(&s[..])
-//            }
-//            else {None},
-//            current_type: self._data.current_type.clone(),
-//            schema: self._data.schema,
-//            context: self._data.context,
-//            errors: &self._data.errors,
-//            field_path: self._data.field_path.clone(),
-//        });
-//    }
 }
 
-pub struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
+struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: 'a,
@@ -218,7 +167,27 @@ where
             e
         }
         else {
-            unimplemented!()
+            panic!("OptionalExecutor was not initialized")
+        }
+    }
+}
+
+pub struct SubscriptionsExecutor<'a, CtxT, S>
+where S: std::clone::Clone
+{
+    executor_variables: ExecutorData<'a, CtxT, S>,
+    fragments: Vec<Spanning<Fragment<'a, S>>>,
+    executor: OptionalExecutor<'a, CtxT, S>,
+}
+
+impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
+where S: std::clone::Clone
+{
+    pub fn new() -> Self {
+        Self {
+            executor_variables: ExecutorData::new(),
+            fragments: vec![],
+            executor: OptionalExecutor::new(),
         }
     }
 }
@@ -1082,15 +1051,13 @@ where
     Ok((value, errors))
 }
 
-pub fn execute_validated_subcription<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+pub fn execute_validated_subscription<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
     operation_name: Option<&str>,
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'a CtxT,
-    executor_variables: &'a mut OwnedExecutor<'a, CtxT, S>,
-    fragments: &'a mut Vec<Spanning<Fragment<'a, S>>>,
-    executor: &'a mut OptionalExecutor<'a, CtxT, S>,
+    executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
 ) -> Result<(Value<ValuesIterator<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -1102,7 +1069,7 @@ where
 //    let mut fragments = vec![];
     let mut operation = None;
 
-    parse_document_definitions(document, operation_name, fragments, &mut operation)?;
+    parse_document_definitions(document, operation_name, &mut executor.fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -1150,9 +1117,9 @@ where
             _ => unreachable!(),
         };
 
-        executor_variables.set_data(
-            OwnedExecutorData {
-                fragments: fragments
+        executor.executor_variables.set_data(
+            ExecutorDataVariables {
+                fragments: executor.fragments
                     .iter()
                     .map(|f| (f.item.name.item, &f.item))
                     .collect(),
@@ -1167,11 +1134,11 @@ where
             }
         );
 
-        executor.set(executor_variables.get_executor());
-
+        // unwrap is safe here because executor's data was set up above
+        executor.executor.set(executor.executor_variables.get_executor().unwrap());
 
         value = match op.item.operation_type {
-            OperationType::Subscription => executor
+            OperationType::Subscription => executor.executor
                 .resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type),
             _ => unreachable!(),
         };
