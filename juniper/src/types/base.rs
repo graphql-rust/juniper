@@ -589,13 +589,12 @@ where
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    panic!("typename not implemented");
-//                    result.add_field(
-//                        response_name,
-//                        Value::Scalar(Box::new(std::iter::once(Value::scalar(
-//                            instance.concrete_type_name(executor.context(), info),
-//                        )))),
-//                    );
+                    result.add_field(
+                        response_name,
+                        Value::Scalar(Box::new(std::iter::once(Value::scalar(
+                            instance.concrete_type_name(executor.context(), info),
+                        )))),
+                    );
                     continue;
                 }
 

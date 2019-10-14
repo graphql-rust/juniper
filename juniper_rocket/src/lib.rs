@@ -116,7 +116,6 @@ where
                     context,
                     &mut executor
                 ).0.unwrap();
-                //                let response: Vec<_> = res.take(5).collect();
                 let x: Value<DefaultScalarValue> = match res {
                     Value::Null => {Value::Null},
                     Value::Scalar(s) => {
