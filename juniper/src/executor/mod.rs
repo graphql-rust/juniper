@@ -196,6 +196,7 @@ where S: std::clone::Clone
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
+#[derive(Clone)]
 pub struct Executor<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
@@ -211,6 +212,8 @@ where
     errors: &'a RwLock<Vec<ExecutionError<S>>>,
     field_path: FieldPath<'a>,
 }
+
+unsafe impl<'a, CtxT, S> Send for Executor<'a, CtxT, S>{}
 
 /// Error type for errors that occur during query execution
 ///
@@ -358,7 +361,10 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 pub type SubscriptionResult<'a, S = DefaultScalarValue> = FieldResult<Value<ValuesIterator<'a, S>>, S>;
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> = FieldResult<Value<ValuesStream<'a, S>>, S>;
+pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> = FieldResult<
+    Value<std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>>,
+    S
+>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler

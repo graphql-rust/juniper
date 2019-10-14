@@ -1,8 +1,4 @@
-use crate::{
-    ast::{Directive, FromInputValue, InputValue, Selection},
-    value::{Object, ScalarRefValue, ScalarValue, Value},
-    FieldError, ValuesStream,
-};
+use crate::{ast::{Directive, FromInputValue, InputValue, Selection}, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldError, ValuesStream, FieldResult};
 
 use crate::{
     executor::{ExecutionResult, Executor},
@@ -61,7 +57,7 @@ where
         info: &'a Self::TypeInfo,
         field_name: &'a str,
         arguments: Arguments<S>,
-        executor: Executor<Self::Context, S>,
+        executor: Executor<'a, Self::Context, S>,
     ) -> BoxFuture<'a, SubscriptionResultAsync<'a, S>> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -406,13 +402,14 @@ where
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    let typename =
-                        Value::scalar(instance.concrete_type_name(executor.context(), info));
-                    object.add_field(
-                        response_name,
-                        Value::Scalar(Box::pin(futures::stream::once(async { typename }))),
-                    );
-                    continue;
+                    unimplemented!()
+//                    let typename =
+//                        Value::scalar(instance.concrete_type_name(executor.context(), info));
+//                    object.add_field(
+//                        response_name,
+//                        Value::Scalar(Box::pin(futures::stream::once(async { typename }))),
+//                    );
+//                    continue;
                 }
 
                 let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
@@ -458,7 +455,6 @@ where
                         Ok(v) => Some(v),
                         Err(e) => {
 //                            sub_exec.push_error_at(e, pos);
-
                             if is_non_null {
                                 None
                             } else {

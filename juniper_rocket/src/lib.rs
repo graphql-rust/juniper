@@ -161,7 +161,7 @@ where
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
+    ) -> GraphQLBatchResponse<'a, DefaultScalarValue>
     where
         QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
@@ -181,28 +181,27 @@ where
                         context,
                         &mut executor
                     ).await.0.unwrap();
-                let mut response = Vec::new();
-                println!("Got response: ");
-                match response_value {
-                    juniper::Value::Object(response_stream) => {
-                        for (name, val) in response_stream.into_key_value_list().into_iter() {
-                            print!(" {:?} ", name);
-                            match val {
-                                juniper::Value::Scalar(s) => {
-                                    let vector: Vec<_> = s.take(5).collect().await;
-                                    response.push(vector);
-                                }
-                                _ => panic!("juniper object didnt have scalar value!"),
-                            }
-                        }
-                    }
-                    _ => panic!("Test server does not support streams everywhere"),
-                }
-                println!("");
-                println!("Asyncronous response values: {:#?}", response);
+                let x = match response_value {
+                    Value::Null => { Value::null() },
+                    Value::Scalar(stream) => {
+                        use futures::{compat::Compat, Future};
+                        use rocket::http::Status;
+                        use std::sync::mpsc::channel;
+
+                        let mut x = futures::executor::block_on(async move {
+                            let collected = stream.take(5).collect::<Vec<_>>().await;
+                            println!("Got response: {:#?}", collected);
+                        });
+
+
+                        Value::Scalar(DefaultScalarValue::String("objects not implemented in test server".to_string()))
+                    },
+                    Value::List(_) => { Value::Scalar(DefaultScalarValue::String("lists not implemented in test server".to_string())) },
+                    Value::Object(_) => { Value::Scalar(DefaultScalarValue::String("objects not implemented in test server".to_string())) },
+                };
 
                 GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((
-                    response[0][0].clone(),
+                    x,
                     vec![],
                 ))))
             }
