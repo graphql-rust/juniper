@@ -354,31 +354,16 @@ impl<S> FieldError<S> {
 /// The result of resolving the value of a field of type `T`
 pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 
-/*
-pub enum ResolvedValue<'a, S = DefaultScalarValue> {
-    Value(Value<S>),
-    Future(crate::BoxFuture<'a, Value<S>>),
-}
-
-impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
-    #[inline]
-    fn from(value: Value<S>) -> Self {
-        ResolvedValue::Value(value)
-    }
-}
-*/
-
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 pub type SubscriptionResult<'a, S = DefaultScalarValue> = FieldResult<Value<ValuesIterator<'a, S>>, S>;
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<S = DefaultScalarValue> = Result<ValuesStream<S>, FieldError<S>>;
+pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> = FieldResult<Value<ValuesStream<'a, S>>, S>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
-// todo: rename to subscription value async
-pub type ValuesStream<S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send>>;
+pub type ValuesStream<'a, S = DefaultScalarValue> =
+    std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>;
 
 /// The type returned from subscription handler
 pub type ValuesIterator<'a, S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'a>;
@@ -555,28 +540,13 @@ where
         Ok(value.resolve_into_iterator(info, self.current_selection_set, self))
     }
 
-    /// Resolve a value into iterator, mapping the context to a new type
-    pub fn subscribe_with_ctx<NewCtxT, T>(
-        &'a self,
-        info: &'a T::TypeInfo,
-        value: &'a T,
-    ) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>>
-    where
-        NewCtxT: FromContext<CtxT>,
-        T: crate::SubscriptionHandler<S, Context = NewCtxT>,
-        S: 'static,
-        CtxT: 'a,
-        NewCtxT: 'a,
-    {
-        //todo
-        unimplemented!()
-//        self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
-//            .subscribe(info, value)
-    }
-
     /// Resolve a single arbitrary value into an `SubscriptionResultAsync`
     #[cfg(feature = "async")]
-    pub async fn subscribe_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<ValuesStream<S>>
+    pub async fn subscribe_async<T>(
+        &'a self,
+        info: &'a T::TypeInfo,
+        value: &'a T
+    ) -> Value<ValuesStream<'a, S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
@@ -586,24 +556,6 @@ where
         value
             .resolve_into_stream(info, self.current_selection_set, self)
             .await
-    }
-
-    /// Resolve a value into iterator asynchronously,
-    /// mapping the context to a new type
-    #[cfg(feature = "async")]
-    pub async fn subscribe_with_ctx_async<NewCtxT, T>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T,
-    ) -> Value<ValuesStream<S>>
-    where
-        T: crate::SubscriptionHandlerAsync<S, Context = NewCtxT>,
-        T::TypeInfo: Send + Sync,
-        S: Send + Sync + 'static,
-        NewCtxT: FromContext<CtxT> + Send + Sync,
-    {
-        let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
-        e.subscribe_async(info, value).await
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
@@ -703,10 +655,10 @@ where
     /// will be returned.
     #[cfg(feature = "async")]
     pub async fn resolve_into_iterator_async<T>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T,
-    ) -> Value<ValuesStream<S>>
+        &'a self,
+        info: &'a T::TypeInfo,
+        value: &'a T,
+    ) -> Value<ValuesStream<'a, S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -1263,10 +1215,11 @@ where
 pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
     operation_name: Option<&str>,
-    root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &CtxT,
-) -> Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: Variables<S>,
+    context: &'a CtxT,
+    executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -1278,10 +1231,9 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    let mut fragments = vec![];
     let mut operation = None;
 
-    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
+    parse_document_definitions(document, operation_name, &mut executor.fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -1311,13 +1263,13 @@ where
         let mut final_vars = variables;
 
         if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
+            all_vars = final_vars;
 
             for (name, value) in defaults {
                 all_vars.entry(name).or_insert(value);
             }
 
-            final_vars = &all_vars;
+            final_vars = all_vars;
         }
 
         let root_type = match op.item.operation_type {
@@ -1328,24 +1280,28 @@ where
             _ => unreachable!(),
         };
 
-        let executor = Executor {
-            fragments: &fragments
+        executor.executor_variables.set_data(
+            ExecutorDataVariables {
+            fragments: executor.fragments
                 .iter()
                 .map(|f| (f.item.name.item, &f.item))
                 .collect(),
             variables: final_vars,
-            current_selection_set: Some(&op.item.selection_set[..]),
+            current_selection_set: Some(op.item.selection_set),
             parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
             context,
-            errors: &errors,
+            errors: errors,
             field_path: FieldPath::Root(op.start),
-        };
+        });
+
+        // unwrap is safe here because executor's data was set up above
+        executor.executor.set(executor.executor_variables.get_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {
-                executor
+                executor.executor
                     .resolve_into_iterator_async(
                         &root_node.subscription_info,
                         &root_node.subscription_type,
@@ -1356,10 +1312,10 @@ where
         };
     }
 
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
+//    let mut errors = errors.into_inner().unwrap();
+//    errors.sort();
 
-    Ok((value, errors))
+    Ok((value, vec![]))
 }
 
 fn parse_document_definitions<'a, 'b, S>(

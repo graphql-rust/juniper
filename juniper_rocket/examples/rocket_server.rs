@@ -8,6 +8,7 @@ use rocket::{response::content, State};
 use juniper::{parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, FieldResult, RootNode, Selection, Value, ValuesStream, GraphQLType, ValuesIterator};
 use juniper_rocket::GraphQLResponse;
 use std::{env::args, sync::Arc};
+use futures::StreamExt;
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
@@ -68,143 +69,130 @@ impl MySubscription {
     }
 }
 
-//impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
-//where
-//    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
-//    Self::Context: Send + Sync,
-//    Self::TypeInfo: Send + Sync,
-//{
-//    fn resolve_field_async<'a>(
-//        &'a self,
-//        info: &'a Self::TypeInfo,
-//        field_name: &'a str,
-//        arguments: &'a Arguments<DefaultScalarValue>,
-//        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-//    ) -> BoxFuture<'a, Result<
-//                Value<ValuesStream<DefaultScalarValue>>,
-//                FieldError<DefaultScalarValue>>
-//         > {
-//        println!("field name: {}", field_name);
-//
-//        match field_name {
-//            "human" => {
-//                let ctx = executor.context();
-//                let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> =
-//                    Box::pin(futures::stream::once(async {
-//                        Value::Scalar(DefaultScalarValue::String("human".to_owned()))
-//                    }));
-//
-//                Box::pin(futures::future::ready(Ok(Value::Scalar(x))))
-//            }
-//            "nothuman" => {
-//                use futures::{channel::mpsc, future::FutureExt, stream::StreamExt};
-//                use std::{thread, time};
-//
-//                let (tx1, rx1) = mpsc::unbounded();
-//
-//                thread::spawn(move || {
-//                    tx1.unbounded_send(1).unwrap();
-//                    thread::sleep(time::Duration::from_millis(1000));
-//                    tx1.unbounded_send(2).unwrap();
-//                });
-//
-//                let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> =
-//                    Box::pin(
-//                        //                    futures::stream::repeat(Value::Scalar(DefaultScalarValue::String("not human".to_owned()))),
-//                        rx1.map(|x| Value::Scalar(DefaultScalarValue::Int(x))),
-//                    );
-//                Box::pin(futures::future::ready(Ok(Value::Scalar(x))))
-//            }
-//            _ => {
-//                panic!("field not found");
-//            }
-//        }
-//
-//    }
-//
-//    //    fn resolve_into_stream<'a>(
-//    //        &'a self,
-//    //        info: &'a Self::TypeInfo,
-//    //        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-//    //        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-//    //    ) -> BoxFuture<'a, juniper::ValuesStream> {
-//    //        let ctx = executor.context();
-//    //        let x: std::pin::Pin<Box<dyn futures::Stream<Item = Value<DefaultScalarValue>>>> = Box::pin(
-//    //            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(ctx.0))),
-//    //        );
-//    //
-//    //        Box::pin(futures::future::ready(x))
-//    //    }
-//}
+//todo: push errors to executors
 
-impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
-    fn resolve_field_into_iterator<'r>(
-        &self,
-        info: &Self::TypeInfo,
-        field_name: &str,
-        arguments: &Arguments<DefaultScalarValue>,
-        executor: Executor<'r, Self::Context, DefaultScalarValue>,
-    ) -> juniper::SubscriptionResult<'r, DefaultScalarValue> {
+impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
+where
+    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
+    Self::Context: Send + Sync,
+    Self::TypeInfo: Send + Sync,
+{
+    fn resolve_field_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        field_name: &'a str,
+        arguments: &'a Arguments<DefaultScalarValue>,
+        executor: Executor<Self::Context, DefaultScalarValue>,
+    ) -> juniper::SubscriptionResultAsync<'a> {
+        use futures::future;
         match field_name {
             "human" => {
                 let res = {
-                    (move || ->  FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
-                        let iter = Box::new(std::iter::repeat(
-                //                Value::Scalar(DefaultScalarValue::Int(22))
-                                    Human {
-                                        id: "subscription id".to_string(),
-                                        name: "subscription name".to_string(),
-                                        home_planet: "subscription planet".to_string()
-                                    }
-                            ));
-
-                        Ok(iter)
-
-                    })()
+//                    let id = args.get::<String>("id").expect("Internal error: missing argument id - validation must have failed");
+                    {
+                        Ok(Box::pin(futures::stream::repeat(
+                            Human {
+                                id: "stream human id".to_string(),
+                                name: "stream human name".to_string(),
+                                home_planet: "stream human home planet".to_string()
+                            }
+                        )))
+                    }
                 }?;
-                let iter = res.map(move |res| {
-                    println!("human map");
-                    let x =
-                        juniper::IntoResolvable::<'_, DefaultScalarValue, _, _>::into(res, executor.context())
-                            .and_then(|res| {
-                                match res {
-                                    Some((ctx, r)) => {
-                                        let resolve_res = executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
-                                        Ok(resolve_res.unwrap())
-                                    },
-                                    None => {
-                                        Ok(Value::null())
-                                    },
-                                }
-                            });
-                    x.unwrap()
-                });
-                Ok(Value::Scalar(Box::new(iter)))
-//                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));
-//                Ok(Value::Null)
+                Ok(Value::Scalar(
+                    future::FutureExt::boxed(
+                        res.map(move |res| {
+                                let res2 = juniper::IntoResolvable::into(res, executor.context());
+                                let f = async move {
+                                    match res2 {
+                                        Ok(Some((ctx, r))) => {
+                                            let sub = executor.replaced_context(ctx);
+                                            sub.resolve_with_ctx_async(&(), &r).await
+                                        }
+                                        Ok(None) => Ok(juniper::Value::null()),
+                                        Err(e) => Err(e),
+                                    }
+                                };
+                        })
+                    )
+                ))
             }
-            "nothuman" => {
-                unimplemented!()
-//                Ok(Value::Scalar(Box::new(std::iter::once(Value::Scalar(
-//                    DefaultScalarValue::Int(32),
-//                )))))
-            },
             _ => {
                 panic!("field not found");
             }
         }
-    }
 
-    //    fn resolve_into_iterator<'a>(
-    //        &'a self,
-    //        info: &'a Self::TypeInfo,
-    //        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
-    //        executor: &'a Executor<Self::Context, DefaultScalarValue>,
-    //    ) -> juniper::ValuesIterator<DefaultScalarValue> {
-    //        println!("Selection: {:#?}", selection_set);
-    //        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(32))))
-    //    }
+    }
 }
+
+//impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
+//    fn resolve_field_into_iterator<'r>(
+//        &self,
+//        info: &Self::TypeInfo,
+//        field_name: &str,
+//        arguments: &Arguments<DefaultScalarValue>,
+//        executor: Executor<'r, Self::Context, DefaultScalarValue>,
+//    ) -> juniper::SubscriptionResult<'r, DefaultScalarValue> {
+//        match field_name {
+//            "human" => {
+//                let res = {
+//                    (move || ->  FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
+//                        let iter = Box::new(std::iter::repeat(
+//                //                Value::Scalar(DefaultScalarValue::Int(22))
+//                                    Human {
+//                                        id: "subscription id".to_string(),
+//                                        name: "subscription name".to_string(),
+//                                        home_planet: "subscription planet".to_string()
+//                                    }
+//                            ));
+//
+//                        Ok(iter)
+//
+//                    })()
+//                }?;
+//                let iter = res.map(move |res| {
+//                    println!("human map");
+//                    let x =
+//                        juniper::IntoResolvable::<'_, DefaultScalarValue, _, _>::into(res, executor.context())
+//                            .and_then(|res| {
+//                                match res {
+//                                    Some((ctx, r)) => {
+//                                        let resolve_res = executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
+//                                        Ok(resolve_res.unwrap())
+//                                    },
+//                                    None => {
+//                                        Ok(Value::null())
+//                                    },
+//                                }
+//                            });
+//                    x.unwrap()
+//                });
+//                Ok(Value::Scalar(Box::new(iter)))
+////                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));
+////                Ok(Value::Null)
+//            }
+//            "nothuman" => {
+//                unimplemented!()
+////                Ok(Value::Scalar(Box::new(std::iter::once(Value::Scalar(
+////                    DefaultScalarValue::Int(32),
+////                )))))
+//            },
+//            _ => {
+//                panic!("field not found");
+//            }
+//        }
+//    }
+//
+//    //    fn resolve_into_iterator<'a>(
+//    //        &'a self,
+//    //        info: &'a Self::TypeInfo,
+//    //        selection_set: Option<&'a [Selection<DefaultScalarValue>]>,
+//    //        executor: &'a Executor<Self::Context, DefaultScalarValue>,
+//    //    ) -> juniper::ValuesIterator<DefaultScalarValue> {
+//    //        println!("Selection: {:#?}", selection_set);
+//    //        Box::new(std::iter::repeat(Value::Scalar(DefaultScalarValue::Int(32))))
+//    //    }
+//}
 
 #[derive(Debug)]
 pub struct MyContext(i32);

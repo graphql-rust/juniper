@@ -354,9 +354,10 @@ pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &CtxT,
-) -> Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+    variables: Variables<S>,
+    context: &'a CtxT,
+    executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -368,7 +369,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    let document = parse_and_validate_document_async(document_source, root_node, variables)?;
+    let document = parse_and_validate_document_async(document_source, root_node, &variables)?;
 
     executor::execute_validated_subscription_async(
         document,
@@ -376,6 +377,7 @@ where
         root_node,
         variables,
         context,
+        executor,
     )
     .await
 }

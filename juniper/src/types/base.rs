@@ -796,9 +796,9 @@ fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
 }
 
 pub(crate) fn async_merge_key_into<S>(
-    result: &mut Object<ValuesStream<S>>,
+    result: &mut Object<S>,
     response_name: &str,
-    value: Value<ValuesStream<S>>,
+    value: Value<S>,
 )
 {
     if let Some(&mut (_, ref mut e)) = result

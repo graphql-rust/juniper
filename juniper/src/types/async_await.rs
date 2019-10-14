@@ -60,9 +60,9 @@ where
         &'a self,
         info: &'a Self::TypeInfo,
         field_name: &'a str,
-        arguments: &'a Arguments<S>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, Result<Value<ValuesStream<S>>, FieldError<S>>> {
+        arguments: Arguments<S>,
+        executor: Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, SubscriptionResultAsync<'a, S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
@@ -74,11 +74,11 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, Value<ValuesStream<S>>> {
+    ) -> BoxFuture<'a, Value<ValuesStream<'a, S>>> {
         if let Some(selection_set) = selection_set {
             resolve_selection_set_into_stream(self, info, selection_set, executor)
         } else {
-            panic!("resolve_into_stream_async() must be implemented");
+            panic!("resolve_into_stream() must be implemented");
         }
     }
 
@@ -347,7 +347,7 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> BoxFuture<'a, Value<ValuesStream<S>>>
+) -> BoxFuture<'a, Value<ValuesStream<'a, S>>>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT>,
     T::TypeInfo: Send + Sync,
@@ -369,7 +369,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> Value<ValuesStream<S>>
+) -> Value<ValuesStream<'a, S>>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
@@ -381,7 +381,7 @@ where
 
     let mut object: Object<ValuesStream<S>> = Object::with_capacity(selection_set.len());
 
-    let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<ValuesStream<S>>>>::new();
+    let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<ValuesStream<'a, S>>>>::new();
 
     let meta_type = executor
         .schema()
@@ -431,6 +431,7 @@ where
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
+
                 let args = Arguments::new(
                     f.arguments.as_ref().map(|m| {
                         m.item
@@ -449,14 +450,14 @@ where
                     // TODO: implement custom future type instead of
                     // two-level boxing.
                     let res = instance
-                        .resolve_field_async(info, f.name.item, &args, &sub_exec)
+                        .resolve_field_async(info, f.name.item, args, sub_exec)
                         .await;
 
                     let value = match res {
                         Ok(Value::Null) if is_non_null => None,
                         Ok(v) => Some(v),
                         Err(e) => {
-                            sub_exec.push_error_at(e, pos);
+//                            sub_exec.push_error_at(e, pos);
 
                             if is_non_null {
                                 None
@@ -489,8 +490,7 @@ where
                         info,
                         &fragment.selection_set[..],
                         executor,
-                    )
-                    .await;
+                    ).await;
                     AsyncValue::Nested(value)
                 };
                 async_values.push(Box::pin(f));
@@ -527,17 +527,19 @@ where
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    let f = async move {
-                        let value = resolve_selection_set_into_stream(
-                            instance,
-                            info,
-                            &fragment.selection_set[..],
-                            &sub_exec,
-                        )
-                        .await;
-                        AsyncValue::Nested(value)
-                    };
-                    async_values.push(Box::pin(f));
+                    unimplemented!()
+//                    let f = async move {
+//                        let value =
+//                            resolve_selection_set_into_stream(
+//                                instance,
+//                                info,
+//                                &fragment.selection_set[..],
+//                                &sub_exec,
+//                            ).await;
+//
+//                        AsyncValue::Nested(value)
+//                    }.await;
+//                    async_values.push(Box::pin(f));
                 }
             }
         }

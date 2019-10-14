@@ -174,8 +174,13 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
+                let mut executor = juniper::SubscriptionsExecutor::new();
                 let (response_value, err) =
-                    request.subscribe_async(root_node, context).await.0.unwrap();
+                    request.subscribe_async(
+                        root_node,
+                        context,
+                        &mut executor
+                    ).await.0.unwrap();
                 let mut response = Vec::new();
                 println!("Got response: ");
                 match response_value {

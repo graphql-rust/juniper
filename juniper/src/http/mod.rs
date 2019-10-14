@@ -107,6 +107,7 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
+        executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
     ) -> StreamGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -120,8 +121,15 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         let op = self.operation_name();
-        let vars = &self.variables();
-        let res = crate::subscribe_async(&self.query, op, root_node, vars, context).await;
+        let vars = self.variables();
+        let res = crate::subscribe_async(
+            &self.query,
+            op,
+            root_node,
+            vars,
+            context,
+            executor
+        ).await;
 
         StreamGraphQLResponse(res)
     }
@@ -191,7 +199,7 @@ where
 #[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
-    pub Result<(Value<ValuesStream<S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    pub Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 )
 where
     S: 'static;
