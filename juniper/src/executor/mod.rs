@@ -133,7 +133,10 @@ where
     where S: PartialEq {
         if let Some(ref mut s) = self._data {
             //todo: maybe not unwrap
-            let errors = s.errors.get_mut().unwrap();
+            let errors = match s.errors.get_mut() {
+                Ok(e) => e,
+                Err(_) => return None,
+            };
             errors.sort();
             Some(errors)
         }
@@ -373,6 +376,20 @@ impl<S> FieldError<S> {
 /// The result of resolving the value of a field of type `T`
 pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 
+/*
+pub enum ResolvedValue<'a, S = DefaultScalarValue> {
+    Value(Value<S>),
+    Future(crate::BoxFuture<'a, Value<S>>),
+}
+
+impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
+    #[inline]
+    fn from(value: Value<S>) -> Self {
+        ResolvedValue::Value(value)
+    }
+}
+*/
+
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 pub type SubscriptionResult<'a, S = DefaultScalarValue> = FieldResult<Value<ValuesIterator<'a, S>>, S>;
@@ -568,16 +585,16 @@ where
         &'a self,
         info: &'a T::TypeInfo,
         value: &'a T
-    ) -> Value<ValuesStream<'a, S>>
+    ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        value
+        Ok(value
             .resolve_into_stream(info, self.current_selection_set, self)
-            .await
+            .await)
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
@@ -643,10 +660,8 @@ where
         match self.subscribe(info, value) {
             Ok(v) => v,
             Err(e) => {
-//                self.push_error(e);
-                unimplemented!()
-                //todo: return null iter object
-                //                Box::new(std::iter::once(Value::null()))
+                self.push_error(e);
+                Value::Null
             }
         }
     }
@@ -687,21 +702,14 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        //        match
-        self.subscribe_async(info, value).await
-        //        {
-        //            Ok(v) => v,
-        //            Err(e) => {
-        //                self.push_error(e);
-        //                unimplemented!()
-        //todo: return null value
-        //                Value::Scalar(Box::pin(
-        //                    futures::stream::repeat(
-        //                        Value::Null
-        //                    )
-        //                ))
-        //            }
-        //        }
+        match self.subscribe_async(info, value).await
+        {
+            Ok(v) => v,
+            Err(e) => {
+                self.push_error(e);
+                Value::Null
+            }
+        }
     }
 
     /// Derive a new executor by replacing the context
@@ -1238,7 +1246,7 @@ pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, Subscri
     variables: Variables<S>,
     context: &'a CtxT,
     executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
-) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -1331,10 +1339,7 @@ where
         };
     }
 
-//    let mut errors = errors.into_inner().unwrap();
-//    errors.sort();
-
-    Ok((value, vec![]))
+    Ok(value)
 }
 
 fn parse_document_definitions<'a, 'b, S>(

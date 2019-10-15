@@ -86,11 +86,11 @@ where
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
     ) -> Result<Value<ValuesStream<S>>, FieldError<S>> {
-        //        if Self::name(info).unwrap() == type_name {
-        //            self.resolve_into_stream(info, selection_set, executor)
-        //        } else {
-        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-        //        }
+//            if Self::name(info).unwrap() == type_name {
+//                Ok(self.resolve_into_stream(info, selection_set, executor))
+//            } else {
+                panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+//            }
     }
 }
 

@@ -357,7 +357,7 @@ pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     variables: Variables<S>,
     context: &'a CtxT,
     executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
-) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

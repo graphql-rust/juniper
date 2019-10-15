@@ -200,7 +200,7 @@ where
 #[cfg(feature = "async")]
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
-    pub Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    pub Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;

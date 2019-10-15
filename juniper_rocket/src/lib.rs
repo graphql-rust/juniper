@@ -182,7 +182,7 @@ where
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
                 let mut executor = juniper::SubscriptionsExecutor::new();
-                let (response_value, err) =
+                let response_value =
                     request.subscribe_async(
                         root_node,
                         context,
