@@ -184,20 +184,30 @@ where
                 let x = match response_value {
                     Value::Null => { Value::null() },
                     Value::Scalar(stream) => {
-                        use futures::{compat::Compat, Future};
-                        use rocket::http::Status;
-                        use std::sync::mpsc::channel;
+                        let collected = stream.take(5).collect::<Vec<_>>().await;
+                        println!("Got response: {:#?}", collected);
 
-                        let mut x = futures::executor::block_on(async move {
-                            let collected = stream.take(5).collect::<Vec<_>>().await;
-                            println!("Got response: {:#?}", collected);
-                        });
-
-
-                        Value::Scalar(DefaultScalarValue::String("objects not implemented in test server".to_string()))
+                        Value::Scalar(DefaultScalarValue::String("got Value::Scalar, check logs".to_string()))
                     },
                     Value::List(_) => { Value::Scalar(DefaultScalarValue::String("lists not implemented in test server".to_string())) },
-                    Value::Object(_) => { Value::Scalar(DefaultScalarValue::String("objects not implemented in test server".to_string())) },
+                    Value::Object(o) => {
+                        let obj = o.into_key_value_list();
+
+                        for (name, stream_val) in obj {
+                            print!("  got name: {:#?}, ", name);
+                            match stream_val {
+                                Value::Null => { println!("got null value"); },
+                                Value::Scalar(stream) => {
+                                    let collected = stream.take(5).collect::<Vec<_>>().await;
+                                    println!("got response: {:#?}", collected);
+                                },
+                                Value::List(_) => { println!("got list value"); },
+                                Value::Object(_) => { println!("got object value"); },
+                            }
+                        }
+
+                        Value::Scalar(DefaultScalarValue::String("got object, check logs".to_string()))
+                    },
                 };
 
                 GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((

@@ -523,6 +523,7 @@ where
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
+                    //todo
                     unimplemented!()
 //                    let f = async move {
 //                        let value =
@@ -532,9 +533,8 @@ where
 //                                &fragment.selection_set[..],
 //                                &sub_exec,
 //                            ).await;
-//
 //                        AsyncValue::Nested(value)
-//                    }.await;
+//                    };
 //                    async_values.push(Box::pin(f));
                 }
             }
