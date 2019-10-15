@@ -82,7 +82,7 @@ where
         &'a self,
         info: &'a Self::TypeInfo,
         field_name: &'a str,
-        arguments: Arguments<DefaultScalarValue>,
+        arguments: Arguments<'a, DefaultScalarValue>,
         executor: Executor<'a, Self::Context, DefaultScalarValue>,
     ) -> BoxFuture<'a, juniper::SubscriptionResultAsync<'a, DefaultScalarValue>> {
         use futures::future;
@@ -90,9 +90,11 @@ where
             "human" => {
                 futures::FutureExt::boxed(async move {
 
+                    let id = arguments.get::<String>("id").expect("Internal error: missing argument id - validation must have failed");
+
                     let res = {
+                        println!("!!!!! got id: {:?} !!!!", id);
                         (move || {
-                            //  let id = args.get::<String>("id").expect("Internal error: missing argument id - validation must have failed");
                             Box::pin(futures::stream::repeat(
                                 Human {
                                     id: "stream human id".to_string(),

@@ -56,7 +56,7 @@ where
         &'a self,
         info: &'a Self::TypeInfo,
         field_name: &'a str,
-        arguments: Arguments<S>,
+        arguments: Arguments<'a, S>,
         executor: Executor<'a, Self::Context, S>,
     ) -> BoxFuture<'a, SubscriptionResultAsync<'a, S>> {
         panic!("resolve_field must be implemented by object types");
