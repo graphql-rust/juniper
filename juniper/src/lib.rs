@@ -196,6 +196,8 @@ pub use crate::executor::ValuesIterator;
 #[cfg(feature = "async")]
 pub use crate::executor::ValuesStream;
 
+pub use juniper_codegen::subscription;
+
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
 #[allow(missing_docs)]

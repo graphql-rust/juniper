@@ -368,13 +368,13 @@ where
     }
 
     #[allow(unused_variables)]
-    fn resolve_field_into_iterator<'r>(
+    fn resolve_field_into_iterator<'a>(
         &self,
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments<S>,
-        executor: Executor<'r, Self::Context, S>,
-    ) -> SubscriptionResult<'r, S> {
+        executor: Executor<'a, Self::Context, S>,
+    ) -> SubscriptionResult<'a, S> {
         panic!("resolve_field must be implemented by object types");
     }
 
