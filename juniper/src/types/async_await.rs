@@ -402,14 +402,13 @@ where
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    unimplemented!()
-//                    let typename =
-//                        Value::scalar(instance.concrete_type_name(executor.context(), info));
-//                    object.add_field(
-//                        response_name,
-//                        Value::Scalar(Box::pin(futures::stream::once(async { typename }))),
-//                    );
-//                    continue;
+                    let typename =
+                        Value::scalar(instance.concrete_type_name(executor.context(), info));
+                    object.add_field(
+                        response_name,
+                        Value::Scalar(Box::pin(futures::stream::once(async { typename }))),
+                    );
+                    continue;
                 }
 
                 let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
