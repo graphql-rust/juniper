@@ -5,10 +5,13 @@
 
 use rocket::{response::content, State};
 
-use juniper::{parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, FieldResult, RootNode, Selection, Value, ValuesStream, GraphQLType, ValuesIterator};
+use futures::StreamExt;
+use juniper::{
+    parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, FieldResult,
+    GraphQLType, RootNode, Selection, Value, ValuesIterator, ValuesStream,
+};
 use juniper_rocket::GraphQLResponse;
 use std::{env::args, sync::Arc};
-use futures::StreamExt;
 
 #[derive(juniper::GraphQLObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
@@ -71,7 +74,6 @@ impl MySubscription {
 
 //todo: push errors to executors
 
-
 impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
 where
     MySubscription: juniper::GraphQLType<DefaultScalarValue>,
@@ -89,58 +91,51 @@ where
         match field_name {
             "human" => {
                 futures::FutureExt::boxed(async move {
-
-                    let id = arguments.get::<String>("id").expect("Internal error: missing argument id - validation must have failed");
+                    let id = arguments.get::<String>("id").expect(
+                        "Internal error: missing argument id - validation must have failed",
+                    );
 
                     let res = {
                         println!("!!!!! got id: {:?} !!!!", id);
                         (move || {
-                            Box::pin(futures::stream::repeat(
-                                Human {
-                                    id: "stream human id".to_string(),
-                                    name: "stream human name".to_string(),
-                                    home_planet: "stream human home planet".to_string()
-                                }
-                            ))
+                            Box::pin(futures::stream::repeat(Human {
+                                id: "stream human id".to_string(),
+                                name: "stream human name".to_string(),
+                                home_planet: "stream human home planet".to_string(),
+                            }))
                         })()
                     };
 
                     let f = res.then(move |res| {
-                        let res2: FieldResult<Option<(
-                            &'a (),
-                            Human
-                        )>, DefaultScalarValue> = juniper::IntoResolvable::into(res, executor.context());
+                        let res2: FieldResult<Option<(&'a (), Human)>, DefaultScalarValue> =
+                            juniper::IntoResolvable::into(res, executor.context());
 
                         let ex = executor.clone();
                         async move {
                             match res2 {
                                 Ok(Some((ctx, r))) => {
-
                                     let sub = ex.replaced_context(ctx);
                                     match sub.resolve_with_ctx_async(&(), &r).await {
                                         Ok(v) => v,
-                                        Err(_) => { juniper::Value::Null },
+                                        Err(_) => juniper::Value::Null,
                                     }
-
                                 }
                                 Ok(None) => juniper::Value::null(),
                                 Err(e) => juniper::Value::Null,
                             }
                         }
-//                        async {
-//                            Value::Scalar(DefaultScalarValue::Int(32))
-//                        }
+                        //                        async {
+                        //                            Value::Scalar(DefaultScalarValue::Int(32))
+                        //                        }
                     });
-//                                            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(32)))
+                    //                                            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(32)))
                     Ok(Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
                 })
-
             }
             _ => {
                 panic!("field not found");
             }
         }
-
     }
 }
 
@@ -155,46 +150,44 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
         match field_name {
             "human" => {
                 let res = {
-                    (move || ->  FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
+                    (move || -> FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
                         let iter = Box::new(std::iter::repeat(
-                //                Value::Scalar(DefaultScalarValue::Int(22))
-                                    Human {
-                                        id: "subscription id".to_string(),
-                                        name: "subscription name".to_string(),
-                                        home_planet: "subscription planet".to_string()
-                                    }
-                            ));
+                            //                Value::Scalar(DefaultScalarValue::Int(22))
+                            Human {
+                                id: "subscription id".to_string(),
+                                name: "subscription name".to_string(),
+                                home_planet: "subscription planet".to_string(),
+                            },
+                        ));
 
                         Ok(iter)
-
                     })()
                 }?;
                 let iter = res.map(move |res| {
-                    let x =
-                        juniper::IntoResolvable::<'_, DefaultScalarValue, _, _>::into(res, executor.context())
-                            .and_then(|res| {
-                                match res {
-                                    Some((ctx, r)) => {
-                                        let resolve_res = executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
-                                        resolve_res
-                                    },
-                                    None => {
-                                        Ok(Value::null())
-                                    },
-                                }
-                            });
+                    let x = juniper::IntoResolvable::<'_, DefaultScalarValue, _, _>::into(
+                        res,
+                        executor.context(),
+                    )
+                    .and_then(|res| match res {
+                        Some((ctx, r)) => {
+                            let resolve_res =
+                                executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
+                            resolve_res
+                        }
+                        None => Ok(Value::null()),
+                    });
                     x.unwrap()
                 });
                 Ok(Value::Scalar(Box::new(iter)))
-//                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));
-//                Ok(Value::Null)
+                //                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));
+                //                Ok(Value::Null)
             }
             "nothuman" => {
                 unimplemented!()
-//                Ok(Value::Scalar(Box::new(std::iter::once(Value::Scalar(
-//                    DefaultScalarValue::Int(32),
-//                )))))
-            },
+                //                Ok(Value::Scalar(Box::new(std::iter::once(Value::Scalar(
+                //                    DefaultScalarValue::Int(32),
+                //                )))))
+            }
             _ => {
                 panic!("field not found");
             }
@@ -229,28 +222,28 @@ fn post_graphql_handler(
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
     let mut is_async = false;
-//    is_async = true;
+    //    is_async = true;
 
-//    if is_async {
-        use futures::{compat::Compat, Future};
-        use rocket::http::Status;
-        use std::sync::mpsc::channel;
+    //    if is_async {
+    use futures::{compat::Compat, Future};
+    use rocket::http::Status;
+    use std::sync::mpsc::channel;
 
-        let cloned_schema = Arc::new(schema);
+    let cloned_schema = Arc::new(schema);
 
-        let (sender, receiver) = channel();
-        let mut x = futures::executor::block_on(async move {
-            let x = request
-                .execute_async(&cloned_schema.clone(), &MyContext(1234))
-                .await;
-            sender.send(x);
-        });
+    let (sender, receiver) = channel();
+    let mut x = futures::executor::block_on(async move {
+        let x = request
+            .execute_async(&cloned_schema.clone(), &MyContext(1234))
+            .await;
+        sender.send(x);
+    });
 
-        let res = receiver.recv().unwrap();
-        res
-//    } else {
-//        request.execute(&schema, &MyContext(1234))
-//    }
+    let res = receiver.recv().unwrap();
+    res
+    //    } else {
+    //        request.execute(&schema, &MyContext(1234))
+    //    }
 
     //    GraphQLResponse(Status {
     //        code: 200,

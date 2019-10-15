@@ -13,8 +13,8 @@ use crate::{
     ast::InputValue,
     executor::ExecutionError,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
-    ValuesIterator, ValuesStream,
+    FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator, ValuesStream,
+    Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -89,14 +89,13 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         IteratorGraphQLResponse(crate::subscribe(
-                &self.query,
-                self.operation_name(),
-                root_node,
-                self.variables(),
-                context,
-                executor,
-                )
-            )
+            &self.query,
+            self.operation_name(),
+            root_node,
+            self.variables(),
+            context,
+            executor,
+        ))
     }
 
     /// Execute a GraphQL subscription using the specified schema and context
@@ -123,14 +122,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe_async(
-            &self.query,
-            op,
-            root_node,
-            vars,
-            context,
-            executor
-        ).await;
+        let res = crate::subscribe_async(&self.query, op, root_node, vars, context, executor).await;
 
         StreamGraphQLResponse(res)
     }

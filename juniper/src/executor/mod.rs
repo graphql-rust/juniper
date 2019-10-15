@@ -31,10 +31,8 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use std::pin::Pin;
 use crate::value::Object;
-use std::rc::Rc;
-use std::sync::Mutex;
+use std::{pin::Pin, rc::Rc, sync::Mutex};
 
 /// A type registry used to build schemas
 ///
@@ -69,20 +67,19 @@ where
 }
 
 impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
-where S: Clone {
-
-    pub fn get_executor(
-        self_ty: &'a Self,
-    ) -> Executor<'a, CtxT, S> {
+where
+    S: Clone,
+{
+    pub fn get_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
         Executor {
             fragments: &self_ty.fragments,
             variables: &self_ty.variables,
-            current_selection_set: if let Some(s) = &self_ty.current_selection_set{
+            current_selection_set: if let Some(s) = &self_ty.current_selection_set {
                 Some(&s[..])
             } else {
                 None
             },
-            parent_selection_set: if let Some(s) = &self_ty.parent_selection_set{
+            parent_selection_set: if let Some(s) = &self_ty.parent_selection_set {
                 Some(&s[..])
             } else {
                 None
@@ -91,9 +88,8 @@ where S: Clone {
             schema: self_ty.schema,
             context: self_ty.context,
             errors: &self_ty.errors,
-            field_path: self_ty.field_path.clone()
+            field_path: self_ty.field_path.clone(),
         }
-
     }
 }
 
@@ -111,9 +107,7 @@ where
     S: Clone + 'a,
 {
     pub fn new() -> Self {
-        Self {
-            _data: None,
-        }
+        Self { _data: None }
     }
 
     pub fn set_data(&mut self, data: ExecutorDataVariables<'a, CtxT, S>) {
@@ -123,14 +117,15 @@ where
     pub fn get_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
         if let Some(ref s) = self._data {
             Ok(ExecutorDataVariables::get_executor(s))
-        }
-        else {
+        } else {
             Err(())
         }
     }
 
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-    where S: PartialEq {
+    where
+        S: PartialEq,
+    {
         if let Some(ref mut s) = self._data {
             //todo: maybe not unwrap
             let errors = match s.errors.get_mut() {
@@ -139,8 +134,7 @@ where
             };
             errors.sort();
             Some(errors)
-        }
-        else {
+        } else {
             None
         }
     }
@@ -160,16 +154,13 @@ where
     S: 'a,
 {
     pub fn new() -> Self {
-        Self {
-            executor: None
-        }
+        Self { executor: None }
     }
 
     pub fn set(&mut self, e: Executor<'a, CtxT, S>) {
         self.executor = Some(e);
     }
 }
-
 
 impl<'a, CtxT, S> std::ops::Deref for OptionalExecutor<'a, CtxT, S>
 where
@@ -181,15 +172,15 @@ where
     fn deref(&self) -> &Self::Target {
         if let Some(ref e) = self.executor {
             e
-        }
-        else {
+        } else {
             panic!("OptionalExecutor was not initialized")
         }
     }
 }
 
 pub struct SubscriptionsExecutor<'a, CtxT, S>
-where S: std::clone::Clone
+where
+    S: std::clone::Clone,
 {
     executor_variables: ExecutorData<'a, CtxT, S>,
     fragments: Vec<Spanning<Fragment<'a, S>>>,
@@ -197,7 +188,8 @@ where S: std::clone::Clone
 }
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
-where S: std::clone::Clone
+where
+    S: std::clone::Clone,
 {
     pub fn new() -> Self {
         Self {
@@ -208,7 +200,9 @@ where S: std::clone::Clone
     }
 
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-    where S: PartialEq  {
+    where
+        S: PartialEq,
+    {
         self.executor_variables.errors()
     }
 }
@@ -392,12 +386,11 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
-pub type SubscriptionResult<'a, S = DefaultScalarValue> = FieldResult<Value<ValuesIterator<'a, S>>, S>;
+pub type SubscriptionResult<'a, S = DefaultScalarValue> =
+    FieldResult<Value<ValuesIterator<'a, S>>, S>;
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> = FieldResult<
-    Value<std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>>,
-    S
->;
+pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> =
+    FieldResult<Value<std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>>, S>;
 
 #[cfg(feature = "async")]
 /// The type returned from asyncronous subscription handler
@@ -567,11 +560,7 @@ where
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(
-        &'a self,
-        info: &'a T::TypeInfo,
-        value: &'a T,
-    ) -> SubscriptionResult<'a, S>
+    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> SubscriptionResult<'a, S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -584,7 +573,7 @@ where
     pub async fn subscribe_async<T>(
         &'a self,
         info: &'a T::TypeInfo,
-        value: &'a T
+        value: &'a T,
     ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
@@ -702,8 +691,7 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        match self.subscribe_async(info, value).await
-        {
+        match self.subscribe_async(info, value).await {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
@@ -1048,10 +1036,15 @@ where
     SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-//    let mut fragments = vec![];
+    //    let mut fragments = vec![];
     let mut operation = None;
 
-    parse_document_definitions(document, operation_name, &mut executor.fragments, &mut operation)?;
+    parse_document_definitions(
+        document,
+        operation_name,
+        &mut executor.fragments,
+        &mut operation,
+    )?;
 
     let op = match operation {
         Some(op) => op,
@@ -1099,28 +1092,30 @@ where
             _ => unreachable!(),
         };
 
-        executor.executor_variables.set_data(
-            ExecutorDataVariables {
-                fragments: executor.fragments
-                    .iter()
-                    .map(|f| (f.item.name.item, &f.item))
-                    .collect(),
-                variables: final_vars,
-                current_selection_set: Some(op.item.selection_set),
-                parent_selection_set: None,
-                current_type: root_type,
-                schema: &root_node.schema,
-                context,
-                errors: errors,
-                field_path: FieldPath::Root(op.start),
-            }
-        );
+        executor.executor_variables.set_data(ExecutorDataVariables {
+            fragments: executor
+                .fragments
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
+                .collect(),
+            variables: final_vars,
+            current_selection_set: Some(op.item.selection_set),
+            parent_selection_set: None,
+            current_type: root_type,
+            schema: &root_node.schema,
+            context,
+            errors: errors,
+            field_path: FieldPath::Root(op.start),
+        });
 
         // unwrap is safe here because executor's data was set up above
-        executor.executor.set(executor.executor_variables.get_executor().unwrap());
+        executor
+            .executor
+            .set(executor.executor_variables.get_executor().unwrap());
 
         value = match op.item.operation_type {
-            OperationType::Subscription => executor.executor
+            OperationType::Subscription => executor
+                .executor
                 .resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type),
             _ => unreachable!(),
         };
@@ -1260,7 +1255,12 @@ where
 {
     let mut operation = None;
 
-    parse_document_definitions(document, operation_name, &mut executor.fragments, &mut operation)?;
+    parse_document_definitions(
+        document,
+        operation_name,
+        &mut executor.fragments,
+        &mut operation,
+    )?;
 
     let op = match operation {
         Some(op) => op,
@@ -1307,9 +1307,9 @@ where
             _ => unreachable!(),
         };
 
-        executor.executor_variables.set_data(
-            ExecutorDataVariables {
-            fragments: executor.fragments
+        executor.executor_variables.set_data(ExecutorDataVariables {
+            fragments: executor
+                .fragments
                 .iter()
                 .map(|f| (f.item.name.item, &f.item))
                 .collect(),
@@ -1324,11 +1324,14 @@ where
         });
 
         // unwrap is safe here because executor's data was set up above
-        executor.executor.set(executor.executor_variables.get_executor().unwrap());
+        executor
+            .executor
+            .set(executor.executor_variables.get_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {
-                executor.executor
+                executor
+                    .executor
                     .resolve_into_iterator_async(
                         &root_node.subscription_info,
                         &root_node.subscription_type,

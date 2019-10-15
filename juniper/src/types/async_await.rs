@@ -1,4 +1,8 @@
-use crate::{ast::{Directive, FromInputValue, InputValue, Selection}, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldError, ValuesStream, FieldResult};
+use crate::{
+    ast::{Directive, FromInputValue, InputValue, Selection},
+    value::{Object, ScalarRefValue, ScalarValue, Value},
+    FieldError, FieldResult, ValuesStream,
+};
 
 use crate::{
     executor::{ExecutionResult, Executor},
@@ -86,11 +90,12 @@ where
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
     ) -> Result<Value<ValuesStream<S>>, FieldError<S>> {
-//            if Self::name(info).unwrap() == type_name {
-//                Ok(self.resolve_into_stream(info, selection_set, executor))
-//            } else {
-                panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-//            }
+        // todo: cannot resolve by default because future is returned
+        //        if Self::name(info).unwrap() == type_name {
+        //            Ok(self.resolve_into_stream(info, selection_set, executor))
+        //        } else {
+        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        //        }
     }
 }
 
@@ -453,7 +458,7 @@ where
                         Ok(Value::Null) if is_non_null => None,
                         Ok(v) => Some(v),
                         Err(e) => {
-//                            sub_exec.push_error_at(e, pos);
+                            //                            sub_exec.push_error_at(e, pos);
                             if is_non_null {
                                 None
                             } else {
@@ -485,7 +490,8 @@ where
                         info,
                         &fragment.selection_set[..],
                         executor,
-                    ).await;
+                    )
+                    .await;
                     AsyncValue::Nested(value)
                 };
                 async_values.push(Box::pin(f));
@@ -525,18 +531,18 @@ where
                     //todo
                     unimplemented!()
 
-//                    let value =
-//                        resolve_selection_set_into_stream(
-//                            instance,
-//                            info,
-//                            &fragment.selection_set[..],
-//                            &sub_exec,
-//                        ).await;
-//
-//                    let f = async move {
-//                        AsyncValue::Nested(value)
-//                    };
-//                    async_values.push(Box::pin(f));
+                    //                    let value =
+                    //                        resolve_selection_set_into_stream(
+                    //                            instance,
+                    //                            info,
+                    //                            &fragment.selection_set[..],
+                    //                            &sub_exec,
+                    //                        ).await;
+                    //
+                    //                    let f = async move {
+                    //                        AsyncValue::Nested(value)
+                    //                    };
+                    //                    async_values.push(Box::pin(f));
                 }
             }
         }

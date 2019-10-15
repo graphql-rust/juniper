@@ -387,11 +387,7 @@ where
         executor: &'a Executor<'a, Self::Context, S>,
     ) -> Value<ValuesIterator<S>> {
         if Self::name(info).unwrap() == type_name {
-            self.resolve_into_iterator(
-                info,
-                selection_set,
-                executor,
-            )
+            self.resolve_into_iterator(info, selection_set, executor)
         } else {
             panic!("iter_resolve_into_type must be implemented by unions and interfaces");
         }
@@ -598,15 +594,13 @@ where
                     continue;
                 }
 
-                let meta_field = meta_type
-                    .field_by_name(f.name.item)
-                    .unwrap_or_else(|| {
-                        panic!(format!(
-                            "Field {} not found on type {:?}",
-                            f.name.item,
-                            meta_type.name()
-                        ))
-                    });
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
+                });
 
                 let exec_vars = executor.variables();
 
@@ -617,32 +611,31 @@ where
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
 
-                let field_result = instance
-                    .resolve_field_into_iterator(
-                        info,
-                        f.name.item,
-                        &Arguments::new(
-                            f.arguments.as_ref().map(|m| {
-                                m.item
-                                    .iter()
-                                    .map(|&(ref k, ref v)| {
-                                        (k.item, v.item.clone().into_const(exec_vars))
-                                    })
-                                    .collect()
-                            }),
-                            &meta_field.arguments,
-                        ),
-                        sub_exec,
-                    );
+                let field_result = instance.resolve_field_into_iterator(
+                    info,
+                    f.name.item,
+                    &Arguments::new(
+                        f.arguments.as_ref().map(|m| {
+                            m.item
+                                .iter()
+                                .map(|&(ref k, ref v)| {
+                                    (k.item, v.item.clone().into_const(exec_vars))
+                                })
+                                .collect()
+                        }),
+                        &meta_field.arguments,
+                    ),
+                    sub_exec,
+                );
 
                 match field_result {
                     //                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => {
                         //todo: better obj (?)
                         merge_key_into(&mut result, response_name, v);
-                    },
+                    }
                     Err(e) => {
-//                        sub_exec.push_error_at(e, start_pos.clone());
+                        //                        sub_exec.push_error_at(e, start_pos.clone());
 
                         if meta_field.field_type.is_non_null() {
                             return Value::Null;
@@ -656,23 +649,23 @@ where
                 item: ref spread, ..
             }) => {
                 unimplemented!()
-//                if is_excluded(&spread.directives, executor.variables()) {
-//                    continue;
-//                }
-//
-//                let fragment = &executor
-//                    .fragment_by_name(spread.name.item)
-//                    .expect("Fragment could not be found");
-//
-//                if !resolve_selection_set_into_iter(
-//                    instance,
-//                    info,
-//                    &fragment.selection_set[..],
-//                    executor,
-//                    result,
-//                ) {
-//                    return false;
-//                }
+                //                if is_excluded(&spread.directives, executor.variables()) {
+                //                    continue;
+                //                }
+                //
+                //                let fragment = &executor
+                //                    .fragment_by_name(spread.name.item)
+                //                    .expect("Fragment could not be found");
+                //
+                //                if !resolve_selection_set_into_iter(
+                //                    instance,
+                //                    info,
+                //                    &fragment.selection_set[..],
+                //                    executor,
+                //                    result,
+                //                ) {
+                //                    return false;
+                //                }
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
@@ -680,39 +673,39 @@ where
                 ..
             }) => {
                 unimplemented!()
-//                if is_excluded(&fragment.directives, executor.variables()) {
-//                    continue;
-//                }
-//
-//                let sub_exec = executor.type_sub_executor(
-//                    fragment.type_condition.as_ref().map(|c| c.item),
-//                    Some(&fragment.selection_set[..]),
-//                );
-//
-//                if let Some(ref type_condition) = fragment.type_condition {
-//                    let sub_result = instance.iter_resolve_into_type(
-//                        info,
-//                        type_condition.item,
-//                        Some(&fragment.selection_set[..]),
-//                        &sub_exec,
-//                    );
-//
-//                    if let Ok(Value::Object(object)) = sub_result {
-//                        for (k, v) in object {
-//                            iter_merge_key_into(result, &k, v);
-//                        }
-//                    } else if let Err(e) = sub_result {
-//                        sub_exec.push_error_at(e, start_pos.clone());
-//                    }
-//                } else if !resolve_selection_set_into_iter(
-//                    instance,
-//                    info,
-//                    &fragment.selection_set[..],
-//                    &sub_exec,
-//                    result,
-//                ) {
-//                    return false;
-//                }
+                //                if is_excluded(&fragment.directives, executor.variables()) {
+                //                    continue;
+                //                }
+                //
+                //                let sub_exec = executor.type_sub_executor(
+                //                    fragment.type_condition.as_ref().map(|c| c.item),
+                //                    Some(&fragment.selection_set[..]),
+                //                );
+                //
+                //                if let Some(ref type_condition) = fragment.type_condition {
+                //                    let sub_result = instance.iter_resolve_into_type(
+                //                        info,
+                //                        type_condition.item,
+                //                        Some(&fragment.selection_set[..]),
+                //                        &sub_exec,
+                //                    );
+                //
+                //                    if let Ok(Value::Object(object)) = sub_result {
+                //                        for (k, v) in object {
+                //                            iter_merge_key_into(result, &k, v);
+                //                        }
+                //                    } else if let Err(e) = sub_result {
+                //                        sub_exec.push_error_at(e, start_pos.clone());
+                //                    }
+                //                } else if !resolve_selection_set_into_iter(
+                //                    instance,
+                //                    info,
+                //                    &fragment.selection_set[..],
+                //                    &sub_exec,
+                //                    result,
+                //                ) {
+                //                    return false;
+                //                }
             }
         }
     }
@@ -799,8 +792,7 @@ pub(crate) fn async_merge_key_into<S>(
     result: &mut Object<S>,
     response_name: &str,
     value: Value<S>,
-)
-{
+) {
     if let Some(&mut (_, ref mut e)) = result
         .iter_mut()
         .find(|&&mut (ref key, _)| key == response_name)

@@ -138,7 +138,6 @@ pub mod integrations;
 // TODO: remove this alias export in 0.10. (breaking change)
 pub use crate::http::graphiql;
 
-
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
 #[cfg(feature = "expose-test-schema")]
@@ -320,7 +319,14 @@ where
 {
     let document = parse_and_validate_document(document_source, root_node, &variables)?;
 
-    executor::execute_validated_subscription(document, operation_name, root_node, variables, context, executor)
+    executor::execute_validated_subscription(
+        document,
+        operation_name,
+        root_node,
+        variables,
+        context,
+        executor,
+    )
 }
 
 /// Execute a query in a provided schema
