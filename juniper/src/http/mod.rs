@@ -89,13 +89,14 @@ where
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         IteratorGraphQLResponse(crate::subscribe(
-            &self.query,
-            self.operation_name(),
-            root_node,
-            self.variables(),
-            context,
-            executor,
-        ))
+                &self.query,
+                self.operation_name(),
+                root_node,
+                self.variables(),
+                context,
+                executor,
+                )
+            )
     }
 
     /// Execute a GraphQL subscription using the specified schema and context
@@ -191,7 +192,7 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
 
 //todo: remove pub (pub is used in playground to access result)
 pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
-    pub Result<(Value<ValuesIterator<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    pub Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;

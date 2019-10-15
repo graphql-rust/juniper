@@ -524,14 +524,16 @@ where
                 } else {
                     //todo
                     unimplemented!()
+
+//                    let value =
+//                        resolve_selection_set_into_stream(
+//                            instance,
+//                            info,
+//                            &fragment.selection_set[..],
+//                            &sub_exec,
+//                        ).await;
+//
 //                    let f = async move {
-//                        let value =
-//                            resolve_selection_set_into_stream(
-//                                instance,
-//                                info,
-//                                &fragment.selection_set[..],
-//                                &sub_exec,
-//                            ).await;
 //                        AsyncValue::Nested(value)
 //                    };
 //                    async_values.push(Box::pin(f));

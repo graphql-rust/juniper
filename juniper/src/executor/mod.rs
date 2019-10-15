@@ -128,6 +128,19 @@ where
             Err(())
         }
     }
+
+    pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
+    where S: PartialEq {
+        if let Some(ref mut s) = self._data {
+            //todo: maybe not unwrap
+            let errors = s.errors.get_mut().unwrap();
+            errors.sort();
+            Some(errors)
+        }
+        else {
+            None
+        }
+    }
 }
 
 struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
@@ -190,6 +203,11 @@ where S: std::clone::Clone
             executor: OptionalExecutor::new(),
         }
     }
+
+    pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
+    where S: PartialEq  {
+        self.executor_variables.errors()
+    }
 }
 
 /// Query execution engine
@@ -212,8 +230,6 @@ where
     errors: &'a RwLock<Vec<ExecutionError<S>>>,
     field_path: FieldPath<'a>,
 }
-
-unsafe impl<'a, CtxT, S> Send for Executor<'a, CtxT, S>{}
 
 /// Error type for errors that occur during query execution
 ///
@@ -1016,7 +1032,7 @@ pub fn execute_validated_subscription<'a, QueryT, MutationT, SubscriptionT, CtxT
     variables: Variables<S>,
     context: &'a CtxT,
     executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
-) -> Result<(Value<ValuesIterator<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT>,
@@ -1101,11 +1117,8 @@ where
             _ => unreachable!(),
         };
     }
-//
-//    let mut errors = errors.into_inner().unwrap();
-//    errors.sort();
 
-    Ok((value, vec![]))
+    Ok(value)
 }
 
 #[cfg(feature = "async")]

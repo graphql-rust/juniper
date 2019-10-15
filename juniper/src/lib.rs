@@ -310,7 +310,7 @@ pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     variables: Variables<S>,
     context: &'a CtxT,
     executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
-) -> Result<(Value<ValuesIterator<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,

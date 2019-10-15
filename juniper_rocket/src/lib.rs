@@ -111,19 +111,27 @@ where
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
                 let mut executor = juniper::SubscriptionsExecutor::new();
-                let (res, err) = request.subscribe(
+
+                // errors could be accessed like that:
+                // let errors = executor.errors();
+
+                let res = request.subscribe(
                     root_node,
                     context,
                     &mut executor
                 ).0.unwrap();
+
                 let x: Value<DefaultScalarValue> = match res {
-                    Value::Null => {Value::Null},
+                    Value::Null => { Value::Null },
                     Value::Scalar(s) => {
                         let ready = s.take(5).collect::<Vec<_>>();
                         println!("Got values (from Value::Scalar): {:?}", ready);
                         Value::Scalar(DefaultScalarValue::String("Got scalar, check logs".to_string()))
                     },
-                    Value::List(_) => { println!("Lists are not implemented here"); Value::Null },
+                    Value::List(_) => {
+                        println!("Lists are not implemented here");
+                        Value::Null
+                    },
                     Value::Object(o) => {
                         let response = o
                             .into_key_value_list();
@@ -136,7 +144,6 @@ where
                                     juniper::Value::Scalar(s) => {
                                         let x: Vec<_> = s.into_iter().take(5).collect();
                                         println!("  got values: {:#?}", x);
-
                                     }
                                     _ => { println!("  value not scalar"); }
                                 }
