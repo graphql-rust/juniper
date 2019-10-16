@@ -654,7 +654,6 @@ where
         }
     }
 
-
     /// Resolve a single arbitrary value into a return iterator
     ///
     /// If the field fails to resolve, `null` will be returned.
@@ -697,8 +696,8 @@ where
     }
 
     /// Resolve a single arbitrary value into a return stream
-     ///
-     /// If the field fails to resolve, `null` will be returned.
+    ///
+    /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
     pub async fn resolve_into_stream<T>(
         &'a self,
@@ -1346,10 +1345,7 @@ where
             OperationType::Subscription => {
                 executor
                     .executor
-                    .resolve_into_stream(
-                        &root_node.subscription_info,
-                        &root_node.subscription_type,
-                    )
+                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             }
             _ => unreachable!(),

@@ -13,10 +13,7 @@ use crate::{
 use crate::ValuesStream;
 
 use crate::{
-    executor::{
-       ExecutionResult, Executor,
-       Registry, SubscriptionResult
-    },
+    executor::{ExecutionResult, Executor, Registry, SubscriptionResult},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
 };
@@ -401,11 +398,11 @@ where
         selection_set: Option<&'a [Selection<S>]>,
         executor: Executor<'a, Self::Context, S>,
     ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
-//        if Self::name(info).unwrap() == type_name {
-//            Ok(self.resolve_into_iterator(info, selection_set, executor))
-//        } else {
-            panic!("iter_resolve_into_type must be implemented by unions and interfaces");
-//        }
+        //        if Self::name(info).unwrap() == type_name {
+        //            Ok(self.resolve_into_iterator(info, selection_set, executor))
+        //        } else {
+        panic!("iter_resolve_into_type must be implemented by unions and interfaces");
+        //        }
     }
 }
 
@@ -649,7 +646,7 @@ where
                         merge_key_into(result, response_name, v);
                     }
                     Err(e) => {
-//                        sub_exec.push_error_at(e, start_pos.clone());
+                        //                        sub_exec.push_error_at(e, start_pos.clone());
 
                         if meta_field.field_type.is_non_null() {
                             return false;
@@ -707,19 +704,19 @@ where
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-//                        sub_exec.push_error_at(e, start_pos.clone());
+                        //                        sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
                     unimplemented!()
-//                    if resolve_selection_set_into_iter(
-//                        instance,
-//                        info,
-//            &fragment.selection_set[..],
-//                &sub_exec,
-//                        result,
-//                    ) {
-//                        return false;
-//                    }
+                    //                    if resolve_selection_set_into_iter(
+                    //                        instance,
+                    //                        info,
+                    //            &fragment.selection_set[..],
+                    //                &sub_exec,
+                    //                        result,
+                    //                    ) {
+                    //                        return false;
+                    //                    }
                 }
             }
         }

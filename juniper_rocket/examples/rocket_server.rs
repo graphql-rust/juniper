@@ -70,13 +70,11 @@ impl MySubscription {
     }
 
     async fn human() -> Human {
-        Ok(
-            Box::pin(futures::stream::repeat(Human {
-                id: "stream human id".to_string(),
-                name: "stream human name".to_string(),
-                home_planet: "stream human home planet".to_string(),
-            }))
-        )
+        Ok(Box::pin(futures::stream::repeat(Human {
+            id: "stream human id".to_string(),
+            name: "stream human name".to_string(),
+            home_planet: "stream human home planet".to_string(),
+        })))
     }
 }
 

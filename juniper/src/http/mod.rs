@@ -13,8 +13,7 @@ use crate::{
     ast::InputValue,
     executor::ExecutionError,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode,
-    Value, ValuesIterator, Variables,
+    FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator, Variables,
 };
 
 #[cfg(feature = "async")]
