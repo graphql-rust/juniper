@@ -61,13 +61,11 @@ struct MySubscription;
 )]
 impl MySubscription {
     fn human() -> Human {
-        let iter = Box::new(std::iter::repeat(
-            Human {
-                id: "subscription id".to_string(),
-                name: "subscription name".to_string(),
-                home_planet: "subscription planet".to_string(),
-            },
-        ));
+        let iter = Box::new(std::iter::repeat(Human {
+            id: "subscription id".to_string(),
+            name: "subscription name".to_string(),
+            home_planet: "subscription planet".to_string(),
+        }));
         Ok(iter)
     }
 
@@ -292,26 +290,26 @@ fn post_graphql_handler(
     let mut is_async = false;
     //    is_async = true;
 
-//        if is_async {
-            use futures::{compat::Compat, Future};
-            use rocket::http::Status;
-            use std::sync::mpsc::channel;
+    //        if is_async {
+    use futures::{compat::Compat, Future};
+    use rocket::http::Status;
+    use std::sync::mpsc::channel;
 
-            let cloned_schema = Arc::new(schema);
+    let cloned_schema = Arc::new(schema);
 
-            let (sender, receiver) = channel();
-            let mut x = futures::executor::block_on(async move {
-                let x = request
-                    .execute_async(&cloned_schema.clone(), &MyContext(1234))
-                    .await;
-                sender.send(x);
-            });
+    let (sender, receiver) = channel();
+    let mut x = futures::executor::block_on(async move {
+        let x = request
+            .execute_async(&cloned_schema.clone(), &MyContext(1234))
+            .await;
+        sender.send(x);
+    });
 
-            let res = receiver.recv().unwrap();
-            res
-//        } else {
-//            request.execute(&schema, &MyContext(1234))
-//        }
+    let res = receiver.recv().unwrap();
+    res
+    //        } else {
+    //            request.execute(&schema, &MyContext(1234))
+    //        }
 
     //    GraphQLResponse(Status {
     //        code: 200,

@@ -50,6 +50,7 @@ pub enum FieldPath<'a> {
     Field(&'a str, SourcePosition, &'a FieldPath<'a>),
 }
 
+/// Struct owning `Executor`'s variables
 pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
@@ -93,11 +94,13 @@ where
     }
 }
 
+/// `ExecutorDataVariables` wrapper
 struct ExecutorData<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: Clone + 'a,
 {
+    /// Variables data
     _data: Option<ExecutorDataVariables<'a, CtxT, S>>,
 }
 
@@ -140,11 +143,14 @@ where
     }
 }
 
+/// `Executor` which can be set later.
+/// __Panics__ if `Executor` was not set.
 struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: 'a,
 {
+    /// `Executor` instance
     executor: Option<Executor<'a, CtxT, S>>,
 }
 
@@ -153,10 +159,12 @@ where
     CtxT: 'a,
     S: 'a,
 {
+    /// Create new `OptionalExecutor`
     pub fn new() -> Self {
         Self { executor: None }
     }
 
+    /// Set `Executor` to dereference
     pub fn set(&mut self, e: Executor<'a, CtxT, S>) {
         self.executor = Some(e);
     }
@@ -173,17 +181,30 @@ where
         if let Some(ref e) = self.executor {
             e
         } else {
-            panic!("OptionalExecutor was not initialized")
+            panic!("Tried dereferencing OptionalExecutor which was not set")
         }
     }
 }
 
+/// `Executor` wrapper to keep all `Executor`'s data
+/// and `Executor` instance
 pub struct SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
 {
+    /// Keeps ownership of all `Executor`'s variables
+    /// because `Executor` only keeps references
+    ///
+    /// Variables are kept in a separate struct rather than this one
+    /// because they have a hashmap referencing this struct's `fragments`
     executor_variables: ExecutorData<'a, CtxT, S>,
+
+    /// Fragments vector.
+    /// Needed in as a separate field because `executor_variables`
+    /// contains a hashmap of references to `fragments`
     fragments: Vec<Spanning<Fragment<'a, S>>>,
+
+    /// `Executor` instance
     executor: OptionalExecutor<'a, CtxT, S>,
 }
 
@@ -633,10 +654,10 @@ where
         }
     }
 
-    /// Resolve a single arbitrary value into a return `SubscriptionType`.
+
+    /// Resolve a single arbitrary value into a return iterator
     ///
-    /// If the field fails to resolve, iterator with one `null`
-    /// will be returned.
+    /// If the field fails to resolve, `null` will be returned.
     pub fn resolve_into_iterator<T>(
         &'a self,
         info: &'a T::TypeInfo,
@@ -675,12 +696,11 @@ where
         }
     }
 
-    /// Resolve a single arbitrary value into a return `SubscriptionType`.
-    ///
-    /// If the field fails to resolve, iterator with one `null`
-    /// will be returned.
+    /// Resolve a single arbitrary value into a return stream
+     ///
+     /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_iterator_async<T>(
+    pub async fn resolve_into_stream<T>(
         &'a self,
         info: &'a T::TypeInfo,
         value: &'a T,
@@ -984,10 +1004,7 @@ where
                 .schema
                 .mutation_type()
                 .expect("No mutation type found"),
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No subscription type found"),
+            OperationType::Subscription => unreachable!(),
         };
 
         let executor = Executor {
@@ -1010,8 +1027,7 @@ where
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
             }
-            OperationType::Subscription => executor
-                .resolve_into_value(&root_node.subscription_info, &root_node.subscription_type),
+            OperationType::Subscription => unreachable!(),
         };
     }
 
@@ -1221,9 +1237,7 @@ where
                     .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
                     .await
             }
-            OperationType::Subscription => {
-                unreachable!();
-            }
+            OperationType::Subscription => unreachable!(),
         };
     }
 
@@ -1332,7 +1346,7 @@ where
             OperationType::Subscription => {
                 executor
                     .executor
-                    .resolve_into_iterator_async(
+                    .resolve_into_stream(
                         &root_node.subscription_info,
                         &root_node.subscription_type,
                     )
@@ -1345,6 +1359,9 @@ where
     Ok(value)
 }
 
+/// Find document's operation (return error
+/// if multiple operations provided)
+/// and collect fragments to `fragments` vector
 fn parse_document_definitions<'a, 'b, S>(
     document: Document<'b, S>,
     operation_name: Option<&str>,

@@ -14,8 +14,8 @@ use crate::{
 
 /// Root query node of a schema
 ///
-/// This brings the mutation and query types together, and provides the
-/// predefined metadata fields.
+/// This brings mutation, subscription and query types together,
+/// and provides the predefined metadata fields.
 #[derive(Debug)]
 pub struct RootNode<
     'a,

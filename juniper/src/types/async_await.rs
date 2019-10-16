@@ -338,9 +338,7 @@ where
     Value::Object(object)
 }
 
-// TODO: maybe prevent duplicating code for resolving subscriptions
-
-// Wrapper function around resolve_selection_set_into_stream_recursive.
+// Wrapper function around `resolve_selection_set_into_stream_recursive`.
 // This wrapper is necessary because async fns can not be recursive.
 #[cfg(feature = "async")]
 pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
@@ -365,6 +363,7 @@ where
 }
 
 #[cfg(feature = "async")]
+/// Selection set resolver logic
 pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
@@ -528,21 +527,21 @@ where
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    //todo
+                    // TODO: implement fragment without type condition resolver
                     unimplemented!()
 
-                    //                    let value =
-                    //                        resolve_selection_set_into_stream(
-                    //                            instance,
-                    //                            info,
-                    //                            &fragment.selection_set[..],
-                    //                            &sub_exec,
-                    //                        ).await;
+                    // let value =
+                    //     resolve_selection_set_into_stream(
+                    //         instance,
+                    //         info,
+                    //         &fragment.selection_set[..],
+                    //         &sub_exec,
+                    //     ).await;
                     //
-                    //                    let f = async move {
-                    //                        AsyncValue::Nested(value)
-                    //                    };
-                    //                    async_values.push(Box::pin(f));
+                    // let f = async move {
+                    //     AsyncValue::Nested(value)
+                    // };
+                    // async_values.push(Box::pin(f));
                 }
             }
         }

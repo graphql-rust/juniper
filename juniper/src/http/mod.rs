@@ -13,8 +13,8 @@ use crate::{
     ast::InputValue,
     executor::ExecutionError,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator,
-    Variables,
+    FieldError, GraphQLError, GraphQLType, RootNode,
+    Value, ValuesIterator, Variables,
 };
 
 #[cfg(feature = "async")]
@@ -130,6 +130,10 @@ where
         StreamGraphQLResponse(res)
     }
 
+    /// Execute a GraphQL request using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute` function exposed at the
+    /// top level of this crate.
     pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
@@ -185,14 +189,16 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
-//todo: remove pub (pub is used in playground to access result)
+/// Wrapper around the result from executing a GraphQL subscription
 pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
+    //todo: remove pub (pub is used in playground to access result)
     pub Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;
 
 #[cfg(feature = "async")]
+/// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: remove pub (pub is used in playground to access result)
     pub Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>,

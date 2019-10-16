@@ -13,7 +13,10 @@ use crate::{
 use crate::ValuesStream;
 
 use crate::{
-    executor::{ExecutionResult, Executor, Registry, SubscriptionResult},
+    executor::{
+       ExecutionResult, Executor,
+       Registry, SubscriptionResult
+    },
     parser::Spanning,
     schema::meta::{Argument, MetaType},
 };
@@ -347,14 +350,13 @@ where
     }
 }
 
-/// Trait to be implemented by Subscription handlers
+/// Trait to be implemented by synchronous Subscription handlers
 pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
 where
     S: ScalarValue + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    /// Stream resolving logic.
-    /// Default implementantion panics.
+    /// Stream resolver logic.
     #[allow(unused_variables)]
     fn resolve_into_iterator<'a>(
         &'a self,
@@ -364,12 +366,18 @@ where
     ) -> Value<ValuesIterator<S>> {
         if let Some(selection_set) = selection_set {
             let mut object = Object::with_capacity(selection_set.len());
-            resolve_selection_set_into_iter(self, info, selection_set, executor, object)
+            if resolve_selection_set_into_iter(self, info, selection_set, executor, &mut object) {
+                Value::Object(object)
+            } else {
+                Value::Null
+            }
         } else {
             panic!("resolve_into_iterator() must be implemented");
         }
     }
 
+    /// Field resolver logic.
+    /// Default implementation __panics__
     #[allow(unused_variables)]
     fn resolve_field_into_iterator<'a>(
         &self,
@@ -381,19 +389,23 @@ where
         panic!("resolve_field must be implemented by object types");
     }
 
+    /// Resolve this interface or union into a concrete type
+    /// Try to resolve the current type into the type name provided.
+    /// If the type matches, pass the instance along to executor.resolve.
+    /// The default implementation panics.
     #[allow(unused_variables)]
     fn iter_resolve_into_type<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         type_name: &'a str,
         selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
-    ) -> Value<ValuesIterator<S>> {
-        if Self::name(info).unwrap() == type_name {
-            self.resolve_into_iterator(info, selection_set, executor)
-        } else {
+        executor: Executor<'a, Self::Context, S>,
+    ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
+//        if Self::name(info).unwrap() == type_name {
+//            Ok(self.resolve_into_iterator(info, selection_set, executor))
+//        } else {
             panic!("iter_resolve_into_type must be implemented by unions and interfaces");
-        }
+//        }
     }
 }
 
@@ -555,11 +567,11 @@ where
 
 pub fn resolve_selection_set_into_iter<'a, T, CtxT, S>(
     instance: &'a T,
-    info: &T::TypeInfo,
+    info: &'a T::TypeInfo,
     selection_set: &'a [Selection<S>],
     executor: &'a Executor<'a, CtxT, S>,
-    mut result: Object<ValuesIterator<'a, S>>,
-) -> Value<ValuesIterator<'a, S>>
+    result: &mut Object<ValuesIterator<'a, S>>,
+) -> bool
 where
     T: SubscriptionHandler<S, Context = CtxT>,
     S: ScalarValue + 'static,
@@ -632,16 +644,15 @@ where
                 );
 
                 match field_result {
-                    //                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
+                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
                     Ok(v) => {
-                        //todo: better obj (?)
-                        merge_key_into(&mut result, response_name, v);
+                        merge_key_into(result, response_name, v);
                     }
                     Err(e) => {
-                        //                        sub_exec.push_error_at(e, start_pos.clone());
+//                        sub_exec.push_error_at(e, start_pos.clone());
 
                         if meta_field.field_type.is_non_null() {
-                            return Value::Null;
+                            return false;
                         }
 
                         result.add_field(response_name, Value::Null);
@@ -651,69 +662,70 @@ where
             Selection::FragmentSpread(Spanning {
                 item: ref spread, ..
             }) => {
-                unimplemented!()
-                //                if is_excluded(&spread.directives, executor.variables()) {
-                //                    continue;
-                //                }
-                //
-                //                let fragment = &executor
-                //                    .fragment_by_name(spread.name.item)
-                //                    .expect("Fragment could not be found");
-                //
-                //                if !resolve_selection_set_into_iter(
-                //                    instance,
-                //                    info,
-                //                    &fragment.selection_set[..],
-                //                    executor,
-                //                    result,
-                //                ) {
-                //                    return false;
-                //                }
+                if is_excluded(&spread.directives, executor.variables()) {
+                    continue;
+                }
+
+                let fragment = &executor
+                    .fragment_by_name(spread.name.item)
+                    .expect("Fragment could not be found");
+
+                if !resolve_selection_set_into_iter(
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    executor,
+                    result,
+                ) {
+                    return false;
+                }
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
                 start: ref start_pos,
                 ..
             }) => {
-                unimplemented!()
-                //                if is_excluded(&fragment.directives, executor.variables()) {
-                //                    continue;
-                //                }
-                //
-                //                let sub_exec = executor.type_sub_executor(
-                //                    fragment.type_condition.as_ref().map(|c| c.item),
-                //                    Some(&fragment.selection_set[..]),
-                //                );
-                //
-                //                if let Some(ref type_condition) = fragment.type_condition {
-                //                    let sub_result = instance.iter_resolve_into_type(
-                //                        info,
-                //                        type_condition.item,
-                //                        Some(&fragment.selection_set[..]),
-                //                        &sub_exec,
-                //                    );
-                //
-                //                    if let Ok(Value::Object(object)) = sub_result {
-                //                        for (k, v) in object {
-                //                            iter_merge_key_into(result, &k, v);
-                //                        }
-                //                    } else if let Err(e) = sub_result {
-                //                        sub_exec.push_error_at(e, start_pos.clone());
-                //                    }
-                //                } else if !resolve_selection_set_into_iter(
-                //                    instance,
-                //                    info,
-                //                    &fragment.selection_set[..],
-                //                    &sub_exec,
-                //                    result,
-                //                ) {
-                //                    return false;
-                //                }
+                if is_excluded(&fragment.directives, executor.variables()) {
+                    continue;
+                }
+
+                let sub_exec = executor.type_sub_executor(
+                    fragment.type_condition.as_ref().map(|c| c.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                if let Some(ref type_condition) = fragment.type_condition {
+                    let sub_result = instance.iter_resolve_into_type(
+                        info,
+                        type_condition.item,
+                        Some(&fragment.selection_set[..]),
+                        sub_exec,
+                    );
+
+                    if let Ok(Value::Object(object)) = sub_result {
+                        for (k, v) in object {
+                            merge_key_into(result, &k, v);
+                        }
+                    } else if let Err(e) = sub_result {
+//                        sub_exec.push_error_at(e, start_pos.clone());
+                    }
+                } else {
+                    unimplemented!()
+//                    if resolve_selection_set_into_iter(
+//                        instance,
+//                        info,
+//            &fragment.selection_set[..],
+//                &sub_exec,
+//                        result,
+//                    ) {
+//                        return false;
+//                    }
+                }
             }
         }
     }
 
-    Value::Object(result)
+    true
 }
 
 pub(super) fn is_excluded<S>(
