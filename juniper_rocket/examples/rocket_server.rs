@@ -91,63 +91,6 @@ impl MySubscription {
 //    }
 //}
 
-// // !!!!!!!!!! macro implementantion !!!!!!!!!!!!!!!!!!!!
-//impl juniper::SubscriptionHandlerAsync<juniper::DefaultScalarValue> for MySubscription {
-//    #[allow(unused_variables)]
-//    fn resolve_field_async<'a>(
-//        &'a self,
-//        info: &'a Self::TypeInfo,
-//        field_name: &'a str,
-//        arguments: Arguments<'a, juniper::DefaultScalarValue>,
-//        executor: Executor<'a, Self::Context, juniper::DefaultScalarValue>,
-//    ) -> juniper::BoxFuture<'a, juniper::SubscriptionResultAsync<'a, juniper::DefaultScalarValue>>
-//    {
-//        match field_name {
-//            "asyncHuman" => futures::FutureExt::boxed(async move {
-//                use futures::stream::StreamExt;
-//
-//                let res: Result<
-//                    std::pin::Pin<Box<dyn futures::stream::Stream<Item = Human> + Send + 'a>>,
-//                    juniper::FieldError<juniper::DefaultScalarValue>,
-//                > = {
-//                        Ok(
-//                            Box::pin(futures::stream::repeat(Human {
-//                                    id: "stream human id".to_string(),
-//                                    name: "stream human name".to_string(),
-//                                    home_planet: "stream human home planet".to_string(),
-//                                }))
-//                        )
-//                };
-//                let res = res?;
-//                let f = res.then(move |res| {
-//                    let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
-//                        juniper::IntoResolvable::into(res, executor.context());
-//                    let ex = executor.clone();
-//                    async move {
-//                        match res2 {
-//                            Ok(Some((ctx, r))) => {
-//                                let sub = ex.replaced_context(ctx);
-//                                match sub.resolve_with_ctx_async(&(), &r).await {
-//                                    Ok(v) => v,
-//                                    Err(_) => juniper::Value::Null,
-//                                }
-//                            }
-//                            Ok(None) => juniper::Value::null(),
-//                            Err(e) => juniper::Value::Null,
-//                        }
-//                    }
-//                });
-//                Ok(juniper::Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
-//            }),
-//            _ => {
-//                {
-//                    panic!("not found");
-//                };
-//            }
-//        }
-//    }
-//}
-
 //impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
 //where
 //    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
