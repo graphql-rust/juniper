@@ -60,7 +60,7 @@ struct MySubscription;
     context = MyContext
 )]
 impl MySubscription {
-    fn human() -> Human {
+    fn human(id: String) -> Human {
         let iter = Box::new(std::iter::repeat(Human {
             id: "subscription id".to_string(),
             name: "subscription name".to_string(),
@@ -70,7 +70,13 @@ impl MySubscription {
     }
 
     async fn human() -> Human {
-        panic!("this is async function");
+        Ok(
+            Box::pin(futures::stream::repeat(Human {
+                id: "stream human id".to_string(),
+                name: "stream human name".to_string(),
+                home_planet: "stream human home planet".to_string(),
+            }))
+        )
     }
 }
 
