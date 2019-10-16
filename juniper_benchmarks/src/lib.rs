@@ -1,5 +1,7 @@
 use juniper::{
-    object, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, Value, Variables,
+    object, subscription, DefaultScalarValue,
+    ExecutionError, FieldError, GraphQLEnum,
+    Value, Variables,
 };
 
 pub type QueryResult = Result<
@@ -95,8 +97,13 @@ pub struct Mutation;
 #[object(Context = Context)]
 impl Mutation {}
 
-pub fn new_schema() -> juniper::RootNode<'static, Query, Mutation> {
-    juniper::RootNode::new(Query, Mutation)
+pub struct Subscription;
+
+#[subscription(Context = Context)]
+impl Subscription {}
+
+pub fn new_schema() -> juniper::RootNode<'static, Query, Mutation, Subscription> {
+    juniper::RootNode::new(Query, Mutation, Subscription)
 }
 
 pub fn execute(query: &str, vars: Variables) -> QueryResult {

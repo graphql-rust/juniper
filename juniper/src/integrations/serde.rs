@@ -412,7 +412,7 @@ mod tests {
     use super::{ExecutionError, GraphQLError};
     use crate::{
         ast::InputValue,
-        value::{base_object::SyncObject, DefaultScalarValue, Object},
+        value::{DefaultScalarValue, Object},
         FieldError, Value,
     };
     use serde_json::{from_str, to_string};

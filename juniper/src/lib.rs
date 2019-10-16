@@ -245,6 +245,7 @@ where
     Ok(document)
 }
 
+#[cfg(feature = "async")]
 fn parse_and_validate_document_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document_source: &'a str,
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,

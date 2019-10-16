@@ -6,8 +6,11 @@ use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::Variables,
     value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
-    FieldError, ValuesIterator, ValuesStream,
+    FieldError, ValuesIterator,
 };
+
+#[cfg(feature = "async")]
+use crate::ValuesStream;
 
 use crate::{
     executor::{ExecutionResult, Executor, Registry, SubscriptionResult},

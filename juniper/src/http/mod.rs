@@ -13,9 +13,12 @@ use crate::{
     ast::InputValue,
     executor::ExecutionError,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator, ValuesStream,
+    FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator,
     Variables,
 };
+
+#[cfg(feature = "async")]
+use crate::ValuesStream;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///

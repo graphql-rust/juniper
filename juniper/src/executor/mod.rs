@@ -33,7 +33,6 @@ pub use self::look_ahead::{
 };
 use crate::value::Object;
 use std::{pin::Pin, rc::Rc, sync::Mutex};
-use std::sync::RwLockReadGuard;
 
 /// A type registry used to build schemas
 ///
@@ -179,32 +178,6 @@ where
     }
 }
 
-pub struct SubExecutors<'a, CtxT, S> {
-    sub_executors: RwLock<Vec<Executor<'a, CtxT, S>>>,
-}
-
-impl<'a, CtxT, S> SubExecutors<'a, CtxT, S> {
-    pub fn new() -> Self {
-        Self {
-            sub_executors: RwLock::new(vec![])
-        }
-    }
-
-    pub fn push<'s>(&self, sub_executor: Executor<'a, CtxT, S>) -> usize {
-        let mut vector = self.sub_executors.write().unwrap();
-        vector.push(sub_executor);
-        vector.len() - 1
-    }
-
-    pub fn get_guard<'s>(&'s self) -> RwLockReadGuard<'s, Vec<Executor<'a, CtxT, S>>> {
-        self.sub_executors.read().unwrap()
-//        x.get(index).unwrap()
-    }
-}
-
-
-
-
 pub struct SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
@@ -212,7 +185,6 @@ where
     executor_variables: ExecutorData<'a, CtxT, S>,
     fragments: Vec<Spanning<Fragment<'a, S>>>,
     executor: OptionalExecutor<'a, CtxT, S>,
-    sub_executors: SubExecutors<'a, CtxT, S>
 }
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
@@ -224,7 +196,6 @@ where
             executor_variables: ExecutorData::new(),
             fragments: vec![],
             executor: OptionalExecutor::new(),
-            sub_executors: SubExecutors::new()
         }
     }
 
@@ -603,7 +574,6 @@ where
         &'a self,
         info: &'a T::TypeInfo,
         value: &'a T,
-        sub_executors: &'a mut SubExecutors<'a, CtxT, S>
     ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
@@ -612,7 +582,7 @@ where
         S: Send + Sync + 'static,
     {
         Ok(value
-            .resolve_into_stream(info, self.current_selection_set, self, sub_executors)
+            .resolve_into_stream(info, self.current_selection_set, self)
             .await)
     }
 
@@ -710,11 +680,10 @@ where
     /// If the field fails to resolve, iterator with one `null`
     /// will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_subscription_async<T>(
+    pub async fn resolve_into_iterator_async<T>(
         &'a self,
         info: &'a T::TypeInfo,
         value: &'a T,
-        sub_executors: &'a mut SubExecutors<'a, CtxT, S>
     ) -> Value<ValuesStream<'a, S>>
     where
         T: crate::SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
@@ -722,7 +691,7 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        match self.subscribe_async(info, value, sub_executors).await {
+        match self.subscribe_async(info, value).await {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
@@ -1363,10 +1332,9 @@ where
             OperationType::Subscription => {
                 executor
                     .executor
-                    .resolve_into_subscription_async(
+                    .resolve_into_iterator_async(
                         &root_node.subscription_info,
                         &root_node.subscription_type,
-                        &mut executor.sub_executors
                     )
                     .await
             }

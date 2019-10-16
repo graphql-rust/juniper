@@ -1285,8 +1285,8 @@ impl GraphQLSubscriptionDefiniton {
                     &self,
                     info: &Self::TypeInfo,
                     field_name: &str,
-                    arguments: &Arguments<#scalar>,
-                    executor: Executor<'a, Self::Context, #scalar>,
+                    arguments: &#juniper_crate_name::Arguments<#scalar>,
+                    executor: #juniper_crate_name::Executor<'a, Self::Context, #scalar>,
                 ) -> #juniper_crate_name::SubscriptionResult<'a, #scalar> {
                     match field_name {
                             #( #resolve_matches )*
@@ -1298,6 +1298,7 @@ impl GraphQLSubscriptionDefiniton {
             }
         );
 
+        #[cfg(feature = "async")]
         let async_subscription_implementation = quote!(
             impl#impl_generics #juniper_crate_name::SubscriptionHandlerAsync<#scalar> for #ty #type_generics_tokens
             #where_clause
@@ -1307,8 +1308,8 @@ impl GraphQLSubscriptionDefiniton {
                     &'a self,
                     info: &'a Self::TypeInfo,
                     field_name: &'a str,
-                    arguments: Arguments<'a, #scalar>,
-                    executor: Executor<'a, Self::Context, #scalar>,
+                    arguments: #juniper_crate_name::Arguments<'a, #scalar>,
+                    executor: #juniper_crate_name::Executor<'a, Self::Context, #scalar>,
                 ) -> #juniper_crate_name::BoxFuture<'a, #juniper_crate_name::SubscriptionResultAsync<'a, #scalar>> {
                     use futures::stream::StreamExt;
 
@@ -1321,6 +1322,8 @@ impl GraphQLSubscriptionDefiniton {
                 }
             }
         );
+        #[cfg(not(feature = "async"))]
+        let async_subscription_implementation = quote!();
 
         quote!(
             #graphql_implementation
