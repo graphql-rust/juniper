@@ -1086,28 +1086,24 @@ impl GraphQLSubscriptionDefiniton {
                 }
             });
 
-        let resolve_matches = self.fields.iter().map(|field| {
-            let name = &field.name;
-            let code = &field.resolver_code;
+        let resolve_matches = self.fields
+            .iter()
+            .filter(|field| !field.is_async)
+            .map(|field| {
+                let name = &field.name;
+                let code = &field.resolver_code;
 
-            if field.is_async {
-                // TODO: better error message with field/type name.
-                quote!(
-                    #name => {
-                        panic!("Tried to resolve async field with a sync subscription resolver");
-                    },
-                )
-            } else {
                 let _type = if field.is_type_inferred {
                     quote!()
                 } else {
                     let _type = &field._type;
-                    quote!(: Result<Box<dyn Iterator<Item = #_type> + 'a>, #juniper_crate_name::FieldError<#scalar>>)
+                    quote!(: Result<Box<dyn std::iter::Iterator<Item = #_type> + 'a>, #juniper_crate_name::FieldError<#scalar>>)
                 };
                 quote!(
                     #name => {
                         let res #_type = { #code };
-                        let iter = res?.map(move |res| {
+                        let res = res?;
+                        let iter = res.map(move |res| {
                         juniper::IntoResolvable::into(
                                 res,
                                 executor.context(),
@@ -1125,8 +1121,57 @@ impl GraphQLSubscriptionDefiniton {
                         Ok(Value::Scalar(Box::new(iter)))
                     },
                 )
-            }
-        });
+
+            });
+
+        let resolve_matches_async = self.fields
+            .iter()
+            .filter(|field| field.is_async)
+            .map(|field| {
+                let name = &field.name;
+                let code = &field.resolver_code;
+
+                let _type = if field.is_type_inferred {
+                    quote!()
+                } else {
+                    let _type = &field._type;
+                    quote!(: Result<std::pin::Pin<Box<dyn futures::stream::Stream<Item = #_type> + Send + 'a>>, #juniper_crate_name::FieldError<#scalar>>)
+                };
+                quote!(
+
+                    #name => {
+                        futures::FutureExt::boxed(async move {
+                            let res #_type = { #code };
+                            let res = res?;
+
+                            let f = res.then(move |res| {
+                                let res2: #juniper_crate_name::FieldResult<_, #scalar> =
+                                    juniper::IntoResolvable::into(res, executor.context());
+                                let ex = executor.clone();
+                                async move {
+                                    match res2 {
+                                        Ok(Some((ctx, r))) => {
+                                            let sub = ex.replaced_context(ctx);
+                                            match sub.resolve_with_ctx_async(&(), &r).await {
+                                                Ok(v) => v,
+                                                Err(_) => juniper::Value::Null,
+                                            }
+                                        }
+                                        Ok(None) => juniper::Value::null(),
+                                        Err(e) => juniper::Value::Null,
+                                    }
+                                }
+                            });
+                            Ok(
+                                #juniper_crate_name::Value::Scalar::<
+                                    #juniper_crate_name::ValuesStream
+                                >(Box::pin(f))
+                            )
+                        })
+                    }
+                )
+
+            });
 
         let description = self
             .description
@@ -1246,7 +1291,31 @@ impl GraphQLSubscriptionDefiniton {
                     match field_name {
                             #( #resolve_matches )*
                             _ => {
-                                panic!("Field {} not found on type {}", field_name, "Mutation");
+                                panic!("Field {} not found on type {}", field_name, "SubscriptionHandler");
+                            }
+                        }
+                }
+            }
+        );
+
+        let async_subscription_implementation = quote!(
+            impl#impl_generics #juniper_crate_name::SubscriptionHandlerAsync<#scalar> for #ty #type_generics_tokens
+            #where_clause
+            {
+                #[allow(unused_variables)]
+                fn resolve_field_async<'a>(
+                    &'a self,
+                    info: &'a Self::TypeInfo,
+                    field_name: &'a str,
+                    arguments: Arguments<'a, #scalar>,
+                    executor: Executor<'a, Self::Context, #scalar>,
+                ) -> #juniper_crate_name::BoxFuture<'a, #juniper_crate_name::SubscriptionResultAsync<'a, #scalar>> {
+                    use futures::stream::StreamExt;
+
+                    match field_name {
+                            #( #resolve_matches_async )*
+                            _ => {
+                                panic!("Field {} not found on type {}", field_name, "SubscriptionHandlerAsync");
                             }
                         }
                 }
@@ -1256,6 +1325,7 @@ impl GraphQLSubscriptionDefiniton {
         quote!(
             #graphql_implementation
             #subscription_implementation
+            #async_subscription_implementation
         )
     }
 }

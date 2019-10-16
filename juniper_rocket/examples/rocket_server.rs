@@ -24,9 +24,6 @@ struct Human {
 
 struct MyQuery;
 
-//todo: panics:
-//             thread 'tokio-runtime-worker-1' panicked at 'Field __schema not found on type Mutation', juniper_rocket/examples/rocket_server.rs:22:1
-//             thread 'tokio-runtime-worker-0' panicked at 'TODO.async: sender was dropped, error instead: Canceled', src/libcore/result.rs:1165:5
 #[juniper::object(
     context = MyContext
 )]
@@ -73,6 +70,10 @@ impl MySubscription {
         ));
         Ok(iter)
     }
+
+    async fn human() -> Human {
+        panic!("this is async function");
+    }
 }
 
 //#[juniper::object(
@@ -87,7 +88,64 @@ impl MySubscription {
 //        unreachable!()
 //    }
 //}
+
+// // !!!!!!!!!! macro implementantion !!!!!!!!!!!!!!!!!!!!
+//impl juniper::SubscriptionHandlerAsync<juniper::DefaultScalarValue> for MySubscription {
+//    #[allow(unused_variables)]
+//    fn resolve_field_async<'a>(
+//        &'a self,
+//        info: &'a Self::TypeInfo,
+//        field_name: &'a str,
+//        arguments: Arguments<'a, juniper::DefaultScalarValue>,
+//        executor: Executor<'a, Self::Context, juniper::DefaultScalarValue>,
+//    ) -> juniper::BoxFuture<'a, juniper::SubscriptionResultAsync<'a, juniper::DefaultScalarValue>>
+//    {
+//        match field_name {
+//            "asyncHuman" => futures::FutureExt::boxed(async move {
+//                use futures::stream::StreamExt;
 //
+//                let res: Result<
+//                    std::pin::Pin<Box<dyn futures::stream::Stream<Item = Human> + Send + 'a>>,
+//                    juniper::FieldError<juniper::DefaultScalarValue>,
+//                > = {
+//                        Ok(
+//                            Box::pin(futures::stream::repeat(Human {
+//                                    id: "stream human id".to_string(),
+//                                    name: "stream human name".to_string(),
+//                                    home_planet: "stream human home planet".to_string(),
+//                                }))
+//                        )
+//                };
+//                let res = res?;
+//                let f = res.then(move |res| {
+//                    let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
+//                        juniper::IntoResolvable::into(res, executor.context());
+//                    let ex = executor.clone();
+//                    async move {
+//                        match res2 {
+//                            Ok(Some((ctx, r))) => {
+//                                let sub = ex.replaced_context(ctx);
+//                                match sub.resolve_with_ctx_async(&(), &r).await {
+//                                    Ok(v) => v,
+//                                    Err(_) => juniper::Value::Null,
+//                                }
+//                            }
+//                            Ok(None) => juniper::Value::null(),
+//                            Err(e) => juniper::Value::Null,
+//                        }
+//                    }
+//                });
+//                Ok(juniper::Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
+//            }),
+//            _ => {
+//                {
+//                    panic!("not found");
+//                };
+//            }
+//        }
+//    }
+//}
+
 //impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
 //where
 //    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
@@ -121,7 +179,7 @@ impl MySubscription {
 //                    };
 //
 //                    let f = res.then(move |res| {
-//                        let res2: FieldResult<Option<(&'a (), Human)>, DefaultScalarValue> =
+//                        let res2: FieldResult<_, DefaultScalarValue> =
 //                            juniper::IntoResolvable::into(res, executor.context());
 //
 //                        let ex = executor.clone();
@@ -138,11 +196,7 @@ impl MySubscription {
 //                                Err(e) => juniper::Value::Null,
 //                            }
 //                        }
-//                        //                        async {
-//                        //                            Value::Scalar(DefaultScalarValue::Int(32))
-//                        //                        }
 //                    });
-//                    //                                            futures::stream::repeat(Value::Scalar(DefaultScalarValue::Int(32)))
 //                    Ok(Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
 //                })
 //            }
@@ -152,7 +206,7 @@ impl MySubscription {
 //        }
 //    }
 //}
-//
+
 //impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
 //    fn resolve_field_into_iterator<'r>(
 //        &self,
@@ -239,24 +293,24 @@ fn post_graphql_handler(
     //    is_async = true;
 
 //        if is_async {
-//            use futures::{compat::Compat, Future};
-//            use rocket::http::Status;
-//            use std::sync::mpsc::channel;
-//
-//            let cloned_schema = Arc::new(schema);
-//
-//            let (sender, receiver) = channel();
-//            let mut x = futures::executor::block_on(async move {
-//                let x = request
-//                    .execute_async(&cloned_schema.clone(), &MyContext(1234))
-//                    .await;
-//                sender.send(x);
-//            });
-//
-//            let res = receiver.recv().unwrap();
-//            res
+            use futures::{compat::Compat, Future};
+            use rocket::http::Status;
+            use std::sync::mpsc::channel;
+
+            let cloned_schema = Arc::new(schema);
+
+            let (sender, receiver) = channel();
+            let mut x = futures::executor::block_on(async move {
+                let x = request
+                    .execute_async(&cloned_schema.clone(), &MyContext(1234))
+                    .await;
+                sender.send(x);
+            });
+
+            let res = receiver.recv().unwrap();
+            res
 //        } else {
-            request.execute(&schema, &MyContext(1234))
+//            request.execute(&schema, &MyContext(1234))
 //        }
 
     //    GraphQLResponse(Status {
