@@ -74,28 +74,38 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
+        sub_executors: &'a crate::executor::SubExecutors<'a, Self::Context, S>
     ) -> BoxFuture<'a, Value<ValuesStream<'a, S>>> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_stream(self, info, selection_set, executor)
+            resolve_selection_set_into_stream(
+                self,
+                info,
+                selection_set,
+                executor,
+                sub_executors
+            )
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
     }
 
     #[allow(unused_variables)]
-    fn stream_resolve_into_type(
-        &self,
-        info: &Self::TypeInfo,
+    fn stream_resolve_into_type<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
         type_name: &str,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<Self::Context, S>,
-    ) -> Result<Value<ValuesStream<S>>, FieldError<S>> {
-        // todo: cannot resolve by default because future is returned
-        //        if Self::name(info).unwrap() == type_name {
-        //            Ok(self.resolve_into_stream(info, selection_set, executor))
-        //        } else {
-        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-        //        }
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+        sub_executors: &'a crate::executor::SubExecutors<'a, Self::Context, S>
+    ) -> BoxFuture<'a, Result<Value<ValuesStream<'a, S>>, FieldError<S>>> {
+        if Self::name(info).unwrap() == type_name {
+            Box::pin(async move {
+                let stream = self.resolve_into_stream(info, selection_set, executor, sub_executors).await;
+                Ok(stream)
+            })
+        } else {
+            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        }
     }
 }
 
@@ -348,6 +358,7 @@ pub(crate) fn resolve_selection_set_into_stream<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
+    sub_executors: &'a crate::executor::SubExecutors<'a, CtxT, S>
 ) -> BoxFuture<'a, Value<ValuesStream<'a, S>>>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT>,
@@ -361,6 +372,7 @@ where
         info,
         selection_set,
         executor,
+        sub_executors
     ))
 }
 
@@ -370,6 +382,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
+    sub_executors: &'a crate::executor::SubExecutors<'a, CtxT, S>
 ) -> Value<ValuesStream<'a, S>>
 where
     T: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
@@ -480,6 +493,8 @@ where
                     continue;
                 }
 
+                let sub_executors = sub_executors.clone();
+
                 // TODO: prevent duplicate boxing.
                 let f = async move {
                     let fragment = &executor
@@ -490,6 +505,7 @@ where
                         info,
                         &fragment.selection_set[..],
                         executor,
+                        sub_executors
                     )
                     .await;
                     AsyncValue::Nested(value)
@@ -510,22 +526,28 @@ where
                     Some(&fragment.selection_set[..]),
                 );
 
-                if let Some(ref type_condition) = fragment.type_condition {
-                    // FIXME: implement async version.
+                let ref_sub_exec;
+                {
+                    let sub_exec_index = sub_executors.push(sub_exec);
+                    let sub_exec_guard = sub_executors.get_guard();
+                    ref_sub_exec = sub_exec_guard.get(sub_exec_index).unwrap();
+                }
 
+                if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.stream_resolve_into_type(
                         info,
                         type_condition.item,
                         Some(&fragment.selection_set[..]),
-                        &sub_exec,
-                    );
+                        &ref_sub_exec,
+                        sub_executors
+                    ).await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
                             async_merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        ref_sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
                     //todo

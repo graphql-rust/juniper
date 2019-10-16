@@ -90,7 +90,7 @@ where
     S: ScalarValue + Send + Sync + 'a + 'static,
     QueryT: GraphQLType<S, TypeInfo = ()>,
     MutationT: GraphQLType<S, TypeInfo = ()>,
-    SubscriptionT: crate::SubscriptionHandler<S, TypeInfo = ()>,
+    SubscriptionT: GraphQLType<S, TypeInfo = ()>,
     SubscriptionT::Context: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -111,7 +111,7 @@ impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, Su
 where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
-    SubscriptionT: crate::SubscriptionHandler<S>,
+    SubscriptionT: GraphQLType<S>,
     SubscriptionT::Context: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync + 'a + 'static,
