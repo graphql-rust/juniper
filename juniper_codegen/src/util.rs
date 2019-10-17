@@ -803,118 +803,122 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
+        let mut resolve_field_async = quote!();
+
+
         #[cfg(feature = "async")]
-        let resolve_field_async = {
-            let resolve_matches_async = self.fields.iter().map(|field| {
-                let name = &field.name;
-                let code = &field.resolver_code;
-                let _type = if field.is_type_inferred {
-                    quote!()
-                } else {
-                    let _type = &field._type;
-                    quote!(: #_type)
-                };
+        {
+            if !self.no_async {
+                resolve_field_async = {
+                    let resolve_matches_async = self.fields.iter().map(|field| {
+                        let name = &field.name;
+                        let code = &field.resolver_code;
+                        let _type = if field.is_type_inferred {
+                            quote!()
+                        } else {
+                            let _type = &field._type;
+                            quote!(: #_type)
+                        };
 
-                if field.is_async {
-                    quote!(
-                        #name => {
-                            let f = async move {
-                                let res #_type = async move { #code }.await;
+                        if field.is_async {
+                            quote!(
+                    #name => {
+                        let f = async move {
+                            let res #_type = async move { #code }.await;
 
-                                let inner_res = #juniper_crate_name::IntoResolvable::into(
-                                    res,
-                                    executor.context()
-                                );
-                                match inner_res {
-                                    Ok(Some((ctx, r))) => {
-                                        let subexec = executor
-                                            .replaced_context(ctx);
-                                        subexec.resolve_with_ctx_async(&(), &r)
-                                            .await
-                                    },
-                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                    Err(e) => Err(e),
-                                }
-                            };
-                            future::FutureExt::boxed(f)
-                        },
-                    )
-                } else {
-                    let inner = if !self.no_async {
-                        quote!(
-                            let f = async move {
-                                match res2 {
-                                    Ok(Some((ctx, r))) => {
-                                        let sub = executor.replaced_context(ctx);
-                                        sub.resolve_with_ctx_async(&(), &r).await
-                                    },
-                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                    Err(e) => Err(e),
-                                }
-                            };
-                            future::FutureExt::boxed(f)
-                        )
-                    } else {
-                        quote!(
-                            let v = match res2 {
-                                Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                                Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                Err(e) => Err(e),
-                            };
-                            future::FutureExt::boxed(future::ready(v))
-                        )
-                    };
-
-                    quote!(
-                        #name => {
-                            let res #_type = { #code };
-                            let res2 = #juniper_crate_name::IntoResolvable::into(
+                            let inner_res = #juniper_crate_name::IntoResolvable::into(
                                 res,
                                 executor.context()
                             );
-                            #inner
-                        },
-                    )
-                }
-            });
-
-            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-
-            where_async
-                .predicates
-                .push(parse_quote!( #scalar: Send + Sync ));
-            where_async.predicates.push(parse_quote!(Self: Send + Sync));
-
-            // FIXME: add where clause for interfaces.
-
-            quote!(
-                impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
-                    #where_async
-                {
-                    fn resolve_field_async<'b>(
-                        &'b self,
-                        info: &'b Self::TypeInfo,
-                        field: &'b str,
-                        args: &'b #juniper_crate_name::Arguments<#scalar>,
-                        executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> futures::future::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
-                        where #scalar: Send + Sync,
-                    {
-                        use futures::future;
-                        use #juniper_crate_name::GraphQLType;
-                        match field {
-                            #( #resolve_matches_async )*
-                            _ => {
-                                panic!("Field {} not found on type {}", field, "Mutation");
+                            match inner_res {
+                                Ok(Some((ctx, r))) => {
+                                    let subexec = executor
+                                        .replaced_context(ctx);
+                                    subexec.resolve_with_ctx_async(&(), &r)
+                                        .await
+                                },
+                                Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                Err(e) => Err(e),
                             }
+                        };
+                        future::FutureExt::boxed(f)
+                    },
+                )
+                        } else {
+                            let inner = if !self.no_async {
+                                quote!(
+                        let f = async move {
+                            match res2 {
+                                Ok(Some((ctx, r))) => {
+                                    let sub = executor.replaced_context(ctx);
+                                    sub.resolve_with_ctx_async(&(), &r).await
+                                },
+                                Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                Err(e) => Err(e),
+                            }
+                        };
+                        future::FutureExt::boxed(f)
+                    )
+                            } else {
+                                quote!(
+                        let v = match res2 {
+                            Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                            Err(e) => Err(e),
+                        };
+                        future::FutureExt::boxed(future::ready(v))
+                    )
+                            };
+
+                            quote!(
+                    #name => {
+                        let res #_type = { #code };
+                        let res2 = #juniper_crate_name::IntoResolvable::into(
+                            res,
+                            executor.context()
+                        );
+                        #inner
+                    },
+                )
+                        }
+                    });
+
+                    let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+
+                    where_async
+                        .predicates
+                        .push(parse_quote!( #scalar: Send + Sync ));
+                    where_async.predicates.push(parse_quote!(Self: Send + Sync));
+
+                    // FIXME: add where clause for interfaces.
+
+                    quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
+                #where_async
+            {
+                fn resolve_field_async<'b>(
+                    &'b self,
+                    info: &'b Self::TypeInfo,
+                    field: &'b str,
+                    args: &'b #juniper_crate_name::Arguments<#scalar>,
+                    executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
+                ) -> futures::future::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
+                    where #scalar: Send + Sync,
+                {
+                    use futures::future;
+                    use #juniper_crate_name::GraphQLType;
+                    match field {
+                        #( #resolve_matches_async )*
+                        _ => {
+                            panic!("Field {} not found on type {}", field, "Mutation");
                         }
                     }
                 }
-            )
-        };
-
-        #[cfg(not(feature = "async"))]
-        let resolve_field_async = quote!();
+            }
+        )
+                };
+            }
+        }
 
         let output = quote!(
         impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens

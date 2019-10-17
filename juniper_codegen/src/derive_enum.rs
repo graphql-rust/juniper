@@ -206,6 +206,9 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         });
     }
 
+    #[cfg(not(feature = "async"))]
+    let _async = quote!();
+
     #[cfg(feature = "async")]
     let _async = quote!(
         impl<__S> #juniper_path::GraphQLTypeAsync<__S> for #ident
@@ -226,9 +229,6 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
             }
         }
     );
-
-    #[cfg(not(feature = "async"))]
-    let _async = quote!();
 
     let body = quote! {
         impl<__S> #juniper_path::GraphQLType<__S> for #ident
