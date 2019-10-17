@@ -402,7 +402,7 @@ pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: boo
                                 let expect_text = format!("Internal error: missing argument {} - validation must have failed", &final_name);
                                 let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
                                 resolve_parts.push(quote!(
-                                    let #mut_modifier #arg_ident = args
+                                    let #mut_modifier #arg_ident = arguments
                                         .get::<#ty>(#final_name)
                                         .expect(#expect_text);
                                 ));
