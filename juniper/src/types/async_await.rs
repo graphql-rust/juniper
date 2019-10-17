@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Directive, FromInputValue, InputValue, Selection},
+    ast::Selection,
     value::{Object, ScalarRefValue, ScalarValue, Value},
     FieldError, FieldResult, ValuesStream,
 };
@@ -13,7 +13,6 @@ use crate::BoxFuture;
 
 use super::base::{async_merge_key_into, is_excluded, merge_key_into, Arguments, GraphQLType};
 use crate::executor::SubscriptionResultAsync;
-use std::pin::Pin;
 
 /// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync

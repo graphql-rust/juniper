@@ -9,9 +9,6 @@ use crate::{
     FieldError, ValuesIterator,
 };
 
-#[cfg(feature = "async")]
-use crate::ValuesStream;
-
 use crate::{
     executor::{ExecutionResult, Executor, Registry, SubscriptionResult},
     parser::Spanning,

@@ -9,7 +9,7 @@ use crate::{
     },
     parser::{SourcePosition, Spanning},
     value::Value,
-    GraphQLError, SubscriptionHandler,
+    GraphQLError,
 };
 
 use crate::schema::{
@@ -31,8 +31,6 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::value::Object;
-use std::{pin::Pin, rc::Rc, sync::Mutex};
 
 /// A type registry used to build schemas
 ///
