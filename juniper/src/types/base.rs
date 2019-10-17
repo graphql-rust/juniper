@@ -8,6 +8,7 @@ use crate::{
     value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
     FieldError, ValuesIterator,
 };
+use crate::executor::{SubExecutorStorage, ArcWithLifetime};
 
 #[cfg(feature = "async")]
 use crate::ValuesStream;
@@ -17,6 +18,7 @@ use crate::{
     parser::Spanning,
     schema::meta::{Argument, MetaType},
 };
+use std::sync::Arc;
 
 /// GraphQL type kind
 ///
@@ -359,11 +361,20 @@ where
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: Executor<'a, Self::Context, S>,
+        sub_executor_storage: &SubExecutorStorage<'a, Self::Context, S>
     ) -> Value<ValuesIterator<S>> {
         if let Some(selection_set) = selection_set {
             let mut object = Object::with_capacity(selection_set.len());
-            if resolve_selection_set_into_iter(self, info, selection_set, executor, &mut object) {
+            if resolve_selection_set_into_iter(
+                self,
+                info,
+                selection_set,
+                //todo: not clone executor
+                ArcWithLifetime::new(Arc::new(executor)),
+                &mut object,
+                sub_executor_storage
+            ) {
                 Value::Object(object)
             } else {
                 Value::Null
@@ -381,7 +392,7 @@ where
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments<S>,
-        executor: Executor<'a, Self::Context, S>,
+        executor: ArcWithLifetime<'a, Self::Context, S>,
     ) -> SubscriptionResult<'a, S> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -396,7 +407,7 @@ where
         info: &'a Self::TypeInfo,
         type_name: &'a str,
         selection_set: Option<&'a [Selection<S>]>,
-        executor: Executor<'a, Self::Context, S>,
+        executor: ArcWithLifetime<'a, Self::Context, S>,
     ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
         //        if Self::name(info).unwrap() == type_name {
         //            Ok(self.resolve_into_iterator(info, selection_set, executor))
@@ -566,8 +577,9 @@ pub fn resolve_selection_set_into_iter<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: ArcWithLifetime<'a, CtxT, S>,
     result: &mut Object<ValuesIterator<'a, S>>,
+    sub_executor_storage: &SubExecutorStorage<'a, CtxT, S>
 ) -> bool
 where
     T: SubscriptionHandler<S, Context = CtxT>,
@@ -616,12 +628,14 @@ where
 
                 let exec_vars = executor.variables();
 
-                let sub_exec = executor.field_sub_executor(
-                    response_name,
-                    f.name.item,
-                    start_pos.clone(),
-                    f.selection_set.as_ref().map(|v| &v[..]),
-                );
+                let sub_exec = ArcWithLifetime::new(Arc::new(
+                    executor.field_sub_executor(
+                        response_name,
+                        f.name.item,
+                        start_pos.clone(),
+                        f.selection_set.as_ref().map(|v| &v[..]),
+                    )
+                ));
 
                 let field_result = instance.resolve_field_into_iterator(
                     info,
@@ -646,7 +660,7 @@ where
                         merge_key_into(result, response_name, v);
                     }
                     Err(e) => {
-                        //                        sub_exec.push_error_at(e, start_pos.clone());
+                        // sub_exec.push_error_at(e, start_pos.clone());
 
                         if meta_field.field_type.is_non_null() {
                             return false;
@@ -671,8 +685,9 @@ where
                     instance,
                     info,
                     &fragment.selection_set[..],
-                    executor,
+                    executor.clone(),
                     result,
+                    sub_executor_storage
                 ) {
                     return false;
                 }
@@ -690,6 +705,11 @@ where
                     fragment.type_condition.as_ref().map(|c| c.item),
                     Some(&fragment.selection_set[..]),
                 );
+                let sub_exec = Arc::new(sub_exec);
+
+                sub_executor_storage.add(Arc::clone(&sub_exec));
+
+                let sub_exec = ArcWithLifetime::new(sub_exec);
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.iter_resolve_into_type(
@@ -704,19 +724,19 @@ where
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        //                        sub_exec.push_error_at(e, start_pos.clone());
+                         // sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    unimplemented!()
-                    //                    if resolve_selection_set_into_iter(
-                    //                        instance,
-                    //                        info,
-                    //            &fragment.selection_set[..],
-                    //                &sub_exec,
-                    //                        result,
-                    //                    ) {
-                    //                        return false;
-                    //                    }
+                    if resolve_selection_set_into_iter(
+                        instance,
+                        info,
+                        &fragment.selection_set[..],
+                        sub_exec,
+                        result,
+                        sub_executor_storage
+                    ) {
+                        return false;
+                    }
                 }
             }
         }

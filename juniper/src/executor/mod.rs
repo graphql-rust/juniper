@@ -32,7 +32,9 @@ pub use self::look_ahead::{
     LookAheadSelection, LookAheadValue,
 };
 use crate::value::Object;
-use std::{pin::Pin, rc::Rc, sync::Mutex};
+use std::{pin::Pin, rc::Rc, sync::Mutex, sync::Arc};
+use std::marker::PhantomData;
+use std::ops::Deref;
 
 /// A type registry used to build schemas
 ///
@@ -186,6 +188,23 @@ where
     }
 }
 
+pub struct SubExecutorStorage<'a, CtxT, S> {
+    data: Mutex<Vec<Arc<Executor<'a, CtxT, S>>>>
+}
+
+impl<'a, CtxT, S> SubExecutorStorage<'a, CtxT, S> {
+    pub fn new() -> Self {
+        Self {
+            data: Mutex::new(vec![])
+        }
+    }
+
+    pub fn add(&self, executor: Arc<Executor<'a, CtxT, S>>) {
+        let mut x = self.data.lock().unwrap();
+        x.push(executor);
+    }
+}
+
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
 pub struct SubscriptionsExecutor<'a, CtxT, S>
@@ -206,6 +225,8 @@ where
 
     /// `Executor` instance
     executor: OptionalExecutor<'a, CtxT, S>,
+
+    sub_executor_storage: SubExecutorStorage<'a, CtxT, S>
 }
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
@@ -217,6 +238,7 @@ where
             executor_variables: ExecutorData::new(),
             fragments: vec![],
             executor: OptionalExecutor::new(),
+            sub_executor_storage: SubExecutorStorage::new()
         }
     }
 
@@ -228,10 +250,40 @@ where
     }
 }
 
+//todo: find crate for this or something
+pub struct ArcWithLifetime<'a, CtxT, S>
+{
+    arc: Arc<Executor<'a, CtxT, S>>,
+    _phantom: PhantomData<&'a ()>,
+}
+
+impl<'a, CtxT, S> ArcWithLifetime<'a, CtxT, S>
+{
+    pub fn new(arc: Arc<Executor<'a, CtxT, S>>) -> Self {
+        Self {
+            arc,
+            _phantom: PhantomData
+        }
+    }
+
+    pub fn deref(&self) -> &'a Executor<'a, CtxT, S> {
+        &self.arc
+    }
+}
+
+impl<'a, CtxT, S> Clone for ArcWithLifetime<'a, CtxT, S> {
+    fn clone(&self) -> Self {
+        Self {
+            arc: Arc::clone(&self.arc),
+            _phantom: PhantomData,
+        }
+    }
+}
+
 /// Query execution engine
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
-/// of the current field stack, context, variables, and errors.
+// of the current field stack, context, variables, and errors.
 #[derive(Clone)]
 pub struct Executor<'a, CtxT, S = DefaultScalarValue>
 where
@@ -581,12 +633,17 @@ where
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> SubscriptionResult<'a, S>
+    pub fn subscribe<T>(
+        self,
+        info: &'a T::TypeInfo,
+        value: &'a T,
+        sub_executor_storage: &SubExecutorStorage<'a, T::Context, S>
+    ) -> SubscriptionResult<'a, S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
     {
-        Ok(value.resolve_into_iterator(info, self.current_selection_set, self))
+        Ok(value.resolve_into_iterator(info, self.current_selection_set, self, sub_executor_storage))
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResultAsync`
@@ -661,12 +718,13 @@ where
         &'a self,
         info: &'a T::TypeInfo,
         value: &'a T,
+        sub_executor_storage: &SubExecutorStorage<'a, T::Context, S>,
     ) -> Value<ValuesIterator<'a, S>>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
     {
-        match self.subscribe(info, value) {
+        match self.subscribe(info, value, sub_executor_storage) {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
@@ -738,13 +796,13 @@ where
     }
 
     #[doc(hidden)]
-    pub fn field_sub_executor(
-        &self,
+    pub fn field_sub_executor<'s>(
+        &'s self,
         field_alias: &'a str,
         field_name: &'a str,
         location: SourcePosition,
         selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<CtxT, S> {
+    ) -> Executor<'s, CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -1131,7 +1189,11 @@ where
         value = match op.item.operation_type {
             OperationType::Subscription => executor
                 .executor
-                .resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type),
+                .resolve_into_iterator(
+                    &root_node.subscription_info,
+                    &root_node.subscription_type,
+                    &executor.sub_executor_storage
+                ),
             _ => unreachable!(),
         };
     }
