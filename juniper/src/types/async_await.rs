@@ -2,9 +2,6 @@ use crate::{
     ast::Selection,
     value::{Object, ScalarRefValue, ScalarValue, Value},
     FieldError, FieldResult, ValuesStream,
-};
-
-use crate::{
     executor::{ExecutionResult, Executor},
     parser::Spanning,
 };

@@ -184,14 +184,12 @@ where
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
-    //todo: remove pub (pub is used in playground to access result)
-    pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
 /// Wrapper around the result from executing a GraphQL subscription
 pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
-    //todo: remove pub (pub is used in playground to access result)
-    pub Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>,
+    Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;
@@ -199,8 +197,7 @@ where
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    //todo: remove pub (pub is used in playground to access result)
-    pub Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>,
+    Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;
@@ -209,6 +206,11 @@ impl<'a, S> GraphQLResponse<'a, S>
 where
     S: ScalarValue,
 {
+    /// Constructs new `GraphQLResponse` with result given
+    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
+        Self(r)
+    }
+
     /// Constructs an error response outside of the normal execution flow
     pub fn error(error: FieldError<S>) -> Self {
         GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
@@ -257,6 +259,19 @@ where
         }
     }
 }
+
+impl<'a, S> IteratorGraphQLResponse<'a, S> {
+    pub fn into_iter(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
+        self.0
+    }
+}
+
+impl<'a, S> StreamGraphQLResponse<'a, S> {
+    pub fn into_stream(self) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>> {
+        self.0
+    }
+}
+
 
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]

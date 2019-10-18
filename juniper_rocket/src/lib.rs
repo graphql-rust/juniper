@@ -117,7 +117,7 @@ where
 
                 let res = request
                     .subscribe(root_node, context, &mut executor)
-                    .0
+                    .into_iter()
                     .unwrap();
 
                 let x: Value<DefaultScalarValue> = match res {
@@ -154,7 +154,7 @@ where
                     }
                 };
 
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((x, vec![]))))
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((x, vec![]))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 unimplemented!()
@@ -187,7 +187,7 @@ where
                 let response_value = request
                     .subscribe_async(root_node, context, &mut executor)
                     .await
-                    .0
+                    .into_stream()
                     .unwrap();
                 let x = match response_value {
                     Value::Null => Value::null(),
@@ -230,7 +230,7 @@ where
                     }
                 };
 
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse(Ok((x, vec![]))))
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((x, vec![]))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 panic!("Batch requests are not supported in this demo!");
