@@ -403,7 +403,11 @@ where
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> SubscriptionResult<'a, S>
+    pub fn subscribe<T>(
+        self,
+        info: &'a T::TypeInfo,
+        value: &'a T
+    ) -> SubscriptionResult<'a, S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -480,7 +484,7 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     pub fn resolve_into_iterator<T>(
-        &'a self,
+        self,
         info: &'a T::TypeInfo,
         value: &'a T,
     ) -> Value<ValuesIterator<'a, S>>
@@ -491,7 +495,7 @@ where
         match self.subscribe(info, value) {
             Ok(v) => v,
             Err(e) => {
-                self.push_error(e);
+//                self.push_error(e);
                 Value::Null
             }
         }
@@ -587,6 +591,35 @@ where
         }
     }
 
+
+    pub fn into_field_sub_executor(
+        self,
+        field_alias: &'a str,
+        field_name: &'a str,
+        location: SourcePosition,
+        selection_set: Option<&'a [Selection<S>]>,
+    ) -> Executor<'a, CtxT, S> {
+        unimplemented!()
+//        Executor {
+//            fragments: self.fragments,
+//            variables: self.variables,
+//            current_selection_set: selection_set,
+//            parent_selection_set: self.current_selection_set,
+//            current_type: self.schema.make_type(
+//                &self
+//                    .current_type
+//                    .innermost_concrete()
+//                    .field_by_name(field_name)
+//                    .expect("Field not found on inner type")
+//                    .field_type,
+//            ),
+//            schema: self.schema,
+//            context: self.context,
+//            errors: self.errors,
+//            field_path: FieldPath::Field(field_alias, location, self.field_path),
+//        }
+    }
+
     #[doc(hidden)]
     pub fn type_sub_executor(
         &self,
@@ -606,6 +639,27 @@ where
             context: self.context,
             errors: self.errors,
             field_path: self.field_path.clone(),
+        }
+    }
+
+    pub fn into_type_sub_executor(
+        self,
+        type_name: Option<&'a str>,
+        selection_set: Option<&'a [Selection<S>]>,
+    ) -> Executor<'a, CtxT, S> {
+        Executor {
+            fragments: self.fragments,
+            variables: self.variables,
+            current_selection_set: selection_set,
+            parent_selection_set: self.current_selection_set,
+            current_type: match type_name {
+                Some(type_name) => self.schema.type_by_name(type_name).expect("Type not found"),
+                None => self.current_type,
+            },
+            schema: self.schema,
+            context: self.context,
+            errors: self.errors,
+            field_path: self.field_path,
         }
     }
 
@@ -946,13 +1000,18 @@ where
         });
 
         // unwrap is safe here because executor's data was set up above
-        executor
-            .executor
-            .set(executor.executor_variables.get_executor().unwrap());
+//        executor
+//            .executor
+//            .set(
+//                executor.executor_variables.get_executor().unwrap()
+//            );
 
         value = match op.item.operation_type {
-            OperationType::Subscription => executor
-                .executor
+            //todo: not clone
+            OperationType::Subscription =>
+//                executor
+//                .executor
+                executor.executor_variables.get_executor().unwrap()
                 .resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type),
             _ => unreachable!(),
         };

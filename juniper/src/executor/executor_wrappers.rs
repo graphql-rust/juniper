@@ -101,6 +101,7 @@ impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
 
 /// `Executor` which can be set later.
 /// __Panics__ if `Executor` was not set.
+#[derive(Clone)]
 pub(crate) struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
     where
         CtxT: 'a,

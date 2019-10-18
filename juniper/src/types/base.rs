@@ -353,7 +353,7 @@ where
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: Executor<'a, Self::Context, S>,
     ) -> Value<ValuesIterator<S>> {
         if let Some(selection_set) = selection_set {
             let mut object = Object::with_capacity(selection_set.len());
@@ -557,11 +557,14 @@ where
 }
 
 pub fn resolve_selection_set_into_iter<'a, T, CtxT, S>(
-    instance: &'a T,
-    info: &'a T::TypeInfo,
-    selection_set: &'a [Selection<S>],
-    executor: &'a Executor<'a, CtxT, S>,
-    result: &mut Object<ValuesIterator<'a, S>>,
+    instance: &'a T, //what object are we calling `resolve` on?
+    info: &'a T::TypeInfo, //additional info
+    selection_set: &'a [Selection<S>], //selection set
+
+    // we need reference rather than ownership at this point
+    executor: Executor<'a, CtxT, S>, //executor to create sub executors from
+
+    result: &mut Object<ValuesIterator<'a, S>>, //where to add values to
 ) -> bool
 where
     T: SubscriptionHandler<S, Context = CtxT>,
@@ -610,7 +613,7 @@ where
 
                 let exec_vars = executor.variables();
 
-                let sub_exec = executor.field_sub_executor(
+                let sub_exec = executor.into_field_sub_executor(
                     response_name,
                     f.name.item,
                     start_pos.clone(),
@@ -701,16 +704,15 @@ where
                          // sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    unimplemented!()
-//                    if resolve_selection_set_into_iter(
-//                        instance,
-//                        info,
-//                        &fragment.selection_set[..],
-//                        &sub_exec,
-//                            result,
-//                        ) {
-//                            return false;
-//                        }
+                    if resolve_selection_set_into_iter(
+                        instance,
+                        info,
+                        &fragment.selection_set[..],
+                        sub_exec,
+                            result,
+                        ) {
+                            return false;
+                        }
                 }
             }
         }
