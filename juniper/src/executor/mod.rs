@@ -1,4 +1,7 @@
-use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
+use std::{
+    borrow::Cow, cmp::Ordering, collections::HashMap,
+    fmt::Display, sync::RwLock
+};
 
 use fnv::FnvHashMap;
 
@@ -8,8 +11,9 @@ use crate::{
         Selection, ToInputValue, Type,
     },
     parser::{SourcePosition, Spanning},
-    value::Value,
-    GraphQLError,
+    value::Value, GraphQLError,
+    types::{base::GraphQLType, name::Name},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
 };
 
 use crate::schema::{
@@ -20,17 +24,16 @@ use crate::schema::{
     model::{RootNode, SchemaType, TypeType},
 };
 
-use crate::{
-    types::{base::GraphQLType, name::Name},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
-};
+use self::executor_wrappers::ExecutorDataVariables;
 
 mod look_ahead;
+mod executor_wrappers;
 
 pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
+pub use self::executor_wrappers::SubscriptionsExecutor;
 
 /// A type registry used to build schemas
 ///
@@ -46,184 +49,6 @@ pub struct Registry<'r, S = DefaultScalarValue> {
 pub enum FieldPath<'a> {
     Root(SourcePosition),
     Field(&'a str, SourcePosition, &'a FieldPath<'a>),
-}
-
-/// Struct owning `Executor`'s variables
-pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    fragments: HashMap<&'a str, &'a Fragment<'a, S>>,
-    variables: Variables<S>,
-    current_selection_set: Option<Vec<Selection<'a, S>>>,
-    parent_selection_set: Option<Vec<Selection<'a, S>>>,
-    current_type: TypeType<'a, S>,
-    schema: &'a SchemaType<'a, S>,
-    context: &'a CtxT,
-    errors: RwLock<Vec<ExecutionError<S>>>,
-    field_path: FieldPath<'a>,
-}
-
-impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
-where
-    S: Clone,
-{
-    pub fn get_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
-        Executor {
-            fragments: &self_ty.fragments,
-            variables: &self_ty.variables,
-            current_selection_set: if let Some(s) = &self_ty.current_selection_set {
-                Some(&s[..])
-            } else {
-                None
-            },
-            parent_selection_set: if let Some(s) = &self_ty.parent_selection_set {
-                Some(&s[..])
-            } else {
-                None
-            },
-            current_type: self_ty.current_type.clone(),
-            schema: self_ty.schema,
-            context: self_ty.context,
-            errors: &self_ty.errors,
-            field_path: self_ty.field_path.clone(),
-        }
-    }
-}
-
-/// `ExecutorDataVariables` wrapper
-struct ExecutorData<'a, CtxT, S = DefaultScalarValue>
-where
-    CtxT: 'a,
-    S: Clone + 'a,
-{
-    /// Variables data
-    _data: Option<ExecutorDataVariables<'a, CtxT, S>>,
-}
-
-impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
-where
-    CtxT: 'a,
-    S: Clone + 'a,
-{
-    pub fn new() -> Self {
-        Self { _data: None }
-    }
-
-    pub fn set_data(&mut self, data: ExecutorDataVariables<'a, CtxT, S>) {
-        self._data = Some(data);
-    }
-
-    pub fn get_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
-        if let Some(ref s) = self._data {
-            Ok(ExecutorDataVariables::get_executor(s))
-        } else {
-            Err(())
-        }
-    }
-
-    pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-    where
-        S: PartialEq,
-    {
-        if let Some(ref mut s) = self._data {
-            //todo: maybe not unwrap
-            let errors = match s.errors.get_mut() {
-                Ok(e) => e,
-                Err(_) => return None,
-            };
-            errors.sort();
-            Some(errors)
-        } else {
-            None
-        }
-    }
-}
-
-/// `Executor` which can be set later.
-/// __Panics__ if `Executor` was not set.
-struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    /// `Executor` instance
-    executor: Option<Executor<'a, CtxT, S>>,
-}
-
-impl<'a, CtxT, S> OptionalExecutor<'a, CtxT, S>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    /// Create new `OptionalExecutor`
-    pub fn new() -> Self {
-        Self { executor: None }
-    }
-
-    /// Set `Executor` to dereference
-    pub fn set(&mut self, e: Executor<'a, CtxT, S>) {
-        self.executor = Some(e);
-    }
-}
-
-impl<'a, CtxT, S> std::ops::Deref for OptionalExecutor<'a, CtxT, S>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    type Target = Executor<'a, CtxT, S>;
-
-    fn deref(&self) -> &Self::Target {
-        if let Some(ref e) = self.executor {
-            e
-        } else {
-            panic!("Tried dereferencing OptionalExecutor which was not set")
-        }
-    }
-}
-
-/// `Executor` wrapper to keep all `Executor`'s data
-/// and `Executor` instance
-pub struct SubscriptionsExecutor<'a, CtxT, S>
-where
-    S: std::clone::Clone,
-{
-    /// Keeps ownership of all `Executor`'s variables
-    /// because `Executor` only keeps references
-    ///
-    /// Variables are kept in a separate struct rather than this one
-    /// because they have a hashmap referencing this struct's `fragments`
-    executor_variables: ExecutorData<'a, CtxT, S>,
-
-    /// Fragments vector.
-    /// Needed in as a separate field because `executor_variables`
-    /// contains a hashmap of references to `fragments`
-    fragments: Vec<Spanning<Fragment<'a, S>>>,
-
-    /// `Executor` instance
-    executor: OptionalExecutor<'a, CtxT, S>,
-}
-
-impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
-where
-    S: std::clone::Clone,
-{
-    pub fn new() -> Self {
-        Self {
-            executor_variables: ExecutorData::new(),
-            fragments: vec![],
-            executor: OptionalExecutor::new(),
-        }
-    }
-
-    pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-    where
-        S: PartialEq,
-    {
-        self.executor_variables.errors()
-    }
 }
 
 /// Query execution engine
@@ -405,19 +230,18 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
-pub type SubscriptionResult<'a, S = DefaultScalarValue> =
-    FieldResult<Value<ValuesIterator<'a, S>>, S>;
-#[cfg(feature = "async")]
-pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> =
-    FieldResult<Value<std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>>, S>;
+
+pub type SubscriptionResult<'a, S = DefaultScalarValue> = Result<Value<ValuesIterator<'a, S>>, FieldError<S>>;
 
 #[cfg(feature = "async")]
-/// The type returned from asyncronous subscription handler
-pub type ValuesStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>;
+pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> = Result<Value<ValuesStream<'a, S>>, FieldError<S>>;
 
-/// The type returned from subscription handler
+/// Boxed `Iterator` of `Value`s
 pub type ValuesIterator<'a, S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'a>;
+
+/// Boxed `futures::Stream` of `Value`s
+#[cfg(feature = "async")]
+pub type ValuesStream<'a, S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;

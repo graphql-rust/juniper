@@ -7,9 +7,6 @@ use crate::{
     executor::Variables,
     value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
     FieldError, ValuesIterator,
-};
-
-use crate::{
     executor::{ExecutionResult, Executor, Registry, SubscriptionResult},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
