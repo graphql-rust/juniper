@@ -805,7 +805,6 @@ impl GraphQLTypeDefiniton {
 
         let mut resolve_field_async = quote!();
 
-
         #[cfg(feature = "async")]
         {
             if !self.no_async {
@@ -883,7 +882,8 @@ impl GraphQLTypeDefiniton {
                         }
                     });
 
-                    let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+                    let mut where_async =
+                        where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
 
                     where_async
                         .predicates
@@ -893,29 +893,29 @@ impl GraphQLTypeDefiniton {
                     // FIXME: add where clause for interfaces.
 
                     quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
-                #where_async
-            {
-                fn resolve_field_async<'b>(
-                    &'b self,
-                    info: &'b Self::TypeInfo,
-                    field: &'b str,
-                    args: &'b #juniper_crate_name::Arguments<#scalar>,
-                    executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                ) -> futures::future::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
-                    where #scalar: Send + Sync,
-                {
-                    use futures::future;
-                    use #juniper_crate_name::GraphQLType;
-                    match field {
-                        #( #resolve_matches_async )*
-                        _ => {
-                            panic!("Field {} not found on type {}", field, "Mutation");
+                        impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
+                            #where_async
+                        {
+                            fn resolve_field_async<'b>(
+                                &'b self,
+                                info: &'b Self::TypeInfo,
+                                field: &'b str,
+                                args: &'b #juniper_crate_name::Arguments<#scalar>,
+                                executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
+                            ) -> futures::future::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
+                                where #scalar: Send + Sync,
+                            {
+                                use futures::future;
+                                use #juniper_crate_name::GraphQLType;
+                                match field {
+                                    #( #resolve_matches_async )*
+                                    _ => {
+                                        panic!("Field {} not found on type {}", field, "Mutation");
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-            }
-        )
+                    )
                 };
             }
         }

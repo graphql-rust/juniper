@@ -103,19 +103,22 @@ where
     <Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo: Send + Sync,
 {
     async fn resolve_field_async<'a>(
-        & self,
+        &self,
         info: &<Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo,
         field_name: &str,
         arguments: Arguments<'a, DefaultScalarValue>,
-        executor: Executor<'a, <Self as juniper::GraphQLType<DefaultScalarValue>>::Context, DefaultScalarValue>,
-    ) -> juniper::SubscriptionResultAsync<'a, DefaultScalarValue>
-    {
+        executor: Executor<
+            'a,
+            <Self as juniper::GraphQLType<DefaultScalarValue>>::Context,
+            DefaultScalarValue,
+        >,
+    ) -> juniper::SubscriptionResultAsync<'a, DefaultScalarValue> {
         use futures::future;
         match field_name {
             "human" => {
-                let id = arguments.get::<String>("id").expect(
-                    "Internal error: missing argument id - validation must have failed",
-                );
+                let id = arguments
+                    .get::<String>("id")
+                    .expect("Internal error: missing argument id - validation must have failed");
 
                 let res = {
                     println!("!!!!! got id: {:?} !!!!", id);
@@ -181,19 +184,16 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
                     })()
                 }?;
                 let iter = res.map(move |res| {
-                    juniper::IntoResolvable::into(
-                        res,
-                        executor.context(),
-                    )
-                    .and_then(|res| match res {
-                        Some((ctx, r)) => {
-                            let resolve_res =
-                                executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
-                            resolve_res
-                        }
-                        None => Ok(Value::null()),
-                    })
-                    .unwrap_or_else(|_| Value::Null)
+                    juniper::IntoResolvable::into(res, executor.context())
+                        .and_then(|res| match res {
+                            Some((ctx, r)) => {
+                                let resolve_res =
+                                    executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
+                                resolve_res
+                            }
+                            None => Ok(Value::null()),
+                        })
+                        .unwrap_or_else(|_| Value::Null)
                 });
                 Ok(Value::Scalar(Box::new(iter)))
                 //                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));

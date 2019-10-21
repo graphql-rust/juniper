@@ -367,9 +367,9 @@ where
     }
 
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-            for<'b> &'b S: ScalarRefValue<'b>,
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
     {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
@@ -383,19 +383,20 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
-{}
+{
+}
 
 #[cfg(feature = "async")]
 impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        Self: GraphQLType<S> + Send + Sync,
-        Self::TypeInfo: Send + Sync,
-        Self::Context: Send + Sync,
-        T: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
-{}
-
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
 
 #[cfg(test)]
 mod tests {

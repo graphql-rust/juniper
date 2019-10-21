@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap,
-    fmt::Display, sync::RwLock
-};
+use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
 
 use fnv::FnvHashMap;
 
@@ -11,9 +8,9 @@ use crate::{
         Selection, ToInputValue, Type,
     },
     parser::{SourcePosition, Spanning},
-    value::Value, GraphQLError,
     types::{base::GraphQLType, name::Name},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue, Value},
+    GraphQLError,
 };
 
 use crate::schema::{
@@ -26,14 +23,16 @@ use crate::schema::{
 
 use self::executor_wrappers::ExecutorDataVariables;
 
-mod look_ahead;
 mod executor_wrappers;
+mod look_ahead;
 
-pub use self::look_ahead::{
-    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
-    LookAheadSelection, LookAheadValue,
+pub use self::{
+    executor_wrappers::SubscriptionsExecutor,
+    look_ahead::{
+        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        LookAheadSelection, LookAheadValue,
+    },
 };
-pub use self::executor_wrappers::SubscriptionsExecutor;
 
 /// A type registry used to build schemas
 ///
@@ -231,17 +230,20 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-pub type SubscriptionResult<'a, S = DefaultScalarValue> = Result<Value<ValuesIterator<'a, S>>, FieldError<S>>;
+pub type SubscriptionResult<'a, S = DefaultScalarValue> =
+    Result<Value<ValuesIterator<'a, S>>, FieldError<S>>;
 
 #[cfg(feature = "async")]
-pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> = Result<Value<ValuesStream<'a, S>>, FieldError<S>>;
+pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> =
+    Result<Value<ValuesStream<'a, S>>, FieldError<S>>;
 
 /// Boxed `Iterator` of `Value`s
 pub type ValuesIterator<'a, S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'a>;
 
 /// Boxed `futures::Stream` of `Value`s
 #[cfg(feature = "async")]
-pub type ValuesStream<'a, S = DefaultScalarValue> = std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>;
+pub type ValuesStream<'a, S = DefaultScalarValue> =
+    std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -403,11 +405,7 @@ where
     }
 
     /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(
-        &'a self,
-        info: &'a T::TypeInfo,
-        value: &'a T
-    ) -> SubscriptionResult<'a, S>
+    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> SubscriptionResult<'a, S>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,

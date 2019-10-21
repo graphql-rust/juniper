@@ -273,7 +273,6 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
     }
 }
 
-
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {

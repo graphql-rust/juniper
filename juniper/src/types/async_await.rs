@@ -2,10 +2,10 @@ use async_trait::async_trait;
 
 use crate::{
     ast::Selection,
-    value::{Object, ScalarRefValue, ScalarValue, Value},
-    FieldError, FieldResult, ValuesStream,
     executor::{ExecutionResult, Executor},
     parser::Spanning,
+    value::{Object, ScalarRefValue, ScalarValue, Value},
+    FieldError, FieldResult, ValuesStream,
 };
 
 use crate::BoxFuture;
@@ -90,14 +90,14 @@ where
         executor: &'a Executor<'a, Self::Context, S>,
     ) -> SubscriptionResultAsync<'a, S> {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
-//        if Self::name(info).unwrap() == type_name {
-//            Box::pin(async {
-//                let stream = self.resolve_into_stream(info, selection_set, executor).await;
-//                Ok(stream)
-//            })
-//        } else {
-            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-//        }
+        //        if Self::name(info).unwrap() == type_name {
+        //            Box::pin(async {
+        //                let stream = self.resolve_into_stream(info, selection_set, executor).await;
+        //                Ok(stream)
+        //            })
+        //        } else {
+        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        //        }
     }
 }
 
@@ -513,21 +513,21 @@ where
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     unimplemented!()
-                    //todo: cannot return value referencing local variable `sub_exec`
-//                    let sub_result = instance.stream_resolve_into_type(
-//                        info,
-//                        type_condition.item,
-//                        Some(&fragment.selection_set[..]),
-//                        &sub_exec,
-//                    ).await;
-//
-//                    if let Ok(Value::Object(obj)) = sub_result {
-//                        for (k, v) in obj {
-//                            async_merge_key_into(&mut object, &k, v);
-//                        }
-//                    } else if let Err(e) = sub_result {
-//                        sub_exec.push_error_at(e, start_pos.clone());
-//                    }
+                //todo: cannot return value referencing local variable `sub_exec`
+                //                    let sub_result = instance.stream_resolve_into_type(
+                //                        info,
+                //                        type_condition.item,
+                //                        Some(&fragment.selection_set[..]),
+                //                        &sub_exec,
+                //                    ).await;
+                //
+                //                    if let Ok(Value::Object(obj)) = sub_result {
+                //                        for (k, v) in obj {
+                //                            async_merge_key_into(&mut object, &k, v);
+                //                        }
+                //                    } else if let Err(e) = sub_result {
+                //                        sub_exec.push_error_at(e, start_pos.clone());
+                //                    }
                 } else {
                     // TODO: implement fragment without type condition resolver
                     unimplemented!()

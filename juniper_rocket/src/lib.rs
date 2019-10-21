@@ -154,7 +154,10 @@ where
                     }
                 };
 
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((x, vec![]))))
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((
+                    x,
+                    vec![],
+                ))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 unimplemented!()
@@ -230,7 +233,10 @@ where
                     }
                 };
 
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((x, vec![]))))
+                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((
+                    x,
+                    vec![],
+                ))))
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 panic!("Batch requests are not supported in this demo!");

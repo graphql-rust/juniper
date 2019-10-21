@@ -1,16 +1,17 @@
-use std::collections::HashMap;
-use crate::ast::Fragment;
-use crate::{Variables, Selection, ExecutionError, Executor, DefaultScalarValue};
-use crate::schema::model::{TypeType, SchemaType};
-use std::sync::RwLock;
-use crate::executor::FieldPath;
-use crate::parser::Spanning;
+use crate::{
+    ast::Fragment,
+    executor::FieldPath,
+    parser::Spanning,
+    schema::model::{SchemaType, TypeType},
+    DefaultScalarValue, ExecutionError, Executor, Selection, Variables,
+};
+use std::{collections::HashMap, sync::RwLock};
 
 /// Struct owning `Executor`'s variables
 pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
-    where
-        CtxT: 'a,
-        S: 'a,
+where
+    CtxT: 'a,
+    S: 'a,
 {
     pub(crate) fragments: HashMap<&'a str, &'a Fragment<'a, S>>,
     pub(crate) variables: Variables<S>,
@@ -24,8 +25,8 @@ pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
 }
 
 impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
-    where
-        S: Clone,
+where
+    S: Clone,
 {
     pub fn get_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
         Executor {
@@ -52,18 +53,18 @@ impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
 
 /// `ExecutorDataVariables` wrapper
 pub(crate) struct ExecutorData<'a, CtxT, S = DefaultScalarValue>
-    where
-        CtxT: 'a,
-        S: Clone + 'a,
+where
+    CtxT: 'a,
+    S: Clone + 'a,
 {
     /// Variables data
     _data: Option<ExecutorDataVariables<'a, CtxT, S>>,
 }
 
 impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
-    where
-        CtxT: 'a,
-        S: Clone + 'a,
+where
+    CtxT: 'a,
+    S: Clone + 'a,
 {
     pub fn new() -> Self {
         Self { _data: None }
@@ -82,8 +83,8 @@ impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
     }
 
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-        where
-            S: PartialEq,
+    where
+        S: PartialEq,
     {
         if let Some(ref mut s) = self._data {
             //todo: maybe not unwrap
@@ -102,18 +103,18 @@ impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
 /// `Executor` which can be set later.
 /// __Panics__ if `Executor` was not set.
 pub(crate) struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
-    where
-        CtxT: 'a,
-        S: 'a,
+where
+    CtxT: 'a,
+    S: 'a,
 {
     /// `Executor` instance
     executor: Option<Executor<'a, CtxT, S>>,
 }
 
 impl<'a, CtxT, S> OptionalExecutor<'a, CtxT, S>
-    where
-        CtxT: 'a,
-        S: 'a,
+where
+    CtxT: 'a,
+    S: 'a,
 {
     /// Create new `OptionalExecutor`
     pub fn new() -> Self {
@@ -127,9 +128,9 @@ impl<'a, CtxT, S> OptionalExecutor<'a, CtxT, S>
 }
 
 impl<'a, CtxT, S> std::ops::Deref for OptionalExecutor<'a, CtxT, S>
-    where
-        CtxT: 'a,
-        S: 'a,
+where
+    CtxT: 'a,
+    S: 'a,
 {
     type Target = Executor<'a, CtxT, S>;
 
@@ -145,8 +146,8 @@ impl<'a, CtxT, S> std::ops::Deref for OptionalExecutor<'a, CtxT, S>
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
 pub struct SubscriptionsExecutor<'a, CtxT, S>
-    where
-        S: std::clone::Clone,
+where
+    S: std::clone::Clone,
 {
     /// Keeps ownership of all `Executor`'s variables
     /// because `Executor` only keeps references
@@ -165,8 +166,8 @@ pub struct SubscriptionsExecutor<'a, CtxT, S>
 }
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
-    where
-        S: std::clone::Clone,
+where
+    S: std::clone::Clone,
 {
     pub fn new() -> Self {
         Self {
@@ -177,10 +178,9 @@ impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
     }
 
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-        where
-            S: PartialEq,
+    where
+        S: PartialEq,
     {
         self.executor_variables.errors()
     }
 }
-
