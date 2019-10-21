@@ -577,6 +577,7 @@ where
         )
         .expect("Type not found in schema");
 
+    //todo: first parse everything, then start resolving
     for selection in selection_set {
         match *selection {
             Selection::Field(Spanning {
@@ -617,22 +618,23 @@ where
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
 
-                let field_result = instance.resolve_field_into_iterator(
-                    info,
-                    f.name.item,
-                    &Arguments::new(
-                        f.arguments.as_ref().map(|m| {
-                            m.item
-                                .iter()
-                                .map(|&(ref k, ref v)| {
-                                    (k.item, v.item.clone().into_const(exec_vars))
-                                })
-                                .collect()
-                        }),
-                        &meta_field.arguments,
-                    ),
-                    sub_exec,
-                );
+                let field_result = instance
+                    .resolve_field_into_iterator(
+                        info,
+                        f.name.item,
+                        &Arguments::new(
+                            f.arguments.as_ref().map(|m| {
+                                m.item
+                                    .iter()
+                                    .map(|&(ref k, ref v)| {
+                                        (k.item, v.item.clone().into_const(exec_vars))
+                                    })
+                                    .collect()
+                            }),
+                            &meta_field.arguments,
+                        ),
+                        sub_exec,
+                    );
 
                 match field_result {
                     Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
@@ -686,12 +688,13 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance.iter_resolve_into_type(
-                        info,
-                        type_condition.item,
-                        Some(&fragment.selection_set[..]),
-                        sub_exec,
-                    );
+                    let sub_result = instance
+                        .iter_resolve_into_type(
+                            info,
+                            type_condition.item,
+                            Some(&fragment.selection_set[..]),
+                            sub_exec,
+                        );
 
                     if let Ok(Value::Object(object)) = sub_result {
                         for (k, v) in object {
