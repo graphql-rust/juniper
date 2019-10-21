@@ -356,18 +356,14 @@ impl<T> EmptySubscription<T> {
 
 impl<S, T> GraphQLType<S> for EmptySubscription<T>
 where
-    S: ScalarValue + Send + Sync,
-    Self: GraphQLType<S> + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
-    T: Send + Sync,
+    S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = T;
     type TypeInfo = ();
 
     fn name(_: &()) -> Option<&str> {
-        Some("_EmptySubscription")
+        Some("_EmptyMutation")
     }
 
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
@@ -381,7 +377,7 @@ where
 
 impl<T, S> crate::SubscriptionHandler<S> for EmptySubscription<T>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
     Self: GraphQLType<S> + Send + Sync,
     Self::TypeInfo: Send + Sync,
     Self::Context: Send + Sync,
@@ -392,7 +388,7 @@ where
 #[cfg(feature = "async")]
 impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
     where
-        S: ScalarValue + Send + Sync,
+        S: ScalarValue + Send + Sync + 'static,
         Self: GraphQLType<S> + Send + Sync,
         Self::TypeInfo: Send + Sync,
         Self::Context: Send + Sync,
