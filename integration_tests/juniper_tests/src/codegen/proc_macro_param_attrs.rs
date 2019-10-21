@@ -49,14 +49,11 @@ static SCHEMA_INTROSPECTION_QUERY: &str = r#"
     }
 "#;
 
-// TODO: Test for `rename` attr
-
 #[test]
 fn old_descriptions_applied_correctly() {
     let schema = introspect_schema();
     let query = schema.types.iter().find(|ty| ty.name == "Query").unwrap();
 
-    // old deprecated `#[graphql(arguments(...))]` style
     let field = query
         .fields
         .iter()
