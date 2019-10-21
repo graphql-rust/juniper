@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 use crate::{
     ast::Selection,
     value::{Object, ScalarRefValue, ScalarValue, Value},
@@ -44,6 +46,7 @@ where
     }
 }
 
+#[async_trait]
 pub trait SubscriptionHandlerAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -52,40 +55,40 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     #[allow(unused_variables)]
-    fn resolve_field_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        field_name: &'a str,
+    async fn resolve_field_async<'a>(
+        &self,
+        info: &Self::TypeInfo,
+        field_name: &str,
         arguments: Arguments<'a, S>,
         executor: Executor<'a, Self::Context, S>,
-    ) -> BoxFuture<'a, SubscriptionResultAsync<'a, S>> {
+    ) -> SubscriptionResultAsync<'a, S> {
         panic!("resolve_field must be implemented by object types");
     }
 
     /// Stream resolving logic.
     /// __Default implementantion panics.__
     #[allow(unused_variables)]
-    fn resolve_into_stream<'a>(
+    async fn resolve_into_stream<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, Value<ValuesStream<'a, S>>> {
+        selection_set: Option<&'a [Selection<'_, S>]>,
+        executor: &'a Executor<'a, Self::Context, S>,
+    ) -> Value<ValuesStream<'a, S>> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_stream(self, info, selection_set, executor)
+            resolve_selection_set_into_stream(self, info, selection_set, executor).await
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
     }
 
     #[allow(unused_variables)]
-    fn stream_resolve_into_type<'a>(
+    async fn stream_resolve_into_type<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         type_name: &'a str,
-        selection_set: Option<&'a [Selection<S>]>,
+        selection_set: Option<&'a [Selection<'_, S>]>,
         executor: &'a Executor<'a, Self::Context, S>,
-    ) -> BoxFuture<'a, SubscriptionResultAsync<'a, S>> {
+    ) -> SubscriptionResultAsync<'a, S> {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
 //        if Self::name(info).unwrap() == type_name {
 //            Box::pin(async {

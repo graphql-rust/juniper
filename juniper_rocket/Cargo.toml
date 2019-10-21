@@ -25,6 +25,7 @@ tokio-io = "=0.2.0-alpha.6"
 futures = { version = "0.3.0-alpha.19", package = "futures-preview", features = ["compat"] }
 futures1 = { version = "0.1.29", package = "futures" }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
+async-trait = "0.1.16"
 
 #[dev-dependencies.juniper]
 #version = "0.13.1"

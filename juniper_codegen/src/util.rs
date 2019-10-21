@@ -1304,13 +1304,25 @@ impl GraphQLSubscriptionDefiniton {
             #where_clause
             {
                 #[allow(unused_variables)]
-                fn resolve_field_async<'a>(
-                    &'a self,
-                    info: &'a Self::TypeInfo,
-                    field_name: &'a str,
+                fn resolve_field_async<'a, 'life0, 'life1, 'life2, 'async_trait>(
+                    &'life0 self,
+                    info: &'life1 Self::TypeInfo,
+                    field_name: &'life2 str,
                     arguments: #juniper_crate_name::Arguments<'a, #scalar>,
                     executor: #juniper_crate_name::Executor<'a, Self::Context, #scalar>,
-                ) -> #juniper_crate_name::BoxFuture<'a, #juniper_crate_name::SubscriptionResultAsync<'a, #scalar>> {
+                ) -> std::pin::Pin<Box<
+                        dyn futures::future::Future<
+                            Output = #juniper_crate_name::SubscriptionResultAsync<'a, #scalar>
+                        >
+                        + Send + 'async_trait
+                    >>
+                    where
+                        'a: 'async_trait,
+                        'life0: 'async_trait,
+                        'life1: 'async_trait,
+                        'life2: 'async_trait,
+                        Self: 'async_trait,
+                {
                     use futures::stream::StreamExt;
 
                     match field_name {

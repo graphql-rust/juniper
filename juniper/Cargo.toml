@@ -33,6 +33,7 @@ default = [
 ]
 
 [dependencies]
+async-trait = "0.1.16"
 chrono = { version = "0.4.0", optional = true }
 fnv = "1.0.3"
 futures-preview = { version = "=0.3.0-alpha.19", optional = true }

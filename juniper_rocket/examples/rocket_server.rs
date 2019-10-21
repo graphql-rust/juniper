@@ -92,68 +92,84 @@ impl MySubscription {
 //        unreachable!()
 //    }
 //}
-
+//
+//use async_trait::async_trait;
+//
+////#[async_trait]
 //impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
 //where
 //    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
 //    Self::Context: Send + Sync + Clone,
 //    Self::TypeInfo: Send + Sync,
 //{
-//    fn resolve_field_async<'a>(
-//        &'a self,
-//        info: &'a Self::TypeInfo,
-//        field_name: &'a str,
+//    fn resolve_field_async<'a, 'life0, 'life1, 'life2, 'async_trait>(
+//        &'life0 self,
+//        info: &'life1 Self::TypeInfo,
+//        field_name: &'life2 str,
 //        arguments: Arguments<'a, DefaultScalarValue>,
 //        executor: Executor<'a, Self::Context, DefaultScalarValue>,
-//    ) -> BoxFuture<'a, juniper::SubscriptionResultAsync<'a, DefaultScalarValue>> {
+//    ) -> std::pin::Pin<Box<
+//            dyn futures::future::Future<
+//                Output = juniper::SubscriptionResultAsync<'a, DefaultScalarValue>
+//            >
+//            + Send + 'async_trait
+//        >>
+//        where
+//            'a: 'async_trait,
+//            'life0: 'async_trait,
+//            'life1: 'async_trait,
+//            'life2: 'async_trait,
+//            Self: 'async_trait,
+//    {
 //        use futures::future;
-//        match field_name {
-//            "human" => {
-//                futures::FutureExt::boxed(async move {
-//                    let id = arguments.get::<String>("id").expect(
-//                        "Internal error: missing argument id - validation must have failed",
-//                    );
-//
-//                    let res = {
-//                        println!("!!!!! got id: {:?} !!!!", id);
-//                        (move || {
-//                            Box::pin(futures::stream::repeat(Human {
-//                                id: "stream human id".to_string(),
-//                                name: "stream human name".to_string(),
-//                                home_planet: "stream human home planet".to_string(),
-//                            }))
-//                        })()
-//                    };
-//
-//                    let f = res.then(move |res| {
-//                        let res2: FieldResult<_, DefaultScalarValue> =
-//                            juniper::IntoResolvable::into(res, executor.context());
-//
-//                        let ex = executor.clone();
-//                        async move {
-//                            match res2 {
-//                                Ok(Some((ctx, r))) => {
-//                                    let sub = ex.replaced_context(ctx);
-//                                    match sub.resolve_with_ctx_async(&(), &r).await {
-//                                        Ok(v) => v,
-//                                        Err(_) => juniper::Value::Null,
-//                                    }
-//                                }
-//                                Ok(None) => juniper::Value::null(),
-//                                Err(e) => juniper::Value::Null,
-//                            }
-//                        }
-//                    });
-//                    Ok(Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
-//                })
-//            }
-//            _ => {
-//                panic!("field not found");
-//            }
-//        }
+//        unimplemented!()
+////        match field_name {
+////            "human" => {
+////                futures::FutureExt::boxed(async move {
+////                    let id = arguments.get::<String>("id").expect(
+////                        "Internal error: missing argument id - validation must have failed",
+////                    );
+////
+////                    let res = {
+////                        println!("!!!!! got id: {:?} !!!!", id);
+////                        (move || {
+////                            Box::pin(futures::stream::repeat(Human {
+////                                id: "stream human id".to_string(),
+////                                name: "stream human name".to_string(),
+////                                home_planet: "stream human home planet".to_string(),
+////                            }))
+////                        })()
+////                    };
+////
+////                    let f = res.then(move |res| {
+////                        let res2: FieldResult<_, DefaultScalarValue> =
+////                            juniper::IntoResolvable::into(res, executor.context());
+////
+////                        let ex = executor.clone();
+////                        async move {
+////                            match res2 {
+////                                Ok(Some((ctx, r))) => {
+////                                    let sub = ex.replaced_context(ctx);
+////                                    match sub.resolve_with_ctx_async(&(), &r).await {
+////                                        Ok(v) => v,
+////                                        Err(_) => juniper::Value::Null,
+////                                    }
+////                                }
+////                                Ok(None) => juniper::Value::null(),
+////                                Err(e) => juniper::Value::Null,
+////                            }
+////                        }
+////                    });
+////                    Ok(Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
+////                })
+////            }
+////            _ => {
+////                panic!("field not found");
+////            }
+////        }
 //    }
 //}
-
+//
 //impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
 //    fn resolve_field_into_iterator<'r>(
 //        &self,
