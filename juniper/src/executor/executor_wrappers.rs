@@ -1,9 +1,8 @@
-use std::sync::RwLock;
-use std::collections::{HashMap, LinkedList};
-
+use std::collections::HashMap;
 use crate::ast::Fragment;
 use crate::{Variables, Selection, ExecutionError, Executor, DefaultScalarValue};
 use crate::schema::model::{TypeType, SchemaType};
+use std::sync::RwLock;
 use crate::executor::FieldPath;
 use crate::parser::Spanning;
 

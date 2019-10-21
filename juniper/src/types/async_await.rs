@@ -509,20 +509,22 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance.stream_resolve_into_type(
-                        info,
-                        type_condition.item,
-                        Some(&fragment.selection_set[..]),
-                        &sub_exec,
-                    ).await;
-
-                    if let Ok(Value::Object(obj)) = sub_result {
-                        for (k, v) in obj {
-                            async_merge_key_into(&mut object, &k, v);
-                        }
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
-                    }
+                    unimplemented!()
+                    //todo: cannot return value referencing local variable `sub_exec`
+//                    let sub_result = instance.stream_resolve_into_type(
+//                        info,
+//                        type_condition.item,
+//                        Some(&fragment.selection_set[..]),
+//                        &sub_exec,
+//                    ).await;
+//
+//                    if let Ok(Value::Object(obj)) = sub_result {
+//                        for (k, v) in obj {
+//                            async_merge_key_into(&mut object, &k, v);
+//                        }
+//                    } else if let Err(e) = sub_result {
+//                        sub_exec.push_error_at(e, start_pos.clone());
+//                    }
                 } else {
                     // TODO: implement fragment without type condition resolver
                     unimplemented!()
