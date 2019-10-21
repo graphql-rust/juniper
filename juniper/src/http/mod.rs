@@ -266,6 +266,7 @@ impl<'a, S> IteratorGraphQLResponse<'a, S> {
     }
 }
 
+#[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     pub fn into_stream(self) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>> {
         self.0

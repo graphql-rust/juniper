@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::sync::RwLock;
+use std::collections::{HashMap, LinkedList};
+
 use crate::ast::Fragment;
 use crate::{Variables, Selection, ExecutionError, Executor, DefaultScalarValue};
 use crate::schema::model::{TypeType, SchemaType};
-use std::sync::RwLock;
 use crate::executor::FieldPath;
 use crate::parser::Spanning;
 
@@ -183,3 +184,27 @@ impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
         self.executor_variables.errors()
     }
 }
+
+//pub struct SubExecutorStorage<'a, CtxT, S> {
+//    data: LinkedList<Executor<'a, CtxT, S>>
+//}
+//
+//impl<'a, CtxT, S> SubExecutorStorage<'a, CtxT, S> {
+//    pub fn new() -> Self {
+//        Self {
+//            data: LinkedList::new()
+//        }
+//    }
+//
+//    pub fn add(
+//        &mut self,
+//        executor: Executor<'a, CtxT, S>
+//    ) -> &'a Executor<'a, CtxT, S> {
+//        self.data.push_back(executor);
+////        self.data.len() - 1
+//        self.data.back()
+//    }
+//
+//
+//}
+

@@ -219,7 +219,7 @@ impl<'a, S> SchemaType<'a, S> {
             } else {
                 None
             },
-            subscription_type_name: if &subscription_type_name != "_EmptyMutation" {
+            subscription_type_name: if &subscription_type_name != "_EmptySubscription" {
                 Some(subscription_type_name)
             } else {
                 None

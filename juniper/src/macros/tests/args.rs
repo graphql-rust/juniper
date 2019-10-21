@@ -6,6 +6,7 @@ use crate::{
     types::scalars::EmptyMutation,
     value::{DefaultScalarValue, Value},
 };
+use crate::types::scalars::EmptySubscription;
 
 struct Root;
 
@@ -158,7 +159,7 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
 
     let (result, errs) =
         crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
