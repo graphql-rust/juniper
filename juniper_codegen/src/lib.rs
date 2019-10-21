@@ -16,8 +16,8 @@ mod derive_scalar_value;
 mod impl_object;
 mod util;
 
-use proc_macro_error::*;
 use proc_macro::TokenStream;
+use proc_macro_error::*;
 
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {

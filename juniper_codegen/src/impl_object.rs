@@ -267,9 +267,7 @@ fn parse_argument_attrs(pat: &syn::PatType) -> Option<util::FieldAttributeArgume
 
     let name = match &*pat.pat {
         syn::Pat::Ident(i) => &i.ident,
-        other => {
-            abort!(other.span(), "Invalid token for function argument")
-        }
+        other => abort!(other.span(), "Invalid token for function argument"),
     };
 
     let mut arg = util::FieldAttributeArgument {
