@@ -52,56 +52,56 @@ static SCHEMA_INTROSPECTION_QUERY: &str = r#"
 // TODO: Test for `rename` attr
 
 #[test]
-fn descriptions_applied_correctly() {
+fn old_descriptions_applied_correctly() {
     let schema = introspect_schema();
-
     let query = schema.types.iter().find(|ty| ty.name == "Query").unwrap();
 
     // old deprecated `#[graphql(arguments(...))]` style
-    {
-        let field = query
-            .fields
-            .iter()
-            .find(|field| field.name == "fieldOldAttrs")
-            .unwrap();
+    let field = query
+        .fields
+        .iter()
+        .find(|field| field.name == "fieldOldAttrs")
+        .unwrap();
 
-        let arg1 = field.args.iter().find(|arg| arg.name == "arg1").unwrap();
-        assert_eq!(&arg1.description, &Some("arg1 desc".to_string()));
-        assert_eq!(
-            &arg1.default_value,
-            &Some(Value::String("true".to_string()))
-        );
+    let arg1 = field.args.iter().find(|arg| arg.name == "arg1").unwrap();
+    assert_eq!(&arg1.description, &Some("arg1 desc".to_string()));
+    assert_eq!(
+        &arg1.default_value,
+        &Some(Value::String("true".to_string()))
+    );
 
-        let arg2 = field.args.iter().find(|arg| arg.name == "arg2").unwrap();
-        assert_eq!(&arg2.description, &Some("arg2 desc".to_string()));
-        assert_eq!(
-            &arg2.default_value,
-            &Some(Value::String("false".to_string()))
-        );
-    }
+    let arg2 = field.args.iter().find(|arg| arg.name == "arg2").unwrap();
+    assert_eq!(&arg2.description, &Some("arg2 desc".to_string()));
+    assert_eq!(
+        &arg2.default_value,
+        &Some(Value::String("false".to_string()))
+    );
+}
 
-    // new style with attrs directly on the args
-    {
-        let field = query
-            .fields
-            .iter()
-            .find(|field| field.name == "fieldNewAttrs")
-            .unwrap();
+#[test]
+fn new_descriptions_applied_correctly() {
+    let schema = introspect_schema();
+    let query = schema.types.iter().find(|ty| ty.name == "Query").unwrap();
 
-        let arg1 = field.args.iter().find(|arg| arg.name == "arg1").unwrap();
-        assert_eq!(&arg1.description, &Some("arg1 desc".to_string()));
-        assert_eq!(
-            &arg1.default_value,
-            &Some(Value::String("true".to_string()))
-        );
+    let field = query
+        .fields
+        .iter()
+        .find(|field| field.name == "fieldNewAttrs")
+        .unwrap();
 
-        let arg2 = field.args.iter().find(|arg| arg.name == "arg2").unwrap();
-        assert_eq!(&arg2.description, &Some("arg2 desc".to_string()));
-        assert_eq!(
-            &arg2.default_value,
-            &Some(Value::String("false".to_string()))
-        );
-    }
+    let arg1 = field.args.iter().find(|arg| arg.name == "arg1").unwrap();
+    assert_eq!(&arg1.description, &Some("arg1 desc".to_string()));
+    assert_eq!(
+        &arg1.default_value,
+        &Some(Value::String("true".to_string()))
+    );
+
+    let arg2 = field.args.iter().find(|arg| arg.name == "arg2").unwrap();
+    assert_eq!(&arg2.description, &Some("arg2 desc".to_string()));
+    assert_eq!(
+        &arg2.default_value,
+        &Some(Value::String("false".to_string()))
+    );
 }
 
 #[derive(Debug)]

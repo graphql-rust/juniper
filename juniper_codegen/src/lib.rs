@@ -16,6 +16,7 @@ mod derive_scalar_value;
 mod impl_object;
 mod util;
 
+use proc_macro_error::*;
 use proc_macro::TokenStream;
 
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
@@ -289,25 +290,21 @@ impl InternalQuery {
     fn deprecated_field_simple() -> bool { true }
 
 
-    // Customizing field arguments is a little awkward right now.
-    // This will improve once [RFC 2564](https://github.com/rust-lang/rust/issues/60406)
-    // is implemented, which will allow attributes on function parameters.
+    // Customizing field arguments can be done like so:
+    // Note that attributes on arguments requires Rust 1.39
+    fn args(
+        #[graphql(
+            // You can specify default values.
+            // A default can be any valid expression that yields the right type.
+            default = true,
+            description = "Argument description....",
+        )] arg1: bool,
 
-    #[graphql(
-        arguments(
-            arg1(
-                // You can specify default values.
-                // A default can be any valid expression that yields the right type.
-                default = true,
-                description = "Argument description....",
-            ),
-            arg2(
-                default = false,
-                description = "arg2 description...",
-            ),
-        ),
-    )]
-    fn args(arg1: bool, arg2: bool) -> bool {
+        #[graphql(
+            default = false,
+            description = "arg2 description...",
+        )] arg2: bool,
+    ) -> bool {
         arg1 && arg2
     }
 }
@@ -354,6 +351,7 @@ impl Query {
 
 */
 #[proc_macro_attribute]
+#[proc_macro_error]
 pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, false);
     gen.into()

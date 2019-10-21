@@ -392,7 +392,7 @@ pub struct FieldAttributeArgument {
 
 impl parse::Parse for FieldAttributeArgument {
     fn parse(input: parse::ParseStream) -> parse::Result<Self> {
-        let name = input.parse()?;
+        let name = input.parse::<syn::Ident>()?;
 
         let mut arg = Self {
             name,
@@ -402,28 +402,37 @@ impl parse::Parse for FieldAttributeArgument {
 
         let content;
         syn::parenthesized!(content in input);
-        while !content.is_empty() {
-            let name = content.parse::<syn::Ident>()?;
-            content.parse::<Token![=]>()?;
-
-            match name.to_string().as_str() {
-                "description" => {
-                    arg.description = Some(content.parse()?);
-                }
-                "default" => {
-                    arg.default = Some(content.parse()?);
-                }
-                other => {
-                    return Err(content.error(format!("Invalid attribute argument key {}", other)));
-                }
-            }
-
-            // Discard trailing comma.
-            content.parse::<Token![,]>().ok();
-        }
+        parse_field_attr_arg_contents(&content, &mut arg)?;
 
         Ok(arg)
     }
+}
+
+pub fn parse_field_attr_arg_contents(
+    content: syn::parse::ParseStream,
+    arg: &mut FieldAttributeArgument,
+) -> parse::Result<()> {
+    while !content.is_empty() {
+        let name = content.parse::<syn::Ident>()?;
+        content.parse::<Token![=]>()?;
+
+        match name.to_string().as_str() {
+            "description" => {
+                arg.description = Some(content.parse()?);
+            }
+            "default" => {
+                arg.default = Some(content.parse()?);
+            }
+            other => {
+                return Err(content.error(format!("Invalid attribute argument key `{}`", other)));
+            }
+        }
+
+        // Discard trailing comma.
+        content.parse::<Token![,]>().ok();
+    }
+
+    Ok(())
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -493,7 +502,7 @@ impl parse::Parse for FieldAttribute {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FieldAttributes {
     pub name: Option<String>,
     pub description: Option<String>,
