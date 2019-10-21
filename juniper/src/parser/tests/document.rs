@@ -4,6 +4,7 @@ use crate::{
     },
     parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
     schema::model::SchemaType,
+    types::scalars::EmptyMutation,
     validation::test_harness::{MutationRoot, QueryRoot},
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
 };
@@ -144,4 +145,20 @@ fn errors() {
             ParseError::UnexpectedToken(Token::CurlyClose)
         )
     );
+}
+
+#[test]
+#[should_panic]
+fn issue_427_panic_is_expected() {
+    struct QueryWithoutFloat;
+
+    #[crate::object_internal]
+    impl QueryWithoutFloat {
+        fn echo(value: String) -> String {
+            value
+        }
+    }
+
+    let schema = SchemaType::new::<QueryWithoutFloat, EmptyMutation<()>>(&(), &());
+    let _parse_result = parse_document_source(r##"{ echo(value: 123.0) }"##, &schema);
 }
