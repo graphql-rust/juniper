@@ -261,7 +261,7 @@ where
 }
 
 impl<'a, S> IteratorGraphQLResponse<'a, S> {
-    pub fn into_iter(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
+    pub fn into_inner(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
         self.0
     }
 }

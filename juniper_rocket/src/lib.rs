@@ -117,7 +117,7 @@ where
 
                 let res = request
                     .subscribe(root_node, context, &mut executor)
-                    .into_iter()
+                    .into_inner()
                     .unwrap();
 
                 let x: Value<DefaultScalarValue> = match res {

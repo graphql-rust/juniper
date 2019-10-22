@@ -1104,7 +1104,7 @@ impl GraphQLSubscriptionDefiniton {
                         let res #_type = { #code };
                         let res = res?;
                         let iter = res.map(move |res| {
-                        juniper::IntoResolvable::into(
+                        #juniper_crate_name::IntoResolvable::into(
                                 res,
                                 executor.context(),
                             )
@@ -1288,6 +1288,7 @@ impl GraphQLSubscriptionDefiniton {
                     arguments: &#juniper_crate_name::Arguments<#scalar>,
                     executor: std::rc::Rc<#juniper_crate_name::Executor<'a, Self::Context, #scalar>>,
                 ) -> #juniper_crate_name::SubscriptionResult<'a, #scalar> {
+                    use #juniper_crate_name::Value;
                     match field_name {
                             #( #resolve_matches )*
                             _ => {
@@ -1323,6 +1324,7 @@ impl GraphQLSubscriptionDefiniton {
                         'life2: 'async_trait,
                         Self: 'async_trait,
                 {
+                    use #juniper_crate_name::Value;
                     use futures::stream::StreamExt;
 
                     match field_name {
