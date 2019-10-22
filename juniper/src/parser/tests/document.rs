@@ -148,8 +148,7 @@ fn errors() {
 }
 
 #[test]
-#[should_panic]
-fn issue_427_panic_is_expected() {
+fn issue_427_panic_is_not_expected() {
     struct QueryWithoutFloat;
 
     #[crate::object_internal]
@@ -160,5 +159,10 @@ fn issue_427_panic_is_expected() {
     }
 
     let schema = SchemaType::new::<QueryWithoutFloat, EmptyMutation<()>>(&(), &());
-    let _parse_result = parse_document_source(r##"{ echo(value: 123.0) }"##, &schema);
+    let parse_result = parse_document_source(r##"{ echo(value: 123.0) }"##, &schema);
+
+    assert_eq!(
+        parse_result.unwrap_err().item,
+        ParseError::ExpectedScalarError("There needs to be a Float type")
+    );
 }
