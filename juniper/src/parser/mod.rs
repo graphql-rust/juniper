@@ -6,8 +6,8 @@ mod parser;
 mod utils;
 mod value;
 
-#[cfg(test)]
-mod tests;
+//#[cfg(test)]
+//mod tests;
 
 pub use self::document::parse_document_source;
 

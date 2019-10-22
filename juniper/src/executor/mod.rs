@@ -139,8 +139,8 @@ where
 /// ```
 #[derive(Debug, PartialEq)]
 pub struct FieldError<S = DefaultScalarValue> {
-    pub message: String,
-    pub extensions: Value<S>,
+    message: String,
+    extensions: Value<S>,
 }
 
 impl<T: Display, S> From<T> for FieldError<S>
