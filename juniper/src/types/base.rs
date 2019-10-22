@@ -391,11 +391,12 @@ where
         selection_set: Option<&'a [Selection<S>]>,
         executor: Executor<'a, Self::Context, S>,
     ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
-        //        if Self::name(info).unwrap() == type_name {
-        //            Ok(self.resolve_into_iterator(info, selection_set, executor))
-        //        } else {
-        panic!("iter_resolve_into_type must be implemented by unions and interfaces");
-        //        }
+        //todo: if type is same as self call resolve_into_iterator
+//        if Self::name(info).unwrap() == type_name {
+//            Ok(self.resolve_into_iterator(info, selection_set, &executor))
+//        } else {
+            panic!("iter_resolve_into_type must be implemented by unions and interfaces");
+//        }
     }
 }
 
@@ -701,16 +702,26 @@ where
                         // sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    unimplemented!()
-                    //                    if resolve_selection_set_into_iter(
-                    //                        instance,
-                    //                        info,
-                    //                        &fragment.selection_set[..],
-                    //                        &sub_exec,
-                    //                            result,
-                    //                        ) {
-                    //                            return false;
-                    //                        }
+                    if let Some(type_name) = meta_type.name() {
+                        let sub_result = instance
+                            .iter_resolve_into_type(
+                                info,
+                                type_name,
+                                Some(&fragment.selection_set[..]),
+                                sub_exec,
+                            );
+
+                        if let Ok(Value::Object(object)) = sub_result {
+                            for (k, v) in object {
+                                merge_key_into(result, &k, v);
+                            }
+                        } else if let Err(e) = sub_result {
+                            // sub_exec.push_error_at(e, start_pos.clone());
+                        }
+                    }
+                    else {
+                        return false;
+                    }
                 }
             }
         }
