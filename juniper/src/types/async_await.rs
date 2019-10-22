@@ -12,6 +12,7 @@ use crate::BoxFuture;
 
 use super::base::{async_merge_key_into, is_excluded, merge_key_into, Arguments, GraphQLType};
 use crate::executor::SubscriptionResultAsync;
+use std::sync::Arc;
 
 /// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
@@ -60,7 +61,7 @@ where
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: Arguments<'a, S>,
-        executor: Executor<'a, Self::Context, S>,
+        executor: Arc<Executor<'a, Self::Context, S>>,
     ) -> SubscriptionResultAsync<'a, S> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -87,7 +88,7 @@ where
         info: &'a Self::TypeInfo,
         type_name: &'a str,
         selection_set: Option<&'a [Selection<'_, S>]>,
-        executor: Executor<'a, Self::Context, S>,
+        executor: Arc<Executor<'a, Self::Context, S>>,
     ) -> SubscriptionResultAsync<'a, S> {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
 //        if Self::name(info).unwrap() == type_name {
@@ -425,12 +426,14 @@ where
 
                 let exec_vars = executor.variables();
 
-                let sub_exec = executor.field_sub_executor(
+                let sub_exec = Arc::new(executor.field_sub_executor(
                     &response_name,
                     f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
-                );
+                ));
+
+                let sub_exec2 = Arc::clone(&sub_exec);
 
                 let args = Arguments::new(
                     f.arguments.as_ref().map(|m| {
@@ -457,7 +460,7 @@ where
                         Ok(Value::Null) if is_non_null => None,
                         Ok(v) => Some(v),
                         Err(e) => {
-                            // sub_exec.push_error_at(e, pos);
+                            sub_exec2.push_error_at(e, pos);
                             if is_non_null {
                                 None
                             } else {
@@ -504,25 +507,28 @@ where
                     continue;
                 }
 
-                let sub_exec = executor.type_sub_executor(
+                let sub_exec = Arc::new(executor.type_sub_executor(
                     fragment.type_condition.as_ref().map(|c| c.item),
                     Some(&fragment.selection_set[..]),
-                );
+                ));
+
+                let sub_exec2 = Arc::clone(&sub_exec);
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance.stream_resolve_into_type(
-                        info,
-                        type_condition.item,
-                        Some(&fragment.selection_set[..]),
-                        sub_exec,
-                    ).await;
+                    let sub_result = instance
+                        .stream_resolve_into_type(
+                            info,
+                            type_condition.item,
+                            Some(&fragment.selection_set[..]),
+                            sub_exec,
+                        ).await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
                             async_merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-//                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec2.push_error_at(e, start_pos.clone());
                     }
                 } else {
                     if let Some(type_name) = meta_type.name() {
@@ -538,7 +544,7 @@ where
                                 async_merge_key_into(&mut object, &k, v);
                             }
                         } else if let Err(e) = sub_result {
-//                            sub_exec.push_error_at(e, start_pos.clone());
+                            sub_exec2.push_error_at(e, start_pos.clone());
                         }
                     }
                     else {

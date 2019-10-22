@@ -108,11 +108,11 @@ where
         info: &<Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo,
         field_name: &str,
         arguments: Arguments<'a, DefaultScalarValue>,
-        executor: Executor<
+        executor: Arc<Executor<
             'a,
             <Self as juniper::GraphQLType<DefaultScalarValue>>::Context,
             DefaultScalarValue,
-        >,
+        >>,
     ) -> juniper::SubscriptionResultAsync<'a, DefaultScalarValue> {
         use futures::future;
         match field_name {
