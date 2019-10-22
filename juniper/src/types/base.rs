@@ -10,6 +10,7 @@ use crate::{
     value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
     FieldError, ValuesIterator,
 };
+use std::sync::Arc;
 
 /// GraphQL type kind
 ///
@@ -374,7 +375,7 @@ where
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments<S>,
-        executor: Executor<'a, Self::Context, S>,
+        executor: Arc<Executor<'a, Self::Context, S>>,
     ) -> SubscriptionResult<'a, S> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -389,11 +390,11 @@ where
         info: &'a Self::TypeInfo,
         type_name: &'a str,
         selection_set: Option<&'a [Selection<S>]>,
-        executor: Executor<'a, Self::Context, S>,
+        executor: Arc<Executor<'a, Self::Context, S>>,
     ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
         //todo: if type is same as self call resolve_into_iterator
 //        if Self::name(info).unwrap() == type_name {
-//            Ok(self.resolve_into_iterator(info, selection_set, &executor))
+//            Ok(self.resolve_into_iterator(info, selection_set, executor))
 //        } else {
             panic!("iter_resolve_into_type must be implemented by unions and interfaces");
 //        }
@@ -611,12 +612,14 @@ where
 
                 let exec_vars = executor.variables();
 
-                let sub_exec = executor.field_sub_executor(
+                let sub_exec = Arc::new(executor.field_sub_executor(
                     response_name,
                     f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
-                );
+                ));
+
+                let sub_exec_2 = Arc::clone(&sub_exec);
 
                 let field_result = instance.resolve_field_into_iterator(
                     info,
@@ -641,7 +644,7 @@ where
                         merge_key_into(result, response_name, v);
                     }
                     Err(e) => {
-                        // sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec_2.push_error_at(e, start_pos.clone());
 
                         if meta_field.field_type.is_non_null() {
                             return false;
@@ -681,10 +684,12 @@ where
                     continue;
                 }
 
-                let sub_exec = executor.type_sub_executor(
+                let sub_exec = Arc::new(executor.type_sub_executor(
                     fragment.type_condition.as_ref().map(|c| c.item),
                     Some(&fragment.selection_set[..]),
-                );
+                ));
+
+                let sub_exec2 = Arc::clone(&sub_exec);
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.iter_resolve_into_type(
@@ -699,7 +704,7 @@ where
                             merge_key_into(result, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        // sub_exec.push_error_at(e, start_pos.clone());
+                         sub_exec2.push_error_at(e, start_pos.clone());
                     }
                 } else {
                     if let Some(type_name) = meta_type.name() {
@@ -716,7 +721,7 @@ where
                                 merge_key_into(result, &k, v);
                             }
                         } else if let Err(e) = sub_result {
-                            // sub_exec.push_error_at(e, start_pos.clone());
+                            sub_exec2.push_error_at(e, start_pos.clone());
                         }
                     }
                     else {
