@@ -56,161 +56,161 @@ impl MyMutation {
 
 struct MySubscription;
 
-//#[juniper::subscription(
-//    context = MyContext
-//)]
-//impl MySubscription {
-//    fn human(id: String) -> Human {
-//        let iter = Box::new(std::iter::repeat(Human {
-//            id: "subscription id".to_string(),
-//            name: "subscription name".to_string(),
-//            home_planet: "subscription planet".to_string(),
-//        }));
-//        Ok(iter)
-//    }
-//
-//    async fn human() -> Human {
-//        Ok(Box::pin(futures::stream::repeat(Human {
-//            id: "stream human id".to_string(),
-//            name: "stream human name".to_string(),
-//            home_planet: "stream human home planet".to_string(),
-//        })))
-//    }
-//}
-
-// Manual subscription implementantion
-
-#[juniper::object(
+#[juniper::subscription(
     context = MyContext
 )]
 impl MySubscription {
-    fn human(id: String) -> FieldResult<Human> {
-        unreachable!()
+    fn human(id: String) -> Human {
+        let iter = Box::new(std::iter::repeat(Human {
+            id: "subscription id".to_string(),
+            name: "subscription name".to_string(),
+            home_planet: "subscription planet".to_string(),
+        }));
+        Ok(iter)
     }
 
-    fn nothuman(id: String) -> FieldResult<Human> {
-        unreachable!()
-    }
-}
-
-use async_trait::async_trait;
-
-#[async_trait]
-impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
-where
-    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
-    <Self as juniper::GraphQLType<DefaultScalarValue>>::Context: Send + Sync + Clone,
-    <Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo: Send + Sync,
-{
-    async fn resolve_field_async<'a>(
-        &self,
-        info: &<Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo,
-        field_name: &str,
-        arguments: Arguments<'a, DefaultScalarValue>,
-        executor: Executor<
-            'a,
-            <Self as juniper::GraphQLType<DefaultScalarValue>>::Context,
-            DefaultScalarValue,
-        >,
-    ) -> juniper::SubscriptionResultAsync<'a, DefaultScalarValue> {
-        use futures::future;
-        match field_name {
-            "human" => {
-                let id = arguments
-                    .get::<String>("id")
-                    .expect("Internal error: missing argument id - validation must have failed");
-
-                let res = {
-                    println!("!!!!! got id: {:?} !!!!", id);
-                    (move || {
-                        Box::pin(futures::stream::repeat(Human {
-                            id: "stream human id".to_string(),
-                            name: "stream human name".to_string(),
-                            home_planet: "stream human home planet".to_string(),
-                        }))
-                    })()
-                };
-
-                let f = res.then(move |res| {
-                    let res2: FieldResult<_, DefaultScalarValue> =
-                        juniper::IntoResolvable::into(res, executor.context());
-
-                    let ex = executor.clone();
-                    async move {
-                        match res2 {
-                            Ok(Some((ctx, r))) => {
-                                let sub = ex.replaced_context(ctx);
-                                match sub.resolve_with_ctx_async(&(), &r).await {
-                                    Ok(v) => v,
-                                    Err(_) => juniper::Value::Null,
-                                }
-                            }
-                            Ok(None) => juniper::Value::null(),
-                            Err(e) => juniper::Value::Null,
-                        }
-                    }
-                });
-                Ok(Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
-            }
-            _ => {
-                panic!("field not found");
-            }
-        }
+    async fn human() -> Human {
+        Ok(Box::pin(futures::stream::repeat(Human {
+            id: "stream human id".to_string(),
+            name: "stream human name".to_string(),
+            home_planet: "stream human home planet".to_string(),
+        })))
     }
 }
 
-impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
-    fn resolve_field_into_iterator<'r>(
-        &self,
-        info: &Self::TypeInfo,
-        field_name: &str,
-        arguments: &Arguments<DefaultScalarValue>,
-        executor: Executor<'r, Self::Context, DefaultScalarValue>,
-    ) -> juniper::SubscriptionResult<'r, DefaultScalarValue> {
-        match field_name {
-            "human" => {
-                let res = {
-                    (move || -> FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
-                        let iter = Box::new(std::iter::repeat(
-                            //                Value::Scalar(DefaultScalarValue::Int(22))
-                            Human {
-                                id: "subscription id".to_string(),
-                                name: "subscription name".to_string(),
-                                home_planet: "subscription planet".to_string(),
-                            },
-                        ));
+// Manual subscription implementantion
 
-                        Ok(iter)
-                    })()
-                }?;
-                let iter = res.map(move |res| {
-                    juniper::IntoResolvable::into(res, executor.context())
-                        .and_then(|res| match res {
-                            Some((ctx, r)) => {
-                                let resolve_res =
-                                    executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
-                                resolve_res
-                            }
-                            None => Ok(Value::null()),
-                        })
-                        .unwrap_or_else(|_| Value::Null)
-                });
-                Ok(Value::Scalar(Box::new(iter)))
-                //                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));
-                //                Ok(Value::Null)
-            }
-            "nothuman" => {
-                unimplemented!()
-                //                Ok(Value::Scalar(Box::new(std::iter::once(Value::Scalar(
-                //                    DefaultScalarValue::Int(32),
-                //                )))))
-            }
-            _ => {
-                panic!("field not found");
-            }
-        }
-    }
-}
+//#[juniper::object(
+//    context = MyContext
+//)]
+//impl MySubscription {
+//    fn human(id: String) -> FieldResult<Human> {
+//        unreachable!()
+//    }
+//
+//    fn nothuman(id: String) -> FieldResult<Human> {
+//        unreachable!()
+//    }
+//}
+//
+//use async_trait::async_trait;
+//
+//#[async_trait]
+//impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
+//where
+//    MySubscription: juniper::GraphQLType<DefaultScalarValue>,
+//    <Self as juniper::GraphQLType<DefaultScalarValue>>::Context: Send + Sync + Clone,
+//    <Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo: Send + Sync,
+//{
+//    async fn resolve_field_async<'a>(
+//        &self,
+//        info: &<Self as juniper::GraphQLType<DefaultScalarValue>>::TypeInfo,
+//        field_name: &str,
+//        arguments: Arguments<'a, DefaultScalarValue>,
+//        executor: Executor<
+//            'a,
+//            <Self as juniper::GraphQLType<DefaultScalarValue>>::Context,
+//            DefaultScalarValue,
+//        >,
+//    ) -> juniper::SubscriptionResultAsync<'a, DefaultScalarValue> {
+//        use futures::future;
+//        match field_name {
+//            "human" => {
+//                let id = arguments
+//                    .get::<String>("id")
+//                    .expect("Internal error: missing argument id - validation must have failed");
+//
+//                let res = {
+//                    println!("!!!!! got id: {:?} !!!!", id);
+//                    (move || {
+//                        Box::pin(futures::stream::repeat(Human {
+//                            id: "stream human id".to_string(),
+//                            name: "stream human name".to_string(),
+//                            home_planet: "stream human home planet".to_string(),
+//                        }))
+//                    })()
+//                };
+//
+//                let f = res.then(move |res| {
+//                    let res2: FieldResult<_, DefaultScalarValue> =
+//                        juniper::IntoResolvable::into(res, executor.context());
+//
+//                    let ex = executor.clone();
+//                    async move {
+//                        match res2 {
+//                            Ok(Some((ctx, r))) => {
+//                                let sub = ex.replaced_context(ctx);
+//                                match sub.resolve_with_ctx_async(&(), &r).await {
+//                                    Ok(v) => v,
+//                                    Err(_) => juniper::Value::Null,
+//                                }
+//                            }
+//                            Ok(None) => juniper::Value::null(),
+//                            Err(e) => juniper::Value::Null,
+//                        }
+//                    }
+//                });
+//                Ok(Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
+//            }
+//            _ => {
+//                panic!("field not found");
+//            }
+//        }
+//    }
+//}
+//
+//impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
+//    fn resolve_field_into_iterator<'r>(
+//        &self,
+//        info: &Self::TypeInfo,
+//        field_name: &str,
+//        arguments: &Arguments<DefaultScalarValue>,
+//        executor: Executor<'r, Self::Context, DefaultScalarValue>,
+//    ) -> juniper::SubscriptionResult<'r, DefaultScalarValue> {
+//        match field_name {
+//            "human" => {
+//                let res = {
+//                    (move || -> FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
+//                        let iter = Box::new(std::iter::repeat(
+//                            //                Value::Scalar(DefaultScalarValue::Int(22))
+//                            Human {
+//                                id: "subscription id".to_string(),
+//                                name: "subscription name".to_string(),
+//                                home_planet: "subscription planet".to_string(),
+//                            },
+//                        ));
+//
+//                        Ok(iter)
+//                    })()
+//                }?;
+//                let iter = res.map(move |res| {
+//                    juniper::IntoResolvable::into(res, executor.context())
+//                        .and_then(|res| match res {
+//                            Some((ctx, r)) => {
+//                                let resolve_res =
+//                                    executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
+//                                resolve_res
+//                            }
+//                            None => Ok(Value::null()),
+//                        })
+//                        .unwrap_or_else(|_| Value::Null)
+//                });
+//                Ok(Value::Scalar(Box::new(iter)))
+//                //                iter.take(5).for_each(|x| println!("About to send result: {:?}", x));
+//                //                Ok(Value::Null)
+//            }
+//            "nothuman" => {
+//                unimplemented!()
+//                //                Ok(Value::Scalar(Box::new(std::iter::once(Value::Scalar(
+//                //                    DefaultScalarValue::Int(32),
+//                //                )))))
+//            }
+//            _ => {
+//                panic!("field not found");
+//            }
+//        }
+//    }
+//}
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -229,7 +229,7 @@ fn post_graphql_handler(
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
     let mut is_async = false;
-    //        is_async = true;
+    is_async = true;
 
     if is_async {
         use futures::{compat::Compat, Future};
