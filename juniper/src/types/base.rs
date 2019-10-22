@@ -10,7 +10,7 @@ use crate::{
     value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
     FieldError, ValuesIterator,
 };
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// GraphQL type kind
 ///
@@ -375,7 +375,7 @@ where
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments<S>,
-        executor: Arc<Executor<'a, Self::Context, S>>,
+        executor: Rc<Executor<'a, Self::Context, S>>,
     ) -> SubscriptionResult<'a, S> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -390,7 +390,7 @@ where
         info: &'a Self::TypeInfo,
         type_name: &'a str,
         selection_set: Option<&'a [Selection<S>]>,
-        executor: Arc<Executor<'a, Self::Context, S>>,
+        executor: Rc<Executor<'a, Self::Context, S>>,
     ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
         //todo: if type is same as self call resolve_into_iterator
 //        if Self::name(info).unwrap() == type_name {
@@ -612,14 +612,14 @@ where
 
                 let exec_vars = executor.variables();
 
-                let sub_exec = Arc::new(executor.field_sub_executor(
+                let sub_exec = Rc::new(executor.field_sub_executor(
                     response_name,
                     f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|v| &v[..]),
                 ));
 
-                let sub_exec_2 = Arc::clone(&sub_exec);
+                let sub_exec_2 = Rc::clone(&sub_exec);
 
                 let field_result = instance.resolve_field_into_iterator(
                     info,
@@ -684,12 +684,12 @@ where
                     continue;
                 }
 
-                let sub_exec = Arc::new(executor.type_sub_executor(
+                let sub_exec = Rc::new(executor.type_sub_executor(
                     fragment.type_condition.as_ref().map(|c| c.item),
                     Some(&fragment.selection_set[..]),
                 ));
 
-                let sub_exec2 = Arc::clone(&sub_exec);
+                let sub_exec2 = Rc::clone(&sub_exec);
 
                 if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance.iter_resolve_into_type(

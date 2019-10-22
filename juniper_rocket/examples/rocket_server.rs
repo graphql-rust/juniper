@@ -94,6 +94,7 @@ impl MySubscription {
 }
 
 use async_trait::async_trait;
+use std::rc::Rc;
 
 #[async_trait]
 impl juniper::SubscriptionHandlerAsync<DefaultScalarValue> for MySubscription
@@ -165,10 +166,15 @@ impl juniper::SubscriptionHandler<DefaultScalarValue> for MySubscription {
         info: &Self::TypeInfo,
         field_name: &str,
         arguments: &Arguments<DefaultScalarValue>,
-        executor: Arc<Executor<'r, Self::Context, DefaultScalarValue>>,
+        executor: Rc<Executor<'r, Self::Context, DefaultScalarValue>>,
     ) -> juniper::SubscriptionResult<'r, DefaultScalarValue> {
         match field_name {
             "human" => {
+                return Err(FieldError {
+                    message: "some error string".to_string(),
+                    extensions: Value::Null,
+                });
+
                 let res = {
                     (move || -> FieldResult<Box<dyn Iterator<Item = Human>>, DefaultScalarValue> {
                         let iter = Box::new(std::iter::repeat(
