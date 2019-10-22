@@ -1286,7 +1286,7 @@ impl GraphQLSubscriptionDefiniton {
                     info: &Self::TypeInfo,
                     field_name: &str,
                     arguments: &#juniper_crate_name::Arguments<#scalar>,
-                    executor: #juniper_crate_name::Executor<'a, Self::Context, #scalar>,
+                    executor: std::rc::Rc<#juniper_crate_name::Executor<'a, Self::Context, #scalar>>,
                 ) -> #juniper_crate_name::SubscriptionResult<'a, #scalar> {
                     match field_name {
                             #( #resolve_matches )*
@@ -1309,7 +1309,7 @@ impl GraphQLSubscriptionDefiniton {
                     info: &'life1 Self::TypeInfo,
                     field_name: &'life2 str,
                     arguments: #juniper_crate_name::Arguments<'a, #scalar>,
-                    executor: #juniper_crate_name::Executor<'a, Self::Context, #scalar>,
+                    executor: std::sync::Arc<#juniper_crate_name::Executor<'a, Self::Context, #scalar>>,
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<
                             Output = #juniper_crate_name::SubscriptionResultAsync<'a, #scalar>
