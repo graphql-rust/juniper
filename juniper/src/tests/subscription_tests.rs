@@ -71,8 +71,8 @@ mod sync_tests {
 
     /// Helper method to create all variables, execute subscription
     /// and collect returned iterators
-    fn create_and_execute_sync_subscription(query: String)
-                                            -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>)
+    fn create_and_execute(query: String)
+        -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>)
     {
         let request = GraphQLRequest::new(
             query,
@@ -143,7 +143,7 @@ mod sync_tests {
         	}
         }"#.to_string();
 
-        let (names, collected_values) = create_and_execute_sync_subscription(query);
+        let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
         let expected_values = vec![
@@ -176,7 +176,7 @@ mod sync_tests {
               }
         }"#.to_string();
 
-        let (names, collected_values) = create_and_execute_sync_subscription(query);
+        let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
         let expected_values = vec![
@@ -211,7 +211,7 @@ mod sync_tests {
              }
            }"#.to_string();
 
-        let (names, collected_values) = create_and_execute_sync_subscription(query);
+        let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
         let expected_values = vec![
@@ -246,7 +246,7 @@ mod sync_tests {
              }
            }"#.to_string();
 
-        let (names, collected_values) = create_and_execute_sync_subscription(query);
+        let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
         let expected_values = vec![
@@ -279,7 +279,7 @@ mod sync_tests {
               }
         }"#.to_string();
 
-        let (names, collected_values) = create_and_execute_sync_subscription(query);
+        let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
         let expected_values = vec![
@@ -346,80 +346,11 @@ mod async_tests {
         }
     }
 
-//    /// Helper method to create all variables, execute subscription
-///// and collect returned iterators
-//    fn create_and_execute_async_subscription(query: String)
-//                                            -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>)
-//    {
-//        let request = GraphQLRequest::new(
-//            query,
-//            None,
-//            None);
-//
-//        let root_node =
-//            Schema::new(
-//                MyQuery,
-//                EmptyMutation::new(),
-//                MySubscription
-//            );
-//        let mut executor = crate::SubscriptionsExecutor::new();
-//        let context = MyContext(2);
-//
-//        let response = request
-//            .subscribe(
-//                &root_node,
-//                &context,
-//                &mut executor
-//            )
-//            .into_inner();
-//
-//        assert!(response.is_ok());
-//
-//        let response = response.unwrap();
-//
-//        // cannot compare with `assert_eq` because
-//        // iterator does not implement Debug
-//        let response_value_object = match response {
-//            Value::Object(o) => Some(o),
-//            _ => None,
-//        };
-//
-//        assert!(response_value_object.is_some());
-//
-//        let response_returned_object = response_value_object.unwrap();
-//
-//        let fields_iterator = response_returned_object.into_key_value_list();
-//
-//        let mut names = vec![];
-//        let mut collected_values = vec![];
-//
-//        for (name, iter_val) in fields_iterator {
-//            names.push(name);
-//
-//            // since macro returns Value::Scalar(iterator) every time,
-//            // other variants may be skipped
-//            match iter_val {
-//                Value::Scalar(iter) => {
-//                    let collected = iter.collect::<Vec<_>>();
-//                    collected_values.push(collected);
-//                },
-//                _ => unreachable!()
-//            }
-//        }
-//
-//        (names, collected_values)
-//    }
-
-    #[test]
-    fn async_subscription_returns_stream() {
-        let query =
-            r#"subscription {
-            asyncHuman(id: "1") {
-    		    id
-                name
-        	}
-        }"#.to_string();
-
+    /// Helper method to create all variables, execute subscription
+    /// and collect returned iterators
+    fn create_and_execute(query: String)
+                          -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>)
+    {
         let request = GraphQLRequest::new(
             query,
             None,
@@ -476,6 +407,21 @@ mod async_tests {
                 _ => unreachable!()
             }
         }
+
+        (names, collected_values)
+    }
+
+    #[test]
+    fn subscription_returns_stream() {
+        let query =
+            r#"subscription {
+            asyncHuman(id: "1") {
+    		    id
+                name
+        	}
+        }"#.to_string();
+
+        let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
         let expected_values = vec![
