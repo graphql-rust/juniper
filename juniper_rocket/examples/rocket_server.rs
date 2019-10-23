@@ -60,7 +60,8 @@ struct MySubscription;
     context = MyContext
 )]
 impl MySubscription {
-    fn human(id: String) -> Human {
+    fn human(id: String, ctxt: &MyContext) -> Human {
+        println!("Got context: {:?}", ctxt);
         let iter = Box::new(std::iter::repeat(Human {
             id: "subscription id".to_string(),
             name: "subscription name".to_string(),

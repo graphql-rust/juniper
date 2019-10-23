@@ -2,10 +2,9 @@ use async_trait::async_trait;
 
 use crate::{
     ast::Selection,
-    executor::{ExecutionResult, Executor},
+    executor::{ExecutionResult, Executor, ValuesStream},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
-    FieldError, FieldResult, ValuesStream,
 };
 
 use crate::BoxFuture;
@@ -13,6 +12,7 @@ use crate::BoxFuture;
 use super::base::{async_merge_key_into, is_excluded, merge_key_into, Arguments, GraphQLType};
 use crate::executor::SubscriptionResultAsync;
 use std::sync::Arc;
+use futures::stream::StreamExt;
 
 /// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
@@ -149,7 +149,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::FuturesOrdered;
 
     let mut object = Object::with_capacity(selection_set.len());
 
@@ -378,7 +378,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::FuturesOrdered;
 
     let mut object: Object<ValuesStream<S>> = Object::with_capacity(selection_set.len());
 
