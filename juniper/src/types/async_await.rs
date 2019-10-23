@@ -11,8 +11,8 @@ use crate::BoxFuture;
 
 use super::base::{async_merge_key_into, is_excluded, merge_key_into, Arguments, GraphQLType};
 use crate::executor::SubscriptionResultAsync;
-use std::sync::Arc;
 use futures::stream::StreamExt;
+use std::sync::Arc;
 
 /// Should contain asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
@@ -91,12 +91,12 @@ where
         executor: Arc<Executor<'a, Self::Context, S>>,
     ) -> SubscriptionResultAsync<'a, S> {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
-//        if Self::name(info).unwrap() == type_name {
-//            let stream = self.resolve_into_stream(info, selection_set, executor).await;
-//            Ok(stream)
-//        } else {
-            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-//        }
+        //        if Self::name(info).unwrap() == type_name {
+        //            let stream = self.resolve_into_stream(info, selection_set, executor).await;
+        //            Ok(stream)
+        //        } else {
+        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        //        }
     }
 }
 
@@ -521,7 +521,8 @@ where
                             type_condition.item,
                             Some(&fragment.selection_set[..]),
                             sub_exec,
-                        ).await;
+                        )
+                        .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
@@ -532,12 +533,14 @@ where
                     }
                 } else {
                     if let Some(type_name) = meta_type.name() {
-                        let sub_result = instance.stream_resolve_into_type(
-                            info,
-                            type_name,
-                            Some(&fragment.selection_set[..]),
-                            sub_exec,
-                        ).await;
+                        let sub_result = instance
+                            .stream_resolve_into_type(
+                                info,
+                                type_name,
+                                Some(&fragment.selection_set[..]),
+                                sub_exec,
+                            )
+                            .await;
 
                         if let Ok(Value::Object(obj)) = sub_result {
                             for (k, v) in obj {
@@ -546,8 +549,7 @@ where
                         } else if let Err(e) = sub_result {
                             sub_exec2.push_error_at(e, start_pos.clone());
                         }
-                    }
-                    else {
+                    } else {
                         return Value::Null;
                     }
                 }

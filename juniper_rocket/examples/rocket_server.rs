@@ -236,7 +236,7 @@ fn post_graphql_handler(
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
     let mut is_async = false;
-//    is_async = true;
+    //    is_async = true;
 
     if is_async {
         use futures::{compat::Compat, Future};

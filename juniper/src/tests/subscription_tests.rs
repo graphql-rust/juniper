@@ -1,6 +1,5 @@
 use crate::Context;
-use juniper_codegen::GraphQLObjectInternal;
-use juniper_codegen::object_internal;
+use juniper_codegen::{object_internal, GraphQLObjectInternal};
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -28,12 +27,13 @@ mod sync_tests {
 
     use std::iter::{self, FromIterator};
 
-    use crate::{DefaultScalarValue, RootNode, Value, EmptyMutation};
+    use crate::{
+        http::GraphQLRequest, value::Object, DefaultScalarValue, EmptyMutation, RootNode, Value,
+    };
     use juniper_codegen::subscription_internal;
-    use crate::http::GraphQLRequest;
-    use crate::value::Object;
 
-    type Schema = RootNode<'static, MyQuery, EmptyMutation::<MyContext>, MySubscription, DefaultScalarValue>;
+    type Schema =
+        RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
     struct MySubscription;
 
@@ -71,29 +71,15 @@ mod sync_tests {
 
     /// Helper method to create all variables, execute subscription
     /// and collect returned iterators
-    fn create_and_execute(query: String)
-        -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>)
-    {
-        let request = GraphQLRequest::new(
-            query,
-            None,
-            None);
+    fn create_and_execute(query: String) -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>) {
+        let request = GraphQLRequest::new(query, None, None);
 
-        let root_node =
-            Schema::new(
-                MyQuery,
-                EmptyMutation::new(),
-                MySubscription
-            );
+        let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
         let mut executor = crate::SubscriptionsExecutor::new();
         let context = MyContext(2);
 
         let response = request
-            .subscribe(
-                &root_node,
-                &context,
-                &mut executor
-            )
+            .subscribe(&root_node, &context, &mut executor)
             .into_inner();
 
         assert!(response.is_ok());
@@ -125,8 +111,8 @@ mod sync_tests {
                 Value::Scalar(iter) => {
                     let collected = iter.collect::<Vec<_>>();
                     collected_values.push(collected);
-                },
-                _ => unreachable!()
+                }
+                _ => unreachable!(),
             }
         }
 
@@ -135,33 +121,33 @@ mod sync_tests {
 
     #[test]
     fn subscription_returns_iterator() {
-        let query =
-            r#"subscription {
+        let query = r#"subscription {
             human(id: "1") {
     		    id
                 name
         	}
-        }"#.to_string();
+        }"#
+        .to_string();
 
         let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
-        let expected_values = vec![
-            vec![
-                Value::Object(
-                    Object::from_iter(
-                        iter::from_fn(move || {
-                            iterator_count += 1;
-                            match iterator_count {
-                                1 => Some(("id", Value::Scalar(DefaultScalarValue::String("subscription id".to_string())))),
-                                2 => Some(("name", Value::Scalar(DefaultScalarValue::String("subscription name".to_string())))),
-                                _ => None,
-                            }
-                        })
-                    )
-                )
-            ]
-        ];
+        let expected_values = vec![vec![Value::Object(Object::from_iter(iter::from_fn(
+            move || {
+                iterator_count += 1;
+                match iterator_count {
+                    1 => Some((
+                        "id",
+                        Value::Scalar(DefaultScalarValue::String("subscription id".to_string())),
+                    )),
+                    2 => Some((
+                        "name",
+                        Value::Scalar(DefaultScalarValue::String("subscription name".to_string())),
+                    )),
+                    _ => None,
+                }
+            },
+        )))]];
 
         assert_eq!(names, vec!["human"]);
         assert_eq!(collected_values, expected_values);
@@ -169,31 +155,28 @@ mod sync_tests {
 
     #[test]
     fn subscription_can_access_context() {
-        let query =
-            r#"subscription {
+        let query = r#"subscription {
             humanWithContext {
                 id
               }
-        }"#.to_string();
+        }"#
+        .to_string();
 
         let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
-        let expected_values = vec![
-            vec![
-                Value::Object(
-                    Object::from_iter(
-                        iter::from_fn(move || {
-                            iterator_count += 1;
-                            match iterator_count {
-                                1 => Some(("id", Value::Scalar(DefaultScalarValue::String("2".to_string())))),
-                                _ => None,
-                            }
-                        })
-                    )
-                )
-            ]
-        ];
+        let expected_values = vec![vec![Value::Object(Object::from_iter(iter::from_fn(
+            move || {
+                iterator_count += 1;
+                match iterator_count {
+                    1 => Some((
+                        "id",
+                        Value::Scalar(DefaultScalarValue::String("2".to_string())),
+                    )),
+                    _ => None,
+                }
+            },
+        )))]];
 
         assert_eq!(names, vec!["humanWithContext"]);
         assert_eq!(collected_values, expected_values);
@@ -202,33 +185,30 @@ mod sync_tests {
     //todo: uncomment once fragments on type `Self` can be executed by default
     //#[test]
     fn subscription_with_inline_fragments_typed() {
-        let query =
-        r#"subscription {
+        let query = r#"subscription {
              ... on MySubscription {
                 human(id: "32") {
                   id
                 }
              }
-           }"#.to_string();
+           }"#
+        .to_string();
 
         let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
-        let expected_values = vec![
-            vec![
-                Value::Object(
-                    Object::from_iter(
-                        iter::from_fn(move || {
-                            iterator_count += 1;
-                            match iterator_count {
-                                1 => Some(("id", Value::Scalar(DefaultScalarValue::String("subscription id".to_string())))),
-                                _ => None,
-                            }
-                        })
-                    )
-                )
-            ]
-        ];
+        let expected_values = vec![vec![Value::Object(Object::from_iter(iter::from_fn(
+            move || {
+                iterator_count += 1;
+                match iterator_count {
+                    1 => Some((
+                        "id",
+                        Value::Scalar(DefaultScalarValue::String("subscription id".to_string())),
+                    )),
+                    _ => None,
+                }
+            },
+        )))]];
 
         assert_eq!(names, vec!["human"]);
         assert_eq!(collected_values, expected_values);
@@ -237,33 +217,30 @@ mod sync_tests {
     //todo: uncomment once fragments on type `Self` can be executed by default
     //#[test]
     fn subscription_with_inline_fragments_nontyped() {
-        let query =
-        r#"subscription {
+        let query = r#"subscription {
              ... {
                 human(id: "32") {
                   id
                 }
              }
-           }"#.to_string();
+           }"#
+        .to_string();
 
         let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
-        let expected_values = vec![
-            vec![
-                Value::Object(
-                    Object::from_iter(
-                        iter::from_fn(move || {
-                            iterator_count += 1;
-                            match iterator_count {
-                                1 => Some(("id", Value::Scalar(DefaultScalarValue::String("subscription id".to_string())))),
-                                _ => None,
-                            }
-                        })
-                    )
-                )
-            ]
-        ];
+        let expected_values = vec![vec![Value::Object(Object::from_iter(iter::from_fn(
+            move || {
+                iterator_count += 1;
+                match iterator_count {
+                    1 => Some((
+                        "id",
+                        Value::Scalar(DefaultScalarValue::String("subscription id".to_string())),
+                    )),
+                    _ => None,
+                }
+            },
+        )))]];
 
         assert_eq!(names, vec!["human"]);
         assert_eq!(collected_values, expected_values);
@@ -271,33 +248,33 @@ mod sync_tests {
 
     #[test]
     fn subscription_can_access_arguments() {
-        let query =
-            r#"subscription {
+        let query = r#"subscription {
             humanWithArgs(id: "123", name: "args name") {
                 id
                 name
               }
-        }"#.to_string();
+        }"#
+        .to_string();
 
         let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
-        let expected_values = vec![
-            vec![
-                Value::Object(
-                    Object::from_iter(
-                        iter::from_fn(move || {
-                            iterator_count += 1;
-                            match iterator_count {
-                                1 => Some(("id", Value::Scalar(DefaultScalarValue::String("123".to_string())))),
-                                2 => Some(("name", Value::Scalar(DefaultScalarValue::String("args name".to_string())))),
-                                _ => None,
-                            }
-                        })
-                    )
-                )
-            ]
-        ];
+        let expected_values = vec![vec![Value::Object(Object::from_iter(iter::from_fn(
+            move || {
+                iterator_count += 1;
+                match iterator_count {
+                    1 => Some((
+                        "id",
+                        Value::Scalar(DefaultScalarValue::String("123".to_string())),
+                    )),
+                    2 => Some((
+                        "name",
+                        Value::Scalar(DefaultScalarValue::String("args name".to_string())),
+                    )),
+                    _ => None,
+                }
+            },
+        )))]];
 
         assert_eq!(names, vec!["humanWithArgs"]);
         assert_eq!(collected_values, expected_values);
@@ -307,20 +284,20 @@ mod sync_tests {
 #[cfg(feature = "async")]
 #[cfg(test)]
 mod async_tests {
-    use futures::{
-        self,
-        stream::StreamExt
-    };
-    use crate::{RootNode, EmptyMutation, Value, Object, DefaultScalarValue};
-    use crate::http::GraphQLRequest;
-    use std::iter::{
-        self, FromIterator,
-    };
+    use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
+    use futures::{self, stream::StreamExt};
     use juniper_codegen::subscription_internal;
+    use std::iter::{self, FromIterator};
 
     use super::*;
 
-    type AsyncSchema = RootNode<'static, MyQuery, EmptyMutation::<MyContext>, MySubscriptionAsync, DefaultScalarValue>;
+    type AsyncSchema = RootNode<
+        'static,
+        MyQuery,
+        EmptyMutation<MyContext>,
+        MySubscriptionAsync,
+        DefaultScalarValue,
+    >;
 
     //copied from `src/executor_tests/async_await/mod.rs`
     fn run<O>(f: impl std::future::Future<Output = O>) -> O {
@@ -348,31 +325,16 @@ mod async_tests {
 
     /// Helper method to create all variables, execute subscription
     /// and collect returned iterators
-    fn create_and_execute(query: String)
-                          -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>)
-    {
-        let request = GraphQLRequest::new(
-            query,
-            None,
-            None);
+    fn create_and_execute(query: String) -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>) {
+        let request = GraphQLRequest::new(query, None, None);
 
-        let root_node =
-            AsyncSchema::new(
-                MyQuery,
-                EmptyMutation::new(),
-                MySubscriptionAsync
-            );
+        let root_node = AsyncSchema::new(MyQuery, EmptyMutation::new(), MySubscriptionAsync);
 
         let mut executor = crate::SubscriptionsExecutor::new();
         let mut context = MyContext(2);
 
-        let response = run(request
-            .subscribe_async(
-                &root_node,
-                &context,
-                &mut executor
-            ))
-            .into_inner();
+        let response =
+            run(request.subscribe_async(&root_node, &context, &mut executor)).into_inner();
 
         assert!(response.is_ok());
 
@@ -403,8 +365,8 @@ mod async_tests {
                 Value::Scalar(stream) => {
                     let collected = run(stream.collect::<Vec<_>>());
                     collected_values.push(collected);
-                },
-                _ => unreachable!()
+                }
+                _ => unreachable!(),
             }
         }
 
@@ -413,43 +375,35 @@ mod async_tests {
 
     #[test]
     fn subscription_returns_stream() {
-        let query =
-            r#"subscription {
+        let query = r#"subscription {
             asyncHuman(id: "1") {
     		    id
                 name
         	}
-        }"#.to_string();
+        }"#
+        .to_string();
 
         let (names, collected_values) = create_and_execute(query);
 
         let mut iterator_count = 0;
-        let expected_values = vec![
-            vec![
-                Value::Object(
-                    Object::from_iter(
-                        iter::from_fn(move || {
-                            iterator_count += 1;
-                            match iterator_count {
-                                1 => Some((
-                                    "id",
-                                    Value::Scalar(DefaultScalarValue::String("stream id".to_string()))
-                                )),
-                                2 => Some((
-                                    "name",
-                                    Value::Scalar(DefaultScalarValue::String("stream name".to_string()))
-                                )),
-                                _ => None,
-                            }
-                        })
-                    )
-                )
-            ]
-        ];
+        let expected_values = vec![vec![Value::Object(Object::from_iter(iter::from_fn(
+            move || {
+                iterator_count += 1;
+                match iterator_count {
+                    1 => Some((
+                        "id",
+                        Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
+                    )),
+                    2 => Some((
+                        "name",
+                        Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
+                    )),
+                    _ => None,
+                }
+            },
+        )))]];
 
         assert_eq!(names, vec!["asyncHuman"]);
         assert_eq!(collected_values, expected_values);
     }
-
 }
-
