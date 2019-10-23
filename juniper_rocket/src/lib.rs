@@ -190,7 +190,7 @@ where
                 let response_value = request
                     .subscribe_async(root_node, context, &mut executor)
                     .await
-                    .into_stream()
+                    .into_inner()
                     .unwrap();
                 let x = match response_value {
                     Value::Null => Value::null(),

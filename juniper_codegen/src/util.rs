@@ -1146,7 +1146,7 @@ impl GraphQLSubscriptionDefiniton {
 
                             let f = res.then(move |res| {
                                 let res2: #juniper_crate_name::FieldResult<_, #scalar> =
-                                    juniper::IntoResolvable::into(res, executor.context());
+                                    #juniper_crate_name::IntoResolvable::into(res, executor.context());
                                 let ex = executor.clone();
                                 async move {
                                     match res2 {
@@ -1154,11 +1154,11 @@ impl GraphQLSubscriptionDefiniton {
                                             let sub = ex.replaced_context(ctx);
                                             match sub.resolve_with_ctx_async(&(), &r).await {
                                                 Ok(v) => v,
-                                                Err(_) => juniper::Value::Null,
+                                                Err(_) => Value::Null,
                                             }
                                         }
-                                        Ok(None) => juniper::Value::null(),
-                                        Err(e) => juniper::Value::Null,
+                                        Ok(None) => Value::null(),
+                                        Err(e) => Value::Null,
                                     }
                                 }
                             });

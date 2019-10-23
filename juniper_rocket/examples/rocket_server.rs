@@ -69,7 +69,7 @@ impl MySubscription {
         Ok(iter)
     }
 
-    async fn human() -> Human {
+    async fn async_human() -> Human {
         Ok(Box::pin(futures::stream::repeat(Human {
             id: "stream human id".to_string(),
             name: "stream human name".to_string(),
