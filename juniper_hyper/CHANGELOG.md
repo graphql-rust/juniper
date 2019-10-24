@@ -2,6 +2,10 @@
 
 - Compatibility with the latest `juniper`.
 
+# [[0.5.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.5.1)
+
+- Compatibility with the latest `juniper`.
+
 # [[0.5.0] 2019-09-29](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.5.0)
 
 - Compatibility with the latest `juniper`.
