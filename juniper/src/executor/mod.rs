@@ -945,7 +945,7 @@ where
         // unwrap is safe here because executor's data was set up above
         executor
             .executor
-            .set(executor.executor_variables.get_executor().unwrap());
+            .set(executor.executor_variables.create_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => executor
@@ -1158,7 +1158,7 @@ where
         // unwrap is safe here because executor's data was set up above
         executor
             .executor
-            .set(executor.executor_variables.get_executor().unwrap());
+            .set(executor.executor_variables.create_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {

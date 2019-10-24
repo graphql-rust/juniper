@@ -1,11 +1,12 @@
+use std::{collections::HashMap, sync::RwLock};
+
 use crate::{
     ast::Fragment,
-    executor::FieldPath,
-    parser::Spanning,
-    schema::model::{SchemaType, TypeType},
-    DefaultScalarValue, ExecutionError, Executor, Selection, Variables,
+    DefaultScalarValue,
+    ExecutionError,
+    Executor,
+    executor::FieldPath, parser::Spanning, schema::model::{SchemaType, TypeType}, Selection, Variables,
 };
-use std::{collections::HashMap, sync::RwLock};
 
 /// Struct owning `Executor`'s variables
 pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
@@ -28,7 +29,8 @@ impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
 where
     S: Clone,
 {
-    pub fn get_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
+    /// Create new executor using inner variables
+    pub fn create_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
         Executor {
             fragments: &self_ty.fragments,
             variables: &self_ty.variables,
@@ -66,22 +68,26 @@ where
     CtxT: 'a,
     S: Clone + 'a,
 {
+    /// Create new empty `ExecutorData`
     pub fn new() -> Self {
         Self { _data: None }
     }
 
+    /// Set executor's data
     pub fn set_data(&mut self, data: ExecutorDataVariables<'a, CtxT, S>) {
         self._data = Some(data);
     }
 
-    pub fn get_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
+    /// Create new executor using inner data
+    pub fn create_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
         if let Some(ref s) = self._data {
-            Ok(ExecutorDataVariables::get_executor(s))
+            Ok(ExecutorDataVariables::create_executor(s))
         } else {
             Err(())
         }
     }
 
+    /// Get sorted errors vector
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
     where
         S: PartialEq,
@@ -151,7 +157,7 @@ where
     /// Keeps ownership of all `Executor`'s variables
     /// because `Executor` only keeps references
     ///
-    /// Variables are kept in a separate struct rather than this one
+    /// Variables are kept in a wrapper rather than this struct
     /// because they have a hashmap referencing this struct's `fragments`
     pub(crate) executor_variables: ExecutorData<'a, CtxT, S>,
 
@@ -168,6 +174,7 @@ impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
 {
+    /// Create new empty `SubscriptionsExecutor`
     pub fn new() -> Self {
         Self {
             executor_variables: ExecutorData::new(),
@@ -176,6 +183,7 @@ where
         }
     }
 
+    /// Get executor's errors
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
     where
         S: PartialEq,
