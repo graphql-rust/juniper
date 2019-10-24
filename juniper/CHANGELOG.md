@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.14.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.1)
+
 - Fix panic when an invalid scalar is used by a client [#434](https://github.com/graphql-rust/juniper/pull/434)
 - `EmptyMutation` now implements `Send` [#443](https://github.com/graphql-rust/juniper/pull/443)
 
