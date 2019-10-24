@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Fix panic when an invalid scalar is used by a client [#434](https://github.com/graphql-rust/juniper/pull/434)
 
 # [[0.14.0] 2019-09-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.0)
 
