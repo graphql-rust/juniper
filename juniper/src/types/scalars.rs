@@ -291,6 +291,9 @@ impl<T> EmptyMutation<T> {
     }
 }
 
+// This is safe due to never using `T`.
+unsafe impl<T> Send for EmptyMutation<T> {}
+
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
@@ -314,7 +317,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::ID;
+    use super::{EmptyMutation, ID};
     use crate::{
         parser::ScalarToken,
         value::{DefaultScalarValue, ParseScalarValue},
@@ -360,5 +363,11 @@ mod tests {
             r#"unicode \u1234\u5678\u90AB\uCDEF"#,
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
+    }
+
+    #[test]
+    fn empty_mutation_is_send() {
+        fn check_if_send<T: Send>() {}
+        check_if_send::<EmptyMutation<()>>();
     }
 }
