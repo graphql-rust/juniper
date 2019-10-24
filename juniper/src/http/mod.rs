@@ -11,7 +11,22 @@ use serde::{
 };
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{ast::InputValue, executor::ExecutionError, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator, Variables, Object, value};
+
+#[cfg(feature = "async")]
+use std::pin::Pin;
+#[cfg(feature = "async")]
+use futures::{
+    stream::Stream,
+    Poll,
+    stream::StreamExt,
+};
+
+use crate::{
+    ast::InputValue, executor::ExecutionError,
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    FieldError, GraphQLError, GraphQLType, RootNode, Value,
+    ValuesIterator, Variables, Object, value
+};
 
 #[cfg(feature = "async")]
 use crate::ValuesStream;
@@ -268,7 +283,8 @@ impl<'a, S> IteratorGraphQLResponse<'a, S> {
 impl<'a, S> IteratorGraphQLResponse<'a, S>
     where S: value::ScalarValue
 {
-    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>> {
+    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>>
+    {
         let val = match self.0
             {
                 Ok(val) => val,
@@ -328,6 +344,98 @@ impl<'a, S> IteratorGraphQLResponse<'a, S>
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     pub fn into_inner(self) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>> {
         self.0
+    }
+}
+
+impl<'a, S> StreamGraphQLResponse<'a, S>
+    where S: value::ScalarValue
+{
+    pub fn into_stream(self) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + 'a>>>
+    {
+        let val = match self.0
+            {
+                Ok(val) => val,
+                Err(_) => return None,
+            };
+
+        match val {
+            Value::Null => {
+                Some(Box::pin(
+                    futures::stream::once(async {
+                        GraphQLResponse::from_result(Ok((Value::null(), vec![])))
+                    })
+                ))
+            },
+            Value::Scalar(stream) => {
+                Some(Box::pin(
+                    stream.map(|value|
+                        GraphQLResponse::from_result(Ok((value, vec![])))
+                    )
+                ))
+            },
+            Value::List(_) => {
+                None
+            },
+            Value::Object(mut obj) => {
+                let key_values = obj.into_key_value_list();
+
+                let mut filled_count = 0;
+                let mut ready_vector = Vec::with_capacity(obj.len());
+                (0..ready_vector.len()).for_each(|i| { ready_vector.push(None); });
+
+                let stream = futures::stream::poll_fn(|_| -> Poll<Option<GraphQLResponse<'static, S>>> {
+                    for i in 0..ready_vector.len() {
+                        let val = &mut ready_vector[i];
+                        if val.is_none() {
+                            let (field_name, ref mut stream_val) = key_values[i];
+
+                            match stream_val {
+                                Value::Scalar(stream) => {
+                                    match stream.poll_next() {
+                                        Poll::Ready(None) => {
+                                            return Poll::Ready(None);
+                                        },
+                                        Poll::Ready(Some(value)) => {
+                                            *val = Some((field_name, value));
+                                            filled_count += 1;
+                                        }
+                                        Poll::Pending => {
+                                            //check back later
+                                        }
+                                    }
+                                },
+                                Value::Null => {
+//                                    return Poll::Ready(
+//                                        Some(futures::stream::once(async {
+//                                            GraphQLResponse::from_result(Ok((Value::null(), vec![])))
+//                                        }))
+//                                    );
+                                }
+                                _ => panic!("into_stream supports only Value::Scalar and Value::Null returned in Value::Object")
+                            }
+                        }
+                    }
+                    if filled_count == ready_vector.len() {
+                        let new_vec = (0..ready_vector.len()).map(|_| None).collect::<Vec<_>>();
+                        let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
+                        let ready_vec_iterator = ready_vec
+                            .into_iter()
+                            .map(|el| el.unwrap());
+                        let obj = Object::from_iter(ready_vec_iterator);
+                        Poll::Ready(Some(
+                            GraphQLResponse::from_result(Ok(
+                                (Value::Object(obj), vec![])
+                            ))
+                        ))
+                    }
+                    else {
+                        return Poll::Pending;
+                    }
+                });
+
+                Some(Box::pin(stream))
+            },
+        }
     }
 }
 
