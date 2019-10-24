@@ -100,8 +100,8 @@ where
     pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, DefaultScalarValue>
+        context: &'a CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
@@ -115,49 +115,54 @@ where
                 // errors could be accessed like that:
                 // let errors = executor.errors();
 
+
                 let res = request
-                    .subscribe(root_node, context, &mut executor)
-                    .into_inner()
-                    .unwrap();
+                    .subscribe(root_node, context, &mut executor);
+//                    .into_inner()
+//                    .unwrap();
+                let response = res.into_iter().unwrap().take(4).collect::<Vec<_>>();
 
-                let x: Value<DefaultScalarValue> = match res {
-                    Value::Null => Value::Null,
-                    Value::Scalar(s) => {
-                        let ready = s.take(5).collect::<Vec<_>>();
-                        println!("Got values (from Value::Scalar): {:?}", ready);
-                        Value::Scalar(DefaultScalarValue::String(
-                            "Got scalar, check logs".to_string(),
-                        ))
-                    }
-                    Value::List(_) => {
-                        println!("Lists are not implemented here");
-                        Value::Null
-                    }
-                    Value::Object(o) => {
-                        let response = o.into_key_value_list();
-                        println!("Got object of length: {:?}", response.len());
-                        response.into_iter().for_each(|(name, val)| {
-                            println!("  object name: {:?} ", name);
-                            match val {
-                                juniper::Value::Scalar(s) => {
-                                    let x: Vec<_> = s.into_iter().take(5).collect();
-                                    println!("  got values: {:#?}", x);
-                                }
-                                _ => {
-                                    println!("  value not scalar");
-                                }
-                            }
-                        });
-                        Value::Scalar(DefaultScalarValue::String(
-                            "Got object, check logs".to_string(),
-                        ))
-                    }
-                };
+//                let x: Value<DefaultScalarValue> = match res {
+//                    Value::Null => Value::Null,
+//                    Value::Scalar(s) => {
+//                        let ready = s.take(5).collect::<Vec<_>>();
+//                        println!("Got values (from Value::Scalar): {:?}", ready);
+//                        Value::Scalar(DefaultScalarValue::String(
+//                            "Got scalar, check logs".to_string(),
+//                        ))
+//                    }
+//                    Value::List(_) => {
+//                        println!("Lists are not implemented here");
+//                        Value::Null
+//                    }
+//                    Value::Object(o) => {
+//                        let response = o.into_key_value_list();
+//                        println!("Got object of length: {:?}", response.len());
+//                        response.into_iter().for_each(|(name, val)| {
+//                            println!("  object name: {:?} ", name);
+//                            match val {
+//                                juniper::Value::Scalar(s) => {
+//                                    let x: Vec<_> = s.into_iter().take(5).collect();
+//                                    println!("  got values: {:#?}", x);
+//                                }
+//                                _ => {
+//                                    println!("  value not scalar");
+//                                }
+//                            }
+//                        });
+//                        Value::Scalar(DefaultScalarValue::String(
+//                            "Got object, check logs".to_string(),
+//                        ))
+//                    }
+//                };
 
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((
-                    x,
-                    vec![],
-                ))))
+                GraphQLBatchResponse::Batch(
+//                    juniper::http::GraphQLResponse::from_result(Ok((
+//                        Value::Null,
+//                        vec![],
+//                    )))
+                    response
+                )
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 unimplemented!()

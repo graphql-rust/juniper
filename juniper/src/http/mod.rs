@@ -180,6 +180,8 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
+// todo: remove this debug
+#[derive(Debug)]
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
@@ -263,10 +265,10 @@ impl<'a, S> IteratorGraphQLResponse<'a, S> {
     }
 }
 
-impl<S> IteratorGraphQLResponse<'static, S>
+impl<'a, S> IteratorGraphQLResponse<'a, S>
     where S: value::ScalarValue
 {
-    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>>>> {
+    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>> {
         let val = match self.0
             {
                 Ok(val) => val,
