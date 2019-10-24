@@ -11,21 +11,17 @@ use serde::{
 };
 use serde_derive::{Deserialize, Serialize};
 
-
+#[cfg(feature = "async")]
+use futures::{stream::Stream, stream::StreamExt, Poll};
 #[cfg(feature = "async")]
 use std::pin::Pin;
-#[cfg(feature = "async")]
-use futures::{
-    stream::Stream,
-    Poll,
-    stream::StreamExt,
-};
 
 use crate::{
-    ast::InputValue, executor::ExecutionError,
+    ast::InputValue,
+    executor::ExecutionError,
+    value,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value,
-    ValuesIterator, Variables, Object, value
+    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, ValuesIterator, Variables,
 };
 
 #[cfg(feature = "async")]
@@ -281,61 +277,49 @@ impl<'a, S> IteratorGraphQLResponse<'a, S> {
 }
 
 impl<'a, S> IteratorGraphQLResponse<'a, S>
-    where S: value::ScalarValue
+where
+    S: value::ScalarValue,
 {
-    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>>
-    {
-        let val = match self.0
-            {
-                Ok(val) => val,
-                Err(_) => return None,
-            };
+    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>> {
+        let val = match self.0 {
+            Ok(val) => val,
+            Err(_) => return None,
+        };
 
         match val {
-            Value::Null => {
-                Some(Box::new(
-                    std::iter::once(
-                        GraphQLResponse::from_result(Ok((Value::null(), vec![]))
-                    ))
-                ))
-            },
+            Value::Null => Some(Box::new(std::iter::once(GraphQLResponse::from_result(Ok(
+                (Value::null(), vec![]),
+            ))))),
             Value::Scalar(iter) => {
-                Some(Box::new(
-                    iter.map(|value|
-                        GraphQLResponse::from_result(Ok((value, vec![])))
-                    )
-                ))
-            },
-            Value::List(_) => {
-                None
-            },
+                Some(Box::new(iter.map(|value| {
+                    GraphQLResponse::from_result(Ok((value, vec![])))
+                })))
+            }
+            Value::List(_) => None,
             Value::Object(mut obj) => {
-                Some(Box::new(
-                        std::iter::from_fn(move || {
-                            let all_values = obj
-                                .iter_mut()
-                                .map(|(field_name, iter_val)| {
-                                    let val = match iter_val {
-                                        Value::Scalar(iter) => {
-                                          iter.next()
-                                        },
-                                        _ => panic!("Default implementation implemented only for Value::Scalar"),
-                                    };
-                                    //todo: not to clone over and over
-                                    (Some(field_name.clone()), val)
-                                });
-
-
-                            let obj = Object::try_from_iter(all_values);
-                            if let Some(obj) = obj {
-                                Some(GraphQLResponse::from_result(Ok((Value::Object(obj), vec![]))))
+                Some(Box::new(std::iter::from_fn(move || {
+                    let all_values = obj.iter_mut().map(|(field_name, iter_val)| {
+                        let val = match iter_val {
+                            Value::Scalar(iter) => iter.next(),
+                            _ => {
+                                panic!("Default implementation implemented only for Value::Scalar")
                             }
-                            else {
-                                None
-                            }
-                        })
-                    ))
-            },
+                        };
+                        //todo: not to clone over and over
+                        (Some(field_name.clone()), val)
+                    });
+
+                    let obj = Object::try_from_iter(all_values);
+                    if let Some(obj) = obj {
+                        Some(GraphQLResponse::from_result(Ok((
+                            Value::Object(obj),
+                            vec![],
+                        ))))
+                    } else {
+                        None
+                    }
+                })))
+            }
         }
     }
 }
@@ -348,48 +332,44 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
 }
 
 impl<'a, S> StreamGraphQLResponse<'a, S>
-    where S: value::ScalarValue
+where
+    S: value::ScalarValue,
 {
-    pub fn into_stream(self) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + 'a>>>
-    {
-        let val = match self.0
-            {
-                Ok(val) => val,
-                Err(_) => return None,
-            };
+    pub fn into_stream(
+        self,
+    ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + 'a>>> {
+        let val = match self.0 {
+            Ok(val) => val,
+            Err(_) => return None,
+        };
 
         match val {
-            Value::Null => {
-                Some(Box::pin(
-                    futures::stream::once(async {
-                        GraphQLResponse::from_result(Ok((Value::null(), vec![])))
-                    })
-                ))
-            },
+            Value::Null => Some(Box::pin(futures::stream::once(async {
+                GraphQLResponse::from_result(Ok((Value::null(), vec![])))
+            }))),
             Value::Scalar(stream) => {
-                Some(Box::pin(
-                    stream.map(|value|
-                        GraphQLResponse::from_result(Ok((value, vec![])))
-                    )
-                ))
-            },
-            Value::List(_) => {
-                None
-            },
+                Some(Box::pin(stream.map(|value| {
+                    GraphQLResponse::from_result(Ok((value, vec![])))
+                })))
+            }
+            Value::List(_) => None,
             Value::Object(mut obj) => {
                 let mut key_values = obj.into_key_value_list();
 
                 let mut filled_count = 0;
                 let mut ready_vector = Vec::with_capacity(key_values.len());
-                for _ in (0..key_values.len()) { ready_vector.push(None); };
+                for _ in (0..key_values.len()) {
+                    ready_vector.push(None);
+                }
 
-                let stream = futures::stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
-                    for i in 0..ready_vector.len() {
-                        let val = &mut ready_vector[i];
-                        if val.is_none() {
-                            let (field_name, ref mut stream_val) = &mut key_values[i];
+                let stream = futures::stream::poll_fn(
+                    move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
+                        for i in 0..ready_vector.len() {
+                            let val = &mut ready_vector[i];
+                            if val.is_none() {
+                                let (field_name, ref mut stream_val) = &mut key_values[i];
 
-                            match stream_val {
+                                match stream_val {
                                 Value::Scalar(stream) => {
                                     match Pin::new(stream).poll_next(&mut ctx) {
                                         Poll::Ready(None) => {
@@ -413,30 +393,26 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
                                 }
                                 _ => panic!("into_stream supports only Value::Scalar and Value::Null returned in Value::Object")
                             }
+                            }
                         }
-                    }
-                    println!("field count: {:?}, len: {:?}", filled_count, key_values.len());
-                    if filled_count == key_values.len()  {
-                        filled_count = 0;
-                        let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
-                        let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
-                        let ready_vec_iterator = ready_vec
-                            .into_iter()
-                            .map(|el| el.unwrap());
-                        let obj = Object::from_iter(ready_vec_iterator);
-                        return Poll::Ready(Some(
-                            GraphQLResponse::from_result(Ok(
-                                (Value::Object(obj), vec![])
-                            ))
-                        ));
-                    }
-                    else {
-                        return Poll::Pending;
-                    }
-                });
+                        if filled_count == key_values.len() {
+                            filled_count = 0;
+                            let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
+                            let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
+                            let ready_vec_iterator = ready_vec.into_iter().map(|el| el.unwrap());
+                            let obj = Object::from_iter(ready_vec_iterator);
+                            return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                                Value::Object(obj),
+                                vec![],
+                            )))));
+                        } else {
+                            return Poll::Pending;
+                        }
+                    },
+                );
 
                 Some(Box::pin(stream))
-            },
+            }
         }
     }
 }

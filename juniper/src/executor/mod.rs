@@ -8,16 +8,17 @@ use crate::{
         Selection, ToInputValue, Type,
     },
     parser::{SourcePosition, Spanning},
+    schema::{
+        meta::{
+            Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
+            InterfaceMeta, ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta,
+            ScalarMeta, UnionMeta,
+        },
+        model::{RootNode, SchemaType, TypeType},
+    },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue, Value},
     GraphQLError,
-    schema::{
-        meta::{
-            Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta,
-            ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
-        },
-        model::{RootNode, SchemaType, TypeType},
-    }
 };
 
 use self::executor_wrappers::ExecutorDataVariables;
