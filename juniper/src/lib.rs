@@ -161,11 +161,13 @@ pub use crate::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue, Registry, Variables,
+        SubscriptionsExecutor, ValuesIterator, SubscriptionResult,
+
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
     types::{
-        base::{Arguments, GraphQLType, TypeKind},
+        base::{Arguments, GraphQLType, TypeKind, SubscriptionHandler},
         scalars::{EmptyMutation, ID},
     },
     validation::RuleError,
@@ -175,8 +177,6 @@ pub use crate::{
     },
 };
 
-pub use executor::SubscriptionsExecutor;
-
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
@@ -184,17 +184,12 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 pub use crate::types::async_await::GraphQLTypeAsync;
 
 #[cfg(feature = "async")]
-pub use crate::executor::SubscriptionResultAsync;
+pub use crate::executor::{
+    SubscriptionResultAsync, ValuesStream,
+};
 
-pub use crate::executor::SubscriptionResult;
 #[cfg(feature = "async")]
 pub use crate::types::async_await::SubscriptionHandlerAsync;
-
-pub use crate::types::base::SubscriptionHandler;
-
-pub use crate::executor::ValuesIterator;
-#[cfg(feature = "async")]
-pub use crate::executor::ValuesStream;
 
 pub use juniper_codegen::subscription;
 
@@ -305,6 +300,7 @@ where
     executor::execute_validated_query(document, operation_name, root_node, variables, context)
 }
 
+/// Execute a subscription in a provided schema
 pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -358,6 +354,7 @@ where
         .await
 }
 
+/// Execute a subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
 pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,

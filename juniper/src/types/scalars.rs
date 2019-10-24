@@ -341,12 +341,16 @@ where
 {
 }
 
+/// Utillity type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the subscription, no subscription will be
+/// generated for the schema.
 pub struct EmptySubscription<T> {
     phantom: PhantomData<T>,
 }
 
 impl<T> EmptySubscription<T> {
-    /// Construct a new empty mutation
+    /// Construct a new empty subscription
     pub fn new() -> Self {
         EmptySubscription {
             phantom: PhantomData,
@@ -363,7 +367,7 @@ where
     type TypeInfo = ();
 
     fn name(_: &()) -> Option<&str> {
-        Some("_EmptyMutation")
+        Some("_EmptySubscription")
     }
 
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
@@ -383,8 +387,7 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
-{
-}
+{}
 
 #[cfg(feature = "async")]
 impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
@@ -395,8 +398,7 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
-{
-}
+{}
 
 #[cfg(test)]
 mod tests {

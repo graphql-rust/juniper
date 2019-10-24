@@ -202,7 +202,7 @@ where
                             "got Value::Scalar, check logs".to_string(),
                         ))
                     }
-                    Value::List(_) => Value::Scalar(DefaultScalarValue::String(
+                    Value::List(l) => Value::Scalar(DefaultScalarValue::String(
                         "lists not implemented in test server".to_string(),
                     )),
                     Value::Object(o) => {

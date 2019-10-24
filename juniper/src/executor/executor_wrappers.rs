@@ -57,7 +57,7 @@ where
     CtxT: 'a,
     S: Clone + 'a,
 {
-    /// Variables data
+    /// Struct owning variables
     _data: Option<ExecutorDataVariables<'a, CtxT, S>>,
 }
 
@@ -87,7 +87,6 @@ where
         S: PartialEq,
     {
         if let Some(ref mut s) = self._data {
-            //todo: maybe not unwrap
             let errors = match s.errors.get_mut() {
                 Ok(e) => e,
                 Err(_) => return None,
@@ -101,7 +100,7 @@ where
 }
 
 /// `Executor` which can be set later.
-/// __Panics__ if `Executor` was not set.
+/// __Panics__ on `Deref` if `Executor` was not set.
 pub(crate) struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,

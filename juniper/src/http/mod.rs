@@ -3,18 +3,15 @@
 pub mod graphiql;
 pub mod playground;
 
+use std::iter::FromIterator;
+
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},
 };
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{
-    ast::InputValue,
-    executor::ExecutionError,
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator, Variables,
-};
+use crate::{ast::InputValue, executor::ExecutionError, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, RootNode, Value, ValuesIterator, Variables, Object, value};
 
 #[cfg(feature = "async")]
 use crate::ValuesStream;
@@ -263,6 +260,65 @@ where
 impl<'a, S> IteratorGraphQLResponse<'a, S> {
     pub fn into_inner(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
         self.0
+    }
+}
+
+impl<S> IteratorGraphQLResponse<'static, S>
+    where S: value::ScalarValue
+{
+    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>>>> {
+        let val = match self.0
+            {
+                Ok(val) => val,
+                Err(_) => return None,
+            };
+
+        match val {
+            Value::Null => {
+                Some(Box::new(
+                    std::iter::once(
+                        GraphQLResponse::from_result(Ok((Value::null(), vec![]))
+                    ))
+                ))
+            },
+            Value::Scalar(iter) => {
+                Some(Box::new(
+                    iter.map(|value|
+                        GraphQLResponse::from_result(Ok((value, vec![])))
+                    )
+                ))
+            },
+            Value::List(_) => {
+                None
+            },
+            Value::Object(mut obj) => {
+                Some(Box::new(
+                        std::iter::from_fn(move || {
+                            let all_values = obj
+                                .iter_mut()
+                                .map(|(field_name, iter_val)| {
+                                    let val = match iter_val {
+                                        Value::Scalar(iter) => {
+                                          iter.next()
+                                        },
+                                        _ => panic!("Default implementation implemented only for Value::Scalar"),
+                                    };
+                                    //todo: not to clone over and over
+                                    (Some(field_name.clone()), val)
+                                });
+
+
+                            let obj = Object::try_from_iter(all_values);
+                            if let Some(obj) = obj {
+                                Some(GraphQLResponse::from_result(Ok((Value::Object(obj), vec![]))))
+                            }
+                            else {
+                                None
+                            }
+                        })
+                    ))
+            },
+        }
     }
 }
 
