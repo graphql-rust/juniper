@@ -377,26 +377,26 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
                 None
             },
             Value::Object(mut obj) => {
-                let key_values = obj.into_key_value_list();
+                let mut key_values = obj.into_key_value_list();
 
                 let mut filled_count = 0;
-                let mut ready_vector = Vec::with_capacity(obj.len());
+                let mut ready_vector = Vec::with_capacity(key_values.len());
                 (0..ready_vector.len()).for_each(|i| { ready_vector.push(None); });
 
-                let stream = futures::stream::poll_fn(|_| -> Poll<Option<GraphQLResponse<'static, S>>> {
+                let stream = futures::stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
                     for i in 0..ready_vector.len() {
                         let val = &mut ready_vector[i];
                         if val.is_none() {
-                            let (field_name, ref mut stream_val) = key_values[i];
+                            let (field_name, ref mut stream_val) = &mut key_values[i];
 
                             match stream_val {
                                 Value::Scalar(stream) => {
-                                    match stream.poll_next() {
+                                    match Pin::new(stream).poll_next(&mut ctx) {
                                         Poll::Ready(None) => {
                                             return Poll::Ready(None);
                                         },
                                         Poll::Ready(Some(value)) => {
-                                            *val = Some((field_name, value));
+                                            *val = Some((field_name.clone(), value));
                                             filled_count += 1;
                                         }
                                         Poll::Pending => {
