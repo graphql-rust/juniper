@@ -178,7 +178,7 @@ where
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
-    ) -> GraphQLBatchResponse<'a, DefaultScalarValue>
+    ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
@@ -194,54 +194,64 @@ where
                 let mut executor = juniper::SubscriptionsExecutor::new();
                 let response_value = request
                     .subscribe_async(root_node, context, &mut executor)
-                    .await
-                    .into_inner()
-                    .unwrap();
-                let x = match response_value {
-                    Value::Null => Value::null(),
-                    Value::Scalar(stream) => {
-                        let collected = stream.take(5).collect::<Vec<_>>().await;
-                        println!("Got response: {:#?}", collected);
+                    .await;
 
-                        Value::Scalar(DefaultScalarValue::String(
-                            "got Value::Scalar, check logs".to_string(),
-                        ))
-                    }
-                    Value::List(l) => Value::Scalar(DefaultScalarValue::String(
-                        "lists not implemented in test server".to_string(),
-                    )),
-                    Value::Object(o) => {
-                        let obj = o.into_key_value_list();
+                let response = response_value
+                    .into_stream()
+                    .unwrap()
+                    .take(5)
+                    .collect::<Vec<_>>()
+                    .await;
 
-                        for (name, stream_val) in obj {
-                            print!("  got name: {:#?}, ", name);
-                            match stream_val {
-                                Value::Null => {
-                                    println!("got null value");
-                                }
-                                Value::Scalar(stream) => {
-                                    let collected = stream.take(5).collect::<Vec<_>>().await;
-                                    println!("got response: {:#?}", collected);
-                                }
-                                Value::List(_) => {
-                                    println!("got list value");
-                                }
-                                Value::Object(_) => {
-                                    println!("got object value");
-                                }
-                            }
-                        }
 
-                        Value::Scalar(DefaultScalarValue::String(
-                            "got object, check logs".to_string(),
-                        ))
-                    }
-                };
+//                    .into_inner()
+//                    .unwrap();
+//                let x = match response_value {
+//                    Value::Null => Value::null(),
+//                    Value::Scalar(stream) => {
+//                        let collected = stream.take(5).collect::<Vec<_>>().await;
+//                        println!("Got response: {:#?}", collected);
+//
+//                        Value::Scalar(DefaultScalarValue::String(
+//                            "got Value::Scalar, check logs".to_string(),
+//                        ))
+//                    }
+//                    Value::List(l) => Value::Scalar(DefaultScalarValue::String(
+//                        "lists not implemented in test server".to_string(),
+//                    )),
+//                    Value::Object(o) => {
+//                        let obj = o.into_key_value_list();
+//
+//                        for (name, stream_val) in obj {
+//                            print!("  got name: {:#?}, ", name);
+//                            match stream_val {
+//                                Value::Null => {
+//                                    println!("got null value");
+//                                }
+//                                Value::Scalar(stream) => {
+//                                    let collected = stream.take(5).collect::<Vec<_>>().await;
+//                                    println!("got response: {:#?}", collected);
+//                                }
+//                                Value::List(_) => {
+//                                    println!("got list value");
+//                                }
+//                                Value::Object(_) => {
+//                                    println!("got object value");
+//                                }
+//                            }
+//                        }
+//
+//                        Value::Scalar(DefaultScalarValue::String(
+//                            "got object, check logs".to_string(),
+//                        ))
+//                    }
+//                };
 
-                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((
-                    x,
-                    vec![],
-                ))))
+//                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((
+//                    x,
+//                    vec![],
+//                ))))
+                GraphQLBatchResponse::Batch(response)
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 panic!("Batch requests are not supported in this demo!");

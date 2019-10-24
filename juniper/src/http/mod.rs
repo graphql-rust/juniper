@@ -381,7 +381,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
 
                 let mut filled_count = 0;
                 let mut ready_vector = Vec::with_capacity(key_values.len());
-                (0..ready_vector.len()).for_each(|i| { ready_vector.push(None); });
+                for _ in (0..key_values.len()) { ready_vector.push(None); };
 
                 let stream = futures::stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
                     for i in 0..ready_vector.len() {
@@ -415,18 +415,20 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
                             }
                         }
                     }
-                    if filled_count == ready_vector.len() {
-                        let new_vec = (0..ready_vector.len()).map(|_| None).collect::<Vec<_>>();
+                    println!("field count: {:?}, len: {:?}", filled_count, key_values.len());
+                    if filled_count == key_values.len()  {
+                        filled_count = 0;
+                        let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
                         let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
                         let ready_vec_iterator = ready_vec
                             .into_iter()
                             .map(|el| el.unwrap());
                         let obj = Object::from_iter(ready_vec_iterator);
-                        Poll::Ready(Some(
+                        return Poll::Ready(Some(
                             GraphQLResponse::from_result(Ok(
                                 (Value::Object(obj), vec![])
                             ))
-                        ))
+                        ));
                     }
                     else {
                         return Poll::Pending;
