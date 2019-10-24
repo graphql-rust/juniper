@@ -1,12 +1,17 @@
-use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
+use std::{
+    borrow::Cow, cmp::Ordering, collections::HashMap,
+    fmt::Display, sync::RwLock,
+};
 
 use fnv::FnvHashMap;
 
 use crate::{
     ast::{
-        Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
+        Definition, Document, Fragment, FromInputValue,
+        InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
     },
+    GraphQLError,
     parser::{SourcePosition, Spanning},
     schema::{
         meta::{
@@ -18,21 +23,18 @@ use crate::{
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue, Value},
-    GraphQLError,
 };
 
-use self::executor_wrappers::ExecutorDataVariables;
-
-mod executor_wrappers;
-mod look_ahead;
-
 pub use self::{
-    executor_wrappers::SubscriptionsExecutor,
+    executor_wrappers::{SubscriptionsExecutor, ExecutorDataVariables},
     look_ahead::{
         Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
 };
+
+mod executor_wrappers;
+mod look_ahead;
 
 /// A type registry used to build schemas
 ///
@@ -230,13 +232,6 @@ impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-pub type SubscriptionResult<'a, S = DefaultScalarValue> =
-    Result<Value<ValuesIterator<'a, S>>, FieldError<S>>;
-
-#[cfg(feature = "async")]
-pub type SubscriptionResultAsync<'a, S = DefaultScalarValue> =
-    Result<Value<ValuesStream<'a, S>>, FieldError<S>>;
-
 /// Boxed `Iterator` of `Value`s
 pub type ValuesIterator<'a, S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'a>;
 
@@ -404,8 +399,8 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
-    /// Resolve a single arbitrary value into an `SubscriptionResult`
-    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> SubscriptionResult<'a, S>
+    /// Resolve a single arbitrary value into an `Value<ValuesIterator>`
+    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -413,7 +408,7 @@ where
         Ok(value.resolve_into_iterator(info, self.current_selection_set, self))
     }
 
-    /// Resolve a single arbitrary value into an `SubscriptionResultAsync`
+    /// Resolve a single arbitrary value into `Value<ValuesStream>`
     #[cfg(feature = "async")]
     pub async fn subscribe_async<T>(
         &'a self,

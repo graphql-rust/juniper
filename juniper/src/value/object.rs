@@ -92,7 +92,6 @@ impl<S> Object<S> {
     }
 
     /// Return underlying key_value_list
-    // TODO: maybe remove this function and add this functionality to subscription return types
     pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
         self.key_value_list
     }
@@ -105,16 +104,21 @@ impl<S> Object<S> {
     /// Creates `Object` out of iterator over `(Option<String>, Option<Value<S>>)`
     /// If any of returned values are `None`, then `None` is returned instead of an object
     pub fn try_from_iter<I, K>(iter: I) -> Option<Self>
-        where I: IntoIterator<Item = (Option<K>, Option<Value<S>>)>,
-              K: Into<String>
+    where
+        I: IntoIterator<Item = (Option<K>, Option<Value<S>>)>,
+        K: Into<String>,
     {
         let iter = iter.into_iter();
         let mut obj = Self {
             key_value_list: Vec::with_capacity(iter.size_hint().0),
         };
         for (k, v) in iter {
-            if k.is_none() { return None; }
-            if v.is_none() { return None; }
+            if k.is_none() {
+                return None;
+            }
+            if v.is_none() {
+                return None;
+            }
             obj.add_field(k.unwrap().into(), v.unwrap());
         }
         Some(obj)

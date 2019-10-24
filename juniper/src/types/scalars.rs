@@ -292,8 +292,8 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
 
 /// Utillity type to define read-only schemas
 ///
-/// If you instantiate `RootNode` with this as the mutation, no mutation will be
-/// generated for the schema.
+/// If you instantiate `RootNode` with this as the mutation,
+/// no mutation will be generated for the schema.
 #[derive(Debug)]
 pub struct EmptyMutation<T> {
     phantom: PhantomData<T>,
@@ -343,8 +343,8 @@ where
 
 /// Utillity type to define read-only schemas
 ///
-/// If you instantiate `RootNode` with this as the subscription, no subscription will be
-/// generated for the schema.
+/// If you instantiate `RootNode` with this as the subscription,
+/// no subscription will be generated for the schema.
 pub struct EmptySubscription<T> {
     phantom: PhantomData<T>,
 }

@@ -1,16 +1,20 @@
+use std::rc::Rc;
+
 use indexmap::IndexMap;
 
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
 use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
-    executor::{ExecutionResult, Executor, Registry, SubscriptionResult, Variables},
+    executor::{ExecutionResult, Executor, Registry, Variables},
+    FieldError,
     parser::Spanning,
     schema::meta::{Argument, MetaType},
-    value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
-    FieldError, ValuesIterator,
+    value::{
+        DefaultScalarValue, Object,
+        ScalarRefValue, ScalarValue, Value
+    }, ValuesIterator,
 };
-use std::rc::Rc;
 
 /// GraphQL type kind
 ///
@@ -341,13 +345,13 @@ where
     }
 }
 
-/// Trait to be implemented by synchronous Subscription handlers
+/// Trait to be implemented by user subscription handlers
 pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
 where
     S: ScalarValue + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    /// Stream resolver logic.
+    /// Selection set resolver logic
     #[allow(unused_variables)]
     fn resolve_into_iterator<'a>(
         &'a self,
@@ -367,7 +371,8 @@ where
         }
     }
 
-    /// Field resolver logic.
+    /// Field resolver logic. Called every time any field
+    /// found in SelectionSet by default.
     /// Default implementation __panics__
     #[allow(unused_variables)]
     fn resolve_field_into_iterator<'a>(
@@ -376,14 +381,12 @@ where
         field_name: &str,
         arguments: &Arguments<S>,
         executor: Rc<Executor<'a, Self::Context, S>>,
-    ) -> SubscriptionResult<'a, S> {
+    ) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
-    /// Resolve this interface or union into a concrete type
-    /// Try to resolve the current type into the type name provided.
-    /// If the type matches, pass the instance along to executor.resolve.
-    /// The default implementation panics.
+    /// Resolve this interface or union into concrete type.
+    /// Default implementation __panics__.
     #[allow(unused_variables)]
     fn iter_resolve_into_type<'a>(
         &'a self,
@@ -401,6 +404,10 @@ where
     }
 }
 
+/// Resolver logic for queries/mutations selection sets.
+/// Calls resolvers for each field or fragment
+/// and merges returned values into `result`.
+/// Returns false if any errors occured.
 pub fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
@@ -557,6 +564,10 @@ where
     true
 }
 
+/// Resolver logic for subscriptions selection sets.
+/// Calls resolvers for each field or fragment
+/// and merges returned values into `result`.
+/// Returns false if any errors occured while resolving
 pub fn resolve_selection_set_into_iter<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
@@ -733,6 +744,7 @@ where
     true
 }
 
+/// Check if was excluded by `include`/`skip` directives
 pub(super) fn is_excluded<S>(
     directives: &Option<Vec<Spanning<Directive<S>>>>,
     vars: &Variables<S>,
@@ -799,53 +811,6 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
 }
 
 fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
-    for (key, value) in src {
-        if dest.contains_field(&key) {
-            merge_key_into(dest, &key, value);
-        } else {
-            dest.add_field(key, value);
-        }
-    }
-}
-
-pub(crate) fn async_merge_key_into<S>(
-    result: &mut Object<S>,
-    response_name: &str,
-    value: Value<S>,
-) {
-    if let Some(&mut (_, ref mut e)) = result
-        .iter_mut()
-        .find(|&&mut (ref key, _)| key == response_name)
-    {
-        match *e {
-            Value::Object(ref mut dest_obj) => {
-                if let Value::Object(src_obj) = value {
-                    async_merge_maps(dest_obj, src_obj);
-                }
-            }
-            Value::List(ref mut dest_list) => {
-                if let Value::List(src_list) = value {
-                    dest_list
-                        .iter_mut()
-                        .zip(src_list.into_iter())
-                        .for_each(|(d, s)| match d {
-                            &mut Value::Object(ref mut d_obj) => {
-                                if let Value::Object(s_obj) = s {
-                                    async_merge_maps(d_obj, s_obj);
-                                }
-                            }
-                            _ => {}
-                        });
-                }
-            }
-            _ => {}
-        }
-        return;
-    }
-    result.add_field(response_name, value);
-}
-
-fn async_merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
     for (key, value) in src {
         if dest.contains_field(&key) {
             merge_key_into(dest, &key, value);

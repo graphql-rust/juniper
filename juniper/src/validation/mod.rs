@@ -10,6 +10,7 @@ mod visitor;
 //#[cfg(test)]
 //pub(crate) mod test_harness;
 
+// todo: remove fake_test_harness once tests compile
 #[cfg(test)]
 pub(crate) mod fake_test_harness;
 

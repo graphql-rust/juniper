@@ -1,9 +1,8 @@
 //! Utilities for building HTTP endpoints in a library-agnostic manner
 
-pub mod graphiql;
-pub mod playground;
-
 use std::iter::FromIterator;
+#[cfg(feature = "async")]
+use std::pin::Pin;
 
 use serde::{
     de::Deserialize,
@@ -11,21 +10,22 @@ use serde::{
 };
 use serde_derive::{Deserialize, Serialize};
 
-#[cfg(feature = "async")]
-use futures::{stream::Stream, stream::StreamExt, Poll};
-#[cfg(feature = "async")]
-use std::pin::Pin;
-
 use crate::{
     ast::InputValue,
     executor::ExecutionError,
-    value,
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, ValuesIterator, Variables,
+    FieldError,
+    GraphQLError,
+    GraphQLType, Object, RootNode, value, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, Value, ValuesIterator, Variables,
 };
 
 #[cfg(feature = "async")]
+use futures::{Poll, stream::Stream, stream::StreamExt};
+
+#[cfg(feature = "async")]
 use crate::ValuesStream;
+
+pub mod graphiql;
+pub mod playground;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -83,8 +83,8 @@ where
 
     /// Execute a GraphQL subscription using the specified schema and context
     ///
-    /// This is a simple wrapper around the `subscribe` function exposed at the
-    /// top level of this crate.
+    /// This is a wrapper around the `subscribe` function
+    /// exposed at the top level of this crate.
     pub fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
@@ -110,8 +110,8 @@ where
 
     /// Execute a GraphQL subscription using the specified schema and context
     ///
-    /// This is a simple wrapper around the `subscribe_async` function exposed at the
-    /// top level of this crate.
+    /// This is a wrapper around the `subscribe_async` function exposed
+    /// at the top level of this crate.
     #[cfg(feature = "async")]
     pub async fn subscribe_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -191,8 +191,6 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
-// todo: remove this debug
-#[derive(Debug)]
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
@@ -216,7 +214,7 @@ impl<'a, S> GraphQLResponse<'a, S>
 where
     S: ScalarValue,
 {
-    /// Constructs new `GraphQLResponse` with result given
+    /// Constructs new `GraphQLResponse` using the given result
     pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
         Self(r)
     }
@@ -280,6 +278,17 @@ impl<'a, S> IteratorGraphQLResponse<'a, S>
 where
     S: value::ScalarValue,
 {
+    /// Converts `self` into default `Iterator` implementantion
+    ///
+    /// Default `Iterator` implementation provides iterator
+    /// based on `Self`'s internal value:
+    ///     `Value::Null` - iterator over one wrapped `Value::Null`
+    ///     `Value::List` - default implementation is not provided
+    ///     `Value::Scalar` - wrapped underlying iterator
+    ///     `Value::Object(Value::Scalar(iterator))` - iterator over objects with each field collected.
+    ///                                                Stops when at least one field's iterator is finished
+    ///     other `Value::Object` - __panics__
+    /// Returns None is `Self`'s internal result is error or `Value::List`
     pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>> {
         let val = match self.0 {
             Ok(val) => val,
@@ -335,6 +344,15 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
 where
     S: value::ScalarValue,
 {
+    /// Converts `Self` into default `Stream` for implementantion
+    ///
+    /// Default `Stream` implementantion based on value's type:
+    ///     `Value::Null` - stream with a single wrapped `Value::Null`
+    ///     `Value::Scalar` - wrapped underlying stream
+    ///     `Value::List` - default implementantion is not provided
+    ///     `Value::Object(Value::Scalar(stream))` - creates new object out of each returned values.
+    ///                                              Stops when at least one stream stops
+    ///     other `Value::Object` - default implementation __panics__
     pub fn into_stream(
         self,
     ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + 'a>>> {
@@ -384,14 +402,7 @@ where
                                         }
                                     }
                                 },
-                                Value::Null => {
-//                                    return Poll::Ready(
-//                                        Some(futures::stream::once(async {
-//                                            GraphQLResponse::from_result(Ok((Value::null(), vec![])))
-//                                        }))
-//                                    );
-                                }
-                                _ => panic!("into_stream supports only Value::Scalar and Value::Null returned in Value::Object")
+                                _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
                             }
                             }
                         }

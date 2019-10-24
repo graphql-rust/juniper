@@ -94,30 +94,71 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #[doc(hidden)]
 pub extern crate serde;
 
-#[cfg(any(test, feature = "expose-test-schema"))]
-extern crate serde_json;
-
 #[cfg(any(test, feature = "chrono"))]
 extern crate chrono;
-
+#[cfg(any(test, feature = "expose-test-schema"))]
+extern crate serde_json;
 #[cfg(any(test, feature = "url"))]
 extern crate url;
-
 #[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
+
+// Internal macros are not exported,
+// but declared at the root to make them easier to use.
+#[allow(unused_imports)]
+use juniper_codegen::{
+    GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal, object_internal,
+};
+
+use crate::{
+    introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
+    parser::{parse_document_source, ParseError, Spanning},
+    validation::{validate_input_values, ValidatorContext, visit_all_rules},
+};
+
 
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    object, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
+    GraphQLEnum, GraphQLInputObject, GraphQLObject,
+    GraphQLScalarValue, object, ScalarValue, subscription
 };
-// Internal macros are not exported,
-// but declared at the root to make them easier to use.
-#[allow(unused_imports)]
-use juniper_codegen::{
-    object_internal, GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
+
+pub use crate::{
+    ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
+    executor::{
+        Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
+        FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
+        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor,
+        ValuesIterator, Variables,
+    },
+    introspection::IntrospectionFormat,
+    schema::{meta, model::RootNode},
+    types::{
+        base::{Arguments, GraphQLType, SubscriptionHandler, TypeKind},
+        scalars::{EmptyMutation, ID},
+    },
+    validation::RuleError,
+    value::{
+        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
+        ScalarValue, Value,
+    },
 };
+
+#[cfg(feature = "async")]
+pub use crate::{
+    executor::ValuesStream,
+    types::async_await::{
+        GraphQLTypeAsync, SubscriptionHandlerAsync,
+    },
+    // TODO: remove this alias export in 0.10. (breaking change)
+    http::graphiql,
+};
+
+
+// Needs to be public because macros use it.
+pub use crate::util::to_camel_case;
 
 #[macro_use]
 mod value;
@@ -135,9 +176,6 @@ mod validation;
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;
 pub mod integrations;
-// TODO: remove this alias export in 0.10. (breaking change)
-pub use crate::http::graphiql;
-
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;
 #[cfg(feature = "expose-test-schema")]
@@ -146,52 +184,8 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
-// Needs to be public because macros use it.
-pub use crate::util::to_camel_case;
-
-use crate::{
-    introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
-    parser::{parse_document_source, ParseError, Spanning},
-    validation::{validate_input_values, visit_all_rules, ValidatorContext},
-};
-
-pub use crate::{
-    ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
-    executor::{
-        Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
-        FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry, Variables,
-        SubscriptionsExecutor, ValuesIterator, SubscriptionResult,
-
-    },
-    introspection::IntrospectionFormat,
-    schema::{meta, model::RootNode},
-    types::{
-        base::{Arguments, GraphQLType, TypeKind, SubscriptionHandler},
-        scalars::{EmptyMutation, ID},
-    },
-    validation::RuleError,
-    value::{
-        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
-        ScalarValue, Value,
-    },
-};
-
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
-
-#[cfg(feature = "async")]
-pub use crate::types::async_await::GraphQLTypeAsync;
-
-#[cfg(feature = "async")]
-pub use crate::executor::{
-    SubscriptionResultAsync, ValuesStream,
-};
-
-#[cfg(feature = "async")]
-pub use crate::types::async_await::SubscriptionHandlerAsync;
-
-pub use juniper_codegen::subscription;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -206,6 +200,7 @@ pub enum GraphQLError<'a> {
     NotSubscription,
 }
 
+/// Parse document source and validate it using `ValidatorContext`
 fn parse_and_validate_document<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document_source: &'a str,
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
@@ -240,6 +235,8 @@ where
     Ok(document)
 }
 
+/// This is the same as `parse_and_validate_document`,
+/// but it uses `GraphQLTypeAsync`, `SubscriptionHandlerAsync` in generics
 #[cfg(feature = "async")]
 fn parse_and_validate_document_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document_source: &'a str,
@@ -253,7 +250,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+    SubscriptionT: SubscriptionHandlerAsync<S, Context = CtxT>,
     SubscriptionT::Context: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
@@ -328,7 +325,7 @@ where
     )
 }
 
-/// Execute a query in a provided schema
+/// Execute query asynchronously in a provided schema
 #[cfg(feature = "async")]
 pub async fn execute_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
@@ -354,7 +351,7 @@ where
         .await
 }
 
-/// Execute a subscription asynchronously in a provided schema
+/// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
 pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,

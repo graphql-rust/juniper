@@ -1,20 +1,27 @@
+use std::sync::Arc;
+
+use futures::stream::StreamExt;
+
 use async_trait::async_trait;
 
 use crate::{
     ast::Selection,
-    executor::{ExecutionResult, Executor, ValuesStream},
+    executor::{ExecutionResult, Executor, ValuesStream, FieldError},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
 };
 
-use crate::BoxFuture;
+#[cfg(feature = "async")]
+use crate::{
+    BoxFuture,
+};
 
-use super::base::{async_merge_key_into, is_excluded, merge_key_into, Arguments, GraphQLType};
-use crate::executor::SubscriptionResultAsync;
-use futures::stream::StreamExt;
-use std::sync::Arc;
+use super::base::{
+    Arguments, GraphQLType,
+    is_excluded, merge_key_into,
+};
 
-/// Should contain asynchronous execution logic
+/// Contains asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -47,6 +54,7 @@ where
     }
 }
 
+/// Contains subscription execution logic
 #[async_trait]
 pub trait SubscriptionHandlerAsync<S>: GraphQLType<S> + Send + Sync
 where
@@ -55,6 +63,10 @@ where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    /// Field resolving logic.
+    /// Called every time a field is found
+    /// in selection set by default.
+    /// Default implementation __panics__
     #[allow(unused_variables)]
     async fn resolve_field_async<'a>(
         &self,
@@ -62,12 +74,11 @@ where
         field_name: &str,
         arguments: Arguments<'a, S>,
         executor: Arc<Executor<'a, Self::Context, S>>,
-    ) -> SubscriptionResultAsync<'a, S> {
+    ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
     /// Stream resolving logic.
-    /// __Default implementantion panics.__
     #[allow(unused_variables)]
     async fn resolve_into_stream<'a>(
         &'a self,
@@ -82,6 +93,8 @@ where
         }
     }
 
+    /// Resolve this interface or union into concrete type.
+    /// Default implementation __panics__.
     #[allow(unused_variables)]
     async fn stream_resolve_into_type<'a>(
         &'a self,
@@ -89,7 +102,7 @@ where
         type_name: &'a str,
         selection_set: Option<&'a [Selection<'_, S>]>,
         executor: Arc<Executor<'a, Self::Context, S>>,
-    ) -> SubscriptionResultAsync<'a, S> {
+    ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>> {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
         //        if Self::name(info).unwrap() == type_name {
         //            let stream = self.resolve_into_stream(info, selection_set, executor).await;
@@ -526,7 +539,7 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            async_merge_key_into(&mut object, &k, v);
+                            merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec2.push_error_at(e, start_pos.clone());
@@ -544,7 +557,7 @@ where
 
                         if let Ok(Value::Object(obj)) = sub_result {
                             for (k, v) in obj {
-                                async_merge_key_into(&mut object, &k, v);
+                                merge_key_into(&mut object, &k, v);
                             }
                         } else if let Err(e) = sub_result {
                             sub_exec2.push_error_at(e, start_pos.clone());
@@ -572,7 +585,7 @@ where
                 }
                 Value::Object(obj) => {
                     for (k, v) in obj {
-                        async_merge_key_into(&mut object, &k, v);
+                        merge_key_into(&mut object, &k, v);
                     }
                 }
                 _ => unreachable!(),
