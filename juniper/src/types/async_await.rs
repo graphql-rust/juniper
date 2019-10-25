@@ -24,6 +24,9 @@ where
     S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    /// Asynchronous field resolving logic.
+    /// Is called each time a field is found by default
+    /// Default implementation __panics__
     #[allow(unused_variables)]
     fn resolve_field_async<'a>(
         &'a self,
@@ -35,6 +38,7 @@ where
         panic!("resolve_field must be implemented by object types");
     }
 
+    /// Asynchronous query/mutation resolving logic
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,

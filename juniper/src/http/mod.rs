@@ -162,6 +162,10 @@ where
         ))
     }
 
+    /// Execute a GraphQL request asynchronously using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute_async` function exposed at the
+    /// top level of this crate.
     #[cfg(feature = "async")]
     pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -269,6 +273,7 @@ where
 }
 
 impl<'a, S> IteratorGraphQLResponse<'a, S> {
+    /// Convert `IteratorGraphQLResponse` to `Value<ValuesIterator>`
     pub fn into_inner(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
         self.0
     }
@@ -335,6 +340,7 @@ where
 
 #[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S> {
+    /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
     pub fn into_inner(self) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>> {
         self.0
     }
@@ -371,12 +377,12 @@ where
                 })))
             }
             Value::List(_) => None,
-            Value::Object(mut obj) => {
+            Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
 
                 let mut filled_count = 0;
                 let mut ready_vector = Vec::with_capacity(key_values.len());
-                for _ in (0..key_values.len()) {
+                for _ in 0..key_values.len() {
                     ready_vector.push(None);
                 }
 
