@@ -387,7 +387,8 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
-{}
+{
+}
 
 #[cfg(feature = "async")]
 impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
@@ -398,7 +399,8 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
-{}
+{
+}
 
 #[cfg(test)]
 mod tests {

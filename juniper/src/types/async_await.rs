@@ -6,20 +6,15 @@ use async_trait::async_trait;
 
 use crate::{
     ast::Selection,
-    executor::{ExecutionResult, Executor, ValuesStream, FieldError},
+    executor::{ExecutionResult, Executor, FieldError, ValuesStream},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
 };
 
 #[cfg(feature = "async")]
-use crate::{
-    BoxFuture,
-};
+use crate::BoxFuture;
 
-use super::base::{
-    Arguments, GraphQLType,
-    is_excluded, merge_key_into,
-};
+use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
 /// Contains asynchronous execution logic
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync

@@ -13,13 +13,13 @@ use serde_derive::{Deserialize, Serialize};
 use crate::{
     ast::InputValue,
     executor::ExecutionError,
-    FieldError,
-    GraphQLError,
-    GraphQLType, Object, RootNode, value, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, Value, ValuesIterator, Variables,
+    value,
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, ValuesIterator, Variables,
 };
 
 #[cfg(feature = "async")]
-use futures::{Poll, stream::Stream, stream::StreamExt};
+use futures::{stream::Stream, stream::StreamExt, Poll};
 
 #[cfg(feature = "async")]
 use crate::ValuesStream;

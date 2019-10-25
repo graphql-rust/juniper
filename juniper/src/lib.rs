@@ -107,22 +107,21 @@ extern crate uuid;
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal, object_internal,
+    object_internal, GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
 
 use crate::{
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
-    validation::{validate_input_values, ValidatorContext, visit_all_rules},
+    validation::{validate_input_values, visit_all_rules, ValidatorContext},
 };
-
 
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    GraphQLEnum, GraphQLInputObject, GraphQLObject,
-    GraphQLScalarValue, object, ScalarValue, subscription
+    object, subscription, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue,
+    ScalarValue,
 };
 
 pub use crate::{
@@ -130,8 +129,8 @@ pub use crate::{
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor,
-        ValuesIterator, Variables,
+        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor, ValuesIterator,
+        Variables,
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
@@ -149,13 +148,10 @@ pub use crate::{
 #[cfg(feature = "async")]
 pub use crate::{
     executor::ValuesStream,
-    types::async_await::{
-        GraphQLTypeAsync, SubscriptionHandlerAsync,
-    },
     // TODO: remove this alias export in 0.10. (breaking change)
     http::graphiql,
+    types::async_await::{GraphQLTypeAsync, SubscriptionHandlerAsync},
 };
-
 
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;

@@ -2,10 +2,10 @@ use std::{collections::HashMap, sync::RwLock};
 
 use crate::{
     ast::Fragment,
-    DefaultScalarValue,
-    ExecutionError,
-    Executor,
-    executor::FieldPath, parser::Spanning, schema::model::{SchemaType, TypeType}, Selection, Variables,
+    executor::FieldPath,
+    parser::Spanning,
+    schema::model::{SchemaType, TypeType},
+    DefaultScalarValue, ExecutionError, Executor, Selection, Variables,
 };
 
 /// Struct owning `Executor`'s variables

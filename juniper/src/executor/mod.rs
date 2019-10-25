@@ -1,17 +1,12 @@
-use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap,
-    fmt::Display, sync::RwLock,
-};
+use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
 
 use fnv::FnvHashMap;
 
 use crate::{
     ast::{
-        Definition, Document, Fragment, FromInputValue,
-        InputValue, Operation, OperationType,
+        Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
     },
-    GraphQLError,
     parser::{SourcePosition, Spanning},
     schema::{
         meta::{
@@ -23,10 +18,11 @@ use crate::{
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue, Value},
+    GraphQLError,
 };
 
 pub use self::{
-    executor_wrappers::{SubscriptionsExecutor, ExecutorDataVariables},
+    executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor},
     look_ahead::{
         Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
@@ -400,7 +396,11 @@ where
     }
 
     /// Resolve a single arbitrary value into an `Value<ValuesIterator>`
-    pub fn subscribe<T>(&'a self, info: &'a T::TypeInfo, value: &'a T) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>>
+    pub fn subscribe<T>(
+        &'a self,
+        info: &'a T::TypeInfo,
+        value: &'a T,
+    ) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>>
     where
         T: crate::SubscriptionHandler<S, Context = CtxT>,
         S: 'static,
@@ -759,6 +759,8 @@ impl<S> ExecutionError<S> {
     }
 }
 
+/// Create new `Executor` and start query/mutation execution
+/// Returns `IsSubscription` error if subscription is passed
 pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<S>,
     operation_name: Option<&str>,
@@ -855,6 +857,8 @@ where
     Ok((value, errors))
 }
 
+/// Create new `Executor` and start subscription execution
+/// Returns `NotSubscription` error if query or mutation is passed
 pub fn execute_validated_subscription<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
     operation_name: Option<&str>,
@@ -958,6 +962,8 @@ where
     Ok(value)
 }
 
+/// Create new `Executor` and start asynchronous query execution
+/// Returns `IsSubscription` error if subscription is passed
 #[cfg(feature = "async")]
 pub async fn execute_validated_query_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
@@ -1065,6 +1071,8 @@ where
     Ok((value, errors))
 }
 
+/// Initialize new `Executor` and start asynchronous subscription execution
+/// Returns `NotSubscription` error if query or mutation is passed
 #[cfg(feature = "async")]
 pub async fn execute_validated_subscription_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
@@ -1174,7 +1182,7 @@ where
     Ok(value)
 }
 
-/// Find document's operation (return error
+/// Find document's operation (returns error
 /// if multiple operations provided)
 /// and collect fragments to `fragments` vector
 fn parse_document_definitions<'a, 'b, S>(
