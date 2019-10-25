@@ -346,6 +346,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
     }
 }
 
+#[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S>
 where
     S: value::ScalarValue,
