@@ -118,12 +118,19 @@ impl Mutation {
     }
 }
 
+fn juniper_value_to_serde_json_value(
+    value: &crate::Value<crate::DefaultScalarValue>,
+) -> serde_json::Value {
+    serde_json::from_str(&serde_json::to_string(value).unwrap()).unwrap()
+}
+
 #[test]
 fn object_introspect() {
     let res = util::run_info_query::<Query, Mutation, Context>("Query");
-    assert_eq!(
-        res,
-        crate::graphql_value!({
+
+    assert_json_diff::assert_json_include!(
+        actual: juniper_value_to_serde_json_value(&res),
+        expected: serde_json::json!({
             "name": "Query",
             "description": "Query Description.",
             "fields": [
@@ -134,32 +141,32 @@ fn object_introspect() {
                 },
                 {
                     "name": "independent",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "withExecutor",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "withExecutorAndSelf",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "withContext",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "withContextAndSelf",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "renamed",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
@@ -174,24 +181,24 @@ fn object_introspect() {
                 },
                 {
                     "name": "hasArgument",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [
                         {
                             "name": "arg1",
-                            "description": None,
+                            "description": None::<String>,
                             "type": {
-                                "name": None,
+                                "name": None::<String>,
                             },
                         }
                     ],
                 },
                 {
                     "name": "defaultArgument",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [
                         {
                             "name": "defaultArg",
-                            "description": None,
+                            "description": None::<String>,
                             "type": {
                                 "name": "Boolean",
                             },
@@ -200,36 +207,36 @@ fn object_introspect() {
                 },
                 {
                     "name": "argWithDescription",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [
                         {
                             "name": "arg",
                             "description": "my argument description",
                             "type": {
-                                "name": None
+                                "name": None::<String>
                             },
                         }
                     ],
                 },
                 {
                     "name": "withContextChild",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "withLifetimeChild",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [],
                 },
                 {
                     "name": "withMutArg",
-                    "description": None,
+                    "description": None::<String>,
                     "args": [
                         {
                             "name": "arg",
-                            "description": None,
+                            "description": None::<String>,
                             "type": {
-                                "name": None,
+                                "name": None::<String>,
                             },
                         }
                     ],
