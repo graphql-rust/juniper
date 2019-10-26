@@ -92,6 +92,10 @@ impl<'a> Query {
         arg
     }
 
+    fn renamed_argument(#[graphql(name = new_name)] old_name: bool) -> bool {
+        old_name
+    }
+
     fn with_context_child(&self) -> WithContext {
         WithContext
     }
@@ -212,6 +216,19 @@ fn object_introspect() {
                         {
                             "name": "arg",
                             "description": "my argument description",
+                            "type": {
+                                "name": None::<String>
+                            },
+                        }
+                    ],
+                },
+                {
+                    "name": "renamedArgument",
+                    "description": None::<String>,
+                    "args": [
+                        {
+                            "name": "newName",
+                            "description": None::<String>,
                             "type": {
                                 "name": None::<String>
                             },

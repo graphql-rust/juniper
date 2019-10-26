@@ -386,7 +386,7 @@ impl ObjectAttributes {
 
 #[derive(Debug)]
 pub struct FieldAttributeArgument {
-    pub name: syn::Ident,
+    pub name: Option<syn::Ident>,
     pub default: Option<syn::Expr>,
     pub description: Option<syn::LitStr>,
 }
@@ -419,7 +419,7 @@ pub fn parse_argument_attrs(pat: &syn::PatType) -> Option<FieldAttributeArgument
     };
 
     let mut arg = FieldAttributeArgument {
-        name: name.to_owned(),
+        name: None,
         default: None,
         description: None,
     };
@@ -447,6 +447,9 @@ fn parse_field_attr_arg_contents(
             }
             "default" => {
                 arg.default = Some(content.parse()?);
+            }
+            "name" => {
+                arg.name = content.parse()?;
             }
             other => {
                 return Err(content.error(format!("Invalid attribute argument key `{}`", other)));

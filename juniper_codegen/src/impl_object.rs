@@ -129,12 +129,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             }
                         }
                         syn::FnArg::Typed(ref captured) => {
-                            if let Some(field_arg) = util::parse_argument_attrs(&captured) {
-                                attrs
-                                    .arguments
-                                    .insert(field_arg.name.to_string(), field_arg);
-                            }
-
                             let (arg_ident, is_mut) = match &*captured.pat {
                                 syn::Pat::Ident(ref pat_ident) => {
                                     (&pat_ident.ident, pat_ident.mutability.is_some())
@@ -143,7 +137,14 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                     panic!("Invalid token for function argument");
                                 }
                             };
-                            let arg_name = arg_ident.to_string();
+                            let arg_ident_name = arg_ident.to_string();
+
+                            if let Some(field_arg) = util::parse_argument_attrs(&captured) {
+                                // We insert with `arg_ident_name` as the key because the argument
+                                // might have been renamed in the param attribute and we need to
+                                // look it up for making `final_name` further down.
+                                attrs.arguments.insert(arg_ident_name.clone(), field_arg);
+                            }
 
                             let context_type = definition.context.as_ref();
 
@@ -178,8 +179,13 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 // Regular argument.
 
                                 let ty = &captured.ty;
-                                // TODO: respect graphql attribute overwrite.
-                                let final_name = util::to_camel_case(&arg_name);
+
+                                let final_name = attrs
+                                    .argument(&arg_ident_name)
+                                    .and_then(|arg| arg.name.as_ref())
+                                    .map(|name| util::to_camel_case(&name.to_string()))
+                                    .unwrap_or_else(|| util::to_camel_case(&arg_ident_name));
+
                                 let expect_text = format!("Internal error: missing argument {} - validation must have failed", &final_name);
                                 let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
                                 resolve_parts.push(quote!(
@@ -188,11 +194,11 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                         .expect(#expect_text);
                                 ));
                                 args.push(util::GraphQLTypeDefinitionFieldArg {
-                                    description: attrs.argument(&arg_name).and_then(|arg| {
+                                    description: attrs.argument(&arg_ident_name).and_then(|arg| {
                                         arg.description.as_ref().map(|d| d.value())
                                     }),
                                     default: attrs
-                                        .argument(&arg_name)
+                                        .argument(&arg_ident_name)
                                         .and_then(|arg| arg.default.clone()),
                                     _type: ty.clone(),
                                     name: final_name,
