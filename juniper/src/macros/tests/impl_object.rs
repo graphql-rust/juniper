@@ -35,7 +35,7 @@ struct Query {
 
 #[crate::object_internal(
     scalar = crate::DefaultScalarValue,
-    name = "Query", 
+    name = "Query",
     context = Context,
 )]
 /// Query Description.
@@ -84,13 +84,11 @@ impl<'a> Query {
         arg1
     }
 
-    #[graphql(arguments(default_arg(default = true)))]
-    fn default_argument(default_arg: bool) -> bool {
+    fn default_argument(#[graphql(default = true)] default_arg: bool) -> bool {
         default_arg
     }
 
-    #[graphql(arguments(arg(description = "my argument description")))]
-    fn arg_with_description(arg: bool) -> bool {
+    fn arg_with_description(#[graphql(description = "my argument description")] arg: bool) -> bool {
         arg
     }
 

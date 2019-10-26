@@ -1,8 +1,9 @@
+use proc_macro_error::abort;
 use quote::quote;
 use std::collections::HashMap;
 use syn::{
-    parse, parse_quote, punctuated::Punctuated, Attribute, Lit, Meta, MetaList, MetaNameValue,
-    NestedMeta, Token,
+    parse, parse_quote, punctuated::Punctuated, spanned::Spanned, Attribute, Lit, Meta, MetaList,
+    MetaNameValue, NestedMeta, Token,
 };
 
 /// Compares a path to a one-segment string value,
@@ -390,25 +391,49 @@ pub struct FieldAttributeArgument {
     pub description: Option<syn::LitStr>,
 }
 
-impl parse::Parse for FieldAttributeArgument {
-    fn parse(input: parse::ParseStream) -> parse::Result<Self> {
-        let name = input.parse::<syn::Ident>()?;
+pub fn parse_argument_attrs(pat: &syn::PatType) -> Option<FieldAttributeArgument> {
+    let graphql_attrs = pat
+        .attrs
+        .iter()
+        .filter(|attr| {
+            let name = attr.path.get_ident().map(|i| i.to_string());
+            name == Some("graphql".to_string())
+        })
+        .collect::<Vec<_>>();
 
-        let mut arg = Self {
-            name,
-            default: None,
-            description: None,
-        };
+    let graphql_attr = match graphql_attrs.len() {
+        0 => return None,
+        1 => &graphql_attrs[0],
+        _ => {
+            let last_attr = graphql_attrs.last().unwrap();
+            abort!(
+                last_attr.span(),
+                "You cannot have multiple #[graphql] attributes on the same arg"
+            );
+        }
+    };
 
-        let content;
-        syn::parenthesized!(content in input);
-        parse_field_attr_arg_contents(&content, &mut arg)?;
+    let name = match &*pat.pat {
+        syn::Pat::Ident(i) => &i.ident,
+        other => abort!(other.span(), "Invalid token for function argument"),
+    };
 
-        Ok(arg)
-    }
+    let mut arg = FieldAttributeArgument {
+        name: name.to_owned(),
+        default: None,
+        description: None,
+    };
+
+    graphql_attr
+        .parse_args_with(|content: syn::parse::ParseStream| {
+            parse_field_attr_arg_contents(&content, &mut arg)
+        })
+        .unwrap_or_else(|err| abort!(err.span(), "{}", err));
+
+    Some(arg)
 }
 
-pub fn parse_field_attr_arg_contents(
+fn parse_field_attr_arg_contents(
     content: syn::parse::ParseStream,
     arg: &mut FieldAttributeArgument,
 ) -> parse::Result<()> {
@@ -446,7 +471,6 @@ enum FieldAttribute {
     Description(syn::LitStr),
     Deprecation(DeprecationAttr),
     Skip(syn::Ident),
-    Arguments(HashMap<String, FieldAttributeArgument>),
 }
 
 impl parse::Parse for FieldAttribute {
@@ -485,18 +509,6 @@ impl parse::Parse for FieldAttribute {
                 }))
             }
             "skip" => Ok(FieldAttribute::Skip(ident)),
-            "arguments" => {
-                let arg_content;
-                syn::parenthesized!(arg_content in input);
-                let args = Punctuated::<FieldAttributeArgument, Token![,]>::parse_terminated(
-                    &arg_content,
-                )?;
-                let map = args
-                    .into_iter()
-                    .map(|arg| (arg.name.to_string(), arg))
-                    .collect();
-                Ok(FieldAttribute::Arguments(map))
-            }
             other => Err(input.error(format!("Unknown attribute: {}", other))),
         }
     }
@@ -522,6 +534,8 @@ impl parse::Parse for FieldAttributes {
             description: None,
             deprecation: None,
             skip: false,
+            // The arguments get set later via attrs on the argument items themselves in
+            // `parse_argument_attrs`
             arguments: Default::default(),
         };
 
@@ -538,9 +552,6 @@ impl parse::Parse for FieldAttributes {
                 }
                 FieldAttribute::Skip(_) => {
                     output.skip = true;
-                }
-                FieldAttribute::Arguments(args) => {
-                    output.arguments = args;
                 }
             }
         }

@@ -78,14 +78,9 @@ impl TestType {
         format!("{:?}", input)
     }
 
-    #[graphql(
-        arguments(
-            input(
-                default = "Hello World".to_string(),
-            )
-        )
-    )]
-    fn field_with_default_argument_value(input: String) -> String {
+    fn field_with_default_argument_value(
+        #[graphql(default = "Hello World".to_string())] input: String,
+    ) -> String {
         format!("{:?}", input)
     }
 

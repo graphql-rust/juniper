@@ -360,6 +360,7 @@ pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
 /// A proc macro for defining a GraphQL object.
 #[doc(hidden)]
 #[proc_macro_attribute]
+#[proc_macro_error]
 pub fn object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, true);
     gen.into()

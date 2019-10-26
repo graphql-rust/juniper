@@ -2,7 +2,6 @@ use crate::util;
 use proc_macro::TokenStream;
 use proc_macro_error::*;
 use quote::quote;
-use syn::spanned::Spanned;
 
 /// Generate code for the juniper::object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
@@ -108,21 +107,13 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     util::FieldAttributeParseMode::Impl,
                 ) {
                     Ok(attrs) => attrs,
-                    Err(err) => panic!(
+                    Err(err) => abort!(
+                        err.span(),
                         "Invalid #[graphql(...)] attribute on field {}:\n{}",
-                        method.sig.ident, err
+                        method.sig.ident,
+                        err
                     ),
                 };
-
-                if !attrs.arguments.is_empty() {
-                    let deprecation_warning = vec![
-                        "Setting arguments via #[graphql(arguments(...))] on the method",
-                        "is deprecrated. Instead use #[graphql(...)] as attributes directly",
-                        "on the arguments themselves.",
-                    ]
-                    .join(" ");
-                    eprintln!("{}", deprecation_warning);
-                }
 
                 let mut args = Vec::new();
                 let mut resolve_parts = Vec::new();
@@ -138,7 +129,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             }
                         }
                         syn::FnArg::Typed(ref captured) => {
-                            if let Some(field_arg) = parse_argument_attrs(&captured) {
+                            if let Some(field_arg) = util::parse_argument_attrs(&captured) {
                                 attrs
                                     .arguments
                                     .insert(field_arg.name.to_string(), field_arg);
@@ -241,46 +232,4 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     }
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
     definition.into_tokens(juniper_crate_name).into()
-}
-
-fn parse_argument_attrs(pat: &syn::PatType) -> Option<util::FieldAttributeArgument> {
-    let graphql_attrs = pat
-        .attrs
-        .iter()
-        .filter(|attr| {
-            let name = attr.path.get_ident().map(|i| i.to_string());
-            name == Some("graphql".to_string())
-        })
-        .collect::<Vec<_>>();
-
-    let graphql_attr = match graphql_attrs.len() {
-        0 => return None,
-        1 => &graphql_attrs[0],
-        _ => {
-            let last_attr = graphql_attrs.last().unwrap();
-            abort!(
-                last_attr.span(),
-                "You cannot have multiple #[graphql] attributes on the same arg"
-            );
-        }
-    };
-
-    let name = match &*pat.pat {
-        syn::Pat::Ident(i) => &i.ident,
-        other => abort!(other.span(), "Invalid token for function argument"),
-    };
-
-    let mut arg = util::FieldAttributeArgument {
-        name: name.to_owned(),
-        default: None,
-        description: None,
-    };
-
-    graphql_attr
-        .parse_args_with(|content: syn::parse::ParseStream| {
-            util::parse_field_attr_arg_contents(&content, &mut arg)
-        })
-        .unwrap_or_else(|err| abort!(err.span(), "{}", err));
-
-    Some(arg)
 }
