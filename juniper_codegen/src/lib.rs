@@ -291,18 +291,21 @@ impl InternalQuery {
 
 
     // Customizing field arguments can be done like so:
-    // Note that attributes on arguments requires Rust 1.39
     fn args(
         #[graphql(
+            description = "Argument description....",
+
             // You can specify default values.
             // A default can be any valid expression that yields the right type.
             default = true,
-            description = "Argument description....",
+
+            // You can also give the argument a different name in your GraphQL schema
+            name = newName
         )] arg1: bool,
 
         #[graphql(
-            default = false,
             description = "arg2 description...",
+            default = false,
         )] arg2: bool,
     ) -> bool {
         arg1 && arg2
