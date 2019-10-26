@@ -1,6 +1,30 @@
 # master
 
-- No changes yet
+### New way to customize arguments
+
+See [#441](https://github.com/graphql-rust/juniper/pull/441).
+
+You can now customize arguments by annotating them with `#[graphql(...)]` directly. Example:
+
+```rust
+#[juniper::object]
+impl Query {
+    fn some_field_with_a_description(
+        #[graphql(
+            name = newNameForArg,
+            description = "My argument description",
+            default = false,
+        )]
+        arg: bool
+    ) -> bool {
+        // ...
+    }
+}
+```
+
+The old style `#[graphql(arguments(...))]` is no longer supported.
+
+Note that this requires Rust 1.39.
 
 # [[0.14.0] 2019-09-29](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.0)
 
