@@ -95,6 +95,8 @@ impl Root {
         Ok(0)
     }
 
+    /*
+     * FIXME: make this work again
     fn with_return() -> i32 {
         return 0;
     }
@@ -102,6 +104,7 @@ impl Root {
     fn with_return_field_result() -> FieldResult<i32> {
         return Ok(0);
     }
+    */
 }
 
 graphql_interface!(Interface: () |&self| {

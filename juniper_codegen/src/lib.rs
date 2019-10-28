@@ -9,12 +9,14 @@
 
 extern crate proc_macro;
 
+mod util;
+
 mod derive_enum;
 mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
 mod impl_object;
-mod util;
+mod impl_union;
 
 use proc_macro::TokenStream;
 
@@ -366,3 +368,25 @@ pub fn object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, true);
     gen.into()
 }
+
+#[proc_macro_attribute]
+#[proc_macro_error::proc_macro_error]
+pub fn union(attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let output = match impl_union::impl_union(false, attrs, body) {
+        Ok(toks) => toks,
+        Err(err) => proc_macro_error::abort!(err),
+    };
+    output
+}
+
+#[doc(hidden)]
+#[proc_macro_attribute]
+#[proc_macro_error::proc_macro_error]
+pub fn union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let output = match impl_union::impl_union(true, attrs, body) {
+        Ok(toks) => toks,
+        Err(err) => proc_macro_error::abort!(err),
+    };
+    output
+}
+

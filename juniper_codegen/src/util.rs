@@ -5,6 +5,36 @@ use syn::{
     NestedMeta, Token,
 };
 
+pub fn juniper_path(is_internal: bool) -> syn::Path {
+    let name = if is_internal { "crate" } else { "juniper" };
+    syn::parse_str::<syn::Path>(name).unwrap()
+}
+
+/// Returns the name of a type.
+/// If the type does not end in a simple ident, `None` is returned.
+pub fn name_of_type(ty: &syn::Type) -> Option<syn::Ident> {
+    let path_opt = match ty {
+        syn::Type::Path(ref type_path) => Some(&type_path.path),
+        syn::Type::Reference(ref reference) => match &*reference.elem {
+            syn::Type::Path(ref type_path) => Some(&type_path.path),
+            syn::Type::TraitObject(ref trait_obj) => {
+                match trait_obj.bounds.iter().nth(0).unwrap() {
+                    syn::TypeParamBound::Trait(ref trait_bound) => Some(&trait_bound.path),
+                    _ => None,
+                }
+            }
+            _ => None,
+        },
+        _ => None,
+    };
+    let path = path_opt?;
+
+    path.segments
+        .iter()
+        .last()
+        .map(|segment| segment.ident.clone())
+}
+
 /// Compares a path to a one-segment string value,
 /// return true if equal.
 pub fn path_eq_single(path: &syn::Path, value: &str) -> bool {
