@@ -292,8 +292,8 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
 
 /// Utillity type to define read-only schemas
 ///
-/// If you instantiate `RootNode` with this as the mutation, no mutation will be
-/// generated for the schema.
+/// If you instantiate `RootNode` with this as the mutation,
+/// no mutation will be generated for the schema.
 #[derive(Debug)]
 pub struct EmptyMutation<T> {
     phantom: PhantomData<T>,
@@ -333,6 +333,67 @@ where
 impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
 where
     S: ScalarValue + Send + Sync,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
+/// Utillity type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the subscription,
+/// no subscription will be generated for the schema.
+pub struct EmptySubscription<T> {
+    phantom: PhantomData<T>,
+}
+
+impl<T> EmptySubscription<T> {
+    /// Construct a new empty subscription
+    pub fn new() -> Self {
+        EmptySubscription {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<S, T> GraphQLType<S> for EmptySubscription<T>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("_EmptySubscription")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
+    }
+}
+
+impl<T, S> crate::SubscriptionHandler<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
+#[cfg(feature = "async")]
+impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
     Self: GraphQLType<S> + Send + Sync,
     Self::TypeInfo: Send + Sync,
     Self::Context: Send + Sync,

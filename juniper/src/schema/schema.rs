@@ -13,11 +13,13 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
@@ -77,14 +79,16 @@ where
 }
 
 #[cfg(feature = "async")]
-impl<'a, CtxT, S, QueryT, MutationT> crate::GraphQLTypeAsync<S>
-    for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + Send + Sync,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
@@ -95,7 +99,7 @@ where
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
-        use futures::future::{ready, FutureExt};
+        use futures::future::ready;
         match field_name {
             "__schema" | "__type" => {
                 let v = self.resolve_field(info, field_name, arguments, executor);
