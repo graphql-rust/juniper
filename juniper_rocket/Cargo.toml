@@ -15,7 +15,7 @@ edition = "2018"
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { version = "0.14.0", default-features = false, path = "../juniper", features=["async"]}
+juniper = { default-features = false, path = "../juniper", features=["async"]}
 
 # this is imported because rocket does not expose "tokio_io::AsyncReadExt" anymore
 tokio-io = "=0.2.0-alpha.6"

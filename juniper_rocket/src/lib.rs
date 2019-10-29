@@ -63,7 +63,6 @@ use juniper::{
     ScalarValue,
 };
 
-#[cfg(feature = "async")]
 use juniper::GraphQLTypeAsync;
 
 use futures::{
@@ -173,7 +172,6 @@ where
         }
     }
 
-    #[cfg(feature = "async")]
     pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
@@ -336,7 +334,6 @@ where
     }
 
     /// Asynchronously execute an incoming GraphQL query
-    #[cfg(feature = "async")]
     pub async fn execute_async<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
         root_node: &RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
