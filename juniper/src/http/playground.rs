@@ -2,7 +2,7 @@
 
 /// Generate the HTML source to show a GraphQL Playground interface
 // source: https://github.com/prisma/graphql-playground/blob/master/packages/graphql-playground-html/withAnimation.html
-pub fn playground_source(graphql_endpoint_url: &str) -> String {
+pub fn playground_source(graphql_endpoint_url: &str, subscriptions_endpoint_url: &str) -> String {
     r##"
 <!DOCTYPE html>
 
@@ -537,10 +537,11 @@ pub fn playground_source(graphql_endpoint_url: &str) -> String {
       const root = document.getElementById('root');
       root.classList.add('playgroundIn');
 
-      GraphQLPlayground.init(root, { endpoint: 'JUNIPER_GRAPHQL_URL' })
+      GraphQLPlayground.init(root, { endpoint: 'JUNIPER_GRAPHQL_URL', subscriptionEndpoint: 'JUNIPER_SUBSCRIPTIONS_URL' })
     })
   </script>
 </body>
 </html>
   "##.replace("JUNIPER_GRAPHQL_URL", graphql_endpoint_url)
+     .replace("JUNIPER_SUBSCRIPTIONS_URL", subscriptions_endpoint_url)
 }

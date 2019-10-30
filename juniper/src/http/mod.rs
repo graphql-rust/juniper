@@ -349,7 +349,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
 #[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S>
 where
-    S: value::ScalarValue,
+    S: value::ScalarValue + Send,
 {
     /// Converts `Self` into default `Stream` for implementantion
     ///
@@ -362,7 +362,7 @@ where
     ///     other `Value::Object` - default implementation __panics__
     pub fn into_stream(
         self,
-    ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + 'a>>> {
+    ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>> {
         let val = match self.0 {
             Ok(val) => val,
             Err(_) => return None,
