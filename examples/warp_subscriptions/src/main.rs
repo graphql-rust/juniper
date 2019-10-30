@@ -176,7 +176,7 @@ async fn main() {
         Response::builder()
             .header("content-type", "text/html")
             .body(format!(
-                "<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/graphiql\">graphql playground</a></html>"
+                "<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>"
             ))
     });
 

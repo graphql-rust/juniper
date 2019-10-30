@@ -403,7 +403,6 @@ where
          rx
              .forward(user_ws_tx)
              .map(|result| {
-                 println!("send result: {:?}", result);
                  if let Err(e) = result {
                      println!("websocket send error: {}", e);
                  }
@@ -458,10 +457,15 @@ where
                             .expect("Response stream is none");
 
                         stream.for_each(move |response| {
-                            let response_text = serde_json::to_string(&response).unwrap();
+                            let mut response_text = serde_json::to_string(&response).unwrap();
                             println!("Got response {:?}", response_text);
+                            response_text = format!(r#"
+                            {{"type":"data","id":"1","payload":{} }}
+                            "#, response_text);
+                            println!("    will send response {:?}", response_text);
 
-                            user_tx.unbounded_send(Ok(Message::text(response_text.clone())));
+
+                            println!("unbounded_send: {:?}", user_tx.unbounded_send(Ok(Message::text(response_text.clone()))));
 
                             async move {
 //                                    let mut user_tx = Arc::get_mut(&mut user_ws_tx).expect("unable to get mut reference");
