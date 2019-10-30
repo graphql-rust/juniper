@@ -3,16 +3,20 @@
 //! NOTE: this uses tokio 0.1 , not the alpha tokio 0.2.
 
 use std::collections::HashMap;
-use juniper::http::GraphQLRequest;
-use serde::Deserialize;
-use juniper::{EmptyMutation, RootNode, FieldError};
-use warp::{http::Response, Filter, Stream};
-use futures::{FutureExt, StreamExt, future, Poll};
-use futures::future::{Future, PollFn};
-use juniper_warp::playground_filter;
-use tokio::sync::mpsc;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
+
+use futures::{future, FutureExt, Poll, StreamExt};
+use futures::future::{Future, PollFn};
+use serde::Deserialize;
+use tokio::sync::mpsc;
+use tokio::timer::Interval;
+use warp::{Filter, http::Response, Stream};
+
+use juniper::{EmptyMutation, FieldError, RootNode};
+use juniper::http::GraphQLRequest;
+use juniper_warp::playground_filter;
 
 #[derive(Clone)]
 struct Context {
@@ -76,6 +80,20 @@ impl User {
                 },
             ];
         }
+        else if self.id == 3 {
+            return vec![
+                User {
+                    id: 31,
+                    kind: UserKind::User,
+                    name: "user31".into(),
+                },
+                User {
+                    id: 32,
+                    kind: UserKind::Guest,
+                    name: "user32".into(),
+                },
+            ];
+        }
         else {
             return vec![]
         }
@@ -120,30 +138,19 @@ struct MySubscription;
 impl MySubscription {
     async fn users() -> User {
 
-        let mut counter = 2usize;
+        let mut counter = 0;
 
-//        let stream = futures::stream::poll_fn(move |_| -> Poll<Option<String>> {
-//            if counter == 0 { return Poll::Ready(None); }
-//            counter -= 1;
-//            Poll::Ready(Some(
-////                User {
-////                    id: 0,
-////                    kind: UserKind::Admin,
-////                    name:
-//            "stream user".to_string()
-////                }
-//            ))
-//        });
-
-        Ok(Box::pin(
-            futures::stream::once(async {
+        let stream = Interval::new_interval(Duration::from_secs(1))
+            .map(move|_| {
+                counter += 1;
                 User {
-                    id: 0,
+                    id: counter,
                     kind: UserKind::Admin,
                     name: "stream user".to_string()
                 }
-            })
-        ))
+            });
+
+        Ok(Box::pin(stream))
 
 //        Ok(stream)
     }
@@ -181,11 +188,11 @@ async fn main() {
     });
 
     let state = warp::any().map(move || Context{} );
-    let schema1 = schema();
+    let qm_schema = schema();
 
     let state2 = warp::any().map(move || Context{} );
-    let schema2 = Arc::new(schema());
-    let graphql_filter = juniper_warp::make_graphql_filter_async(schema1, state.boxed());
+    let s_schema = Arc::new(schema());
+    let qm_graphql_filter = juniper_warp::make_graphql_filter_async(qm_schema, state.boxed());
 
     println!("Listening on 127.0.0.1:8080");
 
@@ -193,11 +200,11 @@ async fn main() {
         (warp::path("subscriptions")
             .and(warp::ws2())
             .and(state2.clone())
-            .and(warp::any().map(move || Arc::clone(&schema2)))
+            .and(warp::any().map(move || Arc::clone(&s_schema)))
             .map(|ws: warp::ws::Ws2, ctx: Context, schema: Arc<Schema>| {
                 ws.on_upgrade(|websocket| -> Pin<Box<Future<Output = ()> + Send>> {
                     println!("ws connected");
-                    juniper_warp::make_graphql_subscriptions_async(
+                    juniper_warp::graphql_subscriptions_async(
                         websocket,
                         schema,
                         ctx
@@ -208,7 +215,7 @@ async fn main() {
         )
         .or(warp::post2()
             .and(warp::path("graphql"))
-            .and(graphql_filter))
+            .and(qm_graphql_filter))
         .or(warp::get2()
             .and(warp::path("playground"))
             .and(playground_filter("/graphql", "/subscriptions")))

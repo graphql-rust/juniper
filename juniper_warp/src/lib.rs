@@ -42,6 +42,7 @@ Check the LICENSE file for details.
 
 use std::pin::Pin;
 use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use futures03::channel::mpsc;
 use futures::{future::poll_fn};
@@ -380,7 +381,7 @@ where
 
 /// FIXME: docs
 #[cfg(feature = "async")]
-pub fn make_graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
+pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
     websocket: warp::ws::WebSocket,
     schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
     context: Context
@@ -398,7 +399,9 @@ where
 {
     let (mut user_ws_tx, mut user_ws_rx) = websocket.split();
 
-     let (tx, rx) = mpsc::unbounded();
+    let got_close_signal = Arc::new(AtomicBool::new(false));
+
+    let (mut tx, rx) = mpsc::unbounded();
      warp::spawn(
          rx
              .forward(user_ws_tx)
@@ -411,13 +414,13 @@ where
 
     let schema = Arc::new(schema);
     let context = Arc::new(context);
-//    let mut user_ws_tx = Arc::new(user_ws_tx);
 
     user_ws_rx
         .then(move |msg| {
             let schema = schema.clone();
             let context = context.clone();
-            let user_tx = tx.clone();
+            let mut user_tx = tx.clone();
+            let got_close_signal = got_close_signal.clone();
 
             async move {
                 let msg = msg.unwrap();
@@ -433,88 +436,58 @@ where
                     "connection_init" => { },
                     "start" => {
                         println!("message payload: {:#?}", request.payload);
-                        let payload = request.payload.unwrap();
 
-                        // execute subscription
-                        let graphql_request = GraphQLRequest::<S>::new(
-                            payload.query.unwrap(),
-                            None,
-                            //todo: variables
-                            None,
+                        warp::spawn(async move {
+                            let payload = request.payload.unwrap();
+
+                            // execute subscription
+                            let graphql_request = GraphQLRequest::<S>::new(
+                                payload.query.unwrap(),
+                                None,
+                                //todo: variables
+                                None,
 //                            payload.variables.map(|s| juniper::InputValue::Object(s)),
-                        );
+                            );
 
-                        let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
-                        let response_stream = graphql_request.subscribe_async(
-                            &schema,
-                            &context,
-                            &mut executor
-                        )
-                            .await;
+                            let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
+                            let response_stream = graphql_request.subscribe_async(
+                                &schema,
+                                &context,
+                                &mut executor
+                            )
+                                .await;
 
-                        let stream = response_stream
-                            .into_stream()
-                            .expect("Response stream is none");
+                            let stream = response_stream
+                                .into_stream()
+                                .expect("Response stream is none");
 
-                        stream.for_each(move |response| {
-                            let mut response_text = serde_json::to_string(&response).unwrap();
-                            println!("Got response {:?}", response_text);
-                            response_text = format!(r#"
-                            {{"type":"data","id":"1","payload":{} }}
-                            "#, response_text);
-                            println!("    will send response {:?}", response_text);
+                            stream.for_each(move |response| {
+                                if got_close_signal.load(Ordering::Relaxed) {
+                                    println!("closing channel");
+                                    user_tx.close();
+                                    user_tx.disconnect();
+                                }
 
+                                let mut response_text = serde_json::to_string(&response).unwrap();
+                                response_text = format!(r#"{{"type":"data","id":"1","payload":{} }}"#, response_text);
+                                println!("will send response {:?}", response_text);
 
-                            println!("unbounded_send: {:?}", user_tx.unbounded_send(Ok(Message::text(response_text.clone()))));
+                                println!("unbounded_send: {:?}", user_tx.unbounded_send(Ok(Message::text(response_text.clone()))));
 
-                            async move {
-//                                    let mut user_tx = Arc::get_mut(&mut user_ws_tx).expect("unable to get mut reference");
-//                                    user_tx.send(Message::text(response_text.clone())).await;
-                            }
-                        }).await;
-
+                                async move {}
+                            }).await;
+                        });
                     },
-                    "stop" => { },
+                    "stop" => {
+                        println!("===== Got stop message =====");
+                        got_close_signal.store(true, Ordering::Relaxed);
+                    },
                     _ => panic!("unknown type")
                 }
 
             }
         })
         .for_each(|x| { async {} })
-////        .for_each(move |response_stream: Option<_>| {
-////            if let Some(r_stream) = response_stream {
-////                async move {
-////                    stream
-////                        .for_each(move |response| {
-////                            let response_text = serde_json::to_string(&response).unwrap();
-////                            println!("Got response {:?}", response_text);
-////                            async {}
-////                        }).await;
-////                }
-////            }
-////            else {
-////                async {}
-////            }
-////        })
-////                .map(move |x| {
-////                    user_ws_tx.send(Message::text(x.clone()));
-////                })
-////        })
-////        .map(|response_text| {
-//
-////            let user_tx = user_ws_tx.clone();
-//
-////                        match
-////            user_ws_tx.send(Message::text(response_text.clone()));
-////                            {
-////                            Ok(()) => (),
-////                            Err(_disconnected) => {
-////                                ()
-////                                // The tx is disconnected, our `user_disconnected` code
-////                                // should be happening in another task, nothing more to
-////                                // do here.
-////                            }
-////        })
         .then(move |result| {
             println!("Got result: {:?}", result);
             async {}
