@@ -461,8 +461,9 @@ where
                                 .into_stream()
                                 .expect("Response stream is none");
 
-                            stream.for_each(move |response| {
-                                if got_close_signal.load(Ordering::Relaxed) {
+                            stream.take_while(move |response| {
+                                let closed = got_close_signal.load(Ordering::Relaxed);
+                                if closed {
                                     println!("closing channel");
                                     user_tx.close();
                                     user_tx.disconnect();
@@ -474,8 +475,10 @@ where
 
                                 println!("unbounded_send: {:?}", user_tx.unbounded_send(Ok(Message::text(response_text.clone()))));
 
-                                async move {}
-                            }).await;
+                                async move { !closed }
+                            })
+                                .for_each(|_| async {})
+                                .await;
                         });
                     },
                     "stop" => {
