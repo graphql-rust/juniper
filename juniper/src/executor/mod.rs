@@ -1053,7 +1053,7 @@ where
         value = match op.item.operation_type {
             OperationType::Query => {
                 executor
-                    .resolve_into_value_async(&root_node.query_info, &root_node.query_type)
+                    .resolve_into_value_async(&root_node.query_info, &root_node)
                     .await
             }
             OperationType::Mutation => {

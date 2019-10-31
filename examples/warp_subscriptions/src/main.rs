@@ -47,7 +47,7 @@ use tokio::timer::Interval;
 use warp::{Filter, http::Response};
 
 use juniper::{
-    EmptyMutation, FieldError,
+    FieldError,
     RootNode,
 };
 use juniper_warp::playground_filter;
@@ -69,6 +69,11 @@ struct User {
     kind: UserKind,
     name: String,
 }
+
+struct EmptyMutation {}
+
+#[juniper::object(Context = Context)]
+impl EmptyMutation {}
 
 #[juniper::object(Context = Context)]
 impl User {
@@ -183,10 +188,10 @@ impl MySubscription {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>, MySubscription>;
+type Schema = RootNode<'static, Query, EmptyMutation, MySubscription>;
 
 fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation::<Context>::new(), MySubscription)
+    Schema::new(Query, EmptyMutation {}, MySubscription)
 }
 
 #[tokio::main]

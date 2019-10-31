@@ -302,6 +302,7 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
 pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
+        graphql_endpoint_url,
     ))
 }
 
