@@ -162,13 +162,6 @@ async fn main() {
 
     let log = warp::log("warp_server");
 
-    // TODO: get original example back, move this example to separate folder
-    // create new graphql schema1
-    // init new playground
-    //                              keep and manage ws connections
-    // create new ws connection
-    // send stuff over ws connection
-
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")

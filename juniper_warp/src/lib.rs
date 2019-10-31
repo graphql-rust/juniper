@@ -40,25 +40,26 @@ Check the LICENSE file for details.
 //#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::RwLock;
-
-use futures::future::poll_fn;
-use futures03::channel::mpsc;
-use futures03::Future;
-use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
-use warp::{filters::BoxedFilter, Filter};
+use std::{
+    borrow::BorrowMut, collections::HashMap,
+    iter::FromIterator, pin::Pin,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
+};
 
 #[cfg(feature = "async")]
 use futures03::{future::FutureExt, sink::SinkExt, stream::StreamExt};
-
-use juniper::http::{GraphQLRequest, StreamGraphQLResponse};
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
-use std::borrow::BorrowMut;
-use std::collections::HashMap;
+use futures03::channel::mpsc;
+use futures03::Future;
+use futures::future::poll_fn;
+use serde::{Deserialize, Serialize};
+use warp::{Filter, filters::BoxedFilter};
 use warp::ws::Message;
+
+use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
+use juniper::http::{GraphQLRequest, StreamGraphQLResponse};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -433,7 +434,7 @@ where
 
             let schema = schema.clone();
             let context = context.clone();
-            let request: WsPayload = serde_json::from_str(&msg).unwrap();
+            let request: WsPayload<S> = serde_json::from_str(msg).unwrap();
 
             match request.type_name.as_str() {
                 "connection_init" => {}
@@ -444,18 +445,22 @@ where
                         let payload = request.payload.unwrap();
 
                         // execute subscription
-                        let graphql_request = GraphQLRequest::<S>::new(
+                        let graphql_request = GraphQLRequest::<S>
+                        ::new(
                             payload.query.unwrap(),
                             None,
-                            //todo: variables
-                            None,
-                            //                            payload.variables.map(|s| juniper::InputValue::Object(s)),
+                            payload.variables
                         );
 
                         let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
                         let response_stream = graphql_request
                             .subscribe_async(&schema, &context, &mut executor)
                             .await;
+
+                        if let Some(error) = response_stream.errors() {
+                            println!("Error occured: {:#?}", error);
+                            panic!("Response stream is none");
+                        }
 
                         let stream = response_stream
                             .into_stream()
@@ -517,17 +522,27 @@ where
 }
 
 #[derive(Deserialize)]
-struct WsPayload {
+#[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
+struct WsPayload<S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        for<'b> &'b S: ScalarRefValue<'b>,
+{
     id: Option<String>,
     #[serde(rename(deserialize = "type"))]
     type_name: String,
-    payload: Option<GraphQLPayload>,
+    payload: Option<GraphQLPayload<S>>,
     //    payload: Option<GraphQLRequest>,
 }
 
 #[derive(Debug, Deserialize)]
-struct GraphQLPayload {
-    variables: Option<HashMap<String, String>>,
+#[serde(bound = "InputValue<S>: Deserialize<'de>")]
+struct GraphQLPayload<S>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    variables: Option<InputValue<S>>,
     extensions: Option<HashMap<String, String>>,
     operatonName: Option<String>,
     query: Option<String>,
@@ -617,8 +632,9 @@ fn playground_response(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use warp::{http, test::request};
+
+    use super::*;
 
     #[test]
     fn graphiql_response_does_not_panic() {
@@ -779,13 +795,15 @@ mod tests {
 
 #[cfg(test)]
 mod tests_http_harness {
-    use super::*;
-    use juniper::{
-        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
-        tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
-    };
     use warp::{self, Filter};
+
+    use juniper::{
+        EmptyMutation,
+        http::tests::{HTTPIntegration, run_http_test_suite, TestResponse},
+        RootNode, tests::{model::Database, schema::Query},
+    };
+
+    use super::*;
 
     type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
 

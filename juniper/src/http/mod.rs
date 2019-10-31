@@ -277,6 +277,11 @@ impl<'a, S> IteratorGraphQLResponse<'a, S> {
     pub fn into_inner(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
         self.0
     }
+
+    /// Return self's errors (if any)
+    pub fn errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
+        self.0.as_ref().err()
+    }
 }
 
 impl<'a, S> IteratorGraphQLResponse<'a, S>
@@ -344,6 +349,11 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
     pub fn into_inner(self) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>> {
         self.0
     }
+
+    /// Return self's errors (if any)
+    pub fn errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
+        self.0.as_ref().err()
+    }
 }
 
 #[cfg(feature = "async")]
@@ -365,7 +375,9 @@ where
     ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>> {
         let val = match self.0 {
             Ok(val) => val,
-            Err(_) => return None,
+            Err(e) => {
+                return None
+            },
         };
 
         match val {
@@ -377,7 +389,7 @@ where
                     GraphQLResponse::from_result(Ok((value, vec![])))
                 })))
             }
-            Value::List(_) => None,
+            Value::List(_) => { None },
             Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
 
