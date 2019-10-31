@@ -35,20 +35,21 @@
 //! ```
 //!
 
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    time::Duration,
+    pin::Pin, sync::Arc,
+};
 
-use futures::future::{Future, PollFn};
-use futures::{future, FutureExt, Poll, StreamExt};
-use serde::Deserialize;
-use tokio::sync::mpsc;
+use futures::{
+    Future, FutureExt,
+};
 use tokio::timer::Interval;
-use warp::{http::Response, Filter, Stream};
+use warp::{Filter, http::Response};
 
-use juniper::http::GraphQLRequest;
-use juniper::{EmptyMutation, FieldError, RootNode};
+use juniper::{
+    EmptyMutation, FieldError,
+    RootNode,
+};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -217,7 +218,7 @@ async fn main() {
         .and(state2.clone())
         .and(warp::any().map(move || Arc::clone(&s_schema)))
         .map(|ws: warp::ws::Ws2, ctx: Context, schema: Arc<Schema>| {
-            ws.on_upgrade(|websocket| -> Pin<Box<Future<Output = ()> + Send>> {
+            ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
                 println!("ws connected");
                 juniper_warp::graphql_subscriptions_async(websocket, schema, ctx).boxed()
             })
@@ -228,7 +229,8 @@ async fn main() {
     .or(warp::get2()
         .and(warp::path("playground"))
         .and(playground_filter("/graphql", "/subscriptions")))
-    .or(homepage);
+    .or(homepage)
+    .with(log);
 
     warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
 }

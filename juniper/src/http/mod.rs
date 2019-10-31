@@ -278,7 +278,7 @@ impl<'a, S> IteratorGraphQLResponse<'a, S> {
         self.0
     }
 
-    /// Return self's errors (if any)
+    /// Return reference to self's errors (if any)
     pub fn errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
         self.0.as_ref().err()
     }
@@ -350,7 +350,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
         self.0
     }
 
-    /// Return self's errors (if any)
+    /// Return reference to self's errors (if any)
     pub fn errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
         self.0.as_ref().err()
     }

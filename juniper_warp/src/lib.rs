@@ -41,25 +41,23 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use std::{
-    borrow::BorrowMut, collections::HashMap,
-    iter::FromIterator, pin::Pin,
+    collections::HashMap, pin::Pin,
     sync::{
-        Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        Arc, atomic::{AtomicBool, Ordering},
     },
 };
 
 #[cfg(feature = "async")]
-use futures03::{future::FutureExt, sink::SinkExt, stream::StreamExt};
-use futures03::channel::mpsc;
-use futures03::Future;
+use futures03::{
+    future::FutureExt, stream::StreamExt,
+    channel::mpsc, Future,
+};
 use futures::future::poll_fn;
 use serde::{Deserialize, Serialize};
-use warp::{Filter, filters::BoxedFilter};
-use warp::ws::Message;
+use warp::{Filter, filters::BoxedFilter, ws::Message};
 
 use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
-use juniper::http::{GraphQLRequest, StreamGraphQLResponse};
+use juniper::http::GraphQLRequest;
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -388,16 +386,14 @@ where
     Subscription: juniper::SubscriptionHandlerAsync<S, Context = Context> + Send + Sync + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
-    let (mut sink_tx, mut sink_rx) = websocket.split();
-    let (mut ws_tx, ws_rx) = mpsc::unbounded();
+    let (sink_tx, sink_rx) = websocket.split();
+    let (ws_tx, ws_rx) = mpsc::unbounded();
     warp::spawn(
         ws_rx
-            .take_while(|x| {
-                if let Some(y) = x {
-                    futures03::future::ready(true)
-                } else {
-                    futures03::future::ready(false)
-                }
+            .take_while(|x: &Option<_>| {
+                // keep this stream until `None` is received
+                let keep_going = x.is_some();
+                futures03::future::ready(keep_going)
             })
             .map(|x| x.unwrap())
             .forward(sink_tx)
@@ -439,10 +435,14 @@ where
             match request.type_name.as_str() {
                 "connection_init" => {}
                 "start" => {
-                    let mut ws_tx = ws_tx.clone();
+                    let ws_tx = ws_tx.clone();
 
                     warp::spawn(async move {
-                        let payload = request.payload.unwrap();
+                        let payload = request.payload.expect("could not deserialize payload");
+                        let request_id = request.id.unwrap_or_else(|| {
+                            println!("id not provided, using '1'");
+                            "1".to_string()
+                        });
 
                         // execute subscription
                         let graphql_request = GraphQLRequest::<S>
@@ -468,10 +468,11 @@ where
 
                         stream
                             .take_while(move |response| {
+                                let request_id = request_id.clone();
                                 let closed = got_close_signal.load(Ordering::Relaxed);
                                 if closed {
                                     let close_text =
-                                        r#"{"type":"complete","id":"1","payload":null}"#;
+                                        format!(r#"{{"type":"complete","id":"{}","payload":null}}"#, request_id);
 
                                     println!(
                                         "sending last message: {:?}",
@@ -484,7 +485,8 @@ where
                                     let mut response_text =
                                         serde_json::to_string(&response).unwrap();
                                     response_text = format!(
-                                        r#"{{"type":"data","id":"1","payload":{} }}"#,
+                                        r#"{{"type":"data","id":"{}","payload":{} }}"#,
+                                        request_id,
                                         response_text
                                     );
                                     println!("will send response {:?}", response_text);
@@ -511,8 +513,8 @@ where
 
             futures03::future::ready(())
         })
-        .for_each(|x| {
-            println!("for each running");
+        .for_each(|_| {
+            // empty `for_each` here to keep executing this stream
             async {}
         })
         .then(move |result| {
@@ -544,7 +546,8 @@ where
 {
     variables: Option<InputValue<S>>,
     extensions: Option<HashMap<String, String>>,
-    operatonName: Option<String>,
+    #[serde(rename(deserialize = "operationName"))]
+    operaton_name: Option<String>,
     query: Option<String>,
 }
 
