@@ -1,4 +1,10 @@
-use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
+use std::{
+    borrow::Cow,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::{self, Debug, Display},
+    sync::RwLock,
+};
 
 use fnv::FnvHashMap;
 
@@ -123,14 +129,26 @@ where
 /// Field errors are represented by a human-readable error message and an
 /// optional `Value` structure containing additional information.
 ///
-/// They can be converted to from any type that implements `std::fmt::Display`,
-/// which makes error chaining with the `?` operator a breeze:
+/// They can be converted to from `&str` or `String` which makes error
+/// chaining with the `?` operator a breeze:
 ///
 /// ```rust
 /// # use juniper::{FieldError, ScalarValue};
 /// fn get_string(data: Vec<u8>) -> Result<String, FieldError>
 /// {
-///     let s = String::from_utf8(data)?;
+///     let s = String::from_utf8(data).map_err(|e| e.to_string())?;
+///     Ok(s)
+/// }
+/// ```
+///
+/// You can also use `FieldError::from_error` with anything that
+/// implements `std::error::Error`:
+///
+/// ```rust
+/// # use juniper::{FieldError, ScalarValue};
+/// fn get_string(data: Vec<u8>) -> Result<String, FieldError>
+/// {
+///     let s = String::from_utf8(data).map_err(FieldError::from_error)?;
 ///     Ok(s)
 /// }
 /// ```
@@ -140,13 +158,43 @@ pub struct FieldError<S = DefaultScalarValue> {
     extensions: Value<S>,
 }
 
-impl<T: Display, S> From<T> for FieldError<S>
+impl<S> FieldError<S>
+where
+    S: ScalarValue,
+{
+    /// Create a `FieldError` from another error.
+    pub fn from_error<E>(error: E) -> FieldError<S>
+    where
+        E: std::error::Error,
+    {
+        FieldError::from(error.to_string())
+    }
+}
+
+impl<S: Display + Debug + ScalarValue> std::error::Error for FieldError<S> {}
+
+impl<S: Display + ScalarValue> fmt::Display for FieldError<S> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} with extensions {}", self.message, self.extensions)
+    }
+}
+
+impl<S> From<&str> for FieldError<S>
 where
     S: crate::value::ScalarValue,
 {
-    fn from(e: T) -> FieldError<S> {
+    fn from(message: &str) -> FieldError<S> {
+        FieldError::from(message.to_owned())
+    }
+}
+
+impl<S> From<String> for FieldError<S>
+where
+    S: crate::value::ScalarValue,
+{
+    fn from(message: String) -> FieldError<S> {
         FieldError {
-            message: format!("{}", e),
+            message,
             extensions: Value::null(),
         }
     }
