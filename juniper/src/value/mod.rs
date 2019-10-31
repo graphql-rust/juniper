@@ -2,6 +2,7 @@ use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
 };
+use std::fmt::{self, Display, Formatter};
 mod object;
 mod scalar;
 
@@ -178,6 +179,46 @@ impl<S: ScalarValue> ToInputValue<S> for Value<S> {
     }
 }
 
+impl<S: ScalarValue> Display for Value<S> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Value::Null => write!(f, "null"),
+            Value::Scalar(s) => {
+                if let Some(string) = s.as_string() {
+                    write!(f, "\"{}\"", string)
+                } else {
+                    write!(f, "{}", s)
+                }
+            }
+            Value::List(list) => {
+                write!(f, "[")?;
+                for (idx, item) in list.iter().enumerate() {
+                    write!(f, "{}", item)?;
+                    if idx < list.len() - 1 {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, "]")?;
+
+                Ok(())
+            }
+            Value::Object(obj) => {
+                write!(f, "{{")?;
+                for (idx, (key, value)) in obj.iter().enumerate() {
+                    write!(f, "\"{}\": {}", key, value)?;
+
+                    if idx < obj.field_count() - 1 {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, "}}")?;
+
+                Ok(())
+            }
+        }
+    }
+}
+
 impl<S, T> From<Option<T>> for Value<S>
 where
     S: ScalarValue,
@@ -344,5 +385,83 @@ mod tests {
                     .collect(),
             )
         );
+    }
+
+    #[test]
+    fn display_null() {
+        let s: Value<DefaultScalarValue> = graphql_value!(None);
+        assert_eq!("null", format!("{}", s));
+    }
+
+    #[test]
+    fn display_int() {
+        let s: Value<DefaultScalarValue> = graphql_value!(123);
+        assert_eq!("123", format!("{}", s));
+    }
+
+    #[test]
+    fn display_float() {
+        let s: Value<DefaultScalarValue> = graphql_value!(123.456);
+        assert_eq!("123.456", format!("{}", s));
+    }
+
+    #[test]
+    fn display_string() {
+        let s: Value<DefaultScalarValue> = graphql_value!("foo");
+        assert_eq!("\"foo\"", format!("{}", s));
+    }
+
+    #[test]
+    fn display_bool() {
+        let s: Value<DefaultScalarValue> = graphql_value!(false);
+        assert_eq!("false", format!("{}", s));
+
+        let s: Value<DefaultScalarValue> = graphql_value!(true);
+        assert_eq!("true", format!("{}", s));
+    }
+
+    #[test]
+    fn display_list() {
+        let s: Value<DefaultScalarValue> = graphql_value!([1, None, "foo"]);
+        assert_eq!("[1, null, \"foo\"]", format!("{}", s));
+    }
+
+    #[test]
+    fn display_list_one_element() {
+        let s: Value<DefaultScalarValue> = graphql_value!([1]);
+        assert_eq!("[1]", format!("{}", s));
+    }
+
+    #[test]
+    fn display_list_empty() {
+        let s: Value<DefaultScalarValue> = graphql_value!([]);
+        assert_eq!("[]", format!("{}", s));
+    }
+
+    #[test]
+    fn display_object() {
+        let s: Value<DefaultScalarValue> = graphql_value!({
+            "int": 1,
+            "null": None,
+            "string": "foo",
+        });
+        assert_eq!(
+            r#"{"int": 1, "null": null, "string": "foo"}"#,
+            format!("{}", s)
+        );
+    }
+
+    #[test]
+    fn display_object_one_field() {
+        let s: Value<DefaultScalarValue> = graphql_value!({
+            "int": 1,
+        });
+        assert_eq!(r#"{"int": 1}"#, format!("{}", s));
+    }
+
+    #[test]
+    fn display_object_empty() {
+        let s = Value::<DefaultScalarValue>::object(Object::with_capacity(0));
+        assert_eq!(r#"{}"#, format!("{}", s));
     }
 }
