@@ -402,10 +402,23 @@ where
     let got_close_signal = Arc::new(AtomicBool::new(false));
 
     let (mut tx, rx) = mpsc::unbounded();
+
      warp::spawn(
          rx
+             .take_while(|x| {
+                 if let Some(y) = x {
+                    futures03::future::ready(true)
+                 }
+                 else {
+                     futures03::future::ready(false)
+                 }
+             })
+             .map(|x| {
+                 x.unwrap()
+             })
              .forward(user_ws_tx)
              .map(|result| {
+                 println!("CLOSED CONNECTION with result: {:?}", result);
                  if let Err(e) = result {
                      println!("websocket send error: {}", e);
                  }
@@ -417,82 +430,99 @@ where
 
     user_ws_rx
         .then(move |msg| {
+            if msg.is_err() {
+                println!("Message is error: {:?}", msg);
+                return futures03::future::ready(());
+            }
+            let msg = msg.unwrap();
+
+            if msg.is_close() {
+                println!("Message is close");
+                return futures03::future::ready(());
+            }
             let schema = schema.clone();
             let context = context.clone();
-            let mut user_tx = tx.clone();
             let got_close_signal = got_close_signal.clone();
 
-            async move {
-                let msg = msg.unwrap();
-                println!("got message: {:?}", msg);
-                let msg = msg.to_str().unwrap();
-                println!("   message text: {}", msg);
 
-                let schema = schema.clone();
-                let context = context.clone();
-                let request: WS = serde_json::from_str(&msg).unwrap();
+            let msg = msg.to_str().unwrap();
+            println!("   message text: {}", msg);
 
-                match request.type_name.as_str() {
-                    "connection_init" => { },
-                    "start" => {
-                        println!("message payload: {:#?}", request.payload);
+            let schema = schema.clone();
+            let context = context.clone();
+            let request: WS = serde_json::from_str(&msg).unwrap();
 
-                        warp::spawn(async move {
-                            let payload = request.payload.unwrap();
+            match request.type_name.as_str() {
+                "connection_init" => {},
+                "start" => {
+                    println!("message payload: {:#?}", request.payload);
 
-                            // execute subscription
-                            let graphql_request = GraphQLRequest::<S>::new(
-                                payload.query.unwrap(),
-                                None,
-                                //todo: variables
-                                None,
+                    let mut user_tx = tx.clone();
+
+                    warp::spawn(async move {
+                        let payload = request.payload.unwrap();
+
+                        // execute subscription
+                        let graphql_request = GraphQLRequest::<S>::new(
+                            payload.query.unwrap(),
+                            None,
+                            //todo: variables
+                            None,
 //                            payload.variables.map(|s| juniper::InputValue::Object(s)),
-                            );
+                        );
 
-                            let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
-                            let response_stream = graphql_request.subscribe_async(
-                                &schema,
-                                &context,
-                                &mut executor
-                            )
-                                .await;
+                        let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
+                        let response_stream = graphql_request.subscribe_async(
+                            &schema,
+                            &context,
+                            &mut executor
+                        )
+                            .await;
 
-                            let stream = response_stream
-                                .into_stream()
-                                .expect("Response stream is none");
+                        let stream = response_stream
+                            .into_stream()
+                            .expect("Response stream is none");
 
-                            stream.take_while(move |response| {
-                                let closed = got_close_signal.load(Ordering::Relaxed);
-                                if closed {
-                                    println!("closing channel");
-                                    user_tx.close();
-                                    user_tx.disconnect();
-                                }
+                        stream.take_while(move |response| {
+                            let closed = got_close_signal.load(Ordering::Relaxed);
+                            if closed {
+                                let close_text = r#"{"type":"complete","id":"1","payload":null}"#;
 
+                                println!("sending last message: {:?}", user_tx.unbounded_send(Some(
+                                    Ok(Message::text(close_text.clone())))
+                                ));
+                                println!("closing channel: {:?}", user_tx.unbounded_send(None));
+
+                                user_tx.close();
+                                user_tx.disconnect();
+                            }
+                            else {
                                 let mut response_text = serde_json::to_string(&response).unwrap();
                                 response_text = format!(r#"{{"type":"data","id":"1","payload":{} }}"#, response_text);
                                 println!("will send response {:?}", response_text);
 
-                                println!("unbounded_send: {:?}", user_tx.unbounded_send(Ok(Message::text(response_text.clone()))));
-
-                                async move { !closed }
-                            })
-                                .for_each(|_| async {})
-                                .await;
-                        });
-                    },
-                    "stop" => {
-                        println!("===== Got stop message =====");
-                        got_close_signal.store(true, Ordering::Relaxed);
-                    },
-                    _ => panic!("unknown type")
-                }
-
+                                println!("unbounded_send: {:?}", user_tx.unbounded_send(Some(
+                                    Ok(Message::text(response_text.clone())))
+                                ));
+                            }
+                            async move { !closed }
+                        })
+                            .for_each(|_| async {})
+                            .await;
+                    });
+                },
+                "stop" => {
+                    println!("===== Got stop message =====");
+                    got_close_signal.store(true, Ordering::Relaxed);
+                },
+                _ => panic!("unknown type")
             }
+
+            futures03::future::ready(())
         })
-        .for_each(|x| { async {} })
+        .for_each(|x| { println!("for each running"); async {} })
         .then(move |result| {
-            println!("Got result: {:?}", result);
+            println!("CLOSED CONNECTION. then result: {:?}", result);
             async {}
         })
 
