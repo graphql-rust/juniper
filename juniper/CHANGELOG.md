@@ -1,6 +1,17 @@
 # master
 
-- No changes yet
+- All error types now implement `std::error::Error`:
+  - `FieldError`
+  - `GraphQLError`
+  - `LexerError`
+  - `ParseError`
+  - `RuleError`
+- `impl From<T> for FieldError where T: Display` has been removed in favor of:
+  - `impl From<String> for FieldError`
+  - `impl From<&str> for FieldError`
+  - `FieldError::from_error`
+
+See [#419](https://github.com/graphql-rust/juniper/pull/419).
 
 # [[0.14.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.1)
 
