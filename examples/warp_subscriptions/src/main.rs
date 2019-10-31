@@ -1,6 +1,39 @@
 //!
 //! This example demonstrates async/await usage with warp.
-//! NOTE: this uses tokio 0.1 , not the alpha tokio 0.2.
+//! NOTE: this uses tokio 0.2.alpha
+//!
+//!
+//! # Error variable is not set when trying to resolve subscription
+//!
+//! GraphQL Playground does not send variables with subscriptions for some reason
+//! The following js code can be used to test variables with subscriptions:
+//! ```js
+//!  // Create WebSocket connection.
+//!  let socket = new WebSocket('ws://localhost:8080/subscriptions');
+//!
+//!  // Send query once connection was opened
+//!  socket.addEventListener('open', function (event) {
+//!      let query = '{"id":"1","type":"start","payload":{"variables":{"withFriends": true},"extensions":{},"operationName":null,"query":"subscription {  users {    id    name    friends {      id      name    }  }}"}}';
+//!      socket.send(query);
+//!  });
+//!
+//!  // Print message that connection was closed
+//!  socket.addEventListener('close', function (event) {
+//!      console.log('================================================');
+//!      console.log('============= CLOSED CONNECTION ================');
+//!      console.log('================================================');
+//!
+//!  });
+//!
+//!  // Print every message from server
+//!  socket.addEventListener('message', function (event) {
+//!      console.log('Message from server ', event.data);
+//!  });
+//!
+//!  // Paste this separatly to stop subscription execution
+//!  socket.send('{"id":"1","type":"stop"}')
+//! ```
+//!
 
 use std::collections::HashMap;
 use std::pin::Pin;
@@ -134,7 +167,7 @@ impl MySubscription {
     async fn users() -> User {
         let mut counter = 0;
 
-        let stream = Interval::new_interval(Duration::from_secs(1)).map(move |_| {
+        let stream = Interval::new_interval(Duration::from_secs(8)).map(move |_| {
             counter += 1;
             User {
                 id: counter,
