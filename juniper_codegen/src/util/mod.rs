@@ -638,6 +638,11 @@ pub fn unraw(s: &str) -> String {
     quote::format_ident!("{}", s).unraw().to_string()
 }
 
+pub fn unraw(s: &str) -> String {
+    use syn::ext::IdentExt;
+    quote::format_ident!("{}", s).unraw().to_string()
+}
+
 /// Definition of a graphql type based on information extracted
 /// by various macros.
 /// The definition can be rendered to Rust code.
