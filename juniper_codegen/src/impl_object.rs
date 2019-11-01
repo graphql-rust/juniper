@@ -41,10 +41,28 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         }
     }
 
-    let name = if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
-        ident
-    } else {
-        panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+    let name = match impl_attrs.name.as_ref() {
+        Some(type_name) => type_name.clone(),
+        None => {
+            let error_msg = "Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")";
+
+            let path = match &*_impl.self_ty {
+                syn::Type::Path(ref type_path) => &type_path.path,
+                syn::Type::Reference(ref reference) => match &*reference.elem {
+                    syn::Type::Path(ref type_path) => &type_path.path,
+                    syn::Type::TraitObject(ref trait_obj) => {
+                        match trait_obj.bounds.iter().nth(0).unwrap() {
+                            syn::TypeParamBound::Trait(ref trait_bound) => &trait_bound.path,
+                            _ => panic!(error_msg),
+                        }
+                    }
+                    _ => panic!(error_msg),
+                },
+                _ => panic!(error_msg),
+            };
+
+            path.segments.iter().last().unwrap().ident.to_string()
+        }
     };
 
     let target_type = *_impl.self_ty.clone();
