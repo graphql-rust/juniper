@@ -96,25 +96,6 @@ macro_rules! __juniper_insert_generic {
     };
 }
 
-// TODO: remove me.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __juniper_extract_generic {
-    (<$name:ident>) => {
-        $name
-    };
-    (
-        <$generic:tt $(: $bound: tt)*>
-    ) => {
-        $generic
-    };
-    (
-        $scalar: ty
-    ) => {
-        $scalar
-    };
-}
-
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __juniper_parse_object_header {
