@@ -165,12 +165,12 @@ impl Query {
     }
 }
 
-struct MySubscription;
+struct Subscription;
 
 #[juniper::subscription(
     Context = Context
 )]
-impl MySubscription {
+impl Subscription {
     async fn users() -> User {
         let mut counter = 0;
 
@@ -189,10 +189,10 @@ impl MySubscription {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>, juniper::EmptySubscription<Context>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
 
 fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation::new(), juniper::EmptySubscription::new())
+    Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
 #[tokio::main]
