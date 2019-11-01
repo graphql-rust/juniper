@@ -1,6 +1,6 @@
 # master
 
-- No changes yet
+- Correctly handle raw identifiers in field and argument names.
 
 # [[0.14.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.1)
 

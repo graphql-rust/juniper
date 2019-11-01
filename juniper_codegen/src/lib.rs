@@ -352,6 +352,24 @@ impl Query {
 }
 ```
 
+## Raw identifiers
+
+You can use [raw identifiers](https://doc.rust-lang.org/stable/edition-guide/rust-2018/module-system/raw-identifiers.html)
+if you want a GrahpQL field that happens to be a Rust keyword:
+
+```
+struct User {
+    r#type: String,
+}
+
+#[juniper::object]
+impl User {
+    fn r#type(&self) -> &str {
+        &self.r#type
+    }
+}
+```
+
 */
 #[proc_macro_attribute]
 pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
