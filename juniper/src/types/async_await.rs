@@ -13,8 +13,7 @@ use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
-// todo: async trait
-//#[async_trait]
+#[async_trait]
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -22,43 +21,38 @@ where
     S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn resolve_field_async<'a>(
+    async fn resolve_field_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         field_name: &'a str,
         arguments: &'a Arguments<'a, S>,
         executor: &'a Executor<'a, Self::Context, S>,
-    ) ->  BoxFuture<'a, ExecutionResult<S>> {
+    ) -> ExecutionResult<S> {
         panic!("resolve_field must be implemented by object types");
     }
 
-    fn resolve_async<'a>(
+    async fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, Self::Context, S>,
-    ) -> BoxFuture<'a, Value<S>> {
+    ) -> Value<S> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_async(self, info, selection_set, executor)
+            resolve_selection_set_into_async(self, info, selection_set, executor).await
         } else {
             panic!("resolve() must be implemented by non-object output types");
         }
     }
 
-    fn resolve_into_type_async<'a>(
+    async fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, Self::Context, S>,
-    ) ->  BoxFuture<'a, ExecutionResult<S>> {
+    ) -> ExecutionResult<S> {
         if Self::name(info).unwrap() == type_name {
-            Box::pin(
-                async move {
-                    let x = self.resolve_async(info, selection_set, executor).await;
-                    Ok(x)
-                }
-            )
+            Ok(self.resolve_async(info, selection_set, executor).await)
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
         }

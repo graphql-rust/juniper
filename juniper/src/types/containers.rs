@@ -257,6 +257,7 @@ where
 }
 
 #[cfg(feature = "async")]
+#[async_trait::async_trait]
 impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Vec<T>
 where
     T: crate::GraphQLTypeAsync<S, Context = CtxT>,
@@ -265,18 +266,18 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn resolve_async<'a>(
+    async fn resolve_async<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
-        let f = resolve_into_list_async(executor, info, self.iter());
-        Box::pin(f)
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> Value<S> {
+        resolve_into_list_async(executor, info, self.iter()).await
     }
 }
 
 #[cfg(feature = "async")]
+#[async_trait::async_trait]
 impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for &[T]
 where
     T: crate::GraphQLTypeAsync<S, Context = CtxT>,
@@ -285,18 +286,18 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn resolve_async<'a>(
+    async fn resolve_async<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
-        let f = resolve_into_list_async(executor, info, self.iter());
-        Box::pin(f)
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> Value<S> {
+        resolve_into_list_async(executor, info, self.iter()).await
     }
 }
 
 #[cfg(feature = "async")]
+#[async_trait::async_trait]
 impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Option<T>
 where
     T: crate::GraphQLTypeAsync<S, Context = CtxT>,
@@ -305,18 +306,15 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn resolve_async<'a>(
+    async fn resolve_async<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
-        let f = async move {
-            match *self {
-                Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
-                None => Value::null(),
-            }
-        };
-        Box::pin(f)
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> Value<S> {
+        match *self {
+            Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
+            None => Value::null(),
+        }
     }
 }

@@ -925,14 +925,17 @@ impl GraphQLTypeDefiniton {
                 impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
                     #where_async
                 {
-                    fn resolve_field_async<'b>(
+                    fn resolve_field_async<'b, 'async_trait>(
                         &'b self,
                         info: &'b Self::TypeInfo,
                         field: &'b str,
                         args: &'b #juniper_crate_name::Arguments<#scalar>,
                         executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> futures::future::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
-                        where #scalar: Send + Sync,
+                    ) -> futures::future::BoxFuture<'async_trait, #juniper_crate_name::ExecutionResult<#scalar>>
+                        where
+                        #scalar: Send + Sync,
+                        'b: 'async_trait,
+                        Self: 'async_trait,
                     {
                         use futures::future;
                         use #juniper_crate_name::GraphQLType;
