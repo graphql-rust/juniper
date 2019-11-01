@@ -128,11 +128,13 @@ where
             .into_iter()
             .filter(|t| {
                 t.to_concrete()
-                    .map(|t| !(t.name() == Some("_EmptyMutation") || t.name() == Some("_EmptySubscription")))
+                    .map(|t| {
+                        !(t.name() == Some("_EmptyMutation")
+                            || t.name() == Some("_EmptySubscription"))
+                    })
                     .unwrap_or(false)
             })
             .collect::<Vec<_>>()
-
     }
 
     fn query_type(&self) -> TypeType<S> {

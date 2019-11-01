@@ -41,23 +41,22 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use std::{
-    collections::HashMap, pin::Pin,
+    collections::HashMap,
+    pin::Pin,
     sync::{
-        Arc, atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, Ordering},
+        Arc,
     },
 };
 
-#[cfg(feature = "async")]
-use futures03::{
-    future::FutureExt, stream::StreamExt,
-    channel::mpsc, Future,
-};
 use futures::future::poll_fn;
+#[cfg(feature = "async")]
+use futures03::{channel::mpsc, future::FutureExt, stream::StreamExt, Future};
 use serde::{Deserialize, Serialize};
-use warp::{Filter, filters::BoxedFilter, ws::Message};
+use warp::{filters::BoxedFilter, ws::Message, Filter};
 
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 use juniper::http::GraphQLRequest;
+use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -297,7 +296,8 @@ where
     get_filter.or(post_filter).unify().boxed()
 }
 
-/// FIXME: docs
+/// Make a filter for asynchronous graphql endpoint.
+/// Accepts GET and POST requests.
 #[cfg(feature = "async")]
 pub fn make_graphql_filter_async<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
@@ -368,7 +368,9 @@ where
     get_filter.or(post_filter).unify().boxed()
 }
 
-/// FIXME: docs
+/// Listen to `websocket`'s messages and do one of the following:
+///  - execute subscription and return values from stream
+///  - stop stream and close ws connection
 #[cfg(feature = "async")]
 pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
     websocket: warp::ws::WebSocket,
@@ -398,9 +400,8 @@ where
             .map(|x| x.unwrap())
             .forward(sink_tx)
             .map(|result| {
-                println!("CLOSED CONNECTION with result: {:?}", result);
                 if let Err(e) = result {
-                    println!("websocket send error: {}", e);
+                    failure::format_err!("websocket send error: {}", e);
                 }
             }),
     );
@@ -412,13 +413,12 @@ where
     sink_rx
         .then(move |msg| {
             if msg.is_err() {
-                println!("message is error: {:?}", msg);
+                failure::format_err!("message is error: {:?}", msg);
                 return futures03::future::ready(());
             }
             let msg = msg.unwrap();
 
             if msg.is_close() {
-                println!("message is close");
                 return futures03::future::ready(());
             }
             let schema = schema.clone();
@@ -426,7 +426,6 @@ where
             let got_close_signal = got_close_signal.clone();
 
             let msg = msg.to_str().unwrap();
-            println!("message text: {}", msg);
 
             let schema = schema.clone();
             let context = context.clone();
@@ -439,17 +438,13 @@ where
 
                     warp::spawn(async move {
                         let payload = request.payload.expect("could not deserialize payload");
-                        let request_id = request.id.unwrap_or_else(|| {
-                            println!("id not provided, using '1'");
-                            "1".to_string()
-                        });
+                        let request_id = request.id.unwrap_or("1".to_string());
 
                         // execute subscription
-                        let graphql_request = GraphQLRequest::<S>
-                        ::new(
+                        let graphql_request = GraphQLRequest::<S>::new(
                             payload.query.unwrap(),
                             None,
-                            payload.variables
+                            payload.variables,
                         );
 
                         let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
@@ -458,8 +453,8 @@ where
                             .await;
 
                         if let Some(error) = response_stream.errors() {
-                            println!("Error occured: {:#?}", error);
-                            panic!("Response stream is none");
+                            failure::format_err!("Error occured: {:#?}", error);
+                            panic!("Response stream is none (error occured)");
                         }
 
                         let stream = response_stream
@@ -471,32 +466,29 @@ where
                                 let request_id = request_id.clone();
                                 let closed = got_close_signal.load(Ordering::Relaxed);
                                 if closed {
-                                    let close_text =
-                                        format!(r#"{{"type":"complete","id":"{}","payload":null}}"#, request_id);
-
-                                    println!(
-                                        "sending last message: {:?}",
-                                        ws_tx.unbounded_send(Some(Ok(Message::text(
-                                            close_text.clone()
-                                        ))))
+                                    let close_text = format!(
+                                        r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                        request_id
                                     );
-                                    println!("closing channel: {:?}", ws_tx.unbounded_send(None));
+
+                                    // send message that we are closing channel
+                                    ws_tx.unbounded_send(Some(Ok(Message::text(
+                                        close_text.clone(),
+                                    ))));
+
+                                    // close channel
+                                    ws_tx.unbounded_send(None);
                                 } else {
                                     let mut response_text =
                                         serde_json::to_string(&response).unwrap();
                                     response_text = format!(
                                         r#"{{"type":"data","id":"{}","payload":{} }}"#,
-                                        request_id,
-                                        response_text
+                                        request_id, response_text
                                     );
-                                    println!("will send response {:?}", response_text);
 
-                                    println!(
-                                        "unbounded_send: {:?}",
-                                        ws_tx.unbounded_send(Some(Ok(Message::text(
-                                            response_text.clone()
-                                        ))))
-                                    );
+                                    ws_tx.unbounded_send(Some(Ok(Message::text(
+                                        response_text.clone(),
+                                    ))));
                                 }
                                 async move { !closed }
                             })
@@ -505,7 +497,6 @@ where
                     });
                 }
                 "stop" => {
-                    println!("===== Got stop message =====");
                     got_close_signal.store(true, Ordering::Relaxed);
                 }
                 _ => panic!("unknown type"),
@@ -517,24 +508,19 @@ where
             // empty `for_each` here to keep executing this stream
             async {}
         })
-        .then(move |result| {
-            println!("CLOSED CONNECTION. then result: {:?}", result);
-            async {}
-        })
 }
 
 #[derive(Deserialize)]
 #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
 struct WsPayload<S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     id: Option<String>,
     #[serde(rename(deserialize = "type"))]
     type_name: String,
     payload: Option<GraphQLPayload<S>>,
-    //    payload: Option<GraphQLRequest>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -801,9 +787,9 @@ mod tests_http_harness {
     use warp::{self, Filter};
 
     use juniper::{
-        EmptyMutation,
-        http::tests::{HTTPIntegration, run_http_test_suite, TestResponse},
-        RootNode, tests::{model::Database, schema::Query},
+        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, RootNode,
     };
 
     use super::*;

@@ -35,22 +35,13 @@
 //! ```
 //!
 
-use std::{
-    time::Duration,
-    pin::Pin, sync::Arc,
-};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
-use futures::{
-    Future, FutureExt,
-};
+use futures::{Future, FutureExt};
 use tokio::timer::Interval;
-use warp::{Filter, http::Response};
+use warp::{http::Response, Filter};
 
-use juniper::{
-    FieldError,
-    RootNode,
-    EmptyMutation
-};
+use juniper::{EmptyMutation, FieldError, RootNode};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
