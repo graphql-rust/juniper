@@ -49,6 +49,7 @@ use warp::{Filter, http::Response};
 use juniper::{
     FieldError,
     RootNode,
+    EmptyMutation
 };
 use juniper_warp::playground_filter;
 
@@ -70,10 +71,10 @@ struct User {
     name: String,
 }
 
-struct EmptyMutation {}
+//struct EmptyMutation {}
 
-#[juniper::object(Context = Context)]
-impl EmptyMutation {}
+//#[juniper::object(Context = Context)]
+//impl EmptyMutation {}
 
 #[juniper::object(Context = Context)]
 impl User {
@@ -188,10 +189,10 @@ impl MySubscription {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation, MySubscription>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>, juniper::EmptySubscription<Context>>;
 
 fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation {}, MySubscription)
+    Schema::new(Query, EmptyMutation::new(), juniper::EmptySubscription::new())
 }
 
 #[tokio::main]
