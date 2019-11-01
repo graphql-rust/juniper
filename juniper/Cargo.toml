@@ -35,17 +35,16 @@ default = [
 [dependencies]
 juniper_codegen = { version = "0.14.1", path = "../juniper_codegen"  }
 
+async-trait = "0.1.16"
+chrono = { version = "0.4.0", optional = true }
 fnv = "1.0.3"
+futures-preview = { version = "=0.3.0-alpha.19", optional = true }
 indexmap = { version = "1.0.0", features = ["serde-1"] }
 serde = { version = "1.0.8" }
 serde_derive = { version = "1.0.2" }
-
-chrono = { version = "0.4.0", optional = true }
 serde_json = { version="1.0.2", optional = true }
 url = { version = "2", optional = true }
 uuid = { version = "0.7", optional = true }
-
-futures-preview = { version = "=0.3.0-alpha.19", optional = true }
 
 [dev-dependencies]
 bencher = "0.1.2"
