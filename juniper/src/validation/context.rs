@@ -1,4 +1,7 @@
-use std::{collections::HashSet, fmt::{self, Debug}};
+use std::{
+    collections::HashSet,
+    fmt::{self, Debug},
+};
 
 use crate::ast::{Definition, Document, Type};
 
