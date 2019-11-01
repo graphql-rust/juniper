@@ -13,7 +13,10 @@ warp = "0.1.19"
 futures-preview = { version = "0.3.0-alpha.19", features = ["async-await", "compat"] }
 reqwest = "0.9.19"
 
-juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
-juniper = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
-juniper_warp = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
+#juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
+#juniper = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
+#juniper_warp = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
 
+juniper_codegen = { path = "../../juniper_codegen", features = ["async"] }
+juniper = { path = "../../juniper", features = ["async"] }
+juniper_warp = { path = "../../juniper_warp", features = ["async"] }
