@@ -2,7 +2,7 @@
 
 /// Generate the HTML source to show a GraphQL Playground interface
 // source: https://github.com/prisma/graphql-playground/blob/master/packages/graphql-playground-html/withAnimation.html
-pub fn playground_source(graphql_endpoint_url: &str) -> String {
+pub fn playground_source(graphql_endpoint_url: &str, subscriptions_endpoint_url: &str) -> String {
     r##"
 <!DOCTYPE html>
 
@@ -12,9 +12,9 @@ pub fn playground_source(graphql_endpoint_url: &str) -> String {
   <meta charset=utf-8 />
   <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
   <title>GraphQL Playground</title>
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.11/build/static/css/index.css" />
-  <link rel="shortcut icon" href="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.11/build/favicon.png" />
-  <script src="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.11/build/static/js/middleware.js"></script>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.20/build/static/css/index.css" />
+  <link rel="shortcut icon" href="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.20/build/favicon.png" />
+  <script src="//cdn.jsdelivr.net/npm/graphql-playground-react@1.7.20/build/static/js/middleware.js"></script>
 
 </head>
 
@@ -537,10 +537,11 @@ pub fn playground_source(graphql_endpoint_url: &str) -> String {
       const root = document.getElementById('root');
       root.classList.add('playgroundIn');
 
-      GraphQLPlayground.init(root, { endpoint: 'JUNIPER_GRAPHQL_URL' })
+      GraphQLPlayground.init(root, { endpoint: 'JUNIPER_GRAPHQL_URL', subscriptionEndpoint: 'JUNIPER_SUBSCRIPTIONS_URL' })
     })
   </script>
 </body>
 </html>
   "##.replace("JUNIPER_GRAPHQL_URL", graphql_endpoint_url)
+     .replace("JUNIPER_SUBSCRIPTIONS_URL", subscriptions_endpoint_url)
 }
