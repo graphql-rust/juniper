@@ -107,27 +107,15 @@ pub struct Query;
 )]
 /// The root query object of the schema
 impl Query {
-    fn human(
-        database: &Database,
-        #[graphql(description = "id of the human")] id: String,
-    ) -> Option<&dyn Human> {
+    fn human(database: &Database, id: String) -> Option<&dyn Human> {
         database.get_human(&id)
     }
 
-    fn droid(
-        database: &Database,
-        #[graphql(description = "id of the droid")] id: String,
-    ) -> Option<&dyn Droid> {
+    fn droid(database: &Database, id: String) -> Option<&dyn Droid> {
         database.get_droid(&id)
     }
 
-    fn hero(
-        database: &Database,
-        #[graphql(
-            description = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode"
-        )]
-        episode: Option<Episode>,
-    ) -> Option<&dyn Character> {
+    fn hero(database: &Database, episode: Option<Episode>) -> Option<&dyn Character> {
         Some(database.get_hero(episode).as_character())
     }
 }

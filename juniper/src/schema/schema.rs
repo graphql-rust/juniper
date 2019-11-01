@@ -144,10 +144,7 @@ where
         }
     }
 
-    fn fields(
-        &self,
-        #[graphql(default = false)] include_deprecated: bool,
-    ) -> Option<Vec<&Field<S>>> {
+    fn fields(&self, include_deprecated: bool) -> Option<Vec<&Field<S>>> {
         match *self {
             TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
             | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
@@ -232,10 +229,7 @@ where
         }
     }
 
-    fn enum_values(
-        &self,
-        #[graphql(default = false)] include_deprecated: bool,
-    ) -> Option<Vec<&EnumValue>> {
+    fn enum_values(&self, include_deprecated: bool) -> Option<Vec<&EnumValue>> {
         match *self {
             TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
                 values
