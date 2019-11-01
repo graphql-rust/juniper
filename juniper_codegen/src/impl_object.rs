@@ -41,29 +41,18 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         }
     }
 
-    let name = match impl_attrs.name.as_ref() {
-        Some(type_name) => type_name.clone(),
-        None => {
-            let error_msg = "Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")";
 
-            let path = match &*_impl.self_ty {
-                syn::Type::Path(ref type_path) => &type_path.path,
-                syn::Type::Reference(ref reference) => match &*reference.elem {
-                    syn::Type::Path(ref type_path) => &type_path.path,
-                    syn::Type::TraitObject(ref trait_obj) => {
-                        match trait_obj.bounds.iter().nth(0).unwrap() {
-                            syn::TypeParamBound::Trait(ref trait_bound) => &trait_bound.path,
-                            _ => panic!(error_msg),
-                        }
-                    }
-                    _ => panic!(error_msg),
-                },
-                _ => panic!(error_msg),
-            };
-
-            path.segments.iter().last().unwrap().ident.to_string()
-        }
-    };
+    let name =
+    if let Some(name) = impl_attrs.name.as_ref(){
+        name.to_string()
+    }
+    else {
+        if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
+            ident.to_string()
+        } else {
+                panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+            }
+        };
 
     let target_type = *_impl.self_ty.clone();
 
@@ -72,7 +61,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         .or(util::get_doc_comment(&_impl.attrs));
 
     let mut definition = util::GraphQLTypeDefiniton {
-        name: name.to_string(),
+        name: name,
         _type: target_type.clone(),
         context: impl_attrs.context,
         scalar: impl_attrs.scalar,
