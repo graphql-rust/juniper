@@ -41,22 +41,33 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use std::{
-    collections::HashMap,
     pin::Pin,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
+    sync::Arc,
+};
+#[cfg(feature = "async")]
+use std::{
+    collections::HashMap,
+    sync::atomic::{AtomicBool, Ordering},
 };
 
-use futures::future::poll_fn;
+use futures03::{
+    Future, future::FutureExt
+};
 #[cfg(feature = "async")]
-use futures03::{channel::mpsc, future::FutureExt, stream::StreamExt, Future};
-use serde::{Deserialize, Serialize};
-use warp::{filters::BoxedFilter, ws::Message, Filter};
+use futures03::{
+    channel::mpsc, stream::StreamExt,
+};
+use futures::future::poll_fn;
+use serde::Deserialize;
+#[cfg(feature = "async")]
+use serde::Serialize;
+use warp::{Filter, filters::BoxedFilter};
+#[cfg(feature = "async")]
+use warp::ws::Message;
 
-use juniper::http::GraphQLRequest;
 use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
+#[cfg(feature = "async")]
+use juniper::http::GraphQLRequest;
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -472,12 +483,12 @@ where
                                     );
 
                                     // send message that we are closing channel
-                                    ws_tx.unbounded_send(Some(Ok(Message::text(
+                                    let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
                                         close_text.clone(),
                                     ))));
 
                                     // close channel
-                                    ws_tx.unbounded_send(None);
+                                    let _ = ws_tx.unbounded_send(None);
                                 } else {
                                     let mut response_text =
                                         serde_json::to_string(&response).unwrap();
@@ -486,7 +497,7 @@ where
                                         request_id, response_text
                                     );
 
-                                    ws_tx.unbounded_send(Some(Ok(Message::text(
+                                    let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
                                         response_text.clone(),
                                     ))));
                                 }
@@ -510,6 +521,7 @@ where
         })
 }
 
+#[cfg(feature = "async")]
 #[derive(Deserialize)]
 #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
 struct WsPayload<S>
@@ -523,6 +535,7 @@ where
     payload: Option<GraphQLPayload<S>>,
 }
 
+#[cfg(feature = "async")]
 #[derive(Debug, Deserialize)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 struct GraphQLPayload<S>
@@ -537,6 +550,7 @@ where
     query: Option<String>,
 }
 
+#[cfg(feature = "async")]
 #[derive(Serialize)]
 struct Output {
     data: String,
@@ -787,9 +801,9 @@ mod tests_http_harness {
     use warp::{self, Filter};
 
     use juniper::{
-        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
-        tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
+        EmptyMutation,
+        http::tests::{HTTPIntegration, run_http_test_suite, TestResponse},
+        RootNode, tests::{model::Database, schema::Query},
     };
 
     use super::*;
