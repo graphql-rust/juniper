@@ -414,7 +414,7 @@ mod tests {
     use crate::{
         parser::ScalarToken,
         value::{DefaultScalarValue, ParseScalarValue},
-        EmptySubscription,
+        EmptyMutation, EmptySubscription,
     };
 
     #[test]
