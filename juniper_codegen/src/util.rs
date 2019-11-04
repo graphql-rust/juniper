@@ -751,7 +751,7 @@ impl GraphQLTypeDefiniton {
                 };
                 quote!(
                     #name => {
-                        let res #_type = { #code };
+                        let res #_type = (|| { #code })();
                         #juniper_crate_name::IntoResolvable::into(
                             res,
                             executor.context()
