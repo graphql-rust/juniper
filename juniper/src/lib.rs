@@ -152,7 +152,6 @@ mod executor_tests;
 pub use crate::util::to_camel_case;
 
 use crate::{
-    executor::execute_validated_query,
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
