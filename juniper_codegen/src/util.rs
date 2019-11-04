@@ -736,10 +736,12 @@ impl GraphQLTypeDefiniton {
             let code = &field.resolver_code;
 
             if field.is_async {
-                // TODO: better error message with field/type name.
                 quote!(
                     #name => {
-                        panic!("Tried to resolve async field with a sync resolver");
+                        panic!("Tried to resolve async field {} on type {:?} with a sync resolver",
+                            #name,
+                            Self::name(_info)
+                        );
                     },
                 )
             } else {
@@ -942,7 +944,10 @@ impl GraphQLTypeDefiniton {
                         match field {
                             #( #resolve_matches_async )*
                             _ => {
-                                panic!("Field {} not found on type {}", field, "Mutation");
+                                panic!("Field {} not found on type {:?}",
+                                    field,
+                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
+                                );
                             }
                         }
                     }
@@ -992,7 +997,10 @@ impl GraphQLTypeDefiniton {
                     match field {
                         #( #resolve_matches )*
                         _ => {
-                            panic!("Field {} not found on type {}", field, "Mutation");
+                            panic!("Field {} not found on type {:?}",
+                                field,
+                                Self::name(_info)
+                            );
                         }
                     }
                 }
