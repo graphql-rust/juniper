@@ -1,3 +1,5 @@
+/*
+ *
 /**
 Expose GraphQL unions
 
@@ -17,6 +19,9 @@ resolvers.
 [1]: macro.graphql_object!.html
 [2]: macro.graphql_interface!.html
 */
+
+
+
 #[macro_export]
 macro_rules! graphql_union {
 
@@ -135,3 +140,4 @@ macro_rules! graphql_union {
         );
     };
 }
+*/

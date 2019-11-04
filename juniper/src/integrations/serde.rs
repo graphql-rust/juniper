@@ -74,6 +74,10 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
                 message: "Expected query, got subscription",
             }]
             .serialize(serializer),
+            GraphQLError::NotSubscription => [SerializeHelper {
+                message: "Expected subscription, got query",
+            }]
+            .serialize(serializer),
         }
     }
 }

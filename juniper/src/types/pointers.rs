@@ -136,6 +136,35 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<'e, S, T> crate::GraphQLTypeAsync<S> for &'e T
+where
+    S: ScalarValue + Send + Sync,
+    T: crate::GraphQLTypeAsync<S>,
+    T::TypeInfo: Send + Sync,
+    T::Context: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_field_async<'b>(
+        &'b self,
+        info: &'b Self::TypeInfo,
+        field_name: &'b str,
+        arguments: &'b Arguments<S>,
+        executor: &'b Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
+        crate::GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
+    }
+
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, Value<S>> {
+        crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
+    }
+}
+
 impl<'a, T, S> ToInputValue<S> for &'a T
 where
     S: Debug,

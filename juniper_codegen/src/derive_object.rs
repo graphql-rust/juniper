@@ -59,6 +59,8 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
                 description: field_attrs.description,
                 deprecation: field_attrs.deprecation,
                 resolver_code,
+                is_type_inferred: true,
+                is_async: false,
             })
         }
     });
@@ -74,6 +76,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
+        no_async: attrs.no_async,
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };

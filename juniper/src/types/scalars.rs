@@ -196,6 +196,23 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
+where
+    S: ScalarValue + Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::Value<S>> {
+        use futures::future;
+        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
+    }
+}
+
 impl<'a, S> ToInputValue<S> for &'a str
 where
     S: ScalarValue,
@@ -315,13 +332,86 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
+where
+    S: ScalarValue + Send + Sync,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
+/// Utillity type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the subscription,
+/// no subscription will be generated for the schema.
+pub struct EmptySubscription<T> {
+    phantom: PhantomData<T>,
+}
+
+// This is safe due to never using `T`.
+unsafe impl<T> Send for EmptySubscription<T> {}
+
+impl<T> EmptySubscription<T> {
+    /// Construct a new empty subscription
+    pub fn new() -> Self {
+        EmptySubscription {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<S, T> GraphQLType<S> for EmptySubscription<T>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("_EmptySubscription")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
+    }
+}
+
+impl<T, S> crate::SubscriptionHandler<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
+#[cfg(feature = "async")]
+impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{EmptyMutation, ID};
-    use crate::{
-        parser::ScalarToken,
-        value::{DefaultScalarValue, ParseScalarValue},
-    };
+    use super::ID;
+    use crate::{parser::ScalarToken, value::{DefaultScalarValue, ParseScalarValue}, EmptySubscription};
 
     #[test]
     fn test_id_from_string() {
@@ -369,5 +459,11 @@ mod tests {
     fn empty_mutation_is_send() {
         fn check_if_send<T: Send>() {}
         check_if_send::<EmptyMutation<()>>();
+    }
+
+    #[test]
+    fn empty_subscription_is_send() {
+        fn check_if_send<T: Send>() {}
+        check_if_send::<EmptySubscription<()>>();
     }
 }

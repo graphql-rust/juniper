@@ -13,11 +13,13 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
@@ -76,10 +78,46 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::SubscriptionHandlerAsync<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    fn resolve_field_async<'b>(
+        &'b self,
+        info: &'b Self::TypeInfo,
+        field_name: &'b str,
+        arguments: &'b Arguments<S>,
+        executor: &'b Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
+        use futures::future::ready;
+        match field_name {
+            "__schema" | "__type" => {
+                let v = self.resolve_field(info, field_name, arguments, executor);
+                Box::pin(ready(v))
+            }
+            _ => self
+                .query_type
+                .resolve_field_async(info, field_name, arguments, executor),
+        }
+    }
+}
+
 #[crate::object_internal(
     name = "__Schema"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> SchemaType<'a, S>
 where
@@ -90,7 +128,10 @@ where
             .into_iter()
             .filter(|t| {
                 t.to_concrete()
-                    .map(|t| t.name() != Some("_EmptyMutation"))
+                    .map(|t| {
+                        !(t.name() == Some("_EmptyMutation")
+                            || t.name() == Some("_EmptySubscription"))
+                    })
                     .unwrap_or(false)
             })
             .collect::<Vec<_>>()
@@ -117,6 +158,8 @@ where
     name = "__Type"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> TypeType<'a, S>
 where
@@ -248,6 +291,8 @@ where
     name = "__Field",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> Field<'a, S>
 where
@@ -285,6 +330,8 @@ where
     name = "__InputValue",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> Argument<'a, S>
 where
@@ -311,6 +358,8 @@ where
 #[crate::object_internal(
     name = "__EnumValue",
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> EnumValue
 where
@@ -337,6 +386,8 @@ where
     name = "__Directive",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> DirectiveType<'a, S>
 where

@@ -11,5 +11,5 @@ mod scalar;
 #[macro_use]
 mod union;
 
-#[cfg(test)]
-mod tests;
+//#[cfg(test)]
+//mod tests;

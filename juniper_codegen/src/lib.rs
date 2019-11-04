@@ -4,17 +4,19 @@
 //! You should not depend on juniper_codegen directly.
 //! You only need the `juniper` crate.
 
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.1")]
+#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.0")]
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
+
+mod util;
 
 mod derive_enum;
 mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
 mod impl_object;
-mod util;
+mod impl_union;
 
 use proc_macro::TokenStream;
 
@@ -52,6 +54,14 @@ pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::build_derive_object(ast, false);
+    gen.into()
+}
+
+// todo: maybe remove this macro once not needed
+#[proc_macro_derive(GraphQLObjectInternal, attributes(graphql))]
+pub fn derive_object_internal(input: TokenStream) -> TokenStream {
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
+    let gen = derive_object::build_derive_object(ast, true);
     gen.into()
 }
 
@@ -364,5 +374,40 @@ pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, true);
+    gen.into()
+}
+
+#[proc_macro_attribute]
+#[proc_macro_error::proc_macro_error]
+pub fn union(attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let output = match impl_union::impl_union(false, attrs, body) {
+        Ok(toks) => toks,
+        Err(err) => proc_macro_error::abort!(err),
+    };
+    output
+}
+
+#[doc(hidden)]
+#[proc_macro_attribute]
+#[proc_macro_error::proc_macro_error]
+pub fn union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let output = match impl_union::impl_union(true, attrs, body) {
+        Ok(toks) => toks,
+        Err(err) => proc_macro_error::abort!(err),
+    };
+    output
+}
+
+/// A proc macro for defining a GraphQL object.
+#[proc_macro_attribute]
+pub fn subscription(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_subscription(args, input, false);
+    gen.into()
+}
+
+/// A proc macro for defining a GraphQL object.
+#[proc_macro_attribute]
+pub fn subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_subscription(args, input, true);
     gen.into()
 }

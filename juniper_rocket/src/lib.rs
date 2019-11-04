@@ -1,4 +1,5 @@
 /*!
+#![feature(async_closure)]
 
 # juniper_rocket
 
@@ -38,6 +39,7 @@ Check the LICENSE file for details.
 
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
+#![cfg_attr(feature = "async", feature(async_await, async_closure))]
 
 use std::{
     error::Error,
@@ -54,19 +56,27 @@ use rocket::{
     Request,
 };
 
-use juniper::{http, InputValue};
+use juniper::{http, InputValue, Value};
 
 use juniper::{
     serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarRefValue,
     ScalarValue,
 };
 
+use juniper::GraphQLTypeAsync;
+
+use futures::{
+    future::{FutureExt, TryFutureExt},
+    StreamExt,
+};
+use rocket::{data::FromDataFuture, response::ResultFuture};
+
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLBatchRequest<S = DefaultScalarValue>
 where
-    S: ScalarValue,
+    S: ScalarValue + Sync + Send,
 {
     Single(http::GraphQLRequest<S>),
     Batch(Vec<http::GraphQLRequest<S>>),
@@ -76,7 +86,7 @@ where
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     Single(http::GraphQLResponse<'a, S>),
     Batch(Vec<http::GraphQLResponse<'a, S>>),
@@ -84,28 +94,165 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
-        context: &CtxT,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: juniper::SubscriptionHandler<S, Context = CtxT>,
+        S: 'static,
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                let mut executor = juniper::SubscriptionsExecutor::new();
+
+                // errors could be accessed like that:
+                // let errors = executor.errors();
+
+                let res = request.subscribe(root_node, context, &mut executor);
+                //                    .into_inner()
+                //                    .unwrap();
+                let response = res.into_iter().unwrap().take(4).collect::<Vec<_>>();
+
+                //                let x: Value<DefaultScalarValue> = match res {
+                //                    Value::Null => Value::Null,
+                //                    Value::Scalar(s) => {
+                //                        let ready = s.take(5).collect::<Vec<_>>();
+                //                        println!("Got values (from Value::Scalar): {:?}", ready);
+                //                        Value::Scalar(DefaultScalarValue::String(
+                //                            "Got scalar, check logs".to_string(),
+                //                        ))
+                //                    }
+                //                    Value::List(_) => {
+                //                        println!("Lists are not implemented here");
+                //                        Value::Null
+                //                    }
+                //                    Value::Object(o) => {
+                //                        let response = o.into_key_value_list();
+                //                        println!("Got object of length: {:?}", response.len());
+                //                        response.into_iter().for_each(|(name, val)| {
+                //                            println!("  object name: {:?} ", name);
+                //                            match val {
+                //                                juniper::Value::Scalar(s) => {
+                //                                    let x: Vec<_> = s.into_iter().take(5).collect();
+                //                                    println!("  got values: {:#?}", x);
+                //                                }
+                //                                _ => {
+                //                                    println!("  value not scalar");
+                //                                }
+                //                            }
+                //                        });
+                //                        Value::Scalar(DefaultScalarValue::String(
+                //                            "Got object, check logs".to_string(),
+                //                        ))
+                //                    }
+                //                };
+
+                GraphQLBatchResponse::Batch(
+                    //                    juniper::http::GraphQLResponse::from_result(Ok((
+                    //                        Value::Null,
+                    //                        vec![],
+                    //                    )))
+                    response,
+                )
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect(),
+                unimplemented!()
+//                requests
+//                    .iter()
+//                    .map(|request| request.execute(root_node, context))
+//                    .collect(),
             ),
+        }
+    }
+
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: 'static,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
+                let mut executor = juniper::SubscriptionsExecutor::new();
+                let response_value = request
+                    .subscribe_async(root_node, context, &mut executor)
+                    .await;
+
+                let response = response_value
+                    .into_stream()
+                    .unwrap()
+                    .take(5)
+                    .collect::<Vec<_>>()
+                    .await;
+
+                //                    .into_inner()
+                //                    .unwrap();
+                //                let x = match response_value {
+                //                    Value::Null => Value::null(),
+                //                    Value::Scalar(stream) => {
+                //                        let collected = stream.take(5).collect::<Vec<_>>().await;
+                //                        println!("Got response: {:#?}", collected);
+                //
+                //                        Value::Scalar(DefaultScalarValue::String(
+                //                            "got Value::Scalar, check logs".to_string(),
+                //                        ))
+                //                    }
+                //                    Value::List(l) => Value::Scalar(DefaultScalarValue::String(
+                //                        "lists not implemented in test server".to_string(),
+                //                    )),
+                //                    Value::Object(o) => {
+                //                        let obj = o.into_key_value_list();
+                //
+                //                        for (name, stream_val) in obj {
+                //                            print!("  got name: {:#?}, ", name);
+                //                            match stream_val {
+                //                                Value::Null => {
+                //                                    println!("got null value");
+                //                                }
+                //                                Value::Scalar(stream) => {
+                //                                    let collected = stream.take(5).collect::<Vec<_>>().await;
+                //                                    println!("got response: {:#?}", collected);
+                //                                }
+                //                                Value::List(_) => {
+                //                                    println!("got list value");
+                //                                }
+                //                                Value::Object(_) => {
+                //                                    println!("got object value");
+                //                                }
+                //                            }
+                //                        }
+                //
+                //                        Value::Scalar(DefaultScalarValue::String(
+                //                            "got object, check logs".to_string(),
+                //                        ))
+                //                    }
+                //                };
+
+                //                GraphQLBatchResponse::Single(juniper::http::GraphQLResponse::from_result(Ok((
+                //                    x,
+                //                    vec![],
+                //                ))))
+                GraphQLBatchResponse::Batch(response)
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => {
+                panic!("Batch requests are not supported in this demo!");
+            }
         }
     }
 
@@ -121,7 +268,7 @@ where
 
 impl<'a, S> GraphQLBatchResponse<'a, S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     fn is_ok(&self) -> bool {
         match self {
@@ -141,7 +288,7 @@ where
 #[derive(Debug, PartialEq)]
 pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
 where
-    S: ScalarValue;
+    S: ScalarValue + Send + Sync;
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
@@ -155,25 +302,55 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
 pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
+        graphql_endpoint_url,
     ))
 }
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Sync + Send,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Execute an incoming GraphQL query
-    pub fn execute<CtxT, QueryT, MutationT>(
+    pub fn execute<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: juniper::SubscriptionHandler<S, Context = CtxT>,
+        S: 'static,
     {
         let response = self.0.execute(root_node, context);
+        let status = if response.is_ok() {
+            Status::Ok
+        } else {
+            Status::BadRequest
+        };
+        let json = serde_json::to_string(&response).unwrap();
+
+        GraphQLResponse(status, json)
+    }
+
+    /// Asynchronously execute an incoming GraphQL query
+    pub async fn execute_async<CtxT, QueryT, MutationT, SubscriptionT>(
+        &self,
+        root_node: &RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
+        context: &CtxT,
+    ) -> GraphQLResponse
+    where
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: juniper::SubscriptionHandlerAsync<S, Context = CtxT>,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: 'static,
+    {
+        let response = self.0.execute_async(root_node, context).await;
         let status = if response.is_ok() {
             Status::Ok
         } else {
@@ -249,7 +426,7 @@ impl GraphQLResponse {
 
 impl<'f, S> FromForm<'f> for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     type Error = String;
 
@@ -320,7 +497,7 @@ where
 
 impl<'v, S> FromFormValue<'v> for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     type Error = String;
 
@@ -331,38 +508,47 @@ where
     }
 }
 
+const BODY_LIMIT: u64 = 1024 * 100;
+
 impl<S> FromDataSimple for GraphQLRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync,
 {
     type Error = String;
 
-    fn from_data(request: &Request, data: Data) -> FromDataOutcome<Self, Self::Error> {
+    fn from_data(request: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
+        use futures::io::AsyncReadExt;
+        use tokio_io::AsyncReadExt as _;
         if !request.content_type().map_or(false, |ct| ct.is_json()) {
-            return Forward(data);
+            return Box::pin(async move { Forward(data) });
         }
 
-        let mut body = String::new();
-        if let Err(e) = data.open().read_to_string(&mut body) {
-            return Failure((Status::InternalServerError, format!("{:?}", e)));
-        }
+        Box::pin(async move {
+            let mut body = String::new();
+            let mut reader = data.open().take(BODY_LIMIT);
+            if let Err(e) = reader.read_to_string(&mut body).await {
+                return Failure((Status::InternalServerError, format!("{:?}", e)));
+            }
 
-        match serde_json::from_str(&body) {
-            Ok(value) => Success(GraphQLRequest(value)),
-            Err(failure) => return Failure((Status::BadRequest, format!("{}", failure))),
-        }
+            match serde_json::from_str(&body) {
+                Ok(value) => Success(GraphQLRequest(value)),
+                Err(failure) => Failure((Status::BadRequest, format!("{}", failure))),
+            }
+        })
     }
 }
 
 impl<'r> Responder<'r> for GraphQLResponse {
-    fn respond_to(self, _: &Request) -> Result<Response<'r>, Status> {
+    fn respond_to(self, _: &Request) -> ResultFuture<'r> {
         let GraphQLResponse(status, body) = self;
 
-        Ok(Response::build()
-            .header(ContentType::new("application", "json"))
-            .status(status)
-            .sized_body(Cursor::new(body))
-            .finalize())
+        Box::pin(async move {
+            Ok(Response::build()
+                .header(ContentType::new("application", "json"))
+                .status(status)
+                .sized_body(Cursor::new(body))
+                .finalize())
+        })
     }
 }
 

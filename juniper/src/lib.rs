@@ -110,13 +110,15 @@ extern crate uuid;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    object, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
+    object, subscription, union, GraphQLEnum,
+    GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    object_internal, GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
+    object_internal, union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
+    GraphQLScalarValueInternal,
 };
 
 #[macro_use]
@@ -161,19 +163,29 @@ pub use crate::{
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry, Variables,
+        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor, ValuesIterator,
+        Variables,
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
     types::{
-        base::{Arguments, GraphQLType, TypeKind},
-        scalars::{EmptyMutation, ID},
+        base::{Arguments, GraphQLType, SubscriptionHandler, TypeKind},
+        scalars::{EmptyMutation, EmptySubscription, ID},
     },
     validation::RuleError,
     value::{
         DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
         ScalarValue, Value,
     },
+};
+
+/// A pinned, boxed future that can be polled.
+pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
+
+#[cfg(feature = "async")]
+pub use crate::{
+    executor::ValuesStream,
+    types::async_await::{GraphQLTypeAsync, SubscriptionHandlerAsync},
 };
 
 /// An error that prevented query execution
@@ -186,21 +198,21 @@ pub enum GraphQLError<'a> {
     MultipleOperationsProvided,
     UnknownOperationName,
     IsSubscription,
+    NotSubscription,
 }
 
-/// Execute a query in a provided schema
-pub fn execute<'a, S, CtxT, QueryT, MutationT>(
+/// Parse document source and validate it using `ValidatorContext`
+fn parse_and_validate_document<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document_source: &'a str,
-    operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
-    context: &CtxT,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<Vec<crate::ast::Definition<'a, S>>, GraphQLError<'a>>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -221,20 +233,171 @@ where
         }
     }
 
-    execute_validated_query(document, operation_name, root_node, variables, context)
+    Ok(document)
+}
+
+/// This is the same as `parse_and_validate_document`,
+/// but it uses `GraphQLTypeAsync`, `SubscriptionHandlerAsync` in generics
+#[cfg(feature = "async")]
+fn parse_and_validate_document_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+    document_source: &'a str,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+) -> Result<Vec<crate::ast::Definition<'a, S>>, GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: SubscriptionHandlerAsync<S, Context = CtxT>,
+    SubscriptionT::Context: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+{
+    let document = parse_document_source(document_source, &root_node.schema)?;
+    {
+        let errors = validate_input_values(variables, &document, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
+
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    Ok(document)
+}
+
+/// Execute a query in a provided schema
+pub fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &CtxT,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+{
+    let document = parse_and_validate_document(document_source, root_node, variables)?;
+
+    executor::execute_validated_query(document, operation_name, root_node, variables, context)
+}
+
+/// Execute a subscription in a provided schema
+pub fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: Variables<S>,
+    context: &'a CtxT,
+    executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
+) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
+{
+    let document = parse_and_validate_document(document_source, root_node, &variables)?;
+
+    executor::execute_validated_subscription(
+        document,
+        operation_name,
+        root_node,
+        variables,
+        context,
+        executor,
+    )
+}
+
+/// Execute query asynchronously in a provided schema
+#[cfg(feature = "async")]
+pub async fn execute_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &CtxT,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    let document = parse_and_validate_document_async(document_source, root_node, variables)?;
+
+    executor::execute_validated_query_async(document, operation_name, root_node, variables, context)
+        .await
+}
+
+/// Execute subscription asynchronously in a provided schema
+#[cfg(feature = "async")]
+pub async fn subscribe_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: Variables<S>,
+    context: &'a CtxT,
+    executor: &'a mut SubscriptionsExecutor<'a, CtxT, S>,
+) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: SubscriptionHandlerAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    let document = parse_and_validate_document_async(document_source, root_node, &variables)?;
+
+    executor::execute_validated_subscription_async(
+        document,
+        operation_name,
+        root_node,
+        variables,
+        context,
+        executor,
+    )
+    .await
 }
 
 /// Execute the reference introspection query in the provided schema
-pub fn introspect<'a, S, CtxT, QueryT, MutationT>(
-    root_node: &'a RootNode<QueryT, MutationT, S>,
+pub fn introspect<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     context: &CtxT,
     format: IntrospectionFormat,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: crate::SubscriptionHandler<S, Context = CtxT>,
 {
     execute(
         match format {
