@@ -4,7 +4,7 @@
 //! You should not depend on juniper_codegen directly.
 //! You only need the `juniper` crate.
 
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.1")]
+#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.0")]
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
