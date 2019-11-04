@@ -6,7 +6,7 @@ use crate::{
     BoxFuture,
 };
 
-use super::base::{Arguments, GraphQLType, is_excluded, merge_key_into};
+use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
 #[async_trait::async_trait]
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
