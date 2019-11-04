@@ -239,8 +239,6 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    // FIXME: implement async version.
-
                     let sub_result = instance.resolve_into_type_async(
                         info,
                         type_condition.item,
