@@ -206,9 +206,38 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         });
     }
 
+    #[cfg(feature = "async")]
+    let _async = quote!(
+        impl<__S> #juniper_path::GraphQLTypeAsync<__S> for #ident
+            where
+                __S: #juniper_path::ScalarValue + Send + Sync,
+                for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
+        {
+            fn resolve_async<'a, 'async_trait>(
+                &'a self,
+                info: &'a Self::TypeInfo,
+                selection_set: Option<&'a [#juniper_path::Selection<__S>]>,
+                executor: &'a #juniper_path::Executor<Self::Context, __S>,
+            ) -> futures::future::BoxFuture<'async_trait, #juniper_path::Value<__S>>
+             where
+                'a: 'async_trait,
+                Self: 'async_trait
+            {
+                use #juniper_path::GraphQLType;
+                use futures::future;
+                let v = self.resolve(info, selection_set, executor);
+                future::FutureExt::boxed(future::ready(v))
+            }
+        }
+    );
+
+    #[cfg(not(feature = "async"))]
+    let _async = quote!();
+
     let body = quote! {
         impl<__S> #juniper_path::GraphQLType<__S> for #ident
-        where __S: #juniper_path::ScalarValue,
+        where __S:
+            #juniper_path::ScalarValue,
             for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
         {
             type Context = ();
@@ -261,6 +290,8 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 }
             }
         }
+
+        #_async
     };
     body
 }

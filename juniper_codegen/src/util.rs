@@ -5,6 +5,36 @@ use syn::{
     NestedMeta, Token,
 };
 
+pub fn juniper_path(is_internal: bool) -> syn::Path {
+    let name = if is_internal { "crate" } else { "juniper" };
+    syn::parse_str::<syn::Path>(name).unwrap()
+}
+
+/// Returns the name of a type.
+/// If the type does not end in a simple ident, `None` is returned.
+pub fn name_of_type(ty: &syn::Type) -> Option<syn::Ident> {
+    let path_opt = match ty {
+        syn::Type::Path(ref type_path) => Some(&type_path.path),
+        syn::Type::Reference(ref reference) => match &*reference.elem {
+            syn::Type::Path(ref type_path) => Some(&type_path.path),
+            syn::Type::TraitObject(ref trait_obj) => {
+                match trait_obj.bounds.iter().nth(0).unwrap() {
+                    syn::TypeParamBound::Trait(ref trait_bound) => Some(&trait_bound.path),
+                    _ => None,
+                }
+            }
+            _ => None,
+        },
+        _ => None,
+    };
+    let path = path_opt?;
+
+    path.segments
+        .iter()
+        .last()
+        .map(|segment| segment.ident.clone())
+}
+
 /// Compares a path to a one-segment string value,
 /// return true if equal.
 pub fn path_eq_single(path: &syn::Path, value: &str) -> bool {
@@ -297,6 +327,7 @@ pub struct ObjectAttributes {
     pub context: Option<syn::Type>,
     pub scalar: Option<syn::Type>,
     pub interfaces: Vec<syn::Type>,
+    pub no_async: bool,
 }
 
 impl syn::parse::Parse for ObjectAttributes {
@@ -307,6 +338,7 @@ impl syn::parse::Parse for ObjectAttributes {
             context: None,
             scalar: None,
             interfaces: Vec::new(),
+            no_async: false,
         };
 
         while !input.is_empty() {
@@ -349,6 +381,10 @@ impl syn::parse::Parse for ObjectAttributes {
                         )?
                         .into_iter()
                         .collect();
+                }
+                // FIXME: make this unneccessary.
+                "noasync" => {
+                    output.no_async = true;
                 }
                 other => {
                     return Err(input.error(format!("Unknown attribute: {}", other)));
@@ -591,6 +627,8 @@ pub struct GraphQLTypeDefinitionField {
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
     pub resolver_code: proc_macro2::TokenStream,
+    pub is_type_inferred: bool,
+    pub is_async: bool,
 }
 
 /// Definition of a graphql type based on information extracted
@@ -618,9 +656,15 @@ pub struct GraphQLTypeDefiniton {
     // If false, the scalar is only generic if a generic parameter
     // is specified manually.
     pub generic_scalar: bool,
+    // FIXME: make this redundant.
+    pub no_async: bool,
 }
 
 impl GraphQLTypeDefiniton {
+    fn has_async_field(&self) -> bool {
+        self.fields.iter().any(|field| field.is_async)
+    }
+
     pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
@@ -691,21 +735,38 @@ impl GraphQLTypeDefiniton {
             let name = &field.name;
             let code = &field.resolver_code;
 
-            quote!(
-                #name => {
-                    let res = { #code };
-                    #juniper_crate_name::IntoResolvable::into(
-                        res,
-                        executor.context()
-                    )
-                        .and_then(|res| {
-                            match res {
-                                Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                                None => Ok(#juniper_crate_name::Value::null()),
-                            }
-                        })
-                },
-            )
+            if field.is_async {
+                quote!(
+                    #name => {
+                        panic!("Tried to resolve async field {} on type {:?} with a sync resolver",
+                            #name,
+                            Self::name(_info)
+                        );
+                    },
+                )
+            } else {
+                let _type = if field.is_type_inferred {
+                    quote!()
+                } else {
+                    let _type = &field._type;
+                    quote!(: #_type)
+                };
+                quote!(
+                    #name => {
+                        let res #_type = { #code };
+                        #juniper_crate_name::IntoResolvable::into(
+                            res,
+                            executor.context()
+                        )
+                            .and_then(|res| {
+                                match res {
+                                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                                    None => Ok(#juniper_crate_name::Value::null()),
+                                }
+                            })
+                    },
+                )
+            }
         });
 
         let description = self
@@ -778,6 +839,125 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
+        #[cfg(feature = "async")]
+        let resolve_field_async = {
+            let resolve_matches_async = self.fields.iter().map(|field| {
+                let name = &field.name;
+                let code = &field.resolver_code;
+                let _type = if field.is_type_inferred {
+                    quote!()
+                } else {
+                    let _type = &field._type;
+                    quote!(: #_type)
+                };
+
+                if field.is_async {
+                    quote!(
+                        #name => {
+                            let f = async move {
+                                let res #_type = async move { #code }.await;
+
+                                let inner_res = #juniper_crate_name::IntoResolvable::into(
+                                    res,
+                                    executor.context()
+                                );
+                                match inner_res {
+                                    Ok(Some((ctx, r))) => {
+                                        let subexec = executor
+                                            .replaced_context(ctx);
+                                        subexec.resolve_with_ctx_async(&(), &r)
+                                            .await
+                                    },
+                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                    Err(e) => Err(e),
+                                }
+                            };
+                            future::FutureExt::boxed(f)
+                        },
+                    )
+                } else {
+                    let inner = if !self.no_async {
+                        quote!(
+                            let f = async move {
+                                match res2 {
+                                    Ok(Some((ctx, r))) => {
+                                        let sub = executor.replaced_context(ctx);
+                                        sub.resolve_with_ctx_async(&(), &r).await
+                                    },
+                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                    Err(e) => Err(e),
+                                }
+                            };
+                            future::FutureExt::boxed(f)
+                        )
+                    } else {
+                        quote!(
+                            let v = match res2 {
+                                Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                                Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                Err(e) => Err(e),
+                            };
+                            future::FutureExt::boxed(future::ready(v))
+                        )
+                    };
+
+                    quote!(
+                        #name => {
+                            let res #_type = { #code };
+                            let res2 = #juniper_crate_name::IntoResolvable::into(
+                                res,
+                                executor.context()
+                            );
+                            #inner
+                        },
+                    )
+                }
+            });
+
+            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+
+            where_async
+                .predicates
+                .push(parse_quote!( #scalar: Send + Sync ));
+            where_async.predicates.push(parse_quote!(Self: Send + Sync));
+
+            // FIXME: add where clause for interfaces.
+
+            quote!(
+                impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
+                    #where_async
+                {
+                    fn resolve_field_async<'b, 'async_trait>(
+                        &'b self,
+                        info: &'b Self::TypeInfo,
+                        field: &'b str,
+                        args: &'b #juniper_crate_name::Arguments<#scalar>,
+                        executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
+                    ) -> futures::future::BoxFuture<'async_trait, #juniper_crate_name::ExecutionResult<#scalar>>
+                        where
+                        #scalar: Send + Sync,
+                        'b: 'async_trait,
+                        Self: 'async_trait,
+                    {
+                        use futures::future;
+                        use #juniper_crate_name::GraphQLType;
+                        match field {
+                            #( #resolve_matches_async )*
+                            _ => {
+                                panic!("Field {} not found on type {:?}",
+                                    field,
+                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
+                                );
+                            }
+                        }
+                    }
+                }
+            )
+        };
+
+        #[cfg(not(feature = "async"))]
+        let resolve_field_async = quote!();
+
         let output = quote!(
         impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
             #where_clause
@@ -817,16 +997,22 @@ impl GraphQLTypeDefiniton {
                     match field {
                         #( #resolve_matches )*
                         _ => {
-                            panic!("Field {} not found on type {}", field, "Mutation");
+                            panic!("Field {} not found on type {:?}",
+                                field,
+                                Self::name(_info)
+                            );
                         }
                     }
                 }
+
 
                 fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
                     #name.to_string()
                 }
 
-            }
+        }
+
+        #resolve_field_async
         );
         output
     }

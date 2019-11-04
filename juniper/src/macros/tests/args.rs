@@ -73,13 +73,12 @@ impl Root {
         0
     }
 
-    // TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
-    // fn attr_arg_descr(#[doc = "The arg"] arg: i32) -> i32 { 0 }
-    // fn attr_arg_descr_collapse(
-    //     #[doc = "The arg"]
-    //     #[doc = "and more details"]
-    //     arg: i32,
-    // ) -> i32 { 0 }
+    fn attr_arg_descr(arg: i32) -> i32 {
+        0
+    }
+    fn attr_arg_descr_collapse(arg: i32) -> i32 {
+        0
+    }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
@@ -559,73 +558,71 @@ fn introspect_field_multi_args_descr_trailing_comma() {
     });
 }
 
-// TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
-// #[test]
-// fn introspect_field_attr_arg_descr() {
-//     run_args_info_query("attrArgDescr", |args| {
-//         assert_eq!(args.len(), 1);
+#[test]
+fn introspect_field_attr_arg_descr() {
+    run_args_info_query("attrArgDescr", |args| {
+        assert_eq!(args.len(), 1);
 
-//         assert!(args.contains(&Value::object(
-//             vec![
-//                 ("name", Value::scalar("arg")),
-//                 ("description", Value::scalar("The arg")),
-//                 ("defaultValue", Value::null()),
-//                 (
-//                     "type",
-//                     Value::object(
-//                         vec![
-//                             ("name", Value::null()),
-//                             (
-//                                 "ofType",
-//                                 Value::object(
-//                                     vec![("name", Value::scalar("Int"))].into_iter().collect(),
-//                                 ),
-//                             ),
-//                         ]
-//                         .into_iter()
-//                         .collect(),
-//                     ),
-//                 ),
-//             ]
-//             .into_iter()
-//             .collect(),
-//         )));
-//     });
-// }
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg")),
+                ("description", Value::scalar("The arg")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    });
+}
 
-// TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
-// #[test]
-// fn introspect_field_attr_arg_descr_collapse() {
-//     run_args_info_query("attrArgDescrCollapse", |args| {
-//         assert_eq!(args.len(), 1);
+#[test]
+fn introspect_field_attr_arg_descr_collapse() {
+    run_args_info_query("attrArgDescrCollapse", |args| {
+        assert_eq!(args.len(), 1);
 
-//         assert!(args.contains(&Value::object(
-//             vec![
-//                 ("name", Value::scalar("arg")),
-//                 ("description", Value::scalar("The arg\nand more details")),
-//                 ("defaultValue", Value::null()),
-//                 (
-//                     "type",
-//                     Value::object(
-//                         vec![
-//                             ("name", Value::null()),
-//                             (
-//                                 "ofType",
-//                                 Value::object(
-//                                     vec![("name", Value::scalar("Int"))].into_iter().collect(),
-//                                 ),
-//                             ),
-//                         ]
-//                         .into_iter()
-//                         .collect(),
-//                     ),
-//                 ),
-//             ]
-//             .into_iter()
-//             .collect(),
-//         )));
-//     });
-// }
+        assert!(args.contains(&Value::object(
+            vec![
+                ("name", Value::scalar("arg")),
+                ("description", Value::scalar("The arg\nand more details")),
+                ("defaultValue", Value::null()),
+                (
+                    "type",
+                    Value::object(
+                        vec![
+                            ("name", Value::null()),
+                            (
+                                "ofType",
+                                Value::object(
+                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+                                ),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        )));
+    });
+}
 
 #[test]
 fn introspect_field_arg_with_default() {

@@ -120,6 +120,16 @@ where
         }
     }
 
+    /// Convert this value into an Object.
+    ///
+    /// Returns None if value is not an Object.
+    pub fn into_object(self) -> Option<Object<S>> {
+        match self {
+            Value::Object(o) => Some(o),
+            _ => None,
+        }
+    }
+
     /// Mutable view into the underlying object value, if present.
     pub fn as_mut_object_value(&mut self) -> Option<&mut Object<S>> {
         match *self {

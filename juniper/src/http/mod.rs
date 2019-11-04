@@ -93,6 +93,27 @@ where
             context,
         ))
     }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLResponse<'a, S>
+    where
+        S: ScalarValue + Send + Sync,
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        let op = self.operation_name();
+        let vars = &self.variables();
+        let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
+        GraphQLResponse(res)
+    }
 }
 
 /// Simple wrapper around the result from executing a GraphQL query
