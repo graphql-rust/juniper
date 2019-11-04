@@ -2,7 +2,6 @@ use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
     value::{Object, ScalarRefValue, ScalarValue, Value},
 };
-use async_trait::async_trait;
 
 use crate::{
     executor::{ExecutionResult, Executor},
@@ -13,7 +12,7 @@ use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
-#[async_trait]
+#[async_trait::async_trait]
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
