@@ -40,34 +40,27 @@ Check the LICENSE file for details.
 //#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-use std::{
-    pin::Pin,
-    sync::Arc,
-};
 #[cfg(feature = "async")]
 use std::{
     collections::HashMap,
     sync::atomic::{AtomicBool, Ordering},
 };
+use std::{pin::Pin, sync::Arc};
 
-use futures03::{
-    Future, future::FutureExt
-};
-#[cfg(feature = "async")]
-use futures03::{
-    channel::mpsc, stream::StreamExt,
-};
 use futures::future::poll_fn;
+#[cfg(feature = "async")]
+use futures03::{channel::mpsc, stream::StreamExt};
+use futures03::{future::FutureExt, Future};
 use serde::Deserialize;
 #[cfg(feature = "async")]
 use serde::Serialize;
-use warp::{Filter, filters::BoxedFilter};
 #[cfg(feature = "async")]
 use warp::ws::Message;
+use warp::{filters::BoxedFilter, Filter};
 
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 #[cfg(feature = "async")]
 use juniper::http::GraphQLRequest;
+use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -801,9 +794,9 @@ mod tests_http_harness {
     use warp::{self, Filter};
 
     use juniper::{
-        EmptyMutation,
-        http::tests::{HTTPIntegration, run_http_test_suite, TestResponse},
-        RootNode, tests::{model::Database, schema::Query},
+        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, RootNode,
     };
 
     use super::*;

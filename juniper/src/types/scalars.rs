@@ -411,7 +411,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::ID;
-    use crate::{parser::ScalarToken, value::{DefaultScalarValue, ParseScalarValue}, EmptySubscription};
+    use crate::{
+        parser::ScalarToken,
+        value::{DefaultScalarValue, ParseScalarValue},
+        EmptySubscription,
+    };
 
     #[test]
     fn test_id_from_string() {
