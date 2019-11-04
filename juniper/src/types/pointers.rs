@@ -85,7 +85,7 @@ where
     }
 }
 
-impl<'a, S, T, CtxT> GraphQLType<S> for &'a T
+impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
 where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
