@@ -234,7 +234,7 @@ fn test_introspection_possible_types() {
     assert_eq!(possible_types, vec!["Human", "Droid"].into_iter().collect());
 }
 
-/* 
+/*
  * FIXME: make this work again
 #[test]
 fn test_builtin_introspection_query() {
