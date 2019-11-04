@@ -1,8 +1,8 @@
-use async_trait::async_trait;
 use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
     value::{Object, ScalarRefValue, ScalarValue, Value},
 };
+use async_trait::async_trait;
 
 use crate::{
     executor::{ExecutionResult, Executor},
@@ -239,12 +239,14 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance.resolve_into_type_async(
-                        info,
-                        type_condition.item,
-                        Some(&fragment.selection_set[..]),
-                        &sub_exec,
-                    ).await;
+                    let sub_result = instance
+                        .resolve_into_type_async(
+                            info,
+                            type_condition.item,
+                            Some(&fragment.selection_set[..]),
+                            &sub_exec,
+                        )
+                        .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
