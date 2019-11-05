@@ -375,7 +375,7 @@ where
     ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>> {
         let val = match self.0 {
             Ok(val) => val,
-            Err(e) => return None,
+            Err(_) => return None,
         };
 
         match val {

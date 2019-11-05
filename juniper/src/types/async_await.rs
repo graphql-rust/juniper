@@ -1,8 +1,7 @@
 use std::sync::Arc;
-use futures::stream::StreamExt;
 
 use crate::{
-    ast::{Directive, FromInputValue, InputValue, Selection},
+    ast::Selection,
     executor::{ExecutionResult, Executor, FieldError, ValuesStream},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
@@ -158,7 +157,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::{FuturesOrdered, StreamExt as _};
 
     let mut object = Object::with_capacity(selection_set.len());
 
@@ -387,7 +386,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::stream::FuturesOrdered;
+    use futures::stream::{FuturesOrdered, StreamExt as _};
 
     let mut object: Object<ValuesStream<S>> = Object::with_capacity(selection_set.len());
 

@@ -62,7 +62,7 @@ impl<S> Object<S> {
     }
 
     /// Get the current number of fields
-    pub fn field_count(&self) -> usize {
+    pub fn fields_count(&self) -> usize {
         self.key_value_list.len()
     }
 
@@ -91,14 +91,9 @@ impl<S> Object<S> {
         }
     }
 
-    /// Return underlying key_value_list
+    /// Converts Object value into a Vec of underlying fields
     pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
         self.key_value_list
-    }
-
-    /// Get `key_value_list`'s length
-    pub fn len(&self) -> usize {
-        self.key_value_list.len()
     }
 
     /// Creates `Object` out of iterator over `(Option<String>, Option<Value<S>>)`
@@ -113,10 +108,7 @@ impl<S> Object<S> {
             key_value_list: Vec::with_capacity(iter.size_hint().0),
         };
         for (k, v) in iter {
-            if k.is_none() {
-                return None;
-            }
-            if v.is_none() {
+            if k.is_none() || v.is_none() {
                 return None;
             }
             obj.add_field(k.unwrap().into(), v.unwrap());
