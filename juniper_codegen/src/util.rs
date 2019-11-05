@@ -731,6 +731,20 @@ impl GraphQLTypeDefiniton {
             }
         });
 
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
         let resolve_matches = self.fields.iter().map(|field| {
             let name = &field.name;
             let code = &field.resolver_code;
@@ -740,7 +754,7 @@ impl GraphQLTypeDefiniton {
                     #name => {
                         panic!("Tried to resolve async field {} on type {:?} with a sync resolver",
                             #name,
-                            Self::name(_info)
+                            <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
                         );
                     },
                 )
@@ -781,20 +795,6 @@ impl GraphQLTypeDefiniton {
                 ])
             )
         });
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
 
         // Preserve the original type_generics before modification,
         // since alteration makes them invalid if self.generic_scalar
@@ -999,7 +999,7 @@ impl GraphQLTypeDefiniton {
                         _ => {
                             panic!("Field {} not found on type {:?}",
                                 field,
-                                Self::name(_info)
+                                <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
                             );
                         }
                     }

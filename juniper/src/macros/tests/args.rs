@@ -73,12 +73,17 @@ impl Root {
         0
     }
 
-    fn attr_arg_descr(arg: i32) -> i32 {
-        0
-    }
-    fn attr_arg_descr_collapse(arg: i32) -> i32 {
-        0
-    }
+// TODO: enable once [this issue](https://github.com/graphql-rust/juniper/pull/441) is implemented
+//     fn attr_arg_descr(
+//        #[graphql(description = "The arg")]
+//        arg: i32) -> i32
+//     { 0 }
+//
+//    fn attr_arg_descr_collapse(
+//        #[graphql(description = "The first arg")]
+//        #[graphql(description = "and more details")]
+//         arg: i32,
+//     ) -> i32 { 0 }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
@@ -558,71 +563,72 @@ fn introspect_field_multi_args_descr_trailing_comma() {
     });
 }
 
-#[test]
-fn introspect_field_attr_arg_descr() {
-    run_args_info_query("attrArgDescr", |args| {
-        assert_eq!(args.len(), 1);
-
-        assert!(args.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("arg")),
-                ("description", Value::scalar("The arg")),
-                ("defaultValue", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![
-                            ("name", Value::null()),
-                            (
-                                "ofType",
-                                Value::object(
-                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
-                                ),
-                            ),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-    });
-}
-
-#[test]
-fn introspect_field_attr_arg_descr_collapse() {
-    run_args_info_query("attrArgDescrCollapse", |args| {
-        assert_eq!(args.len(), 1);
-
-        assert!(args.contains(&Value::object(
-            vec![
-                ("name", Value::scalar("arg")),
-                ("description", Value::scalar("The arg\nand more details")),
-                ("defaultValue", Value::null()),
-                (
-                    "type",
-                    Value::object(
-                        vec![
-                            ("name", Value::null()),
-                            (
-                                "ofType",
-                                Value::object(
-                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
-                                ),
-                            ),
-                        ]
-                        .into_iter()
-                        .collect(),
-                    ),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        )));
-    });
-}
+// TODO: enable once [this issue](https://github.com/graphql-rust/juniper/pull/441) is implemented
+//#[test]
+//fn introspect_field_attr_arg_descr() {
+//    run_args_info_query("attrArgDescr", |args| {
+//        assert_eq!(args.len(), 1);
+//
+//        assert!(args.contains(&Value::object(
+//            vec![
+//                ("name", Value::scalar("arg")),
+//                ("description", Value::scalar("The arg")),
+//                ("defaultValue", Value::null()),
+//                (
+//                    "type",
+//                    Value::object(
+//                        vec![
+//                            ("name", Value::null()),
+//                            (
+//                                "ofType",
+//                                Value::object(
+//                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+//                                ),
+//                            ),
+//                        ]
+//                        .into_iter()
+//                        .collect(),
+//                    ),
+//                ),
+//            ]
+//            .into_iter()
+//            .collect(),
+//        )));
+//    });
+//}
+//
+//#[test]
+//fn introspect_field_attr_arg_descr_collapse() {
+//    run_args_info_query("attrArgDescrCollapse", |args| {
+//        assert_eq!(args.len(), 1);
+//
+//        assert!(args.contains(&Value::object(
+//            vec![
+//                ("name", Value::scalar("arg")),
+//                ("description", Value::scalar("The arg\nand more details")),
+//                ("defaultValue", Value::null()),
+//                (
+//                    "type",
+//                    Value::object(
+//                        vec![
+//                            ("name", Value::null()),
+//                            (
+//                                "ofType",
+//                                Value::object(
+//                                    vec![("name", Value::scalar("Int"))].into_iter().collect(),
+//                                ),
+//                            ),
+//                        ]
+//                        .into_iter()
+//                        .collect(),
+//                    ),
+//                ),
+//            ]
+//            .into_iter()
+//            .collect(),
+//        )));
+//    });
+//}
 
 #[test]
 fn introspect_field_arg_with_default() {
