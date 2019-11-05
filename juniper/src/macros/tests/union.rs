@@ -10,6 +10,7 @@ Syntax to validate:
 *
 */
 
+
 use std::marker::PhantomData;
 
 use crate::{
@@ -49,20 +50,16 @@ impl Concrete {
 impl CustomName {
     fn resolve(&self) {
         match self {
-            Concrete => match *self {
-                CustomName::Concrete(ref c) => Some(c),
-            },
+            Concrete => match *self { CustomName::Concrete(ref c) => Some(c) },
         }
     }
 }
 
 #[crate::union_internal]
-impl<'a> WithLifetime<'a> {
+impl<'a> WithLifetime<'a>{
     fn resolve(&self) {
         match self {
-            Concrete => match *self {
-                WithLifetime::Int(_) => Some(&Concrete),
-            },
+            Concrete => match *self { WithLifetime::Int(_) => Some(&Concrete) },
         }
     }
 }
@@ -71,9 +68,7 @@ impl<'a> WithLifetime<'a> {
 impl<T> WithGenerics<T> {
     fn resolve(&self) {
         match self {
-            Concrete => match *self {
-                WithGenerics::Generic(_) => Some(&Concrete),
-            },
+            Concrete => match *self { WithGenerics::Generic(_) => Some(&Concrete) }
         }
     }
 }
@@ -82,9 +77,7 @@ impl<T> WithGenerics<T> {
 impl DescriptionFirst {
     fn resolve(&self) {
         match self {
-            Concrete => match *self {
-                DescriptionFirst::Concrete(ref c) => Some(c),
-            },
+            Concrete => match *self { DescriptionFirst::Concrete(ref c) => Some(c) },
         }
     }
 }
@@ -120,7 +113,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
     let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();
@@ -218,3 +215,4 @@ fn introspect_description_first() {
         )));
     });
 }
+

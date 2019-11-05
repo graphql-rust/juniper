@@ -308,6 +308,9 @@ impl<T> EmptyMutation<T> {
     }
 }
 
+// This is safe due to never using `T`.
+unsafe impl<T> Send for EmptyMutation<T> {}
+
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
@@ -341,12 +344,77 @@ where
 {
 }
 
+/// Utillity type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the subscription,
+/// no subscription will be generated for the schema.
+pub struct EmptySubscription<T> {
+    phantom: PhantomData<T>,
+}
+
+// This is safe due to never using `T`.
+unsafe impl<T> Send for EmptySubscription<T> {}
+
+impl<T> EmptySubscription<T> {
+    /// Construct a new empty subscription
+    pub fn new() -> Self {
+        EmptySubscription {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<S, T> GraphQLType<S> for EmptySubscription<T>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("_EmptySubscription")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
+    }
+}
+
+impl<T, S> crate::SubscriptionHandler<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
+#[cfg(feature = "async")]
+impl<T, S> crate::SubscriptionHandlerAsync<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::ID;
     use crate::{
         parser::ScalarToken,
         value::{DefaultScalarValue, ParseScalarValue},
+        EmptyMutation, EmptySubscription,
     };
 
     #[test]
@@ -389,5 +457,17 @@ mod tests {
             r#"unicode \u1234\u5678\u90AB\uCDEF"#,
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
+    }
+
+    #[test]
+    fn empty_mutation_is_send() {
+        fn check_if_send<T: Send>() {}
+        check_if_send::<EmptyMutation<()>>();
+    }
+
+    #[test]
+    fn empty_subscription_is_send() {
+        fn check_if_send<T: Send>() {}
+        check_if_send::<EmptySubscription<()>>();
     }
 }

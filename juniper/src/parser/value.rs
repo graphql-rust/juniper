@@ -210,33 +210,36 @@ fn parse_scalar_literal_by_infered_type<'a, 'b, S>(
 where
     S: ScalarValue,
 {
-    match token {
+    let result = match token {
         ScalarToken::String(_) => {
             if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("String") {
-                (s.parse_fn)(token)
-                    .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
-                    .map_err(|e| Spanning::start_end(start, end, e))
+                (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
-                panic!("There needs to be a String type")
+                Err(ParseError::ExpectedScalarError(
+                    "There needs to be a String type",
+                ))
             }
         }
         ScalarToken::Int(_) => {
             if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Int") {
-                (s.parse_fn)(token)
-                    .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
-                    .map_err(|e| Spanning::start_end(start, end, e))
+                (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
-                panic!("There needs to be a Int type")
+                Err(ParseError::ExpectedScalarError(
+                    "There needs to be an Int type",
+                ))
             }
         }
         ScalarToken::Float(_) => {
             if let Some(&MetaType::Scalar(ref s)) = schema.concrete_type_by_name("Float") {
-                (s.parse_fn)(token)
-                    .map(|s| Spanning::start_end(start, end, InputValue::Scalar(s)))
-                    .map_err(|e| Spanning::start_end(start, end, e))
+                (s.parse_fn)(token).map(InputValue::Scalar)
             } else {
-                panic!("There needs to be a Float type")
+                Err(ParseError::ExpectedScalarError(
+                    "There needs to be a Float type",
+                ))
             }
         }
-    }
+    };
+    result
+        .map(|s| Spanning::start_end(start, end, s))
+        .map_err(|e| Spanning::start_end(start, end, e))
 }
