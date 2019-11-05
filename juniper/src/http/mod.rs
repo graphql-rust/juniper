@@ -7,12 +7,16 @@ use std::iter::FromIterator;
 #[cfg(feature = "async")]
 use std::pin::Pin;
 
+#[cfg(feature = "async")]
+use futures::{stream::Stream, stream::StreamExt, Poll};
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},
 };
 use serde_derive::{Deserialize, Serialize};
 
+#[cfg(feature = "async")]
+use crate::executor::ValuesStream;
 use crate::{
     ast::InputValue,
     executor::{ExecutionError, ValuesIterator},
@@ -20,12 +24,6 @@ use crate::{
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
-
-#[cfg(feature = "async")]
-use futures::{stream::Stream, stream::StreamExt, Poll};
-
-#[cfg(feature = "async")]
-use crate::executor::ValuesStream;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///

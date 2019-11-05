@@ -1,5 +1,6 @@
-use crate::Context;
 use juniper_codegen::{object_internal, GraphQLObjectInternal};
+
+use crate::Context;
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -16,30 +17,26 @@ struct Human {
 
 struct MyQuery;
 
-#[object_internal(
-    context = MyContext
-)]
+#[object_internal(context = MyContext)]
 impl MyQuery {}
 
-#[cfg(test)]
-mod sync_tests {
-    use super::*;
-
+mod sync {
     use std::iter::{self, FromIterator};
+
+    use juniper_codegen::subscription_internal;
 
     use crate::{
         http::GraphQLRequest, value::Object, DefaultScalarValue, EmptyMutation, RootNode, Value,
     };
-    use juniper_codegen::subscription_internal;
+
+    use super::*;
 
     type Schema =
         RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
     struct MySubscription;
 
-    #[subscription_internal(
-    context = MyContext
-    )]
+    #[subscription_internal(context = MyContext)]
     impl MySubscription {
         fn human(id: String) -> Human {
             let iter = Box::new(iter::once(Human {
@@ -70,7 +67,7 @@ mod sync_tests {
     }
 
     /// Helper method to create all variables, execute subscription
-    /// and collect returned iterators
+    /// and collect returned iterators.
     fn create_and_execute(query: String) -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>) {
         let request = GraphQLRequest::new(query, None, None);
 
@@ -120,7 +117,7 @@ mod sync_tests {
     }
 
     #[test]
-    fn subscription_returns_iterator() {
+    fn returns_iterator() {
         let query = r#"subscription {
             human(id: "1") {
     		    id
@@ -154,7 +151,7 @@ mod sync_tests {
     }
 
     #[test]
-    fn subscription_can_access_context() {
+    fn can_access_context() {
         let query = r#"subscription {
             humanWithContext {
                 id
@@ -182,9 +179,9 @@ mod sync_tests {
         assert_eq!(collected_values, expected_values);
     }
 
-    //todo: uncomment once fragments on type `Self` can be executed by default
+    // TODO: uncomment once fragments on type `Self` can be executed by default
     //#[test]
-    fn subscription_with_inline_fragments_typed() {
+    fn resolves_typed_inline_fragments() {
         let query = r#"subscription {
              ... on MySubscription {
                 human(id: "32") {
@@ -214,9 +211,9 @@ mod sync_tests {
         assert_eq!(collected_values, expected_values);
     }
 
-    //todo: uncomment once fragments on type `Self` can be executed by default
+    // TODO: uncomment once fragments on type `Self` can be executed by default
     //#[test]
-    fn subscription_with_inline_fragments_nontyped() {
+    fn resolves_nontyped_inline_fragments() {
         let query = r#"subscription {
              ... {
                 human(id: "32") {
@@ -247,7 +244,7 @@ mod sync_tests {
     }
 
     #[test]
-    fn subscription_can_access_arguments() {
+    fn can_access_arguments() {
         let query = r#"subscription {
             humanWithArgs(id: "123", name: "args name") {
                 id
@@ -282,12 +279,13 @@ mod sync_tests {
 }
 
 #[cfg(feature = "async")]
-#[cfg(test)]
-mod async_tests {
-    use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
+mod r#async {
+    use std::iter::{self, FromIterator};
+
     use futures::{self, stream::StreamExt};
     use juniper_codegen::subscription_internal;
-    use std::iter::{self, FromIterator};
+
+    use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
 
     use super::*;
 
@@ -299,7 +297,7 @@ mod async_tests {
         DefaultScalarValue,
     >;
 
-    //copied from `src/executor_tests/async_await/mod.rs`
+    // Copied from `src/executor_tests/async_await/mod.rs`.
     fn run<O>(f: impl std::future::Future<Output = O>) -> O {
         tokio::runtime::current_thread::Runtime::new()
             .unwrap()
@@ -308,9 +306,7 @@ mod async_tests {
 
     struct MySubscriptionAsync;
 
-    #[subscription_internal(
-        context = MyContext
-    )]
+    #[subscription_internal(context = MyContext)]
     impl MySubscriptionAsync {
         async fn async_human() -> Human {
             Ok(Box::pin(futures::stream::once(async {
@@ -324,7 +320,7 @@ mod async_tests {
     }
 
     /// Helper method to create all variables, execute subscription
-    /// and collect returned iterators
+    /// and collect returned iterators.
     fn create_and_execute(query: String) -> (Vec<String>, Vec<Vec<Value<DefaultScalarValue>>>) {
         let request = GraphQLRequest::new(query, None, None);
 
@@ -374,7 +370,7 @@ mod async_tests {
     }
 
     #[test]
-    fn subscription_returns_stream() {
+    fn returns_stream() {
         let query = r#"subscription {
             asyncHuman(id: "1") {
     		    id

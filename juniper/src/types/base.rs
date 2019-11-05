@@ -343,23 +343,22 @@ where
 }
 
 /// Trait to be implemented by user subscription handlers
-pub trait SubscriptionHandler<S>: GraphQLType<S> + Send + Sync
+pub trait Subscription<S>: GraphQLType<S> + Send + Sync
 where
     S: ScalarValue + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    /// Selection set resolver logic
-    #[allow(unused_variables)]
+    /// Resolve the provided selection set against the current subscription.
     fn resolve_into_iterator<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<'a, Self::Context, S>,
-    ) -> Value<ValuesIterator<S>> {
-        if let Some(selection_set) = selection_set {
-            let mut object = Object::with_capacity(selection_set.len());
-            if resolve_selection_set_into_iter(self, info, selection_set, executor, &mut object) {
-                Value::Object(object)
+    ) -> Value<ValuesIterator<'a, S>> {
+        if let Some(set) = selection_set {
+            let mut obj = Object::with_capacity(set.len());
+            if resolve_selection_set_into_iter(self, info, set, executor, &mut obj) {
+                Value::Object(obj)
             } else {
                 Value::Null
             }
@@ -370,28 +369,28 @@ where
 
     /// Field resolver logic. Called every time any field
     /// found in SelectionSet by default.
-    /// Default implementation __panics__
-    #[allow(unused_variables)]
+    ///
+    /// The default implementation panics.
     fn resolve_field_into_iterator<'a>(
         &self,
-        info: &Self::TypeInfo,
-        field_name: &str,
-        arguments: &Arguments<S>,
-        executor: Rc<Executor<'a, Self::Context, S>>,
+        _: &Self::TypeInfo,
+        _: &str,
+        _: &Arguments<S>,
+        _: Rc<Executor<'a, Self::Context, S>>,
     ) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
     /// Resolve this interface or union into concrete type.
-    /// Default implementation __panics__.
-    #[allow(unused_variables)]
+    ///
+    /// The default implementation panics.
     fn iter_resolve_into_type<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        type_name: &'a str,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: Rc<Executor<'a, Self::Context, S>>,
-    ) -> Result<Value<ValuesIterator<S>>, FieldError<S>> {
+        _: &'a Self::TypeInfo,
+        _: &'a str,
+        _: Option<&'a [Selection<S>]>,
+        _: Rc<Executor<'a, Self::Context, S>>,
+    ) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>> {
         //todo: if type is same as self call resolve_into_iterator
         //        if Self::name(info).unwrap() == type_name {
         //            Ok(self.resolve_into_iterator(info, selection_set, executor))
@@ -741,7 +740,7 @@ where
     true
 }
 
-/// Check if was excluded by `include`/`skip` directives
+/// Checks if field is excluded via `@include`/`@skip` GraphQL directives.
 pub(super) fn is_excluded<S>(
     directives: &Option<Vec<Spanning<Directive<S>>>>,
     vars: &Variables<S>,

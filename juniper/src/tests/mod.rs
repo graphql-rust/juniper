@@ -12,4 +12,4 @@
 //mod type_info_tests;
 
 #[cfg(test)]
-mod subscription_tests;
+mod subscription;

@@ -127,23 +127,19 @@ impl Query {
 
 struct Subscription;
 
-#[juniper::subscription(
-    Context = Context
-)]
+#[juniper::subscription(Context = Context)]
 impl Subscription {
-    async fn users() -> User {
+    async fn users() -> impl Stream<Item = User> {
         let mut counter = 0;
 
-        let stream = Interval::new_interval(Duration::from_secs(8)).map(move |_| {
+        Interval::new_interval(Duration::from_secs(8)).map(move |_| {
             counter += 1;
             User {
                 id: counter,
                 kind: UserKind::Admin,
                 name: "stream user".to_string(),
             }
-        });
-
-        Ok(Box::pin(stream))
+        })
 
         //        Ok(stream)
     }

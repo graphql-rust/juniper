@@ -62,7 +62,6 @@ where
     /// Called every time a field is found
     /// in selection set by default.
     /// Default implementation __panics__
-    #[allow(unused_variables)]
     async fn resolve_field_async<'a>(
         &self,
         info: &Self::TypeInfo,
@@ -74,7 +73,6 @@ where
     }
 
     /// Stream resolving logic.
-    #[allow(unused_variables)]
     async fn resolve_into_stream<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -90,7 +88,6 @@ where
 
     /// Resolve this interface or union into concrete type.
     /// Default implementation __panics__.
-    #[allow(unused_variables)]
     async fn stream_resolve_into_type<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
