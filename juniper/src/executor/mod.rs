@@ -4,8 +4,8 @@ use fnv::FnvHashMap;
 
 use crate::{
     ast::{
-        Definition, Document, Fragment, FromInputValue, InputValue, Operation,
-        OperationType, Selection, ToInputValue, Type,
+        Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
+        Selection, ToInputValue, Type,
     },
     parser::{SourcePosition, Spanning},
     schema::{

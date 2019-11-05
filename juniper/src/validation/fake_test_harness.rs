@@ -1,6 +1,5 @@
-//! This are just inimplemented `test_harness` functions which
-//! are used elsewhere (needed temporarily
-//! while `test_harness` does not compile)
+//! This are just unimplemented `test_harness` functions which are used
+//! elsewhere (needed temporarily while `test_harness` does not compile).
 
 use crate::{
     types::base::GraphQLType,
