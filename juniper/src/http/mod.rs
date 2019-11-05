@@ -325,7 +325,7 @@ where
                             }
                         };
                         //todo: not to clone over and over
-                        (Some(field_name.clone()), val)
+                        (field_name.clone(), val)
                     });
 
                     let obj = Object::try_from_iter(all_values);

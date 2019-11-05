@@ -96,24 +96,20 @@ impl<S> Object<S> {
         self.key_value_list
     }
 
-    /// Creates `Object` out of iterator over `(Option<String>, Option<Value<S>>)`
-    /// If any of returned values are `None`, then `None` is returned instead of an object
+    /// Creates Object out of iterator over `(K, Option<Value<S>>)`.
+    /// If any of returned values are `None`, then `None` is returned instead
+    /// of an Object.
     pub fn try_from_iter<I, K>(iter: I) -> Option<Self>
     where
-        I: IntoIterator<Item = (Option<K>, Option<Value<S>>)>,
+        I: IntoIterator<Item = (K, Option<Value<S>>)>,
         K: Into<String>,
     {
-        let iter = iter.into_iter();
-        let mut obj = Self {
-            key_value_list: Vec::with_capacity(iter.size_hint().0),
-        };
-        for (k, v) in iter {
-            if k.is_none() || v.is_none() {
-                return None;
-            }
-            obj.add_field(k.unwrap().into(), v.unwrap());
-        }
-        Some(obj)
+        Some(Self {
+            key_value_list: iter
+                .into_iter()
+                .map(|(k, v)| v.map(|v| (k.into(), v)))
+                .collect::<Option<Vec<_>>>()?,
+        })
     }
 }
 
