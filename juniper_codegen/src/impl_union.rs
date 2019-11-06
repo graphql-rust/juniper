@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 
 use proc_macro_error::MacroError;
-use quote::{quote};
+use quote::quote;
 use syn::spanned::Spanned;
 
 use crate::util;
