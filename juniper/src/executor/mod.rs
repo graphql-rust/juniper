@@ -210,20 +210,6 @@ impl<S> FieldError<S> {
 /// The result of resolving the value of a field of type `T`
 pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 
-/*
-pub enum ResolvedValue<'a, S = DefaultScalarValue> {
-    Value(Value<S>),
-    Future(crate::BoxFuture<'a, Value<S>>),
-}
-
-impl<'a, S> From<Value<S>> for ResolvedValue<'a, S> {
-    #[inline]
-    fn from(value: Value<S>) -> Self {
-        ResolvedValue::Value(value)
-    }
-}
-*/
-
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 

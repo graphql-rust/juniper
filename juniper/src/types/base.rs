@@ -343,7 +343,7 @@ where
     }
 }
 
-pub fn resolve_selection_set_into<T, CtxT, S>(
+pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
     selection_set: &[Selection<S>],

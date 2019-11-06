@@ -88,7 +88,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [chrono]: https://crates.io/crates/chrono
 
 */
-#![doc(html_root_url = "https://docs.rs/juniper/0.14.0")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.14.1")]
 #![warn(missing_docs)]
 
 #[doc(hidden)]
@@ -151,6 +151,7 @@ mod executor_tests;
 pub use crate::util::to_camel_case;
 
 use crate::{
+    executor::{execute_validated_query, execute_validated_query_async},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
@@ -227,7 +228,7 @@ where
         }
     }
 
-    executor::execute_validated_query(document, operation_name, root_node, variables, context)
+    execute_validated_query(document, operation_name, root_node, variables, context)
 }
 
 /// Execute a query in a provided schema
@@ -267,7 +268,7 @@ where
         }
     }
 
-    executor::execute_validated_query_async(document, operation_name, root_node, variables, context)
+    execute_validated_query_async(document, operation_name, root_node, variables, context)
         .await
 }
 

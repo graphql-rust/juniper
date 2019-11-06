@@ -13,6 +13,9 @@ pub enum ParseError<'a> {
 
     /// An error during tokenization occurred
     LexerError(LexerError),
+
+    /// A scalar of unexpected type occurred in the source
+    ExpectedScalarError(&'static str),
 }
 
 #[doc(hidden)]
@@ -196,6 +199,7 @@ impl<'a> fmt::Display for ParseError<'a> {
             ParseError::UnexpectedToken(ref token) => write!(f, "Unexpected \"{}\"", token),
             ParseError::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
             ParseError::LexerError(ref err) => err.fmt(f),
+            ParseError::ExpectedScalarError(err) => err.fmt(f),
         }
     }
 }
