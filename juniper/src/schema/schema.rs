@@ -98,12 +98,13 @@ where
     ) -> ExecutionResult<S> {
         use futures::future::{ready, FutureExt};
         match field_name {
-            "__schema" | "__type" => self.resolve_field(info, field_name, arguments, executor),
-            _ => {
-                self.query_type
-                    .resolve_field_async(info, field_name, arguments, executor)
-                    .await
+            "__schema" | "__type" => {
+                let v = self.resolve_field(info, field_name, arguments, executor);
+                Box::pin(ready(v))
             }
+            _ => self
+                .query_type
+                .resolve_field_async(info, field_name, arguments, executor),
         }
     }
 }

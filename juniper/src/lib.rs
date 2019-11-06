@@ -151,7 +151,6 @@ mod executor_tests;
 pub use crate::util::to_camel_case;
 
 use crate::{
-    executor::{execute_validated_query, execute_validated_query_async},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
@@ -228,7 +227,7 @@ where
         }
     }
 
-    execute_validated_query(document, operation_name, root_node, variables, context)
+    executor::execute_validated_query(document, operation_name, root_node, variables, context)
 }
 
 /// Execute a query in a provided schema
@@ -268,7 +267,7 @@ where
         }
     }
 
-    execute_validated_query_async(document, operation_name, root_node, variables, context)
+    executor::execute_validated_query_async(document, operation_name, root_node, variables, context)
         .await
 }
 

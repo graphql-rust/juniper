@@ -7,7 +7,7 @@ macro_rules! __juniper_impl_trait {
         }
     ) => {
         impl<$($other,)*> $crate::$impl_trait<$crate::DefaultScalarValue> for $name {
-            $($body)+
+            $($body)*
         }
     };
     (
@@ -26,7 +26,7 @@ macro_rules! __juniper_impl_trait {
 
     (
         impl< <$generic:tt $(: $bound: tt)*> $(, $other: tt)* > $impl_trait:tt for $name:ty {
-            $($body:tt)+
+            $($body:tt)*
         }
     ) => {
        impl<$($other,)* $generic $(: $bound)*> $crate::$impl_trait<$generic> for $name
@@ -50,17 +50,17 @@ macro_rules! __juniper_impl_trait {
             $generic: $crate::ScalarValue,
             for<'__b> &'__b $generic: $crate::ScalarRefValue<'__b>,
        {
-           $($body)+
+           $($body)*
        }
     };
 
     (
         impl<$scalar:ty $(, $other: tt )*> $impl_trait:tt for $name:ty {
-            $($body:tt)+
+            $($body:tt)*
         }
     ) => {
         impl<$($other, )*> $crate::$impl_trait<$scalar> for $name {
-            $($body)+
+            $($body)*
         }
     };
     (

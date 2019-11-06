@@ -41,13 +41,14 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use futures::{future::poll_fn, Future};
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
 #[cfg(feature = "async")]
 use futures03::future::{FutureExt, TryFutureExt};
+
+use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
