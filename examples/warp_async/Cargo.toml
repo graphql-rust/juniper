@@ -16,4 +16,3 @@ reqwest = "0.9.19"
 juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
 juniper = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
 juniper_warp = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
-

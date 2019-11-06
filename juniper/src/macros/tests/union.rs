@@ -1,3 +1,12 @@
+use std::marker::PhantomData;
+
+use crate::{
+    ast::InputValue,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    value::{DefaultScalarValue, Object, Value},
+};
+
 /*
 
 Syntax to validate:
@@ -33,6 +42,16 @@ enum WithGenerics<T> {
 }
 
 enum DescriptionFirst {
+    Concrete(Concrete),
+}
+enum ResolversFirst {
+    Concrete(Concrete),
+}
+
+enum CommasWithTrailing {
+    Concrete(Concrete),
+}
+enum ResolversWithTrailingComma {
     Concrete(Concrete),
 }
 
