@@ -7,8 +7,11 @@ mod rules;
 mod traits;
 mod visitor;
 
+//#[cfg(test)]
+//pub(crate) mod test_harness;
+// TODO: remove fake_test_harness once test_harness compiles
 #[cfg(test)]
-pub(crate) mod test_harness;
+pub(crate) mod fake_test_harness;
 
 pub(crate) use self::rules::visit_all_rules;
 pub use self::{
@@ -19,8 +22,14 @@ pub use self::{
     visitor::visit,
 };
 
+//#[cfg(test)]
+//pub use self::test_harness::{
+//    expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+//    expect_passes_rule_with_schema,
+//};
+// TODO: remove fake_test_harness once test_harness compiles
 #[cfg(test)]
-pub use self::test_harness::{
+pub use self::fake_test_harness::{
     expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
     expect_passes_rule_with_schema,
 };
