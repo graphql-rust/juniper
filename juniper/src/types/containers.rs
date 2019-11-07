@@ -269,7 +269,7 @@ where
     async fn resolve_async<'a>(
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
-        selection_set: Option<&'a [Selection<'a, S>]>,
+        _: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         resolve_into_list_async(executor, info, self.iter()).await
@@ -289,7 +289,7 @@ where
     async fn resolve_async<'a>(
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
-        selection_set: Option<&'a [Selection<'a, S>]>,
+        _: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         resolve_into_list_async(executor, info, self.iter()).await
@@ -309,7 +309,7 @@ where
     async fn resolve_async<'a>(
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
-        selection_set: Option<&'a [Selection<'a, S>]>,
+        _: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         match *self {

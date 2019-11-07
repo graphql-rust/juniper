@@ -1,14 +1,9 @@
 use indexmap::IndexMap;
 
-use crate::{
-    executor::{ExecutionResult, Executor, Registry, Variables},
-    schema::{meta::MetaType, model::RootNode},
-    types::{
-        base::{Arguments, GraphQLType},
-        scalars::EmptyMutation,
-    },
-    value::{ScalarRefValue, ScalarValue, Value},
-};
+use crate::{executor::{ExecutionResult, Executor, Registry, Variables}, schema::{meta::MetaType, model::RootNode}, types::{
+    base::{Arguments, GraphQLType},
+    scalars::EmptyMutation,
+}, value::{ScalarRefValue, ScalarValue, Value}, EmptySubscription};
 
 pub struct NodeTypeInfo {
     name: String,
@@ -75,7 +70,7 @@ fn test_node() {
     node.attributes.insert("foo".to_string(), "1".to_string());
     node.attributes.insert("bar".to_string(), "2".to_string());
     node.attributes.insert("baz".to_string(), "3".to_string());
-    let schema: RootNode<_, _> = RootNode::new_with_info(node, EmptyMutation::new(), node_info, ());
+    let schema: RootNode<_, _, _> = RootNode::new_with_info(node, EmptyMutation::new(), EmptySubscription::new(), node_info, (), ());
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &()),

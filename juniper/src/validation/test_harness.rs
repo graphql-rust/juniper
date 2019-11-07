@@ -1,17 +1,9 @@
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
-use crate::{
-    ast::{FromInputValue, InputValue},
-    executor::Registry,
-    parser::parse_document_source,
-    schema::{
-        meta::{EnumValue, MetaType},
-        model::{DirectiveLocation, DirectiveType, RootNode},
-    },
-    types::{base::GraphQLType, scalars::ID},
-    validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
-    value::{ScalarRefValue, ScalarValue},
-};
+use crate::{ast::{FromInputValue, InputValue}, executor::Registry, parser::parse_document_source, schema::{
+    meta::{EnumValue, MetaType},
+    model::{DirectiveLocation, DirectiveType, RootNode},
+}, types::{base::GraphQLType, scalars::ID}, validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor}, value::{ScalarRefValue, ScalarValue}, EmptySubscription};
 
 struct Being;
 struct Pet;
@@ -654,16 +646,18 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, V, F, S>(r: Q, m: M, q: &'a str, factory: F) -> Vec<RuleError>
+pub fn validate<'a, Q, M, Sub, V, F, S>(r: Q, m: M, s: Sub, q: &'a str, factory: F) -> Vec<RuleError>
 where
     for<'b> &'b S: ScalarRefValue<'b>,
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
+    Sub: GraphQLType<S, TypeInfo = ()>,
+    <Sub as crate::GraphQLType<S>>::Context: Send + Sync,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let mut root = RootNode::new(r, m);
+    let mut root = RootNode::new(r, m, s);
 
     root.schema.add_directive(DirectiveType::new(
         "onQuery",
@@ -708,7 +702,7 @@ where
 
 pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
@@ -718,14 +712,14 @@ where
 
 pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m,  EmptySubscription::<S>::new(), q, factory);
 
     if !errs.is_empty() {
         print_errors(&errs);
@@ -735,7 +729,7 @@ where
 
 pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
@@ -750,14 +744,14 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     q: &'a str,
     expected_errors: &[RuleError],
 ) where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m, EmptySubscription::<S>::new(), q, factory);
 
     if errs.is_empty() {
         panic!("Expected rule to fail, but no errors were found");

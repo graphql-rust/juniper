@@ -62,7 +62,7 @@ impl<S> Object<S> {
     }
 
     /// Get the current number of fields
-    pub fn field_count(&self) -> usize {
+    pub fn fields_count(&self) -> usize {
         self.key_value_list.len()
     }
 
@@ -89,6 +89,27 @@ impl<S> Object<S> {
                 _ => {}
             }
         }
+    }
+
+    /// Converts Object value into a Vec of underlying fields
+    pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
+        self.key_value_list
+    }
+
+    /// Creates Object out of iterator over `(K, Option<Value<S>>)`.
+    /// If any of returned values are `None`, then `None` is returned instead
+    /// of an Object.
+    pub fn try_from_iter<I, K>(iter: I) -> Option<Self>
+    where
+        I: IntoIterator<Item = (K, Option<Value<S>>)>,
+        K: Into<String>,
+    {
+        Some(Self {
+            key_value_list: iter
+                .into_iter()
+                .map(|(k, v)| v.map(|v| (k.into(), v)))
+                .collect::<Option<Vec<_>>>()?,
+        })
     }
 }
 

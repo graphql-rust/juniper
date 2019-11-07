@@ -10,6 +10,8 @@ members = [
   "juniper_iron",
   "juniper_rocket",
   "juniper_warp",
+  "examples/warp_subscriptions",
+
 ]
 exclude = [
   "docs/book/tests",

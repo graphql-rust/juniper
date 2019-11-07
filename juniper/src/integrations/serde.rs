@@ -74,6 +74,10 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
                 message: "Expected query, got subscription",
             }]
             .serialize(serializer),
+            GraphQLError::NotSubscription => [SerializeHelper {
+                message: "Expected subscription, got query",
+            }]
+            .serialize(serializer),
         }
     }
 }
@@ -375,7 +379,7 @@ where
     where
         S: ser::Serializer,
     {
-        let mut map = serializer.serialize_map(Some(self.field_count()))?;
+        let mut map = serializer.serialize_map(Some(self.fields_count()))?;
 
         for &(ref f, ref v) in self.iter() {
             map.serialize_key(f)?;
@@ -450,8 +454,7 @@ mod tests {
             to_string(&ExecutionError::at_origin(FieldError::new(
                 "foo error",
                 Value::Object(obj),
-            )))
-            .unwrap(),
+            ))).unwrap(),
             r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#
         );
     }

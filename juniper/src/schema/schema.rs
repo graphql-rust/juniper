@@ -13,11 +13,13 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
@@ -78,14 +80,16 @@ where
 
 #[cfg(feature = "async")]
 #[async_trait::async_trait]
-impl<'a, CtxT, S, QueryT, MutationT> crate::GraphQLTypeAsync<S>
-    for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'a,
     for<'c> &'c S: ScalarRefValue<'c>,
 {
@@ -99,12 +103,12 @@ where
         use futures::future::{ready, FutureExt};
         match field_name {
             "__schema" | "__type" => {
-                let v = self.resolve_field(info, field_name, arguments, executor);
-                Box::pin(ready(v))
+                self.resolve_field(info, field_name, arguments, executor)
             }
             _ => self
                 .query_type
-                .resolve_field_async(info, field_name, arguments, executor),
+                .resolve_field_async(info, field_name, arguments, executor)
+                .await
         }
     }
 }
@@ -125,7 +129,10 @@ where
             .into_iter()
             .filter(|t| {
                 t.to_concrete()
-                    .map(|t| t.name() != Some("_EmptyMutation"))
+                    .map(|t| {
+                        !(t.name() == Some("_EmptyMutation")
+                            || t.name() == Some("_EmptySubscription"))
+                    })
                     .unwrap_or(false)
             })
             .collect::<Vec<_>>()

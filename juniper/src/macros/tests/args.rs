@@ -3,7 +3,7 @@ use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Value},
 };
 
@@ -73,17 +73,13 @@ impl Root {
         0
     }
 
-// TODO: enable once [parameter attributes are supported by proc macros]
-//       (https://github.com/graphql-rust/juniper/pull/441)
-//     fn attr_arg_descr(
-//        #[graphql(description = "The arg")]
-//        arg: i32) -> i32
-//     { 0 }
-//    fn attr_arg_descr_collapse(
-//        #[graphql(description = "The first arg")]
-//        #[graphql(description = "and more details")]
-//         arg: i32,
-//     ) -> i32 { 0 }
+    // TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
+    // fn attr_arg_descr(#[doc = "The arg"] arg: i32) -> i32 { 0 }
+    // fn attr_arg_descr_collapse(
+    //     #[doc = "The arg"]
+    //     #[doc = "and more details"]
+    //     arg: i32,
+    // ) -> i32 { 0 }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
@@ -162,7 +158,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) =
         crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
@@ -563,8 +563,7 @@ fn introspect_field_multi_args_descr_trailing_comma() {
     });
 }
 
-// TODO: enable once [parameter attributes are supported by proc macros]
-//       (https://github.com/graphql-rust/juniper/pull/441)
+// TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
 // #[test]
 // fn introspect_field_attr_arg_descr() {
 //     run_args_info_query("attrArgDescr", |args| {
@@ -598,8 +597,7 @@ fn introspect_field_multi_args_descr_trailing_comma() {
 //     });
 // }
 
-// TODO: enable once [parameter attributes are supported by proc macros]
-//       (https://github.com/graphql-rust/juniper/pull/441)
+// TODO: enable once [RFC 2565](https://github.com/rust-lang/rust/issues/60406) is implemented
 // #[test]
 // fn introspect_field_attr_arg_descr_collapse() {
 //     run_args_info_query("attrArgDescrCollapse", |args| {
