@@ -238,7 +238,6 @@ fn test_introspection_possible_types() {
 fn test_builtin_introspection_query() {
     let database = Database::new();
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
-
     let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
     sort_schema_value(&mut result.0);
     let expected = schema_introspection_result();

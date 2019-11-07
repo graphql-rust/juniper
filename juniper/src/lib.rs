@@ -110,13 +110,14 @@ extern crate uuid;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    object, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
+    object, union, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    object_internal, GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
+    object_internal, union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
+    GraphQLScalarValueInternal,
 };
 
 #[macro_use]
@@ -150,7 +151,6 @@ mod executor_tests;
 pub use crate::util::to_camel_case;
 
 use crate::{
-    executor::execute_validated_query,
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
@@ -175,6 +175,12 @@ pub use crate::{
         ScalarValue, Value,
     },
 };
+
+/// A pinned, boxed future that can be polled.
+pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
+
+#[cfg(feature = "async")]
+pub use crate::types::async_await::GraphQLTypeAsync;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -221,7 +227,48 @@ where
         }
     }
 
-    execute_validated_query(document, operation_name, root_node, variables, context)
+    executor::execute_validated_query(document, operation_name, root_node, variables, context)
+}
+
+/// Execute a query in a provided schema
+#[cfg(feature = "async")]
+pub async fn execute_async<'a, S, CtxT, QueryT, MutationT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+    variables: &Variables<S>,
+    context: &CtxT,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    let document = parse_document_source(document_source, &root_node.schema)?;
+    {
+        let errors = validate_input_values(variables, &document, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
+
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    executor::execute_validated_query_async(document, operation_name, root_node, variables, context)
+        .await
 }
 
 /// Execute the reference introspection query in the provided schema

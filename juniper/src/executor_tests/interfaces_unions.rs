@@ -166,12 +166,24 @@ mod union {
         }
     }
 
+    /*
     graphql_union!(<'a> &'a dyn Pet: () as "Pet" |&self| {
         instance_resolvers: |&_| {
             &Dog => self.as_dog(),
             &Cat => self.as_cat(),
         }
     });
+    */
+
+    #[crate::union_internal]
+    impl<'a> &'a dyn Pet {
+        fn resolve(&self) {
+            match self {
+                Dog => self.as_dog(),
+                Cat => self.as_cat(),
+            }
+        }
+    }
 
     struct Dog {
         name: String,
@@ -227,7 +239,7 @@ mod union {
     }
 
     #[test]
-    fn test() {
+    fn test_unions() {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
