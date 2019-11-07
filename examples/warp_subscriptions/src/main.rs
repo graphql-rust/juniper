@@ -176,19 +176,19 @@ async fn main() {
     println!("Listening on 127.0.0.1:8080");
 
     let routes = (warp::path("subscriptions")
-        .and(warp::ws2())
+        .and(warp::ws())
         .and(state2.clone())
         .and(warp::any().map(move || Arc::clone(&s_schema)))
-        .map(|ws: warp::ws::Ws2, ctx: Context, schema: Arc<Schema>| {
+        .map(|ws: warp::ws::Ws, ctx: Context, schema: Arc<Schema>| {
             ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
                 println!("ws connected");
                 juniper_warp::graphql_subscriptions_async(websocket, schema, ctx).boxed()
             })
         }))
-    .or(warp::post2()
+    .or(warp::post()
         .and(warp::path("graphql"))
         .and(qm_graphql_filter))
-    .or(warp::get2()
+    .or(warp::get()
         .and(warp::path("playground"))
         .and(playground_filter("/graphql", "/subscriptions")))
     .or(homepage)

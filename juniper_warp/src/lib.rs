@@ -217,7 +217,7 @@ where
 /// let graphql_filter = make_graphql_filter(schema, context_extractor);
 ///
 /// let graphql_endpoint = warp::path("graphql")
-///     .and(warp::post2())
+///     .and(warp::post())
 ///     .and(graphql_filter);
 /// # }
 /// ```
@@ -259,7 +259,7 @@ where
             .boxed()
         };
 
-    let post_filter = warp::post2()
+    let post_filter = warp::post()
         .and(context_extractor.clone())
         .and(warp::body::json())
         .and_then(handle_post_request);
@@ -294,7 +294,7 @@ where
         .boxed()
     };
 
-    let get_filter = warp::get2()
+    let get_filter = warp::get()
         .and(context_extractor.clone())
         .and(warp::filters::query::query())
         .and_then(handle_get_request);
@@ -337,7 +337,7 @@ where
         }
     };
 
-    let post_filter = warp::post2()
+    let post_filter = warp::post()
         .and(context_extractor.clone())
         .and(warp::body::json())
         .and_then(handle_post_request);
@@ -367,7 +367,7 @@ where
                 .map(|result| -> Result<_, warp::reject::Rejection> { Ok(build_response(result)) })
         };
 
-    let get_filter = warp::get2()
+    let get_filter = warp::get()
         .and(context_extractor.clone())
         .and(warp::filters::query::query())
         .and_then(handle_get_request);
@@ -643,7 +643,7 @@ mod tests {
 
     #[test]
     fn graphiql_endpoint_matches() {
-        let filter = warp::get2()
+        let filter = warp::get()
             .and(warp::path("graphiql"))
             .and(graphiql_filter("/graphql"));
         let result = request()
@@ -657,7 +657,7 @@ mod tests {
 
     #[test]
     fn graphiql_endpoint_returns_graphiql_source() {
-        let filter = warp::get2()
+        let filter = warp::get()
             .and(warp::path("dogs-api"))
             .and(warp::path("graphiql"))
             .and(graphiql_filter("/dogs-api/graphql"));
@@ -679,7 +679,7 @@ mod tests {
 
     #[test]
     fn playground_endpoint_matches() {
-        let filter = warp::get2()
+        let filter = warp::get()
             .and(warp::path("playground"))
             .and(playground_filter("/graphql"));
         let result = request()
@@ -693,7 +693,7 @@ mod tests {
 
     #[test]
     fn playground_endpoint_returns_playground_source() {
-        let filter = warp::get2()
+        let filter = warp::get()
             .and(warp::path("dogs-api"))
             .and(warp::path("playground"))
             .and(playground_filter("/dogs-api/graphql"));
