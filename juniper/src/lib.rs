@@ -88,7 +88,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [chrono]: https://crates.io/crates/chrono
 
 */
-#![doc(html_root_url = "https://docs.rs/juniper/0.14.0")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.14.1")]
 #![warn(missing_docs)]
 
 #[doc(hidden)]

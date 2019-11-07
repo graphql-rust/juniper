@@ -4,7 +4,7 @@
 //! You should not depend on juniper_codegen directly.
 //! You only need the `juniper` crate.
 
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.0")]
+#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.1")]
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
@@ -349,6 +349,24 @@ struct Query;
 )]
 impl Query {
     // ...
+}
+```
+
+## Raw identifiers
+
+You can use [raw identifiers](https://doc.rust-lang.org/stable/edition-guide/rust-2018/module-system/raw-identifiers.html)
+if you want a GrahpQL field that happens to be a Rust keyword:
+
+```
+struct User {
+    r#type: String,
+}
+
+#[juniper::object]
+impl User {
+    fn r#type(&self) -> &str {
+        &self.r#type
+    }
 }
 ```
 

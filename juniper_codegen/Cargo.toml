@@ -1,6 +1,6 @@
 [package]
 name = "juniper_codegen"
-version = "0.14.0"
+version = "0.14.1"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -21,7 +21,7 @@ quote = "1.0.2"
 proc-macro-error = "0.3.4"
 
 [dev-dependencies]
-juniper = { version = "0.14.0", path = "../juniper" }
+juniper = { version = "0.14.1", path = "../juniper" }
 
 [badges]
 travis-ci = { repository = "graphql-rust/juniper" }
