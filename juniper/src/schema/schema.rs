@@ -77,6 +77,7 @@ where
 }
 
 #[cfg(feature = "async")]
+#[async_trait::async_trait]
 impl<'a, CtxT, S, QueryT, MutationT> crate::GraphQLTypeAsync<S>
     for RootNode<'a, QueryT, MutationT, S>
 where
@@ -85,16 +86,16 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
+    CtxT: Send + Sync + 'a,
+    for<'c> &'c S: ScalarRefValue<'c>,
 {
-    fn resolve_field_async<'b>(
+    async fn resolve_field_async<'b>(
         &'b self,
-        info: &'b Self::TypeInfo,
+        info: &'b <Self as crate::GraphQLType<S>>::TypeInfo,
         field_name: &'b str,
-        arguments: &'b Arguments<S>,
-        executor: &'b Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
+        arguments: &'b Arguments<'b, S>,
+        executor: &'b Executor<'b, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> ExecutionResult<S> {
         use futures::future::{ready, FutureExt};
         match field_name {
             "__schema" | "__type" => {

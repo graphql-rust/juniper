@@ -197,19 +197,19 @@ where
 }
 
 #[cfg(feature = "async")]
+#[async_trait::async_trait]
 impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
 where
     S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn resolve_async<'a>(
+    async fn resolve_async<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::Value<S>> {
-        use futures::future;
-        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> crate::Value<S> {
+        self.resolve(info, selection_set, executor)
     }
 }
 
@@ -308,6 +308,9 @@ impl<T> EmptyMutation<T> {
     }
 }
 
+// This is safe due to never using `T`.
+unsafe impl<T> Send for EmptyMutation<T> {}
+
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
@@ -343,7 +346,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::ID;
+    use super::{EmptyMutation, ID};
     use crate::{
         parser::ScalarToken,
         value::{DefaultScalarValue, ParseScalarValue},
@@ -389,5 +392,11 @@ mod tests {
             r#"unicode \u1234\u5678\u90AB\uCDEF"#,
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
+    }
+
+    #[test]
+    fn empty_mutation_is_send() {
+        fn check_if_send<T: Send>() {}
+        check_if_send::<EmptyMutation<()>>();
     }
 }

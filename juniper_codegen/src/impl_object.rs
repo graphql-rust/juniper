@@ -42,8 +42,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     }
 
 
-    let name =
-    if let Some(name) = impl_attrs.name.as_ref(){
+    let name = if let Some(name) = impl_attrs.name.as_ref(){
         name.to_string()
     }
     else {

@@ -43,7 +43,7 @@ impl User {
     }
 }
 
-struct Query; 
+struct Query;
 
 #[juniper::object(Context = Context)]
 impl Query {

@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 
 use proc_macro_error::MacroError;
-use quote::{quote};
+use quote::quote;
 use syn::spanned::Spanned;
 
 use crate::util;
@@ -39,7 +39,7 @@ impl syn::parse::Parse for ResolveBody {
         body.parse::<syn::token::Match>()?;
         body.parse::<syn::token::SelfValue>()?;
 
-        let match_body; 
+        let match_body;
         syn::braced!( match_body in body );
 
         let mut variants = Vec::new();
@@ -154,7 +154,7 @@ pub fn impl_union(
     let context = attrs.context.map(|c| quote!{ #c } ).unwrap_or_else(|| quote!{ () });
 
     let output = quote! {
-        impl #impl_generics #juniper::GraphQLType<#scalar> for #ty #where_clause 
+        impl #impl_generics #juniper::GraphQLType<#scalar> for #ty #where_clause
         {
             type Context = #context;
             type TypeInfo = ();

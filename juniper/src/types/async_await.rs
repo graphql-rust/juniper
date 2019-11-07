@@ -12,6 +12,7 @@ use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
+#[async_trait::async_trait]
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -19,26 +20,40 @@ where
     S: ScalarValue + Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    fn resolve_field_async<'a>(
+    async fn resolve_field_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         field_name: &'a str,
-        arguments: &'a Arguments<S>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        arguments: &'a Arguments<'a, S>,
+        executor: &'a Executor<'a, Self::Context, S>,
+    ) -> ExecutionResult<S> {
         panic!("resolve_field must be implemented by object types");
     }
 
-    fn resolve_async<'a>(
+    async fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, Value<S>> {
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, Self::Context, S>,
+    ) -> Value<S> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_async(self, info, selection_set, executor)
+            resolve_selection_set_into_async(self, info, selection_set, executor).await
         } else {
             panic!("resolve() must be implemented by non-object output types");
+        }
+    }
+
+    async fn resolve_into_type_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        type_name: &str,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        if Self::name(info).unwrap() == type_name {
+            Ok(self.resolve_async(info, selection_set, executor).await)
+        } else {
+            panic!("resolve_into_type_async must be implemented by unions and interfaces");
         }
     }
 }
@@ -160,7 +175,7 @@ where
                 let response_name = response_name.to_string();
                 let field_future = async move {
                     // TODO: implement custom future type instead of
-                    // two-level boxing.
+                    //       two-level boxing.
                     let res = instance
                         .resolve_field_async(info, f.name.item, &args, &sub_exec)
                         .await;
@@ -223,14 +238,14 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    // FIXME: implement async version.
-
-                    let sub_result = instance.resolve_into_type(
-                        info,
-                        type_condition.item,
-                        Some(&fragment.selection_set[..]),
-                        &sub_exec,
-                    );
+                    let sub_result = instance
+                        .resolve_into_type_async(
+                            info,
+                            type_condition.item,
+                            Some(&fragment.selection_set[..]),
+                            &sub_exec,
+                        )
+                        .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
