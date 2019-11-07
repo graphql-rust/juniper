@@ -431,1071 +431,1071 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
     }
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//    use crate::{
-//        ast::Document,
-//        parser::UnlocatedParseResult,
-//        schema::model::SchemaType,
-//        validation::test_harness::{MutationRoot, QueryRoot},
-//        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-//    };
-//    use std::collections::HashMap;
-//
-//    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
-//    where
-//        S: ScalarValue,
-//        for<'b> &'b S: ScalarRefValue<'b>,
-//    {
-//        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
-//    }
-//
-//    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {
-//        let mut fragments = HashMap::new();
-//        for d in doc {
-//            if let crate::ast::Definition::Fragment(ref f) = *d {
-//                let f = &f.item;
-//                fragments.insert(f.name.item, f);
-//            }
-//        }
-//        fragments
-//    }
-//
-//    #[test]
-//    fn check_simple_query() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        id
-//        name
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_alias() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    custom_hero: hero {
-//        id
-//        my_name: name
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: Some("custom_hero"),
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: Some("my_name"),
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_child() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        id
-//        name
-//        friends {
-//            name
-//            id
-//        }
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "friends",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: vec![
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "name",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::All,
-//                                },
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "id",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::All,
-//                                },
-//                            ],
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_argument() {
-//        let docs = parse_document_source(
-//            "
-//query Hero {
-//    hero(episode: EMPIRE) {
-//        id
-//        name(uppercase: true)
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: vec![LookAheadArgument {
-//                    name: "episode",
-//                    value: LookAheadValue::Enum("EMPIRE"),
-//                }],
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: vec![LookAheadArgument {
-//                                name: "uppercase",
-//                                value: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
-//                            }],
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_variable() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero($episode: Episode) {
-//    hero(episode: $episode) {
-//        id
-//        name
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let mut vars = Variables::default();
-//            vars.insert("episode".into(), InputValue::Enum("JEDI".into()));
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: vec![LookAheadArgument {
-//                    name: "episode",
-//                    value: LookAheadValue::Enum("JEDI"),
-//                }],
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_optional_variable() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero($episode: Episode) {
-//    hero(episode: $episode) {
-//        id
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: vec![LookAheadArgument {
-//                    name: "episode",
-//                    value: LookAheadValue::Null,
-//                }],
-//                children: vec![ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "id",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    applies_for: Applies::All,
-//                }],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//    #[test]
-//    fn check_query_with_fragment() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        id
-//        ...commonFields
-//    }
-//}
-//
-//fragment commonFields on Character {
-//  name
-//  appearsIn
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "appearsIn",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_directives() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        id @include(if: true)
-//        name @include(if: false)
-//        appearsIn @skip(if: true)
-//        height @skip(if: false)
-//    }
-//}",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "height",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_inline_fragments() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        name
-//        ... on Droid {
-//            primaryFunction
-//        }
-//        ... on Human {
-//            height
-//        }
-//    }
-//}",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "primaryFunction",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::OnlyType("Droid"),
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "height",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::OnlyType("Human"),
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_query_with_multiple() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query HeroAndHuman {
-//    hero {
-//        id
-//    }
-//    human {
-//        name
-//    }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "id",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    applies_for: Applies::All,
-//                }],
-//            };
-//            assert_eq!(look_ahead, expected);
-//
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[1],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "human",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "name",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    applies_for: Applies::All,
-//                }],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_complex_query() {
-//        let docs = parse_document_source(
-//            "
-//query HeroNameAndFriends($id: Integer!, $withFriends: Boolean! = true) {
-//  hero(id: $id) {
-//    id
-//    ... comparisonFields
-//    friends @include(if: $withFriends) {
-//      ... comparisonFields
-//      ... on Human @skip(if: true) { mass }
-//    }
-//  }
-//}
-//
-//fragment comparisonFields on Character {
-//  __typename
-//  name
-//  appearsIn
-//  ... on Droid { primaryFunction }
-//  ... on Human { height }
-//}",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let mut vars = Variables::default();
-//            vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
-//            // This will normally be there
-//            vars.insert(
-//                "withFriends".into(),
-//                InputValue::Scalar(DefaultScalarValue::Boolean(true)),
-//            );
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: vec![LookAheadArgument {
-//                    name: "id",
-//                    value: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
-//                }],
-//                children: vec![
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "id",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "__typename",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "name",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "appearsIn",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "primaryFunction",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::OnlyType("Droid"),
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "height",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: Vec::new(),
-//                        },
-//                        applies_for: Applies::OnlyType("Human"),
-//                    },
-//                    ChildSelection {
-//                        inner: LookAheadSelection {
-//                            name: "friends",
-//                            alias: None,
-//                            arguments: Vec::new(),
-//                            children: vec![
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "__typename",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::All,
-//                                },
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "name",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::All,
-//                                },
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "appearsIn",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::All,
-//                                },
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "primaryFunction",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::OnlyType("Droid"),
-//                                },
-//                                ChildSelection {
-//                                    inner: LookAheadSelection {
-//                                        name: "height",
-//                                        alias: None,
-//                                        arguments: Vec::new(),
-//                                        children: Vec::new(),
-//                                    },
-//                                    applies_for: Applies::OnlyType("Human"),
-//                                },
-//                            ],
-//                        },
-//                        applies_for: Applies::All,
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_resolve_concrete_type() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        name
-//        ... on Droid {
-//            primaryFunction
-//        }
-//        ... on Human {
-//            height
-//        }
-//    }
-//}",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap()
-//            .for_explicit_type("Human");
-//            let expected = ConcreteLookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![
-//                    ConcreteLookAheadSelection {
-//                        name: "name",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    ConcreteLookAheadSelection {
-//                        name: "height",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                ],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_select_child() {
-//        let lookahead: LookAheadSelection<DefaultScalarValue> = LookAheadSelection {
-//            name: "hero",
-//            alias: None,
-//            arguments: Vec::new(),
-//            children: vec![
-//                ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "id",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    applies_for: Applies::All,
-//                },
-//                ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "friends",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: vec![
-//                            ChildSelection {
-//                                inner: LookAheadSelection {
-//                                    name: "id",
-//                                    alias: None,
-//                                    arguments: Vec::new(),
-//                                    children: Vec::new(),
-//                                },
-//                                applies_for: Applies::All,
-//                            },
-//                            ChildSelection {
-//                                inner: LookAheadSelection {
-//                                    name: "name",
-//                                    alias: None,
-//                                    arguments: Vec::new(),
-//                                    children: Vec::new(),
-//                                },
-//                                applies_for: Applies::All,
-//                            },
-//                        ],
-//                    },
-//                    applies_for: Applies::All,
-//                },
-//            ],
-//        };
-//        let concret_query = lookahead.for_explicit_type("does not matter");
-//
-//        let id = lookahead.select_child("id");
-//        let concrete_id = concret_query.select_child("id");
-//        let expected = LookAheadSelection {
-//            name: "id",
-//            alias: None,
-//            arguments: Vec::new(),
-//            children: Vec::new(),
-//        };
-//        assert_eq!(id, Some(&expected));
-//        assert_eq!(
-//            concrete_id,
-//            Some(&expected.for_explicit_type("does not matter"))
-//        );
-//
-//        let friends = lookahead.select_child("friends");
-//        let concrete_friends = concret_query.select_child("friends");
-//        let expected = LookAheadSelection {
-//            name: "friends",
-//            alias: None,
-//            arguments: Vec::new(),
-//            children: vec![
-//                ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "id",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    applies_for: Applies::All,
-//                },
-//                ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "name",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: Vec::new(),
-//                    },
-//                    applies_for: Applies::All,
-//                },
-//            ],
-//        };
-//        assert_eq!(friends, Some(&expected));
-//        assert_eq!(
-//            concrete_friends,
-//            Some(&expected.for_explicit_type("does not matter"))
-//        );
-//    }
-//
-//    #[test]
-//    // https://github.com/graphql-rust/juniper/issues/335
-//    fn check_fragment_with_nesting() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero {
-//        ...heroFriendNames
-//    }
-//}
-//
-//fragment heroFriendNames on Hero {
-//  friends { name }
-//}
-//",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//            let expected = LookAheadSelection {
-//                name: "hero",
-//                alias: None,
-//                arguments: Vec::new(),
-//                children: vec![ChildSelection {
-//                    inner: LookAheadSelection {
-//                        name: "friends",
-//                        alias: None,
-//                        arguments: Vec::new(),
-//                        children: vec![ChildSelection {
-//                            inner: LookAheadSelection {
-//                                name: "name",
-//                                alias: None,
-//                                arguments: Vec::new(),
-//                                children: Vec::new(),
-//                            },
-//                            applies_for: Applies::All,
-//                        }],
-//                    },
-//                    applies_for: Applies::All,
-//                }],
-//            };
-//            assert_eq!(look_ahead, expected);
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//
-//    #[test]
-//    fn check_visitability() {
-//        let docs = parse_document_source::<DefaultScalarValue>(
-//            "
-//query Hero {
-//    hero(episode: EMPIRE) {
-//        name
-//        friends {
-//            name
-//        }
-//    }
-//}
-//            ",
-//        )
-//        .unwrap();
-//        let fragments = extract_fragments(&docs);
-//
-//        if let crate::ast::Definition::Operation(ref op) = docs[0] {
-//            let vars = Variables::default();
-//            let look_ahead = LookAheadSelection::build_from_selection(
-//                &op.item.selection_set[0],
-//                &vars,
-//                &fragments,
-//            )
-//            .unwrap();
-//
-//            assert_eq!(look_ahead.field_name(), "hero");
-//
-//            assert!(look_ahead.has_arguments());
-//            let args = look_ahead.arguments();
-//            assert_eq!(args[0].name(), "episode");
-//            assert_eq!(args[0].value(), &LookAheadValue::Enum("EMPIRE"));
-//
-//            assert!(look_ahead.has_children());
-//            assert_eq!(look_ahead.child_names(), vec!["name", "friends"]);
-//
-//            let child0 = look_ahead.select_child("name").unwrap();
-//            assert_eq!(child0.field_name(), "name");
-//            assert!(!child0.has_arguments());
-//            assert!(!child0.has_children());
-//
-//            let child1 = look_ahead.select_child("friends").unwrap();
-//            assert_eq!(child1.field_name(), "friends");
-//            assert!(!child1.has_arguments());
-//            assert!(child1.has_children());
-//            assert_eq!(child1.child_names(), vec!["name"]);
-//
-//            let child2 = child1.select_child("name").unwrap();
-//            assert!(!child2.has_arguments());
-//            assert!(!child2.has_children());
-//        } else {
-//            panic!("No Operation found");
-//        }
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        ast::Document,
+        parser::UnlocatedParseResult,
+        schema::model::SchemaType,
+        validation::test_harness::{MutationRoot, QueryRoot},
+        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    };
+    use std::collections::HashMap;
+
+    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
+    where
+        S: ScalarValue,
+        for<'b> &'b S: ScalarRefValue<'b>,
+    {
+        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
+    }
+
+    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {
+        let mut fragments = HashMap::new();
+        for d in doc {
+            if let crate::ast::Definition::Fragment(ref f) = *d {
+                let f = &f.item;
+                fragments.insert(f.name.item, f);
+            }
+        }
+        fragments
+    }
+
+    #[test]
+    fn check_simple_query() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        id
+        name
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_alias() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    custom_hero: hero {
+        id
+        my_name: name
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: Some("custom_hero"),
+                arguments: Vec::new(),
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: Some("my_name"),
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_child() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        id
+        name
+        friends {
+            name
+            id
+        }
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "friends",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: vec![
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "name",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::All,
+                                },
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "id",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::All,
+                                },
+                            ],
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_argument() {
+        let docs = parse_document_source(
+            "
+query Hero {
+    hero(episode: EMPIRE) {
+        id
+        name(uppercase: true)
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: vec![LookAheadArgument {
+                    name: "episode",
+                    value: LookAheadValue::Enum("EMPIRE"),
+                }],
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: vec![LookAheadArgument {
+                                name: "uppercase",
+                                value: LookAheadValue::Scalar(&DefaultScalarValue::Boolean(true)),
+                            }],
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_variable() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero($episode: Episode) {
+    hero(episode: $episode) {
+        id
+        name
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let mut vars = Variables::default();
+            vars.insert("episode".into(), InputValue::Enum("JEDI".into()));
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: vec![LookAheadArgument {
+                    name: "episode",
+                    value: LookAheadValue::Enum("JEDI"),
+                }],
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_optional_variable() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero($episode: Episode) {
+    hero(episode: $episode) {
+        id
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: vec![LookAheadArgument {
+                    name: "episode",
+                    value: LookAheadValue::Null,
+                }],
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+    #[test]
+    fn check_query_with_fragment() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        id
+        ...commonFields
+    }
+}
+
+fragment commonFields on Character {
+  name
+  appearsIn
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "appearsIn",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_directives() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        id @include(if: true)
+        name @include(if: false)
+        appearsIn @skip(if: true)
+        height @skip(if: false)
+    }
+}",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "height",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_inline_fragments() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        name
+        ... on Droid {
+            primaryFunction
+        }
+        ... on Human {
+            height
+        }
+    }
+}",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "primaryFunction",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::OnlyType("Droid"),
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "height",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::OnlyType("Human"),
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_query_with_multiple() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query HeroAndHuman {
+    hero {
+        id
+    }
+    human {
+        name
+    }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[1],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "human",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "name",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_complex_query() {
+        let docs = parse_document_source(
+            "
+query HeroNameAndFriends($id: Integer!, $withFriends: Boolean! = true) {
+  hero(id: $id) {
+    id
+    ... comparisonFields
+    friends @include(if: $withFriends) {
+      ... comparisonFields
+      ... on Human @skip(if: true) { mass }
+    }
+  }
+}
+
+fragment comparisonFields on Character {
+  __typename
+  name
+  appearsIn
+  ... on Droid { primaryFunction }
+  ... on Human { height }
+}",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let mut vars = Variables::default();
+            vars.insert("id".into(), InputValue::Scalar(DefaultScalarValue::Int(42)));
+            // This will normally be there
+            vars.insert(
+                "withFriends".into(),
+                InputValue::Scalar(DefaultScalarValue::Boolean(true)),
+            );
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: vec![LookAheadArgument {
+                    name: "id",
+                    value: LookAheadValue::Scalar(&DefaultScalarValue::Int(42)),
+                }],
+                children: vec![
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "id",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "__typename",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "name",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "appearsIn",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::All,
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "primaryFunction",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::OnlyType("Droid"),
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "height",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: Vec::new(),
+                        },
+                        applies_for: Applies::OnlyType("Human"),
+                    },
+                    ChildSelection {
+                        inner: LookAheadSelection {
+                            name: "friends",
+                            alias: None,
+                            arguments: Vec::new(),
+                            children: vec![
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "__typename",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::All,
+                                },
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "name",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::All,
+                                },
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "appearsIn",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::All,
+                                },
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "primaryFunction",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::OnlyType("Droid"),
+                                },
+                                ChildSelection {
+                                    inner: LookAheadSelection {
+                                        name: "height",
+                                        alias: None,
+                                        arguments: Vec::new(),
+                                        children: Vec::new(),
+                                    },
+                                    applies_for: Applies::OnlyType("Human"),
+                                },
+                            ],
+                        },
+                        applies_for: Applies::All,
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_resolve_concrete_type() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        name
+        ... on Droid {
+            primaryFunction
+        }
+        ... on Human {
+            height
+        }
+    }
+}",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap()
+            .for_explicit_type("Human");
+            let expected = ConcreteLookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![
+                    ConcreteLookAheadSelection {
+                        name: "name",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    ConcreteLookAheadSelection {
+                        name: "height",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                ],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_select_child() {
+        let lookahead: LookAheadSelection<DefaultScalarValue> = LookAheadSelection {
+            name: "hero",
+            alias: None,
+            arguments: Vec::new(),
+            children: vec![
+                ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                },
+                ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "friends",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: vec![
+                            ChildSelection {
+                                inner: LookAheadSelection {
+                                    name: "id",
+                                    alias: None,
+                                    arguments: Vec::new(),
+                                    children: Vec::new(),
+                                },
+                                applies_for: Applies::All,
+                            },
+                            ChildSelection {
+                                inner: LookAheadSelection {
+                                    name: "name",
+                                    alias: None,
+                                    arguments: Vec::new(),
+                                    children: Vec::new(),
+                                },
+                                applies_for: Applies::All,
+                            },
+                        ],
+                    },
+                    applies_for: Applies::All,
+                },
+            ],
+        };
+        let concret_query = lookahead.for_explicit_type("does not matter");
+
+        let id = lookahead.select_child("id");
+        let concrete_id = concret_query.select_child("id");
+        let expected = LookAheadSelection {
+            name: "id",
+            alias: None,
+            arguments: Vec::new(),
+            children: Vec::new(),
+        };
+        assert_eq!(id, Some(&expected));
+        assert_eq!(
+            concrete_id,
+            Some(&expected.for_explicit_type("does not matter"))
+        );
+
+        let friends = lookahead.select_child("friends");
+        let concrete_friends = concret_query.select_child("friends");
+        let expected = LookAheadSelection {
+            name: "friends",
+            alias: None,
+            arguments: Vec::new(),
+            children: vec![
+                ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "id",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                },
+                ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "name",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: Vec::new(),
+                    },
+                    applies_for: Applies::All,
+                },
+            ],
+        };
+        assert_eq!(friends, Some(&expected));
+        assert_eq!(
+            concrete_friends,
+            Some(&expected.for_explicit_type("does not matter"))
+        );
+    }
+
+    #[test]
+    // https://github.com/graphql-rust/juniper/issues/335
+    fn check_fragment_with_nesting() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero {
+        ...heroFriendNames
+    }
+}
+
+fragment heroFriendNames on Hero {
+  friends { name }
+}
+",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+            let expected = LookAheadSelection {
+                name: "hero",
+                alias: None,
+                arguments: Vec::new(),
+                children: vec![ChildSelection {
+                    inner: LookAheadSelection {
+                        name: "friends",
+                        alias: None,
+                        arguments: Vec::new(),
+                        children: vec![ChildSelection {
+                            inner: LookAheadSelection {
+                                name: "name",
+                                alias: None,
+                                arguments: Vec::new(),
+                                children: Vec::new(),
+                            },
+                            applies_for: Applies::All,
+                        }],
+                    },
+                    applies_for: Applies::All,
+                }],
+            };
+            assert_eq!(look_ahead, expected);
+        } else {
+            panic!("No Operation found");
+        }
+    }
+
+    #[test]
+    fn check_visitability() {
+        let docs = parse_document_source::<DefaultScalarValue>(
+            "
+query Hero {
+    hero(episode: EMPIRE) {
+        name
+        friends {
+            name
+        }
+    }
+}
+            ",
+        )
+        .unwrap();
+        let fragments = extract_fragments(&docs);
+
+        if let crate::ast::Definition::Operation(ref op) = docs[0] {
+            let vars = Variables::default();
+            let look_ahead = LookAheadSelection::build_from_selection(
+                &op.item.selection_set[0],
+                &vars,
+                &fragments,
+            )
+            .unwrap();
+
+            assert_eq!(look_ahead.field_name(), "hero");
+
+            assert!(look_ahead.has_arguments());
+            let args = look_ahead.arguments();
+            assert_eq!(args[0].name(), "episode");
+            assert_eq!(args[0].value(), &LookAheadValue::Enum("EMPIRE"));
+
+            assert!(look_ahead.has_children());
+            assert_eq!(look_ahead.child_names(), vec!["name", "friends"]);
+
+            let child0 = look_ahead.select_child("name").unwrap();
+            assert_eq!(child0.field_name(), "name");
+            assert!(!child0.has_arguments());
+            assert!(!child0.has_children());
+
+            let child1 = look_ahead.select_child("friends").unwrap();
+            assert_eq!(child1.field_name(), "friends");
+            assert!(!child1.has_arguments());
+            assert!(child1.has_children());
+            assert_eq!(child1.child_names(), vec!["name"]);
+
+            let child2 = child1.select_child("name").unwrap();
+            assert!(!child2.has_arguments());
+            assert!(!child2.has_children());
+        } else {
+            panic!("No Operation found");
+        }
+    }
+}
