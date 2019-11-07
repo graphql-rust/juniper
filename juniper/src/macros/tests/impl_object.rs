@@ -84,15 +84,15 @@ impl<'a> Query {
         arg1
     }
 
-    fn default_argument(default_arg: bool) -> bool {
+    fn default_argument(#[graphql(default = true)] default_arg: bool) -> bool {
         default_arg
     }
 
-    fn arg_with_description(arg: bool) -> bool {
+    fn arg_with_description(#[graphql(description = "my argument description")] arg: bool) -> bool {
         arg
     }
 
-    fn renamed_argument(old_name: bool) -> bool {
+    fn renamed_argument(#[graphql(name = new_name)] old_name: bool) -> bool {
         old_name
     }
 
