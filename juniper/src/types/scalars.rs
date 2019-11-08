@@ -196,6 +196,23 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+#[async_trait::async_trait]
+impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
+where
+    S: ScalarValue + Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    async fn resolve_async<'a>(
+        &'a self,
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> crate::Value<S> {
+        self.resolve(info, selection_set, executor)
+    }
+}
+
 impl<'a, S> ToInputValue<S> for &'a str
 where
     S: ScalarValue,
@@ -313,6 +330,18 @@ where
     {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
+}
+
+#[cfg(feature = "async")]
+impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
+where
+    S: ScalarValue + Send + Sync,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
 }
 
 #[cfg(test)]

@@ -217,3 +217,104 @@ where
 
     Value::list(result)
 }
+
+#[cfg(feature = "async")]
+async fn resolve_into_list_async<'a, S, T, I>(
+    executor: &'a Executor<'a, T::Context, S>,
+    info: &'a T::TypeInfo,
+    items: I,
+) -> Value<S>
+where
+    S: ScalarValue + Send + Sync,
+    I: Iterator<Item = T> + ExactSizeIterator,
+    T: crate::GraphQLTypeAsync<S>,
+    T::TypeInfo: Send + Sync,
+    T::Context: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    use futures::stream::{FuturesOrdered, StreamExt};
+    use std::iter::FromIterator;
+
+    let stop_on_null = executor
+        .current_type()
+        .list_contents()
+        .expect("Current type is not a list type")
+        .is_non_null();
+
+    let iter =
+        items.map(|item| async move { executor.resolve_into_value_async(info, &item).await });
+    let mut futures = FuturesOrdered::from_iter(iter);
+
+    let mut values = Vec::with_capacity(futures.len());
+    while let Some(value) = futures.next().await {
+        if stop_on_null && value.is_null() {
+            return value;
+        }
+        values.push(value);
+    }
+
+    Value::list(values)
+}
+
+#[cfg(feature = "async")]
+#[async_trait::async_trait]
+impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Vec<T>
+where
+    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    async fn resolve_async<'a>(
+        &'a self,
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> Value<S> {
+        resolve_into_list_async(executor, info, self.iter()).await
+    }
+}
+
+#[cfg(feature = "async")]
+#[async_trait::async_trait]
+impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for &[T]
+where
+    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    async fn resolve_async<'a>(
+        &'a self,
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> Value<S> {
+        resolve_into_list_async(executor, info, self.iter()).await
+    }
+}
+
+#[cfg(feature = "async")]
+#[async_trait::async_trait]
+impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Option<T>
+where
+    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    async fn resolve_async<'a>(
+        &'a self,
+        info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
+        selection_set: Option<&'a [Selection<'a, S>]>,
+        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+    ) -> Value<S> {
+        match *self {
+            Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
+            None => Value::null(),
+        }
+    }
+}
