@@ -631,6 +631,11 @@ pub struct GraphQLTypeDefinitionField {
     pub is_async: bool,
 }
 
+pub fn unraw(s: &str) -> String {
+    use syn::ext::IdentExt;
+    quote::format_ident!("{}", s).unraw().to_string()
+}
+
 /// Definition of a graphql type based on information extracted
 /// by various macros.
 /// The definition can be rendered to Rust code.
@@ -679,7 +684,7 @@ impl GraphQLTypeDefiniton {
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
                 let arg_type = &arg._type;
-                let arg_name = &arg.name;
+                let arg_name = unraw(&arg.name);
 
                 let description = match arg.description.as_ref() {
                     Some(value) => quote!( .description( #value ) ),
@@ -719,7 +724,7 @@ impl GraphQLTypeDefiniton {
                 None => quote!(),
             };
 
-            let field_name = &field.name;
+            let field_name = unraw(&field.name);
 
             let _type = &field._type;
             quote! {
