@@ -170,7 +170,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
             }
             None => {
                 // Note: auto camel casing when no custom name specified.
-                crate::util::to_camel_case(&field_ident.to_string())
+                crate::util::to_camel_case(&unraw(&field_ident.to_string()))
             }
         };
         let field_description = match field_attrs.description {
