@@ -282,7 +282,7 @@ mod sync {
 mod r#async {
     use std::iter::{self, FromIterator};
 
-    use futures::{self, stream::StreamExt};
+    use futures::{self, stream::StreamExt as _};
     use juniper_codegen::subscription_internal;
 
     use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};

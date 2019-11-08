@@ -57,7 +57,7 @@ impl Query {
     async fn request(url: String) -> Result<String, FieldError> {
         use futures::{
             compat::{Future01CompatExt, Stream01CompatExt},
-            stream::TryStreamExt,
+            stream::TryStreamExt as _,
         };
 
         let res = reqwest::r#async::Client::new()

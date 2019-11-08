@@ -18,7 +18,7 @@ pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: boo
     definition.into_subscription_tokens(juniper_crate_name).into()
 }
 
-fn create(args: TokenStream, body: TokenStream, name: &str) -> util::GraphQLTypeDefiniton {
+fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQLTypeDefiniton {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
         Ok(attrs) => attrs,
         Err(e) => {
@@ -47,7 +47,7 @@ fn create(args: TokenStream, body: TokenStream, name: &str) -> util::GraphQLType
                 .map(|segment| segment.ident.to_string())
                 .collect::<Vec<_>>()
                 .join(".");
-            if !(name == name || name == format!("juniper.{}", name)) {
+            if !(name == obj_name || name == format!("juniper.{}", obj_name)) {
                 panic!(format!("The impl block must implement the '{}' trait", name));
             }
         },

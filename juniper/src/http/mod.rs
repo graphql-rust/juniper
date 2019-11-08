@@ -3,12 +3,12 @@
 pub mod graphiql;
 pub mod playground;
 
-use std::iter::FromIterator;
+use std::iter::FromIterator as _;
 #[cfg(feature = "async")]
 use std::pin::Pin;
 
 #[cfg(feature = "async")]
-use futures::{stream::Stream, stream::StreamExt, Poll};
+use futures::{stream::Stream, stream::StreamExt as _, Poll};
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},

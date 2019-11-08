@@ -666,10 +666,6 @@ pub struct GraphQLTypeDefiniton {
 }
 
 impl GraphQLTypeDefiniton {
-    fn has_async_field(&self) -> bool {
-        self.fields.iter().any(|field| field.is_async)
-    }
-
     pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
@@ -1140,6 +1136,7 @@ impl GraphQLTypeDefiniton {
 
             });
 
+        #[cfg(feature = "async")]
         let resolve_matches_async = self.fields
             .iter()
             .filter(|field| field.is_async)
@@ -1306,7 +1303,7 @@ impl GraphQLTypeDefiniton {
                         #juniper_crate_name::FieldError<#scalar>
                      > {
                     use #juniper_crate_name::Value;
-                    use futures::stream::StreamExt;
+                    use futures::stream::StreamExt as _;
                     match field_name {
                             #( #resolve_matches )*
                             _ => {
@@ -1348,7 +1345,7 @@ impl GraphQLTypeDefiniton {
                         Self: 'async_trait,
                 {
                     use #juniper_crate_name::Value;
-                    use futures::stream::StreamExt;
+                    use futures::stream::StreamExt as _;
 
                     match field_name {
                             #( #resolve_matches_async )*

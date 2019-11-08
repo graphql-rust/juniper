@@ -49,8 +49,8 @@ use std::{pin::Pin, sync::Arc};
 
 use futures::future::poll_fn;
 #[cfg(feature = "async")]
-use futures03::{channel::mpsc, stream::StreamExt};
-use futures03::{future::FutureExt, Future};
+use futures03::{channel::mpsc, stream::StreamExt as _};
+use futures03::{future::FutureExt as _, Future};
 use serde::Deserialize;
 #[cfg(feature = "async")]
 use serde::Serialize;

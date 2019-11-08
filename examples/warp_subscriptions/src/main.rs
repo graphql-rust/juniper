@@ -5,11 +5,11 @@
 
 use std::{pin::Pin, sync::Arc, time::Duration};
 
-use futures::{Future, FutureExt};
+use futures::{Future, FutureExt as _};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{EmptyMutation, FieldError, RootNode, GraphQLType};
+use juniper::{EmptyMutation, FieldError, RootNode};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -126,10 +126,6 @@ impl Query {
 
 struct Subscription;
 
-#[juniper::object(Context = Context)]
-impl Subscription {
-    fn users() -> User;
-}
 
 //todo: error implementing graphqltype implementation.
 //      rather:
@@ -137,7 +133,7 @@ impl Subscription {
 //         ✔️ add new type which represents objects returned
 #[juniper::subscription(Context = Context)]
 impl Subscription {
-    async fn users() -> Result<juniper::ValuesStream<User>, juniper::FieldError> {
+    async fn users() -> User {
 //        -> Result<Pin<Box<dyn futures::Stream<Item = User> + Send>>, juniper::FieldError> {
         let mut counter = 0;
 

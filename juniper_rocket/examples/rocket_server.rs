@@ -5,7 +5,7 @@
 
 use rocket::{response::content, State};
 
-use futures::StreamExt;
+use futures::StreamExt as _;
 use juniper::{
     parser::Spanning, Arguments, BoxFuture, DefaultScalarValue, Executor, FieldError, FieldResult,
     GraphQLType, RootNode, Selection, Value, ValuesIterator,

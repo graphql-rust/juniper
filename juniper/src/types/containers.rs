@@ -232,7 +232,7 @@ where
     T::Context: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::{FuturesOrdered, StreamExt as _};
     use std::iter::FromIterator;
 
     let stop_on_null = executor

@@ -66,8 +66,8 @@ use juniper::{
 use juniper::GraphQLTypeAsync;
 
 use futures::{
-    future::{FutureExt, TryFutureExt},
-    StreamExt,
+    future::{FutureExt as _, TryFutureExt as _},
+    StreamExt as _,
 };
 use rocket::{data::FromDataFuture, response::ResultFuture};
 
