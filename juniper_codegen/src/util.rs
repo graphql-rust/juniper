@@ -1031,7 +1031,7 @@ impl GraphQLTypeDefiniton {
 
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
-                let arg_type = &arg._type;
+                let arg_type= &arg._type;
                 let arg_name = &arg.name;
 
                 let description = match arg.description.as_ref() {
@@ -1039,7 +1039,7 @@ impl GraphQLTypeDefiniton {
                     None => quote!(),
                 };
 
-                let code = match arg.default.as_ref() {
+                match arg.default.as_ref() {
                     Some(value) => quote!(
                         .argument(
                             registry.arg_with_default::<#arg_type>(#arg_name, &#value, info)
@@ -1052,8 +1052,7 @@ impl GraphQLTypeDefiniton {
                                 #description
                         )
                     ),
-                };
-                code
+                }
             });
 
             let description = match field.description.as_ref() {
@@ -1074,7 +1073,24 @@ impl GraphQLTypeDefiniton {
 
             let field_name = &field.name;
 
-            let _type = &field._type;
+            let _type_name = &field._type;
+
+            let _type;
+            if let Some(t) = extract_ok_type_from_result(_type_name) {
+                if field.is_async {
+                    _type = quote!(<#t as GraphQLTraitAsync<_>>::Item);
+                } else {
+                    _type = quote!(<#t as GraphQLTrait<_>>::Item);
+                }
+            }
+            else {
+                if field.is_async {
+                    _type = quote!(<#_type_name as GraphQLTraitAsync<_>>::Item);
+                } else {
+                    _type = quote!(<#_type_name as GraphQLTrait<_>>::Item);
+                }
+            }
+
             quote! {
                 registry
                     .field_convert::<#_type, _, Self::Context>(#field_name, info)
@@ -1096,92 +1112,6 @@ impl GraphQLTypeDefiniton {
                 } else {
                     quote!(#juniper_crate_name::DefaultScalarValue)
                 }
-            });
-
-        let resolve_matches = self.fields
-            .iter()
-            .filter(|field| !field.is_async)
-            .map(|field| {
-                let name = &field.name;
-                let code = &field.resolver_code;
-
-                let _type = if field.is_type_inferred {
-                    quote!()
-                } else {
-                    let _type = &field._type;
-                    quote!(: Result<Box<dyn std::iter::Iterator<Item = #_type> + 'res>, #juniper_crate_name::FieldError<#scalar>>)
-                };
-                quote!(
-                    #name => {
-                        let res #_type = { #code };
-                        let res = res?;
-                        let iter = res.map(move |res| {
-                        #juniper_crate_name::IntoResolvable::into(
-                                res,
-                                executor.context(),
-                            )
-                            .and_then(|res| match res {
-                                Some((ctx, r)) => {
-                                    let resolve_res =
-                                        executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
-                                    resolve_res
-                                }
-                                None => Ok(Value::null()),
-                            })
-                            .unwrap_or_else(|_| Value::Null)
-                        });
-                        Ok(Value::Scalar(Box::new(iter)))
-                    },
-                )
-
-            });
-
-        #[cfg(feature = "async")]
-        let resolve_matches_async = self.fields
-            .iter()
-            .filter(|field| field.is_async)
-            .map(|field| {
-                let name = &field.name;
-                let code = &field.resolver_code;
-
-                let _type = if field.is_type_inferred {
-                    quote!()
-                } else {
-                    let _type = &field._type;
-                    quote!(: Result<std::pin::Pin<Box<dyn futures::stream::Stream<Item = #_type> + Send + 'res>>, #juniper_crate_name::FieldError<#scalar>>)
-                };
-                quote!(
-                    #name => {
-                        futures::FutureExt::boxed(async move {
-                            let res #_type = { #code };
-                            let res = res?;
-                            let f = res.then(move |res| {
-                                let res2: #juniper_crate_name::FieldResult<_, #scalar> =
-                                    #juniper_crate_name::IntoResolvable::into(res, executor.context());
-                                let ex = executor.clone();
-                                async move {
-                                    match res2 {
-                                        Ok(Some((ctx, r))) => {
-                                            let sub = ex.replaced_context(ctx);
-                                            match sub.resolve_with_ctx_async(&(), &r).await {
-                                                Ok(v) => v,
-                                                Err(_) => Value::Null,
-                                            }
-                                        }
-                                        Ok(None) => Value::null(),
-                                        Err(e) => Value::Null,
-                                    }
-                                }
-                            });
-                            Ok(
-                                #juniper_crate_name::Value::Scalar::<
-                                    #juniper_crate_name::ValuesStream
-                                >(Box::pin(f))
-                            )
-                        })
-                    }
-                )
-
             });
 
         let description = self
@@ -1240,6 +1170,112 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
+        let resolve_matches = self.fields
+            .iter()
+            .filter(|field| !field.is_async)
+            .map(|field| {
+                let name = &field.name;
+                let code = &field.resolver_code;
+
+                let return_error_if_res_is_error;
+                let _type;
+                if field.is_type_inferred {
+                    return_error_if_res_is_error = quote!(let res = res?;);
+                    _type = quote!();
+                } else {
+                    let _type_name = &field._type;
+                    _type = quote!(: #_type_name);
+
+                    if extract_ok_type_from_result(_type_name).is_some() {
+                        return_error_if_res_is_error = quote!(let res = res?;);
+                    }
+                    else {
+                        return_error_if_res_is_error = quote!();
+                    }
+                };
+                quote!(
+                    #name => {
+                        let res #_type = { #code };
+                        #return_error_if_res_is_error
+                        let iter = res.map(move |res| {
+                        #juniper_crate_name::IntoResolvable::into(
+                                res,
+                                executor.context(),
+                            )
+                            .and_then(|res| match res {
+                                Some((ctx, r)) => {
+                                    let resolve_res =
+                                        executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
+                                    resolve_res
+                                }
+                                None => Ok(Value::null()),
+                            })
+                            .unwrap_or_else(|_| Value::Null)
+                        });
+                        Ok(Value::Scalar(Box::new(iter)))
+                    },
+                )
+
+            });
+
+        #[cfg(feature = "async")]
+            let resolve_matches_async = self.fields
+            .iter()
+            .filter(|field| field.is_async)
+            .map(|field| {
+                let name = &field.name;
+                let code = &field.resolver_code;
+
+                let return_error_if_res_is_error;
+                let _type;
+                if field.is_type_inferred {
+                    return_error_if_res_is_error = quote!(let res = res?;);
+                    _type = quote!();
+                } else {
+                    let _type_name = &field._type;
+                    _type = quote!(: #_type_name);
+
+                    if extract_ok_type_from_result(_type_name).is_some() {
+                        return_error_if_res_is_error = quote!(let res = res?;);
+                    }
+                    else {
+                        return_error_if_res_is_error = quote!();
+                    }
+                };
+                quote!(
+                    #name => {
+                        futures::FutureExt::boxed(async move {
+                            let res #_type = { #code };
+                            #return_error_if_res_is_error
+                            let f = res.then(move |res| {
+                                let res2: #juniper_crate_name::FieldResult<_, #scalar> =
+                                    #juniper_crate_name::IntoResolvable::into(res, executor.context());
+                                let ex = executor.clone();
+                                async move {
+                                    match res2 {
+                                        Ok(Some((ctx, r))) => {
+                                            let sub = ex.replaced_context(ctx);
+                                            match sub.resolve_with_ctx_async(&(), &r).await {
+                                                Ok(v) => v,
+                                                Err(_) => Value::Null,
+                                            }
+                                        }
+                                        Ok(None) => Value::null(),
+                                        Err(e) => Value::Null,
+                                    }
+                                }
+                            });
+                            Ok(
+                                #juniper_crate_name::Value::Scalar::<
+                                    #juniper_crate_name::ValuesStream
+                                >(Box::pin(f))
+                            )
+                        })
+                    }
+                )
+
+            });
+
         let graphql_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
@@ -1258,6 +1294,32 @@ impl GraphQLTypeDefiniton {
                         where #scalar : 'r,
                         for<'z> &'z #scalar: #juniper_crate_name::ScalarRefValue<'z>,
                     {
+                        trait GraphQLTrait<T>
+                        {
+                            type Item: #juniper_crate_name::GraphQLType<#scalar>;
+                        }
+
+                        trait GraphQLTraitAsync<T>
+                        {
+                            type Item: #juniper_crate_name::GraphQLType<#scalar>;
+                        }
+
+                        impl<T, Type> GraphQLTrait<T> for Type
+                            where
+                                Type: std::iter::Iterator<Item = T>,
+                                T: GraphQLType<#scalar>
+                        {
+                            type Item = T;
+                        }
+
+                        impl<T, Type> GraphQLTraitAsync<T> for Type
+                            where
+                                Type: futures::Stream<Item = T>,
+                                T: GraphQLType<#scalar>
+                        {
+                            type Item = T;
+                        }
+
                         let fields = vec![
                             #( #field_definitions ),*
                         ];
@@ -1364,6 +1426,55 @@ impl GraphQLTypeDefiniton {
             #async_subscription_implementation
         )
     }
+}
+
+//todo: tests
+/// Extract "T" from "Result<T, E>"
+fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
+    use syn::punctuated::Pair;
+    use syn::token::Colon2;
+    use syn::{GenericArgument, Path, PathArguments, PathSegment};
+
+    fn extract_type_path(ty: &syn::Type) -> Option<&Path> {
+        match *ty {
+            syn::Type::Path(ref typepath) if typepath.qself.is_none() => Some(&typepath.path),
+            _ => None,
+        }
+    }
+
+    // TODO store (with lazy static) the vec of string
+    // TODO maybe optimization, reverse the order of segments
+    /// Extract "T, E" from "Result<T, E>"
+    fn extract_option_segment(path: &Path) -> Option<&PathSegment> {
+        let idents_of_path = path
+            .segments
+            .iter()
+            .into_iter()
+            .fold(String::new(), |mut acc, v| {
+                acc.push_str(&v.ident.to_string());
+                acc.push('|');
+                acc
+            });
+        vec!["Result|", "std|result|Result|", "core|result|Result|"]
+            .into_iter()
+            .find(|s| &idents_of_path == *s)
+            .and_then(|_| path.segments.last())
+    }
+
+    extract_type_path(ty)
+        .and_then(|path| extract_option_segment(path))
+        .and_then(|path_segment| {
+            let type_params = &path_segment.arguments;
+            // It should have only an angle-bracketed params. We need the first one. ("T" in "<T, E>")
+            match *type_params {
+                PathArguments::AngleBracketed(ref params) => params.args.first(),
+                _ => None,
+            }
+        })
+        .and_then(|generic_arg| match *generic_arg {
+            GenericArgument::Type(ref ty) => Some(ty),
+            _ => None,
+        })
 }
 
 #[cfg(test)]

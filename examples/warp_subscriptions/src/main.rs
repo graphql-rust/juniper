@@ -5,11 +5,11 @@
 
 use std::{pin::Pin, sync::Arc, time::Duration};
 
-use futures::{Future, FutureExt as _};
+use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{EmptyMutation, FieldError, RootNode};
+use juniper::{EmptyMutation, FieldError, GraphQLType, RootNode};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -93,6 +93,22 @@ impl User {
     }
 }
 
+#[derive(juniper::GraphQLObject)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
+struct SyncUser {
+    id: i32,
+    kind: UserKind,
+    name: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
+struct AsyncUser {
+    id: i32,
+    kind: UserKind,
+    name: String,
+}
+
 struct Query;
 
 #[juniper::object(Context = Context)]
@@ -128,22 +144,13 @@ struct Subscription;
 
 #[juniper::subscription(Context = Context)]
 impl Subscription {
-    async fn users() -> User {
-//        -> Result<Pin<Box<dyn futures::Stream<Item = User> + Send>>, juniper::FieldError> {
-        let mut counter = 0;
 
-        let stream = Interval
-           ::new_interval(Duration::from_secs(8))
-            .map(move |_| {
-                counter += 1;
-                User {
-                    id: counter,
-                    kind: UserKind::Admin,
-                    name: "stream user".to_string(),
-                }
-            });
+    fn sync_users() -> Result<Box<dyn Iterator<Item = SyncUser>>, juniper::FieldError> {
+        unimplemented!()
+    }
 
-        Ok(Box::pin(stream))
+    async fn async_users() -> Pin<Box<dyn Stream<Item = AsyncUser> + Send>> {
+        unimplemented!()
     }
 }
 
@@ -157,18 +164,49 @@ impl Subscription {
 //
 //    fn meta<'r>(
 //        info: &Self::TypeInfo,
-//        registry: &mut juniper::Registry<'r>
+//        registry: &mut juniper::Registry<'r>,
 //    ) -> juniper::meta::MetaType<'r>
-//        where juniper::DefaultScalarValue: 'r,
+//    where
+//        juniper::DefaultScalarValue: 'r,
 //    {
+//        trait GraphQLTrait<T> {
+//            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
+//        }
+//        trait GraphQLTraitAsync<T> {
+//            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
+//        }
+//        impl<T, Type> GraphQLTrait<T> for Type
+//        where
+//            Type: std::iter::Iterator<Item = T>,
+//            T: GraphQLType<juniper::DefaultScalarValue>,
+//        {
+//            type Item = T;
+//        }
+//        impl<T, Type> GraphQLTraitAsync<T> for Type
+//        where
+//            Type: futures::Stream<Item = T>,
+//            T: GraphQLType<juniper::DefaultScalarValue>,
+//        {
+//            type Item = T;
+//        }
 //        let fields = vec![
-//            registry.field_convert::<User, _, Self::Context>("users", info),
+//            registry.field_convert::<
+//                <Box<dyn Iterator<Item = SyncUser>> as GraphQLTrait<_>>::Item,
+//                _,
+//                Self::Context
+//            >("syncUsers", info),
+//
+//            registry.field_convert::<
+//                <Pin<Box<dyn Stream<Item = AsyncUser> + Send>> as GraphQLTraitAsync<_>>::Item,
+//                _,
+//                Self::Context
+//            >("asyncUsers", info)
 //        ];
 //        let meta = registry.build_object_type::<Subscription>(info, &fields);
 //        meta.into_meta()
 //    }
 //}
-
+//
 //impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subscription {
 //    #[allow(unused_variables)]
 //    fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
@@ -180,43 +218,35 @@ impl Subscription {
 //    ) -> std::pin::Pin<
 //        Box<
 //            dyn futures::future::Future<
-//                Output=Result<
-//                    juniper::Value<juniper::ValuesStream<'res, juniper::DefaultScalarValue>>,
-//                    juniper::FieldError<juniper::DefaultScalarValue>,
-//                >,
-//            > + Send
-//            + 'async_trait,
+//                    Output = Result<
+//                        juniper::Value<juniper::ValuesStream<'res, juniper::DefaultScalarValue>>,
+//                        juniper::FieldError<juniper::DefaultScalarValue>,
+//                    >,
+//                > + Send
+//                + 'async_trait,
 //        >,
 //    >
-//        where
-//            'args: 'res,
-//            'e: 'res,
-//            'res: 'async_trait,
-//            'life0: 'async_trait,
-//            'life1: 'async_trait,
-//            'life2: 'async_trait,
-//            Self: 'async_trait,
+//    where
+//        'args: 'res,
+//        'e: 'res,
+//        'res: 'async_trait,
+//        'life0: 'async_trait,
+//        'life1: 'async_trait,
+//        'life2: 'async_trait,
+//        Self: 'async_trait,
 //    {
-//        use futures::stream::StreamExt;
+//        use futures::stream::StreamExt as _;
 //        use juniper::Value;
 //        match field_name {
-//            "users" => futures::FutureExt::boxed(async move {
+//            "asyncUsers" => futures::FutureExt::boxed(async move {
 //                let res: Result<
-//                    Pin<Box<dyn futures::Stream<Item=User> + Send>>,
+//                    Pin<Box<dyn Stream<Item = AsyncUser> + Send>>,
 //                    juniper::FieldError,
 //                > = {
 //                    {
-//                        let mut counter = 0;
-//                        let stream =
-//                            Interval::new_interval(Duration::from_secs(8)).map(move |_| {
-//                                counter += 1;
-//                                User {
-//                                    id: counter,
-//                                    kind: UserKind::Admin,
-//                                    name: "stream user".to_string(),
-//                                }
-//                            });
-//                        Ok(Box::pin(stream))
+//                        {
+//                            panic!("not yet implemented");
+//                        }
 //                    }
 //                };
 //                let res = res?;
@@ -240,10 +270,59 @@ impl Subscription {
 //                });
 //                Ok(juniper::Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
 //            }),
-//            _ => unreachable!()
+//            _ => unreachable!(),
 //        }
 //    }
 //}
+//
+//impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
+//    #[allow(unused_variables)]
+//    fn resolve_field_into_iterator<'res>(
+//        &self,
+//        info: &Self::TypeInfo,
+//        field_name: &str,
+//        args: &juniper::Arguments<juniper::DefaultScalarValue>,
+//        executor: std::rc::Rc<juniper::Executor<'res, Self::Context, juniper::DefaultScalarValue>>,
+//    ) -> Result<
+//        juniper::Value<juniper::ValuesIterator<'res, juniper::DefaultScalarValue>>,
+//        juniper::FieldError<juniper::DefaultScalarValue>,
+//    > {
+//        use juniper::Value;
+//        match field_name {
+//            "syncUsers" => {
+//                let res: Result<Box<dyn Iterator<Item = SyncUser>>, juniper::FieldError> = {
+//                    {
+//                        {
+//                            panic!(
+//                                "not yet implemented"
+//                            );
+//                        }
+//                    }
+//                };
+//                let res = res?;
+//                let iter = res.map(move |res| {
+//                    juniper::IntoResolvable::into(res, executor.context())
+//                        .and_then(|res| match res {
+//                            Some((ctx, r)) => {
+//                                let resolve_res =
+//                                    executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
+//                                resolve_res
+//                            }
+//                            None => Ok(Value::null()),
+//                        })
+//                        .unwrap_or_else(|_| Value::Null)
+//                });
+//                Ok(Value::Scalar(Box::new(iter)))
+//            }
+//            _ => {
+//                {
+//                    panic!("Field not found on type ");
+//                }
+//            }
+//        }
+//    }
+//}
+
 
 type Schema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
 
