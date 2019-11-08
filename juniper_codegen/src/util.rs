@@ -1016,38 +1016,8 @@ impl GraphQLTypeDefiniton {
         );
         output
     }
-}
 
-/// Definition of a graphql type based on information extracted
-/// by various macros.
-/// The definition can be rendered to Rust code.
-#[derive(Debug)]
-pub struct GraphQLSubscriptionDefiniton {
-    pub name: String,
-    pub _type: syn::Type,
-    pub context: Option<syn::Type>,
-    pub scalar: Option<syn::Type>,
-    pub description: Option<String>,
-    pub fields: Vec<GraphQLTypeDefinitionField>,
-    pub generics: syn::Generics,
-    pub interfaces: Option<Vec<syn::Type>>,
-    // Due to syn parsing differences,
-    // when parsing an impl the type generics are included in the type
-    // directly, but in syn::DeriveInput, the type generics are
-    // in the generics field.
-    // This flag signifies if the type generics need to be
-    // included manually.
-    pub include_type_generics: bool,
-    // This flag indicates if the generated code should always be
-    // generic over the ScalarValue.
-    // If false, the scalar is only generic if a generic parameter
-    // is specified manually.
-    pub generic_scalar: bool,
-    pub is_async: bool,
-}
-
-impl GraphQLSubscriptionDefiniton {
-    pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+    pub fn into_subscription_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
         let name = &self.name;
@@ -1138,7 +1108,7 @@ impl GraphQLSubscriptionDefiniton {
                     quote!()
                 } else {
                     let _type = &field._type;
-                    quote!(: Result<Box<dyn std::iter::Iterator<Item = #_type> + 'res>, #juniper_crate_name::FieldError<#scalar>>)
+                    quote!(: #_type)
                 };
                 quote!(
                     #name => {
@@ -1176,15 +1146,13 @@ impl GraphQLSubscriptionDefiniton {
                     quote!()
                 } else {
                     let _type = &field._type;
-                    quote!(: Result<std::pin::Pin<Box<dyn futures::stream::Stream<Item = #_type> + Send + 'res>>, #juniper_crate_name::FieldError<#scalar>>)
+                    quote!(: #_type)
                 };
                 quote!(
-
                     #name => {
                         futures::FutureExt::boxed(async move {
                             let res #_type = { #code };
                             let res = res?;
-
                             let f = res.then(move |res| {
                                 let res2: #juniper_crate_name::FieldResult<_, #scalar> =
                                     #juniper_crate_name::IntoResolvable::into(res, executor.context());
@@ -1333,6 +1301,7 @@ impl GraphQLSubscriptionDefiniton {
                         #juniper_crate_name::FieldError<#scalar>
                      > {
                     use #juniper_crate_name::Value;
+                    use futures::stream::StreamExt;
                     match field_name {
                             #( #resolve_matches )*
                             _ => {
@@ -1344,7 +1313,7 @@ impl GraphQLSubscriptionDefiniton {
         );
 
         #[cfg(feature = "async")]
-        let async_subscription_implementation = quote!(
+            let async_subscription_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLSubscriptionTypeAsync<#scalar> for #ty #type_generics_tokens
             #where_clause
             {
@@ -1386,7 +1355,7 @@ impl GraphQLSubscriptionDefiniton {
             }
         );
         #[cfg(not(feature = "async"))]
-        let async_subscription_implementation = quote!();
+            let async_subscription_implementation = quote!();
 
         quote!(
             #graphql_implementation
