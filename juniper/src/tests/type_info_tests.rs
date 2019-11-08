@@ -1,9 +1,13 @@
 use indexmap::IndexMap;
 
-use crate::{executor::{ExecutionResult, Executor, Registry, Variables}, schema::{meta::MetaType, model::RootNode}, types::{
-    base::{Arguments, GraphQLType},
-    scalars::EmptyMutation,
-}, value::{ScalarRefValue, ScalarValue, Value}, EmptySubscription};
+use crate::{
+    executor::{ExecutionResult, Executor, Registry, Variables},
+    schema::{meta::MetaType, model::RootNode},
+    types::{
+        base::{Arguments, GraphQLType},
+        scalars::EmptyMutation,
+    },
+    value::{ScalarRefValue, ScalarValue, Value}, EmptySubscription};
 
 pub struct NodeTypeInfo {
     name: String,

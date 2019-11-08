@@ -1,6 +1,8 @@
 mod field_execution {
     use crate::{
-        ast::InputValue, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+        ast::InputValue, schema::model::RootNode,
+        types::scalars::{EmptyMutation, EmptySubscription},
+        value::Value,
     };
 
     struct DataType;
@@ -56,7 +58,7 @@ mod field_execution {
     #[test]
     fn test() {
         let schema =
-            RootNode::<_, _, crate::DefaultScalarValue>::new(DataType, EmptyMutation::<()>::new());
+            RootNode::<_, _, _, crate::DefaultScalarValue>::new(DataType, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"
           query Example($size: Int) {
             a,
@@ -155,7 +157,7 @@ mod field_execution {
 }
 
 mod merge_parallel_fragments {
-    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value};
+    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription};
 
     struct Type;
 
@@ -177,7 +179,7 @@ mod merge_parallel_fragments {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Type, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Type, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"
           { a, ...FragOne, ...FragTwo }
           fragment FragOne on Type {
@@ -236,7 +238,7 @@ mod merge_parallel_fragments {
 }
 
 mod merge_parallel_inline_fragments {
-    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value};
+    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription};
 
     struct Type;
     struct Other;
@@ -281,7 +283,7 @@ mod merge_parallel_inline_fragments {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Type, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Type, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"
           { a, ...FragOne }
           fragment FragOne on Type {
@@ -379,7 +381,9 @@ mod merge_parallel_inline_fragments {
 
 mod threads_context_correctly {
     use crate::{
-        executor::Context, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+        executor::Context, schema::model::RootNode,
+        types::scalars::{EmptyMutation, EmptySubscription},
+        value::Value,
     };
 
     struct Schema;
@@ -401,7 +405,7 @@ mod threads_context_correctly {
 
     #[test]
     fn test() {
-        let schema = RootNode::new(Schema, EmptyMutation::<TestContext>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<TestContext>::new(), EmptySubscription::<TestContext>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
@@ -435,13 +439,7 @@ mod threads_context_correctly {
 mod dynamic_context_switching {
     use indexmap::IndexMap;
 
-    use crate::{
-        executor::{Context, ExecutionError, FieldError, FieldResult},
-        parser::SourcePosition,
-        schema::model::RootNode,
-        types::scalars::EmptyMutation,
-        value::Value,
-    };
+    use crate::{executor::{Context, ExecutionError, FieldError, FieldResult}, parser::SourcePosition, schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription};
 
     struct Schema;
 
@@ -497,7 +495,7 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_opt() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new(), EmptySubscription::<OuterContext>::new());
         let doc = r"{ first: itemOpt(key: 0) { value }, missing: itemOpt(key: 2) { value } }";
 
         let vars = vec![].into_iter().collect();
@@ -550,7 +548,7 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_res_success() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new(), EmptySubscription::<OuterContext>::new());
         let doc = r"
           {
             first: itemRes(key: 0) { value }
@@ -604,7 +602,7 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_res_fail() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new(), EmptySubscription::<OuterContext>::new());
         let doc = r"
           {
             missing: itemRes(key: 2) { value }
@@ -651,7 +649,7 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_res_opt() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new(), EmptySubscription::<OuterContext>::new());
         let doc = r"
           {
             first: itemResOpt(key: 0) { value }
@@ -718,7 +716,7 @@ mod dynamic_context_switching {
 
     #[test]
     fn test_always() {
-        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<OuterContext>::new(), EmptySubscription::<OuterContext>::new());
         let doc = r"{ first: itemAlways(key: 0) { value } }";
 
         let vars = vec![].into_iter().collect();
@@ -772,7 +770,7 @@ mod propagates_errors_to_nullable_fields {
         executor::{ExecutionError, FieldError, FieldResult, IntoFieldError},
         parser::SourcePosition,
         schema::model::RootNode,
-        types::scalars::EmptyMutation,
+        types::scalars::{EmptyMutation, EmptySubscription},
         value::{ScalarValue, Value},
     };
 
@@ -833,7 +831,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn nullable_first_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inner { nullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -860,7 +858,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_nullable_first_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inner { nonNullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -884,7 +882,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn custom_error_first_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inner { customErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -908,7 +906,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn nullable_nested_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inner { nullableField { nonNullableErrorField } } }";
 
         let vars = vec![].into_iter().collect();
@@ -935,7 +933,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_nullable_nested_level() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inner { nonNullableField { nonNullableErrorField } } }";
 
         let vars = vec![].into_iter().collect();
@@ -959,7 +957,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn nullable_innermost() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inner { nonNullableField { nullableErrorField } } }";
 
         let vars = vec![].into_iter().collect();
@@ -986,7 +984,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_null_list() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ inners { nonNullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -1010,7 +1008,7 @@ mod propagates_errors_to_nullable_fields {
 
     #[test]
     fn non_null_list_of_nullable() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ nullableInners { nonNullableErrorField } }";
 
         let vars = vec![].into_iter().collect();
@@ -1060,7 +1058,8 @@ mod propagates_errors_to_nullable_fields {
 
 mod named_operations {
     use crate::{
-        schema::model::RootNode, types::scalars::EmptyMutation, value::Value, GraphQLError,
+        schema::model::RootNode, types::scalars::{EmptyMutation, EmptySubscription},
+        value::Value, GraphQLError,
     };
 
     struct Schema;
@@ -1075,7 +1074,7 @@ mod named_operations {
     #[test]
     fn uses_inline_operation_if_no_name_provided() {
         let schema =
-            RootNode::<_, _, crate::DefaultScalarValue>::new(Schema, EmptyMutation::<()>::new());
+            RootNode::<_, _, _, crate::DefaultScalarValue>::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"{ a }";
 
         let vars = vec![].into_iter().collect();
@@ -1093,7 +1092,7 @@ mod named_operations {
 
     #[test]
     fn uses_only_named_operation() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"query Example { a }";
 
         let vars = vec![].into_iter().collect();
@@ -1111,7 +1110,7 @@ mod named_operations {
 
     #[test]
     fn uses_named_operation_if_name_provided() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
@@ -1129,7 +1128,7 @@ mod named_operations {
 
     #[test]
     fn error_if_multiple_operations_provided_but_no_name() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
@@ -1141,7 +1140,7 @@ mod named_operations {
 
     #[test]
     fn error_if_unknown_operation_name_provided() {
-        let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
+        let schema = RootNode::new(Schema, EmptyMutation::<()>::new(), EmptySubscription::<()>::new());
         let doc = r"query Example { first: a } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();

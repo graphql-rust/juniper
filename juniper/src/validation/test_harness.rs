@@ -32,6 +32,8 @@ struct TestInput {
 
 pub(crate) struct MutationRoot;
 
+pub(crate) struct SubscriptionRoot;
+
 #[derive(Debug)]
 enum DogCommand {
     Sit,
@@ -641,6 +643,28 @@ where
                 i,
             ),
         )];
+
+        registry.build_object_type::<Self>(i, &fields).into_meta()
+    }
+}
+
+impl<S> GraphQLType<S> for SubscriptionRoot
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("SubscriptionRoot")
+    }
+
+    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+    {
+        let fields = [];
 
         registry.build_object_type::<Self>(i, &fields).into_meta()
     }

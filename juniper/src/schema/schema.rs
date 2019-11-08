@@ -100,7 +100,6 @@ where
         arguments: &'b Arguments<'b, S>,
         executor: &'b Executor<'b, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> ExecutionResult<S> {
-        use futures::future::{ready, FutureExt};
         match field_name {
             "__schema" | "__type" => {
                 self.resolve_field(info, field_name, arguments, executor)

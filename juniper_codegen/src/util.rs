@@ -1108,7 +1108,7 @@ impl GraphQLTypeDefiniton {
                     quote!()
                 } else {
                     let _type = &field._type;
-                    quote!(: #_type)
+                    quote!(: Result<Box<dyn std::iter::Iterator<Item = #_type> + 'res>, #juniper_crate_name::FieldError<#scalar>>)
                 };
                 quote!(
                     #name => {
@@ -1146,7 +1146,7 @@ impl GraphQLTypeDefiniton {
                     quote!()
                 } else {
                     let _type = &field._type;
-                    quote!(: #_type)
+                    quote!(: Result<std::pin::Pin<Box<dyn futures::stream::Stream<Item = #_type> + Send + 'res>>, #juniper_crate_name::FieldError<#scalar>>)
                 };
                 quote!(
                     #name => {
@@ -1294,7 +1294,7 @@ impl GraphQLTypeDefiniton {
                     &self,
                     info: &Self::TypeInfo,
                     field_name: &str,
-                    arguments: &#juniper_crate_name::Arguments<#scalar>,
+                    args: &#juniper_crate_name::Arguments<#scalar>,
                     executor: std::rc::Rc<#juniper_crate_name::Executor<'res, Self::Context, #scalar>>,
                 ) -> Result<
                         #juniper_crate_name::Value<#juniper_crate_name::ValuesIterator<'res, #scalar>>,

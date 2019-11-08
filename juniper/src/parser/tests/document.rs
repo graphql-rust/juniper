@@ -1,20 +1,16 @@
-use crate::{
-    ast::{
-        Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
-    },
-    parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
-    schema::model::SchemaType,
-    types::scalars::EmptyMutation,
-    validation::test_harness::{MutationRoot, QueryRoot},
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-};
+use crate::{ast::{
+    Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
+}, parser::{
+    document::parse_document_source, ParseError, SourcePosition, Spanning, Token
+}, schema::model::SchemaType, types::scalars::EmptyMutation, validation::test_harness::{MutationRoot, QueryRoot}, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, EmptySubscription};
+use crate::validation::test_harness::SubscriptionRoot;
 
 fn parse_document<S>(s: &str) -> Document<S>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    parse_document_source(s, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
+    parse_document_source(s, &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()))
         .expect(&format!("Parse error on input {:#?}", s))
 }
 
@@ -23,7 +19,7 @@ where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    match parse_document_source::<S>(s, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &())) {
+    match parse_document_source::<S>(s, &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &())) {
         Ok(doc) => panic!("*No* parse error on input {:#?} =>\n{:#?}", s, doc),
         Err(err) => err,
     }
@@ -158,7 +154,7 @@ fn issue_427_panic_is_not_expected() {
         }
     }
 
-    let schema = SchemaType::new::<QueryWithoutFloat, EmptyMutation<()>>(&(), &());
+    let schema = SchemaType::new::<QueryWithoutFloat, EmptyMutation<()>, EmptySubscription<()>>(&(), &(), &());
     let parse_result = parse_document_source(r##"{ echo(value: 123.0) }"##, &schema);
 
     assert_eq!(
