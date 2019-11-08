@@ -2,7 +2,7 @@
 //! This example demonstrates async/await usage with warp.
 //! NOTE: this uses tokio 0.1 , not the alpha tokio 0.2.
 
-use juniper::{EmptyMutation, FieldError, RootNode};
+use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
@@ -72,10 +72,10 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>>, EmptySubscription<Context>;
 
 fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation::<Context>::new())
+    Schema::new(Query, EmptyMutation::<Context>::new(), EmptySubscription::<Context>::new())
 }
 
 fn main() {

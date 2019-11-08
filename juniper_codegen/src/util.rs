@@ -1303,7 +1303,6 @@ impl GraphQLTypeDefiniton {
                         #juniper_crate_name::FieldError<#scalar>
                      > {
                     use #juniper_crate_name::Value;
-                    use futures::stream::StreamExt as _;
                     match field_name {
                             #( #resolve_matches )*
                             _ => {
@@ -1315,7 +1314,7 @@ impl GraphQLTypeDefiniton {
         );
 
         #[cfg(feature = "async")]
-            let async_subscription_implementation = quote!(
+        let async_subscription_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLSubscriptionTypeAsync<#scalar> for #ty #type_generics_tokens
             #where_clause
             {
@@ -1357,7 +1356,7 @@ impl GraphQLTypeDefiniton {
             }
         );
         #[cfg(not(feature = "async"))]
-            let async_subscription_implementation = quote!();
+        let async_subscription_implementation = quote!();
 
         quote!(
             #graphql_implementation

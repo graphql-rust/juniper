@@ -3,7 +3,6 @@
 pub mod graphiql;
 pub mod playground;
 
-use std::iter::FromIterator as _;
 #[cfg(feature = "async")]
 use std::pin::Pin;
 
@@ -375,6 +374,8 @@ where
     pub fn into_stream(
         self,
     ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>> {
+        use std::iter::FromIterator as _;
+
         let val = match self.0 {
             Ok(val) => val,
             Err(_) => return None,

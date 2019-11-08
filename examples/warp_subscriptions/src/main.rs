@@ -126,11 +126,6 @@ impl Query {
 
 struct Subscription;
 
-
-//todo: error implementing graphqltype implementation.
-//      rather:
-//         x  parse result type
-//         ✔️ add new type which represents objects returned
 #[juniper::subscription(Context = Context)]
 impl Subscription {
     async fn users() -> User {
