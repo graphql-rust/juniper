@@ -4,7 +4,12 @@ use juniper_codegen::{
     GraphQLEnumInternal as GraphQLEnum, GraphQLInputObjectInternal as GraphQLInputObject,
 };
 
-use crate::{ast::{FromInputValue, InputValue, Type}, parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning}, value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue}, EmptySubscription};
+use crate::{
+    ast::{FromInputValue, InputValue, Type},
+    parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    EmptySubscription,
+};
 
 use crate::{
     schema::{

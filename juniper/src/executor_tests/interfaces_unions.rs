@@ -1,5 +1,7 @@
 mod interface {
-    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription};
+    use crate::{
+        schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription,
+    };
 
     trait Pet {
         fn name(&self) -> &str;
@@ -156,7 +158,9 @@ mod interface {
 }
 
 mod union {
-    use crate::{schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription};
+    use crate::{
+        schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription,
+    };
 
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {

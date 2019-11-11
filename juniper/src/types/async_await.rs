@@ -60,11 +60,11 @@ where
     /// Default implementation panics.
     async fn resolve_field_async<'a>(
         &'a self,
-        _: &'a Self::TypeInfo, // this query's type info
-        _: &'a str, // field's type name
+        _: &'a Self::TypeInfo,   // this query's type info
+        _: &'a str,              // field's type name
         _: &'a Arguments<'a, S>, // field's arguments
         _: &'a Executor<'a, Self::Context, S>, // field's executor (query's sub-executor
-        // with current field's selection set)
+                                 // with current field's selection set)
     ) -> ExecutionResult<S> {
         panic!("resolve_field must be implemented by object types");
     }
@@ -223,11 +223,11 @@ impl GraphQLSubscriptionTypeAsync<DefaultScalarValue> for Subscription {
 */
 #[async_trait::async_trait]
 pub trait GraphQLSubscriptionTypeAsync<S>: GraphQLType<S> + Send + Sync
-    where
-        Self::Context: Send + Sync,
-        Self::TypeInfo: Send + Sync,
-        S: ScalarValue + Send + Sync + 'static,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    Self::Context: Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve the provided selection set asynchronously against
     /// the current object. This method is called by subscriptions executor
@@ -248,12 +248,12 @@ pub trait GraphQLSubscriptionTypeAsync<S>: GraphQLType<S> + Send + Sync
         selection_set: Option<&'ss [Selection<'_, S>]>,
         executor: &'ref_e Executor<'e, Self::Context, S>,
     ) -> Value<ValuesStream<'res, S>>
-        where
-            's: 'res,
-            'i: 'res,
-            'ss: 'res,
-            'ref_e: 'e,
-            'e: 'res,
+    where
+        's: 'res,
+        'i: 'res,
+        'ss: 'res,
+        'ref_e: 'e,
+        'e: 'res,
     {
         if let Some(selection_set) = selection_set {
             resolve_selection_set_into_stream(self, info, selection_set, executor).await
@@ -268,15 +268,15 @@ pub trait GraphQLSubscriptionTypeAsync<S>: GraphQLType<S> + Send + Sync
     /// The default implementation panics.
     async fn resolve_field_into_stream<'args, 'e, 'res>(
         &self,
-        _: &Self::TypeInfo, // this subscription's type info
-        _: &str, // field's type name
+        _: &Self::TypeInfo,     // this subscription's type info
+        _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
         _: Arc<Executor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
-        // with current field's selection set)
+                                // with current field's selection set)
     ) -> Result<Value<ValuesStream<'res, S>>, FieldError<S>>
-        where
-            'args: 'res,
-            'e: 'res,
+    where
+        'args: 'res,
+        'e: 'res,
     {
         panic!("resolve_field must be implemented by object types");
     }
@@ -287,18 +287,18 @@ pub trait GraphQLSubscriptionTypeAsync<S>: GraphQLType<S> + Send + Sync
     /// The default implementation panics.
     async fn resolve_into_type_stream<'s, 'i, 'tn, 'ss, 'e, 'res>(
         &'s self,
-        _: &'i Self::TypeInfo, // this subscription's type info
-        _: &'tn str, // fragment's type name
+        _: &'i Self::TypeInfo,              // this subscription's type info
+        _: &'tn str,                        // fragment's type name
         _: Option<&'ss [Selection<'_, S>]>, // fragment's arguments
         _: Arc<Executor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
-        // with current field's selection set)
+                                            // with current field's selection set)
     ) -> Result<Value<ValuesStream<'res, S>>, FieldError<S>>
-        where
-            's: 'res,
-            'i: 'res,
-            'tn: 'res,
-            'ss: 'res,
-            'e: 'res,
+    where
+        's: 'res,
+        'i: 'res,
+        'tn: 'res,
+        'ss: 'res,
+        'e: 'res,
     {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
         //        if Self::name(info).unwrap() == type_name {

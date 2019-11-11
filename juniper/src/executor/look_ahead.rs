@@ -435,9 +435,11 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 mod tests {
     use super::*;
     use crate::{
-        ast::Document, parser::UnlocatedParseResult, schema::model::SchemaType,
+        ast::Document,
+        parser::UnlocatedParseResult,
+        schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
-        value::{DefaultScalarValue, ScalarRefValue, ScalarValue}
+        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
     };
     use std::collections::HashMap;
 
@@ -446,7 +448,10 @@ mod tests {
         S: ScalarValue,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
-        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()))
+        crate::parse_document_source(
+            q,
+            &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
+        )
     }
 
     fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {

@@ -11,11 +11,12 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
 /// Generate code for the juniper::subscription macro.
 pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
-
     let definition = create(args, body, "GraphQLSubscription");
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_subscription_tokens(juniper_crate_name).into()
+    definition
+        .into_subscription_tokens(juniper_crate_name)
+        .into()
 }
 
 fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQLTypeDefiniton {
@@ -48,19 +49,20 @@ fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQL
                 .collect::<Vec<_>>()
                 .join(".");
             if !(name == obj_name || name == format!("juniper.{}", obj_name)) {
-                panic!(format!("The impl block must implement the '{}' trait", name));
+                panic!(format!(
+                    "The impl block must implement the '{}' trait",
+                    name
+                ));
             }
-        },
+        }
         None => {
-//            panic!(format!("The impl block must implement the '{}' trait", name))
+            //            panic!(format!("The impl block must implement the '{}' trait", name))
         }
     }
 
-
-    let name = if let Some(name) = impl_attrs.name.as_ref(){
+    let name = if let Some(name) = impl_attrs.name.as_ref() {
         name.to_string()
-    }
-    else {
+    } else {
         if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
             ident.to_string()
         } else {

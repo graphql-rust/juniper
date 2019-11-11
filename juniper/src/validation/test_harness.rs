@@ -1,9 +1,18 @@
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
-use crate::{ast::{FromInputValue, InputValue}, executor::Registry, parser::parse_document_source, schema::{
-    meta::{EnumValue, MetaType},
-    model::{DirectiveLocation, DirectiveType, RootNode},
-}, types::{base::GraphQLType, scalars::ID}, validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor}, value::{ScalarRefValue, ScalarValue}, EmptySubscription};
+use crate::{
+    ast::{FromInputValue, InputValue},
+    executor::Registry,
+    parser::parse_document_source,
+    schema::{
+        meta::{EnumValue, MetaType},
+        model::{DirectiveLocation, DirectiveType, RootNode},
+    },
+    types::{base::GraphQLType, scalars::ID},
+    validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
+    value::{ScalarRefValue, ScalarValue},
+    EmptySubscription,
+};
 
 struct Being;
 struct Pet;
@@ -661,8 +670,8 @@ where
     }
 
     fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
+    where
+        S: 'r,
     {
         let fields = [];
 
@@ -670,7 +679,13 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, Sub, V, F, S>(r: Q, m: M, s: Sub, q: &'a str, factory: F) -> Vec<RuleError>
+pub fn validate<'a, Q, M, Sub, V, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    q: &'a str,
+    factory: F,
+) -> Vec<RuleError>
 where
     for<'b> &'b S: ScalarRefValue<'b>,
     S: ScalarValue + Send + Sync + 'a + 'static,
@@ -743,7 +758,7 @@ where
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m,  EmptySubscription::<S>::new(), q, factory);
+    let errs = validate(r, m, EmptySubscription::<S>::new(), q, factory);
 
     if !errs.is_empty() {
         print_errors(&errs);
