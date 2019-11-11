@@ -1076,7 +1076,7 @@ impl GraphQLTypeDefiniton {
             let _type_name = &field._type;
 
             let _type;
-            if let Some(t) = extract_ok_type_from_result(_type_name) {
+            if let Some(t) = extract_ok_type_from_std_result(_type_name) {
                 if field.is_async {
                     _type = quote!(<#t as GraphQLTraitAsync<_>>::Item);
                 } else {
@@ -1186,7 +1186,7 @@ impl GraphQLTypeDefiniton {
                     let _type_name = &field._type;
                     _type = quote!(: #_type_name);
 
-                    if extract_ok_type_from_result(_type_name).is_some() {
+                    if extract_ok_type_from_std_result(_type_name).is_some() {
                         return_error_if_res_is_error = quote!(let res = res?;);
                     } else {
                         return_error_if_res_is_error = quote!();
@@ -1233,7 +1233,7 @@ impl GraphQLTypeDefiniton {
                     let _type_name = &field._type;
                     _type = quote!(: #_type_name);
 
-                    if extract_ok_type_from_result(_type_name).is_some() {
+                    if extract_ok_type_from_std_result(_type_name).is_some() {
                         return_error_if_res_is_error = quote!(let res = res?;);
                     }
                     else {
@@ -1351,7 +1351,6 @@ impl GraphQLTypeDefiniton {
                     fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
                         #name.to_string()
                     }
-
             }
         );
 
@@ -1434,9 +1433,8 @@ impl GraphQLTypeDefiniton {
     }
 }
 
-//todo: tests
 /// Extract "T" from "Result<T, E>"
-fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
+fn extract_ok_type_from_std_result(ty: &syn::Type) -> Option<&syn::Type> {
     use syn::{GenericArgument, Path, PathArguments, PathSegment};
 
     fn extract_type_path(ty: &syn::Type) -> Option<&Path> {
@@ -1446,10 +1444,8 @@ fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
         }
     }
 
-    // TODO store (with lazy static) the vec of string
-    // TODO maybe optimization, reverse the order of segments
     /// Extract "T, E" from "Result<T, E>"
-    fn extract_option_segment(path: &Path) -> Option<&PathSegment> {
+    fn extract_result_segment(path: &Path) -> Option<&PathSegment> {
         let idents_of_path = path
             .segments
             .iter()
@@ -1466,7 +1462,7 @@ fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
     }
 
     extract_type_path(ty)
-        .and_then(|path| extract_option_segment(path))
+        .and_then(|path| extract_result_segment(path))
         .and_then(|path_segment| {
             let type_params = &path_segment.arguments;
             // It should have only an angle-bracketed params. We need the first one. ("T" in "<T, E>")
@@ -1483,6 +1479,8 @@ fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
 
 #[cfg(test)]
 mod test {
+    // test prefix is needed not to mix test functions with function names
+
     use super::*;
     use quote::__rt::*;
     use syn::{Ident, LitStr};
@@ -1629,5 +1627,22 @@ mod test {
         assert_eq!(is_valid_name(""), false);
         assert_eq!(is_valid_name("aTest"), true);
         assert_eq!(is_valid_name("__Atest90"), true);
+    }
+
+    #[test]
+    fn test_extract_ok_type_from_std_result() {
+        let no_result = syn::parse2(quote!(Box<OkVal>)).unwrap();
+        assert_eq!(extract_ok_type_from_std_result(&no_result), None);
+
+        let result_ok = syn::parse2(quote!(OkVal)).unwrap();
+
+        let result = syn::parse2(quote!(Result<OkVal, ErrVal>)).unwrap();
+        assert_eq!(extract_ok_type_from_std_result(&result), Some(&result_ok));
+
+        let std_result = syn::parse2(quote!(std::result::Result<OkVal, ErrVal>)).unwrap();
+        assert_eq!(extract_ok_type_from_std_result(&std_result), Some(&result_ok));
+
+        let core_result = syn::parse2(quote!(core::result::Result<OkVal, ErrVal>)).unwrap();
+        assert_eq!(extract_ok_type_from_std_result(&core_result), Some(&result_ok));
     }
 }
