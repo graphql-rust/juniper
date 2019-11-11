@@ -1640,9 +1640,15 @@ mod test {
         assert_eq!(extract_ok_type_from_std_result(&result), Some(&result_ok));
 
         let std_result = syn::parse2(quote!(std::result::Result<OkVal, ErrVal>)).unwrap();
-        assert_eq!(extract_ok_type_from_std_result(&std_result), Some(&result_ok));
+        assert_eq!(
+            extract_ok_type_from_std_result(&std_result),
+            Some(&result_ok)
+        );
 
         let core_result = syn::parse2(quote!(core::result::Result<OkVal, ErrVal>)).unwrap();
-        assert_eq!(extract_ok_type_from_std_result(&core_result), Some(&result_ok));
+        assert_eq!(
+            extract_ok_type_from_std_result(&core_result),
+            Some(&result_ok)
+        );
     }
 }

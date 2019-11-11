@@ -9,7 +9,7 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{EmptyMutation, FieldError, GraphQLType, RootNode};
+use juniper::{EmptyMutation, FieldError, RootNode};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]

@@ -289,7 +289,9 @@ impl<'a, S> IteratorGraphQLResponse<'a, S>
 where
     S: value::ScalarValue,
 {
-    /// Converts `self` into default `Iterator` implementantion
+    /// Converts `self` into default `Iterator` implementantion.
+    /// Is not implemented as `std::iter::IntoIterator` because in some cases
+    /// iterator cannot be generated.
     ///
     /// Default `Iterator` implementation provides iterator
     /// based on `Self`'s internal value:
@@ -300,6 +302,7 @@ where
     ///                                                Stops when at least one field's iterator is finished
     ///     other `Value::Object` - __panics__
     /// Returns None is `Self`'s internal result is error or `Value::List`
+    #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>> {
         let val = match self.0 {
             Ok(val) => val,
