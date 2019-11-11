@@ -607,7 +607,7 @@ fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response
 /// Create a filter that replies with an HTML page containing GraphQL Playground. This does not handle routing, so you can mount it on any endpoint.
 pub fn playground_filter(
     graphql_endpoint_url: &'static str,
-    subscriptions_endpoint_url: &'static str,
+    subscriptions_endpoint_url: Option<&'static str>,
 ) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
     warp::any()
         .map(move || playground_response(graphql_endpoint_url, subscriptions_endpoint_url))
@@ -616,7 +616,7 @@ pub fn playground_filter(
 
 fn playground_response(
     graphql_endpoint_url: &'static str,
-    subscriptions_endpoint_url: &'static str,
+    subscriptions_endpoint_url: Option<&'static str>,
 ) -> warp::http::Response<Vec<u8>> {
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")

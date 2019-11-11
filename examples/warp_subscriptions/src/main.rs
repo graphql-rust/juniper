@@ -207,7 +207,7 @@ async fn main() {
         .and(qm_graphql_filter))
     .or(warp::get()
         .and(warp::path("playground"))
-        .and(playground_filter("/graphql", "/subscriptions")))
+        .and(playground_filter("/graphql", Some("/subscriptions"))))
     .or(homepage)
     .with(log);
 

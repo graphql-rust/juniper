@@ -1283,7 +1283,7 @@ impl GraphQLTypeDefiniton {
 
             impl<T, Type> GraphQLTraitAsync<T> for Type
                 where
-                    Type: future::futures::Stream<Item = T>,
+                    Type: futures::Stream<Item = T>,
                     T: #juniper_crate_name::GraphQLType<#scalar>
             {
                 type Item = T;
