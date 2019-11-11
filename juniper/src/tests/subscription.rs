@@ -38,31 +38,28 @@ mod sync {
 
     #[subscription_internal(context = MyContext)]
     impl MySubscription {
-        fn human(id: String) -> Human {
-            let iter = Box::new(iter::once(Human {
+        fn human(id: String) -> Box<dyn std::iter::Iterator<Item = Human>> {
+            Box::new(iter::once(Human {
                 id: "subscription id".to_string(),
                 name: "subscription name".to_string(),
                 home_planet: "subscription planet".to_string(),
-            }));
-            Ok(iter)
+            }))
         }
 
-        fn human_with_context(ctxt: &MyContext) -> Human {
-            let iter = Box::new(iter::once(Human {
+        fn human_with_context(ctxt: &MyContext) -> Box<dyn std::iter::Iterator<Item = Human>> {
+            Box::new(iter::once(Human {
                 id: ctxt.0.to_string(),
                 name: ctxt.0.to_string(),
                 home_planet: ctxt.0.to_string(),
-            }));
-            Ok(iter)
+            }))
         }
 
-        fn human_with_args(id: String, name: String) -> Human {
-            let iter = Box::new(iter::once(Human {
+        fn human_with_args(id: String, name: String) -> Box<dyn std::iter::Iterator<Item = Human>> {
+            Box::new(iter::once(Human {
                 id: id,
                 name: name,
                 home_planet: "default home planet".to_string(),
-            }));
-            Ok(iter)
+            }))
         }
     }
 
@@ -308,14 +305,14 @@ mod r#async {
 
     #[subscription_internal(context = MyContext)]
     impl MySubscriptionAsync {
-        async fn async_human() -> Human {
-            Ok(Box::pin(futures::stream::once(async {
+        async fn async_human() -> Pin<Box<dyn futures::Stream<Item = Human>>> {
+            Box::pin(futures::stream::once(async {
                 Human {
                     id: "stream id".to_string(),
                     name: "stream name".to_string(),
                     home_planet: "stream home planet".to_string(),
                 }
-            })))
+            }))
         }
     }
 

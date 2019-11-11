@@ -1274,6 +1274,25 @@ impl GraphQLTypeDefiniton {
 
             });
 
+        #[cfg(feature = "async")]
+        let graphqltraitasync_implementation = quote!(
+            trait GraphQLTraitAsync<T>
+            {
+                type Item: #juniper_crate_name::GraphQLType<#scalar>;
+            }
+
+            impl<T, Type> GraphQLTraitAsync<T> for Type
+                where
+                    Type: future::futures::Stream<Item = T>,
+                    T: #juniper_crate_name::GraphQLType<#scalar>
+            {
+                type Item = T;
+            }
+        );
+
+        #[cfg(not(feature = "async"))]
+        let graphqltraitasync_implementation = quote!();
+
         let graphql_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
@@ -1297,26 +1316,15 @@ impl GraphQLTypeDefiniton {
                             type Item: #juniper_crate_name::GraphQLType<#scalar>;
                         }
 
-                        trait GraphQLTraitAsync<T>
-                        {
-                            type Item: #juniper_crate_name::GraphQLType<#scalar>;
-                        }
-
                         impl<T, Type> GraphQLTrait<T> for Type
                             where
                                 Type: std::iter::Iterator<Item = T>,
-                                T: GraphQLType<#scalar>
+                                T: #juniper_crate_name::GraphQLType<#scalar>
                         {
                             type Item = T;
                         }
 
-                        impl<T, Type> GraphQLTraitAsync<T> for Type
-                            where
-                                Type: futures::Stream<Item = T>,
-                                T: GraphQLType<#scalar>
-                        {
-                            type Item = T;
-                        }
+                        #graphqltraitasync_implementation
 
                         let fields = vec![
                             #( #field_definitions ),*
