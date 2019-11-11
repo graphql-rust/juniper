@@ -343,9 +343,9 @@ where
 }
 
 /**
-This trait is used to implement synchronous subscription execution logic.
-It should be used with `GraphQLType` in order to implement subscription GraphQL
-objects.
+This trait replaces GraphQLType`'s resolver logic with synchronous subscription
+execution logic. It should be used with `GraphQLType` in order to implement
+subscription GraphQL objects.
 
 Synchronous subscription related convenience macros expand into an
 implementation of this trait and `GraphQLType` for the given type.
@@ -355,8 +355,8 @@ See trait methods for more detailed explanation on how this trait works.
 ## Manual implementation example
 
 The following example demonstrates how to manually implement
-`GraphQLSubscriptionType` with default resolver logic
-(without overwriting `resolve_into_iterator`).
+`GraphQLSubscriptionType` with default resolver logic (without overwriting
+`resolve_into_iterator`).
 
 Juniper's subscription macros use similar logic by default.
 
@@ -405,7 +405,7 @@ impl GraphQLSubscriptionType for Subscription {
     // This function will be called every time a field is found
     fn resolve_field_into_iterator<'res>(
         &self,
-        info: &Self::TypeInfo, // `TypeInfo` from `GraphQLType` implementation
+        info: &Self::TypeInfo,
         field_name: &str,
         arguments: &juniper::Arguments,
         executor: std::rc::Rc<juniper::Executor<'res, Self::Context>>,
@@ -414,13 +414,18 @@ impl GraphQLSubscriptionType for Subscription {
             "users" => {
                 let users_iterator = std::iter::once(User {
                     id: "1".to_string(),
-                    name: "stream user".to_string(),
-                    friend_ids: vec!["2".to_string(), "3".to_string(), "4".to_string()]
+                    name: "iterator user".to_string(),
+                    friend_ids: vec![
+                        "2".to_string(),
+                        "3".to_string(),
+                        "4".to_string()
+                    ]
                 });
                 // Each `User` that is returned from iterator should be resolved
                 // as well to filter out fields that were not requested.
-                // This could be done by resolving each object returned from iterator as
-                // a separate query, which was executed up to user's logic
+                // This could be done by resolving each object returned from
+                // iterator as a separate query, which was executed up to
+                // getting the right GraphQLObject
                 let iter = users_iterator.map(move |res| {
                     // if context could be replaced...
                     juniper::IntoResolvable::into(res, executor.context())
@@ -428,22 +433,28 @@ impl GraphQLSubscriptionType for Subscription {
                             Some((ctx, r)) => {
                                 // ...resolve each `User` with current context
                                 // (note that here `resolve_with_ctx` is called,
-                                //  which resolves each `User` object as separate query)
-                                executor.replaced_context(ctx).resolve_with_ctx(&(), &r)
+                                //  which resolves each `User` object as
+                                //  separate query)
+                                executor
+                                    .replaced_context(ctx)
+                                    .resolve_with_ctx(&(), &r)
                             }
-                            // ...or return Null
+                            // ...or return Null since `User` couldn't be
+                            // resolved
                             None => Ok(Value::null()),
                         })
                         .unwrap_or_else(|_| Value::Null)
                 });
-                // `Value::Scalar` is returned here because we resolved subscription
-                // into a single iterator (other types of values can be returned too,
-                // but they might not be supported by default implementation)
+                // `Value::Scalar` is returned here because we resolved
+                // subscription into a single iterator (other types of values
+                // can be returned as well, but they might not be supported by
+                // default implementation (see methods that you're going to use
+                // for more details))
                 Ok(Value::Scalar(Box::new(iter)))
             },
             _ => {
-                // panicking here because juniper should return field does not exist
-                // error while parsing subscription query
+                // panicking here because juniper should return field does not
+                // exist error while parsing subscription query
                 panic!("Field {} not found on type GraphQLSubscriptionType", &field_name);
             }
         }
@@ -457,8 +468,10 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve the provided selection set against the current object.
-    /// This method is called by subscriptions executor and should call
+    /// This method is called by executor and should call
     /// other trait methods (if needed).
+    ///
+    /// This method replaces `GraphQLType::resolve`.
     ///
     /// ## Default implementation
     ///
@@ -493,13 +506,13 @@ where
         }
     }
 
-    /// This method replaces `GraphQLType::resolve_field`.
-    /// Unlike `resolve_field`, which resolves each field into
-    /// a single `Value<S>`, this method resolves each field into
-    /// `Value<ValuesIterator<S>>`.
+    /// This method is called by Self's `resolve_into_iterator` default
+    /// implementation every time any field is found in selection set.
     ///
-    /// It is called by Self's `resolve_into_iterator` default implementation
-    /// every time any field is found in selection set.
+    /// It replaces `GraphQLType::resolve_field`.
+    /// Unlike `resolve_field`, which resolves each field into a single
+    /// `Value<S>`, this method resolves each field into
+    /// `Value<ValuesIterator<S>>`.
     ///
     /// The default implementation panics.
     fn resolve_field_into_iterator<'res>(
@@ -513,13 +526,13 @@ where
         panic!("resolve_field_into_iterator must be implemented in order to resolve fields on subscriptions");
     }
 
-    /// This method replaces `GraphQLType::resolve_into_type`.
+    /// It is called by Self's `resolve_into_iterator` default implementation
+    /// every time any fragment is found in selection set.
+    ///
+    /// It replaces `GraphQLType::resolve_into_type`.
     /// Unlike `resolve_into_type`, which resolves each fragment
     /// a single `Value<S>`, this method resolves each fragment into
     /// `Value<ValuesIterator<S>>`.
-    ///
-    /// It is called by Self's `resolve_into_iterator` default implementation
-    /// every time any fragment is found in selection set.
     ///
     /// The default implementation panics.
     fn resolve_into_type_iterator<'res>(
@@ -541,7 +554,8 @@ where
 
 /// Resolver logic for queries'/mutations' selection set.
 /// Calls appropriate resolver method for each field or fragment found
-/// and then merges returned values into `result` or pushes errors to field's/fragment's sub executor.
+/// and then merges returned values into `result` or pushes errors to
+/// field's/fragment's sub executor.
 ///
 /// Returns false if any errors occured and true otherwise.
 pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
@@ -702,7 +716,8 @@ where
 
 /// Resolver logic for subscriptions' selection set.
 /// Calls appropriate resolver method for each field or fragment found
-/// and then merges returned values into `result` or pushes errors to field's/fragment's sub executor
+/// and then merges returned values into `result` or pushes errors to
+/// field's/fragment's sub executor
 ///
 /// Returns false if any errors occured and true otherwise.
 pub(crate) fn resolve_selection_set_into_iter<'i, 'inf, 'ss, 'e, 'res, T, CtxT, S>(
@@ -730,7 +745,6 @@ where
         )
         .expect("Type not found in schema");
 
-    //todo: first parse everything, then start resolving
     for selection in selection_set {
         match *selection {
             Selection::Field(Spanning {
