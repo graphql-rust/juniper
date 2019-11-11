@@ -147,16 +147,14 @@ impl Subscription {
     async fn users() -> Pin<Box<dyn Stream<Item = User> + Send>> {
         let mut counter = 0;
 
-        let stream = Interval
-            ::new_interval(Duration::from_secs(5))
-            .map(move |_| {
-                counter += 1;
-                User {
-                    id: counter,
-                    kind: UserKind::Admin,
-                    name: "stream user".to_string(),
-                }
-            });
+        let stream = Interval::new_interval(Duration::from_secs(5)).map(move |_| {
+            counter += 1;
+            User {
+                id: counter,
+                kind: UserKind::Admin,
+                name: "stream user".to_string(),
+            }
+        });
 
         Box::pin(stream)
     }

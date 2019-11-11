@@ -19,7 +19,6 @@ Convenience macros related to asynchronous queries/mutations expand into an
 implementation of this trait and `GraphQLType` for the given type.
 
 This trait's execution logic is similar to `GraphQLType`.
-See trait methods for more details.
 
 ## Manual implementation example
 
@@ -116,12 +115,20 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve the provided selection set against the current object.
-    /// This method is similar to `GraphQLType::resolve` except that it
+    /// This method is called by executor and should call other methods on this
+    /// trait (if needed).
+    ///
+    /// It is similar to `GraphQLType::resolve` except that it
     /// returns a future which resolves into a single value.
     ///
+    ///  ## Default implementation
+    ///
     /// For object types, the default implementation calls `resolve_field_async`
-    /// on each field in provided selection set. For non-object types, the
-    /// selection set will be `None` and default implementation will panic.
+    /// on each field and `resolve_into_type_async` for each fragment in
+    /// provided selection set.
+    ///
+    /// For non-object types, the selection set will be `None` and default
+    /// implementation will panic.
     async fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -135,9 +142,10 @@ where
         }
     }
 
-    /// Asynchronous field resolving logic.
+    /// This method is similar to `GraphQLType::resolve_field`, but it returns
+    /// future that resolves into value instead of value.
     ///
-    /// Default implementation panics.
+    /// The default implementation panics.
     async fn resolve_field_async<'a>(
         &'a self,
         _: &'a Self::TypeInfo,   // this query's type info
@@ -149,10 +157,11 @@ where
         panic!("resolve_field must be implemented by object types");
     }
 
-    /// Asynchronous fragment resolving logic.
+    /// This method is similar to `GraphQLType::resolve_into_type`, but it
+    /// returns future that resolves into value instead of value.
     ///
-    /// Default implementation resolves fragments if
-    /// fragment type is `Self` and panics otherwise.
+    /// Default implementation resolves fragments with the same type as `Self`
+    /// and panics otherwise.
     async fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -381,10 +390,10 @@ where
         'e: 'res,
     {
         // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
-        //        if Self::name(info).unwrap() == type_name {
-        //            let stream = self.resolve_into_stream(info, selection_set, executor).await;
-        //            Ok(stream)
-        //        } else {
+        // if Self::name(info).unwrap() == type_name {
+        //      let stream = self.resolve_into_stream(info, selection_set, executor).await;
+        //      Ok(stream)
+        // } else {
         panic!("stream_resolve_into_type must be implemented by unions and interfaces");
         //        }
     }

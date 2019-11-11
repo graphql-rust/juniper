@@ -2,10 +2,15 @@
 
 /// Generate the HTML source to show a GraphQL Playground interface
 // source: https://github.com/prisma/graphql-playground/blob/master/packages/graphql-playground-html/withAnimation.html
-pub fn playground_source(graphql_endpoint_url: &str, subscriptions_endpoint_url: Option<&str>) -> String {
-    let subscriptions_endpoint =
-    if let Some(sub_url) =  subscriptions_endpoint_url { sub_url }
-    else { graphql_endpoint_url };
+pub fn playground_source(
+    graphql_endpoint_url: &str,
+    subscriptions_endpoint_url: Option<&str>,
+) -> String {
+    let subscriptions_endpoint = if let Some(sub_url) = subscriptions_endpoint_url {
+        sub_url
+    } else {
+        graphql_endpoint_url
+    };
 
     r##"
 <!DOCTYPE html>
