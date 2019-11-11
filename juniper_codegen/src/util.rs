@@ -1031,7 +1031,7 @@ impl GraphQLTypeDefiniton {
 
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
-                let arg_type= &arg._type;
+                let arg_type = &arg._type;
                 let arg_name = &arg.name;
 
                 let description = match arg.description.as_ref() {
@@ -1082,8 +1082,7 @@ impl GraphQLTypeDefiniton {
                 } else {
                     _type = quote!(<#t as GraphQLTrait<_>>::Item);
                 }
-            }
-            else {
+            } else {
                 if field.is_async {
                     _type = quote!(<#_type_name as GraphQLTraitAsync<_>>::Item);
                 } else {
@@ -1170,7 +1169,8 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let resolve_matches = self.fields
+        let resolve_matches = self
+            .fields
             .iter()
             .filter(|field| !field.is_async)
             .map(|field| {
@@ -1188,8 +1188,7 @@ impl GraphQLTypeDefiniton {
 
                     if extract_ok_type_from_result(_type_name).is_some() {
                         return_error_if_res_is_error = quote!(let res = res?;);
-                    }
-                    else {
+                    } else {
                         return_error_if_res_is_error = quote!();
                     }
                 };
@@ -1215,7 +1214,6 @@ impl GraphQLTypeDefiniton {
                         Ok(Value::Scalar(Box::new(iter)))
                     },
                 )
-
             });
 
         #[cfg(feature = "async")]

@@ -144,13 +144,26 @@ struct Subscription;
 
 #[juniper::subscription(Context = Context)]
 impl Subscription {
-
-    fn sync_users() -> Result<Box<dyn Iterator<Item = SyncUser>>, juniper::FieldError> {
+    fn sync_users() -> Box<dyn Iterator<Item = SyncUser>> {
         unimplemented!()
     }
 
-    async fn async_users() -> Pin<Box<dyn Stream<Item = AsyncUser> + Send>> {
-        unimplemented!()
+    async fn users() -> Result<
+        Pin<Box<dyn Stream<Item = User> + Send>>,
+        juniper::FieldError<juniper::DefaultScalarValue>,
+    > {
+        let mut counter = 0;
+
+        let stream = Interval::new_interval(Duration::from_secs(8)).map(move |_| {
+            counter += 1;
+            User {
+                id: counter,
+                kind: UserKind::Admin,
+                name: "stream user".to_string(),
+            }
+        });
+
+        Ok(Box::pin(stream))
     }
 }
 
@@ -322,7 +335,6 @@ impl Subscription {
 //        }
 //    }
 //}
-
 
 type Schema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
 
