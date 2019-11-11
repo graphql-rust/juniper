@@ -11,23 +11,20 @@ documentation = "https://docs.rs/juniper_rocket"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+async = [ "juniper/async" ]
+
 [dependencies]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { default-features = false, path = "../juniper", features=["async"]}
+juniper = { version = "0.14.1", default-features = false, path = "../juniper"}
 
-# this is imported because rocket does not expose "tokio_io::AsyncReadExt" anymore
-tokio-io = "=0.2.0-alpha.6"
-
-# todo: cargo.toml from async-await
-
-futures = { version = "0.3.0-alpha.19", package = "futures-preview", features = ["compat"] }
-futures1 = { version = "0.1.29", package = "futures" }
+futures03 = { version = "=0.3.0-alpha.19", package = "futures-preview", features = ["compat"] }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
-async-trait = "0.1.16"
+tokio = "=0.2.0-alpha.6"
 
-#[dev-dependencies.juniper]
-#version = "0.13.1"
-#features = ["expose-test-schema", "serde_json"]
-#path = "../juniper"
+[dev-dependencies.juniper]
+version = "0.14.1"
+features = ["expose-test-schema", "serde_json"]
+path = "../juniper"

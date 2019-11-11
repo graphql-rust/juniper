@@ -1429,8 +1429,6 @@ impl GraphQLTypeDefiniton {
 //todo: tests
 /// Extract "T" from "Result<T, E>"
 fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
-    use syn::punctuated::Pair;
-    use syn::token::Colon2;
     use syn::{GenericArgument, Path, PathArguments, PathSegment};
 
     fn extract_type_path(ty: &syn::Type) -> Option<&Path> {
