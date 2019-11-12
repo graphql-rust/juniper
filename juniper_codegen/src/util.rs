@@ -938,7 +938,7 @@ impl GraphQLTypeDefiniton {
                         field: &'b str,
                         args: &'b #juniper_crate_name::Arguments<#scalar>,
                         executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> futures::future::BoxFuture<'async_trait, #juniper_crate_name::ExecutionResult<#scalar>>
+                    ) -> #juniper_crate_name::BoxFuture<'async_trait, #juniper_crate_name::ExecutionResult<#scalar>>
                         where
                         #scalar: Send + Sync,
                         'b: 'async_trait,
