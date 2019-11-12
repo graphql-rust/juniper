@@ -57,7 +57,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-// todo: maybe remove this macro once not needed
+// TODO: maybe remove this macro once not needed
 #[proc_macro_derive(GraphQLObjectInternal, attributes(graphql))]
 pub fn derive_object_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();

@@ -389,7 +389,7 @@ where
         'ss: 'res,
         'e: 'res,
     {
-        // todo: cannot resolve by default (cannot return value referencing function parameter `self`)
+        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
         // if Self::name(info).unwrap() == type_name {
         //      let stream = self.resolve_into_stream(info, selection_set, executor).await;
         //      Ok(stream)

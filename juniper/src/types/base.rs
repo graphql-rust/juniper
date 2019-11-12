@@ -543,7 +543,7 @@ where
         _: Rc<Executor<'res, Self::Context, S>>, // fragment's executor (subscription's sub-executor
                                     //              with current fragment's selection set)
     ) -> Result<Value<ValuesIterator<'res, S>>, FieldError<S>> {
-        //todo: if type is same as self call resolve_into_iterator
+        //TODO: if type is same as self call resolve_into_iterator
         // if Self::name(info).unwrap() == type_name {
         //      Ok(self.resolve_into_iterator(info, selection_set, executor))
         // } else {
