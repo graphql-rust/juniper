@@ -62,7 +62,7 @@ use juniper::{
 use juniper::GraphQLTypeAsync;
 
 #[cfg(feature = "async")]
-use futures03::future::{FutureExt, TryFutureExt};
+use futures::future::{FutureExt, TryFutureExt};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -135,7 +135,7 @@ where
                     .map(|request| request.execute_async(root_node, context))
                     .collect::<Vec<_>>();
 
-                GraphQLBatchResponse::Batch(futures03::future::join_all(futures).await)
+                GraphQLBatchResponse::Batch(futures::future::join_all(futures).await)
             }
         }
     }
