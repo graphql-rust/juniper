@@ -218,7 +218,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 info: &'a Self::TypeInfo,
                 selection_set: Option<&'a [#juniper_path::Selection<__S>]>,
                 executor: &'a #juniper_path::Executor<Self::Context, __S>,
-            ) -> futures::future::BoxFuture<'async_trait, #juniper_path::Value<__S>>
+            ) -> #juniper_path::BoxFuture<'async_trait, #juniper_path::Value<__S>>
              where
                 'a: 'async_trait,
                 Self: 'async_trait
