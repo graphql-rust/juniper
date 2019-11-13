@@ -62,7 +62,7 @@ impl<S> Object<S> {
     }
 
     /// Get the current number of fields
-    pub fn fields_count(&self) -> usize {
+    pub fn field_count(&self) -> usize {
         self.key_value_list.len()
     }
 
