@@ -1335,14 +1335,12 @@ impl GraphQLTypeDefiniton {
                         meta.into_meta()
                     }
 
-                    #[allow(unused_variables)]
-                    #[allow(unused_mut)]
                     fn resolve_field(
                         &self,
-                        _info: &(),
-                        field: &str,
-                        args: &#juniper_crate_name::Arguments<#scalar>,
-                        executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
+                        _: &(),
+                        _: &str,
+                        _: &#juniper_crate_name::Arguments<#scalar>,
+                        _: &#juniper_crate_name::Executor<Self::Context, #scalar>,
                     ) -> #juniper_crate_name::ExecutionResult<#scalar> {
                         panic!("Called `resolve_field` on subscription object");
                     }
@@ -1479,8 +1477,6 @@ fn extract_ok_type_from_std_result(ty: &syn::Type) -> Option<&syn::Type> {
 
 #[cfg(test)]
 mod test {
-    // test prefix is needed not to mix test functions with function names
-
     use super::*;
     use quote::__rt::*;
     use syn::{Ident, LitStr};
