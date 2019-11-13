@@ -9,7 +9,7 @@ use crate::{
         model::{SchemaType, TypeType},
     },
     validation::RuleError,
-    value::{ScalarRefValue, ScalarValue},
+    value::ScalarValue,
 };
 
 #[derive(Debug)]
@@ -26,7 +26,6 @@ pub fn validate_input_values<S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errs = vec![];
 
@@ -49,7 +48,6 @@ fn validate_var_defs<S>(
     errors: &mut Vec<RuleError>,
 ) where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     for &(ref name, ref def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
@@ -91,7 +89,6 @@ fn unify_value<'a, S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
 
@@ -222,12 +219,13 @@ fn unify_enum<'a, S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
+
     match *value {
-        InputValue::Scalar(ref scalar) if scalar.is_type::<String>() => {
-            if let Some(ref name) = <&S as Into<Option<&String>>>::into(scalar) {
+        // TODO: avoid this bad duplicate as_str() call. (value system refactor)
+        InputValue::Scalar(ref scalar) if scalar.as_str().is_some() => {
+            if let Some(ref name) = scalar.as_str() {
                 if !meta.values.iter().any(|ev| &ev.name == *name) {
                     errors.push(unification_error(
                         var_name,
@@ -268,7 +266,6 @@ fn unify_input_object<'a, S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
 

@@ -48,7 +48,7 @@ use warp::{filters::BoxedFilter, Filter};
 #[cfg(feature = "async")]
 use futures03::future::{FutureExt, TryFutureExt};
 
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
+use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -64,7 +64,6 @@ where
 impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
@@ -210,7 +209,6 @@ pub fn make_graphql_filter<Query, Mutation, Context, S>(
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
@@ -283,7 +281,6 @@ pub fn make_graphql_filter_async<Query, Mutation, Context, S>(
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + Sync + 'static,
     Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Query::TypeInfo: Send + Sync,

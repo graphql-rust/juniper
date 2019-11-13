@@ -32,7 +32,6 @@ macro_rules! __juniper_impl_trait {
        impl<$($other,)* $generic $(: $bound)*> $crate::$impl_trait<$generic> for $name
         where
             $generic: $crate::ScalarValue,
-            for<'__b> &'__b $generic: $crate::ScalarRefValue<'__b>,
        {
            $($body)*
        }
@@ -48,7 +47,6 @@ macro_rules! __juniper_impl_trait {
         where
             $($where)*
             $generic: $crate::ScalarValue,
-            for<'__b> &'__b $generic: $crate::ScalarRefValue<'__b>,
        {
            $($body)*
        }

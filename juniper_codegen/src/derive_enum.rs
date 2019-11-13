@@ -211,7 +211,6 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         impl<__S> #juniper_path::GraphQLTypeAsync<__S> for #ident
             where
                 __S: #juniper_path::ScalarValue + Send + Sync,
-                for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
         {
             fn resolve_async<'a>(
                 &'a self,
@@ -234,7 +233,6 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         impl<__S> #juniper_path::GraphQLType<__S> for #ident
         where __S:
             #juniper_path::ScalarValue,
-            for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
         {
             type Context = ();
             type TypeInfo = ();
@@ -268,10 +266,9 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
 
         impl<__S: #juniper_path::ScalarValue> #juniper_path::FromInputValue<__S> for #ident {
             fn from_input_value(v: &#juniper_path::InputValue<__S>) -> Option<#ident>
-                where for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
             {
                 match v.as_enum_value().or_else(|| {
-                    v.as_scalar_value::<String>().map(|s| s as &str)
+                    v.as_string_value()
                 }) {
                     #from_inputs
                     _ => None,

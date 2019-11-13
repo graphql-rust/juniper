@@ -7,7 +7,7 @@ use juniper_codegen::{
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
 };
 
 use crate::{
@@ -72,7 +72,6 @@ where
 fn parse_value<S>(s: &str, meta: &MetaType<S>) -> Spanning<InputValue<S>>
 where
     S: ScalarValue,
-    for<'a> &'a S: ScalarRefValue<'a>,
 {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));

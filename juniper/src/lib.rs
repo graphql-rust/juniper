@@ -170,10 +170,7 @@ pub use crate::{
         scalars::{EmptyMutation, ID},
     },
     validation::RuleError,
-    value::{
-        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
-        ScalarValue, Value,
-    },
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
 };
 
 /// A pinned, boxed future that can be polled.
@@ -204,7 +201,6 @@ pub fn execute<'a, S, CtxT, QueryT, MutationT>(
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
 {
@@ -246,7 +242,6 @@ where
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -279,7 +274,6 @@ pub fn introspect<'a, S, CtxT, QueryT, MutationT>(
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
 {

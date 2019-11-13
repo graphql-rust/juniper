@@ -12,7 +12,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::{
     ast::InputValue,
     executor::ExecutionError,
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
 };
 
@@ -83,7 +83,6 @@ where
         S: ScalarValue,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(crate::execute(
             &self.query,
@@ -107,7 +106,6 @@ where
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let op = self.operation_name();
         let vars = &self.variables();

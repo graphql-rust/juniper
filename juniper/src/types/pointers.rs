@@ -5,14 +5,13 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
     types::base::{Arguments, GraphQLType},
-    value::{ScalarRefValue, ScalarValue, Value},
+    value::{ScalarValue, Value},
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -24,7 +23,6 @@ where
     fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         T::meta(info, registry)
     }
@@ -64,10 +62,7 @@ where
     S: ScalarValue,
     T: FromInputValue<S>,
 {
-    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Box<T>>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Box<T>> {
         match <T as FromInputValue<S>>::from_input_value(v) {
             Some(v) => Some(Box::new(v)),
             None => None,
@@ -89,7 +84,6 @@ impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
 where
     S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -101,7 +95,6 @@ where
     fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         T::meta(info, registry)
     }
@@ -143,7 +136,6 @@ where
     T: crate::GraphQLTypeAsync<S>,
     T::TypeInfo: Send + Sync,
     T::Context: Send + Sync,
-    for<'c> &'c S: ScalarRefValue<'c>,
 {
     fn resolve_field_async<'b>(
         &'b self,
@@ -179,7 +171,6 @@ impl<S, T> GraphQLType<S> for Arc<T>
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
@@ -191,7 +182,6 @@ where
     fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         T::meta(info, registry)
     }

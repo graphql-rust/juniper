@@ -11,7 +11,7 @@ use hyper::{
 };
 use juniper::{
     http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue,
-    GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue,
+    GraphQLType, InputValue, RootNode, ScalarValue,
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
@@ -25,7 +25,6 @@ pub fn graphql<CtxT, QueryT, MutationT, S>(
 ) -> impl Future<Item = Response<Body>, Error = hyper::Error>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
@@ -111,7 +110,6 @@ fn execute_request<CtxT, QueryT, MutationT, S>(
 ) -> impl Future<Item = Response<Body>, Error = tokio_threadpool::BlockingError>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
@@ -212,7 +210,6 @@ where
 impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn execute<'a, CtxT: 'a, QueryT, MutationT>(
         self,

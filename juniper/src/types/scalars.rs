@@ -7,7 +7,7 @@ use crate::{
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::base::GraphQLType,
-    value::{ParseScalarResult, ScalarRefValue, ScalarValue, Value},
+    value::{ParseScalarResult, ScalarValue, Value},
 };
 
 /// An ID as defined by the GraphQL specification
@@ -169,7 +169,6 @@ where
 impl<'a, S> GraphQLType<S> for &'a str
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -181,7 +180,6 @@ where
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         registry.build_scalar_type::<String>(&()).into_meta()
     }
@@ -200,7 +198,6 @@ where
 impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
 where
     S: ScalarValue + Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn resolve_async<'a>(
         &'a self,
@@ -314,7 +311,6 @@ unsafe impl<T> Send for EmptyMutation<T> {}
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = T;
     type TypeInfo = ();
@@ -326,7 +322,6 @@ where
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
@@ -340,7 +335,6 @@ where
     Self::TypeInfo: Send + Sync,
     Self::Context: Send + Sync,
     T: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
 }
 

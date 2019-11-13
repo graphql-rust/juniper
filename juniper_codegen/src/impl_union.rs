@@ -132,19 +132,7 @@ pub fn impl_union(
         .map(|s| quote!( #s ))
         .unwrap_or_else(|| { quote! { #juniper::DefaultScalarValue } });
 
-    let mut generics = item.generics.clone();
-    if attrs.scalar.is_some() {
-        // A custom scalar type was specified.
-        // Therefore, we always insert a where clause that marks the scalar as
-        // compatible with ScalarValueRef.
-        // This is done to prevent the user from having to specify this
-        // manually.
-        let where_clause = generics.where_clause.get_or_insert(syn::parse_quote!(where));
-        where_clause.predicates.push(
-            syn::parse_quote!(for<'__b> &'__b #scalar: #juniper::ScalarRefValue<'__b>),
-        );
-    }
-
+    let generics = item.generics.clone();
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let description = match attrs.description.as_ref() {
@@ -168,7 +156,6 @@ pub fn impl_union(
                 registry: &mut #juniper::Registry<'r, #scalar>
             ) -> #juniper::meta::MetaType<'r, #scalar>
                 where
-                    for<'__b> &'__b #scalar: #juniper::ScalarRefValue<'__b>,
                     #scalar: 'r,
             {
                 let types = &[

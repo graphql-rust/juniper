@@ -90,7 +90,7 @@ macro_rules! graphql_scalar {
                     info: &Self::TypeInfo,
                     registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
                 ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
-                where for<'__b> &'__b $crate::__juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                where
                     $crate::__juniper_insert_generic!($($scalar)+): 'r
                 {
                     let meta = registry.build_scalar_type::<Self>(info);
@@ -390,7 +390,7 @@ macro_rules! graphql_scalar {
                     info: &Self::TypeInfo,
                     registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
                 ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
-                where for<'__b> &'__b $crate::__juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                where
                     $crate::__juniper_insert_generic!($($scalar)+): 'r
                 {
                     let meta = registry.build_scalar_type::<Self>(info);

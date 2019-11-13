@@ -1,6 +1,6 @@
 use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
-    value::{Object, ScalarRefValue, ScalarValue, Value},
+    value::{Object, ScalarValue, Value},
 };
 
 use crate::{
@@ -17,7 +17,6 @@ where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn resolve_field_async<'a>(
         &'a self,
@@ -75,7 +74,6 @@ where
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
     'e: 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     Box::pin(resolve_selection_set_into_async_recursive(
         instance,
@@ -107,7 +105,6 @@ where
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     use futures::stream::{FuturesOrdered, StreamExt};
 

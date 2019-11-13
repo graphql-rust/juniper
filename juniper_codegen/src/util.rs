@@ -809,15 +809,6 @@ impl GraphQLTypeDefiniton {
         let mut generics = self.generics.clone();
 
         if self.scalar.is_some() {
-            // A custom scalar type was specified.
-            // Therefore, we always insert a where clause that marks the scalar as
-            // compatible with ScalarValueRef.
-            // This is done to prevent the user from having to specify this
-            // manually.
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            where_clause.predicates.push(
-                parse_quote!(for<'__b> &'__b #scalar: #juniper_crate_name::ScalarRefValue<'__b>),
-            );
         } else if self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
@@ -829,12 +820,6 @@ impl GraphQLTypeDefiniton {
             where_clause
                 .predicates
                 .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-            // Insert a where clause that marks the scalar as
-            // compatible with ScalarValueRef.
-            // Same as in branch above.
-            where_clause
-                .predicates
-                .push(parse_quote!(for<'__b> &'__b __S: #juniper_crate_name::ScalarRefValue<'__b>));
         }
 
         let type_generics_tokens = if self.include_type_generics {
@@ -976,7 +961,6 @@ impl GraphQLTypeDefiniton {
                     registry: &mut #juniper_crate_name::Registry<'r, #scalar>
                 ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
                     where #scalar : 'r,
-                    for<'z> &'z #scalar: #juniper_crate_name::ScalarRefValue<'z>,
                 {
                     let fields = vec![
                         #( #field_definitions ),*

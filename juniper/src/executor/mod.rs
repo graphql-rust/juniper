@@ -22,7 +22,7 @@ use crate::schema::{
 
 use crate::{
     types::{base::GraphQLType, name::Name},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
 };
 
 mod look_ahead;
@@ -235,7 +235,6 @@ impl<S> IntoFieldError<S> for FieldError<S> {
 pub trait IntoResolvable<'a, S, T: GraphQLType<S>, C>: Sized
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     #[doc(hidden)]
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
@@ -246,7 +245,6 @@ where
     T: GraphQLType<S>,
     S: ScalarValue,
     T::Context: FromContext<C>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some((FromContext::from(ctx), self)))
@@ -258,7 +256,6 @@ where
     S: ScalarValue,
     T: GraphQLType<S>,
     T::Context: FromContext<C>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
@@ -270,7 +267,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for (&'a T::Context, T)
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some(self))
@@ -281,7 +277,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C> for Option<(&'a T::Context
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
@@ -292,7 +287,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(Some)
@@ -304,7 +298,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
@@ -352,7 +345,6 @@ where
 impl<'a, CtxT, S> Executor<'a, CtxT, S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve a single arbitrary value, mapping the context to a new type
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -671,7 +663,6 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -786,7 +777,6 @@ where
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
     let mut operation = None;
@@ -908,7 +898,6 @@ where
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
@@ -930,7 +919,6 @@ where
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Field {
             name: name.to_owned(),
@@ -949,7 +937,6 @@ where
     ) -> Field<'r, S>
     where
         I: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Field {
             name: name.to_owned(),
@@ -964,7 +951,6 @@ where
     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
@@ -981,7 +967,6 @@ where
     ) -> Argument<'r, S>
     where
         T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
@@ -999,26 +984,22 @@ where
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement name()");
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> ListMeta<'r>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    pub fn build_list_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> ListMeta<'r> {
         let of_type = self.get_type::<T>(info);
         ListMeta::new(of_type)
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    pub fn build_nullable_type<T: GraphQLType<S>>(
+        &mut self,
+        info: &T::TypeInfo,
+    ) -> NullableMeta<'r> {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
     }
@@ -1034,7 +1015,6 @@ where
     ) -> ObjectMeta<'r, S>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
@@ -1051,7 +1031,6 @@ where
     ) -> EnumMeta<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Enum types must be named. Implement name()");
 
@@ -1067,7 +1046,6 @@ where
     ) -> InterfaceMeta<'r, S>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
@@ -1080,7 +1058,6 @@ where
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
@@ -1095,7 +1072,6 @@ where
     ) -> InputObjectMeta<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 

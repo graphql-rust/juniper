@@ -63,6 +63,13 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///        }
 ///    }
 ///
+///    fn as_str(&self) -> Option<&str> {
+///        match *self {
+///            MyScalarValue::String(ref s) => Some(s.as_str()),
+///            _ => None,
+///        }
+///    }
+///
 ///    fn as_float(&self) -> Option<f64> {
 ///        match *self {
 ///            MyScalarValue::Int(ref i) => Some(*i as f64),
@@ -157,19 +164,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # fn main() {}
 /// ```
 pub trait ScalarValue:
-    Debug
-    + Display
-    + PartialEq
-    + Clone
-    + Serialize
-    + From<String>
-    + From<bool>
-    + From<i32>
-    + From<f64>
-    + Into<Option<bool>>
-    + Into<Option<i32>>
-    + Into<Option<f64>>
-    + Into<Option<String>>
+    Debug + Display + PartialEq + Clone + Serialize + From<String> + From<bool> + From<i32> + From<f64>
 {
     /// Serde visitor used to deserialize this scalar value
     type Visitor: for<'de> de::Visitor<'de, Value = Self> + Default;
@@ -206,6 +201,12 @@ pub trait ScalarValue:
     /// scalar values
     fn as_string(&self) -> Option<String>;
 
+    /// Convert the given scalar value into a string value
+    ///
+    /// This function is used for implementing `GraphQLType` for `String` for all
+    /// scalar values
+    fn as_str(&self) -> Option<&str>;
+
     /// Convert the given scalar value into a float value
     ///
     /// This function is used for implementing `GraphQLType` for `f64` for all
@@ -219,33 +220,6 @@ pub trait ScalarValue:
     /// This function is used for implementing `GraphQLType` for `bool` for all
     /// scalar values.
     fn as_boolean(&self) -> Option<bool>;
-}
-
-/// A marker trait extending the [`ScalarValue`](../trait.ScalarValue.html) trait
-///
-/// This trait should not be relied on directly by most apps.  However, you may
-/// need a where clause in the form of `for<'b> &'b S: ScalarRefValue<'b>` to
-/// abstract over different scalar value types.
-///
-/// This is automatically implemented for a type as soon as the type implements
-/// `ScalarValue` and the additional conversations.
-pub trait ScalarRefValue<'a>:
-    Debug
-    + Into<Option<&'a bool>>
-    + Into<Option<&'a i32>>
-    + Into<Option<&'a String>>
-    + Into<Option<&'a f64>>
-{
-}
-
-impl<'a, T> ScalarRefValue<'a> for &'a T
-where
-    T: ScalarValue,
-    &'a T: Into<Option<&'a bool>>
-        + Into<Option<&'a i32>>
-        + Into<Option<&'a String>>
-        + Into<Option<&'a f64>>,
-{
 }
 
 /// The default scalar value representation in juniper
@@ -270,17 +244,24 @@ impl ScalarValue for DefaultScalarValue {
         }
     }
 
-    fn as_string(&self) -> Option<String> {
-        match *self {
-            DefaultScalarValue::String(ref s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
     fn as_float(&self) -> Option<f64> {
         match *self {
             DefaultScalarValue::Int(ref i) => Some(*i as f64),
             DefaultScalarValue::Float(ref f) => Some(*f),
+            _ => None,
+        }
+    }
+
+    fn as_str(&self) -> Option<&str> {
+        match *self {
+            DefaultScalarValue::String(ref s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    fn as_string(&self) -> Option<String> {
+        match *self {
+            DefaultScalarValue::String(ref s) => Some(s.clone()),
             _ => None,
         }
     }
