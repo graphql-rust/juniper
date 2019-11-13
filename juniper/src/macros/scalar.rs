@@ -423,16 +423,12 @@ macro_rules! graphql_scalar {
                 )
             {
 
-                fn resolve_async<'a, 'async_trait>(
+                fn resolve_async<'a>(
                     &'a self,
                     info: &'a Self::TypeInfo,
-                    selection_set: Option<&'a [$crate::Selection<'a, $crate::__juniper_insert_generic!($($scalar)+)>]>,
-                    executor: &'a $crate::Executor<'a, Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>,
-                ) -> $crate::BoxFuture<'async_trait, $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)>>
-                where
-                    'a: 'async_trait,
-                    Self: 'async_trait,
-                {
+                    selection_set: Option<&'a [$crate::Selection<$crate::__juniper_insert_generic!($($scalar)+)>]>,
+                    executor: &'a $crate::Executor<Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>,
+                ) -> $crate::BoxFuture<'a, $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)>> {
                     use $crate::GraphQLType;
                     use futures::future;
                     let v = self.resolve(info, selection_set, executor);
