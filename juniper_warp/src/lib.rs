@@ -650,6 +650,7 @@ fn playground_response(
         .expect("response is valid")
 }
 
+// todo: update tests once `juniper::schema` compiles
 #[cfg(test)]
 mod tests {
     use warp::{http, test::request};
@@ -740,9 +741,9 @@ mod tests {
             EmptyMutation, RootNode,
         };
 
-        type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
+        type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
-        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new(), EmptySubscription::<Database>::new());
 
         let state = warp::any().map(move || Database::new());
         let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
@@ -773,7 +774,7 @@ mod tests {
             EmptyMutation, RootNode,
         };
 
-        type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
+        type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
         let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
@@ -817,18 +818,14 @@ mod tests {
 mod tests_http_harness {
     use warp::{self, Filter};
 
-    use juniper::{
-        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
-        tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
-    };
+    use juniper::{http::tests::{run_http_test_suite, HTTPIntegration, TestResponse}, tests::{model::Database, schema::Query}, EmptyMutation, RootNode, EmptySubscription};
 
     use super::*;
 
-    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>>;
+    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     fn warp_server() -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
-        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new(), EmptySubscription::<Database>::new());
 
         let state = warp::any().map(move || Database::new());
         let filter = warp::filters::path::end().and(make_graphql_filter(schema, state.boxed()));
