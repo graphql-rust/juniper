@@ -7,3 +7,4 @@ libraries.
 - [Warp](warp.md)
 - [Rocket](rocket.md)
 - [Iron](iron.md)
+- [Actix web](actix_web.md)

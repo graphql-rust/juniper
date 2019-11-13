@@ -23,6 +23,7 @@
     - [Rocket](servers/rocket.md)
     - [Iron](servers/iron.md)
     - [Hyper](servers/hyper.md)
+    - [Actix web](servers/actix_web.md)
   - [Third Party Integrations](servers/third-party.md)
 
 - [Advanced Topics](advanced/index.md)
