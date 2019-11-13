@@ -37,7 +37,7 @@ Check the LICENSE file for details.
 */
 
 #![deny(missing_docs)]
-//#![deny(warnings)]
+#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 #[cfg(feature = "async")]
@@ -254,7 +254,7 @@ where
                     })
                 })
                 .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(JuniperWarpError::TokioBlockingError(e))),
             )
             .boxed()
         };
@@ -289,7 +289,7 @@ where
                 })
             })
             .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(JuniperWarpError::TokioBlockingError(e))),
         )
         .boxed()
     };
@@ -332,7 +332,7 @@ where
 
             match serde_json::to_vec(&res) {
                 Ok(json) => Ok(build_response(Ok((json, res.is_ok())))),
-                Err(e) => Err(warp::reject::custom(e)),
+                Err(e) => Err(warp::reject::custom(JuniperWarpError::Serde(e))),
             }
         }
     };
@@ -373,6 +373,26 @@ where
         .and_then(handle_get_request);
 
     get_filter.or(post_filter).unify().boxed()
+}
+
+/// Wrapper around different errors `juniper_warp`'s premade filters return
+/// Needed because `warp::reject::Reject` is not implemented for
+/// these errors
+// todo: better docs
+pub enum JuniperWarpError{
+    /// Wrapper around `serde_json::error::Error`
+    Serde(serde_json::error::Error),
+
+    /// Wrapper around `tokio_threadpool::BlockingError`
+    TokioBlockingError(tokio_threadpool::BlockingError),
+}
+impl warp::reject::Reject for JuniperWarpError {}
+
+impl std::fmt::Debug for JuniperWarpError {
+    // todo: better debug
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "JuniperWarpError")
+    }
 }
 
 /// Listen to `websocket`'s messages and do one of the following:
