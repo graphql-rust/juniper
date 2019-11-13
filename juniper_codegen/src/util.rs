@@ -932,27 +932,21 @@ impl GraphQLTypeDefiniton {
                 impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
                     #where_async
                 {
-                    fn resolve_field_async<'b, 'async_trait>(
+                    fn resolve_field_async<'b>(
                         &'b self,
                         info: &'b Self::TypeInfo,
                         field: &'b str,
                         args: &'b #juniper_crate_name::Arguments<#scalar>,
                         executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> #juniper_crate_name::BoxFuture<'async_trait, #juniper_crate_name::ExecutionResult<#scalar>>
-                        where
-                        #scalar: Send + Sync,
-                        'b: 'async_trait,
-                        Self: 'async_trait,
+                    ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
+                        where #scalar: Send + Sync,
                     {
                         use futures::future;
                         use #juniper_crate_name::GraphQLType;
                         match field {
                             #( #resolve_matches_async )*
                             _ => {
-                                panic!("Field {} not found on type {:?}",
-                                    field,
-                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
-                                );
+                                panic!("Field {} not found on type {}", field, "Mutation");
                             }
                         }
                     }

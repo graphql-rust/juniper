@@ -213,16 +213,12 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 __S: #juniper_path::ScalarValue + Send + Sync,
                 for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
         {
-            fn resolve_async<'a, 'async_trait>(
+            fn resolve_async<'a>(
                 &'a self,
                 info: &'a Self::TypeInfo,
                 selection_set: Option<&'a [#juniper_path::Selection<__S>]>,
                 executor: &'a #juniper_path::Executor<Self::Context, __S>,
-            ) -> #juniper_path::BoxFuture<'async_trait, #juniper_path::Value<__S>>
-             where
-                'a: 'async_trait,
-                Self: 'async_trait
-            {
+            ) -> #juniper_path::BoxFuture<'a, #juniper_path::Value<__S>> {
                 use #juniper_path::GraphQLType;
                 use futures::future;
                 let v = self.resolve(info, selection_set, executor);
