@@ -439,7 +439,7 @@ where
     let got_close_signal = Arc::new(AtomicBool::new(false));
 
     sink_rx
-        .then(move |msg| {
+        .for_each(move |msg| {
             if msg.is_err() {
                 failure::format_err!("message is error: {:?}", msg);
                 return futures03::future::ready(());
@@ -531,10 +531,6 @@ where
             }
 
             futures03::future::ready(())
-        })
-        .for_each(|_| {
-            // empty `for_each` here to keep executing this stream
-            async {}
         })
 }
 
