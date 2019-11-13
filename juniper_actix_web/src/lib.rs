@@ -230,11 +230,32 @@ where
                         GraphQLRequest(GraphQLBatchRequest::Single(gql_request.into_inner().into()))
                     }),
             )),
-            &Method::POST => Box::new(
-                web::Json::<GraphQLBatchRequest<S>>::from_request(req, payload)
-                    .map_err(Error::from)
-                    .map(|gql_request| GraphQLRequest(gql_request.into_inner())),
-            ),
+            &Method::POST => {
+                let content_type_header = req
+                    .headers()
+                    .get(actix_web::http::header::CONTENT_TYPE)
+                    .and_then(|hv| hv.to_str().ok());
+                // println!("CONTENT_TYPE: {}", content_type_header);
+                match content_type_header {
+                    Some("application/json") => Box::new(
+                        web::Json::<GraphQLBatchRequest<S>>::from_request(req, payload)
+                            .map_err(Error::from)
+                            .map(|gql_request| GraphQLRequest(gql_request.into_inner())),
+                    ),
+                    Some("application/graphql") => Box::new(
+                        String::from_request(req, payload)
+                            .map_err(|_| actix_http::error::ContentTypeError::ParseError.into())
+                            .map(|query| {
+                                GraphQLRequest(GraphQLBatchRequest::Single(
+                                    JuniperGraphQLRequest::new(query, None, None),
+                                ))
+                            }),
+                    ),
+                    _ => Box::new(future::err(
+                        actix_http::error::ContentTypeError::UnknownEncoding.into(),
+                    )),
+                }
+            }
             _ => Box::new(future::result(Err(
                 actix_http::error::ErrorMethodNotAllowed(
                     "GraphQL requests can only be sent with GET or POST",
