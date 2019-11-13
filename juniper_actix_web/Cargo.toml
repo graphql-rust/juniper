@@ -10,18 +10,20 @@ edition = "2018"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-juniper = { version = "0.13.1" , default-features = false, path = "../juniper"}
+juniper = { version = "0.14.1" , default-features = false, path = "../juniper"}
 
 futures = "0.1"
 actix-web = "1.0"
 actix-http = "0.2.8"
 
 [dev-dependencies]
+actix-rt = "0.2.0"
 pretty_env_logger = "0.2"
 reqwest = "0.9.19"
+awc = "0.2.8"
 url = "2.1.0"
 
 [dev-dependencies.juniper]
-version = "0.13.1"
+version = "0.14.1"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"

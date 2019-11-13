@@ -199,7 +199,6 @@ where
     #[serde(rename = "operationName")]
     operation_name: Option<String>,
     #[serde(bound(deserialize = "InputValue<S>: DeserializeOwned"))]
-    // #[serde(default = "default_none")]
     #[serde(default = "Option::default")]
     #[serde(deserialize_with = "deserialize_from_str")]
     variables: Option<InputValue<S>>,
@@ -420,8 +419,8 @@ mod fromrequest_tests {
         let (req, mut payload) = TestRequest::post()
             .set_payload(
                 r#"{
-                "query": "{foo { bar }}"
-            }"#,
+                    "query": "{foo { bar }}"
+                }"#,
             )
             .header(header::CONTENT_TYPE, "content/json")
             .to_http_parts();
@@ -436,9 +435,9 @@ mod fromrequest_tests {
         let (req, mut payload) = TestRequest::post()
             .set_payload(
                 r#"[
-                { "query": "{ foo { bar } }" },
-                { "query": "{ qux { quux } }" }
-            ]"#,
+                    { "query": "{ foo { bar } }" },
+                    { "query": "{ baz { qux } }" }
+                ]"#,
             )
             .header(header::CONTENT_TYPE, "content/json")
             .to_http_parts();
@@ -453,9 +452,9 @@ mod fromrequest_tests {
         let (req, mut payload) = TestRequest::post()
             .set_payload(
                 r#"{
-                "query": "foo",
-                "query": "bar"
-            }"#,
+                    "query": "foo",
+                    "query": "bar"
+                }"#,
             )
             .header(header::CONTENT_TYPE, "content/json")
             .to_http_parts();
@@ -483,4 +482,118 @@ mod fromrequest_tests {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use actix_rt;
+    use actix_web::{guard, web, App, HttpServer};
+    use futures::lazy;
+    use juniper::{
+        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, RootNode,
+    };
+    use std::sync::Arc;
+
+    type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+
+    struct Data {
+        schema: Schema,
+        context: Database,
+    }
+
+    struct TestActixWebIntegration;
+
+    impl TestActixWebIntegration {
+        const fn server_url() -> &'static str {
+            "127.0.0.1:8088"
+        }
+    }
+
+    impl HTTPIntegration for TestActixWebIntegration {
+        fn get(&self, url: &str) -> TestResponse {
+            let url = format!("http://{}{}", TestActixWebIntegration::server_url(), url);
+            actix_rt::System::new("get_request")
+                .block_on(lazy(|| {
+                    awc::Client::default()
+                        .get(&url)
+                        .send()
+                        .map(make_test_response)
+                }))
+                .expect(&format!("failed GET {}", url))
+        }
+
+        fn post(&self, url: &str, body: &str) -> TestResponse {
+            let url = format!("http://{}{}", TestActixWebIntegration::server_url(), url);
+            actix_rt::System::new("post_request")
+                .block_on(lazy(|| {
+                    awc::Client::default()
+                        .post(&url)
+                        .header(awc::http::header::CONTENT_TYPE, "application/json")
+                        .send_body(body.to_string())
+                        .map(make_test_response)
+                }))
+                .expect(&format!("failed POST {}", url))
+        }
+    }
+
+    type Resp = awc::ClientResponse<
+        actix_http::encoding::Decoder<actix_http::Payload<actix_http::PayloadStream>>,
+    >;
+
+    fn make_test_response(mut response: Resp) -> TestResponse {
+        let status_code = response.status().as_u16() as i32;
+        let body = response
+            .body()
+            .wait()
+            .ok()
+            .and_then(|body| String::from_utf8(body.to_vec()).ok());
+        let content_type_header = response
+            .headers()
+            .get(actix_web::http::header::CONTENT_TYPE);
+        let content_type = content_type_header
+            .and_then(|ct| ct.to_str().ok())
+            .unwrap_or_default()
+            .to_string();
+
+        TestResponse {
+            status_code,
+            body,
+            content_type,
+        }
+    }
+
+    #[test]
+    fn test_actix_web_integration() {
+        let schema = Schema::new(Query, EmptyMutation::<Database>::new());
+        let context = Database::new();
+        let data = Arc::new(Data { schema, context });
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        let join = std::thread::spawn(move || {
+            let sys = actix_rt::System::new("test-integration-server");
+            let app = HttpServer::new(move || {
+                App::new().data(data.clone()).service(
+                    web::resource("/")
+                        .guard(guard::Any(guard::Get()).or(guard::Post()))
+                        .to(|st: web::Data<Arc<Data>>, data: GraphQLRequest| {
+                            data.execute(&st.schema, &st.context)
+                        }),
+                )
+            })
+            .shutdown_timeout(0)
+            .bind(TestActixWebIntegration::server_url())
+            .unwrap();
+
+            tx.send(app.system_exit().start()).unwrap();
+            sys.run().unwrap();
+        });
+
+        let server = rx.recv().unwrap();
+        server.resume();
+
+        run_http_test_suite(&TestActixWebIntegration);
+
+        server.stop(true);
+        join.join().unwrap();
+    }
+}
