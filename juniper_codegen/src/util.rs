@@ -946,7 +946,10 @@ impl GraphQLTypeDefiniton {
                         match field {
                             #( #resolve_matches_async )*
                             _ => {
-                                panic!("Field {} not found on type {}", field, "Mutation");
+                                panic!("Field {} not found on type {:?}",
+                                    field,
+                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
+                                );
                             }
                         }
                     }
