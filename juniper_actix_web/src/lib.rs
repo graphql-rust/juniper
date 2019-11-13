@@ -235,7 +235,6 @@ where
                     .headers()
                     .get(actix_web::http::header::CONTENT_TYPE)
                     .and_then(|hv| hv.to_str().ok());
-                // println!("CONTENT_TYPE: {}", content_type_header);
                 match content_type_header {
                     Some("application/json") => Box::new(
                         web::Json::<GraphQLBatchRequest<S>>::from_request(req, payload)
@@ -443,7 +442,7 @@ mod fromrequest_tests {
                     "query": "{foo { bar }}"
                 }"#,
             )
-            .header(header::CONTENT_TYPE, "content/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .to_http_parts();
 
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
@@ -460,7 +459,7 @@ mod fromrequest_tests {
                     { "query": "{ baz { qux } }" }
                 ]"#,
             )
-            .header(header::CONTENT_TYPE, "content/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .to_http_parts();
 
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
@@ -477,7 +476,7 @@ mod fromrequest_tests {
                     "query": "bar"
                 }"#,
             )
-            .header(header::CONTENT_TYPE, "content/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .to_http_parts();
 
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
@@ -493,7 +492,7 @@ mod fromrequest_tests {
                 "variables": {"foo": "bar"}
             }"#,
             )
-            .header(header::CONTENT_TYPE, "content/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .to_http_parts();
         let result = GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
         // println!("ERR: {:?}", &result.unwrap_err().to_string());
