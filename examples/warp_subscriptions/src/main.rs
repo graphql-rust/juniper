@@ -30,11 +30,6 @@ struct User {
     name: String,
 }
 
-//struct EmptyMutation {}
-
-//#[juniper::object(Context = Context)]
-//impl EmptyMutation {}
-
 #[juniper::object(Context = Context)]
 impl User {
     fn id(&self) -> i32 {
@@ -91,22 +86,6 @@ impl User {
             return vec![];
         }
     }
-}
-
-#[derive(juniper::GraphQLObject)]
-#[graphql(description = "A humanoid creature in the Star Wars universe")]
-struct SyncUser {
-    id: i32,
-    kind: UserKind,
-    name: String,
-}
-
-#[derive(juniper::GraphQLObject)]
-#[graphql(description = "A humanoid creature in the Star Wars universe")]
-struct AsyncUser {
-    id: i32,
-    kind: UserKind,
-    name: String,
 }
 
 struct Query;
