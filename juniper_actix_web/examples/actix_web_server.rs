@@ -1,11 +1,11 @@
-use actix_web::{middleware, web, App, HttpServer, Responder, guard};
+use actix_web::{guard, middleware, web, App, HttpServer, Responder};
 
 use juniper::{
     tests::{model::Database, schema::Query},
     EmptyMutation, RootNode,
 };
 
-use juniper_actix_web::{GraphQLRequest, graphiql_source, playground_source};
+use juniper_actix_web::{graphiql_source, playground_source, GraphQLRequest};
 
 use std::sync::Arc;
 
@@ -43,15 +43,11 @@ fn main() -> std::io::Result<()> {
             )
             .service(
                 web::resource("/graphiql")
-                    .route(web::get().to(|| {
-                        graphiql_source("http://127.0.0.1:8088/graphql")
-                    }))
+                    .route(web::get().to(|| graphiql_source("http://127.0.0.1:8088/graphql"))),
             )
             .service(
                 web::resource("/playground")
-                    .route(web::get().to(|| {
-                        playground_source("http://127.0.0.1:8088/graphql")
-                    }))
+                    .route(web::get().to(|| playground_source("http://127.0.0.1:8088/graphql"))),
             )
     })
     .bind("localhost:8088")?
