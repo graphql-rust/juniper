@@ -108,6 +108,7 @@ impl<S> Object<S> {
             key_value_list: iter
                 .into_iter()
                 .map(|(k, v)| v.map(|v| (k.into(), v)))
+                .take_while(|x| x.is_some())
                 .collect::<Option<Vec<_>>>()?,
         })
     }
