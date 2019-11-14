@@ -1,16 +1,18 @@
 use std::sync::Arc;
 
 use crate::{
-    ast::Selection,
-    executor::{ExecutionResult, Executor, FieldError, ValuesStream},
-    parser::Spanning,
-    value::{Object, ScalarRefValue, ScalarValue, Value},
+    ast::Selection, executor::{
+        ExecutionResult, Executor, FieldError, ValuesStream,
+    },
+    parser::Spanning, SubscriptionsExecutor,
+    value::{ Object, ScalarRefValue, ScalarValue, Value },
 };
 
 #[cfg(feature = "async")]
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
+use crate::executor::ExecutorDataVariables;
 
 /**
 This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
@@ -339,8 +341,8 @@ where
     async fn resolve_into_stream<'s, 'i, 'ss, 'ref_e, 'e, 'res>(
         &'s self,
         info: &'i Self::TypeInfo,
-        selection_set: Option<&'ss [Selection<'_, S>]>,
-        executor: &'ref_e Executor<'e, Self::Context, S>,
+//        selection_set: Option<&'ss [Selection<'_, S>]>,
+        executor: SubscriptionsExecutor<'e, Self::Context, S>,
     ) -> Value<ValuesStream<'res, S>>
     where
         's: 'res,
@@ -349,8 +351,12 @@ where
         'ref_e: 'e,
         'e: 'res,
     {
-        if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_stream(self, info, selection_set, executor).await
+        if executor.executor_variables.current_selection_set.is_some() {
+            resolve_selection_set_into_stream(
+                self,
+                info,
+                executor
+            ).await
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -659,8 +665,8 @@ where
 pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    selection_set: &'ss [Selection<'ss, S>],
-    executor: &'ref_e Executor<'e, CtxT, S>,
+//    selection_set: &'ss [Selection<'ss, S>],
+    executor: SubscriptionsExecutor<'e, CtxT, S>,
 ) -> BoxFuture<'res, Value<ValuesStream<'res, S>>>
 where
     'i: 'res,
@@ -677,7 +683,7 @@ where
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance,
         info,
-        selection_set,
+//        selection_set,
         executor,
     ))
 }
@@ -687,8 +693,8 @@ where
 pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
-    selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+//    selection_set: &'a [Selection<'a, S>],
+    owned_executor: SubscriptionsExecutor<'a, CtxT, S>,
 ) -> Value<ValuesStream<'a, S>>
 where
     T: GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -698,6 +704,12 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     use futures::stream::{FuturesOrdered, StreamExt as _};
+
+    let executor = ExecutorDataVariables::create_executor(
+        &owned_executor.executor_variables
+    );
+
+    let selection_set = executor.current_selection_set.unwrap();
 
     let mut object: Object<ValuesStream<S>> = Object::with_capacity(selection_set.len());
 
@@ -809,8 +821,8 @@ where
                     let value = resolve_selection_set_into_stream(
                         instance,
                         info,
-                        &fragment.selection_set[..],
-                        executor,
+//                        &fragment.selection_set[..],
+                        owned_executor,
                     )
                     .await;
                     AsyncValue::Nested(value)

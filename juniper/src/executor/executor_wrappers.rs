@@ -1,11 +1,10 @@
 use std::{collections::HashMap, sync::RwLock};
 
 use crate::{
-    ast::Fragment,
-    executor::FieldPath,
-    parser::Spanning,
-    schema::model::{SchemaType, TypeType},
-    DefaultScalarValue, ExecutionError, Executor, Selection, Variables,
+    ast::Fragment, executor::FieldPath, parser::Spanning,
+    schema::model::{SchemaType, TypeType}, DefaultScalarValue,
+    ExecutionError, Executor, Selection, Variables,
+    Value, ValuesStream, FieldError, ScalarRefValue, ScalarValue
 };
 
 /// Struct owning `Executor`'s variables
@@ -148,6 +147,7 @@ where
     }
 }
 
+
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
 pub struct SubscriptionsExecutor<'a, CtxT, S>
@@ -156,38 +156,89 @@ where
 {
     /// Keeps ownership of all `Executor`'s variables
     /// because `Executor` only keeps references
-    ///
-    /// Variables are kept in a wrapper rather than this struct
-    /// because they have a hashmap referencing this struct's `fragments`
-    pub(crate) executor_variables: ExecutorData<'a, CtxT, S>,
-
-    /// Fragments vector.
-    /// Needed in as a separate field because `executor_variables`
-    /// contains a hashmap of references to `fragments`
-    pub(crate) fragments: Vec<Spanning<Fragment<'a, S>>>,
+    pub(crate) executor_variables: ExecutorDataVariables<'a, CtxT, S>,
 
     /// `Executor` instance
     pub(crate) executor: OptionalExecutor<'a, CtxT, S>,
 }
+
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
 {
     /// Create new empty `SubscriptionsExecutor`
-    pub fn new() -> Self {
-        Self {
-            executor_variables: ExecutorData::new(),
-            fragments: vec![],
+    pub fn new(executor_variables: ExecutorDataVariables<'a, CtxT, S>) -> Self {
+        let mut x = Self {
+            executor_variables,
             executor: OptionalExecutor::new(),
+        };
+//        x.executor.set(
+//            ExecutorDataVariables::create_executor(
+//                x.executor_variables
+//            )
+//        );
+
+        x
+    }
+}
+
+
+impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
+where
+    S: std::clone::Clone,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    /// Resolve a single arbitrary value into a return stream
+    ///
+    /// If the field fails to resolve, `null` will be returned.
+    #[cfg(feature = "async")]
+    pub async fn resolve_into_stream<'s, 'i, 'v, T>(
+        self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Value<ValuesStream<'a, S>>
+        where
+            'i: 'a,
+            'v: 'a,
+            's: 'a,
+            T: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
+            T::TypeInfo: Send + Sync,
+            CtxT: Send + Sync,
+            S: Send + Sync + 'static,
+    {
+        match self.subscribe(info, value).await {
+            Ok(v) => v,
+            Err(e) => {
+//                self.push_error(e);
+                Value::Null
+            }
         }
     }
 
-    /// Get executor's errors
-    pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-    where
-        S: PartialEq,
+    /// Resolve a single arbitrary value into `Value<ValuesStream>`
+    #[cfg(feature = "async")]
+    pub async fn subscribe<'s, 'i, 'v, T>(
+        self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>>
+        where
+            'i: 'a,
+            'v: 'a,
+            's: 'a,
+            T: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT>,
+            T::TypeInfo: Send + Sync,
+            CtxT: Send + Sync,
+            S: Send + Sync + 'static,
     {
-        self.executor_variables.errors()
+        Ok(value
+            .resolve_into_stream(
+                info,
+//                self.executor.current_selection_set,
+                self)
+            .await)
     }
+
 }

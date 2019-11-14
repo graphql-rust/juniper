@@ -91,6 +91,10 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![doc(html_root_url = "https://docs.rs/juniper/0.14.1")]
 #![warn(missing_docs)]
 
+// todo: consider not using this crate
+#[macro_use]
+extern crate rental;
+
 #[doc(hidden)]
 pub extern crate serde;
 

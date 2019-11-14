@@ -60,7 +60,8 @@ where
 {
     fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     variables: &'a Variables<S>,
-    current_selection_set: Option<&'a [Selection<'a, S>]>,
+    // todo: make private back
+    pub current_selection_set: Option<&'a [Selection<'a, S>]>,
     parent_selection_set: Option<&'a [Selection<'a, S>]>,
     current_type: TypeType<'a, S>,
     schema: &'a SchemaType<'a, S>,
@@ -378,27 +379,6 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
-    /// Resolve a single arbitrary value into `Value<ValuesStream>`
-    #[cfg(feature = "async")]
-    pub async fn subscribe<'s, 'i, 'v, T>(
-        &'s self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Result<Value<ValuesStream<'a, S>>, FieldError<S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
-    {
-        Ok(value
-            .resolve_into_stream(info, self.current_selection_set, self)
-            .await)
-    }
-
     /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -462,33 +442,6 @@ where
             Err(e) => {
                 self.push_error(e);
                 Value::null()
-            }
-        }
-    }
-
-    /// Resolve a single arbitrary value into a return stream
-    ///
-    /// If the field fails to resolve, `null` will be returned.
-    #[cfg(feature = "async")]
-    pub async fn resolve_into_stream<'s, 'i, 'v, T>(
-        &'s self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Value<ValuesStream<'a, S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
-    {
-        match self.subscribe(info, value).await {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                Value::Null
             }
         }
     }
@@ -958,96 +911,98 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-//    let mut operation = None;
-//
-//    parse_document_definitions(
-//        document,
-//        operation_name,
-//        &mut executor.fragments,
-//        &mut operation,
-//    )?;
-//
-//    let op = match operation {
-//        Some(op) => op,
-//        None => return Err(GraphQLError::UnknownOperationName),
-//    };
-//
-//    if op.item.operation_type != OperationType::Subscription {
-//        return Err(GraphQLError::UnknownOperationName);
-//    }
-//
-//    let default_variable_values = op.item.variable_definitions.map(|defs| {
-//        defs.item
-//            .items
-//            .iter()
-//            .filter_map(|&(ref name, ref def)| {
-//                def.default_value
-//                    .as_ref()
-//                    .map(|i| (name.item.to_owned(), i.item.clone()))
-//            })
-//            .collect::<HashMap<String, InputValue<S>>>()
-//    });
-//
-//    let errors = RwLock::new(Vec::new());
-//    let value;
-//    {
-//        let mut all_vars;
-//        let mut final_vars = variables;
-//
-//        if let Some(defaults) = default_variable_values {
-//            all_vars = final_vars;
-//
-//            for (name, value) in defaults {
-//                all_vars.entry(name).or_insert(value);
-//            }
-//
-//            final_vars = all_vars;
-//        }
-//
-//        let root_type = match op.item.operation_type {
-//            OperationType::Subscription => root_node
-//                .schema
-//                .subscription_type()
-//                .expect("No subscription type found"),
-//            _ => unreachable!(),
-//        };
-//
-//        let executor = SubscriptionsExecutor::new();
-//
-//        executor.executor_variables.set_data(ExecutorDataVariables {
-//            fragments: executor
-//                .fragments
-//                .into_iter()
-//                .map(|f| (f.item.name.item, f.item))
-//                .collect(),
-//            variables: final_vars,
-//            current_selection_set: Some(op.item.selection_set),
-//            parent_selection_set: None,
-//            current_type: root_type,
-//            schema: &root_node.schema,
-//            context,
-//            errors: errors,
-//            field_path: FieldPath::Root(op.start),
-//        });
-//
-//        // unwrap is safe here because executor's data was set up above
-//        executor
-//            .executor
-//            .set(executor.executor_variables.create_executor().unwrap());
-//
-//        value = match op.item.operation_type {
-//            OperationType::Subscription => {
-//                executor
-//                    .executor
-//                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-//                    .await
-//            }
-//            _ => unreachable!(),
-//        };
-//    }
-//
-//    Ok(value)
-    unimplemented!()
+    let mut operation = None;
+
+    let mut fragments = vec![];
+
+    parse_document_definitions(
+        document,
+        operation_name,
+        &mut fragments,
+        &mut operation,
+    )?;
+
+    let op = match operation {
+        Some(op) => op,
+        None => return Err(GraphQLError::UnknownOperationName),
+    };
+
+    if op.item.operation_type != OperationType::Subscription {
+        return Err(GraphQLError::UnknownOperationName);
+    }
+
+    let default_variable_values = op.item.variable_definitions.map(|defs| {
+        defs.item
+            .items
+            .iter()
+            .filter_map(|&(ref name, ref def)| {
+                def.default_value
+                    .as_ref()
+                    .map(|i| (name.item.to_owned(), i.item.clone()))
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
+    });
+
+    let errors = RwLock::new(Vec::new());
+    let value;
+    {
+        let mut all_vars;
+        let mut final_vars = variables;
+
+        if let Some(defaults) = default_variable_values {
+            all_vars = final_vars;
+
+            for (name, value) in defaults {
+                all_vars.entry(name).or_insert(value);
+            }
+
+            final_vars = all_vars;
+        }
+
+        let root_type = match op.item.operation_type {
+            OperationType::Subscription => root_node
+                .schema
+                .subscription_type()
+                .expect("No subscription type found"),
+            _ => unreachable!(),
+        };
+
+        let mut executor = SubscriptionsExecutor::new(
+            ExecutorDataVariables {
+                fragments: fragments
+                    .into_iter()
+                    .map(|f| (f.item.name.item, f.item))
+                    .collect(),
+                variables: final_vars,
+                current_selection_set: Some(op.item.selection_set),
+                parent_selection_set: None,
+                current_type: root_type,
+                schema: &root_node.schema,
+                context,
+                errors: errors,
+                field_path: FieldPath::Root(op.start),
+            }
+        );
+
+        //todo: use less executor word
+//        executor.executor.set(
+//            ExecutorDataVariables::create_executor(
+//                &executor.executor_variables
+//            )
+//        );
+
+
+        value = match op.item.operation_type {
+            OperationType::Subscription => {
+                executor
+                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+                    .await
+            }
+            _ => unreachable!(),
+        };
+    }
+
+    Ok(value)
 }
 
 /// Find document's operation (returns error
