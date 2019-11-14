@@ -379,7 +379,7 @@ where
     where
         S: ser::Serializer,
     {
-        let mut map = serializer.serialize_map(Some(self.fields_count()))?;
+        let mut map = serializer.serialize_map(Some(self.field_count()))?;
 
         for &(ref f, ref v) in self.iter() {
             map.serialize_key(f)?;

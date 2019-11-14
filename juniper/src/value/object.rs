@@ -62,7 +62,7 @@ impl<S> Object<S> {
     }
 
     /// Get the current number of fields
-    pub fn fields_count(&self) -> usize {
+    pub fn field_count(&self) -> usize {
         self.key_value_list.len()
     }
 
@@ -108,6 +108,7 @@ impl<S> Object<S> {
             key_value_list: iter
                 .into_iter()
                 .map(|(k, v)| v.map(|v| (k.into(), v)))
+                .take_while(|x| x.is_some())
                 .collect::<Option<Vec<_>>>()?,
         })
     }
