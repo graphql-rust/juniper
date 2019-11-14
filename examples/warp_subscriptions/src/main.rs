@@ -18,12 +18,15 @@ struct Context {}
 impl juniper::Context for Context {}
 
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
+/// UserKind sample docs
 enum UserKind {
     Admin,
     User,
     Guest,
 }
 
+
+/// Sample User representation
 struct User {
     id: i32,
     kind: UserKind,

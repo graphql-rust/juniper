@@ -58,7 +58,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     variables: &'a Variables<S>,
     current_selection_set: Option<&'a [Selection<'a, S>]>,
     parent_selection_set: Option<&'a [Selection<'a, S>]>,
@@ -586,7 +586,7 @@ where
 
     #[doc(hidden)]
     pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
-        self.fragments.get(name).cloned()
+        self.fragments.get(name)
     }
 
     /// The current location of the executor
@@ -656,7 +656,7 @@ where
                                     inner: LookAheadSelection::build_from_selection(
                                         s,
                                         self.variables,
-                                        self.fragments,
+                                        &self.fragments,
                                     )
                                     .expect("a child selection"),
                                     applies_for: Applies::All,
@@ -784,8 +784,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
+                .into_iter()
+                .map(|f| (f.item.name.item, f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -887,8 +887,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
+                .into_iter()
+                .map(|f| (f.item.name.item, f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -961,93 +961,94 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    let mut operation = None;
-
-    parse_document_definitions(
-        document,
-        operation_name,
-        &mut executor.fragments,
-        &mut operation,
-    )?;
-
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type != OperationType::Subscription {
-        return Err(GraphQLError::UnknownOperationName);
-    }
-
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|&(ref name, ref def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = final_vars;
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = all_vars;
-        }
-
-        let root_type = match op.item.operation_type {
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No mutation type found"),
-            _ => unreachable!(),
-        };
-
-        executor.executor_variables.set_data(ExecutorDataVariables {
-            fragments: executor
-                .fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
-                .collect(),
-            variables: final_vars,
-            current_selection_set: Some(op.item.selection_set),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: errors,
-            field_path: FieldPath::Root(op.start),
-        });
-
-        // unwrap is safe here because executor's data was set up above
-        executor
-            .executor
-            .set(executor.executor_variables.create_executor().unwrap());
-
-        value = match op.item.operation_type {
-            OperationType::Subscription => {
-                executor
-                    .executor
-                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-                    .await
-            }
-            _ => unreachable!(),
-        };
-    }
-
-    Ok(value)
+//    let mut operation = None;
+//
+//    parse_document_definitions(
+//        document,
+//        operation_name,
+//        &mut executor.fragments,
+//        &mut operation,
+//    )?;
+//
+//    let op = match operation {
+//        Some(op) => op,
+//        None => return Err(GraphQLError::UnknownOperationName),
+//    };
+//
+//    if op.item.operation_type != OperationType::Subscription {
+//        return Err(GraphQLError::UnknownOperationName);
+//    }
+//
+//    let default_variable_values = op.item.variable_definitions.map(|defs| {
+//        defs.item
+//            .items
+//            .iter()
+//            .filter_map(|&(ref name, ref def)| {
+//                def.default_value
+//                    .as_ref()
+//                    .map(|i| (name.item.to_owned(), i.item.clone()))
+//            })
+//            .collect::<HashMap<String, InputValue<S>>>()
+//    });
+//
+//    let errors = RwLock::new(Vec::new());
+//    let value;
+//    {
+//        let mut all_vars;
+//        let mut final_vars = variables;
+//
+//        if let Some(defaults) = default_variable_values {
+//            all_vars = final_vars;
+//
+//            for (name, value) in defaults {
+//                all_vars.entry(name).or_insert(value);
+//            }
+//
+//            final_vars = all_vars;
+//        }
+//
+//        let root_type = match op.item.operation_type {
+//            OperationType::Subscription => root_node
+//                .schema
+//                .subscription_type()
+//                .expect("No mutation type found"),
+//            _ => unreachable!(),
+//        };
+//
+//        executor.executor_variables.set_data(ExecutorDataVariables {
+//            fragments: executor
+//                .fragments
+//                .into_iter()
+//                .map(|f| (f.item.name.item, f.item))
+//                .collect(),
+//            variables: final_vars,
+//            current_selection_set: Some(op.item.selection_set),
+//            parent_selection_set: None,
+//            current_type: root_type,
+//            schema: &root_node.schema,
+//            context,
+//            errors: errors,
+//            field_path: FieldPath::Root(op.start),
+//        });
+//
+//        // unwrap is safe here because executor's data was set up above
+//        executor
+//            .executor
+//            .set(executor.executor_variables.create_executor().unwrap());
+//
+//        value = match op.item.operation_type {
+//            OperationType::Subscription => {
+//                executor
+//                    .executor
+//                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+//                    .await
+//            }
+//            _ => unreachable!(),
+//        };
+//    }
+//
+//    Ok(value)
+    unimplemented!()
 }
 
 /// Find document's operation (returns error

@@ -14,7 +14,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    pub(crate) fragments: HashMap<&'a str, &'a Fragment<'a, S>>,
+    pub(crate) fragments: HashMap<&'a str, Fragment<'a, S>>,
     pub(crate) variables: Variables<S>,
     pub(crate) current_selection_set: Option<Vec<Selection<'a, S>>>,
     pub(crate) parent_selection_set: Option<Vec<Selection<'a, S>>>,
