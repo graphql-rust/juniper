@@ -336,9 +336,63 @@ where
                     GraphQLResponse::from_result(Ok((value, vec![])))
                 })))
             }
-            // TODO: implement these
-            Value::List(_) => unimplemented!(),
-            Value::Object(_) => unimplemented!(),
+            // todo: remove these and add
+            //       // TODO: implement these
+            //       (current implementation might be confusing)
+            Value::List(_) => None,
+            Value::Object(obj) => {
+                let mut key_values = obj.into_key_value_list();
+
+                let mut filled_count = 0;
+                let mut ready_vector = Vec::with_capacity(key_values.len());
+                for _ in 0..key_values.len() {
+                    ready_vector.push(None);
+                }
+
+                let stream = futures::stream::poll_fn(
+                    move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
+                        for i in 0..ready_vector.len() {
+                            let val = &mut ready_vector[i];
+                            if val.is_none() {
+                                let (field_name, ref mut stream_val) = &mut key_values[i];
+
+                                match stream_val {
+                                Value::Scalar(stream) => {
+                                    match Pin::new(stream).poll_next(&mut ctx) {
+                                        Poll::Ready(None) => {
+                                            return Poll::Ready(None);
+                                        },
+                                        Poll::Ready(Some(value)) => {
+                                            *val = Some((field_name.clone(), value));
+                                            filled_count += 1;
+                                        }
+                                        Poll::Pending => {
+                                            //check back later
+                                        }
+                                    }
+                                },
+                                _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
+                            }
+                            }
+                        }
+                        if filled_count == key_values.len() {
+                            filled_count = 0;
+                            let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
+                            let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
+                            let ready_vec_iterator = ready_vec.into_iter().map(|el| el.unwrap());
+                            let obj = Object::from_iter(ready_vec_iterator);
+                            return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                                Value::Object(obj),
+                                vec![],
+                            )))));
+                        } else {
+                            return Poll::Pending;
+                        }
+                    },
+                );
+
+                Some(Box::pin(stream))
+            }
         }
     }
 }
