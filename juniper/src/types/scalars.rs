@@ -3,7 +3,7 @@ use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
-    executor::{Executor, Registry},
+    executor::{Executor, Registry, ExecutionResult},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::base::GraphQLType,
@@ -189,8 +189,8 @@ where
         _: &(),
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
-    ) -> Value<S> {
-        Value::scalar(String::from(*self))
+    ) -> ExecutionResult<S> {
+        Ok(Value::scalar(String::from(*self)))
     }
 }
 

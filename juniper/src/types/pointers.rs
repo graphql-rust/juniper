@@ -52,7 +52,7 @@ where
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
@@ -124,7 +124,7 @@ where
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
@@ -211,7 +211,7 @@ where
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<T::Context, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }

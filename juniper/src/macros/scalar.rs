@@ -107,8 +107,8 @@ macro_rules! graphql_scalar {
                     _: &$crate::Executor<
                         Self::Context,
                         $crate::__juniper_insert_generic!($($scalar)+)
-                    >) -> $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)> {
-                    $resolve_body
+                    >) -> $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)+)> {
+                    Ok($resolve_body)
                 }
             });
 

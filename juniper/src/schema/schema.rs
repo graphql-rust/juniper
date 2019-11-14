@@ -59,16 +59,17 @@ where
         info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         use crate::{types::base::resolve_selection_set_into, value::Object};
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
-                Value::Object(result)
+                Ok(Value::Object(result))
             } else {
-                Value::null()
+                Ok(Value::null())
             }
         } else {
+            // TODO: this panic seems useless, investigate why it is here.
             panic!("resolve() must be implemented by non-object output types");
         }
     }

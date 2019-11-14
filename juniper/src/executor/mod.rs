@@ -361,7 +361,7 @@ where
     where
         T: GraphQLType<S, Context = CtxT>,
     {
-        Ok(value.resolve(info, self.current_selection_set, self))
+        value.resolve(info, self.current_selection_set, self)
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`

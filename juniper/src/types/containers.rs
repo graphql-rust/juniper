@@ -2,6 +2,7 @@ use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     schema::meta::MetaType,
     value::{ScalarValue, Value},
+    executor::ExecutionResult,
 };
 
 use crate::{
@@ -33,10 +34,10 @@ where
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         match *self {
-            Some(ref obj) => executor.resolve_into_value(info, obj),
-            None => Value::null(),
+            Some(ref obj) => executor.resolve(info, obj),
+            None => Ok(Value::null()),
         }
     }
 }
@@ -94,7 +95,7 @@ where
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
     }
 }
@@ -161,7 +162,7 @@ where
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
     }
 }
@@ -180,7 +181,7 @@ fn resolve_into_list<S, T, I>(
     executor: &Executor<T::Context, S>,
     info: &T::TypeInfo,
     iter: I,
-) -> Value<S>
+) -> ExecutionResult<S>
 where
     S: ScalarValue,
     I: Iterator<Item = T> + ExactSizeIterator,
@@ -191,19 +192,17 @@ where
         .list_contents()
         .expect("Current type is not a list type")
         .is_non_null();
-
     let mut result = Vec::with_capacity(iter.len());
 
     for o in iter {
-        let value = executor.resolve_into_value(info, &o);
-        if stop_on_null && value.is_null() {
-            return value;
+        match executor.resolve(info, &o) {
+            Ok(value) if stop_on_null && value.is_null() => { return Ok(value) },
+            Ok(value) => { result.push(value) },
+            Err(e) => { return Err(e) },
         }
-
-        result.push(value);
     }
 
-    Value::list(result)
+    Ok(Value::list(result))
 }
 
 #[cfg(feature = "async")]

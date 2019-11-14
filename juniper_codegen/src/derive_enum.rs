@@ -257,10 +257,11 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 _: &(),
                 _: Option<&[#juniper_path::Selection<__S>]>,
                 _: &#juniper_path::Executor<Self::Context, __S>
-            ) -> #juniper_path::Value<__S> {
-                match self {
+            ) -> #juniper_path::ExecutionResult<__S> {
+                let v = match self {
                     #resolves
-                }
+                };
+                Ok(v)
             }
         }
 

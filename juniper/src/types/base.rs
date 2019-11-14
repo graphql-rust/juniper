@@ -165,7 +165,7 @@ struct Database { users: HashMap<String, User> }
 
 impl Context for Database {}
 
-impl GraphQLType for User
+impl GraphQLType<DefaultScalarValue> for User
 {
     type Context = Database;
     type TypeInfo = ();
@@ -298,7 +298,7 @@ where
         executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         if Self::name(info).unwrap() == type_name {
-            Ok(self.resolve(info, selection_set, executor))
+            self.resolve(info, selection_set, executor)
         } else {
             panic!("resolve_into_type must be implemented by unions and interfaces");
         }
@@ -318,23 +318,26 @@ where
     /// of the object should simply be returned.
     ///
     /// For objects, all fields in the selection set should be resolved.
-    ///
     /// The default implementation uses `resolve_field` to resolve all fields,
-    /// including those through fragment expansion, for object types. For
-    /// non-object types, this method panics.
+    /// including those through fragment expansion.
+    ///
+    /// Since the GraphQL spec specificies that errors during field processing
+    /// should result in a null-value, this might return Ok(Null) in case of
+    /// failure. Errors are recorded internally.
     fn resolve(
         &self,
         info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
-            if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
+            let out = if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
                 Value::Object(result)
             } else {
                 Value::null()
-            }
+            };
+            Ok(out)
         } else {
             panic!("resolve() must be implemented by non-object output types");
         }
