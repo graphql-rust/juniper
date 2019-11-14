@@ -162,7 +162,7 @@ pub use crate::{
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor, ValuesIterator,
+        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor,
         Variables,
     },
     introspection::IntrospectionFormat,

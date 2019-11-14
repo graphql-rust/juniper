@@ -214,9 +214,6 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-/// Boxed `Iterator` of `Value`s
-pub type ValuesIterator<'a, S = DefaultScalarValue> = Box<dyn Iterator<Item = Value<S>> + 'a>;
-
 /// Boxed `futures::Stream` of `Value`s
 #[cfg(feature = "async")]
 pub type ValuesStream<'a, S = DefaultScalarValue> =

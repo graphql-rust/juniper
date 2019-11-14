@@ -26,7 +26,7 @@ This trait's execution logic is similar to `GraphQLType`.
 use async_trait::async_trait;
 use juniper::{
     meta::MetaType, DefaultScalarValue, FieldError,
-    GraphQLType, GraphQLTypeAsync, Registry, Value, ValuesIterator,
+    GraphQLType, GraphQLTypeAsync, Registry, Value,
 };
 
 #[derive(Debug)]

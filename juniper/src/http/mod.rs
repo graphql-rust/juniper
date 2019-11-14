@@ -18,7 +18,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::executor::ValuesStream;
 use crate::{
     ast::InputValue,
-    executor::{ExecutionError, ValuesIterator},
+    executor::ExecutionError,
     value,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
@@ -169,13 +169,6 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
-/// Wrapper around the result from executing a GraphQL subscription
-pub struct IteratorGraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>>,
-)
-where
-    S: 'static;
-
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
@@ -238,56 +231,6 @@ where
                 map.serialize_value(err)?;
                 map.end()
             }
-        }
-    }
-}
-
-impl<'a, S> IteratorGraphQLResponse<'a, S> {
-    /// Convert `IteratorGraphQLResponse` to `Value<ValuesIterator>`
-    pub fn into_inner(self) -> Result<Value<ValuesIterator<'a, S>>, GraphQLError<'a>> {
-        self.0
-    }
-
-    /// Return reference to self's errors (if any)
-    pub fn errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
-        self.0.as_ref().err()
-    }
-}
-
-impl<'a, S> IteratorGraphQLResponse<'a, S>
-where
-    S: value::ScalarValue,
-{
-    /// Converts `self` into default `Iterator` implementantion.
-    /// Is not implemented as `std::iter::IntoIterator` because in some cases
-    /// iterator cannot be generated.
-    ///
-    /// Default `Iterator` implementation provides iterator
-    /// based on `Self`'s internal value:
-    ///     `Value::Null` - iterator over one wrapped `Value::Null`
-    ///     `Value::List` - default implementation is not provided
-    ///     `Value::Scalar` - wrapped underlying iterator
-    ///     `Value::Object(Value::Scalar(iterator))` - iterator over objects with each field collected.
-    ///                                                Stops when at least one field's iterator is finished
-    ///     other `Value::Object` - __panics__
-    /// Returns None is `Self`'s internal result is error or `Value::List`
-    #[allow(clippy::should_implement_trait)]
-    pub fn into_iter(self) -> Option<Box<dyn Iterator<Item = GraphQLResponse<'static, S>> + 'a>> {
-        let val = match self.0 {
-            Ok(val) => val,
-            Err(_) => return None,
-        };
-
-        match val {
-            Value::Null => None,
-            Value::Scalar(iter) => {
-                Some(Box::new(iter.map(|value| {
-                    GraphQLResponse::from_result(Ok((value, vec![])))
-                })))
-            }
-            // TODO: implement these
-            Value::List(_) => unimplemented!(),
-            Value::Object(mut obj) => unimplemented!(),
         }
     }
 }
