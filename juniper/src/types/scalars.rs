@@ -385,17 +385,6 @@ where
     }
 }
 
-impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    Self: GraphQLType<S> + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
-    T: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
-{
-}
-
 #[cfg(feature = "async")]
 impl<T, S> crate::GraphQLSubscriptionTypeAsync<S> for EmptySubscription<T>
 where

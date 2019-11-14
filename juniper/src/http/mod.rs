@@ -78,37 +78,7 @@ where
         }
     }
 
-    /// Execute a GraphQL subscription using the specified schema and context
-    ///
-    /// This is a wrapper around the `subscribe` function
-    /// exposed at the top level of this crate.
-    pub fn subscribe<'s, 'rn, 'ctx, 'e, 'res, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'s self,
-        root_node: &'rn RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &'ctx CtxT,
-        executor: &'e mut crate::executor::SubscriptionsExecutor<'e, CtxT, S>,
-    ) -> IteratorGraphQLResponse<'res, S>
-    where
-        's: 'e,
-        'rn: 'e,
-        'ctx: 'e,
-        'e: 'res,
-        S: ScalarValue + Send + Sync + 'static,
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
-        IteratorGraphQLResponse(crate::subscribe(
-            &self.query,
-            self.operation_name(),
-            root_node,
-            self.variables(),
-            context,
-            executor,
-        ))
-    }
-
+    // todo: rename to subscribe
     /// Execute a GraphQL subscription using the specified schema and context
     ///
     /// This is a wrapper around the `subscribe_async` function exposed
@@ -151,7 +121,7 @@ where
         S: ScalarValue + Send + Sync + 'static,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
         for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(crate::execute(

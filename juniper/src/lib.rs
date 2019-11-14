@@ -168,7 +168,7 @@ pub use crate::{
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
     types::{
-        base::{Arguments, GraphQLSubscriptionType, GraphQLType, TypeKind},
+        base::{Arguments, GraphQLType, TypeKind},
         scalars::{EmptyMutation, EmptySubscription, ID},
     },
     validation::RuleError,
@@ -211,7 +211,7 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
     {
@@ -290,44 +290,11 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
     let document = parse_and_validate_document(document_source, root_node, variables)?;
 
     executor::execute_validated_query(document, operation_name, root_node, variables, context)
-}
-
-/// Execute a subscription in a provided schema
-pub fn subscribe<'ds, 'rn, 'ctx, 'ref_e, 'e, 'res, S, CtxT, QueryT, MutationT, SubscriptionT>(
-    document_source: &'ds str,
-    operation_name: Option<&str>,
-    root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
-    variables: Variables<S>,
-    context: &'ctx CtxT,
-    executor: &'ref_e mut crate::executor::SubscriptionsExecutor<'e, CtxT, S>,
-) -> Result<Value<ValuesIterator<'res, S>>, GraphQLError<'res>>
-where
-    'ds: 'e,
-    'rn: 'e,
-    'ctx: 'e,
-    'e: 'res,
-    'ref_e: 'e,
-    S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-{
-    let document = parse_and_validate_document(document_source, root_node, &variables)?;
-
-    executor::execute_validated_subscription(
-        document,
-        operation_name,
-        root_node,
-        variables,
-        context,
-        executor,
-    )
 }
 
 /// Execute query asynchronously in a provided schema
@@ -356,6 +323,7 @@ where
         .await
 }
 
+//todo: rename to subscribe
 /// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
 pub async fn subscribe_async<
@@ -418,7 +386,7 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
     execute(
         match format {

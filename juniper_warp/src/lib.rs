@@ -86,7 +86,7 @@ where
     where
         QueryT: juniper::GraphQLType<S, Context = CtxT>,
         MutationT: juniper::GraphQLType<S, Context = CtxT>,
-        SubscriptionT: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
+        SubscriptionT: juniper::GraphQLType<S, Context = CtxT>,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
@@ -231,7 +231,7 @@ where
     Context: Send + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context, TypeInfo = ()>
+    Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()>
         + Send
         + Sync
         + 'static,

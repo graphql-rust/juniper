@@ -1352,32 +1352,6 @@ impl GraphQLTypeDefiniton {
             }
         );
 
-        let subscription_implementation = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics_tokens
-            #where_clause
-            {
-                #[allow(unused_variables)]
-                fn resolve_field_into_iterator<'res>(
-                    &self,
-                    info: &Self::TypeInfo,
-                    field_name: &str,
-                    args: &#juniper_crate_name::Arguments<#scalar>,
-                    executor: std::rc::Rc<#juniper_crate_name::Executor<'res, Self::Context, #scalar>>,
-                ) -> Result<
-                        #juniper_crate_name::Value<#juniper_crate_name::ValuesIterator<'res, #scalar>>,
-                        #juniper_crate_name::FieldError<#scalar>
-                     > {
-                    use #juniper_crate_name::Value;
-                    match field_name {
-                            #( #resolve_matches )*
-                            _ => {
-                                panic!("Field {} not found on type {}", field_name, "GraphQLSubscriptionType");
-                            }
-                        }
-                }
-            }
-        );
-
         #[cfg(feature = "async")]
         let async_subscription_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLSubscriptionTypeAsync<#scalar> for #ty #type_generics_tokens
@@ -1425,7 +1399,6 @@ impl GraphQLTypeDefiniton {
 
         quote!(
             #graphql_implementation
-            #subscription_implementation
             #async_subscription_implementation
         )
     }

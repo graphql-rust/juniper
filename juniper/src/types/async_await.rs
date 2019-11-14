@@ -25,7 +25,7 @@ This trait's execution logic is similar to `GraphQLType`.
 ```rust
 use async_trait::async_trait;
 use juniper::{
-    meta::MetaType, DefaultScalarValue, FieldError, GraphQLSubscriptionType,
+    meta::MetaType, DefaultScalarValue, FieldError,
     GraphQLType, GraphQLTypeAsync, Registry, Value, ValuesIterator,
 };
 
@@ -178,14 +178,19 @@ where
 }
 
 /**
-This trait is asynchronous version of `GraphQLSubscriptionType`(it uses streams
-instead of iterators). It can be used to implement asynchronous subscription
-execution logic.
+
+This trait replaces GraphQLType`'s resolver logic with asynchronous subscription
+execution logic. It should be used with `GraphQLType` in order to implement
+subscription GraphQL objects.
+
+Asynchronous subscription related convenience macros expand into an
+implementation of this trait and `GraphQLType` for the given type.
+
+See trait methods for more detailed explanation on how this trait works.
 
 Convenience macros related to asynchronous subscriptions expand into an
 implementation of this trait and `GraphQLType` for the given type.
 
-This trait's execution logic is similar to `GraphQLSubscriptionType`.
 See trait methods descriptions for more details.
 
 ## Manual implementation example
@@ -302,7 +307,7 @@ impl GraphQLSubscriptionTypeAsync<DefaultScalarValue> for Subscription {
             _ => {
                 // panicking here because juniper should return field does not exist
                 // error while parsing subscription query
-                panic!("Field {} not found on type GraphQLSubscriptionType", &field_name);
+                panic!("Field {} not found on type GraphQLSubscriptionTypeAsync", &field_name);
             }
         }
     }
@@ -351,8 +356,13 @@ where
         }
     }
 
-    /// This method is similar to `GraphQLType::resolve_field`
-    /// and `GraphQLSubscriptionType::resolve_field_into_iterator`.
+    /// This method is called by Self's `resolve_into_stream` default
+    /// implementation every time any field is found in selection set.
+    ///
+    /// It replaces `GraphQLType::resolve_field`.
+    /// Unlike `resolve_field`, which resolves each field into a single
+    /// `Value<S>`, this method resolves each field into
+    /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
     async fn resolve_field_into_stream<'args, 'e, 'res>(
@@ -370,8 +380,13 @@ where
         panic!("resolve_field must be implemented by object types");
     }
 
-    /// This method is similar to `GraphQLType::resolve_into_type`
-    /// and `GraphQLSubscriptionType::resolve_into_type_iterator`.
+    /// It is called by Self's `resolve_into_stream` default implementation
+    /// every time any fragment is found in selection set.
+    ///
+    /// It replaces `GraphQLType::resolve_into_type`.
+    /// Unlike `resolve_into_type`, which resolves each fragment
+    /// a single `Value<S>`, this method resolves each fragment into
+    /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
     async fn resolve_into_type_stream<'s, 'i, 'tn, 'ss, 'e, 'res>(

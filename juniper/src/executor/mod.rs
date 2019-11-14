@@ -381,22 +381,7 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
-    /// Resolve a single arbitrary value into an `Value<ValuesIterator>`
-    pub fn subscribe<'s, 'i, 'v, T>(
-        &'s self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Result<Value<ValuesIterator<'a, S>>, FieldError<S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-        S: 'static,
-    {
-        Ok(value.resolve_into_iterator(info, self.current_selection_set, self))
-    }
-
+    //todo: rename to subscribe
     /// Resolve a single arbitrary value into `Value<ValuesStream>`
     #[cfg(feature = "async")]
     pub async fn subscribe_async<'s, 'i, 'v, T>(
@@ -461,30 +446,6 @@ where
             Err(e) => {
                 self.push_error(e);
                 Value::null()
-            }
-        }
-    }
-
-    /// Resolve a single arbitrary value into a return iterator
-    ///
-    /// If the field fails to resolve, `null` will be returned.
-    pub fn resolve_into_iterator<'s, 'i, 'v, T>(
-        &'s self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Value<ValuesIterator<'a, S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-        S: 'static,
-    {
-        match self.subscribe(info, value) {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                Value::Null
             }
         }
     }
@@ -770,7 +731,7 @@ where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
@@ -853,128 +814,6 @@ where
     errors.sort();
 
     Ok((value, errors))
-}
-
-/// Create new `Executor` and start subscription execution
-/// Returns `NotSubscription` error if query or mutation is passed
-pub fn execute_validated_subscription<
-    'd,
-    'rn,
-    'ctx,
-    'ref_e,
-    'e,
-    'res,
-    QueryT,
-    MutationT,
-    SubscriptionT,
-    CtxT,
-    S,
->(
-    document: Document<'d, S>,
-    operation_name: Option<&str>,
-    root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
-    variables: Variables<S>,
-    context: &'ctx CtxT,
-    executor: &'e mut SubscriptionsExecutor<'e, CtxT, S>,
-) -> Result<Value<ValuesIterator<'res, S>>, GraphQLError<'res>>
-where
-    'd: 'e,
-    'rn: 'e,
-    'ctx: 'e,
-    'e: 'res,
-    'ref_e: 'e,
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
-{
-    //    let mut fragments = vec![];
-    let mut operation = None;
-
-    parse_document_definitions(
-        document,
-        operation_name,
-        &mut executor.fragments,
-        &mut operation,
-    )?;
-
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type != OperationType::Subscription {
-        return Err(GraphQLError::NotSubscription);
-    }
-
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|&(ref name, ref def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = final_vars;
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = all_vars;
-        }
-
-        let root_type = match op.item.operation_type {
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No subscription type found"),
-            _ => unreachable!(),
-        };
-
-        executor.executor_variables.set_data(ExecutorDataVariables {
-            fragments: executor
-                .fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
-                .collect(),
-            variables: final_vars,
-            current_selection_set: Some(op.item.selection_set),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: errors,
-            field_path: FieldPath::Root(op.start),
-        });
-
-        // unwrap is safe here because executor's data was set above
-        executor
-            .executor
-            .set(executor.executor_variables.create_executor().unwrap());
-
-        value = match op.item.operation_type {
-            OperationType::Subscription => executor
-                .executor
-                .resolve_into_iterator(&root_node.subscription_info, &root_node.subscription_type),
-            _ => unreachable!(),
-        };
-    }
-
-    Ok(value)
 }
 
 /// Create new `Executor` and start asynchronous query execution
@@ -1086,6 +925,7 @@ where
     Ok((value, errors))
 }
 
+// todo: rename to execute_validated_subscription
 /// Initialize new `Executor` and start asynchronous subscription execution
 /// Returns `NotSubscription` error if query or mutation is passed
 #[cfg(feature = "async")]
