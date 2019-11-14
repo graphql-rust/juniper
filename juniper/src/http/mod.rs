@@ -87,7 +87,6 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
-        executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
     ) -> StreamGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -102,7 +101,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe(&self.query, op, root_node, vars, context, executor).await;
+        let res = crate::subscribe(&self.query, op, root_node, vars, context).await;
 
         StreamGraphQLResponse(res)
     }

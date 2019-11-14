@@ -921,11 +921,10 @@ where
     Ok((value, errors))
 }
 
-// todo: rename to execute_validated_subscription
 /// Initialize new `Executor` and start asynchronous subscription execution
 /// Returns `NotSubscription` error if query or mutation is passed
 #[cfg(feature = "async")]
-pub async fn execute_validated_subscription_async<
+pub async fn execute_validated_subscription<
     'd,
     'rn,
     'ctx,
@@ -936,14 +935,12 @@ pub async fn execute_validated_subscription_async<
     MutationT,
     SubscriptionT,
     CtxT,
-    S,
->(
+    S,>(
     document: Document<'d, S>,
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
 ) -> Result<Value<ValuesStream<'res, S>>, GraphQLError<'res>>
 where
     'd: 'e,
@@ -1011,9 +1008,11 @@ where
 //            OperationType::Subscription => root_node
 //                .schema
 //                .subscription_type()
-//                .expect("No mutation type found"),
+//                .expect("No subscription type found"),
 //            _ => unreachable!(),
 //        };
+//
+//        let executor = SubscriptionsExecutor::new();
 //
 //        executor.executor_variables.set_data(ExecutorDataVariables {
 //            fragments: executor

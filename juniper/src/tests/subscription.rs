@@ -69,11 +69,10 @@ mod sync {
         let request = GraphQLRequest::new(query, None, None);
 
         let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
-        let mut executor = crate::SubscriptionsExecutor::new();
         let context = MyContext(2);
 
         let response = request
-            .subscribe(&root_node, &context, &mut executor)
+            .subscribe(&root_node, &context)
             .into_inner();
 
         assert!(response.is_ok());
@@ -323,11 +322,10 @@ mod r#async {
 
         let root_node = AsyncSchema::new(MyQuery, EmptyMutation::new(), MySubscriptionAsync);
 
-        let mut executor = crate::SubscriptionsExecutor::new();
         let mut context = MyContext(2);
 
         let response =
-            run(request.subscribe(&root_node, &context, &mut executor)).into_inner();
+            run(request.subscribe(&root_node, &context)).into_inner();
 
         assert!(response.is_ok());
 

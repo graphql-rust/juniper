@@ -475,9 +475,8 @@ where
                             payload.variables,
                         );
 
-                        let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
                         let response_stream = graphql_request
-                            .subscribe(&schema, &context, &mut executor)
+                            .subscribe(&schema, &context)
                             .await;
 
                         if let Some(error) = response_stream.errors() {

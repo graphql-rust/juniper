@@ -343,7 +343,6 @@ pub async fn subscribe<
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
 ) -> Result<Value<ValuesStream<'res, S>>, GraphQLError<'res>>
 where
     'd: 'e,
@@ -363,13 +362,12 @@ where
 {
     let document = parse_and_validate_document_async(document_source, root_node, &variables)?;
 
-    executor::execute_validated_subscription_async(
+    executor::execute_validated_subscription(
         document,
         operation_name,
         root_node,
         variables,
         context,
-        executor,
     )
     .await
 }
