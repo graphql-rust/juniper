@@ -78,13 +78,12 @@ where
         }
     }
 
-    // todo: rename to subscribe
     /// Execute a GraphQL subscription using the specified schema and context
     ///
     /// This is a wrapper around the `subscribe_async` function exposed
     /// at the top level of this crate.
     #[cfg(feature = "async")]
-    pub async fn subscribe_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub async fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
@@ -103,7 +102,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe_async(&self.query, op, root_node, vars, context, executor).await;
+        let res = crate::subscribe(&self.query, op, root_node, vars, context, executor).await;
 
         StreamGraphQLResponse(res)
     }

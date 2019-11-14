@@ -327,7 +327,7 @@ mod r#async {
         let mut context = MyContext(2);
 
         let response =
-            run(request.subscribe_async(&root_node, &context, &mut executor)).into_inner();
+            run(request.subscribe(&root_node, &context, &mut executor)).into_inner();
 
         assert!(response.is_ok());
 

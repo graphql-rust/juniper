@@ -381,10 +381,9 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
-    //todo: rename to subscribe
     /// Resolve a single arbitrary value into `Value<ValuesStream>`
     #[cfg(feature = "async")]
-    pub async fn subscribe_async<'s, 'i, 'v, T>(
+    pub async fn subscribe<'s, 'i, 'v, T>(
         &'s self,
         info: &'i T::TypeInfo,
         value: &'v T,
@@ -488,7 +487,7 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        match self.subscribe_async(info, value).await {
+        match self.subscribe(info, value).await {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);

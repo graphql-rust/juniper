@@ -323,10 +323,9 @@ where
         .await
 }
 
-//todo: rename to subscribe
 /// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
-pub async fn subscribe_async<
+pub async fn subscribe<
     'd,
     'rn,
     'ctx,
