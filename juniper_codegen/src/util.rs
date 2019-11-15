@@ -666,6 +666,7 @@ pub struct GraphQLTypeDefiniton {
 }
 
 impl GraphQLTypeDefiniton {
+    #[allow(unused)]
     fn has_async_field(&self) -> bool {
         self.fields.iter().any(|field| field.is_async)
     }
