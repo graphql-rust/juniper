@@ -37,6 +37,8 @@ struct Query {
     scalar = crate::DefaultScalarValue,
     name = "Query", 
     context = Context,
+    // FIXME: make async work
+    noasync
 )]
 /// Query Description.
 impl<'a> Query {

@@ -152,7 +152,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
     }
 }

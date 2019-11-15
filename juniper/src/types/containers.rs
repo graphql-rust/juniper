@@ -210,7 +210,7 @@ async fn resolve_into_list_async<'a, S, T, I>(
     executor: &'a Executor<'a, T::Context, S>,
     info: &'a T::TypeInfo,
     items: I,
-) -> Value<S>
+) -> ExecutionResult<S>
 where
     S: ScalarValue + Send + Sync,
     I: Iterator<Item = T> + ExactSizeIterator,
@@ -234,12 +234,12 @@ where
     let mut values = Vec::with_capacity(futures.len());
     while let Some(value) = futures.next().await {
         if stop_on_null && value.is_null() {
-            return value;
+            return Ok(value);
         }
         values.push(value);
     }
 
-    Value::list(values)
+    Ok(Value::list(values))
 }
 
 #[cfg(feature = "async")]
@@ -255,7 +255,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
         Box::pin(f)
     }
@@ -274,7 +274,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
         Box::pin(f)
     }
@@ -293,12 +293,13 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = async move {
-            match *self {
+            let value = match *self {
                 Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
                 None => Value::null(),
-            }
+            };
+            Ok(value)
         };
         Box::pin(f)
     }

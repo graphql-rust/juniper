@@ -37,6 +37,8 @@ graphql_interface!(<'a> &'a dyn Character: Database as "Character" |&self| {
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     interfaces = [&dyn Character],
+    // FIXME: make async work
+    noasync
 )]
 /// A humanoid creature in the Star Wars universe.
 impl<'a> &'a dyn Human {
@@ -70,6 +72,8 @@ impl<'a> &'a dyn Human {
     Context = Database,
     Scalar = crate::DefaultScalarValue,
     interfaces = [&dyn Character],
+    // FIXME: make async work
+    noasync
 )]
 /// A mechanical creature in the Star Wars universe.
 impl<'a> &'a dyn Droid {
@@ -104,6 +108,8 @@ pub struct Query;
 #[crate::object_internal(
     Context = Database,
     Scalar = crate::DefaultScalarValue,
+    // FIXME: make async work
+    noasync
 )]
 /// The root query object of the schema
 impl Query {

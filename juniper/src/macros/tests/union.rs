@@ -89,7 +89,8 @@ impl DescriptionFirst {
     }
 }
 
-#[crate::object_internal]
+// FIXME: make async work
+#[crate::object_internal(noasync)]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)

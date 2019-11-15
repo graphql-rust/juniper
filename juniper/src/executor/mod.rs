@@ -373,9 +373,9 @@ where
         CtxT: Send + Sync,
         S: Send + Sync,
     {
-        Ok(value
+        value
             .resolve_async(info, self.current_selection_set, self)
-            .await)
+            .await
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
