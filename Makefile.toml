@@ -1,6 +1,7 @@
 # https://github.com/sagiegurari/cargo-make#automatically-extend-workspace-makefile
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
+CARGO_MAKE_CARGO_ALL_FEATURES = ""
 
 #
 # Run `RELEASE_LEVEL=(patch|major|minor) cargo make release` to push a new release of every crate.
