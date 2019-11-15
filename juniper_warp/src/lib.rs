@@ -114,7 +114,7 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: juniper::GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -318,7 +318,7 @@ where
     Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Mutation::TypeInfo: Send + Sync,
     Subscription:
-        juniper::GraphQLSubscriptionTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let schema = Arc::new(schema);
@@ -413,7 +413,7 @@ where
     Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Mutation::TypeInfo: Send + Sync,
     Subscription:
-        juniper::GraphQLSubscriptionTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let (sink_tx, sink_rx) = websocket.split();

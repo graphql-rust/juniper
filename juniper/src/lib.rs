@@ -184,7 +184,7 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 #[cfg(feature = "async")]
 pub use crate::{
     executor::ValuesResultStream,
-    types::async_await::{GraphQLSubscriptionTypeAsync, GraphQLTypeAsync},
+    types::async_await::{GraphQLSubscriptionType, GraphQLTypeAsync},
 };
 
 /// An error that prevented query execution
@@ -236,7 +236,7 @@ where
 }
 
 /// This is the same as `parse_and_validate_document`,
-/// but it uses `GraphQLTypeAsync`, `GraphQLSubscriptionTypeAsync` in generics
+/// but it uses `GraphQLTypeAsync`, `GraphQLSubscriptionType` in generics
 #[cfg(feature = "async")]
 fn parse_and_validate_document_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document_source: &'a str,
@@ -250,7 +250,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionTypeAsync<S, Context = CtxT>,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
     SubscriptionT::Context: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
@@ -312,7 +312,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -356,7 +356,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,

@@ -189,7 +189,7 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
     }
 }
 
-impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subscription {
+impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
 
     fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
         &'life0 self,
