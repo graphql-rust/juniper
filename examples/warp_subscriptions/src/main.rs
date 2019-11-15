@@ -9,7 +9,7 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{EmptyMutation, FieldError, RootNode};
+use juniper::{EmptyMutation, FieldError, RootNode, DefaultScalarValue};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -236,6 +236,12 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                         Box::pin(stream)
                     }
                 };
+                return Err(FieldError::new(
+                    "some field error from handler",
+                    Value::Scalar(
+                        DefaultScalarValue::String("some additional string".to_string())
+                    )
+                ));
                 let f = res.then(move |res| {
                     let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
                         juniper::IntoResolvable::into(res, executor.context());
