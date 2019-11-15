@@ -139,7 +139,7 @@ fn impl_scalar_struct(
                 info: &(),
                 selection: Option<&[#crate_name::Selection<S>]>,
                 executor: &#crate_name::Executor<Self::Context, S>,
-            ) -> #crate_name::Value<S> {
+            ) -> #crate_name::ExecutionResult<S> {
                 #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
             }
         }

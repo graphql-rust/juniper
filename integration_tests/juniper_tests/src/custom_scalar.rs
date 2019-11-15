@@ -37,6 +37,13 @@ impl ScalarValue for MyScalarValue {
         }
     }
 
+    fn as_str(&self) -> Option<&str> {
+        match *self {
+            MyScalarValue::String(ref s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
     fn as_float(&self) -> Option<f64> {
         match *self {
             MyScalarValue::Int(ref i) => Some(*i as f64),

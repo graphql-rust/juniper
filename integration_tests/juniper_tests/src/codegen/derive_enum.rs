@@ -42,7 +42,7 @@ enum OverrideDocEnum {
 #[test]
 fn test_derived_enum() {
     // Ensure that rename works.
-    assert_eq!(<SomeEnum as GraphQLType>::name(&()), Some("Some"));
+    assert_eq!(<SomeEnum as GraphQLType<DefaultScalarValue>>::name(&()), Some("Some"));
 
     // Ensure validity of meta info.
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
