@@ -190,7 +190,7 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
 }
 
 impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subscription {
-    #[allow(unused_variables)]
+
     fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
         &'life0 self,
         info: &'life1 Self::TypeInfo,
@@ -201,7 +201,7 @@ impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subs
         Box<
             dyn futures::future::Future<
                 Output = Result<
-                    juniper::Value<juniper::ValuesStream<'res, juniper::DefaultScalarValue>>,
+                    juniper::Value<juniper::ValuesResultStream<'res, juniper::DefaultScalarValue>>,
                     juniper::FieldError<juniper::DefaultScalarValue>,
                 >,
             > + Send
@@ -236,7 +236,6 @@ impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subs
                         Box::pin(stream)
                     }
                 };
-                println!("Executor: {:#?}", executor.current_selection_set);
                 let f = res.then(move |res| {
                     let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
                         juniper::IntoResolvable::into(res, executor.context());
@@ -245,17 +244,14 @@ impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subs
                         match res2 {
                             Ok(Some((ctx, r))) => {
                                 let sub = ex.replaced_context(ctx);
-                                match sub.resolve_with_ctx_async(&(), &r).await {
-                                    Ok(v) => v,
-                                    Err(_) => Value::Null,
-                                }
+                                sub.resolve_with_ctx_async(&(), &r).await
                             }
-                            Ok(None) => Value::null(),
-                            Err(e) => Value::Null,
+                            Ok(None) => Ok(Value::null()),
+                            Err(e) => Err(e)
                         }
                     }
                 });
-                Ok(juniper::Value::Scalar::<juniper::ValuesStream>(Box::pin(f)))
+                Ok(juniper::Value::Scalar::<juniper::ValuesResultStream>(Box::pin(f)))
             }),
             _ => {
                 panic!("field not found")
@@ -263,24 +259,6 @@ impl juniper::GraphQLSubscriptionTypeAsync<juniper::DefaultScalarValue> for Subs
         }
     }
 }
-
-//#[juniper::subscription(Context = Context)]
-//impl Subscription {
-//    async fn users() -> Pin<Box<dyn Stream<Item = User> + Send>> {
-//        let mut counter = 0;
-//
-//        let stream = Interval::new_interval(Duration::from_secs(5)).map(move |_| {
-//            counter += 1;
-//            User {
-//                id: counter,
-//                kind: UserKind::Admin,
-//                name: "stream user".to_string(),
-//            }
-//        });
-//
-//        Box::pin(stream)
-//    }
-//}
 
 type Schema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
 

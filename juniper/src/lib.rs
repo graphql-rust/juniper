@@ -91,10 +91,6 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![doc(html_root_url = "https://docs.rs/juniper/0.14.1")]
 #![warn(missing_docs)]
 
-// todo: consider not using this crate
-#[macro_use]
-extern crate rental;
-
 #[doc(hidden)]
 pub extern crate serde;
 
@@ -187,7 +183,7 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 
 #[cfg(feature = "async")]
 pub use crate::{
-    executor::ValuesStream,
+    executor::ValuesResultStream,
     types::async_await::{GraphQLSubscriptionTypeAsync, GraphQLTypeAsync},
 };
 
@@ -347,7 +343,8 @@ pub async fn subscribe<
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-) -> Result<Value<ValuesStream<'res, S>>, GraphQLError<'res>>
+    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
+) -> Result<Value<ValuesResultStream<'res, S>>, GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,
@@ -366,12 +363,13 @@ where
 {
     let document = parse_and_validate_document_async(document_source, root_node, &variables)?;
 
-    executor::execute_validated_subscription(
+    executor::execute_validated_subscription_async(
         document,
         operation_name,
         root_node,
         variables,
         context,
+        executor,
     )
     .await
 }

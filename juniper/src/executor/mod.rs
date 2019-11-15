@@ -58,10 +58,9 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+    fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
     variables: &'a Variables<S>,
-    // todo: make private back
-    pub current_selection_set: Option<&'a [Selection<'a, S>]>,
+    current_selection_set: Option<&'a [Selection<'a, S>]>,
     parent_selection_set: Option<&'a [Selection<'a, S>]>,
     current_type: TypeType<'a, S>,
     schema: &'a SchemaType<'a, S>,
@@ -217,8 +216,8 @@ pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S
 
 /// Boxed `futures::Stream` of `Value`s
 #[cfg(feature = "async")]
-pub type ValuesStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn futures::Stream<Item = Value<S>> + Send + 'a>>;
+pub type ValuesResultStream<'a, S = DefaultScalarValue> =
+    std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<Value<S>, S>> + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -379,6 +378,27 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
+    /// Resolve a single arbitrary value into `Value<ValuesStream>`
+    #[cfg(feature = "async")]
+    pub async fn subscribe<'s, 'i, 'v, T>(
+        &'s self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Result<Value<ValuesResultStream<'a, S>>, FieldError<S>>
+    where
+        'i: 'a,
+        'v: 'a,
+        's: 'a,
+        T: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
+    {
+        Ok(value
+            .resolve_into_stream(info, self.current_selection_set, self)
+            .await)
+    }
+
     /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -442,6 +462,33 @@ where
             Err(e) => {
                 self.push_error(e);
                 Value::null()
+            }
+        }
+    }
+
+    /// Resolve a single arbitrary value into a return stream
+    ///
+    /// If the field fails to resolve, `null` will be returned.
+    #[cfg(feature = "async")]
+    pub async fn resolve_into_stream<'s, 'i, 'v, T>(
+        &'s self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Value<ValuesResultStream<'a, S>>
+    where
+        'i: 'a,
+        'v: 'a,
+        's: 'a,
+        T: crate::GraphQLSubscriptionTypeAsync<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
+    {
+        match self.subscribe(info, value).await {
+            Ok(v) => v,
+            Err(e) => {
+                self.push_error(e);
+                Value::Null
             }
         }
     }
@@ -539,7 +586,7 @@ where
 
     #[doc(hidden)]
     pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
-        self.fragments.get(name)
+        self.fragments.get(name).cloned()
     }
 
     /// The current location of the executor
@@ -609,7 +656,7 @@ where
                                     inner: LookAheadSelection::build_from_selection(
                                         s,
                                         self.variables,
-                                        &self.fragments,
+                                        self.fragments,
                                     )
                                     .expect("a child selection"),
                                     applies_for: Applies::All,
@@ -737,8 +784,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -840,8 +887,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -874,10 +921,11 @@ where
     Ok((value, errors))
 }
 
+// todo: rename to execute_validated_subscription
 /// Initialize new `Executor` and start asynchronous subscription execution
 /// Returns `NotSubscription` error if query or mutation is passed
 #[cfg(feature = "async")]
-pub async fn execute_validated_subscription<
+pub async fn execute_validated_subscription_async<
     'd,
     'rn,
     'ctx,
@@ -888,13 +936,15 @@ pub async fn execute_validated_subscription<
     MutationT,
     SubscriptionT,
     CtxT,
-    S,>(
+    S,
+>(
     document: Document<'d, S>,
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-) -> Result<Value<ValuesStream<'res, S>>, GraphQLError<'res>>
+    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
+) -> Result<Value<ValuesResultStream<'res, S>>, GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,
@@ -913,12 +963,10 @@ where
 {
     let mut operation = None;
 
-    let mut fragments = vec![];
-
     parse_document_definitions(
         document,
         operation_name,
-        &mut fragments,
+        &mut executor.fragments,
         &mut operation,
     )?;
 
@@ -967,34 +1015,31 @@ where
             _ => unreachable!(),
         };
 
-        let mut executor = SubscriptionsExecutor::new(
-            ExecutorDataVariables {
-                fragments: fragments
-                    .into_iter()
-                    .map(|f| (f.item.name.item, f.item))
-                    .collect(),
-                variables: final_vars,
-                current_selection_set: Some(op.item.selection_set),
-                parent_selection_set: None,
-                current_type: root_type,
-                schema: &root_node.schema,
-                context,
-                errors: errors,
-                field_path: FieldPath::Root(op.start),
-            }
-        );
+        executor.executor_variables.set_data(ExecutorDataVariables {
+            fragments: executor
+                .fragments
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
+                .collect(),
+            variables: final_vars,
+            current_selection_set: Some(op.item.selection_set),
+            parent_selection_set: None,
+            current_type: root_type,
+            schema: &root_node.schema,
+            context,
+            errors: errors,
+            field_path: FieldPath::Root(op.start),
+        });
 
-        //todo: use less executor word
-//        executor.executor.set(
-//            ExecutorDataVariables::create_executor(
-//                &executor.executor_variables
-//            )
-//        );
-
+        // unwrap is safe here because executor's data was set up above
+        executor
+            .executor
+            .set(executor.executor_variables.create_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {
                 executor
+                    .executor
                     .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             }

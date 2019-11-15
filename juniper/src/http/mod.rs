@@ -15,7 +15,7 @@ use serde::{
 use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "async")]
-use crate::executor::ValuesStream;
+use crate::executor::ValuesResultStream;
 use crate::{
     ast::InputValue,
     executor::ExecutionError,
@@ -87,6 +87,7 @@ where
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
+        executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
     ) -> StreamGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -101,7 +102,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe(&self.query, op, root_node, vars, context).await;
+        let res = crate::subscribe(&self.query, op, root_node, vars, context, executor).await;
 
         StreamGraphQLResponse(res)
     }
@@ -171,7 +172,7 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>>,
+    Result<Value<ValuesResultStream<'a, S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;
@@ -237,7 +238,7 @@ where
 #[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
-    pub fn into_inner(self) -> Result<Value<ValuesStream<'a, S>>, GraphQLError<'a>> {
+    pub fn into_inner(self) -> Result<Value<ValuesResultStream<'a, S>>, GraphQLError<'a>> {
         self.0
     }
 
@@ -252,6 +253,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
 where
     S: value::ScalarValue + Send,
 {
+    // todo: not panic on errors
     /// Converts `Self` into default `Stream` for implementantion
     ///
     /// Default `Stream` implementantion based on value's type:
@@ -274,9 +276,16 @@ where
         match val {
             Value::Null => None,
             Value::Scalar(stream) => {
-                Some(Box::pin(stream.map(|value| {
-                    GraphQLResponse::from_result(Ok((value, vec![])))
-                })))
+                Some(Box::pin(stream
+                    .map(|value| {
+                        match value {
+                            Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
+                            // todo: not return random error
+                            Err(e) =>
+                                GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
+                        }
+                    })
+                ))
             }
             // todo: remove these and add
             //       // TODO: implement these
@@ -321,7 +330,12 @@ where
                             filled_count = 0;
                             let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
                             let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
-                            let ready_vec_iterator = ready_vec.into_iter().map(|el| el.unwrap());
+                            let ready_vec_iterator = ready_vec
+                                .into_iter()
+                                .map(|el| {
+                                    let (name, val) = el.unwrap();
+                                    (name, val.expect("iterator returned error"))
+                                });
                             let obj = Object::from_iter(ready_vec_iterator);
                             return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
                                 Value::Object(obj),
