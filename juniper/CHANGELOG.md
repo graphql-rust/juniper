@@ -1,6 +1,16 @@
 # master
 
-- Correctly handle raw identifiers in field and argument names.
+## Features
+
+- Support raw identifiers in field and argument names. (#[object] macro)
+
+## Breaking Changes
+
+- Remove ScalarRefValue trait 
+- Change return type of GraphQLType::resolve to `ExecutionResult`
+  This was done to unify the return type of all resolver methods
+  The previous `Value` return type was just an internal artifact of 
+  error handling.
 
 # [[0.14.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.1)
 
