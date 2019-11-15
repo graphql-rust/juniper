@@ -807,50 +807,6 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
 }
 
 #[test]
-fn does_not_allow_invalid_types_to_be_used_as_values() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
-
-    let query = r#"query q($input: TestType!) { fieldWithObjectInput(input: $input) }"#;
-    let vars = vec![(
-        "value".to_owned(),
-        InputValue::list(vec![InputValue::scalar("A"), InputValue::scalar("B")]),
-    )]
-    .into_iter()
-    .collect();
-
-    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
-
-    assert_eq!(error, ValidationError(vec![
-        RuleError::new(
-            r#"Variable "$input" expected value of type "TestType!" which cannot be used as an input type."#,
-            &[SourcePosition::new(8, 0, 8)],
-        ),
-    ]));
-}
-
-#[test]
-fn does_not_allow_unknown_types_to_be_used_as_values() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
-
-    let query = r#"query q($input: UnknownType!) { fieldWithObjectInput(input: $input) }"#;
-    let vars = vec![(
-        "value".to_owned(),
-        InputValue::list(vec![InputValue::scalar("A"), InputValue::scalar("B")]),
-    )]
-    .into_iter()
-    .collect();
-
-    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
-
-    assert_eq!(error, ValidationError(vec![
-        RuleError::new(
-            r#"Variable "$input" expected value of type "UnknownType!" which cannot be used as an input type."#,
-            &[SourcePosition::new(8, 0, 8)],
-        ),
-    ]));
-}
-
-#[test]
 fn default_argument_when_not_provided() {
     run_query(r#"{ fieldWithDefaultArgumentValue }"#, |result| {
         assert_eq!(

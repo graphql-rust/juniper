@@ -150,7 +150,7 @@ mod executor_tests;
 pub use crate::util::to_camel_case;
 
 use crate::{
-    executor::execute_validated_query,
+    executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
@@ -203,13 +203,6 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
-    {
-        let errors = validate_input_values(variables, &document, &root_node.schema);
-
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
 
     {
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
@@ -221,7 +214,17 @@ where
         }
     }
 
-    execute_validated_query(document, operation_name, root_node, variables, context)
+    let operation = get_operation(&document, operation_name)?;
+
+    {
+        let errors = validate_input_values(variables, operation, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    execute_validated_query(&document, operation, root_node, variables, context)
 }
 
 /// Execute the reference introspection query in the provided schema
