@@ -196,8 +196,13 @@ where
 
     for o in iter {
         match executor.resolve(info, &o) {
-            Ok(value) if stop_on_null && value.is_null() => return Ok(value),
-            Ok(value) => result.push(value),
+            Ok(value) => {
+                if stop_on_null && value.is_null() {
+                    return Ok(value);
+                } else {
+                    result.push(value)
+                }
+            }
             Err(e) => return Err(e),
         }
     }
