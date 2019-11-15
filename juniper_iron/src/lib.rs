@@ -118,8 +118,7 @@ use std::{error::Error, fmt, io::Read};
 use serde_json::error::Error as SerdeError;
 
 use juniper::{
-    http, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode,
-    ScalarValue,
+    http, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarValue,
 };
 
 #[derive(serde_derive::Deserialize)]

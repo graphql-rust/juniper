@@ -5,7 +5,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
     types::base::{Arguments, GraphQLType},
-    value::{ScalarValue},
+    value::ScalarValue,
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>

@@ -67,7 +67,6 @@ pub fn impl_union(
     attrs: TokenStream,
     body: TokenStream,
 ) -> Result<TokenStream, MacroError> {
-
     // We are re-using the object attributes since they are almost the same.
     let attrs = syn::parse::<util::ObjectAttributes>(attrs)?;
 
@@ -76,7 +75,8 @@ pub fn impl_union(
     if item.items.len() != 1 {
         return Err(MacroError::new(
             item.span(),
-            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }".to_string(),
+            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
+                .to_string(),
         ));
     }
 
@@ -92,7 +92,7 @@ pub fn impl_union(
             "Expected a path ending in a simple type identifier".to_string(),
         )
     })?;
-    let name = attrs.name.unwrap_or_else(||  ty_ident.to_string());
+    let name = attrs.name.unwrap_or_else(|| ty_ident.to_string());
 
     let juniper = util::juniper_path(is_internal);
 
@@ -130,7 +130,9 @@ pub fn impl_union(
         .scalar
         .as_ref()
         .map(|s| quote!( #s ))
-        .unwrap_or_else(|| { quote! { #juniper::DefaultScalarValue } });
+        .unwrap_or_else(|| {
+            quote! { #juniper::DefaultScalarValue }
+        });
 
     let generics = item.generics.clone();
     let (impl_generics, _, where_clause) = generics.split_for_impl();
@@ -139,7 +141,10 @@ pub fn impl_union(
         Some(value) => quote!( .description( #value ) ),
         None => quote!(),
     };
-    let context = attrs.context.map(|c| quote!{ #c } ).unwrap_or_else(|| quote!{ () });
+    let context = attrs
+        .context
+        .map(|c| quote! { #c })
+        .unwrap_or_else(|| quote! { () });
 
     let output = quote! {
         impl #impl_generics #juniper::GraphQLType<#scalar> for #ty #where_clause

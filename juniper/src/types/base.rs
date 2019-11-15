@@ -332,11 +332,12 @@ where
     ) -> ExecutionResult<S> {
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
-            let out = if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
-                Value::Object(result)
-            } else {
-                Value::null()
-            };
+            let out =
+                if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
+                    Value::Object(result)
+                } else {
+                    Value::null()
+                };
             Ok(out)
         } else {
             panic!("resolve() must be implemented by non-object output types");

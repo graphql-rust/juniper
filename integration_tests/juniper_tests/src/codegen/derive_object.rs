@@ -170,7 +170,10 @@ fn test_doc_comment_override() {
 
 #[test]
 fn test_derived_object() {
-    assert_eq!(<Obj as GraphQLType<DefaultScalarValue>>::name(&()), Some("MyObj"));
+    assert_eq!(
+        <Obj as GraphQLType<DefaultScalarValue>>::name(&()),
+        Some("MyObj")
+    );
 
     // Verify meta info.
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());

@@ -1,8 +1,8 @@
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
+    executor::ExecutionResult,
     schema::meta::MetaType,
     value::{ScalarValue, Value},
-    executor::ExecutionResult,
 };
 
 use crate::{
@@ -196,9 +196,9 @@ where
 
     for o in iter {
         match executor.resolve(info, &o) {
-            Ok(value) if stop_on_null && value.is_null() => { return Ok(value) },
-            Ok(value) => { result.push(value) },
-            Err(e) => { return Err(e) },
+            Ok(value) if stop_on_null && value.is_null() => return Ok(value),
+            Ok(value) => result.push(value),
+            Err(e) => return Err(e),
         }
     }
 

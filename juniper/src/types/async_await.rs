@@ -36,8 +36,8 @@ where
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         if let Some(selection_set) = selection_set {
             Box::pin(async move {
-                let value = 
-            resolve_selection_set_into_async(self, info, selection_set, executor).await;
+                let value =
+                    resolve_selection_set_into_async(self, info, selection_set, executor).await;
                 Ok(value)
             })
         } else {

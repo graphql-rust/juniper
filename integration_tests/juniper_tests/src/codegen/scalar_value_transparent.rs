@@ -31,7 +31,10 @@ impl User2 {
 
 #[test]
 fn test_scalar_value_simple() {
-    assert_eq!(<UserId as GraphQLType<DefaultScalarValue>>::name(&()), Some("UserId"));
+    assert_eq!(
+        <UserId as GraphQLType<DefaultScalarValue>>::name(&()),
+        Some("UserId")
+    );
 
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = UserId::meta(&(), &mut registry);
@@ -49,7 +52,10 @@ fn test_scalar_value_simple() {
 
 #[test]
 fn test_scalar_value_custom() {
-    assert_eq!(<CustomUserId as GraphQLType<DefaultScalarValue>>::name(&()), Some("MyUserId"));
+    assert_eq!(
+        <CustomUserId as GraphQLType<DefaultScalarValue>>::name(&()),
+        Some("MyUserId")
+    );
 
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = CustomUserId::meta(&(), &mut registry);

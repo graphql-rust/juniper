@@ -3,7 +3,7 @@ use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
-    executor::{Executor, Registry, ExecutionResult},
+    executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::base::GraphQLType,

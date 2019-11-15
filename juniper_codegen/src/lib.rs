@@ -407,4 +407,3 @@ pub fn union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
     };
     output
 }
-

@@ -41,17 +41,15 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         }
     }
 
-
-    let name = if let Some(name) = impl_attrs.name.as_ref(){
+    let name = if let Some(name) = impl_attrs.name.as_ref() {
         name.to_string()
-    }
-    else {
+    } else {
         if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
             ident.to_string()
         } else {
-                panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
-            }
-        };
+            panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+        }
+    };
 
     let target_type = *_impl.self_ty.clone();
 
