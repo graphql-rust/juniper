@@ -336,8 +336,7 @@ where
         info: &'i Self::TypeInfo,
         selection_set: Option<&'ss [Selection<'_, S>]>,
         executor: &'ref_e Executor<'e, Self::Context, S>,
-        // TODO: decide if this should be a result or not
-    ) -> Value<ValuesResultStream<'res, S>>
+    ) -> FieldResult<Value<ValuesResultStream<'res, S>>, S>
     where
         's: 'res,
         'i: 'res,
@@ -346,17 +345,12 @@ where
         'e: 'res,
     {
         if let Some(selection_set) = selection_set {
-            let x = resolve_selection_set_into_stream(
+            resolve_selection_set_into_stream(
                 self,
                 info,
                 selection_set,
                 executor
-            ).await;
-
-            match x {
-                Ok(v) => v,
-                Err(e) => panic!("Got error: {:#?}", e)
-            }
+            ).await
 
         } else {
             panic!("resolve_into_stream() must be implemented");

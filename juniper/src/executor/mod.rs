@@ -394,9 +394,9 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        Ok(value
+        value
             .resolve_into_stream(info, self.current_selection_set, self)
-            .await)
+            .await
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
@@ -474,7 +474,7 @@ where
         &'s self,
         info: &'i T::TypeInfo,
         value: &'v T,
-    ) -> Value<ValuesResultStream<'a, S>>
+    ) -> FieldResult<Value<ValuesResultStream<'a, S>>, S>
     where
         'i: 'a,
         'v: 'a,
@@ -484,13 +484,7 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        match self.subscribe(info, value).await {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                Value::Null
-            }
-        }
+        self.subscribe(info, value).await
     }
 
     /// Derive a new executor by replacing the context
@@ -944,7 +938,10 @@ pub async fn execute_validated_subscription_async<
     variables: Variables<S>,
     context: &'ctx CtxT,
     executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
-) -> Result<Value<ValuesResultStream<'res, S>>, GraphQLError<'res>>
+) -> Result<
+    FieldResult<Value<ValuesResultStream<'res, S>>, S>,
+    GraphQLError<'res>
+>
 where
     'd: 'e,
     'rn: 'e,

@@ -344,7 +344,7 @@ pub async fn subscribe<
     variables: Variables<S>,
     context: &'ctx CtxT,
     executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
-) -> Result<Value<ValuesResultStream<'res, S>>, GraphQLError<'res>>
+) -> Result<FieldResult<Value<ValuesResultStream<'res, S>>, S>, GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,

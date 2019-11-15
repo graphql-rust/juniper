@@ -16,13 +16,7 @@ use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "async")]
 use crate::executor::ValuesResultStream;
-use crate::{
-    ast::InputValue,
-    executor::ExecutionError,
-    value,
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
-};
+use crate::{ast::InputValue, executor::ExecutionError, value, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables, FieldResult};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -169,14 +163,6 @@ pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
 
-#[cfg(feature = "async")]
-/// Wrapper around the asynchronous result from executing a GraphQL subscription
-pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<Value<ValuesResultStream<'a, S>>, GraphQLError<'a>>,
-)
-where
-    S: 'static;
-
 impl<'a, S> GraphQLResponse<'a, S>
 where
     S: ScalarValue,
@@ -236,15 +222,43 @@ where
 }
 
 #[cfg(feature = "async")]
+/// Wrapper around the asynchronous result from executing a GraphQL subscription
+pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
+    Result<
+        FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+        GraphQLError<'a>
+    >,
+)
+    where
+        S: 'static;
+
+#[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
-    pub fn into_inner(self) -> Result<Value<ValuesResultStream<'a, S>>, GraphQLError<'a>> {
+    pub fn into_inner(self) -> Result<
+        FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+        GraphQLError<'a>
+    > {
         self.0
     }
 
     /// Return reference to self's errors (if any)
-    pub fn errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
+    pub fn graphql_errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
         self.0.as_ref().err()
+    }
+
+    pub fn field_errors<'err>(&'err self) -> Option<&'err FieldError<S>> {
+        if let Ok(result) = self.0.as_ref() {
+            if let Err(e) = result {
+                Some(e)
+            }
+            else {
+                None
+            }
+        }
+        else {
+            None
+        }
     }
 }
 
@@ -269,7 +283,14 @@ where
         use std::iter::FromIterator as _;
 
         let val = match self.0 {
-            Ok(val) => val,
+            Ok(val) => {
+                if let Ok(v) = val {
+                    v
+                }
+                else {
+                    return None
+                }
+            },
             Err(_) => return None,
         };
 
