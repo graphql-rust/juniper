@@ -480,9 +480,42 @@ where
                             .subscribe(&schema, &context, &mut executor)
                             .await;
 
-                        if let Some(error) = response_stream.errors() {
-                            println!("Error occured: {:#?}", error);
-                            panic!("Response stream is none (error occured)");
+                        if let Some(error) = response_stream.graphql_errors() {
+                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
+                                format!("GraphQL error occured: {:#?}", error)
+                            ))));
+
+                            let close_text = format!(
+                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                request_id
+                            );
+
+                            // send message that we are closing channel
+                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
+                                close_text.clone(),
+                            ))));
+
+                            // close channel
+                            let _ = ws_tx.unbounded_send(None);
+                        }
+
+                        if let Some(error) = response_stream.field_errors() {
+                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
+                                format!("Field error occured: {:#?}", error)
+                            ))));
+
+                            let close_text = format!(
+                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                request_id
+                            );
+
+                            // send message that we are closing channel
+                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
+                                close_text.clone(),
+                            ))));
+
+                            // close channel
+                            let _ = ws_tx.unbounded_send(None);
                         }
 
                         let stream = response_stream
