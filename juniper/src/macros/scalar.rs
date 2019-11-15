@@ -1,51 +1,47 @@
-/**
-Expose GraphQL scalars
-
-The GraphQL language defines a number of built-in scalars: strings, numbers, and
-booleans. This macro can be used either to define new types of scalars (e.g.
-timestamps), or expose other types as one of the built-in scalars (e.g. bigints
-as numbers or strings).
-
-Since the preferred transport protocol for GraphQL responses is JSON, most
-custom scalars will be transferred as strings. You therefore need to ensure that
-the client library you are sending data to can parse the custom value into a
-datatype appropriate for that platform.
-
-By default the trait is implemented in terms of the default scalar value
-representation provided by juniper. If that does not fit your needs it is
-possible to use the same syntax as on `graphql_object!` to specify a custom
-representation.
-
-```rust
-# extern crate juniper;
-# use juniper::{Value, FieldResult, ParseScalarValue, ParseScalarResult};
-struct UserID(String);
-
-juniper::graphql_scalar!(UserID {
-    description: "An opaque identifier, represented as a string"
-
-    resolve(&self) -> Value {
-        Value::string(&self.0)
-    }
-
-    from_input_value(v: &InputValue) -> Option<UserID> {
-        v.as_string_value().map(|s| UserID(s.to_owned()))
-    }
-
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-        <String as ParseScalarValue>::from_str(value)
-    }
-});
-
-# fn main() { }
-```
-
-In addition to implementing `GraphQLType` for the type in question,
-`FromInputValue` and `ToInputValue` is also implemented. This makes the type
-usable as arguments and default values.
-
-*/
-
+/// Expose GraphQL scalars
+///
+/// The GraphQL language defines a number of built-in scalars: strings, numbers, and
+/// booleans. This macro can be used either to define new types of scalars (e.g.
+/// timestamps), or expose other types as one of the built-in scalars (e.g. bigints
+/// as numbers or strings).
+///
+/// Since the preferred transport protocol for GraphQL responses is JSON, most
+/// custom scalars will be transferred as strings. You therefore need to ensure that
+/// the client library you are sending data to can parse the custom value into a
+/// datatype appropriate for that platform.
+///
+/// By default the trait is implemented in terms of the default scalar value
+/// representation provided by juniper. If that does not fit your needs it is
+/// possible to use the same syntax as on `graphql_object!` to specify a custom
+/// representation.
+///
+/// ```rust
+/// # extern crate juniper;
+/// # use juniper::{Value, FieldResult, ParseScalarValue, ParseScalarResult};
+/// struct UserID(String);
+///
+/// juniper::graphql_scalar!(UserID {
+///     description: "An opaque identifier, represented as a string"
+///
+///     resolve(&self) -> Value {
+///         Value::string(&self.0)
+///     }
+///
+///     from_input_value(v: &InputValue) -> Option<UserID> {
+///     v.as_string_value().map(|s| UserID(s.to_owned()))
+///     }
+///
+///     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+///         <String as ParseScalarValue>::from_str(value)
+///     }
+/// });
+///
+/// # fn main() { }
+/// ```
+///
+/// In addition to implementing `GraphQLType` for the type in question,
+/// `FromInputValue` and `ToInputValue` is also implemented. This makes the type
+/// usable as arguments and default values.
 #[cfg(not(feature = "async"))]
 #[macro_export]
 macro_rules! graphql_scalar {
