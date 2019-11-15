@@ -1,11 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-    ast::Selection,
-    executor::{ExecutionResult, Executor, FieldError, ValuesResultStream},
-    parser::Spanning,
-    value::{Object, ScalarRefValue, ScalarValue, Value},
-};
+use crate::{ast::Selection, executor::{ExecutionResult, Executor, FieldError, ValuesResultStream}, parser::Spanning, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldResult};
 
 #[cfg(feature = "async")]
 use crate::BoxFuture;
@@ -341,6 +336,7 @@ where
         info: &'i Self::TypeInfo,
         selection_set: Option<&'ss [Selection<'_, S>]>,
         executor: &'ref_e Executor<'e, Self::Context, S>,
+        // TODO: decide if this should be a result or not
     ) -> Value<ValuesResultStream<'res, S>>
     where
         's: 'res,
@@ -350,7 +346,12 @@ where
         'e: 'res,
     {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_stream(self, info, selection_set, executor).await
+            resolve_selection_set_into_stream(
+                self,
+                info,
+                selection_set,
+                executor
+            ).await
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -447,6 +448,17 @@ struct AsyncField<S> {
 enum AsyncValue<S> {
     Field(AsyncField<S>),
     Nested(Value<S>),
+}
+
+
+struct AsyncResultField<'a, S> {
+    name: String,
+    value: FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+}
+
+enum AsyncResultValue<'a, S> {
+    Field(AsyncResultField<'a, S>),
+    Nested(FieldResult<Value<ValuesResultStream<'a, S>>, S>),
 }
 
 #[cfg(feature = "async")]
@@ -661,7 +673,7 @@ pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res,
     info: &'inf T::TypeInfo,
     selection_set: &'ss [Selection<'ss, S>],
     executor: &'ref_e Executor<'e, CtxT, S>,
-) -> BoxFuture<'res, Value<ValuesResultStream<'res, S>>>
+) -> BoxFuture<'res, FieldResult<Value<ValuesResultStream<'res, S>>, S>>
 where
     'i: 'res,
     'inf: 'res,
@@ -689,7 +701,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
     executor: &'a Executor<'a, CtxT, S>,
-) -> Value<ValuesResultStream<'a, S>>
+) -> FieldResult<Value<ValuesResultStream<'a, S>>, S>
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
@@ -701,7 +713,9 @@ where
 
     let mut object: Object<ValuesResultStream<S>> = Object::with_capacity(selection_set.len());
 
-    let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<ValuesResultStream<'a, S>>>>::new();
+    let mut async_values = FuturesOrdered::<
+        BoxFuture<'a, AsyncResultValue<'a, S>>
+    >::new();
 
     let meta_type = executor
         .schema()
@@ -727,7 +741,12 @@ where
 
                 if f.name.item == "__typename" {
                     let typename =
-                        Value::scalar(instance.concrete_type_name(executor.context(), info));
+                        Value::scalar(
+                            instance.concrete_type_name(
+                                executor.context(),
+                                info
+                            )
+                        );
                     object.add_field(
                         response_name,
                         Value::Scalar(
@@ -756,8 +775,6 @@ where
                     f.selection_set.as_ref().map(|v| &v[..]),
                 ));
 
-                let sub_exec2 = Arc::clone(&sub_exec);
-
                 let args = Arguments::new(
                     f.arguments.as_ref().map(|m| {
                         m.item
@@ -774,24 +791,25 @@ where
                 let response_name = response_name.to_string();
                 let field_future = async move {
                     // TODO: implement custom future type instead of
-                    // two-level boxing.
+                    //       two-level boxing.
                     let res = instance
-                        .resolve_field_into_stream(info, f.name.item, args, sub_exec)
-                        .await;
+                        .resolve_field_into_stream(
+                            info,
+                            f.name.item,
+                            args,
+                            sub_exec
+                        ).await;
 
                     let value = match res {
-                        Ok(Value::Null) if is_non_null => None,
-                        Ok(v) => Some(v),
-                        Err(e) => {
-                            sub_exec2.push_error_at(e, pos);
-                            if is_non_null {
-                                None
-                            } else {
-                                Some(Value::Null)
-                            }
-                        }
+                        //todo: custom error type
+                        Ok(Value::Null) if is_non_null => Err(FieldError::new(
+                            "null value on non null field",
+                            Value::null()
+                            )),
+                        Ok(v) => Ok(v),
+                        Err(e) => Err(e),
                     };
-                    AsyncValue::Field(AsyncField {
+                    AsyncResultValue::Field(AsyncResultField {
                         name: response_name,
                         value,
                     })
@@ -817,7 +835,7 @@ where
                         executor,
                     )
                     .await;
-                    AsyncValue::Nested(value)
+                    AsyncResultValue::Nested(value)
                 };
                 async_values.push(Box::pin(f));
             }
@@ -852,7 +870,8 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec2.push_error_at(e, start_pos.clone());
+                        //todo
+//                        sub_exec2.push_error_at(e, start_pos.clone());
                     }
                 } else {
                     if let Some(type_name) = meta_type.name() {
@@ -870,7 +889,8 @@ where
                                 merge_key_into(&mut object, &k, v);
                             }
                         } else if let Err(e) = sub_result {
-                            sub_exec2.push_error_at(e, start_pos.clone());
+                            //todo
+//                            sub_exec2.push_error_at(e, start_pos.clone());
                         }
                     } else {
                         return Value::Null;
