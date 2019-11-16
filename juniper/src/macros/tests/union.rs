@@ -45,7 +45,7 @@ impl Concrete {
     }
 }
 
-#[crate::union_internal(name = "ACustomNamedUnion")]
+#[crate::graphql_union_internal(name = "ACustomNamedUnion")]
 impl CustomName {
     fn resolve(&self) {
         match self {
@@ -56,7 +56,7 @@ impl CustomName {
     }
 }
 
-#[crate::union_internal]
+#[crate::graphql_union_internal]
 impl<'a> WithLifetime<'a> {
     fn resolve(&self) {
         match self {
@@ -67,7 +67,7 @@ impl<'a> WithLifetime<'a> {
     }
 }
 
-#[crate::union_internal]
+#[crate::graphql_union_internal]
 impl<T> WithGenerics<T> {
     fn resolve(&self) {
         match self {
@@ -78,7 +78,7 @@ impl<T> WithGenerics<T> {
     }
 }
 
-#[crate::union_internal(description = "A description")]
+#[crate::graphql_union_internal(description = "A description")]
 impl DescriptionFirst {
     fn resolve(&self) {
         match self {

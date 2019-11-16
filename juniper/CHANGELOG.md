@@ -6,8 +6,12 @@
 
 ## Breaking Changes
 
-- Remove ScalarRefValue trait 
-- Change return type of GraphQLType::resolve to `ExecutionResult`
+- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro
+
+- ScalarRefValue trait  removed
+  Trait was not required.
+
+- Changed return type of GraphQLType::resolve to `ExecutionResult`
   This was done to unify the return type of all resolver methods
   The previous `Value` return type was just an internal artifact of 
   error handling.

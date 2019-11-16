@@ -166,17 +166,8 @@ mod union {
         }
     }
 
-    /*
-    graphql_union!(<'a> &'a dyn Pet: () as "Pet" |&self| {
-        instance_resolvers: |&_| {
-            &Dog => self.as_dog(),
-            &Cat => self.as_cat(),
-        }
-    });
-    */
-
-    #[crate::union_internal]
-    impl<'a> &'a dyn Pet {
+    #[crate::graphql_union_internal]
+    impl<'a> GraphQLUnion for &'a dyn Pet {
         fn resolve(&self) {
             match self {
                 Dog => self.as_dog(),

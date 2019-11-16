@@ -389,7 +389,7 @@ pub fn object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[proc_macro_error::proc_macro_error]
-pub fn union(attrs: TokenStream, body: TokenStream) -> TokenStream {
+pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
     let output = match impl_union::impl_union(false, attrs, body) {
         Ok(toks) => toks,
         Err(err) => proc_macro_error::abort!(err),
@@ -400,7 +400,7 @@ pub fn union(attrs: TokenStream, body: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro_attribute]
 #[proc_macro_error::proc_macro_error]
-pub fn union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
+pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
     let output = match impl_union::impl_union(true, attrs, body) {
         Ok(toks) => toks,
         Err(err) => proc_macro_error::abort!(err),

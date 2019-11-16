@@ -17,30 +17,11 @@ struct ResolveBody {
 
 impl syn::parse::Parse for ResolveBody {
     fn parse(input: syn::parse::ParseStream) -> Result<Self, syn::parse::Error> {
-        input.parse::<syn::token::Fn>()?;
-        let ident = input.parse::<syn::Ident>()?;
-        if ident != "resolve" {
-            return Err(input.error("Expected method named 'resolve'"));
-        }
-
-        let args;
-        syn::parenthesized!(args in input);
-        args.parse::<syn::token::And>()?;
-        args.parse::<syn::token::SelfValue>()?;
-        if !args.is_empty() {
-            return Err(
-                input.error("Unexpected extra tokens: only one '&self' parameter is allowed")
-            );
-        }
-
-        let body;
-        syn::braced!( body in input );
-
-        body.parse::<syn::token::Match>()?;
-        body.parse::<syn::token::SelfValue>()?;
+        input.parse::<syn::token::Match>()?;
+        input.parse::<syn::token::SelfValue>()?;
 
         let match_body;
-        syn::braced!( match_body in body );
+        syn::braced!( match_body in input );
 
         let mut variants = Vec::new();
         while !match_body.is_empty() {
@@ -54,7 +35,7 @@ impl syn::parse::Parse for ResolveBody {
             match_body.parse::<syn::token::Comma>().ok();
         }
 
-        if !body.is_empty() {
+        if !input.is_empty() {
             return Err(input.error("Unexpected input"));
         }
 
@@ -67,36 +48,51 @@ pub fn impl_union(
     attrs: TokenStream,
     body: TokenStream,
 ) -> Result<TokenStream, MacroError> {
-    // We are re-using the object attributes since they are almost the same.
-    let attrs = syn::parse::<util::ObjectAttributes>(attrs)?;
+    let _impl = util::parse_impl::ImplBlock::parse(attrs, body);
 
-    let item = syn::parse::<syn::ItemImpl>(body)?;
+    // Validate trait target name, if present.
+    if let Some((name, path)) = &_impl.target_trait {
+        if !(name == "GraphQLUnion" || name == "juniper.GraphQLUnion") {
+            return Err(MacroError::new(
+                path.span(),
+                "Invalid impl target trait: expected 'GraphQLUnion'".to_string(),
+            ));
+        }
+    }
 
-    if item.items.len() != 1 {
+    let type_ident = &_impl.type_ident;
+    let name = _impl
+        .attrs
+        .name
+        .clone()
+        .unwrap_or_else(|| type_ident.to_string());
+    let crate_name = util::juniper_path(is_internal);
+
+    let scalar = _impl
+        .attrs
+        .scalar
+        .as_ref()
+        .map(|s| quote!( #s ))
+        .unwrap_or_else(|| {
+            quote! { #crate_name::DefaultScalarValue }
+        });
+
+    if _impl.methods.len() != 1 {
         return Err(MacroError::new(
-            item.span(),
+            _impl.target_type.span(),
             "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
                 .to_string(),
         ));
     }
+    let method = _impl.methods.first().unwrap();
 
-    let body_item = item.items.first().unwrap();
-    let body = quote! { #body_item };
-    let variants = syn::parse::<ResolveBody>(body.into())?.variants;
+    let resolve_args = _impl.parse_resolve_method(method);
 
-    let ty = &item.self_ty;
+    let stmts = &method.block.stmts;
+    let body_raw = quote!( #( #stmts )* );
+    let body = syn::parse::<ResolveBody>(body_raw.into())?;
 
-    let ty_ident = util::name_of_type(&*ty).ok_or_else(|| {
-        MacroError::new(
-            ty.span(),
-            "Expected a path ending in a simple type identifier".to_string(),
-        )
-    })?;
-    let name = attrs.name.unwrap_or_else(|| ty_ident.to_string());
-
-    let juniper = util::juniper_path(is_internal);
-
-    let meta_types = variants.iter().map(|var| {
+    let meta_types = body.variants.iter().map(|var| {
         let var_ty = &var.ty;
 
         quote! {
@@ -104,50 +100,45 @@ pub fn impl_union(
         }
     });
 
-    let concrete_type_resolver = variants.iter().map(|var| {
+    let concrete_type_resolver = body.variants.iter().map(|var| {
         let var_ty = &var.ty;
         let resolve = &var.resolver;
 
         quote! {
             if ({#resolve} as std::option::Option<&#var_ty>).is_some() {
-                return <#var_ty as #juniper::GraphQLType<_>>::name(&()).unwrap().to_string();
+                return <#var_ty as #crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string();
             }
         }
     });
 
-    let resolve_into_type = variants.iter().map(|var| {
+    let resolve_into_type = body.variants.iter().map(|var| {
         let var_ty = &var.ty;
         let resolve = &var.resolver;
 
         quote! {
-            if type_name == (<#var_ty as #juniper::GraphQLType<_>>::name(&())).unwrap() {
+            if type_name == (<#var_ty as #crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
                 return executor.resolve(&(), &{ #resolve });
             }
         }
     });
 
-    let scalar = attrs
-        .scalar
-        .as_ref()
-        .map(|s| quote!( #s ))
-        .unwrap_or_else(|| {
-            quote! { #juniper::DefaultScalarValue }
-        });
-
-    let generics = item.generics.clone();
+    let generics = _impl.generics;
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    let description = match attrs.description.as_ref() {
+    let description = match _impl.description.as_ref() {
         Some(value) => quote!( .description( #value ) ),
         None => quote!(),
     };
-    let context = attrs
+    let context = _impl
+        .attrs
         .context
         .map(|c| quote! { #c })
         .unwrap_or_else(|| quote! { () });
 
+    let ty = _impl.target_type;
+
     let output = quote! {
-        impl #impl_generics #juniper::GraphQLType<#scalar> for #ty #where_clause
+        impl #impl_generics #crate_name::GraphQLType<#scalar> for #ty #where_clause
         {
             type Context = #context;
             type TypeInfo = ();
@@ -158,8 +149,8 @@ pub fn impl_union(
 
             fn meta<'r>(
                 info: &Self::TypeInfo,
-                registry: &mut #juniper::Registry<'r, #scalar>
-            ) -> #juniper::meta::MetaType<'r, #scalar>
+                registry: &mut #crate_name::Registry<'r, #scalar>
+            ) -> #crate_name::meta::MetaType<'r, #scalar>
                 where
                     #scalar: 'r,
             {
@@ -184,10 +175,11 @@ pub fn impl_union(
                 &self,
                 _info: &Self::TypeInfo,
                 type_name: &str,
-                _: Option<&[#juniper::Selection<#scalar>]>,
-                executor: &#juniper::Executor<Self::Context, #scalar>,
-            ) -> #juniper::ExecutionResult<#scalar> {
+                _: Option<&[#crate_name::Selection<#scalar>]>,
+                executor: &#crate_name::Executor<Self::Context, #scalar>,
+            ) -> #crate_name::ExecutionResult<#scalar> {
                 let context = &executor.context();
+                #( #resolve_args )*
 
                 #( #resolve_into_type )*
 

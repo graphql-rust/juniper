@@ -1,3 +1,5 @@
+pub mod parse_impl;
+
 use quote::quote;
 use std::collections::HashMap;
 use syn::{

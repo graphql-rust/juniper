@@ -234,7 +234,7 @@ impl GraphQLType<DefaultScalarValue> for User
 ```
 
 */
-pub trait GraphQLType<S>: Sized
+pub trait GraphQLType<S = DefaultScalarValue>: Sized
 where
     S: ScalarValue,
 {
