@@ -6,6 +6,8 @@
 
 ## Breaking Changes
 
+- Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
+
 - `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro
 
 - ScalarRefValue trait  removed

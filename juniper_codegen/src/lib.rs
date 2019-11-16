@@ -106,12 +106,6 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[deprecated(note = "ScalarValue has been renamed to GraphQLScalarValue")]
-#[proc_macro_derive(ScalarValue)]
-pub fn derive_scalar_value_deprecated(input: TokenStream) -> TokenStream {
-    derive_scalar_value(input)
-}
-
 #[proc_macro_derive(GraphQLScalarValueInternal)]
 #[doc(hidden)]
 pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
