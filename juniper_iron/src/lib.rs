@@ -37,7 +37,7 @@ use juniper::{Context, EmptyMutation};
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# #[juniper::object( Context = Database )]
+# #[juniper::graphql_object( Context = Database )]
 # impl User {
 #     fn id(&self) -> FieldResult<&String> {
 #         Ok(&self.id)
@@ -54,7 +54,7 @@ use juniper::{Context, EmptyMutation};
 #     }
 # }
 #
-# #[juniper::object( Context = Database )]
+# #[juniper::graphql_object( Context = Database )]
 # impl QueryRoot {
 #     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))

@@ -14,7 +14,7 @@ struct Person {
     age: i32,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Person {
     fn name(&self) -> &str {
         self.name.as_str()
@@ -43,7 +43,7 @@ struct House {
     inhabitants: Vec<Person>,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
     fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
@@ -70,7 +70,7 @@ struct Person {
 }
 
 /// Doc comments are used as descriptions for GraphQL.
-#[juniper::object(
+#[juniper::graphql_object(
     // With this attribtue you can change the public GraphQL name of the type.
     name = "PersonObject",
     // You can also specify a description here, which will overwrite 
@@ -125,7 +125,7 @@ This will become better once the [Rust RFC 2565](https://github.com/rust-lang/ru
 
 struct Person {}
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Person {
     #[graphql(
         arguments(

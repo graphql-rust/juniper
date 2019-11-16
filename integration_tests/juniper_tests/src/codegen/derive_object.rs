@@ -79,7 +79,7 @@ struct WithCustomContext {
     a: bool,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Query {
     fn obj() -> Obj {
         Obj {

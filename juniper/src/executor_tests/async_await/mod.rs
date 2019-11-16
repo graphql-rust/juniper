@@ -13,7 +13,7 @@ struct User {
     kind: UserKind,
 }
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl User {
     async fn name(&self) -> &str {
         &self.name
@@ -43,7 +43,7 @@ impl User {
 
 struct Query;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"
@@ -70,7 +70,7 @@ impl Query {
 
 struct Mutation;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Mutation {}
 
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {

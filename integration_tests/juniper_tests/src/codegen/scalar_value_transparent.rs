@@ -22,7 +22,7 @@ struct User {
 
 struct User2;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl User2 {
     fn id(&self) -> UserId {
         UserId("id".to_string())

@@ -47,7 +47,7 @@ fn context_factory(_: &mut Request) -> IronResult<()> {
 
 struct Root;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Root {
     fn foo() -> String {
         "Bar".to_owned()
@@ -99,7 +99,7 @@ fn context_factory(req: &mut Request) -> IronResult<Context> {
 
 struct Root;
 
-#[juniper::object(
+#[juniper::graphql_object(
     Context = Context,
 )]
 impl Root {

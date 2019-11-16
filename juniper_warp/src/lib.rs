@@ -169,7 +169,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::object(
+/// #[juniper::graphql_object(
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {

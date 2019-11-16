@@ -1,5 +1,5 @@
 // TODO: make sure proc macro tests cover all
-// variants of the below 
+// variants of the below
 
 /*
 use std::marker::PhantomData;

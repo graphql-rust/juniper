@@ -38,7 +38,7 @@ enum DescriptionFirst {
 
 struct Root;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Concrete {
     fn simple() -> i32 {
         123
@@ -90,7 +90,7 @@ impl DescriptionFirst {
 }
 
 // FIXME: make async work
-#[crate::object_internal(noasync)]
+#[crate::graphql_object_internal(noasync)]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)

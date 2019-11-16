@@ -110,14 +110,15 @@ extern crate uuid;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_union, object, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue,
+    graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+    GraphQLScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    graphql_union_internal, object_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
-    GraphQLScalarValueInternal,
+    graphql_object_internal, graphql_union_internal, GraphQLEnumInternal,
+    GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
 
 #[macro_use]

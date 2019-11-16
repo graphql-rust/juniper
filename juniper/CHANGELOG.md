@@ -6,6 +6,8 @@
 
 ## Breaking Changes
 
+- remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
+
 - Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
 
 - `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro

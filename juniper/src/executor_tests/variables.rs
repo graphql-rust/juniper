@@ -64,7 +64,7 @@ struct InputWithDefaults {
     a: i32,
 }
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl TestType {
     fn field_with_object_input(input: Option<TestInputObject>) -> String {
         format!("{:?}", input)

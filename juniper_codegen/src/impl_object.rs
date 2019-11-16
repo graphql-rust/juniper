@@ -2,7 +2,7 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
-/// Generate code for the juniper::object macro.
+/// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
         Ok(attrs) => attrs,
@@ -20,7 +20,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     let mut _impl = match item {
         syn::Item::Impl(_impl) => _impl,
         _ => {
-            panic!("#[juniper::object] can only be applied to impl blocks");
+            panic!("#[juniper::graphql_object] can only be applied to impl blocks");
         }
     };
 
@@ -47,7 +47,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
             ident.to_string()
         } else {
-            panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+            panic!("Could not determine a name for the object type: specify one with #[juniper::graphql_object(name = \"SomeName\")");
         }
     };
 

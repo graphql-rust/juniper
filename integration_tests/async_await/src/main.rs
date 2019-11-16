@@ -13,7 +13,7 @@ struct User {
     kind: UserKind,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl User {
     async fn name(&self) -> &str {
         &self.name
@@ -43,7 +43,7 @@ impl User {
 
 struct Query;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"
@@ -70,7 +70,7 @@ impl Query {
 
 struct Mutation;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Mutation {}
 
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {

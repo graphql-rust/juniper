@@ -160,7 +160,7 @@ juniper::graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
 
 struct TestType;
 
-#[juniper::object(
+#[juniper::graphql_object(
     Scalar = MyScalarValue
 )]
 impl TestType {

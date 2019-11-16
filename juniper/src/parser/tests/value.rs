@@ -36,7 +36,7 @@ struct Foo {
 
 struct Query;
 
-#[crate::object_internal(Scalar = S)]
+#[crate::graphql_object_internal(Scalar = S)]
 impl<'a, S> Query
 where
     S: crate::ScalarValue + 'a,

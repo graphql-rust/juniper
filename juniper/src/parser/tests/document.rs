@@ -149,7 +149,7 @@ fn errors() {
 fn issue_427_panic_is_not_expected() {
     struct QueryWithoutFloat;
 
-    #[crate::object_internal]
+    #[crate::graphql_object_internal]
     impl QueryWithoutFloat {
         fn echo(value: String) -> String {
             value
