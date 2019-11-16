@@ -121,8 +121,9 @@ juniper::graphql_scalar!(Date where Scalar = <S> {
 
     // Define how to parse a primitive type into your custom scalar.
     from_input_value(v: &InputValue) -> Option<Date> {
-        v.as_scalar_value::<String>()
-         .and_then(|s| s.parse().ok())
+        v.as_scalar_value()
+        .and_then(|v| v.as_str())
+        .and_then(|s| s.parse().ok())
     }
 
     // Define how to parse a string value.

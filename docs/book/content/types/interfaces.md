@@ -49,7 +49,7 @@ impl Character for Droid {
     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
 }
 
-juniper::graphql_interface!(<'a> &'a Character: () as "Character" where Scalar = <S> |&self| {
+juniper::graphql_interface!(<'a> &'a dyn Character: () as "Character" where Scalar = <S> |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |_| {
@@ -111,7 +111,7 @@ impl Character for Droid {
     fn id(&self) -> &str { self.id.as_str() }
 }
 
-juniper::graphql_interface!(<'a> &'a Character: Database as "Character" where Scalar = <S> |&self| {
+juniper::graphql_interface!(<'a> &'a dyn Character: Database as "Character" where Scalar = <S> |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |&context| {
