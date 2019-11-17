@@ -1,5 +1,10 @@
 use futures::{future, Future};
 
+#[cfg(feature = "async")]
+use futures03::future::{FutureExt, TryFutureExt};
+#[cfg(feature = "async")]
+use juniper::GraphQLTypeAsync;
+
 use actix_web::http::{Method, StatusCode};
 use actix_web::{dev, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
 
@@ -10,7 +15,7 @@ use juniper::http::{
 
 use juniper::serde::Deserialize;
 use juniper::{
-    DefaultScalarValue, FieldError, GraphQLType, InputValue, RootNode, ScalarRefValue, ScalarValue,
+    DefaultScalarValue, FieldError, GraphQLType, InputValue, RootNode, ScalarValue,
 };
 
 use serde::{de, Deserializer};
@@ -54,7 +59,6 @@ where
 impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
@@ -75,6 +79,37 @@ where
                     .map(|request| request.execute(root_node, context))
                     .collect(),
             ),
+        }
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
+                let res = request.execute_async(root_node, context).await;
+                GraphQLBatchResponse::Single(res)
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => {
+                let futures = requests
+                    .iter()
+                    .map(|request| request.execute_async(root_node, context))
+                    .collect::<Vec<_>>();
+                let responses = futures03::future::join_all(futures).await;
+                
+                GraphQLBatchResponse::Batch(responses)
+            }
         }
     }
 
@@ -133,7 +168,6 @@ pub fn playground_source(graphql_endpoint_url: &str) -> HttpResponse {
 impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Execute an incoming GraphQL query
     pub fn execute<CtxT, QueryT, MutationT>(
@@ -146,6 +180,31 @@ where
         MutationT: GraphQLType<S, Context = CtxT>,
     {
         let response = self.0.execute(root_node, context);
+        let status = if response.is_ok() {
+            StatusCode::OK
+        } else {
+            StatusCode::BAD_REQUEST
+        };
+        let json = serde_json::to_string(&response).unwrap();
+
+        GraphQLResponse(status, json)
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLResponse
+    where
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        let response = self.0.execute_async(root_node, context).await;
         let status = if response.is_ok() {
             StatusCode::OK
         } else {
@@ -184,7 +243,6 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned,
 {
-    // let s: &'de str = Deserialize::deserialize(deserializer)?;
     let data: String = Deserialize::deserialize(deserializer)?;
     serde_json::from_str(&data).map_err(de::Error::custom)
 }
@@ -277,6 +335,7 @@ impl Responder for GraphQLResponse {
     }
 }
 
+
 #[cfg(test)]
 mod fromrequest_tests;
 
@@ -300,17 +359,17 @@ mod tests {
         context: Database,
     }
 
-    struct TestActixWebIntegration;
+    struct TestActixWebIntegration { server_url: &'static str }
 
     impl TestActixWebIntegration {
-        const fn server_url() -> &'static str {
-            "127.0.0.1:8088"
+        fn new(server_url: &'static str) -> TestActixWebIntegration {
+            TestActixWebIntegration { server_url }
         }
     }
 
     impl HTTPIntegration for TestActixWebIntegration {
         fn get(&self, url: &str) -> TestResponse {
-            let url = format!("http://{}{}", TestActixWebIntegration::server_url(), url);
+            let url = format!("http://{}{}", self.server_url, url);
             actix_rt::System::new("get_request")
                 .block_on(lazy(|| {
                     awc::Client::default()
@@ -322,7 +381,7 @@ mod tests {
         }
 
         fn post(&self, url: &str, body: &str) -> TestResponse {
-            let url = format!("http://{}{}", TestActixWebIntegration::server_url(), url);
+            let url = format!("http://{}{}", self.server_url, url);
             actix_rt::System::new("post_request")
                 .block_on(lazy(|| {
                     awc::Client::default()
@@ -367,20 +426,39 @@ mod tests {
         let context = Database::new();
         let data = Arc::new(Data { schema, context });
 
+        let base_url = "127.0.0.1:8088";
+
+        #[cfg(feature = "async")]
+        let async_base_url = "127.0.0.1:8088";
+
         let (tx, rx) = std::sync::mpsc::channel();
         let join = std::thread::spawn(move || {
             let sys = actix_rt::System::new("test-integration-server");
             let app = HttpServer::new(move || {
-                App::new().data(data.clone()).service(
+                let app = App::new().data(data.clone()).service(
                     web::resource("/")
                         .guard(guard::Any(guard::Get()).or(guard::Post()))
                         .to(|st: web::Data<Arc<Data>>, data: GraphQLRequest| {
                             data.execute(&st.schema, &st.context)
                         }),
-                )
+                );
+
+                #[cfg(feature = "async")]
+                let app = app.service(
+                    web::resource("/async/")
+                        .guard(guard::Any(guard::Get()).or(guard::Post()))
+                        .to_async(|st: web::Data<Arc<Data>>, data: GraphQLRequest| {
+                            let f = async move {
+                                data.execute_async(&st.schema, &st.context).await
+                            };
+                            Box::new(f.unit_error().boxed().compat())
+                        }),
+                );
+
+                app
             })
             .shutdown_timeout(0)
-            .bind(TestActixWebIntegration::server_url())
+            .bind(base_url)
             .unwrap();
 
             tx.send(app.system_exit().start()).unwrap();
@@ -388,11 +466,13 @@ mod tests {
         });
 
         let server = rx.recv().unwrap();
-        server.resume();
 
-        run_http_test_suite(&TestActixWebIntegration);
+        run_http_test_suite(&TestActixWebIntegration::new(base_url));
 
-        server.stop(true);
+        #[cfg(feature = "async")]
+        run_http_test_suite(&TestActixWebIntegration::new(async_base_url));
+
+        server.stop(true).wait().unwrap();
         join.join().unwrap();
     }
 }
