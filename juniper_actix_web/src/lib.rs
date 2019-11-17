@@ -5,16 +5,18 @@ use futures03::future::{FutureExt, TryFutureExt};
 #[cfg(feature = "async")]
 use juniper::GraphQLTypeAsync;
 
-use actix_web::http::{Method, StatusCode};
-use actix_web::{dev, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-
-use juniper::http::{
-    graphiql, playground, GraphQLRequest as JuniperGraphQLRequest,
-    GraphQLResponse as JuniperGraphQLResponse,
+use actix_web::{
+    dev,
+    http::{Method, StatusCode},
+    web, Error, FromRequest, HttpRequest, HttpResponse, Responder,
 };
 
-use juniper::serde::Deserialize;
 use juniper::{
+    http::{
+        graphiql, playground, GraphQLRequest as JuniperGraphQLRequest,
+        GraphQLResponse as JuniperGraphQLResponse,
+    },
+    serde::Deserialize,
     DefaultScalarValue, FieldError, GraphQLType, InputValue, RootNode, ScalarValue,
 };
 
@@ -107,7 +109,6 @@ where
                     .map(|request| request.execute_async(root_node, context))
                     .collect::<Vec<_>>();
                 let responses = futures03::future::join_all(futures).await;
-                
                 GraphQLBatchResponse::Batch(responses)
             }
         }
@@ -335,7 +336,6 @@ impl Responder for GraphQLResponse {
     }
 }
 
-
 #[cfg(test)]
 mod fromrequest_tests;
 
@@ -359,7 +359,9 @@ mod tests {
         context: Database,
     }
 
-    struct TestActixWebIntegration { server_url: &'static str }
+    struct TestActixWebIntegration {
+        server_url: &'static str,
+    }
 
     impl TestActixWebIntegration {
         fn new(server_url: &'static str) -> TestActixWebIntegration {
@@ -448,9 +450,8 @@ mod tests {
                     web::resource("/async/")
                         .guard(guard::Any(guard::Get()).or(guard::Post()))
                         .to_async(|st: web::Data<Arc<Data>>, data: GraphQLRequest| {
-                            let f = async move {
-                                data.execute_async(&st.schema, &st.context).await
-                            };
+                            let f =
+                                async move { data.execute_async(&st.schema, &st.context).await };
                             Box::new(f.unit_error().boxed().compat())
                         }),
                 );

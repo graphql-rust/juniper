@@ -1,6 +1,8 @@
 use super::*;
 use actix_web::{http::header, test::TestRequest};
 
+use GetSerializer;
+
 fn make_get(uri: &str) -> Result<GraphQLRequest, Error> {
     let (req, mut payload) = TestRequest::get().uri(uri).to_http_parts();
     GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait()
@@ -91,7 +93,7 @@ fn test_no_query() {
     let variables = r#"{
         "qux": "quux"
     }"#;
-    let uri = url::form_urlencoded::Serializer::new(URI_PREFIX_Q.to_string())
+    let uri = GetSerializer::new(URI_PREFIX_Q.to_string())
         .append_pair("operationName", "foo")
         .append_pair("variables", variables)
         .finish();
@@ -100,7 +102,7 @@ fn test_no_query() {
 
 #[test]
 fn test_normal_get() {
-    let query = "{foo{bar,baz}}";
+    let query = "{ foo { bar, baz } }";
     let operation_name = "rust";
     let uri = &format!(
         "{}?query={}&operationName={}",
@@ -113,14 +115,13 @@ fn test_normal_get() {
 
 #[test]
 fn test_get_all_fields() {
-    use url::form_urlencoded;
     let query = "query a($qux: Qux) { foo(qux: $qux) { bar } } query b { foo { baz } }";
     let operation_name = "b";
     let variables = r#"{
         "qux": "quux"
     }"#;
 
-    let uri = form_urlencoded::Serializer::new(URI_PREFIX_Q.to_string())
+    let uri = GetSerializer::new(URI_PREFIX_Q.to_string())
         .append_pair("query", query)
         .append_pair("operationName", operation_name)
         .append_pair("variables", variables)
@@ -131,10 +132,10 @@ fn test_get_all_fields() {
 
 #[test]
 fn test_get_extra_fields() {
-    let query = "{foo{bar,baz}}";
+    let query = "{ foo { bar, baz } }";
     let operation_name = "rust";
 
-    let uri = url::form_urlencoded::Serializer::new(URI_PREFIX_Q.to_string())
+    let uri = GetSerializer::new(URI_PREFIX_Q.to_string())
         .append_pair("query", query)
         .append_pair("operationName", operation_name)
         .append_pair("foo", "bar")
@@ -145,10 +146,10 @@ fn test_get_extra_fields() {
 
 #[test]
 fn test_get_duplicate_query() {
-    let query = "{foo{bar,baz}}";
+    let query = "{ foo { bar, baz } }";
     let operation_name = "rust";
 
-    let uri = url::form_urlencoded::Serializer::new(URI_PREFIX_Q.to_string())
+    let uri = GetSerializer::new(URI_PREFIX_Q.to_string())
         .append_pair("query", query)
         .append_pair("operationName", operation_name)
         .append_pair("query", "bar")
@@ -159,9 +160,9 @@ fn test_get_duplicate_query() {
 
 #[test]
 fn test_get_duplicate_operation_name() {
-    let query = "{foo{bar,baz}}";
+    let query = "{ foo { bar, baz } }";
 
-    let uri = url::form_urlencoded::Serializer::new(URI_PREFIX_Q.to_string())
+    let uri = GetSerializer::new(URI_PREFIX_Q.to_string())
         .append_pair("query", query)
         .append_pair("operationName", "qux")
         .append_pair("operationName", "quux")
