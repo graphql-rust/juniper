@@ -1,3 +1,40 @@
+/*!
+
+# juniper_actix_web
+
+This repository contains the [Actix web][Actix web] web server integration for
+[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
+
+## Documentation
+
+For documentation, including guides and examples, check out [Juniper][Juniper].
+
+A basic usage example can also be found in the [Api documentation][documentation].
+
+## Examples
+
+Check [examples/actix_web_server.rs][example] for example code of a working Rocket
+server with GraphQL handlers.
+
+## Links
+
+* [Juniper][Juniper]
+* [Api Reference][documentation]
+* [Actix web][Actix web]
+
+## License
+
+This project is under the BSD-2 license.
+
+Check the LICENSE file for details.
+
+[Actix web]: https://actix.rs
+[Juniper]: https://github.com/graphql-rust/juniper
+[GraphQL]: http://graphql.org
+[documentation]: https://docs.rs/juniper_actix_web
+[example]: https://github.com/graphql-rust/juniper_actix_web/blob/master/examples/actix_web_server.rs
+
+*/
 use futures::{future, Future};
 
 #[cfg(feature = "async")]
@@ -300,15 +337,15 @@ where
                             .map_err(Error::from)
                             .map(|gql_request| GraphQLRequest(gql_request.into_inner())),
                     ),
-                    Some("application/graphql") => Box::new(
-                        String::from_request(req, payload)
-                            .map_err(|_| actix_http::error::ContentTypeError::ParseError.into())
-                            .map(|query| {
+                    Some("application/graphql") => {
+                        Box::new(String::from_request(req, payload).map_err(Error::from).map(
+                            |query| {
                                 GraphQLRequest(GraphQLBatchRequest::Single(
                                     JuniperGraphQLRequest::new(query, None, None),
                                 ))
-                            }),
-                    ),
+                            },
+                        ))
+                    }
                     _ => Box::new(future::err(
                         actix_http::error::ContentTypeError::UnknownEncoding.into(),
                     )),
@@ -338,6 +375,64 @@ impl Responder for GraphQLResponse {
 
 #[cfg(test)]
 mod fromrequest_tests;
+
+#[cfg(test)]
+mod http_method_tests {
+    use super::*;
+    use actix_web::{
+        http::{Method, StatusCode},
+        test::TestRequest,
+    };
+
+    fn check_method(meth: Method, should_succeed: bool) {
+        let (req, mut payload) = TestRequest::default().method(meth).to_http_parts();
+        let response =
+            GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        match response {
+            Err(e) => {
+                let status = e.as_response_error()
+                    .error_response()
+                    .status();
+                if should_succeed {
+                    assert_ne!(status, StatusCode::METHOD_NOT_ALLOWED);
+                } else {
+                    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+                }
+            }
+            _ => assert!(should_succeed),
+        }
+    }
+
+    #[test]
+    fn test_get() {
+        check_method(Method::GET, true);
+    }
+
+    #[test]
+    fn test_post() {
+        check_method(Method::POST, true);
+    }
+
+    #[test]
+    fn test_put() {
+        check_method(Method::PUT, false);
+    }
+
+    #[test]
+    fn test_patch() {
+        check_method(Method::PATCH, false);
+    }
+
+    #[test]
+    fn test_delete() {
+        check_method(Method::DELETE, false);
+    }
+}
+
+#[cfg(test)]
+mod contenttype_tests {
+    
+}
 
 #[cfg(test)]
 mod tests {

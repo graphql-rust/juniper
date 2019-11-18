@@ -1,7 +1,7 @@
 use super::*;
 use actix_web::{http::header, test::TestRequest};
 
-use GetSerializer;
+use url::form_urlencoded::Serializer as GetSerializer;
 
 fn make_get(uri: &str) -> Result<GraphQLRequest, Error> {
     let (req, mut payload) = TestRequest::get().uri(uri).to_http_parts();
@@ -261,7 +261,7 @@ fn test_post_variables() {
 
 #[test]
 fn test_post_graphql() {
-    let query = "{ meep { morp }}";
+    let query = "{ meep { morp } }";
     let expected = create_single_request(query, None, None);
     check_success_post(query, "application/graphql", expected);
 }
