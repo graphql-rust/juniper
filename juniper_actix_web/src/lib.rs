@@ -347,7 +347,7 @@ where
                         ))
                     }
                     _ => Box::new(future::err(
-                        actix_http::error::ContentTypeError::UnknownEncoding.into(),
+                        actix_http::error::ErrorUnsupportedMediaType("GraphQL requests should have content type `application/json` or `application/graphql`")
                     )),
                 }
             }
@@ -390,9 +390,7 @@ mod http_method_tests {
             GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
         match response {
             Err(e) => {
-                let status = e.as_response_error()
-                    .error_response()
-                    .status();
+                let status = e.as_response_error().error_response().status();
                 if should_succeed {
                     assert_ne!(status, StatusCode::METHOD_NOT_ALLOWED);
                 } else {
@@ -431,7 +429,47 @@ mod http_method_tests {
 
 #[cfg(test)]
 mod contenttype_tests {
-    
+    use super::*;
+    use actix_web::{
+        http::{header, StatusCode},
+        test::TestRequest,
+    };
+
+    fn check_content_type(content_type: &str, should_succeed: bool) {
+        let (req, mut payload) = TestRequest::post()
+            .header(header::CONTENT_TYPE, content_type)
+            .to_http_parts();
+        let response =
+            GraphQLRequest::<DefaultScalarValue>::from_request(&req, &mut payload).wait();
+        match response {
+            Err(e) => {
+                let status = e.as_response_error().error_response().status();
+                if should_succeed {
+                    assert_ne!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
+                } else {
+                    assert_eq!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
+                }
+            }
+            _ => assert!(should_succeed),
+        }
+    }
+
+    #[test]
+    fn check_json() {
+        check_content_type("application/json", true);
+    }
+
+    #[test]
+    fn check_graphql() {
+        check_content_type("application/graphql", true);
+    }
+
+    #[test]
+    fn check_invalid_content_types() {
+        check_content_type("text/plain", false);
+        check_content_type("multipart/form-data", false);
+        check_content_type("foobarbaz", false);
+    }
 }
 
 #[cfg(test)]
