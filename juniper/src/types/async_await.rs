@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{ast::Selection, executor::{ExecutionResult, Executor, FieldError, ValuesResultStream}, parser::Spanning, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldResult};
+use crate::{ast::Selection, executor::{ExecutionResult, Executor, FieldError, ValuesResultStream}, parser::Spanning, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldResult, SubscriptionsExecutor};
 
 #[cfg(feature = "async")]
 use crate::BoxFuture;
@@ -334,8 +334,7 @@ where
     async fn resolve_into_stream<'s, 'i, 'ss, 'ref_e, 'e, 'res>(
         &'s self,
         info: &'i Self::TypeInfo,
-        selection_set: Option<&'ss [Selection<'_, S>]>,
-        executor: &'ref_e Executor<'e, Self::Context, S>,
+        executor: SubscriptionsExecutor<'e, Self::Context, S>,
     ) -> FieldResult<Value<ValuesResultStream<'res, S>>, S>
     where
         's: 'res,
@@ -344,14 +343,12 @@ where
         'ref_e: 'e,
         'e: 'res,
     {
-        if let Some(selection_set) = selection_set {
+        if executor.variables.current_selection_set.is_some() {
             resolve_selection_set_into_stream(
                 self,
                 info,
-                selection_set,
                 executor
             ).await
-
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -371,7 +368,7 @@ where
         _: &Self::TypeInfo,     // this subscription's type info
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
-        _: Arc<Executor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
+        _: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
                                 // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
@@ -394,8 +391,7 @@ where
         &'s self,
         _: &'i Self::TypeInfo,              // this subscription's type info
         tn: &'tn str,                        // fragment's type name
-        _: Option<&'ss [Selection<'_, S>]>, // fragment's arguments
-        _: Arc<Executor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
+        _: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
                                             // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
@@ -679,8 +675,7 @@ where
 pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    selection_set: &'ss [Selection<'ss, S>],
-    executor: &'ref_e Executor<'e, CtxT, S>,
+    executor: SubscriptionsExecutor<'e, CtxT, S>,
 ) -> BoxFuture<'res, FieldResult<Value<ValuesResultStream<'res, S>>, S>>
 where
     'i: 'res,
@@ -697,7 +692,6 @@ where
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance,
         info,
-        selection_set,
         executor,
     ))
 }
@@ -707,8 +701,7 @@ where
 pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
-    selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: SubscriptionsExecutor<'a, CtxT, S>,
 ) -> FieldResult<Value<ValuesResultStream<'a, S>>, S>
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
@@ -717,6 +710,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    let selection_set = executor.variables.current_selection_set.unwrap();
     let mut object: Object<ValuesResultStream<'a, S>> = Object::with_capacity(selection_set.len());
     let meta_type = executor
         .schema()
@@ -728,7 +722,7 @@ where
         .expect("Type not found in schema");
 
     for selection in selection_set {
-        match *selection {
+        match selection {
             Selection::Field(Spanning {
                                  item: ref f,
                                  start: ref start_pos,
@@ -838,7 +832,6 @@ where
                 let obj = resolve_selection_set_into_stream(
                     instance,
                     info,
-                    &fragment.selection_set[..],
                     executor,
                 ).await;
 
@@ -879,7 +872,6 @@ where
                         .resolve_into_type_stream(
                             info,
                             type_condition.item,
-                            Some(&fragment.selection_set[..]),
                             sub_exec,
                         ).await;
 

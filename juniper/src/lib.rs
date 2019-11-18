@@ -342,8 +342,7 @@ pub async fn subscribe<
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
-    context: &'ctx CtxT,
-    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
+    context: &'ctx CtxT
 ) -> Result<FieldResult<Value<ValuesResultStream<'res, S>>, S>, GraphQLError<'res>>
 where
     'd: 'e,
@@ -369,7 +368,6 @@ where
         root_node,
         variables,
         context,
-        executor,
     )
     .await
 }
