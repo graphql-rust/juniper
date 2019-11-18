@@ -43,11 +43,11 @@ fn main() -> std::io::Result<()> {
             )
             .service(
                 web::resource("/graphiql")
-                    .route(web::get().to(|| graphiql_source("http://127.0.0.1:8088/graphql"))),
+                    .route(web::get().to(|| graphiql_source("http://localhost:8088/graphql"))),
             )
             .service(
                 web::resource("/playground")
-                    .route(web::get().to(|| playground_source("http://127.0.0.1:8088/graphql"))),
+                    .route(web::get().to(|| playground_source("http://localhost:8088/graphql"))),
             )
     })
     .bind("localhost:8088")?

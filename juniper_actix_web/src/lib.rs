@@ -555,16 +555,35 @@ mod tests {
         }
     }
 
+    fn test_endpoint(url: &str, expected: &str) {
+        println!("URL: {}", url);
+        let body = actix_rt::System::new("endpoint_test")
+            .block_on(lazy(|| {
+                awc::Client::default()
+                    .get(url.to_string())
+                    .send()
+                    .map(|mut response| {
+                        let body = response.body().wait().unwrap();
+                        String::from_utf8(body.to_vec()).unwrap() 
+                    })
+            }))
+            .expect(&format!("failed GET {}", url));
+        
+        assert_eq!(body, expected);
+    }
+
     #[test]
     fn test_actix_web_integration() {
         let schema = Schema::new(Query, EmptyMutation::<Database>::new());
         let context = Database::new();
         let data = Arc::new(Data { schema, context });
 
-        let base_url = "127.0.0.1:8088";
+        let base_url = "localhost:8088";
 
         #[cfg(feature = "async")]
-        let async_base_url = "127.0.0.1:8088";
+        let async_base_url = "localhost:8088";
+
+        let protocol_base_url = "http://localhost:8088/";
 
         let (tx, rx) = std::sync::mpsc::channel();
         let join = std::thread::spawn(move || {
@@ -576,6 +595,12 @@ mod tests {
                         .to(|st: web::Data<Arc<Data>>, data: GraphQLRequest| {
                             data.execute(&st.schema, &st.context)
                         }),
+                ).service(
+                    web::resource("/graphiql")
+                        .route(web::get().to(move || graphiql_source(protocol_base_url)))
+                ).service(
+                    web::resource("/playground")
+                        .route(web::get().to(move || playground_source(protocol_base_url)))
                 );
 
                 #[cfg(feature = "async")]
@@ -606,7 +631,13 @@ mod tests {
         #[cfg(feature = "async")]
         run_http_test_suite(&TestActixWebIntegration::new(async_base_url));
 
+        test_endpoint("http://localhost:8088/graphiql", &graphiql::graphiql_source(protocol_base_url));
+        test_endpoint("http://localhost:8088/playground", &playground::playground_source(protocol_base_url));
+
         server.stop(true).wait().unwrap();
         join.join().unwrap();
     }
+
+
+
 }
