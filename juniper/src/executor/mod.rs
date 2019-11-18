@@ -22,14 +22,14 @@ use crate::{
 };
 
 pub use self::{
-    executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor},
     look_ahead::{
         Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
 };
+use crate::executor::executor_wrappers::SubscriptionsExecutor;
 
-mod executor_wrappers;
+pub mod executor_wrappers;
 mod look_ahead;
 
 /// A type registry used to build schemas
@@ -917,6 +917,7 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    //todo: clean up
     let mut operation = None;
 
     let mut fragments = vec![];
@@ -937,7 +938,7 @@ where
         return Err(GraphQLError::UnknownOperationName);
     }
 
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
+    let default_variable_values = op.item.variable_definitions.as_ref().map(|defs| {
         defs.item
             .items
             .iter()
@@ -949,8 +950,8 @@ where
             .collect::<HashMap<String, InputValue<S>>>()
     });
 
-    let errors = RwLock::new(Vec::new());
-    let value;
+//    let errors = RwLock::new(Vec::new());
+//    let value;
     {
         let mut all_vars;
         let mut final_vars = variables;
@@ -973,36 +974,25 @@ where
             _ => unreachable!(),
         };
 
-        let executor = SubscriptionsExecutor::from_data(ExecutorDataVariables {
-            fragments: fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
-                .collect(),
+        let executor = SubscriptionsExecutor {
+            fragments: fragments,
+            operation: op,
             variables: final_vars,
-            current_selection_set: Some(op.item.selection_set),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: errors,
-            field_path: FieldPath::Root(op.start),
-        });
-
-//        // unwrap is safe here because executor's data was set up above
-//        executor
-//            .set(executor.executor_variables.create_executor().unwrap());
-
-        value = match op.item.operation_type {
-            OperationType::Subscription => {
-                executor
-                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-                    .await
-            }
-            _ => unreachable!(),
+            context: context,
         };
+
+//        value = match op.item.operation_type {
+//            OperationType::Subscription => {
+//                executor
+//                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+//                    .await
+//            }
+//            _ => unreachable!(),
+//        };
     }
 
-    Ok(value)
+//    Ok(value)
+    unimplemented!()
 }
 
 /// Find document's operation (returns error
