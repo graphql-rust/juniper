@@ -80,7 +80,8 @@ where
     pub async fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-        context: &'a CtxT
+        context: &'a CtxT,
+        executor: &'a mut crate::executor::SubscriptionsExecutor<'a, CtxT, S>,
     ) -> StreamGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -95,7 +96,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe(&self.query, op, root_node, vars, context).await;
+        let res = crate::subscribe(&self.query, op, root_node, vars, context, executor).await;
 
         StreamGraphQLResponse(res)
     }
@@ -224,7 +225,7 @@ where
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     Result<
-        FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+        Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>,
         GraphQLError<'a>
     >,
 )
@@ -235,7 +236,7 @@ pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
     pub fn into_inner(self) -> Result<
-        FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+        Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>,
         GraphQLError<'a>
     > {
         self.0
@@ -246,7 +247,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
         self.0.as_ref().err()
     }
 
-    pub fn field_errors<'err>(&'err self) -> Option<&'err FieldError<S>> {
+    pub fn execution_errors<'err>(&'err self) -> Option<&'err ExecutionError<S>> {
         if let Ok(result) = self.0.as_ref() {
             if let Err(e) = result {
                 Some(e)

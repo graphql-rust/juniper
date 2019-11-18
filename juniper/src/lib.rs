@@ -162,7 +162,7 @@ pub use crate::{
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry,
+        LookAheadSelection, LookAheadValue, Registry, SubscriptionsExecutor,
         Variables,
     },
     introspection::IntrospectionFormat,
@@ -342,8 +342,9 @@ pub async fn subscribe<
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
-    context: &'ctx CtxT
-) -> Result<FieldResult<Value<ValuesResultStream<'res, S>>, S>, GraphQLError<'res>>
+    context: &'ctx CtxT,
+    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
+) -> Result<Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>, GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,
@@ -368,6 +369,7 @@ where
         root_node,
         variables,
         context,
+        executor,
     )
     .await
 }

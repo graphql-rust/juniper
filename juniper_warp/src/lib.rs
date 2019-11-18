@@ -482,7 +482,10 @@ where
 
                         if let Some(error) = response_stream.graphql_errors() {
                             let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                format!("GraphQL error occured: {:#?}", error)
+                                format!(
+                                    r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                                    request_id,
+                                    serde_json::ser::to_string(error).unwrap())
                             ))));
 
                             let close_text = format!(
@@ -497,11 +500,16 @@ where
 
                             // close channel
                             let _ = ws_tx.unbounded_send(None);
+
+                            return;
                         }
 
-                        if let Some(error) = response_stream.field_errors() {
+                        if let Some(error) = response_stream.execution_errors() {
                             let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                format!("Field error occured: {:#?}", error)
+                                format!(
+                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                                request_id,
+                                serde_json::ser::to_string(error).unwrap())
                             ))));
 
                             let close_text = format!(
@@ -516,6 +524,8 @@ where
 
                             // close channel
                             let _ = ws_tx.unbounded_send(None);
+
+                            return;
                         }
 
                         let stream = response_stream
@@ -539,6 +549,7 @@ where
 
                                     // close channel
                                     let _ = ws_tx.unbounded_send(None);
+
                                 } else {
                                     let mut response_text =
                                         serde_json::to_string(&response).unwrap();

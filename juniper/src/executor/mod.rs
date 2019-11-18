@@ -22,14 +22,14 @@ use crate::{
 };
 
 pub use self::{
+    executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor},
     look_ahead::{
         Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
 };
-use crate::executor::executor_wrappers::SubscriptionsExecutor;
 
-pub mod executor_wrappers;
+mod executor_wrappers;
 mod look_ahead;
 
 /// A type registry used to build schemas
@@ -58,7 +58,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+    fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
     variables: &'a Variables<S>,
     current_selection_set: Option<&'a [Selection<'a, S>]>,
     parent_selection_set: Option<&'a [Selection<'a, S>]>,
@@ -378,6 +378,27 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
+    /// Resolve a single arbitrary value into `Value<ValuesStream>`
+    #[cfg(feature = "async")]
+    pub async fn subscribe<'s, 'i, 'v, T>(
+        &'s self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
+    where
+        'i: 'a,
+        'v: 'a,
+        's: 'a,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
+    {
+        value
+            .resolve_into_stream(info, self.current_selection_set, self)
+            .await
+    }
+
     /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -445,7 +466,26 @@ where
         }
     }
 
-
+    /// Resolve a single arbitrary value into a return stream
+    ///
+    /// If the field fails to resolve, `null` will be returned.
+    #[cfg(feature = "async")]
+    pub async fn resolve_into_stream<'s, 'i, 'v, T>(
+        &'s self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
+    where
+        'i: 'a,
+        'v: 'a,
+        's: 'a,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
+    {
+        self.subscribe(info, value).await
+    }
 
     /// Derive a new executor by replacing the context
     ///
@@ -540,7 +580,7 @@ where
 
     #[doc(hidden)]
     pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
-        self.fragments.get(name)
+        self.fragments.get(name).cloned()
     }
 
     /// The current location of the executor
@@ -565,6 +605,27 @@ where
             path,
             error,
         });
+    }
+
+    /// Generate an error to the execution engine at the current executor location
+    pub fn generate_error(&self, error: FieldError<S>) -> ExecutionError<S> {
+        self.generate_error_at(error, self.location().clone())
+    }
+
+    /// Add an error to the execution engine at a specific location
+    pub fn generate_error_at(
+        &self,
+        error: FieldError<S>,
+        location: SourcePosition
+    ) -> ExecutionError<S> {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        ExecutionError {
+            location,
+            path,
+            error,
+        }
     }
 
     /// Construct a lookahead selection for the current selection.
@@ -738,8 +799,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -841,8 +902,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -896,9 +957,10 @@ pub async fn execute_validated_subscription_async<
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
-    context: &'ctx CtxT
+    context: &'ctx CtxT,
+    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
 ) -> Result<
-    FieldResult<Value<ValuesResultStream<'res, S>>, S>,
+    Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>,
     GraphQLError<'res>
 >
 where
@@ -917,15 +979,12 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    //todo: clean up
     let mut operation = None;
-
-    let mut fragments = vec![];
 
     parse_document_definitions(
         document,
         operation_name,
-        &mut fragments,
+        &mut executor.fragments,
         &mut operation,
     )?;
 
@@ -938,7 +997,7 @@ where
         return Err(GraphQLError::UnknownOperationName);
     }
 
-    let default_variable_values = op.item.variable_definitions.as_ref().map(|defs| {
+    let default_variable_values = op.item.variable_definitions.map(|defs| {
         defs.item
             .items
             .iter()
@@ -950,8 +1009,8 @@ where
             .collect::<HashMap<String, InputValue<S>>>()
     });
 
-//    let errors = RwLock::new(Vec::new());
-//    let value;
+    let errors = RwLock::new(Vec::new());
+    let value;
     {
         let mut all_vars;
         let mut final_vars = variables;
@@ -974,25 +1033,39 @@ where
             _ => unreachable!(),
         };
 
-        let executor = SubscriptionsExecutor {
-            fragments: fragments,
-            operation: op,
+        executor.executor_variables.set_data(ExecutorDataVariables {
+            fragments: executor
+                .fragments
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
+                .collect(),
             variables: final_vars,
-            context: context,
-        };
+            current_selection_set: Some(op.item.selection_set),
+            parent_selection_set: None,
+            current_type: root_type,
+            schema: &root_node.schema,
+            context,
+            errors: errors,
+            field_path: FieldPath::Root(op.start),
+        });
 
-//        value = match op.item.operation_type {
-//            OperationType::Subscription => {
-//                executor
-//                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-//                    .await
-//            }
-//            _ => unreachable!(),
-//        };
+        // unwrap is safe here because executor's data was set up above
+        executor
+            .executor
+            .set(executor.executor_variables.create_executor().unwrap());
+
+        value = match op.item.operation_type {
+            OperationType::Subscription => {
+                executor
+                    .executor
+                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+                    .await
+            }
+            _ => unreachable!(),
+        };
     }
 
-//    Ok(value)
-    unimplemented!()
+    Ok(value)
 }
 
 /// Find document's operation (returns error
