@@ -104,13 +104,13 @@ fn test_no_query() {
 fn test_normal_get() {
     let query = "{ foo { bar, baz } }";
     let operation_name = "rust";
-    let uri = &format!(
-        "{}?query={}&operationName={}",
-        URI_PREFIX, query, operation_name
-    );
+    let uri = GetSerializer::new(URI_PREFIX_Q.to_string())
+        .append_pair("query", query)
+        .append_pair("operationName", operation_name)
+        .finish();
 
     let expected = create_single_request(query, Some(operation_name), None);
-    check_success_get(uri, expected);
+    check_success_get(&uri, expected);
 }
 
 #[test]
