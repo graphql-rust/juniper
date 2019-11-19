@@ -504,7 +504,6 @@ where
     true
 }
 
-
 /// Checks if a field/fragment is excluded via `@include`/`@skip` GraphQL directives.
 pub(super) fn is_excluded<S>(
     directives: &Option<Vec<Spanning<Directive<S>>>>,

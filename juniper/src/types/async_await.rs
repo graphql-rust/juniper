@@ -1,6 +1,13 @@
 use std::sync::Arc;
 
-use crate::{ast::Selection, executor::{ExecutionResult, Executor, FieldError, ValuesResultStream}, parser::Spanning, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldResult, executor::executor_wrappers::SubscriptionsExecutor, ExecutionError};
+use crate::{
+    ast::Selection,
+    executor::executor_wrappers::SubscriptionsExecutor,
+    executor::{ExecutionResult, Executor, FieldError, ValuesResultStream},
+    parser::Spanning,
+    value::{Object, ScalarRefValue, ScalarValue, Value},
+    ExecutionError, FieldResult,
+};
 
 #[cfg(feature = "async")]
 use crate::BoxFuture;
@@ -338,11 +345,7 @@ where
         'e: 'res,
     {
         if executor.variables.current_selection_set.is_some() {
-            resolve_selection_set_into_stream(
-                self,
-                info,
-                executor
-            ).await
+            resolve_selection_set_into_stream(self, info, executor).await
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -363,7 +366,7 @@ where
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
         _: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
-                                // with current field's selection set)
+                                                             // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'e: 'res,
@@ -382,10 +385,10 @@ where
     /// The default implementation panics.
     async fn resolve_into_type_stream<'s, 'i, 'tn, 'ss, 'e, 'res>(
         &'s self,
-        info: &'i Self::TypeInfo,              // this subscription's type info
-        type_name: &'tn str,                        // fragment's type name
+        info: &'i Self::TypeInfo, // this subscription's type info
+        type_name: &'tn str,      // fragment's type name
         executor: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
-                                            // with current field's selection set)
+                                                                    // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         's: 'res,
@@ -393,13 +396,13 @@ where
         'ss: 'res,
         'e: 'res,
     {
-//        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
-//        if Self::name(info).unwrap() == type_name {
-//            let stream = self.resolve_into_stream(info, executor).await;
-//            Ok(stream)
-//        } else {
-            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-//        }
+        //        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
+        //        if Self::name(info).unwrap() == type_name {
+        //            let stream = self.resolve_into_stream(info, executor).await;
+        //            Ok(stream)
+        //        } else {
+        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        //        }
     }
 }
 
@@ -438,7 +441,6 @@ enum AsyncValue<S> {
     Nested(Value<S>),
 }
 
-
 struct AsyncResultField<'a, S> {
     name: String,
     value: FieldResult<Value<ValuesResultStream<'a, S>>, S>,
@@ -469,14 +471,14 @@ where
 
     let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<S>>>::new();
 
-//    let meta_type = executor
-//        .schema()
-//        .concrete_type_by_name(
-//            T::name(info)
-//                .expect("Resolving named type's selection set")
-//                .as_ref(),
-//        )
-//        .expect("Type not found in schema");
+    //    let meta_type = executor
+    //        .schema()
+    //        .concrete_type_by_name(
+    //            T::name(info)
+    //                .expect("Resolving named type's selection set")
+    //                .as_ref(),
+    //        )
+    //        .expect("Type not found in schema");
 
     for selection in selection_set {
         match *selection {
@@ -527,8 +529,7 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)|
-                                (k.item, v.item.clone().into_const(exec_vars)))
+                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
                             .collect()
                     }),
                     &meta_field.arguments,
@@ -683,9 +684,7 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
-        instance,
-        info,
-        executor,
+        instance, info, executor,
     ))
 }
 
@@ -704,44 +703,167 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let selection_set = executor.variables.current_selection_set.as_ref().unwrap();
-    if selection_set.len() > 1 { panic!("multiple subscriptions are not implemented yet"); }
+    if selection_set.len() > 1 {
+        panic!("multiple subscriptions are not implemented yet");
+    }
     let mut object: Object<ValuesResultStream<'a, S>> = Object::with_capacity(selection_set.len());
 
-//    for selection in selection_set {
-        match selection_set[0] {
-            Selection::Field(Spanning {
-                                 item: ref f,
-                                 start: ref start_pos,
-                                 ..
-                             }) =>
-            {
-                if is_excluded(&f.directives, &executor.variables()) {
-//                    continue;
-                    return Ok(Value::Null);
+    //    for selection in selection_set {
+    match selection_set[0] {
+        Selection::Field(Spanning {
+            item: ref f,
+            start: ref start_pos,
+            ..
+        }) => {
+            if is_excluded(&f.directives, &executor.variables()) {
+                //                    continue;
+                return Ok(Value::Null);
+            }
+
+            let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
+
+            if f.name.item == "__typename" {
+                let typename = Value::scalar(instance.concrete_type_name(executor.context(), info));
+                object.add_field(
+                    response_name,
+                    Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
+                );
+                //                    continue;
+                return Ok(Value::Null);
+            }
+
+            let meta_type = executor
+                .schema()
+                .concrete_type_by_name(
+                    T::name(info)
+                        .expect("Resolving named type's selection set")
+                        .as_ref(),
+                )
+                .expect("Type not found in schema");
+
+            let meta_field = meta_type
+                .field_by_name(f.name.item)
+                .unwrap_or_else(|| {
+                    panic!(format!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name()
+                    ))
+                })
+                .clone();
+
+            let exec_vars = executor.variables();
+
+            let sub_exec = Arc::new(executor.field_sub_executor(
+                &response_name,
+                f.name.item,
+                start_pos.clone(),
+                f.selection_set.as_ref().map(|v| v.clone()),
+            ));
+
+            let sub_exec2 = Arc::clone(&sub_exec);
+
+            let args = Arguments::new(
+                f.arguments.as_ref().map(|m| {
+                    m.item
+                        .iter()
+                        .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(&exec_vars)))
+                        .collect()
+                }),
+                &meta_field.arguments,
+            );
+
+            let pos = start_pos.clone();
+            let is_non_null = meta_field.field_type.is_non_null();
+
+            let response_name = response_name.to_string();
+
+            // TODO: implement custom future type instead of
+            //       two-level boxing.
+            let res = instance
+                .resolve_field_into_stream(info, f.name.item, args, sub_exec)
+                .await;
+
+            match res {
+                //todo: custom error type
+                Ok(Value::Null) if is_non_null => {
+                    return Err(sub_exec2.generate_error(FieldError::new(
+                        "Null value on non-null field",
+                        Value::Null,
+                    )))
                 }
+                Ok(v) => merge_key_into(&mut object, &f.name.item, v),
+                Err(e) => {
+                    if meta_field.field_type.is_non_null() {
+                        return Err(sub_exec2.generate_error(e));
+                    }
 
-                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
-
-                if f.name.item == "__typename" {
-                    let typename =
-                        Value::scalar(
-                            instance.concrete_type_name(
-                                executor.context(),
-                                info
-                            )
-                        );
-                    object.add_field(
-                        response_name,
-                        Value::Scalar(
-                            Box::pin(
-                                futures::stream::once(async { Ok(typename) })
-                            )
-                        ),
-                    );
-//                    continue;
-                    return Ok(Value::Null);
+                    object.add_field(f.name.item, Value::Null);
                 }
+            }
+        }
 
+        Selection::FragmentSpread(Spanning {
+            item: ref spread, ..
+        }) => {
+            if is_excluded(&spread.directives, &executor.variables()) {
+                //                    continue;
+                return Ok(Value::Null);
+            }
+
+            let fragment = &executor
+                .fragment_by_name(spread.name.item)
+                .expect("Fragment could not be found");
+
+            let obj = resolve_selection_set_into_stream(instance, info, executor).await;
+
+            match obj {
+                Ok(val) => {
+                    match val {
+                        Value::Object(o) => {
+                            for (k, v) in o {
+                                merge_key_into(&mut object, &k, v);
+                            }
+                        }
+                        // since this was a wrapper of current function,
+                        // we'll rather get an object or nothing
+                        _ => unreachable!(),
+                    }
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        Selection::InlineFragment(Spanning {
+            item: ref fragment,
+            start: ref start_pos,
+            ..
+        }) => {
+            if is_excluded(&fragment.directives, &executor.variables()) {
+                //                    continue;
+                return Ok(Value::Null);
+            }
+
+            let sub_exec = Arc::new(executor.type_sub_executor(
+                fragment.type_condition.as_ref().map(|c| c.item),
+                Some(fragment.selection_set.clone()),
+            ));
+
+            let sub_exec2 = Arc::clone(&sub_exec);
+
+            if let Some(ref type_condition) = fragment.type_condition {
+                let sub_result = instance
+                    .resolve_into_type_stream(info, type_condition.item, sub_exec)
+                    .await;
+
+                if let Ok(Value::Object(obj)) = sub_result {
+                    for (k, v) in obj {
+                        merge_key_into(&mut object, &k, v);
+                    }
+                } else if let Err(e) = sub_result {
+                    return Err(sub_exec2.generate_error_at(e, start_pos.clone()));
+                }
+            } else {
                 let meta_type = executor
                     .schema()
                     .concrete_type_by_name(
@@ -751,133 +873,15 @@ where
                     )
                     .expect("Type not found in schema");
 
-
-                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
-                    panic!(format!(
-                        "Field {} not found on type {:?}",
-                        f.name.item,
-                        meta_type.name()
-                    ))
-                }).clone();
-
-                let exec_vars = executor.variables();
-
-                let sub_exec = Arc::new(executor.field_sub_executor(
-                    &response_name,
-                    f.name.item,
-                    start_pos.clone(),
-                    f.selection_set.as_ref().map(|v| v.clone()),
-                ));
-
-                let sub_exec2 = Arc::clone(&sub_exec);
-
-                let args = Arguments::new(
-                    f.arguments.as_ref().map(|m| {
-                        m.item
-                            .iter()
-                            .map(|&(ref k, ref v)|
-                                (k.item, v.item.clone().into_const(&exec_vars)))
-                            .collect()
-                    }),
-                    &meta_field.arguments,
-                );
-
-                let pos = start_pos.clone();
-                let is_non_null = meta_field.field_type.is_non_null();
-
-                let response_name = response_name.to_string();
-
-                // TODO: implement custom future type instead of
-                //       two-level boxing.
-                let res = instance
-                    .resolve_field_into_stream(
-                        info,
-                        f.name.item,
-                        args,
-                        sub_exec
-                    ).await;
-
-                match res {
-                    //todo: custom error type
-                    Ok(Value::Null) if is_non_null =>
-                        return Err(sub_exec2.generate_error(FieldError::new(
-                            "Null value on non-null field",
-                            Value::Null
-                        ))),
-                    Ok(v) =>
-                        merge_key_into(&mut object, &f.name.item, v),
-                    Err(e) => {
-                        if meta_field.field_type.is_non_null() {
-                            return Err(sub_exec2.generate_error(e));
-                        }
-
-                        object.add_field(f.name.item, Value::Null);
-                    },
-                }
-            },
-
-            Selection::FragmentSpread(Spanning {
-                                          item: ref spread,
-                                          ..
-                                      }) =>
-            {
-                if is_excluded(&spread.directives, &executor.variables()) {
-//                    continue;
-                    return Ok(Value::Null);
-                }
-
-                let fragment = &executor
-                    .fragment_by_name(spread.name.item)
-                    .expect("Fragment could not be found");
-
-                let obj = resolve_selection_set_into_stream(
-                    instance,
-                    info,
-                    executor,
-                ).await;
-
-                match obj {
-                    Ok(val) => {
-                        match val {
-                            Value::Object(o) => {
-                                for (k, v) in o {
-                                    merge_key_into(&mut object, &k, v);
-                                }
-                            },
-                            // since this was a wrapper of current function,
-                            // we'll rather get an object or nothing
-                            _ => unreachable!()
-                        }
-                    },
-                    Err(e) => return Err(e),
-                }
-            },
-
-            Selection::InlineFragment(Spanning {
-                                          item: ref fragment,
-                                          start: ref start_pos,
-                                          ..
-                                      }) =>
-            {
-                if is_excluded(&fragment.directives, &executor.variables()) {
-//                    continue;
-                    return Ok(Value::Null);
-                }
-
-                let sub_exec = Arc::new(executor.type_sub_executor(
-                    fragment.type_condition.as_ref().map(|c| c.item),
-                    Some(fragment.selection_set.clone()),
-                ));
-
-                let sub_exec2 = Arc::clone(&sub_exec);
-
-                if let Some(ref type_condition) = fragment.type_condition {
+                if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
                         .resolve_into_type_stream(
                             info,
-                            type_condition.item,
+                            type_name.clone(),
+                            //                                Some(&fragment.selection_set[..]),
                             sub_exec,
-                        ).await;
+                        )
+                        .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
@@ -886,49 +890,16 @@ where
                     } else if let Err(e) = sub_result {
                         return Err(sub_exec2.generate_error_at(e, start_pos.clone()));
                     }
-
-                }
-                else {
-                    let meta_type = executor
-                        .schema()
-                        .concrete_type_by_name(
-                            T::name(info)
-                                .expect("Resolving named type's selection set")
-                                .as_ref(),
-                        )
-                        .expect("Type not found in schema");
-
-                    if let Some(type_name) = meta_type.name() {
-                        let sub_result = instance
-                            .resolve_into_type_stream(
-                                info,
-                                type_name.clone(),
-//                                Some(&fragment.selection_set[..]),
-                                sub_exec,
-                            ).await;
-
-                        if let Ok(Value::Object(obj)) = sub_result {
-                            for (k, v) in obj {
-                                merge_key_into(&mut object, &k, v);
-                            }
-                        } else if let Err(e) = sub_result {
-                            return Err(
-                                sub_exec2.generate_error_at(e, start_pos.clone())
-                            );
-                        }
-                    } else {
-                        return Err(sub_exec2.generate_error(
-                            FieldError::new(
-                                "unknown type condition on fragment",
-                                Value::Null
-                            )
-                        ));
-                    }
-
+                } else {
+                    return Err(sub_exec2.generate_error(FieldError::new(
+                        "unknown type condition on fragment",
+                        Value::Null,
+                    )));
                 }
             }
         }
-//    }
+    }
+    //    }
 
     Ok(Value::Object(object))
 }

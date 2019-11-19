@@ -1171,7 +1171,6 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-
         let resolve_matches_async = self.fields
             .iter()
             .filter(|field| field.is_async)
@@ -1225,7 +1224,6 @@ impl GraphQLTypeDefiniton {
                 )
 
             });
-
 
         let graphqltraitasync_implementation = quote!(
             trait GraphQLTraitAsync<T>
@@ -1361,10 +1359,16 @@ fn extract_ok_type_from_std_result(ty: &syn::Type) -> Option<&syn::Type> {
                 acc.push('|');
                 acc
             });
-        vec!["Result|", "std|result|Result|", "core|result|Result|", "FieldResult|", "juniper|FieldResult|"]
-            .into_iter()
-            .find(|s| &idents_of_path == *s)
-            .and_then(|_| path.segments.last())
+        vec![
+            "Result|",
+            "std|result|Result|",
+            "core|result|Result|",
+            "FieldResult|",
+            "juniper|FieldResult|",
+        ]
+        .into_iter()
+        .find(|s| &idents_of_path == *s)
+        .and_then(|_| path.segments.last())
     }
 
     extract_type_path(ty)

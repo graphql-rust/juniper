@@ -1,7 +1,14 @@
 use std::{collections::HashMap, sync::RwLock};
 
-use crate::{ast::Fragment, executor::FieldPath, parser::Spanning, schema::model::{SchemaType, TypeType}, DefaultScalarValue, ExecutionError, Executor, Selection, Variables, Value, FieldError, ScalarRefValue, ScalarValue, FieldResult, ValuesResultStream};
 use crate::parser::SourcePosition;
+use crate::{
+    ast::Fragment,
+    executor::FieldPath,
+    parser::Spanning,
+    schema::model::{SchemaType, TypeType},
+    DefaultScalarValue, ExecutionError, Executor, FieldError, FieldResult, ScalarRefValue,
+    ScalarValue, Selection, Value, ValuesResultStream, Variables,
+};
 use std::sync::Arc;
 
 /// Struct owning `Executor`'s variables
@@ -25,28 +32,28 @@ impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
 where
     S: Clone,
 {
-//    /// Create new executor using inner variables
-//    pub fn create_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
-//        Executor {
-//            fragments: &self_ty.fragments,
-//            variables: &self_ty.variables,
-//            current_selection_set: if let Some(s) = &self_ty.current_selection_set {
-//                Some(&s[..])
-//            } else {
-//                None
-//            },
-//            parent_selection_set: if let Some(s) = &self_ty.parent_selection_set {
-//                Some(&s[..])
-//            } else {
-//                None
-//            },
-//            current_type: self_ty.current_type.clone(),
-//            schema: Arc::new(self_ty.schema),
-//            context: self_ty.context,
-//            errors: &self_ty.errors,
-//            field_path: self_ty.field_path.clone(),
-//        }
-//    }
+    //    /// Create new executor using inner variables
+    //    pub fn create_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
+    //        Executor {
+    //            fragments: &self_ty.fragments,
+    //            variables: &self_ty.variables,
+    //            current_selection_set: if let Some(s) = &self_ty.current_selection_set {
+    //                Some(&s[..])
+    //            } else {
+    //                None
+    //            },
+    //            parent_selection_set: if let Some(s) = &self_ty.parent_selection_set {
+    //                Some(&s[..])
+    //            } else {
+    //                None
+    //            },
+    //            current_type: self_ty.current_type.clone(),
+    //            schema: Arc::new(self_ty.schema),
+    //            context: self_ty.context,
+    //            errors: &self_ty.errors,
+    //            field_path: self_ty.field_path.clone(),
+    //        }
+    //    }
 }
 
 /// `ExecutorDataVariables` wrapper
@@ -74,14 +81,14 @@ where
         self._data = Some(data);
     }
 
-//    /// Create new executor using inner data
-//    pub fn create_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
-//        if let Some(ref s) = self._data {
-//            Ok(ExecutorDataVariables::create_executor(s))
-//        } else {
-//            Err(())
-//        }
-//    }
+    //    /// Create new executor using inner data
+    //    pub fn create_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
+    //        if let Some(ref s) = self._data {
+    //            Ok(ExecutorDataVariables::create_executor(s))
+    //        } else {
+    //            Err(())
+    //        }
+    //    }
 
     /// Get sorted errors vector
     pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
@@ -144,42 +151,35 @@ where
     }
 }
 
-
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
-pub struct SubscriptionsExecutor<'a, CtxT, S>
-{
+pub struct SubscriptionsExecutor<'a, CtxT, S> {
     pub(crate) variables: ExecutorDataVariables<'a, CtxT, S>,
-
-//    /// Fragments vector.
-//    /// Needed in as a separate field because `executor_variables`
-//    /// contains a hashmap of references to `fragments`
-//    pub(crate) fragments: Vec<Spanning<Fragment<'a, S>>>,
-//
-//    /// `Executor` instance
-//    pub(crate) executor: OptionalExecutor<'a, CtxT, S>,
+    //    /// Fragments vector.
+    //    /// Needed in as a separate field because `executor_variables`
+    //    /// contains a hashmap of references to `fragments`
+    //    pub(crate) fragments: Vec<Spanning<Fragment<'a, S>>>,
+    //
+    //    /// `Executor` instance
+    //    pub(crate) executor: OptionalExecutor<'a, CtxT, S>,
 }
-
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
 {
-//    /// Create new empty `SubscriptionsExecutor`
-//    pub fn new() -> Self {
-//        Self {
-//            executor_variables: ExecutorData::new(),
-//            fragments: vec![],
-//            executor: OptionalExecutor::new(),
-//        }
-//    }
+    //    /// Create new empty `SubscriptionsExecutor`
+    //    pub fn new() -> Self {
+    //        Self {
+    //            executor_variables: ExecutorData::new(),
+    //            fragments: vec![],
+    //            executor: OptionalExecutor::new(),
+    //        }
+    //    }
 
     pub fn from_data(data: ExecutorDataVariables<'a, CtxT, S>) -> Self {
-        Self {
-            variables: data,
-        }
+        Self { variables: data }
     }
-
 }
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
@@ -196,14 +196,14 @@ where
         info: &'i T::TypeInfo,
         value: &'v T,
     ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
-        where
-            'i: 'a,
-            'v: 'a,
-            's: 'a,
-            T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync + 'static,
+    where
+        'i: 'a,
+        'v: 'a,
+        's: 'a,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
     {
         self.subscribe(info, value).await
     }
@@ -215,24 +215,24 @@ where
         info: &'i T::TypeInfo,
         value: &'v T,
     ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
-        where
-            'i: 'a,
-            'v: 'a,
-            's: 'a,
-            T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync + 'static,
+    where
+        'i: 'a,
+        'v: 'a,
+        's: 'a,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
     {
-        value
-            .resolve_into_stream(info,self).await
+        value.resolve_into_stream(info, self).await
     }
 }
 
 //todo add #[doc(hidden)] to all functions
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
-where S: Clone, {
-
+where
+    S: Clone,
+{
     //#[doc(hidden)]
     pub fn type_sub_executor(
         &self,
@@ -246,19 +246,22 @@ where S: Clone, {
                 current_selection_set: selection_set,
                 parent_selection_set: self.variables.current_selection_set.clone(),
                 current_type: match type_name {
-                    Some(type_name) => self.variables.schema.type_by_name(type_name).expect("Type not found"),
+                    Some(type_name) => self
+                        .variables
+                        .schema
+                        .type_by_name(type_name)
+                        .expect("Type not found"),
                     None => self.variables.current_type.clone(),
                 },
                 schema: self.variables.schema,
                 context: self.variables.context,
                 errors: RwLock::new(vec![]),
                 field_path: self.variables.field_path.clone(),
-            }
+            },
         }
     }
 
-
-//    #[doc(hidden)]
+    //    #[doc(hidden)]
     pub fn variables(&self) -> Variables<S> {
         self.variables.variables.clone()
     }
@@ -293,9 +296,9 @@ where S: Clone, {
                 context: self.variables.context,
                 errors: RwLock::new(vec![]),
                 //todo:
-//                field_path: FieldPath::Field(field_alias, location, &self.variables.field_path),
+                //                field_path: FieldPath::Field(field_alias, location, &self.variables.field_path),
                 field_path: FieldPath::Root(location),
-            }
+            },
         }
     }
 
@@ -338,7 +341,7 @@ where S: Clone, {
     pub fn generate_error_at(
         &self,
         error: FieldError<S>,
-        location: SourcePosition
+        location: SourcePosition,
     ) -> ExecutionError<S> {
         let mut path = Vec::new();
         self.variables.field_path.construct_path(&mut path);

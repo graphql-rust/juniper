@@ -21,13 +21,11 @@ use crate::{
     GraphQLError,
 };
 
-pub use self::{
-    look_ahead::{
-        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue,
-    },
+pub use self::look_ahead::{
+    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+    LookAheadSelection, LookAheadValue,
 };
-use crate::executor::executor_wrappers::{SubscriptionsExecutor, ExecutorDataVariables};
+use crate::executor::executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor};
 use std::sync::Arc;
 
 pub mod executor_wrappers;
@@ -445,8 +443,6 @@ where
             }
         }
     }
-
-
 
     /// Derive a new executor by replacing the context
     ///
@@ -897,11 +893,8 @@ pub async fn execute_validated_subscription_async<
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
-    context: &'ctx CtxT
-) -> Result<
-        Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>,
-        GraphQLError<'res>
->
+    context: &'ctx CtxT,
+) -> Result<Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>, GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,
@@ -922,12 +915,7 @@ where
 
     let mut fragments = vec![];
 
-    parse_document_definitions(
-        document,
-        operation_name,
-        &mut fragments,
-        &mut operation,
-    )?;
+    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
 
     let op = match operation {
         Some(op) => op,
@@ -989,9 +977,9 @@ where
             field_path: FieldPath::Root(op.start),
         });
 
-//        // unwrap is safe here because executor's data was set up above
-//        executor
-//            .set(executor.executor_variables.create_executor().unwrap());
+        //        // unwrap is safe here because executor's data was set up above
+        //        executor
+        //            .set(executor.executor_variables.create_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {

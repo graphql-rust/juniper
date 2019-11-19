@@ -16,7 +16,13 @@ use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "async")]
 use crate::executor::ValuesResultStream;
-use crate::{ast::InputValue, executor::ExecutionError, value, value::{DefaultScalarValue, ScalarRefValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables, FieldResult};
+use crate::{
+    ast::InputValue,
+    executor::ExecutionError,
+    value,
+    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    FieldError, FieldResult, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
+};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -80,7 +86,7 @@ where
     pub async fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-        context: &'a CtxT
+        context: &'a CtxT,
     ) -> StreamGraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -223,21 +229,17 @@ where
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<
-        Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>,
-        GraphQLError<'a>
-    >,
+    Result<Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>, GraphQLError<'a>>,
 )
-    where
-        S: 'static;
+where
+    S: 'static;
 
 #[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
-    pub fn into_inner(self) -> Result<
-        Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>,
-        GraphQLError<'a>
-    > {
+    pub fn into_inner(
+        self,
+    ) -> Result<Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>, GraphQLError<'a>> {
         self.0
     }
 
@@ -250,12 +252,10 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
         if let Ok(result) = self.0.as_ref() {
             if let Err(e) = result {
                 Some(e)
-            }
-            else {
+            } else {
                 None
             }
-        }
-        else {
+        } else {
             None
         }
     }
@@ -285,27 +285,23 @@ where
             Ok(val) => {
                 if let Ok(v) = val {
                     v
+                } else {
+                    return None;
                 }
-                else {
-                    return None
-                }
-            },
+            }
             Err(_) => return None,
         };
 
         match val {
             Value::Null => None,
             Value::Scalar(stream) => {
-                Some(Box::pin(stream
-                    .map(|value| {
-                        match value {
-                            Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
-                            // todo: not return random error
-                            Err(e) =>
-                                GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
-                        }
-                    })
-                ))
+                Some(Box::pin(stream.map(|value| {
+                    match value {
+                        Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
+                        // todo: not return random error
+                        Err(e) => GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
+                    }
+                })))
             }
             // todo: remove these and add
             //       // TODO: implement these
@@ -350,12 +346,10 @@ where
                             filled_count = 0;
                             let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
                             let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
-                            let ready_vec_iterator = ready_vec
-                                .into_iter()
-                                .map(|el| {
-                                    let (name, val) = el.unwrap();
-                                    (name, val.expect("iterator returned error"))
-                                });
+                            let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                                let (name, val) = el.unwrap();
+                                (name, val.expect("iterator returned error"))
+                            });
                             let obj = Object::from_iter(ready_vec_iterator);
                             return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
                                 Value::Object(obj),

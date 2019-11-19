@@ -160,10 +160,10 @@ use crate::{
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
     executor::{
-        Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
-        FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry,
-        Variables, executor_wrappers::SubscriptionsExecutor,
+        executor_wrappers::SubscriptionsExecutor, Applies, Context, ExecutionError,
+        ExecutionResult, Executor, FieldError, FieldResult, FromContext, IntoFieldError,
+        IntoResolvable, LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue,
+        Registry, Variables,
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
@@ -325,28 +325,13 @@ where
 
 /// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
-pub async fn subscribe<
-    'd,
-    'rn,
-    'ctx,
-    'ref_e,
-    'e,
-    'res,
-    S,
-    CtxT,
-    QueryT,
-    MutationT,
-    SubscriptionT,
->(
+pub async fn subscribe<'d, 'rn, 'ctx, 'ref_e, 'e, 'res, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'d str,
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
-    context: &'ctx CtxT
-) -> Result<
-        Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>,
-        GraphQLError<'res>
->
+    context: &'ctx CtxT,
+) -> Result<Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>, GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,
@@ -371,7 +356,8 @@ where
         root_node,
         variables,
         context,
-    ).await
+    )
+    .await
 }
 
 /// Execute the reference introspection query in the provided schema

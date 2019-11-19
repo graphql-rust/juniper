@@ -2,24 +2,18 @@
 
 use rocket::{response::content, State};
 
-use juniper::{tests::{model::Database}, EmptyMutation, RootNode, FieldResult, Value, FieldError};
+use juniper::{tests::model::Database, EmptyMutation, FieldError, FieldResult, RootNode, Value};
 
 struct Query;
 
 #[juniper::object(Context = Database)]
 impl Query {
     fn users(id: i32) -> FieldResult<Vec<i32>> {
-        Err(FieldError::new(
-            "users field result",
-            Value::Null
-        ))
+        Err(FieldError::new("users field result", Value::Null))
     }
 
     fn usersTwo(id: i32) -> FieldResult<Vec<i32>> {
-        Err(FieldError::new(
-            "users2 field result",
-            Value::Null
-        ))
+        Err(FieldError::new("users2 field result", Value::Null))
     }
 }
 

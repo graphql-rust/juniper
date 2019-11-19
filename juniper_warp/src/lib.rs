@@ -231,10 +231,7 @@ where
     Context: Send + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()>
-        + Send
-        + Sync
-        + 'static,
+    Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Context: Send + Sync,
 {
     use futures::future::Future;
@@ -254,7 +251,9 @@ where
                     })
                 })
                 .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(JuniperWarpError::TokioBlockingError(e))),
+                .map_err(|e: tokio_threadpool::BlockingError| {
+                    warp::reject::custom(JuniperWarpError::TokioBlockingError(e))
+                }),
             )
             .boxed()
         };
@@ -289,7 +288,9 @@ where
                 })
             })
             .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(JuniperWarpError::TokioBlockingError(e))),
+            .map_err(|e: tokio_threadpool::BlockingError| {
+                warp::reject::custom(JuniperWarpError::TokioBlockingError(e))
+            }),
         )
         .boxed()
     };
@@ -317,8 +318,7 @@ where
     Query::TypeInfo: Send + Sync,
     Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription:
-        juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let schema = Arc::new(schema);
@@ -379,7 +379,7 @@ where
 /// Needed because `warp::reject::Reject` is not implemented for
 /// these errors
 // todo: better docs
-pub enum JuniperWarpError{
+pub enum JuniperWarpError {
     /// Wrapper around `serde_json::error::Error`
     Serde(serde_json::error::Error),
 
@@ -412,8 +412,7 @@ where
     Query::TypeInfo: Send + Sync,
     Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription:
-        juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let (sink_tx, sink_rx) = websocket.split();
@@ -438,144 +437,128 @@ where
     let context = Arc::new(context);
     let got_close_signal = Arc::new(AtomicBool::new(false));
 
-    sink_rx
-        .for_each(move |msg| {
-            if msg.is_err() {
-                failure::format_err!("message is error: {:?}", msg);
-                return futures03::future::ready(());
-            }
-            let msg = msg.unwrap();
+    sink_rx.for_each(move |msg| {
+        if msg.is_err() {
+            failure::format_err!("message is error: {:?}", msg);
+            return futures03::future::ready(());
+        }
+        let msg = msg.unwrap();
 
-            if msg.is_close() {
-                return futures03::future::ready(());
-            }
-            let schema = schema.clone();
-            let context = context.clone();
-            let got_close_signal = got_close_signal.clone();
+        if msg.is_close() {
+            return futures03::future::ready(());
+        }
+        let schema = schema.clone();
+        let context = context.clone();
+        let got_close_signal = got_close_signal.clone();
 
-            let msg = msg.to_str().unwrap();
+        let msg = msg.to_str().unwrap();
 
-            let schema = schema.clone();
-            let context = context.clone();
-            let request: WsPayload<S> = serde_json::from_str(msg).unwrap();
+        let schema = schema.clone();
+        let context = context.clone();
+        let request: WsPayload<S> = serde_json::from_str(msg).unwrap();
 
-            match request.type_name.as_str() {
-                "connection_init" => {}
-                "start" => {
-                    let ws_tx = ws_tx.clone();
+        match request.type_name.as_str() {
+            "connection_init" => {}
+            "start" => {
+                let ws_tx = ws_tx.clone();
 
-                    warp::spawn(async move {
-                        let payload = request.payload.expect("could not deserialize payload");
-                        let request_id = request.id.unwrap_or("1".to_string());
+                warp::spawn(async move {
+                    let payload = request.payload.expect("could not deserialize payload");
+                    let request_id = request.id.unwrap_or("1".to_string());
 
-                        // execute subscription
-                        let graphql_request = GraphQLRequest::<S>::new(
-                            payload.query.unwrap(),
-                            None,
-                            payload.variables,
+                    // execute subscription
+                    let graphql_request =
+                        GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
+
+                    //                        let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
+                    let response_stream = graphql_request.subscribe(&schema, &context).await;
+
+                    if let Some(error) = response_stream.graphql_errors() {
+                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+                            r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                            request_id,
+                            serde_json::ser::to_string(error).unwrap()
+                        )))));
+
+                        let close_text = format!(
+                            r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                            request_id
                         );
 
-//                        let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
-                        let response_stream = graphql_request
-                            .subscribe(&schema, &context)
-                            .await;
+                        // send message that we are closing channel
+                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
 
-                        if let Some(error) = response_stream.graphql_errors() {
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                format!(
-                                    r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                                    request_id,
-                                    serde_json::ser::to_string(error).unwrap())
-                            ))));
+                        // close channel
+                        let _ = ws_tx.unbounded_send(None);
 
-                            let close_text = format!(
-                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                request_id
-                            );
+                        return;
+                    }
 
-                            // send message that we are closing channel
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                close_text.clone(),
-                            ))));
+                    if let Some(error) = response_stream.execution_errors() {
+                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+                            r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                            request_id,
+                            serde_json::ser::to_string(error).unwrap()
+                        )))));
 
-                            // close channel
-                            let _ = ws_tx.unbounded_send(None);
+                        let close_text = format!(
+                            r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                            request_id
+                        );
 
-                            return;
-                        }
+                        // send message that we are closing channel
+                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
 
-                        if let Some(error) = response_stream.execution_errors() {
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                format!(
-                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                                request_id,
-                                serde_json::ser::to_string(error).unwrap())
-                            ))));
+                        // close channel
+                        let _ = ws_tx.unbounded_send(None);
 
-                            let close_text = format!(
-                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                request_id
-                            );
+                        return;
+                    }
 
-                            // send message that we are closing channel
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                close_text.clone(),
-                            ))));
+                    let stream = response_stream
+                        .into_stream()
+                        .expect("Response stream is none");
 
-                            // close channel
-                            let _ = ws_tx.unbounded_send(None);
+                    stream
+                        .take_while(move |response| {
+                            let request_id = request_id.clone();
+                            let closed = got_close_signal.load(Ordering::Relaxed);
+                            if closed {
+                                let close_text = format!(
+                                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                    request_id
+                                );
 
-                            return;
-                        }
+                                // send message that we are closing channel
+                                let _ = ws_tx
+                                    .unbounded_send(Some(Ok(Message::text(close_text.clone()))));
 
-                        let stream = response_stream
-                            .into_stream()
-                            .expect("Response stream is none");
+                                // close channel
+                                let _ = ws_tx.unbounded_send(None);
+                            } else {
+                                let mut response_text = serde_json::to_string(&response).unwrap();
+                                response_text = format!(
+                                    r#"{{"type":"data","id":"{}","payload":{} }}"#,
+                                    request_id, response_text
+                                );
 
-                        stream
-                            .take_while(move |response| {
-                                let request_id = request_id.clone();
-                                let closed = got_close_signal.load(Ordering::Relaxed);
-                                if closed {
-                                    let close_text = format!(
-                                        r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                        request_id
-                                    );
-
-                                    // send message that we are closing channel
-                                    let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                        close_text.clone(),
-                                    ))));
-
-                                    // close channel
-                                    let _ = ws_tx.unbounded_send(None);
-
-                                } else {
-                                    let mut response_text =
-                                        serde_json::to_string(&response).unwrap();
-                                    response_text = format!(
-                                        r#"{{"type":"data","id":"{}","payload":{} }}"#,
-                                        request_id, response_text
-                                    );
-
-                                    let _ = ws_tx.unbounded_send(Some(Ok(Message::text(
-                                        response_text.clone(),
-                                    ))));
-                                }
-                                async move { !closed }
-                            })
-                            .for_each(|_| async {})
-                            .await;
-                    });
-                }
-                "stop" => {
-                    got_close_signal.store(true, Ordering::Relaxed);
-                }
-                _ => panic!("unknown type"),
+                                let _ = ws_tx
+                                    .unbounded_send(Some(Ok(Message::text(response_text.clone()))));
+                            }
+                            async move { !closed }
+                        })
+                        .for_each(|_| async {})
+                        .await;
+                });
             }
+            "stop" => {
+                got_close_signal.store(true, Ordering::Relaxed);
+            }
+            _ => panic!("unknown type"),
+        }
 
-            futures03::future::ready(())
-        })
+        futures03::future::ready(())
+    })
 }
 
 #[cfg(feature = "async")]
@@ -781,9 +764,14 @@ mod tests {
             EmptyMutation, RootNode,
         };
 
-        type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+        type Schema =
+            juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
-        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new(), EmptySubscription::<Database>::new());
+        let schema: Schema = RootNode::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        );
 
         let state = warp::any().map(move || Database::new());
         let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
@@ -814,7 +802,8 @@ mod tests {
             EmptyMutation, RootNode,
         };
 
-        type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+        type Schema =
+            juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
         let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
@@ -858,14 +847,23 @@ mod tests {
 mod tests_http_harness {
     use warp::{self, Filter};
 
-    use juniper::{http::tests::{run_http_test_suite, HTTPIntegration, TestResponse}, tests::{model::Database, schema::Query}, EmptyMutation, RootNode, EmptySubscription};
+    use juniper::{
+        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, EmptySubscription, RootNode,
+    };
 
     use super::*;
 
-    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+    type Schema =
+        juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     fn warp_server() -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
-        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new(), EmptySubscription::<Database>::new());
+        let schema: Schema = RootNode::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        );
 
         let state = warp::any().map(move || Database::new());
         let filter = warp::filters::path::end().and(make_graphql_filter(schema, state.boxed()));

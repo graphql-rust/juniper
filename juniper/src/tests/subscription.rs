@@ -326,8 +326,7 @@ mod r#async {
         let mut executor = crate::SubscriptionsExecutor::new();
         let mut context = MyContext(2);
 
-        let response =
-            run(request.subscribe(&root_node, &context, &mut executor)).into_inner();
+        let response = run(request.subscribe(&root_node, &context, &mut executor)).into_inner();
 
         assert!(response.is_ok());
 
