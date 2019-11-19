@@ -319,12 +319,6 @@ where
     S: ScalarValue + Send + Sync + 'static,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    /// Resolve the provided selection set asynchronously against
-    /// the current object. This method is called by subscriptions executor
-    /// and should call other trait methods if needed.
-    ///
-    /// ## Default implementation
-    ///
     /// In order to resolve selection set on object types, default
     /// implementation calls `resolve_field_into_stream` every time a field
     /// needs to be resolved and `resolve_into_type_stream` every time a
@@ -411,16 +405,8 @@ where
         //      let stream = self.resolve_into_stream(info, selection_set, executor).await;
         //      Ok(stream)
         // } else {
-//        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
         // }
-
-        return Err(FieldError::new(
-            format!(
-                "some field error from fragment handler. type is {}",
-                tn
-            ),
-            Value::Null
-        ));
     }
 }
 

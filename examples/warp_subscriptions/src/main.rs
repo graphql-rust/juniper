@@ -9,7 +9,7 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{EmptyMutation, FieldError, RootNode, DefaultScalarValue};
+use juniper::{EmptyMutation, FieldError, RootNode, DefaultScalarValue, Value};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -124,147 +124,159 @@ impl Query {
 
 struct Subscription;
 
-impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
-
-    type Context = Context;
-    type TypeInfo = ();
-
-    fn name(_: &Self::TypeInfo) -> Option<&str> {
-        Some("Subscription")
-    }
-
-    fn meta<'r>(
-        info: &Self::TypeInfo,
-        registry: &mut juniper::Registry<'r, juniper::DefaultScalarValue>,
-    ) -> juniper::meta::MetaType<'r, juniper::DefaultScalarValue>
-        where
-            juniper::DefaultScalarValue: 'r,
-            for<'z> &'z juniper::DefaultScalarValue: juniper::ScalarRefValue<'z>,
-    {
-        trait GraphQLTrait<T> {
-            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
-        }
-        impl<T, Type> GraphQLTrait<T> for Type
-            where
-                Type: std::iter::Iterator<Item = T>,
-                T: juniper::GraphQLType<juniper::DefaultScalarValue>,
-        {
-            type Item = T;
-        }
-        trait GraphQLTraitAsync<T> {
-            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
-        }
-        impl<T, Type> GraphQLTraitAsync<T> for Type
-            where
-                Type: futures::Stream<Item = T>,
-                T: juniper::GraphQLType<juniper::DefaultScalarValue>,
-        {
-            type Item = T;
-        }
-        let fields = vec![
-            registry.field_convert::<
-                <Pin<Box<dyn Stream<Item=User> + Send>> as GraphQLTraitAsync<_>>::Item,
-                _,
-                Self::Context
-            >("users",info)
-        ] ;
-        let meta = registry.build_object_type::<Subscription>(info, &fields);
-        meta.into_meta()
-    }
-
-    fn resolve_field(
-        &self,
-        _: &(),
-        _: &str,
-        _: &juniper::Arguments<juniper::DefaultScalarValue>,
-        _: &juniper::Executor<Self::Context, juniper::DefaultScalarValue>,
-    ) -> juniper::ExecutionResult<juniper::DefaultScalarValue> {
-        {
-            panic!("Called `resolve_field` on subscription object")
-        };
-    }
-
-    fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
-        "Subscription".to_string()
+#[juniper::subscription(Context = Context)]
+impl Subscription {
+    async fn users() -> Result<Pin<Box<futures::Stream<Item = User> + Send>>, FieldError> {
+        Err(FieldError::new(
+            "some field error from handler",
+            Value::Scalar(
+                DefaultScalarValue::String("some additional string".to_string())
+            )
+        ))
     }
 }
 
-impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
-
-    fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        info: &'life1 Self::TypeInfo,
-        field_name: &'life2 str,
-        arguments: juniper::Arguments<'args, juniper::DefaultScalarValue>,
-        executor: std::sync::Arc<juniper::Executor<'e, Self::Context, juniper::DefaultScalarValue>>,
-    ) -> std::pin::Pin<
-        Box<
-            dyn futures::future::Future<
-                Output = Result<
-                    juniper::Value<juniper::ValuesResultStream<'res, juniper::DefaultScalarValue>>,
-                    juniper::FieldError<juniper::DefaultScalarValue>,
-                >,
-            > + Send
-            + 'async_trait,
-        >,
-    >
-        where
-            'args: 'res,
-            'e: 'res,
-            'res: 'async_trait,
-            'life0: 'async_trait,
-            'life1: 'async_trait,
-            'life2: 'async_trait,
-            Self: 'async_trait,
-    {
-        use futures::stream::StreamExt as _;
-        use juniper::Value;
-        match field_name {
-            "users" => futures::FutureExt::boxed(async move {
-                let res: Pin<Box<dyn Stream<Item = User> + Send>> = {
-                    {
-                        let mut counter = 0;
-                        let stream =
-                            Interval::new_interval(Duration::from_secs(5)).map(move |_| {
-                                counter += 1;
-                                User {
-                                    id: counter,
-                                    kind: UserKind::Admin,
-                                    name: "stream user".to_string(),
-                                }
-                            });
-                        Box::pin(stream)
-                    }
-                };
-                return Err(FieldError::new(
-                    "some field error from handler",
-                    Value::Scalar(
-                        DefaultScalarValue::String("some additional string".to_string())
-                    )
-                ));
-                let f = res.then(move |res| {
-                    let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
-                        juniper::IntoResolvable::into(res, executor.context());
-                    let ex = executor.clone();
-                    async move {
-                        match res2 {
-                            Ok(Some((ctx, r))) => {
-                                let sub = ex.replaced_context(ctx);
-                                sub.resolve_with_ctx_async(&(), &r).await
-                            }
-                            Ok(None) => Ok(Value::null()),
-                            Err(e) => Err(e)
-                        }
-                    }
-                });
-                Ok(juniper::Value::Scalar::<juniper::ValuesResultStream>(Box::pin(f)))
-            }),
-            _ => {
-                panic!("field not found")
-            }
-        }
-    }
-}
+//impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
+//
+//    type Context = Context;
+//    type TypeInfo = ();
+//
+//    fn name(_: &Self::TypeInfo) -> Option<&str> {
+//        Some("Subscription")
+//    }
+//
+//    fn meta<'r>(
+//        info: &Self::TypeInfo,
+//        registry: &mut juniper::Registry<'r, juniper::DefaultScalarValue>,
+//    ) -> juniper::meta::MetaType<'r, juniper::DefaultScalarValue>
+//        where
+//            juniper::DefaultScalarValue: 'r,
+//            for<'z> &'z juniper::DefaultScalarValue: juniper::ScalarRefValue<'z>,
+//    {
+//        trait GraphQLTrait<T> {
+//            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
+//        }
+//        impl<T, Type> GraphQLTrait<T> for Type
+//            where
+//                Type: std::iter::Iterator<Item = T>,
+//                T: juniper::GraphQLType<juniper::DefaultScalarValue>,
+//        {
+//            type Item = T;
+//        }
+//        trait GraphQLTraitAsync<T> {
+//            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
+//        }
+//        impl<T, Type> GraphQLTraitAsync<T> for Type
+//            where
+//                Type: futures::Stream<Item = T>,
+//                T: juniper::GraphQLType<juniper::DefaultScalarValue>,
+//        {
+//            type Item = T;
+//        }
+//        let fields = vec![
+//            registry.field_convert::<
+//                <Pin<Box<dyn Stream<Item=User> + Send>> as GraphQLTraitAsync<_>>::Item,
+//                _,
+//                Self::Context
+//            >("users",info)
+//        ] ;
+//        let meta = registry.build_object_type::<Subscription>(info, &fields);
+//        meta.into_meta()
+//    }
+//
+//    fn resolve_field(
+//        &self,
+//        _: &(),
+//        _: &str,
+//        _: &juniper::Arguments<juniper::DefaultScalarValue>,
+//        _: &juniper::Executor<Self::Context, juniper::DefaultScalarValue>,
+//    ) -> juniper::ExecutionResult<juniper::DefaultScalarValue> {
+//        {
+//            panic!("Called `resolve_field` on subscription object")
+//        };
+//    }
+//
+//    fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
+//        "Subscription".to_string()
+//    }
+//}
+//
+//impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
+//
+//    fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
+//        &'life0 self,
+//        info: &'life1 Self::TypeInfo,
+//        field_name: &'life2 str,
+//        arguments: juniper::Arguments<'args, juniper::DefaultScalarValue>,
+//        executor: std::sync::Arc<juniper::Executor<'e, Self::Context, juniper::DefaultScalarValue>>,
+//    ) -> std::pin::Pin<
+//        Box<
+//            dyn futures::future::Future<
+//                Output = Result<
+//                    juniper::Value<juniper::ValuesResultStream<'res, juniper::DefaultScalarValue>>,
+//                    juniper::FieldError<juniper::DefaultScalarValue>,
+//                >,
+//            > + Send
+//            + 'async_trait,
+//        >,
+//    >
+//        where
+//            'args: 'res,
+//            'e: 'res,
+//            'res: 'async_trait,
+//            'life0: 'async_trait,
+//            'life1: 'async_trait,
+//            'life2: 'async_trait,
+//            Self: 'async_trait,
+//    {
+//        use futures::stream::StreamExt as _;
+//        use juniper::Value;
+//        match field_name {
+//            "users" => futures::FutureExt::boxed(async move {
+//                let res: Pin<Box<dyn Stream<Item = User> + Send>> = {
+//                    {
+//                        let mut counter = 0;
+//                        let stream =
+//                            Interval::new_interval(Duration::from_secs(5)).map(move |_| {
+//                                counter += 1;
+//                                User {
+//                                    id: counter,
+//                                    kind: UserKind::Admin,
+//                                    name: "stream user".to_string(),
+//                                }
+//                            });
+//                        Box::pin(stream)
+//                    }
+//                };
+//                return Err(FieldError::new(
+//                    "some field error from handler",
+//                    Value::Scalar(
+//                        DefaultScalarValue::String("some additional string".to_string())
+//                    )
+//                ));
+//                let f = res.then(move |res| {
+//                    let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
+//                        juniper::IntoResolvable::into(res, executor.context());
+//                    let ex = executor.clone();
+//                    async move {
+//                        match res2 {
+//                            Ok(Some((ctx, r))) => {
+//                                let sub = ex.replaced_context(ctx);
+//                                sub.resolve_with_ctx_async(&(), &r).await
+//                            }
+//                            Ok(None) => Ok(Value::null()),
+//                            Err(e) => Err(e)
+//                        }
+//                    }
+//                });
+//                Ok(juniper::Value::Scalar::<juniper::ValuesResultStream>(Box::pin(f)))
+//            }),
+//            _ => {
+//                panic!("field not found")
+//            }
+//        }
+//    }
+//}
 
 type Schema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
 

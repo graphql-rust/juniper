@@ -1080,13 +1080,15 @@ impl GraphQLTypeDefiniton {
                 if field.is_async {
                     _type = quote!(<#t as GraphQLTraitAsync<_>>::Item);
                 } else {
-                    _type = quote!(<#t as GraphQLTrait<_>>::Item);
+                    //todo
+                    unimplemented!()
                 }
             } else {
                 if field.is_async {
                     _type = quote!(<#_type_name as GraphQLTraitAsync<_>>::Item);
                 } else {
-                    _type = quote!(<#_type_name as GraphQLTrait<_>>::Item);
+                    //todo
+                    unimplemented!()
                 }
             }
 
@@ -1169,55 +1171,8 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let resolve_matches = self
-            .fields
-            .iter()
-            .filter(|field| !field.is_async)
-            .map(|field| {
-                let name = &field.name;
-                let code = &field.resolver_code;
 
-                let return_error_if_res_is_error;
-                let _type;
-                if field.is_type_inferred {
-                    return_error_if_res_is_error = quote!(let res = res?;);
-                    _type = quote!();
-                } else {
-                    let _type_name = &field._type;
-                    _type = quote!(: #_type_name);
-
-                    if extract_ok_type_from_std_result(_type_name).is_some() {
-                        return_error_if_res_is_error = quote!(let res = res?;);
-                    } else {
-                        return_error_if_res_is_error = quote!();
-                    }
-                };
-                quote!(
-                    #name => {
-                        let res #_type = { #code };
-                        #return_error_if_res_is_error
-                        let iter = res.map(move |res| {
-                        #juniper_crate_name::IntoResolvable::into(
-                                res,
-                                executor.context(),
-                            )
-                            .and_then(|res| match res {
-                                Some((ctx, r)) => {
-                                    let resolve_res =
-                                        executor.replaced_context(ctx).resolve_with_ctx(&(), &r);
-                                    resolve_res
-                                }
-                                None => Ok(Value::null()),
-                            })
-                            .unwrap_or_else(|_| Value::Null)
-                        });
-                        Ok(Value::Scalar(Box::new(iter)))
-                    },
-                )
-            });
-
-        #[cfg(feature = "async")]
-            let resolve_matches_async = self.fields
+        let resolve_matches_async = self.fields
             .iter()
             .filter(|field| field.is_async)
             .map(|field| {
@@ -1253,19 +1208,16 @@ impl GraphQLTypeDefiniton {
                                     match res2 {
                                         Ok(Some((ctx, r))) => {
                                             let sub = ex.replaced_context(ctx);
-                                            match sub.resolve_with_ctx_async(&(), &r).await {
-                                                Ok(v) => v,
-                                                Err(_) => Value::Null,
-                                            }
+                                            sub.resolve_with_ctx_async(&(), &r).await
                                         }
-                                        Ok(None) => Value::null(),
-                                        Err(e) => Value::Null,
+                                        Ok(None) => Ok(Value::null()),
+                                        Err(e) => Err(e),
                                     }
                                 }
                             });
                             Ok(
                                 #juniper_crate_name::Value::Scalar::<
-                                    #juniper_crate_name::ValuesStream
+                                    #juniper_crate_name::ValuesResultStream
                                 >(Box::pin(f))
                             )
                         })
@@ -1274,7 +1226,7 @@ impl GraphQLTypeDefiniton {
 
             });
 
-        #[cfg(feature = "async")]
+
         let graphqltraitasync_implementation = quote!(
             trait GraphQLTraitAsync<T>
             {
@@ -1289,9 +1241,6 @@ impl GraphQLTypeDefiniton {
                 type Item = T;
             }
         );
-
-        #[cfg(not(feature = "async"))]
-        let graphqltraitasync_implementation = quote!();
 
         let graphql_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
@@ -1311,19 +1260,6 @@ impl GraphQLTypeDefiniton {
                         where #scalar : 'r,
                         for<'z> &'z #scalar: #juniper_crate_name::ScalarRefValue<'z>,
                     {
-                        trait GraphQLTrait<T>
-                        {
-                            type Item: #juniper_crate_name::GraphQLType<#scalar>;
-                        }
-
-                        impl<T, Type> GraphQLTrait<T> for Type
-                            where
-                                Type: std::iter::Iterator<Item = T>,
-                                T: #juniper_crate_name::GraphQLType<#scalar>
-                        {
-                            type Item = T;
-                        }
-
                         #graphqltraitasync_implementation
 
                         let fields = vec![
@@ -1352,7 +1288,6 @@ impl GraphQLTypeDefiniton {
             }
         );
 
-        #[cfg(feature = "async")]
         let async_subscription_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics_tokens
             #where_clause
@@ -1367,7 +1302,7 @@ impl GraphQLTypeDefiniton {
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<
                             Output = Result<
-                                #juniper_crate_name::Value<#juniper_crate_name::ValuesStream<'res, #scalar>>,
+                                #juniper_crate_name::Value<#juniper_crate_name::ValuesResultStream<'res, #scalar>>,
                                 #juniper_crate_name::FieldError<#scalar>
                             >
                         >
