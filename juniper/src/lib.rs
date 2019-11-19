@@ -163,7 +163,7 @@ pub use crate::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue, Registry,
-        Variables,
+        Variables, executor_wrappers::SubscriptionsExecutor,
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
@@ -343,7 +343,10 @@ pub async fn subscribe<
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT
-) -> Result<FieldResult<Value<ValuesResultStream<'res, S>>, S>, GraphQLError<'res>>
+) -> Result<
+        Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>,
+        GraphQLError<'res>
+>
 where
     'd: 'e,
     'rn: 'e,
@@ -368,8 +371,7 @@ where
         root_node,
         variables,
         context,
-    )
-    .await
+    ).await
 }
 
 /// Execute the reference introspection query in the provided schema

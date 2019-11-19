@@ -224,7 +224,7 @@ where
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     Result<
-        FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+        Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>,
         GraphQLError<'a>
     >,
 )
@@ -235,7 +235,7 @@ pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
 impl<'a, S> StreamGraphQLResponse<'a, S> {
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
     pub fn into_inner(self) -> Result<
-        FieldResult<Value<ValuesResultStream<'a, S>>, S>,
+        Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>,
         GraphQLError<'a>
     > {
         self.0
@@ -246,7 +246,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
         self.0.as_ref().err()
     }
 
-    pub fn field_errors<'err>(&'err self) -> Option<&'err FieldError<S>> {
+    pub fn execution_errors<'err>(&'err self) -> Option<&'err ExecutionError<S>> {
         if let Ok(result) = self.0.as_ref() {
             if let Err(e) = result {
                 Some(e)

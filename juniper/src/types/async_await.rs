@@ -370,7 +370,6 @@ where
                                 // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
-        'args: 'res,
         'e: 'res,
     {
         panic!("resolve_field must be implemented by object types");
@@ -387,26 +386,24 @@ where
     /// The default implementation panics.
     async fn resolve_into_type_stream<'s, 'i, 'tn, 'ss, 'e, 'res>(
         &'s self,
-        _: &'i Self::TypeInfo,              // this subscription's type info
-        tn: &'tn str,                        // fragment's type name
-        _: Option<&'ss [Selection<'_, S>]>, // fragment's arguments
-        _: Arc<Executor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
+        info: &'i Self::TypeInfo,              // this subscription's type info
+        type_name: &'tn str,                        // fragment's type name
+        executor: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
                                             // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         's: 'res,
         'i: 'res,
-        'tn: 'res,
         'ss: 'res,
         'e: 'res,
     {
-        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
-        // if Self::name(info).unwrap() == type_name {
-        //      let stream = self.resolve_into_stream(info, selection_set, executor).await;
-        //      Ok(stream)
-        // } else {
-        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-        // }
+//        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
+//        if Self::name(info).unwrap() == type_name {
+//            let stream = self.resolve_into_stream(info, executor).await;
+//            Ok(stream)
+//        } else {
+            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+//        }
     }
 }
 
@@ -476,14 +473,14 @@ where
 
     let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<S>>>::new();
 
-    let meta_type = executor
-        .schema()
-        .concrete_type_by_name(
-            T::name(info)
-                .expect("Resolving named type's selection set")
-                .as_ref(),
-        )
-        .expect("Type not found in schema");
+//    let meta_type = executor
+//        .schema()
+//        .concrete_type_by_name(
+//            T::name(info)
+//                .expect("Resolving named type's selection set")
+//                .as_ref(),
+//        )
+//        .expect("Type not found in schema");
 
     for selection in selection_set {
         match *selection {
@@ -505,6 +502,14 @@ where
                     );
                     continue;
                 }
+                let meta_type = executor
+                    .schema()
+                    .concrete_type_by_name(
+                        T::name(info)
+                            .expect("Resolving named type's selection set")
+                            .as_ref(),
+                    )
+                    .expect("Type not found in schema");
 
                 let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
                     panic!(format!(
@@ -526,7 +531,8 @@ where
                     f.arguments.as_ref().map(|m| {
                         m.item
                             .iter()
-                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(exec_vars)))
+                            .map(|&(ref k, ref v)|
+                                (k.item, v.item.clone().into_const(exec_vars)))
                             .collect()
                     }),
                     &meta_field.arguments,
@@ -705,14 +711,6 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut object: Object<ValuesResultStream<'a, S>> = Object::with_capacity(selection_set.len());
-    let meta_type = executor
-        .schema()
-        .concrete_type_by_name(
-            T::name(info)
-                .expect("Resolving named type's selection set")
-                .as_ref(),
-        )
-        .expect("Type not found in schema");
 
     for selection in selection_set {
         match *selection {
@@ -722,8 +720,9 @@ where
                                  ..
                              }) =>
             {
-                if is_excluded(&f.directives, executor.variables()) {
-                    continue;
+                if is_excluded(&f.directives, &executor.variables()) {
+//                    continue;
+                    return Ok(Value::Null);
                 }
 
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
@@ -744,8 +743,19 @@ where
                             )
                         ),
                     );
-                    continue;
+//                    continue;
+                    return Ok(Value::Null);
                 }
+
+                let meta_type = executor
+                    .schema()
+                    .concrete_type_by_name(
+                        T::name(info)
+                            .expect("Resolving named type's selection set")
+                            .as_ref(),
+                    )
+                    .expect("Type not found in schema");
+
 
                 let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
                     panic!(format!(
@@ -753,7 +763,7 @@ where
                         f.name.item,
                         meta_type.name()
                     ))
-                });
+                }).clone();
 
                 let exec_vars = executor.variables();
 
@@ -761,7 +771,7 @@ where
                     &response_name,
                     f.name.item,
                     start_pos.clone(),
-                    f.selection_set.as_ref().map(|v| &v[..]),
+                    f.selection_set.as_ref().map(|v| v.clone()),
                 ));
 
                 let sub_exec2 = Arc::clone(&sub_exec);
@@ -771,7 +781,7 @@ where
                         m.item
                             .iter()
                             .map(|&(ref k, ref v)|
-                                (k.item, v.item.clone().into_const(exec_vars)))
+                                (k.item, v.item.clone().into_const(&exec_vars)))
                             .collect()
                     }),
                     &meta_field.arguments,
@@ -816,8 +826,9 @@ where
                                           ..
                                       }) =>
             {
-                if is_excluded(&spread.directives, executor.variables()) {
-                    continue;
+                if is_excluded(&spread.directives, &executor.variables()) {
+//                    continue;
+                    return Ok(Value::Null);
                 }
 
                 let fragment = &executor
@@ -854,13 +865,14 @@ where
                                           ..
                                       }) =>
             {
-                if is_excluded(&fragment.directives, executor.variables()) {
-                    continue;
+                if is_excluded(&fragment.directives, &executor.variables()) {
+//                    continue;
+                    return Ok(Value::Null);
                 }
 
                 let sub_exec = Arc::new(executor.type_sub_executor(
                     fragment.type_condition.as_ref().map(|c| c.item),
-                    Some(&fragment.selection_set[..]),
+                    Some(fragment.selection_set.clone()),
                 ));
 
                 let sub_exec2 = Arc::clone(&sub_exec);
@@ -884,12 +896,21 @@ where
 
                 }
                 else {
+                    let meta_type = executor
+                        .schema()
+                        .concrete_type_by_name(
+                            T::name(info)
+                                .expect("Resolving named type's selection set")
+                                .as_ref(),
+                        )
+                        .expect("Type not found in schema");
+
                     if let Some(type_name) = meta_type.name() {
                         let sub_result = instance
                             .resolve_into_type_stream(
                                 info,
-                                type_name,
-                                Some(&fragment.selection_set[..]),
+                                type_name.clone(),
+//                                Some(&fragment.selection_set[..]),
                                 sub_exec,
                             ).await;
 
@@ -914,7 +935,7 @@ where
                 }
             }
         }
-    }
+//    }
 
     Ok(Value::Object(object))
 }
