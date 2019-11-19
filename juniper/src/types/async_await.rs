@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
-use crate::{ast::Selection, executor::{ExecutionResult, Executor, FieldError, ValuesResultStream}, parser::Spanning, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldResult, ExecutionError};
+use crate::{ast::Selection, executor::{ExecutionResult, Executor, FieldError, ValuesResultStream}, parser::Spanning, value::{Object, ScalarRefValue, ScalarValue, Value}, FieldResult, executor::executor_wrappers::SubscriptionsExecutor, ExecutionError};
 
 #[cfg(feature = "async")]
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
-use crate::parser::SourcePosition;
 
 /**
 This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
@@ -329,8 +328,7 @@ where
     async fn resolve_into_stream<'s, 'i, 'ss, 'ref_e, 'e, 'res>(
         &'s self,
         info: &'i Self::TypeInfo,
-        selection_set: Option<&'ss [Selection<'_, S>]>,
-        executor: &'ref_e Executor<'e, Self::Context, S>,
+        executor: SubscriptionsExecutor<'e, Self::Context, S>,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
     where
         's: 'res,
@@ -339,14 +337,12 @@ where
         'ref_e: 'e,
         'e: 'res,
     {
-        if let Some(selection_set) = selection_set {
+        if executor.variables.current_selection_set.is_some() {
             resolve_selection_set_into_stream(
                 self,
                 info,
-                selection_set,
                 executor
             ).await
-
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -366,7 +362,7 @@ where
         _: &Self::TypeInfo,     // this subscription's type info
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
-        _: Arc<Executor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
+        _: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
                                 // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
@@ -672,8 +668,7 @@ where
 pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    selection_set: &'ss [Selection<'ss, S>],
-    executor: &'ref_e Executor<'e, CtxT, S>,
+    executor: SubscriptionsExecutor<'e, CtxT, S>,
 ) -> BoxFuture<'res, Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>>
 where
     'i: 'res,
@@ -690,7 +685,6 @@ where
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance,
         info,
-        selection_set,
         executor,
     ))
 }
@@ -700,8 +694,7 @@ where
 pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
-    selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: SubscriptionsExecutor<'a, CtxT, S>,
 ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
@@ -710,10 +703,12 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    let selection_set = executor.variables.current_selection_set.as_ref().unwrap();
+    if selection_set.len() > 1 { panic!("multiple subscriptions are not implemented yet"); }
     let mut object: Object<ValuesResultStream<'a, S>> = Object::with_capacity(selection_set.len());
 
-    for selection in selection_set {
-        match *selection {
+//    for selection in selection_set {
+        match selection_set[0] {
             Selection::Field(Spanning {
                                  item: ref f,
                                  start: ref start_pos,
@@ -838,7 +833,6 @@ where
                 let obj = resolve_selection_set_into_stream(
                     instance,
                     info,
-                    &fragment.selection_set[..],
                     executor,
                 ).await;
 
@@ -882,7 +876,6 @@ where
                         .resolve_into_type_stream(
                             info,
                             type_condition.item,
-                            Some(&fragment.selection_set[..]),
                             sub_exec,
                         ).await;
 

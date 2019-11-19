@@ -10,7 +10,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    pub(crate) fragments: Arc<HashMap<&'a str, Fragment<'a, S>>>,
+    pub(crate) fragments: HashMap<&'a str, Fragment<'a, S>>,
     pub(crate) variables: Variables<S>,
     pub(crate) current_selection_set: Option<Vec<Selection<'a, S>>>,
     pub(crate) parent_selection_set: Option<Vec<Selection<'a, S>>>,
@@ -305,6 +305,28 @@ where S: Clone, {
 
     pub fn schema(&self) -> &'a SchemaType<S> {
         self.variables.schema
+    }
+
+    pub fn as_executor<'e>(&'e self) -> Executor<'e, CtxT, S> {
+        Executor {
+            fragments: &self.variables.fragments,
+            variables: &self.variables.variables,
+            current_selection_set: if let Some(s) = &self.variables.current_selection_set {
+                Some(&s[..])
+            } else {
+                None
+            },
+            parent_selection_set: if let Some(s) = &self.variables.parent_selection_set {
+                Some(&s[..])
+            } else {
+                None
+            },
+            current_type: self.variables.current_type.clone(),
+            schema: self.variables.schema,
+            context: self.variables.context,
+            errors: &self.variables.errors,
+            field_path: self.variables.field_path.clone(),
+        }
     }
 
     /// Generate an error to the execution engine at the current executor location

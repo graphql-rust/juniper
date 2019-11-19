@@ -22,14 +22,15 @@ use crate::{
 };
 
 pub use self::{
-    executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor},
     look_ahead::{
         Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
     },
 };
+use crate::executor::executor_wrappers::{SubscriptionsExecutor, ExecutorDataVariables};
+use std::sync::Arc;
 
-mod executor_wrappers;
+pub mod executor_wrappers;
 mod look_ahead;
 
 /// A type registry used to build schemas
@@ -58,7 +59,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     variables: &'a Variables<S>,
     current_selection_set: Option<&'a [Selection<'a, S>]>,
     parent_selection_set: Option<&'a [Selection<'a, S>]>,
@@ -378,27 +379,6 @@ where
         Ok(value.resolve(info, self.current_selection_set, self))
     }
 
-    /// Resolve a single arbitrary value into `Value<ValuesStream>`
-    #[cfg(feature = "async")]
-    pub async fn subscribe<'s, 'i, 'v, T>(
-        &'s self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
-    {
-        value
-            .resolve_into_stream(info, self.current_selection_set, self)
-            .await
-    }
-
     /// Resolve a single arbitrary value into an `ExecutionResult`
     #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -466,26 +446,7 @@ where
         }
     }
 
-    /// Resolve a single arbitrary value into a return stream
-    ///
-    /// If the field fails to resolve, `null` will be returned.
-    #[cfg(feature = "async")]
-    pub async fn resolve_into_stream<'s, 'i, 'v, T>(
-        &'s self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
-    {
-        self.subscribe(info, value).await
-    }
+
 
     /// Derive a new executor by replacing the context
     ///
@@ -580,7 +541,7 @@ where
 
     #[doc(hidden)]
     pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
-        self.fragments.get(name).cloned()
+        self.fragments.get(name)
     }
 
     /// The current location of the executor
@@ -605,27 +566,6 @@ where
             path,
             error,
         });
-    }
-
-    /// Generate an error to the execution engine at the current executor location
-    pub fn generate_error(&self, error: FieldError<S>) -> ExecutionError<S> {
-        self.generate_error_at(error, self.location().clone())
-    }
-
-    /// Add an error to the execution engine at a specific location
-    pub fn generate_error_at(
-        &self,
-        error: FieldError<S>,
-        location: SourcePosition
-    ) -> ExecutionError<S> {
-        let mut path = Vec::new();
-        self.field_path.construct_path(&mut path);
-
-        ExecutionError {
-            location,
-            path,
-            error,
-        }
     }
 
     /// Construct a lookahead selection for the current selection.
@@ -799,8 +739,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
+                .into_iter()
+                .map(|f| (f.item.name.item, f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -902,8 +842,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
+                .into_iter()
+                .map(|f| (f.item.name.item, f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&op.item.selection_set[..]),
@@ -957,11 +897,10 @@ pub async fn execute_validated_subscription_async<
     operation_name: Option<&str>,
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
-    context: &'ctx CtxT,
-    executor: &'ref_e mut SubscriptionsExecutor<'e, CtxT, S>,
+    context: &'ctx CtxT
 ) -> Result<
-    Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>,
-    GraphQLError<'res>
+        Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>,
+        GraphQLError<'res>
 >
 where
     'd: 'e,
@@ -981,10 +920,12 @@ where
 {
     let mut operation = None;
 
+    let mut fragments = vec![];
+
     parse_document_definitions(
         document,
         operation_name,
-        &mut executor.fragments,
+        &mut fragments,
         &mut operation,
     )?;
 
@@ -1033,11 +974,10 @@ where
             _ => unreachable!(),
         };
 
-        executor.executor_variables.set_data(ExecutorDataVariables {
-            fragments: executor
-                .fragments
-                .iter()
-                .map(|f| (f.item.name.item, &f.item))
+        let executor = SubscriptionsExecutor::from_data(ExecutorDataVariables {
+            fragments: fragments
+                .into_iter()
+                .map(|f| (f.item.name.item, f.item))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(op.item.selection_set),
@@ -1049,15 +989,13 @@ where
             field_path: FieldPath::Root(op.start),
         });
 
-        // unwrap is safe here because executor's data was set up above
-        executor
-            .executor
-            .set(executor.executor_variables.create_executor().unwrap());
+//        // unwrap is safe here because executor's data was set up above
+//        executor
+//            .set(executor.executor_variables.create_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {
                 executor
-                    .executor
                     .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             }

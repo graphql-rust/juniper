@@ -248,29 +248,25 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                         Box::pin(stream)
                     }
                 };
-                return Err(FieldError::new(
-                    "some field error from handler",
-                    Value::Scalar(
-                        DefaultScalarValue::String("some additional string".to_string())
-                    )
-                ));
-                unimplemented!()
-//                let f = res.then(move |res| {
-//                    let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
-//                        juniper::IntoResolvable::into(res, executor.context());
-//                    let ex = executor.clone();
-//                    async move {
-//                        match res2 {
-//                            Ok(Some((ctx, r))) => {
-//                                let sub = ex.replaced_context(ctx);
-//                                sub.resolve_with_ctx_async(&(), &r).await
-//                            }
-//                            Ok(None) => Ok(Value::null()),
-//                            Err(e) => Err(e)
-//                        }
-//                    }
-//                });
-//                Ok(juniper::Value::Scalar::<juniper::ValuesResultStream>(Box::pin(f)))
+
+                let f = res
+                    .then(move |res| {
+                        let executor = executor.clone();
+                        let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
+                            juniper::IntoResolvable::into(res, executor.context());
+                        async move {
+                            let ex = executor.as_executor();
+                            match res2 {
+                                Ok(Some((ctx, r))) => {
+                                    let sub = ex.replaced_context(ctx);
+                                    sub.resolve_with_ctx_async(&(), &r).await
+                                }
+                                Ok(None) => Ok(Value::null()),
+                                Err(e) => Err(e)
+                            }
+                        }
+                    });
+                Ok(juniper::Value::Scalar::<juniper::ValuesResultStream>(Box::pin(f)))
             }),
             _ => {
                 panic!("field not found")
