@@ -350,7 +350,7 @@ where
 {
     let document = parse_and_validate_document_async(document_source, root_node, &variables)?;
 
-    executor::execute_validated_subscription_async(
+    executor::execute_validated_subscription(
         document,
         operation_name,
         root_node,

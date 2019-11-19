@@ -872,11 +872,10 @@ where
     Ok((value, errors))
 }
 
-// todo: rename to execute_validated_subscription
 /// Initialize new `Executor` and start asynchronous subscription execution
 /// Returns `NotSubscription` error if query or mutation is passed
 #[cfg(feature = "async")]
-pub async fn execute_validated_subscription_async<
+pub async fn execute_validated_subscription<
     'd,
     'rn,
     'ctx,

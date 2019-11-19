@@ -347,8 +347,14 @@ where
                             let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
                             let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
                             let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                                //todo: not return null
                                 let (name, val) = el.unwrap();
-                                (name, val.expect("iterator returned error"))
+                                if let Ok(value) = val {
+                                    (name, value)
+                                }
+                                else {
+                                    (name, Value::Null)
+                                }
                             });
                             let obj = Object::from_iter(ready_vec_iterator);
                             return Poll::Ready(Some(GraphQLResponse::from_result(Ok((

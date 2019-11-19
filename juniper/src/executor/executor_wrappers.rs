@@ -228,12 +228,12 @@ where
     }
 }
 
-//todo add #[doc(hidden)] to all functions
+//todo: do something with a lot of boxing
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: Clone,
 {
-    //#[doc(hidden)]
+    #[doc(hidden)]
     pub fn type_sub_executor(
         &self,
         type_name: Option<&'a str>,
@@ -261,15 +261,17 @@ where
         }
     }
 
-    //    #[doc(hidden)]
+    #[doc(hidden)]
     pub fn variables(&self) -> Variables<S> {
         self.variables.variables.clone()
     }
 
+    #[doc(hidden)]
     pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
         self.variables.fragments.get(name)
     }
 
+    #[doc(hidden)]
     pub fn field_sub_executor(
         &self,
         field_alias: &'a str,
@@ -295,21 +297,24 @@ where
                 schema: self.variables.schema,
                 context: self.variables.context,
                 errors: RwLock::new(vec![]),
-                //todo:
-                //                field_path: FieldPath::Field(field_alias, location, &self.variables.field_path),
+                //  todo: not assume that field path is root
+                //field_path: FieldPath::Field(field_alias, location, &self.variables.field_path),
                 field_path: FieldPath::Root(location),
             },
         }
     }
 
+    #[doc(hidden)]
     pub fn context(&self) -> &'a CtxT {
         self.variables.context
     }
 
+    #[doc(hidden)]
     pub fn schema(&self) -> &'a SchemaType<S> {
         self.variables.schema
     }
 
+    #[doc(hidden)]
     pub fn as_executor<'e>(&'e self) -> Executor<'e, CtxT, S> {
         Executor {
             fragments: &self.variables.fragments,
@@ -332,11 +337,13 @@ where
         }
     }
 
+    #[doc(hidden)]
     /// Generate an error to the execution engine at the current executor location
     pub fn generate_error(&self, error: FieldError<S>) -> ExecutionError<S> {
         self.generate_error_at(error, self.location().clone())
     }
 
+    #[doc(hidden)]
     /// Add an error to the execution engine at a specific location
     pub fn generate_error_at(
         &self,
@@ -353,6 +360,7 @@ where
         }
     }
 
+    #[doc(hidden)]
     /// The current location of the executor
     pub fn location(&self) -> &SourcePosition {
         self.variables.field_path.location()
