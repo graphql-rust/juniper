@@ -387,22 +387,21 @@ where
         &'s self,
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
-        executor: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // fragment's executor (subscription's sub-executor
+        executor: SubscriptionsExecutor<'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
                                                                     // with current field's selection set)
-    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
+    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
     where
         's: 'res,
         'i: 'res,
         'ss: 'res,
         'e: 'res,
     {
-        //        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
-        //        if Self::name(info).unwrap() == type_name {
-        //            let stream = self.resolve_into_stream(info, executor).await;
-        //            Ok(stream)
-        //        } else {
-        panic!("stream_resolve_into_type must be implemented by unions and interfaces");
-        //        }
+        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
+        if Self::name(info).unwrap() == type_name {
+            self.resolve_into_stream(info, executor).await
+        } else {
+            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+        }
     }
 }
 
@@ -707,6 +706,14 @@ where
         panic!("multiple subscriptions are not implemented yet");
     }
     let mut object: Object<ValuesResultStream<'a, S>> = Object::with_capacity(selection_set.len());
+    let meta_type = executor
+        .schema()
+        .concrete_type_by_name(
+            T::name(info)
+                .expect("Resolving named type's selection set")
+                .as_ref(),
+        )
+        .expect("Type not found in schema");
 
     //    for selection in selection_set {
     match selection_set[0] {
@@ -731,15 +738,6 @@ where
                 //                    continue;
                 return Ok(Value::Null);
             }
-
-            let meta_type = executor
-                .schema()
-                .concrete_type_by_name(
-                    T::name(info)
-                        .expect("Resolving named type's selection set")
-                        .as_ref(),
-                )
-                .expect("Type not found in schema");
 
             let meta_field = meta_type
                 .field_by_name(f.name.item)
@@ -844,12 +842,10 @@ where
                 return Ok(Value::Null);
             }
 
-            let sub_exec = Arc::new(executor.type_sub_executor(
+            let sub_exec = executor.type_sub_executor(
                 fragment.type_condition.as_ref().map(|c| c.item),
                 Some(fragment.selection_set.clone()),
-            ));
-
-            let sub_exec2 = Arc::clone(&sub_exec);
+            );
 
             if let Some(ref type_condition) = fragment.type_condition {
                 let sub_result = instance
@@ -861,17 +857,9 @@ where
                         merge_key_into(&mut object, &k, v);
                     }
                 } else if let Err(e) = sub_result {
-                    return Err(sub_exec2.generate_error_at(e, start_pos.clone()));
+                    return Err(e);
                 }
             } else {
-                let meta_type = executor
-                    .schema()
-                    .concrete_type_by_name(
-                        T::name(info)
-                            .expect("Resolving named type's selection set")
-                            .as_ref(),
-                    )
-                    .expect("Type not found in schema");
 
                 if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
@@ -888,10 +876,10 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        return Err(sub_exec2.generate_error_at(e, start_pos.clone()));
+                        return Err(e);
                     }
                 } else {
-                    return Err(sub_exec2.generate_error(FieldError::new(
+                    return Err(executor.generate_error(FieldError::new(
                         "unknown type condition on fragment",
                         Value::Null,
                     )));

@@ -76,7 +76,7 @@ where
 pub struct ExecutionError<S> {
     location: SourcePosition,
     path: Vec<String>,
-    error: FieldError<S>,
+    pub(crate) error: FieldError<S>,
 }
 
 impl<S> Eq for ExecutionError<S> where Self: PartialEq {}
