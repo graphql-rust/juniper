@@ -809,11 +809,21 @@ where
                 return Ok(Value::Null);
             }
 
-            let fragment = &executor
+            let fragment = executor
                 .fragment_by_name(spread.name.item)
                 .expect("Fragment could not be found");
 
-            let obj = resolve_selection_set_into_stream(instance, info, executor).await;
+            let sub_exec = executor.type_sub_executor(
+                Some(fragment.type_condition.item),
+                Some(fragment.selection_set.clone()),
+            );
+
+            let obj = instance
+                .resolve_into_type_stream(
+                    info,
+                    fragment.type_condition.item,
+                    sub_exec
+                ).await;
 
             match obj {
                 Ok(val) => {

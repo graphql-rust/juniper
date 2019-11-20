@@ -236,7 +236,7 @@ where
     #[doc(hidden)]
     pub fn type_sub_executor(
         &self,
-        type_name: Option<&'a str>,
+        type_name: Option<&str>,
         selection_set: Option<Vec<Selection<'a, S>>>,
     ) -> SubscriptionsExecutor<'a, CtxT, S> {
         SubscriptionsExecutor {
@@ -267,7 +267,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
+    pub fn fragment_by_name<'b>(&'b self, name: &str) -> Option<&'b Fragment<'a, S>> {
         self.variables.fragments.get(name)
     }
 
