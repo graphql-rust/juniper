@@ -1200,10 +1200,11 @@ impl GraphQLTypeDefiniton {
                             let res #_type = { #code };
                             #return_error_if_res_is_error
                             let f = res.then(move |res| {
+                                let executor = executor.clone();
                                 let res2: #juniper_crate_name::FieldResult<_, #scalar> =
                                     #juniper_crate_name::IntoResolvable::into(res, executor.context());
-                                let ex = executor.clone();
                                 async move {
+                                    let ex = executor.as_executor();
                                     match res2 {
                                         Ok(Some((ctx, r))) => {
                                             let sub = ex.replaced_context(ctx);
@@ -1296,7 +1297,7 @@ impl GraphQLTypeDefiniton {
                     info: &'life1 Self::TypeInfo,
                     field_name: &'life2 str,
                     arguments: #juniper_crate_name::Arguments<'args, #scalar>,
-                    executor: std::sync::Arc<#juniper_crate_name::Executor<'e, Self::Context, #scalar>>,
+                    executor: std::sync::Arc<#juniper_crate_name::SubscriptionsExecutor<'e, Self::Context, #scalar>>,
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<
                             Output = Result<
@@ -1307,9 +1308,9 @@ impl GraphQLTypeDefiniton {
                         + Send + 'async_trait
                     >>
                     where
-                        'args: 'res,
                         'e: 'res,
                         'res: 'async_trait,
+                        'args: 'async_trait,
                         'life0: 'async_trait,
                         'life1: 'async_trait,
                         'life2: 'async_trait,
