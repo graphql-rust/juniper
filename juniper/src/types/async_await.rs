@@ -6,7 +6,7 @@ use crate::{
     executor::{ExecutionResult, Executor, FieldError, ValuesResultStream},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
-    ExecutionError, FieldResult,
+    ExecutionError,
 };
 
 #[cfg(feature = "async")]
@@ -171,7 +171,7 @@ where
         selection_set: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, Self::Context, S>,
     ) -> ExecutionResult<S> {
-        if Self::name(info).unwrap() == type_name {
+        if Self::name(info) == Some(type_name) {
             Ok(self.resolve_async(info, selection_set, executor).await)
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
@@ -371,7 +371,7 @@ where
     where
         'e: 'res,
     {
-        panic!("resolve_field must be implemented by object types");
+        panic!("resolve_field_into_stream must be implemented");
     }
 
     /// It is called by Self's `resolve_into_stream` default implementation
@@ -388,7 +388,7 @@ where
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
         executor: SubscriptionsExecutor<'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
-                                                                    // with current field's selection set)
+                                                               // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
     where
         's: 'res,
@@ -396,11 +396,10 @@ where
         'ss: 'res,
         'e: 'res,
     {
-        // TODO: cannot resolve by default (cannot return value referencing function parameter `self`)
-        if Self::name(info).unwrap() == type_name {
+        if Self::name(info) == Some(type_name) {
             self.resolve_into_stream(info, executor).await
         } else {
-            panic!("stream_resolve_into_type must be implemented by unions and interfaces");
+            panic!("resolve_into_type_stream must be implemented");
         }
     }
 }
@@ -438,16 +437,6 @@ struct AsyncField<S> {
 enum AsyncValue<S> {
     Field(AsyncField<S>),
     Nested(Value<S>),
-}
-
-struct AsyncResultField<'a, S> {
-    name: String,
-    value: FieldResult<Value<ValuesResultStream<'a, S>>, S>,
-}
-
-enum AsyncResultValue<'a, S> {
-    Field(AsyncResultField<'a, S>),
-    Nested(FieldResult<Value<ValuesResultStream<'a, S>>, S>),
 }
 
 #[cfg(feature = "async")]
@@ -664,8 +653,9 @@ where
 
 // Wrapper function around `resolve_selection_set_into_stream_recursive`.
 // This wrapper is necessary because async fns can not be recursive.
+// Panics if executor's current selection set is None
 #[cfg(feature = "async")]
-pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S>(
+fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: SubscriptionsExecutor<'e, CtxT, S>,
@@ -701,7 +691,11 @@ where
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
-    let selection_set = executor.variables.current_selection_set.as_ref().unwrap();
+    let selection_set = executor
+        .variables
+        .current_selection_set
+        .as_ref()
+        .expect("Executor's selection set is none");
     if selection_set.len() > 1 {
         panic!("multiple subscriptions are not implemented yet");
     }
@@ -723,7 +717,7 @@ where
             ..
         }) => {
             if is_excluded(&f.directives, &executor.variables()) {
-                //                    continue;
+                // continue;
                 return Ok(Value::Null);
             }
 
@@ -735,7 +729,7 @@ where
                     response_name,
                     Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
                 );
-                //                    continue;
+                // continue;
                 return Ok(Value::Null);
             }
 
@@ -771,19 +765,13 @@ where
                 &meta_field.arguments,
             );
 
-            let pos = start_pos.clone();
             let is_non_null = meta_field.field_type.is_non_null();
 
-            let response_name = response_name.to_string();
-
-            // TODO: implement custom future type instead of
-            //       two-level boxing.
             let res = instance
                 .resolve_field_into_stream(info, f.name.item, args, sub_exec)
                 .await;
 
             match res {
-                //todo: custom error type
                 Ok(Value::Null) if is_non_null => {
                     return Err(sub_exec2.generate_error(FieldError::new(
                         "Null value on non-null field",
@@ -805,7 +793,7 @@ where
             item: ref spread, ..
         }) => {
             if is_excluded(&spread.directives, &executor.variables()) {
-                //                    continue;
+                // continue;
                 return Ok(Value::Null);
             }
 
@@ -819,11 +807,8 @@ where
             );
 
             let obj = instance
-                .resolve_into_type_stream(
-                    info,
-                    fragment.type_condition.item,
-                    sub_exec
-                ).await;
+                .resolve_into_type_stream(info, fragment.type_condition.item, sub_exec)
+                .await;
 
             match obj {
                 Ok(val) => {
@@ -844,11 +829,10 @@ where
 
         Selection::InlineFragment(Spanning {
             item: ref fragment,
-            start: ref start_pos,
             ..
         }) => {
             if is_excluded(&fragment.directives, &executor.variables()) {
-                //                    continue;
+                // continue;
                 return Ok(Value::Null);
             }
 
@@ -870,13 +854,12 @@ where
                     return Err(e);
                 }
             } else {
-
                 if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
                         .resolve_into_type_stream(
                             info,
                             type_name.clone(),
-                            //                                Some(&fragment.selection_set[..]),
+                            // Some(&fragment.selection_set[..]),
                             sub_exec,
                         )
                         .await;

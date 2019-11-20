@@ -26,7 +26,6 @@ pub use self::look_ahead::{
     LookAheadSelection, LookAheadValue,
 };
 use crate::executor::executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor};
-use std::sync::Arc;
 
 pub mod executor_wrappers;
 mod look_ahead;
@@ -76,7 +75,7 @@ where
 pub struct ExecutionError<S> {
     location: SourcePosition,
     path: Vec<String>,
-    pub(crate) error: FieldError<S>,
+    error: FieldError<S>,
 }
 
 impl<S> Eq for ExecutionError<S> where Self: PartialEq {}
@@ -975,10 +974,6 @@ where
             errors: errors,
             field_path: FieldPath::Root(op.start),
         });
-
-        //        // unwrap is safe here because executor's data was set up above
-        //        executor
-        //            .set(executor.executor_variables.create_executor().unwrap());
 
         value = match op.item.operation_type {
             OperationType::Subscription => {

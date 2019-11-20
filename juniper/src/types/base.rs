@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use indexmap::IndexMap;
 
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
@@ -10,7 +8,6 @@ use crate::{
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
-    FieldError,
 };
 
 /// GraphQL type kind

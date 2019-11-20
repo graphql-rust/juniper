@@ -243,12 +243,11 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                                 if counter == 2 {
                                     Err(FieldError::new(
                                         "some field error from handler",
-                                        Value::Scalar(
-                                            DefaultScalarValue::String("some additional string".to_string())
-                                        )
+                                        Value::Scalar(DefaultScalarValue::String(
+                                            "some additional string".to_string(),
+                                        )),
                                     ))
-                                }
-                                else {
+                                } else {
                                     Ok(User {
                                         id: counter,
                                         kind: UserKind::Admin,
@@ -257,7 +256,6 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                                 }
                             });
                         Box::pin(stream)
-
                     }
                 };
                 let f = res.then(move |res| {

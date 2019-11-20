@@ -3,13 +3,11 @@ use std::{collections::HashMap, sync::RwLock};
 use crate::parser::SourcePosition;
 use crate::{
     ast::Fragment,
-    executor::FieldPath,
-    parser::Spanning,
     schema::model::{SchemaType, TypeType},
-    DefaultScalarValue, ExecutionError, Executor, FieldError, FieldResult, ScalarRefValue,
+    DefaultScalarValue, ExecutionError, Executor, FieldError, ScalarRefValue,
     ScalarValue, Selection, Value, ValuesResultStream, Variables,
 };
-use std::sync::Arc;
+use crate::executor::FieldPath;
 
 /// Struct owning `Executor`'s variables
 pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
@@ -28,154 +26,16 @@ where
     pub(crate) field_path: FieldPath<'a>,
 }
 
-impl<'a, CtxT, S> ExecutorDataVariables<'a, CtxT, S>
-where
-    S: Clone,
-{
-    //    /// Create new executor using inner variables
-    //    pub fn create_executor(self_ty: &'a Self) -> Executor<'a, CtxT, S> {
-    //        Executor {
-    //            fragments: &self_ty.fragments,
-    //            variables: &self_ty.variables,
-    //            current_selection_set: if let Some(s) = &self_ty.current_selection_set {
-    //                Some(&s[..])
-    //            } else {
-    //                None
-    //            },
-    //            parent_selection_set: if let Some(s) = &self_ty.parent_selection_set {
-    //                Some(&s[..])
-    //            } else {
-    //                None
-    //            },
-    //            current_type: self_ty.current_type.clone(),
-    //            schema: Arc::new(self_ty.schema),
-    //            context: self_ty.context,
-    //            errors: &self_ty.errors,
-    //            field_path: self_ty.field_path.clone(),
-    //        }
-    //    }
-}
-
-/// `ExecutorDataVariables` wrapper
-pub(crate) struct ExecutorData<'a, CtxT, S = DefaultScalarValue>
-where
-    CtxT: 'a,
-    S: Clone + 'a,
-{
-    /// Struct owning variables
-    _data: Option<ExecutorDataVariables<'a, CtxT, S>>,
-}
-
-impl<'a, CtxT, S> ExecutorData<'a, CtxT, S>
-where
-    CtxT: 'a,
-    S: Clone + 'a,
-{
-    /// Create new empty `ExecutorData`
-    pub fn new() -> Self {
-        Self { _data: None }
-    }
-
-    /// Set executor's data
-    pub fn set_data(&mut self, data: ExecutorDataVariables<'a, CtxT, S>) {
-        self._data = Some(data);
-    }
-
-    //    /// Create new executor using inner data
-    //    pub fn create_executor(&'a self) -> Result<Executor<'a, CtxT, S>, ()> {
-    //        if let Some(ref s) = self._data {
-    //            Ok(ExecutorDataVariables::create_executor(s))
-    //        } else {
-    //            Err(())
-    //        }
-    //    }
-
-    /// Get sorted errors vector
-    pub fn errors(&'a mut self) -> Option<&'a Vec<ExecutionError<S>>>
-    where
-        S: PartialEq,
-    {
-        if let Some(ref mut s) = self._data {
-            let errors = match s.errors.get_mut() {
-                Ok(e) => e,
-                Err(_) => return None,
-            };
-            errors.sort();
-            Some(errors)
-        } else {
-            None
-        }
-    }
-}
-
-/// `Executor` which can be set later.
-/// __Panics__ on `Deref` if `Executor` was not set.
-pub(crate) struct OptionalExecutor<'a, CtxT, S = DefaultScalarValue>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    /// `Executor` instance
-    executor: Option<Executor<'a, CtxT, S>>,
-}
-
-impl<'a, CtxT, S> OptionalExecutor<'a, CtxT, S>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    /// Create new `OptionalExecutor`
-    pub fn new() -> Self {
-        Self { executor: None }
-    }
-
-    /// Set `Executor` to dereference
-    pub fn set(&mut self, e: Executor<'a, CtxT, S>) {
-        self.executor = Some(e);
-    }
-}
-
-impl<'a, CtxT, S> std::ops::Deref for OptionalExecutor<'a, CtxT, S>
-where
-    CtxT: 'a,
-    S: 'a,
-{
-    type Target = Executor<'a, CtxT, S>;
-
-    fn deref(&self) -> &Self::Target {
-        if let Some(ref e) = self.executor {
-            e
-        } else {
-            panic!("Tried dereferencing OptionalExecutor which was not set")
-        }
-    }
-}
-
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
 pub struct SubscriptionsExecutor<'a, CtxT, S> {
     pub(crate) variables: ExecutorDataVariables<'a, CtxT, S>,
-    //    /// Fragments vector.
-    //    /// Needed in as a separate field because `executor_variables`
-    //    /// contains a hashmap of references to `fragments`
-    //    pub(crate) fragments: Vec<Spanning<Fragment<'a, S>>>,
-    //
-    //    /// `Executor` instance
-    //    pub(crate) executor: OptionalExecutor<'a, CtxT, S>,
 }
 
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
 {
-    //    /// Create new empty `SubscriptionsExecutor`
-    //    pub fn new() -> Self {
-    //        Self {
-    //            executor_variables: ExecutorData::new(),
-    //            fragments: vec![],
-    //            executor: OptionalExecutor::new(),
-    //        }
-    //    }
 
     pub fn from_data(data: ExecutorDataVariables<'a, CtxT, S>) -> Self {
         Self { variables: data }
@@ -228,7 +88,7 @@ where
     }
 }
 
-//todo: do something with a lot of boxing
+//todo: do something with a lot of cloning
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: Clone,

@@ -21,7 +21,7 @@ use crate::{
     executor::ExecutionError,
     value,
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
-    FieldError, FieldResult, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
+    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -248,7 +248,9 @@ impl<'a, S> StreamGraphQLResponse<'a, S> {
         self.0.as_ref().err()
     }
 
-    pub fn execution_errors<'err>(&'err self) -> Option<&'err ExecutionError<S>> {
+    /// Return error that happened while trying to resolve stream.
+    /// Returns None if errors didn't happen
+    pub fn execution_error<'err>(&'err self) -> Option<&'err ExecutionError<S>> {
         if let Ok(result) = self.0.as_ref() {
             if let Err(e) = result {
                 Some(e)
@@ -351,8 +353,7 @@ where
                                 let (name, val) = el.unwrap();
                                 if let Ok(value) = val {
                                     (name, value)
-                                }
-                                else {
+                                } else {
                                     (name, Value::Null)
                                 }
                             });

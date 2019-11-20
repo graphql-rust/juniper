@@ -494,7 +494,7 @@ where
                         return;
                     }
 
-                    if let Some(error) = response_stream.execution_errors() {
+                    if let Some(error) = response_stream.execution_error() {
                         let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
                             r#"{{"type":"error","id":"{}","payload":{}}}"#,
                             request_id,
