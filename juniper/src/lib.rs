@@ -185,7 +185,10 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 pub use crate::{
     executor::ValuesResultStream,
     types::async_await::GraphQLTypeAsync,
-    types::subscriptions::GraphQLSubscriptionType,
+    types::subscriptions::{
+        GraphQLSubscriptionType, SubscriptionConnection,
+        SubscriptionCoordinator, SubscriptionCoordinatorStruct,
+    },
 };
 
 /// An error that prevented query execution

@@ -9,7 +9,7 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, Value};
+use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, Value, SubscriptionCoordinatorStruct};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -280,6 +280,36 @@ fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
+struct WarpSubscriptionConnection {
+
+}
+
+impl WarpSubscriptionConnection {
+
+}
+
+impl juniper::SubscriptionConnection for WarpSubscriptionConnection {
+    type ArgsData = ();
+
+    fn new() -> Self {
+        Self {
+
+        }
+    }
+
+    fn subscribe(&mut self, data: Self::ArgsData) {
+
+    }
+
+    fn unsubscribe(&mut self, data: Self::ArgsData) {
+
+    }
+
+    fn close(&mut self, data: Self::ArgsData) {
+
+    }
+}
+
 #[tokio::main]
 async fn main() {
     ::std::env::set_var("RUST_LOG", "warp_async");
@@ -301,6 +331,8 @@ async fn main() {
     let state2 = warp::any().map(move || Context {});
     let s_schema = Arc::new(schema());
     let qm_graphql_filter = juniper_warp::make_graphql_filter_async(qm_schema, state.boxed());
+
+    let subscriptions_manager = SubscriptionCoordinatorStruct::<WarpSubscriptionConnection>::new();
 
     println!("Listening on 127.0.0.1:8080");
 

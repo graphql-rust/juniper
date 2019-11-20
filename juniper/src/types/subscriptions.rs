@@ -19,7 +19,7 @@ pub trait SubscriptionCoordinator {
 pub trait SubscriptionConnection {
     type ArgsData;
 
-    fn init() -> Self;
+    fn new() -> Self;
 
     fn subscribe(&mut self, data: Self::ArgsData);
 
@@ -35,6 +35,16 @@ pub struct SubscriptionCoordinatorStruct<T>
     last_index: u64,
 }
 
+impl<T> SubscriptionCoordinatorStruct<T>
+where T: SubscriptionConnection {
+    pub fn new() -> Self {
+        Self {
+            connections: HashMap::new(),
+            last_index: 0
+        }
+    }
+}
+
 impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
     where T: SubscriptionConnection
 {
@@ -43,7 +53,7 @@ impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
     type Id = u64;
 
     fn subscribe(&mut self, data: Self::ArgsData) -> Self::Id {
-        let sub = T::init();
+        let sub = T::new();
         let index = self.last_index + 1;
         self.connections.insert(index, sub);
         self.last_index = index;

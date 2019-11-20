@@ -236,15 +236,6 @@ where
 
     let mut async_values = FuturesOrdered::<BoxFuture<'a, AsyncValue<S>>>::new();
 
-    //    let meta_type = executor
-    //        .schema()
-    //        .concrete_type_by_name(
-    //            T::name(info)
-    //                .expect("Resolving named type's selection set")
-    //                .as_ref(),
-    //        )
-    //        .expect("Type not found in schema");
-
     for selection in selection_set {
         match *selection {
             Selection::Field(Spanning {
