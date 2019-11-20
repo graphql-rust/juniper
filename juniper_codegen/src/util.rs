@@ -1081,14 +1081,14 @@ impl GraphQLTypeDefiniton {
                     _type = quote!(<#t as GraphQLTraitAsync<_>>::Item);
                 } else {
                     //todo
-                    unimplemented!()
+                    panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
                 }
             } else {
                 if field.is_async {
                     _type = quote!(<#_type_name as GraphQLTraitAsync<_>>::Item);
                 } else {
                     //todo
-                    unimplemented!()
+                    panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
                 }
             }
 
@@ -1376,7 +1376,7 @@ fn extract_ok_type_from_std_result(ty: &syn::Type) -> Option<&syn::Type> {
         .and_then(|path| extract_result_segment(path))
         .and_then(|path_segment| {
             let type_params = &path_segment.arguments;
-            // It should have only an angle-bracketed params. We need the first one. ("T" in "<T, E>")
+            // It should have only angle-bracketed params. We need the first one. ("T" in "<T, E>")
             match *type_params {
                 PathArguments::AngleBracketed(ref params) => params.args.first(),
                 _ => None,
