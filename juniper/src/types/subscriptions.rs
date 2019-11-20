@@ -3,6 +3,58 @@ use std::sync::Arc;
 use crate::parser::Spanning;
 use crate::Arguments;
 use crate::types::base::{is_excluded, merge_key_into};
+use std::collections::HashMap;
+
+pub trait SubscriptionCoordinator {
+
+    type ArgsData;
+    type Connection: SubscriptionConnection;
+    type Id;
+
+    fn subscribe(&mut self, data: Self::ArgsData) -> Self::Id;
+
+    fn get_connection(&mut self, id: Self::Id) -> Option<&Self::Connection>;
+}
+
+pub trait SubscriptionConnection {
+    type ArgsData;
+
+    fn init() -> Self;
+
+    fn subscribe(&mut self, data: Self::ArgsData);
+
+    fn unsubscribe(&mut self, data: Self::ArgsData);
+
+    fn close(&mut self, data: Self::ArgsData);
+}
+
+pub struct SubscriptionCoordinatorStruct<T>
+    where T: SubscriptionConnection
+{
+    connections: HashMap<u64, T>,
+    last_index: u64,
+}
+
+impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
+    where T: SubscriptionConnection
+{
+    type ArgsData = ();
+    type Connection = T;
+    type Id = u64;
+
+    fn subscribe(&mut self, data: Self::ArgsData) -> Self::Id {
+        let sub = T::init();
+        let index = self.last_index + 1;
+        self.connections.insert(index, sub);
+        self.last_index = index;
+        index
+    }
+
+    fn get_connection(&mut self, id: Self::Id) -> Option<&Self::Connection> {
+        self.connections.get(&id)
+    }
+}
+
 
 /**
 *
