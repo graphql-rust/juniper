@@ -42,51 +42,6 @@ where
     }
 }
 
-impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
-{
-    /// Resolve a single arbitrary value into a return stream
-    ///
-    /// If the field fails to resolve, `null` will be returned.
-    #[cfg(feature = "async")]
-    pub async fn resolve_into_stream<'s, 'i, 'v, T>(
-        self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
-    {
-        self.subscribe(info, value).await
-    }
-
-    /// Resolve a single arbitrary value into `Value<ValuesStream>`
-    #[cfg(feature = "async")]
-    pub async fn subscribe<'s, 'i, 'v, T>(
-        self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
-    where
-        'i: 'a,
-        'v: 'a,
-        's: 'a,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync + 'static,
-    {
-        value.resolve_into_stream(info, self).await
-    }
-}
 
 //todo: do something with a lot of cloning
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
@@ -194,29 +149,6 @@ where
             context: self.variables.context,
             errors: &self.variables.errors,
             field_path: self.variables.field_path.clone(),
-        }
-    }
-
-    #[doc(hidden)]
-    /// Generate an error to the execution engine at the current executor location
-    pub fn generate_error(&self, error: FieldError<S>) -> ExecutionError<S> {
-        self.generate_error_at(error, self.location().clone())
-    }
-
-    #[doc(hidden)]
-    /// Add an error to the execution engine at a specific location
-    pub fn generate_error_at(
-        &self,
-        error: FieldError<S>,
-        location: SourcePosition,
-    ) -> ExecutionError<S> {
-        let mut path = Vec::new();
-        self.variables.field_path.construct_path(&mut path);
-
-        ExecutionError {
-            location,
-            path,
-            error,
         }
     }
 

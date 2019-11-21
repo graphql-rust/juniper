@@ -358,6 +358,51 @@ where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    /// Resolve a single arbitrary value into a return stream
+   ///
+   /// If the field fails to resolve, `null` will be returned.
+    #[cfg(feature = "async")]
+    pub async fn resolve_into_stream<'s, 'i, 'v, 'res, T>(
+        &'s self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+        where
+            'i: 'res,
+            'v: 'res,
+            T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+            T::TypeInfo: Send + Sync,
+            CtxT: Send + Sync,
+            S: Send + Sync + 'static,
+    {
+        self.subscribe(info, value).await
+    }
+
+    /// Resolve a single arbitrary value into `Value<ValuesStream>`
+    #[cfg(feature = "async")]
+    pub async fn subscribe<'s, 'i, 'v, 'res, T>(
+        &'s self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+        where
+            'i: 'res,
+            'v: 'res,
+            T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+            T::TypeInfo: Send + Sync,
+            CtxT: Send + Sync,
+            S: Send + Sync + 'static,
+    {
+        value.resolve_into_stream(info, self).await
+    }
+}
+
+
+impl<'a, CtxT, S> Executor<'a, CtxT, S>
+where
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
     /// Resolve a single arbitrary value, mapping the context to a new type
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
@@ -511,6 +556,10 @@ where
         }
     }
 
+    pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
+        self.current_selection_set
+    }
+
     /// Access the current context
     ///
     /// You usually provide the context when calling the top-level `execute`
@@ -617,6 +666,29 @@ where
                 })
             })
             .unwrap_or_default()
+    }
+
+    #[doc(hidden)]
+    /// Generate an error to the execution engine at the current executor location
+    pub fn generate_error(&self, error: FieldError<S>) -> ExecutionError<S> {
+        self.generate_error_at(error, self.location().clone())
+    }
+
+    #[doc(hidden)]
+    /// Add an error to the execution engine at a specific location
+    pub fn generate_error_at(
+        &self,
+        error: FieldError<S>,
+        location: SourcePosition,
+    ) -> ExecutionError<S> {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        ExecutionError {
+            location,
+            path,
+            error,
+        }
     }
 }
 
@@ -960,20 +1032,35 @@ where
             _ => unreachable!(),
         };
 
-        let executor = SubscriptionsExecutor::from_data(ExecutorDataVariables {
-            fragments: fragments
+//        let executor = SubscriptionsExecutor::from_data(ExecutorDataVariables {
+//            fragments: fragments
+//                .into_iter()
+//                .map(|f| (f.item.name.item, f.item))
+//                .collect(),
+//            variables: final_vars,
+//            current_selection_set: Some(op.item.selection_set),
+//            parent_selection_set: None,
+//            current_type: root_type,
+//            schema: &root_node.schema,
+//            context,
+//            errors: errors,
+//            field_path: FieldPath::Root(op.start),
+//        });
+
+        let executor = Executor {
+            fragments: &fragments
                 .into_iter()
                 .map(|f| (f.item.name.item, f.item))
                 .collect(),
-            variables: final_vars,
-            current_selection_set: Some(op.item.selection_set),
+            variables: &final_vars,
+            current_selection_set: Some(&op.item.selection_set[..]),
             parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
             context,
-            errors: errors,
+            errors: &errors,
             field_path: FieldPath::Root(op.start),
-        });
+        };
 
         value = match op.item.operation_type {
             OperationType::Subscription => {

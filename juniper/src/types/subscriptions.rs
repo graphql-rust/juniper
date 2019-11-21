@@ -1,4 +1,4 @@
-use crate::{SubscriptionsExecutor, ValuesResultStream, Value, ExecutionError, Object, Selection, GraphQLType, ScalarRefValue, ScalarValue, FieldError, BoxFuture};
+use crate::{SubscriptionsExecutor, ValuesResultStream, Value, ExecutionError, Object, Selection, GraphQLType, ScalarRefValue, ScalarValue, FieldError, BoxFuture, Executor};
 use std::sync::Arc;
 use crate::parser::Spanning;
 use crate::Arguments;
@@ -222,16 +222,15 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
     async fn resolve_into_stream<'s, 'i, 'ss, 'ref_e, 'e, 'res>(
         &'s self,
         info: &'i Self::TypeInfo,
-        executor: SubscriptionsExecutor<'e, Self::Context, S>,
+        executor: &'ref_e Executor<'e, Self::Context, S>,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
         where
             's: 'res,
             'i: 'res,
             'ss: 'res,
             'ref_e: 'e,
-            'e: 'res,
     {
-        if executor.variables.current_selection_set.is_some() {
+        if executor.current_selection_set().is_some() {
             resolve_selection_set_into_stream(self, info, executor).await
         } else {
             panic!("resolve_into_stream() must be implemented");
@@ -252,11 +251,9 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
         _: &Self::TypeInfo,     // this subscription's type info
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
-        _: Arc<SubscriptionsExecutor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
+        _: Arc<Executor<'e, Self::Context, S>>, // field's executor (subscription's sub-executor
         // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
-        where
-            'e: 'res,
     {
         panic!("resolve_field_into_stream must be implemented");
     }
@@ -270,24 +267,22 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    async fn resolve_into_type_stream<'s, 'i, 'tn, 'ss, 'e, 'res>(
+    async fn resolve_into_type_stream<'s, 'i, 'tn, 'e, 'res>(
         &'s self,
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
-        executor: SubscriptionsExecutor<'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
+        executor: Executor<'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
         // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
         where
             's: 'res,
             'i: 'res,
-            'ss: 'res,
-            'e: 'res,
     {
-        if Self::name(info) == Some(type_name) {
-            self.resolve_into_stream(info, executor).await
-        } else {
+//        if Self::name(info) == Some(type_name) {
+//            self.resolve_into_stream(info, &executor).await
+//        } else {
             panic!("resolve_into_type_stream must be implemented");
-        }
+//        }
     }
 }
 
@@ -295,18 +290,17 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 // This wrapper is necessary because async fns can not be recursive.
 // Panics if executor's current selection set is None
 #[cfg(feature = "async")]
-fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S>(
+fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
-    executor: SubscriptionsExecutor<'e, CtxT, S>,
-) ->
-                                                                                   BoxFuture<'res, Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>>
+    executor: &'ref_e Executor<'e, CtxT, S>,
+) -> BoxFuture<'fut, Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>>
     where
         'i: 'res,
         'inf: 'res,
-        'ss: 'res,
-        'e: 'res,
         'ref_e: 'e,
+        'e: 'fut,
+        'res: 'fut,
         T: GraphQLSubscriptionType<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         S: ScalarValue + Send + Sync + 'static,
@@ -320,27 +314,37 @@ fn resolve_selection_set_into_stream<'i, 'inf, 'ss, 'ref_e, 'e, 'res, T, CtxT, S
 
 #[cfg(feature = "async")]
 /// Selection set resolver logic
-pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
-    instance: &'a T,
-    info: &'a T::TypeInfo,
-    executor: SubscriptionsExecutor<'a, CtxT, S>,
-) -> Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>
+pub(crate) async fn resolve_selection_set_into_stream_recursive<
+    'i,
+    'inf,
+    'ref_e,
+    'e,
+    'res,
+    T,
+    CtxT,
+    S
+>(
+    instance: &'i T,
+    info: &'inf T::TypeInfo,
+    executor: &'ref_e Executor<'e, CtxT, S>,
+) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
     where
         T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
         S: ScalarValue + Send + Sync + 'static,
         CtxT: Send + Sync,
         for<'b> &'b S: ScalarRefValue<'b>,
+        'i: 'res,
+        'inf: 'res,
+        'ref_e: 'e,
 {
     let selection_set = executor
-        .variables
-        .current_selection_set
-        .as_ref()
+        .current_selection_set()
         .expect("Executor's selection set is none");
     if selection_set.len() > 1 {
         panic!("multiple subscriptions are not implemented yet");
     }
-    let mut object: Object<ValuesResultStream<'a, S>> = Object::with_capacity(selection_set.len());
+    let mut object: Object<ValuesResultStream<'res, S>> = Object::with_capacity(selection_set.len());
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
@@ -350,7 +354,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
         )
         .expect("Type not found in schema");
 
-    //    for selection in selection_set {
+//        for selection in selection_set {
     match selection_set[0] {
         Selection::Field(Spanning {
                              item: ref f,
@@ -391,7 +395,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
                 &response_name,
                 f.name.item,
                 start_pos.clone(),
-                f.selection_set.as_ref().map(|v| v.clone()),
+                f.selection_set.as_ref().map(|x| &x[..]),
             ));
 
             let sub_exec2 = Arc::clone(&sub_exec);
@@ -444,12 +448,13 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
 
             let sub_exec = executor.type_sub_executor(
                 Some(fragment.type_condition.item),
-                Some(fragment.selection_set.clone()),
+                Some(&fragment.selection_set[..]),
             );
 
             let obj = instance
                 .resolve_into_type_stream(info, fragment.type_condition.item, sub_exec)
                 .await;
+
 
             match obj {
                 Ok(val) => {
@@ -479,7 +484,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<'a, T, CtxT, S>(
 
             let sub_exec = executor.type_sub_executor(
                 fragment.type_condition.as_ref().map(|c| c.item),
-                Some(fragment.selection_set.clone()),
+                Some(&fragment.selection_set[..]),
             );
 
             if let Some(ref type_condition) = fragment.type_condition {

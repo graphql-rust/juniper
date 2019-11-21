@@ -466,11 +466,9 @@ where
                     let payload = request.payload.expect("could not deserialize payload");
                     let request_id = request.id.unwrap_or("1".to_string());
 
-                    // execute subscription
                     let graphql_request =
                         GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
 
-                    //                        let mut executor = juniper::SubscriptionsExecutor::<'_, Context, S>::new();
                     let response_stream = graphql_request.subscribe(&schema, &context).await;
 
                     if let Some(error) = response_stream.graphql_errors() {
