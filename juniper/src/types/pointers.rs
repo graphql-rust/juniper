@@ -151,7 +151,7 @@ where
         info: &'b <Self as crate::GraphQLType<S>>::TypeInfo,
         field_name: &'b str,
         arguments: &'b Arguments<'b, S>,
-        executor: &'b Executor<'b, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'b Executor<'b, 'b, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> ExecutionResult<S> {
         crate::GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
             .await
@@ -161,7 +161,7 @@ where
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'a Executor<'a, 'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor).await
     }

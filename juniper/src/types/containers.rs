@@ -220,7 +220,7 @@ where
 
 #[cfg(feature = "async")]
 async fn resolve_into_list_async<'a, S, T, I>(
-    executor: &'a Executor<'a, T::Context, S>,
+    executor: &'a Executor<'a, 'a, T::Context, S>,
     info: &'a T::TypeInfo,
     items: I,
 ) -> Value<S>
@@ -270,7 +270,7 @@ where
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
         _: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'a Executor<'a, 'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         resolve_into_list_async(executor, info, self.iter()).await
     }
@@ -290,7 +290,7 @@ where
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
         _: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'a Executor<'a, 'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         resolve_into_list_async(executor, info, self.iter()).await
     }
@@ -310,7 +310,7 @@ where
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
         _: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'a Executor<'a, 'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> Value<S> {
         match *self {
             Some(ref obj) => executor.resolve_into_value_async(info, obj).await,

@@ -36,9 +36,24 @@ impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
 where
     S: std::clone::Clone,
 {
-
     pub fn from_data(data: ExecutorDataVariables<'a, CtxT, S>) -> Self {
         Self { variables: data }
+    }
+
+    pub fn clone(&self) -> Self {
+        Self {
+            variables: ExecutorDataVariables {
+                fragments: self.variables.fragments.clone(),
+                variables: self.variables.variables.clone(),
+                current_selection_set: self.variables.current_selection_set.clone(),
+                parent_selection_set: self.variables.parent_selection_set.clone(),
+                current_type: self.variables.current_type.clone(),
+                schema: self.variables.schema.clone(),
+                context: self.variables.context.clone(),
+                errors: RwLock::new(vec![]),
+                field_path: self.variables.field_path.clone(),
+            }
+        }
     }
 }
 
@@ -130,15 +145,16 @@ where
     }
 
     #[doc(hidden)]
-    pub fn as_executor<'e>(&'e self) -> Executor<'e, CtxT, S> {
+    pub fn as_executor<'e>(&'e self) -> Executor<'e, 'e, CtxT, S> {
         Executor {
             fragments: &self.variables.fragments,
             variables: &self.variables.variables,
-            current_selection_set: if let Some(s) = &self.variables.current_selection_set {
-                Some(&s[..])
-            } else {
-                None
-            },
+            current_selection_set: if let Some(s) =
+                &self.variables.current_selection_set {
+                    Some(&s[..])
+                } else {
+                    None
+                },
             parent_selection_set: if let Some(s) = &self.variables.parent_selection_set {
                 Some(&s[..])
             } else {

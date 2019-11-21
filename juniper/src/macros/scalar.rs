@@ -427,7 +427,7 @@ macro_rules! graphql_scalar {
                     &'a self,
                     info: &'a Self::TypeInfo,
                     selection_set: Option<&'a [$crate::Selection<'a, $crate::__juniper_insert_generic!($($scalar)+)>]>,
-                    executor: &'a $crate::Executor<'a, Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>,
+                    executor: &'a $crate::Executor<'a, 'a, Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>,
                 ) -> futures::future::BoxFuture<'async_trait, $crate::Value<$crate::__juniper_insert_generic!($($scalar)+)>>
                 where
                     'a: 'async_trait,

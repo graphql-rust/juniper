@@ -191,14 +191,23 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
 }
 
 impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
-    fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
+    fn resolve_field_into_stream<
+        'args,
+        'ref_e,
+        'e,
+        'r,
+        'res,
+        'life0,
+        'life1,
+        'life2,
+        'async_trait,
+    >(
         &'life0 self,
         info: &'life1 Self::TypeInfo,
         field_name: &'life2 str,
         arguments: juniper::Arguments<'args, juniper::DefaultScalarValue>,
-        executor: std::sync::Arc<
-            juniper::Executor<'e, Self::Context, juniper::DefaultScalarValue>,
-        >,
+        executor: &'r
+            juniper::Executor<'ref_e, 'e, Self::Context, juniper::DefaultScalarValue>,
     ) -> std::pin::Pin<
         Box<
             dyn futures::future::Future<
@@ -213,8 +222,11 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
         >,
     >
     where
-        'args: 'async_trait,
         'e: 'res,
+        'args: 'async_trait,
+        'ref_e: 'async_trait,
+        'e: 'async_trait,
+        'r: 'async_trait,
         'res: 'async_trait,
         'life0: 'async_trait,
         'life1: 'async_trait,
@@ -249,12 +261,14 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                         Box::pin(stream)
                     }
                 };
+                let executor = executor.as_owned_executor();
                 let f = res.then(move |res| {
-                    let executor = executor.clone();
+                    let exec = executor.clone();
+
                     let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
-                        juniper::IntoResolvable::into(res, executor.context());
+                        juniper::IntoResolvable::into(res, exec.context());
                     async move {
-                        let ex = executor.as_executor();
+                        let ex = exec.as_executor();
                         match res2 {
                             Ok(Some((ctx, r))) => {
                                 let sub = ex.replaced_context(ctx);

@@ -51,19 +51,19 @@ pub enum FieldPath<'a> {
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
 #[derive(Clone)]
-pub struct Executor<'a, CtxT, S = DefaultScalarValue>
+pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
-    variables: &'a Variables<S>,
-    current_selection_set: Option<&'a [Selection<'a, S>]>,
+    fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
+    variables: &'r Variables<S>,
+    current_selection_set: Option<&'r [Selection<'a, S>]>,
     parent_selection_set: Option<&'a [Selection<'a, S>]>,
     current_type: TypeType<'a, S>,
     schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
-    errors: &'a RwLock<Vec<ExecutionError<S>>>,
+    errors: &'r RwLock<Vec<ExecutionError<S>>>,
     field_path: FieldPath<'a>,
 }
 
@@ -353,7 +353,7 @@ where
     }
 }
 
-impl<'a, CtxT, S> Executor<'a, CtxT, S>
+impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -363,13 +363,14 @@ where
    /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
     pub async fn resolve_into_stream<'s, 'i, 'v, 'res, T>(
-        &'s self,
+        &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
         where
             'i: 'res,
             'v: 'res,
+            'a: 'res,
             T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
             T::TypeInfo: Send + Sync,
             CtxT: Send + Sync,
@@ -381,13 +382,14 @@ where
     /// Resolve a single arbitrary value into `Value<ValuesStream>`
     #[cfg(feature = "async")]
     pub async fn subscribe<'s, 'i, 'v, 'res, T>(
-        &'s self,
+        &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
         where
             'i: 'res,
             'v: 'res,
+            'a: 'res,
             T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
             T::TypeInfo: Send + Sync,
             CtxT: Send + Sync,
@@ -398,7 +400,7 @@ where
 }
 
 
-impl<'a, CtxT, S> Executor<'a, CtxT, S>
+impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -492,7 +494,7 @@ where
     ///
     /// This can be used to connect different types, e.g. from different Rust
     /// libraries, that require different context types.
-    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, NewCtxT, S> {
+    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, 'b, NewCtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -564,7 +566,7 @@ where
     ///
     /// You usually provide the context when calling the top-level `execute`
     /// function, or using the context factory in the Iron integration.
-    pub fn context(&self) -> &'a CtxT {
+    pub fn context(&self) -> &'r CtxT {
         self.context
     }
 
@@ -579,7 +581,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> &'a Variables<S> {
+    pub fn variables(&self) -> &'r Variables<S> {
         self.variables
     }
 
@@ -689,6 +691,20 @@ where
             path,
             error,
         }
+    }
+
+    pub fn as_owned_executor<'s>(&'s self) -> SubscriptionsExecutor<'a, CtxT, S> {
+        SubscriptionsExecutor::from_data(ExecutorDataVariables {
+            fragments: self.fragments.clone(),
+            variables: self.variables.clone(),
+            current_selection_set: self.current_selection_set.map(|x| x.to_vec()),
+            parent_selection_set: self.parent_selection_set.map(|x| x.to_vec()),
+            current_type: self.current_type.clone(),
+            schema: self.schema.clone(),
+            context: self.context,
+            errors: RwLock::new(vec![]),
+            field_path: self.field_path.clone(),
+        })
     }
 }
 
@@ -950,9 +966,8 @@ pub async fn execute_validated_subscription<
     'd,
     'rn,
     'ctx,
-    'ref_e,
-    'e,
     'res,
+    'e,
     QueryT,
     MutationT,
     SubscriptionT,
@@ -969,8 +984,10 @@ where
     'd: 'e,
     'rn: 'e,
     'ctx: 'e,
-    'ref_e: 'e,
     'e: 'res,
+    'd: 'res,
+    'rn: 'res,
+    'ctx: 'res,
     S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
@@ -1032,22 +1049,7 @@ where
             _ => unreachable!(),
         };
 
-//        let executor = SubscriptionsExecutor::from_data(ExecutorDataVariables {
-//            fragments: fragments
-//                .into_iter()
-//                .map(|f| (f.item.name.item, f.item))
-//                .collect(),
-//            variables: final_vars,
-//            current_selection_set: Some(op.item.selection_set),
-//            parent_selection_set: None,
-//            current_type: root_type,
-//            schema: &root_node.schema,
-//            context,
-//            errors: errors,
-//            field_path: FieldPath::Root(op.start),
-//        });
-
-        let executor = Executor {
+        let executor: Executor<'_, 'e, CtxT, S> = Executor {
             fragments: &fragments
                 .into_iter()
                 .map(|f| (f.item.name.item, f.item))

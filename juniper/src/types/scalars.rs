@@ -207,7 +207,7 @@ where
         &'a self,
         info: &'a <Self as crate::GraphQLType<S>>::TypeInfo,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'a Executor<'a, 'a, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> crate::Value<S> {
         self.resolve(info, selection_set, executor)
     }

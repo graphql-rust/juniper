@@ -135,7 +135,7 @@ where
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> Value<S> {
         if let Some(selection_set) = selection_set {
             resolve_selection_set_into_async(self, info, selection_set, executor).await
@@ -153,7 +153,7 @@ where
         _: &'a Self::TypeInfo,   // this query's type info
         _: &'a str,              // field's type name
         _: &'a Arguments<'a, S>, // field's arguments
-        _: &'a Executor<'a, Self::Context, S>, // field's executor (query's sub-executor
+        _: &'a Executor<'a, 'a, Self::Context, S>, // field's executor (query's sub-executor
                                  // with current field's selection set)
     ) -> ExecutionResult<S> {
         panic!("resolve_field must be implemented by object types");
@@ -169,7 +169,7 @@ where
         info: &'a Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> ExecutionResult<S> {
         if Self::name(info) == Some(type_name) {
             Ok(self.resolve_async(info, selection_set, executor).await)
@@ -188,7 +188,7 @@ pub(crate) fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
-    executor: &'e Executor<'e, CtxT, S>,
+    executor: &'e Executor<'e, 'e, CtxT, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
@@ -221,7 +221,7 @@ pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: &'a Executor<'a, 'a, CtxT, S>,
 ) -> Value<S>
 where
     T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

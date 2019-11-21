@@ -98,7 +98,7 @@ where
         info: &'b <Self as crate::GraphQLType<S>>::TypeInfo,
         field_name: &'b str,
         arguments: &'b Arguments<'b, S>,
-        executor: &'b Executor<'b, <Self as crate::GraphQLType<S>>::Context, S>,
+        executor: &'b Executor<'b, 'b, <Self as crate::GraphQLType<S>>::Context, S>,
     ) -> ExecutionResult<S> {
         match field_name {
             "__schema" | "__type" => self.resolve_field(info, field_name, arguments, executor),
