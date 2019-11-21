@@ -551,14 +551,14 @@ impl FieldAttributes {
     ) -> syn::parse::Result<Self> {
         let doc_comment = get_doc_comment(&attrs);
         let deprecation = get_deprecated(&attrs);
-
+        //TEMP add the condition were here before and add a new for authoriation
         let attr_opt = attrs.into_iter().find(|attr| attr.path.is_ident("graphql"));
 
+        println!("{:#?}", attr_opt);
         let mut output = match attr_opt {
             Some(attr) => attr.parse_args()?,
             None => Self::default(),
         };
-
         // Check for regular doc comment.
         if output.description.is_none() {
             output.description = doc_comment;

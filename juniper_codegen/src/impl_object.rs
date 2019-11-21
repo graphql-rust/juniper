@@ -10,7 +10,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
             panic!("Invalid attributes:\n{}", e);
         }
     };
-
     let item = match syn::parse::<syn::Item>(body) {
         Ok(item) => item,
         Err(err) => {
@@ -100,7 +99,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         );
                     }
                 };
-
                 let attrs = match util::FieldAttributes::from_attrs(
                     method.attrs,
                     util::FieldAttributeParseMode::Impl,

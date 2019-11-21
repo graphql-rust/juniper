@@ -8,6 +8,8 @@
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput};
 
 mod derive_enum;
 mod derive_input_object;
@@ -376,6 +378,17 @@ pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, false);
     gen.into()
 }
+
+#[proc_macro_attribute]
+pub fn aurelien(args: TokenStream, input: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+    quote!(
+        println!("Aurelien")
+        #ast
+    )
+    .into()
+}
+
 
 /// A proc macro for defining a GraphQL object.
 #[doc(hidden)]
