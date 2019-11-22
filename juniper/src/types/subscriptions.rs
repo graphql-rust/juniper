@@ -1,12 +1,14 @@
-use crate::{SubscriptionsExecutor, ValuesResultStream, Value, ExecutionError, Object, Selection, GraphQLType, ScalarRefValue, ScalarValue, FieldError, BoxFuture, Executor};
-use std::sync::Arc;
 use crate::parser::Spanning;
-use crate::Arguments;
 use crate::types::base::{is_excluded, merge_key_into};
+use crate::Arguments;
+use crate::{
+    BoxFuture, ExecutionError, Executor, FieldError, GraphQLType, Object, ScalarRefValue,
+    ScalarValue, Selection, SubscriptionsExecutor, Value, ValuesResultStream,
+};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub trait SubscriptionCoordinator {
-
     type ArgsData;
     type Connection: SubscriptionConnection;
     type Id;
@@ -29,24 +31,28 @@ pub trait SubscriptionConnection {
 }
 
 pub struct SubscriptionCoordinatorStruct<T>
-    where T: SubscriptionConnection
+where
+    T: SubscriptionConnection,
 {
     connections: HashMap<u64, T>,
     last_index: u64,
 }
 
 impl<T> SubscriptionCoordinatorStruct<T>
-where T: SubscriptionConnection {
+where
+    T: SubscriptionConnection,
+{
     pub fn new() -> Self {
         Self {
             connections: HashMap::new(),
-            last_index: 0
+            last_index: 0,
         }
     }
 }
 
 impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
-    where T: SubscriptionConnection
+where
+    T: SubscriptionConnection,
 {
     type ArgsData = ();
     type Connection = T;
@@ -64,7 +70,6 @@ impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
         self.connections.get(&id)
     }
 }
-
 
 /**
 *
@@ -206,11 +211,11 @@ impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
 */
 #[async_trait::async_trait]
 pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
-    where
-        Self::Context: Send + Sync,
-        Self::TypeInfo: Send + Sync,
-        S: ScalarValue + Send + Sync + 'static,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    Self::Context: Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// In order to resolve selection set on object types, default
     /// implementation calls `resolve_field_into_stream` every time a field
@@ -224,13 +229,12 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
         info: &'i Self::TypeInfo,
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
-        where
-            's: 'res,
-            'i: 'res,
-            'e: 'res,
-            'e: 'ref_e,
+    where
+        's: 'res,
+        'i: 'res,
+        'e: 'res,
+        'e: 'ref_e,
     {
-
         if executor.current_selection_set().is_some() {
             resolve_selection_set_into_stream(self, info, executor).await
         } else {
@@ -253,9 +257,10 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
         e: SubscriptionsExecutor<'e, Self::Context, S>, // field's executor (subscription's sub-executor
-        // with current field's selection set)
+                                                        // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
-    where 'e: 'res,
+    where
+        'e: 'res,
     {
         panic!("resolve_field_into_stream must be implemented");
     }
@@ -274,13 +279,13 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
-        // with current field's selection set)
+                                                                  // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
-        where
-            's: 'res,
-            'i: 'res,
-            'e: 'res,
-            'e: 'ref_e,
+    where
+        's: 'res,
+        'i: 'res,
+        'e: 'res,
+        'e: 'ref_e,
     {
         if Self::name(info) == Some(type_name) {
             self.resolve_into_stream(info, &executor).await
@@ -294,26 +299,24 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 // This wrapper is necessary because async fns can not be recursive.
 // Panics if executor's current selection set is None
 #[cfg(feature = "async")]
-fn resolve_selection_set_into_stream<
-    'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S
->(
+fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
 ) -> BoxFuture<'fut, Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>>
-    where
-        'i: 'res,
-        'inf: 'res,
-        'e: 'res,
-        'e: 'ref_e,
-        'e: 'fut,
-        'ref_e: 'fut,
-        'res: 'fut,
-        T: GraphQLSubscriptionType<S, Context = CtxT>,
-        T::TypeInfo: Send + Sync,
-        S: ScalarValue + Send + Sync + 'static,
-        CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
+where
+    'i: 'res,
+    'inf: 'res,
+    'e: 'res,
+    'e: 'ref_e,
+    'e: 'fut,
+    'ref_e: 'fut,
+    'res: 'fut,
+    T: GraphQLSubscriptionType<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance, info, executor,
@@ -330,21 +333,21 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
     'res,
     T,
     CtxT,
-    S
+    S,
 >(
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
 ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
-    where
-        T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        T::TypeInfo: Send + Sync,
-        S: ScalarValue + Send + Sync + 'static,
-        CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
-        'i: 'res,
-        'inf: 'res,
-        'e: 'res,
+where
+    T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
+    CtxT: Send + Sync,
+    for<'b> &'b S: ScalarRefValue<'b>,
+    'i: 'res,
+    'inf: 'res,
+    'e: 'res,
 {
     let selection_set = executor
         .current_selection_set()
@@ -353,7 +356,8 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
         panic!("multiple subscriptions are not implemented yet");
     }
 
-    let mut object: Object<ValuesResultStream<'res, S>> = Object::with_capacity(selection_set.len());
+    let mut object: Object<ValuesResultStream<'res, S>> =
+        Object::with_capacity(selection_set.len());
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
@@ -363,13 +367,13 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
         )
         .expect("Type not found in schema");
 
-//        for selection in selection_set {
+    //        for selection in selection_set {
     match selection_set[0] {
         Selection::Field(Spanning {
-                             item: ref f,
-                             start: ref start_pos,
-                             ..
-                         }) => {
+            item: ref f,
+            start: ref start_pos,
+            ..
+        }) => {
             if is_excluded(&f.directives, &executor.variables()) {
                 // continue;
                 return Ok(Value::Null);
@@ -400,28 +404,24 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
 
             let exec_vars = executor.variables();
 
-            let sub_exec = executor
-                .field_sub_executor(
-                    response_name,
-                    f.name.item,
-                    start_pos.clone(),
-                    f.selection_set.as_ref().map(|x| &x[..]),
-                );
-            let owned_sub_exec = executor
-                .owned_field_sub_executor(
-                    response_name,
-                    f.name.item,
-                    start_pos.clone(),
-                    f.selection_set.clone(),
-                );
-
+            let sub_exec = executor.field_sub_executor(
+                response_name,
+                f.name.item,
+                start_pos.clone(),
+                f.selection_set.as_ref().map(|x| &x[..]),
+            );
+            let owned_sub_exec = executor.owned_field_sub_executor(
+                response_name,
+                f.name.item,
+                start_pos.clone(),
+                f.selection_set.clone(),
+            );
 
             let args = Arguments::new(
                 f.arguments.as_ref().map(|m| {
                     m.item
                         .iter()
-                        .map(|&(ref k, ref v)|
-                                (k.item, v.item.clone().into_const(&exec_vars)))
+                        .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(&exec_vars)))
                         .collect()
                 }),
                 &meta_field.arguments,
@@ -430,12 +430,8 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
             let is_non_null = meta_field.field_type.is_non_null();
 
             let res = instance
-                .resolve_field_into_stream(
-                    info,
-                    f.name.item,
-                    args,
-                    owned_sub_exec
-                ).await;
+                .resolve_field_into_stream(info, f.name.item, args, owned_sub_exec)
+                .await;
 
             match res {
                 Ok(Value::Null) if is_non_null => {
@@ -456,8 +452,8 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
         }
 
         Selection::FragmentSpread(Spanning {
-                                      item: ref spread, ..
-                                  }) => {
+            item: ref spread, ..
+        }) => {
             if is_excluded(&spread.directives, &executor.variables()) {
                 // continue;
                 return Ok(Value::Null);
@@ -467,38 +463,37 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
                 .fragment_by_name(spread.name.item)
                 .expect("Fragment could not be found");
 
-//            let sub_exec = executor.type_sub_executor(
-//                Some(fragment.type_condition.item),
-//                Some(&fragment.selection_set[..]),
-//            );
-//
-//            let obj = instance
-//                .resolve_into_type_stream(
-//                    info,
-//                    fragment.type_condition.item,
-//                    &sub_exec
-//                ).await;
-//
-//            match obj {
-//                Ok(val) => {
-//                    match val {
-//                        Value::Object(o) => {
-//                            for (k, v) in o {
-//                                merge_key_into(&mut object, &k, v);
-//                            }
-//                        }
-//                        // since this was a wrapper of current function,
-//                        // we'll rather get an object or nothing
-//                        _ => unreachable!(),
-//                    }
-//                }
-//                Err(e) => return Err(e),
-//            }
+            //            let sub_exec = executor.type_sub_executor(
+            //                Some(fragment.type_condition.item),
+            //                Some(&fragment.selection_set[..]),
+            //            );
+            //
+            //            let obj = instance
+            //                .resolve_into_type_stream(
+            //                    info,
+            //                    fragment.type_condition.item,
+            //                    &sub_exec
+            //                ).await;
+            //
+            //            match obj {
+            //                Ok(val) => {
+            //                    match val {
+            //                        Value::Object(o) => {
+            //                            for (k, v) in o {
+            //                                merge_key_into(&mut object, &k, v);
+            //                            }
+            //                        }
+            //                        // since this was a wrapper of current function,
+            //                        // we'll rather get an object or nothing
+            //                        _ => unreachable!(),
+            //                    }
+            //                }
+            //                Err(e) => return Err(e),
+            //            }
         }
         Selection::InlineFragment(Spanning {
-                                      item: ref fragment,
-                                      ..
-                                  }) => {
+            item: ref fragment, ..
+        }) => {
             if is_excluded(&fragment.directives, &executor.variables()) {
                 // continue;
                 return Ok(Value::Null);
@@ -511,11 +506,8 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
 
             if let Some(ref type_condition) = fragment.type_condition {
                 let sub_result = instance
-                    .resolve_into_type_stream(
-                        info,
-                        type_condition.item,
-                        &sub_exec
-                    ).await;
+                    .resolve_into_type_stream(info, type_condition.item, &sub_exec)
+                    .await;
 
                 if let Ok(Value::Object(obj)) = sub_result {
                     for (k, v) in obj {
@@ -527,11 +519,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
             } else {
                 if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
-                        .resolve_into_type_stream(
-                            info,
-                            type_name.clone(),
-                            &sub_exec,
-                        )
+                        .resolve_into_type_stream(info, type_name.clone(), &sub_exec)
                         .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {

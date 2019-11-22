@@ -9,7 +9,10 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, Value, SubscriptionCoordinatorStruct, ValuesResultStream};
+use juniper::{
+    DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinatorStruct, Value,
+    ValuesResultStream,
+};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
@@ -191,16 +194,7 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
 }
 
 impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
-    fn resolve_field_into_stream<
-        'args,
-        'ref_e,
-        'e,
-        'res,
-        'life0,
-        'life1,
-        'life2,
-        'async_trait,
-    >(
+    fn resolve_field_into_stream<'args, 'ref_e, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
         &'life0 self,
         info: &'life1 Self::TypeInfo,
         field_name: &'life2 str,
@@ -219,16 +213,16 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                 + 'async_trait,
         >,
     >
-        where
-            'e: 'res,
-            'args: 'async_trait,
-            'ref_e: 'async_trait,
-            'e: 'async_trait,
-            'res: 'async_trait,
-            'life0: 'async_trait,
-            'life1: 'async_trait,
-            'life2: 'async_trait,
-            Self: 'async_trait,
+    where
+        'e: 'res,
+        'args: 'async_trait,
+        'ref_e: 'async_trait,
+        'e: 'async_trait,
+        'res: 'async_trait,
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        'life2: 'async_trait,
+        Self: 'async_trait,
     {
         use futures::stream::StreamExt as _;
         use juniper::Value;
@@ -291,34 +285,22 @@ fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)
 }
 
-struct WarpSubscriptionConnection {
+struct WarpSubscriptionConnection {}
 
-}
-
-impl WarpSubscriptionConnection {
-
-}
+impl WarpSubscriptionConnection {}
 
 impl juniper::SubscriptionConnection for WarpSubscriptionConnection {
     type ArgsData = ();
 
     fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 
-    fn subscribe(&mut self, data: Self::ArgsData) {
+    fn subscribe(&mut self, data: Self::ArgsData) {}
 
-    }
+    fn unsubscribe(&mut self, data: Self::ArgsData) {}
 
-    fn unsubscribe(&mut self, data: Self::ArgsData) {
-
-    }
-
-    fn close(&mut self, data: Self::ArgsData) {
-
-    }
+    fn close(&mut self, data: Self::ArgsData) {}
 }
 
 #[tokio::main]

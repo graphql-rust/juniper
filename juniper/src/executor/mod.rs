@@ -360,22 +360,22 @@ where
     for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve a single arbitrary value into a return stream
-   ///
-   /// If the field fails to resolve, `null` will be returned.
+    ///
+    /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
     pub async fn resolve_into_stream<'s, 'i, 'v, 'res, T>(
         &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
-        where
-            'i: 'res,
-            'v: 'res,
-            'a: 'res,
-            T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync + 'static,
+    where
+        'i: 'res,
+        'v: 'res,
+        'a: 'res,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
     {
         self.subscribe(info, value).await
     }
@@ -387,19 +387,18 @@ where
         info: &'i T::TypeInfo,
         value: &'v T,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
-        where
-            'i: 'res,
-            'v: 'res,
-            'a: 'res,
-            T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
-            T::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
-            S: Send + Sync + 'static,
+    where
+        'i: 'res,
+        'v: 'res,
+        'a: 'res,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync + 'static,
     {
         value.resolve_into_stream(info, self).await
     }
 }
-
 
 impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
 where
@@ -495,7 +494,10 @@ where
     ///
     /// This can be used to connect different types, e.g. from different Rust
     /// libraries, that require different context types.
-    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, 'b, NewCtxT, S> {
+    pub fn replaced_context<'b, NewCtxT>(
+        &'b self,
+        ctx: &'b NewCtxT,
+    ) -> Executor<'b, 'b, NewCtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -536,7 +538,7 @@ where
             field_path: Arc::new(FieldPath::Field(
                 field_alias,
                 location,
-                Arc::clone(&self.field_path)
+                Arc::clone(&self.field_path),
             )),
         }
     }
@@ -548,11 +550,7 @@ where
         location: SourcePosition,
         selection_set: Option<Vec<Selection<'a, S>>>,
     ) -> SubscriptionsExecutor<'a, CtxT, S> {
-        let field_path = FieldPath::Field(
-            field_alias,
-            location,
-            Arc::clone(&self.field_path)
-        );
+        let field_path = FieldPath::Field(field_alias, location, Arc::clone(&self.field_path));
 
         SubscriptionsExecutor::from_data(ExecutorDataVariables {
             fragments: self.fragments.clone(),

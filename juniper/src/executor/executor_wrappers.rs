@@ -1,13 +1,13 @@
 use std::{collections::HashMap, sync::RwLock};
 
+use crate::executor::FieldPath;
 use crate::parser::SourcePosition;
 use crate::{
     ast::Fragment,
     schema::model::{SchemaType, TypeType},
-    DefaultScalarValue, ExecutionError, Executor, FieldError, ScalarRefValue,
-    ScalarValue, Selection, Value, ValuesResultStream, Variables,
+    DefaultScalarValue, ExecutionError, Executor, FieldError, ScalarRefValue, ScalarValue,
+    Selection, Value, ValuesResultStream, Variables,
 };
-use crate::executor::FieldPath;
 use std::sync::Arc;
 
 /// Struct owning `Executor`'s variables
@@ -25,7 +25,6 @@ where
     pub(crate) context: &'a CtxT,
     pub(crate) errors: RwLock<Vec<ExecutionError<S>>>,
     pub(crate) field_path: Arc<FieldPath<'a>>,
-
 }
 
 /// `Executor` wrapper to keep all `Executor`'s data
@@ -54,11 +53,10 @@ where
                 context: self.variables.context.clone(),
                 errors: RwLock::new(vec![]),
                 field_path: self.variables.field_path.clone(),
-            }
+            },
         }
     }
 }
-
 
 //todo: do something with a lot of cloning
 impl<'a, CtxT, S> SubscriptionsExecutor<'a, CtxT, S>
@@ -129,13 +127,11 @@ where
                 schema: self.variables.schema,
                 context: self.variables.context,
                 errors: RwLock::new(vec![]),
-                field_path: Arc::new(
-                    FieldPath::Field(
-                        field_alias,
-                        location,
-                        Arc::clone(&self.variables.field_path)
-                    )
-                ),
+                field_path: Arc::new(FieldPath::Field(
+                    field_alias,
+                    location,
+                    Arc::clone(&self.variables.field_path),
+                )),
             },
         }
     }
@@ -155,12 +151,11 @@ where
         Executor {
             fragments: &self.variables.fragments,
             variables: &self.variables.variables,
-            current_selection_set: if let Some(s) =
-                &self.variables.current_selection_set {
-                    Some(&s[..])
-                } else {
-                    None
-                },
+            current_selection_set: if let Some(s) = &self.variables.current_selection_set {
+                Some(&s[..])
+            } else {
+                None
+            },
             parent_selection_set: if let Some(s) = &self.variables.parent_selection_set {
                 Some(&s[..])
             } else {

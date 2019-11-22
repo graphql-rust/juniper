@@ -179,8 +179,6 @@ where
     }
 }
 
-
-
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
 #[cfg(feature = "async")]
@@ -418,5 +416,3 @@ where
 
     Value::Object(object)
 }
-
-
