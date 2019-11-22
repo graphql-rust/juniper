@@ -195,7 +195,6 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
         'args,
         'ref_e,
         'e,
-        'r,
         'res,
         'life0,
         'life1,
@@ -206,8 +205,7 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
         info: &'life1 Self::TypeInfo,
         field_name: &'life2 str,
         arguments: juniper::Arguments<'args, juniper::DefaultScalarValue>,
-        executor: &'r
-            juniper::Executor<'ref_e, 'e, Self::Context, juniper::DefaultScalarValue>,
+        executor: juniper::SubscriptionsExecutor<'e, Self::Context, juniper::DefaultScalarValue>,
     ) -> std::pin::Pin<
         Box<
             dyn futures::future::Future<
@@ -221,17 +219,16 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                 + 'async_trait,
         >,
     >
-    where
-        'e: 'res,
-        'args: 'async_trait,
-        'ref_e: 'async_trait,
-        'e: 'async_trait,
-        'r: 'async_trait,
-        'res: 'async_trait,
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        'life2: 'async_trait,
-        Self: 'async_trait,
+        where
+            'e: 'res,
+            'args: 'async_trait,
+            'ref_e: 'async_trait,
+            'e: 'async_trait,
+            'res: 'async_trait,
+            'life0: 'async_trait,
+            'life1: 'async_trait,
+            'life2: 'async_trait,
+            Self: 'async_trait,
     {
         use futures::stream::StreamExt as _;
         use juniper::Value;
@@ -261,7 +258,7 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                         Box::pin(stream)
                     }
                 };
-                let executor = executor.as_owned_executor();
+
                 let f = res.then(move |res| {
                     let exec = executor.clone();
 

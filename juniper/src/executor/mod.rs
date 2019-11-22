@@ -59,7 +59,7 @@ where
     fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
     variables: &'r Variables<S>,
     current_selection_set: Option<&'r [Selection<'a, S>]>,
-    parent_selection_set: Option<&'a [Selection<'a, S>]>,
+    parent_selection_set: Option<&'r [Selection<'a, S>]>,
     current_type: TypeType<'a, S>,
     schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
@@ -509,13 +509,13 @@ where
     }
 
     #[doc(hidden)]
-    pub fn field_sub_executor(
-        &self,
+    pub fn field_sub_executor<'s>(
+        &'s self,
         field_alias: &'a str,
-        field_name: &'a str,
+        field_name: &'s str,
         location: SourcePosition,
-        selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<CtxT, S> {
+        selection_set: Option<&'s [Selection<'a, S>]>,
+    ) -> Executor<'s, 'a, CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -532,16 +532,18 @@ where
             schema: self.schema,
             context: self.context,
             errors: self.errors,
-            field_path: FieldPath::Field(field_alias, location, &self.field_path),
+            //todo: not assume we're at root position
+//            field_path: FieldPath::Field(field_alias, location, &self.field_path),
+            field_path: FieldPath::Root(location),
         }
     }
 
     #[doc(hidden)]
-    pub fn type_sub_executor(
-        &self,
-        type_name: Option<&'a str>,
-        selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<CtxT, S> {
+    pub fn type_sub_executor<'s>(
+        &'s self,
+        type_name: Option<&'s str>,
+        selection_set: Option<&'s [Selection<'a, S>]>,
+    ) -> Executor<'s, 'a, CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -581,7 +583,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> &'r Variables<S> {
+    pub fn variables(&self) -> &Variables<S> {
         self.variables
     }
 
@@ -693,7 +695,7 @@ where
         }
     }
 
-    pub fn as_owned_executor<'s>(&'s self) -> SubscriptionsExecutor<'a, CtxT, S> {
+    pub fn as_owned_executor(&self) -> SubscriptionsExecutor<'a, CtxT, S> {
         SubscriptionsExecutor::from_data(ExecutorDataVariables {
             fragments: self.fragments.clone(),
             variables: self.variables.clone(),

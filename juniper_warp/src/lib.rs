@@ -37,7 +37,7 @@ Check the LICENSE file for details.
 */
 
 #![deny(missing_docs)]
-#![deny(warnings)]
+//#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 #[cfg(feature = "async")]
@@ -439,7 +439,7 @@ where
 
     sink_rx.for_each(move |msg| {
         if msg.is_err() {
-            failure::format_err!("message is error: {:?}", msg);
+            println!("message is error: {:?}", msg);
             return futures03::future::ready(());
         }
         let msg = msg.unwrap();
