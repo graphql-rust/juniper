@@ -554,7 +554,6 @@ impl FieldAttributes {
         //TEMP add the condition were here before and add a new for authoriation
         let attr_opt = attrs.into_iter().find(|attr| attr.path.is_ident("graphql"));
 
-        println!("{:#?}", attr_opt);
         let mut output = match attr_opt {
             Some(attr) => attr.parse_args()?,
             None => Self::default(),
@@ -587,6 +586,7 @@ pub struct GraphQLTypeDefinitionFieldArg {
 pub struct GraphQLTypeDefinitionField {
     pub name: String,
     pub _type: syn::Type,
+    pub authorization: String,
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
@@ -695,9 +695,11 @@ impl GraphQLTypeDefiniton {
         let resolve_matches = self.fields.iter().map(|field| {
             let name = &field.name;
             let code = &field.resolver_code;
+            let authorization = &field.authorization;
 
             quote!(
                 #name => {
+                    println!(#authorization);
                     let res = { #code };
                     #juniper_crate_name::IntoResolvable::into(
                         res,

@@ -51,8 +51,9 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
             let resolver_code = quote!(
                 &self . #field_name
             );
-
+            let wip = "";
             Some(util::GraphQLTypeDefinitionField {
+                authorization: wip.to_string(),
                 name,
                 _type: field.ty,
                 args: Vec::new(),

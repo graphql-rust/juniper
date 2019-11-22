@@ -99,8 +99,22 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         );
                     }
                 };
+
+                let mut save_attrs = method.attrs.into_iter();
+                let attr_public = save_attrs.find(|attr| attr.path.is_ident("authorized_public"));
+                let mut authorization = match attr_public {
+                    Some(_attr) => "public",
+                    None => "Need authorization",
+                };
+                if authorization == "Need authorization" {
+                    let attr_public = save_attrs.find(|attr| attr.path.is_ident("authorized_private"));
+                    authorization = match attr_public {
+                        Some(_attr) => "private",
+                        None => "Need authorization",
+                    };
+                }
                 let attrs = match util::FieldAttributes::from_attrs(
-                    method.attrs,
+                    save_attrs.as_slice().to_vec(),
                     util::FieldAttributeParseMode::Impl,
                 ) {
                     Ok(attrs) => attrs,
@@ -202,13 +216,14 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let ident = &method.sig.ident;
                 let name = attrs
-                    .name
-                    .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
+                           .name
+                           .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
 
                 definition.fields.push(util::GraphQLTypeDefinitionField {
                     name,
                     _type,
                     args,
+                    authorization: authorization.to_string(),
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,
