@@ -311,6 +311,9 @@ where
             Value::List(_) => None,
             Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
+                if key_values.len() == 0 {
+                    return None;
+                }
 
                 let mut filled_count = 0;
                 let mut ready_vector = Vec::with_capacity(key_values.len());
