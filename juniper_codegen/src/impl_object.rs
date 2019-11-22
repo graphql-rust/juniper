@@ -99,22 +99,20 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         );
                     }
                 };
-
-                let mut save_attrs = method.attrs.into_iter();
-                let attr_public = save_attrs.find(|attr| attr.path.is_ident("authorized_public"));
-                let mut authorization = match attr_public {
-                    Some(_attr) => "public",
-                    None => "Need authorization",
+                let authorization = match util::GraphQLAuthorization::from_attrs(
+                    method.attrs.clone()
+                ) {
+                    Ok(authorization) => authorization,
+                    Err(err) => {
+                        println!("{:#?}", method);
+                        panic!(
+                        "Invalid authorization attribute on field {}:\n{}",
+                        method.sig.ident, err
+                        );
+                    }
                 };
-                if authorization == "Need authorization" {
-                    let attr_public = save_attrs.find(|attr| attr.path.is_ident("authorized_private"));
-                    authorization = match attr_public {
-                        Some(_attr) => "private",
-                        None => "Need authorization",
-                    };
-                }
                 let attrs = match util::FieldAttributes::from_attrs(
-                    save_attrs.as_slice().to_vec(),
+                    method.attrs.clone(),
                     util::FieldAttributeParseMode::Impl,
                 ) {
                     Ok(attrs) => attrs,
@@ -164,6 +162,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 .map(|ctx| util::type_is_ref_of(&captured.ty, ctx))
                                 .unwrap_or(false)
                             {
+                                println!("test");
                                 resolve_parts.push(quote!( let #arg_ident = executor.context(); ));
                             }
                             // Make sure the user does not specify the Context
@@ -208,6 +207,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 let body = &method.block;
                 let return_ty = &method.sig.output;
                 let resolver_code = quote!(
+                    let context = executor.context();
                     (|| #return_ty {
                         #( #resolve_parts )*
                         #body
@@ -223,7 +223,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     name,
                     _type,
                     args,
-                    authorization: authorization.to_string(),
+                    authorization: authorization,
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,

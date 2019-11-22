@@ -551,7 +551,7 @@ impl FieldAttributes {
     ) -> syn::parse::Result<Self> {
         let doc_comment = get_doc_comment(&attrs);
         let deprecation = get_deprecated(&attrs);
-        //TEMP add the condition were here before and add a new for authoriation
+
         let attr_opt = attrs.into_iter().find(|attr| attr.path.is_ident("graphql"));
 
         let mut output = match attr_opt {
@@ -582,11 +582,68 @@ pub struct GraphQLTypeDefinitionFieldArg {
     pub _type: Box<syn::Type>,
 }
 
+#[derive(Debug, Clone)]
+pub enum AuthorizationType {
+    None,
+    Public,
+    Authorized,
+    AuthorizedWith,
+    AuthorizedFilter,
+}
+
+impl Default for AuthorizationType {
+    fn default() -> Self { AuthorizationType::None }
+}
+
+#[derive(Debug, Clone)]
+pub struct GraphQLAuthorization {
+    pub ty: AuthorizationType,
+    pub function: Option<String>,
+    pub args: Option<Vec<String>>
+}
+
+impl parse::Parse for GraphQLAuthorization {
+    fn parse(_input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
+        let output = Self {
+            ty: AuthorizationType::Authorized,
+            function: Some("test".to_owned()),
+            args: Some(vec!("test1".to_owned(), "test2".to_owned())),
+        };
+        Ok(output)
+    }
+}
+
+impl Default for GraphQLAuthorization {
+    fn default() -> Self { GraphQLAuthorization {
+        ty: AuthorizationType::Authorized,
+        function: Some("test".to_owned()),
+        args: Some(vec!("test1".to_owned(), "test2".to_owned()))
+    }
+    }
+}
+
+impl GraphQLAuthorization {
+    pub fn from_attrs(
+        _attrs: Vec<syn::Attribute>
+    ) -> syn::parse::Result<Self> {
+/*         let attr_opt = attrs.into_iter().find(|attr| 
+           attr.path.is_ident("authorized_with")
+        || attr.path.is_ident("authorized")
+        || attr.path.is_ident("authorized_public"));
+        let mut output = match attr_opt {
+            Some(attr) => Ok(attr.parse_args()?),
+            None => Ok(Self::default()),
+        }; */
+        Ok(Self::default())
+    }
+}
+
+
 #[derive(Debug)]
 pub struct GraphQLTypeDefinitionField {
     pub name: String,
     pub _type: syn::Type,
-    pub authorization: String,
+    pub authorization: GraphQLAuthorization,
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
@@ -695,12 +752,18 @@ impl GraphQLTypeDefiniton {
         let resolve_matches = self.fields.iter().map(|field| {
             let name = &field.name;
             let code = &field.resolver_code;
-            let authorization = &field.authorization;
-
+            let _authorization_function = match &field.authorization.function {
+                Some(function) => function,
+                None => panic!("osecour")
+            };
             quote!(
                 #name => {
-                    println!(#authorization);
-                    let res = { #code };
+                    let res = { 
+                        if executor.context().authorize() == false {
+                            panic!("test");
+                        }
+                        #code
+                    };
                     #juniper_crate_name::IntoResolvable::into(
                         res,
                         executor.context()

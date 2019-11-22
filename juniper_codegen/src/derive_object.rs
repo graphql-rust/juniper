@@ -18,6 +18,15 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
     };
 
     // Parse attributes.
+    let authorization = match util::GraphQLAuthorization::from_attrs(
+        ast.attrs.clone()
+    ) {
+        Ok(authorization) => authorization,
+        Err(err) => panic!(
+            "Invalid authorization attribute on field \n{}",
+            err
+        )
+    };
     let attrs = match util::ObjectAttributes::from_attrs(&ast.attrs) {
         Ok(a) => a,
         Err(e) => {
@@ -51,10 +60,9 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
             let resolver_code = quote!(
                 &self . #field_name
             );
-            let wip = "";
             Some(util::GraphQLTypeDefinitionField {
-                authorization: wip.to_string(),
-                name,
+                authorization: authorization.clone(),
+                name,  
                 _type: field.ty,
                 args: Vec::new(),
                 description: field_attrs.description,
