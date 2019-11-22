@@ -406,9 +406,14 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
                     f.name.item,
                     start_pos.clone(),
                     f.selection_set.as_ref().map(|x| &x[..]),
-//loop {}
                 );
-            let owned_sub_exec = sub_exec.as_owned_executor();
+            let owned_sub_exec = executor
+                .owned_field_sub_executor(
+                    response_name,
+                    f.name.item,
+                    start_pos.clone(),
+                    f.selection_set.clone(),
+                );
 
 
             let args = Arguments::new(

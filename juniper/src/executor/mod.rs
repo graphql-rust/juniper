@@ -26,6 +26,7 @@ pub use self::look_ahead::{
     LookAheadSelection, LookAheadValue,
 };
 use crate::executor::executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor};
+use std::sync::Arc;
 
 pub mod executor_wrappers;
 mod look_ahead;
@@ -43,7 +44,7 @@ pub struct Registry<'r, S = DefaultScalarValue> {
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
-    Field(&'a str, SourcePosition, &'a FieldPath<'a>),
+    Field(&'a str, SourcePosition, Arc<FieldPath<'a>>),
 }
 
 /// Query execution engine
@@ -64,7 +65,7 @@ where
     schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
-    field_path: FieldPath<'a>,
+    field_path: Arc<FieldPath<'a>>,
 }
 
 /// Error type for errors that occur during query execution
@@ -510,7 +511,7 @@ where
 
     #[doc(hidden)]
     pub fn field_sub_executor<'s>(
-        &'s self,
+        &'a self,
         field_alias: &'a str,
         field_name: &'s str,
         location: SourcePosition,
@@ -532,10 +533,45 @@ where
             schema: self.schema,
             context: self.context,
             errors: self.errors,
-            //todo: not assume we're at root position
-//            field_path: FieldPath::Field(field_alias, location, &self.field_path),
-            field_path: FieldPath::Root(location),
+            field_path: Arc::new(FieldPath::Field(
+                field_alias,
+                location,
+                Arc::clone(&self.field_path)
+            )),
         }
+    }
+
+    pub fn owned_field_sub_executor<'s>(
+        &'s self,
+        field_alias: &'a str,
+        field_name: &'s str,
+        location: SourcePosition,
+        selection_set: Option<Vec<Selection<'a, S>>>,
+    ) -> SubscriptionsExecutor<'a, CtxT, S> {
+        let field_path = FieldPath::Field(
+            field_alias,
+            location,
+            Arc::clone(&self.field_path)
+        );
+
+        SubscriptionsExecutor::from_data(ExecutorDataVariables {
+            fragments: self.fragments.clone(),
+            variables: self.variables.clone(),
+            current_selection_set: selection_set.clone(),
+            parent_selection_set: self.current_selection_set.map(|x| x.to_vec()),
+            current_type: self.schema.make_type(
+                &self
+                    .current_type
+                    .innermost_concrete()
+                    .field_by_name(field_name)
+                    .expect("Field not found on inner type")
+                    .field_type,
+            ),
+            schema: self.schema,
+            context: self.context,
+            errors: RwLock::new(vec![]),
+            field_path: Arc::new(field_path),
+        })
     }
 
     #[doc(hidden)]
@@ -621,7 +657,7 @@ where
     /// This allows seeing the whole selection and perform operations
     /// affecting the children.
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a, S> {
-        let field_name = match self.field_path {
+        let field_name = match *self.field_path {
             FieldPath::Field(x, ..) => x,
             FieldPath::Root(_) => unreachable!(),
         };
@@ -705,18 +741,18 @@ where
             schema: self.schema.clone(),
             context: self.context,
             errors: RwLock::new(vec![]),
-            field_path: self.field_path.clone(),
+            field_path: Arc::clone(&self.field_path),
         })
     }
 }
 
 impl<'a> FieldPath<'a> {
     fn construct_path(&self, acc: &mut Vec<String>) {
-        match *self {
+        match &*self {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
-                acc.push(name.to_owned());
+                acc.push(name.to_string());
             }
         }
     }
@@ -834,7 +870,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: FieldPath::Root(op.start),
+            field_path: Arc::new(FieldPath::Root(op.start)),
         };
 
         value = match op.item.operation_type {
@@ -937,7 +973,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: FieldPath::Root(op.start),
+            field_path: Arc::new(FieldPath::Root(op.start)),
         };
 
         value = match op.item.operation_type {
@@ -1063,7 +1099,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: FieldPath::Root(op.start),
+            field_path: Arc::new(FieldPath::Root(op.start)),
         };
 
         value = match op.item.operation_type {

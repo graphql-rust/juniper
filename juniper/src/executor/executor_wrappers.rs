@@ -8,6 +8,7 @@ use crate::{
     ScalarValue, Selection, Value, ValuesResultStream, Variables,
 };
 use crate::executor::FieldPath;
+use std::sync::Arc;
 
 /// Struct owning `Executor`'s variables
 pub struct ExecutorDataVariables<'a, CtxT, S = DefaultScalarValue>
@@ -23,7 +24,8 @@ where
     pub(crate) schema: &'a SchemaType<'a, S>,
     pub(crate) context: &'a CtxT,
     pub(crate) errors: RwLock<Vec<ExecutionError<S>>>,
-    pub(crate) field_path: FieldPath<'a>,
+    pub(crate) field_path: Arc<FieldPath<'a>>,
+
 }
 
 /// `Executor` wrapper to keep all `Executor`'s data
@@ -127,9 +129,13 @@ where
                 schema: self.variables.schema,
                 context: self.variables.context,
                 errors: RwLock::new(vec![]),
-                //  todo: not assume that field path is root
-                //field_path: FieldPath::Field(field_alias, location, &self.variables.field_path),
-                field_path: FieldPath::Root(location),
+                field_path: Arc::new(
+                    FieldPath::Field(
+                        field_alias,
+                        location,
+                        Arc::clone(&self.variables.field_path)
+                    )
+                ),
             },
         }
     }
@@ -164,7 +170,7 @@ where
             schema: self.variables.schema,
             context: self.variables.context,
             errors: &self.variables.errors,
-            field_path: self.variables.field_path.clone(),
+            field_path: Arc::clone(&self.variables.field_path),
         }
     }
 
