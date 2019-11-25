@@ -7,6 +7,7 @@ use crate::{
 };
 use std::collections::HashMap;
 use std::sync::Arc;
+use crate::ast::Fragment;
 
 pub trait SubscriptionCoordinator {
     type ArgsData;
@@ -230,10 +231,10 @@ where
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
     where
-        's: 'res,
+//        's: 'res,
         'i: 'res,
         'e: 'res,
-        'e: 'ref_e,
+//        'e: 'ref_e,
     {
         if executor.current_selection_set().is_some() {
             resolve_selection_set_into_stream(self, info, executor).await
@@ -274,18 +275,16 @@ where
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    async fn resolve_into_type_stream<'s, 'i, 'tn, 'ref_e, 'e, 'res>(
+    async fn resolve_into_type_stream<'s, 'i, 'tn, 'e, 'ref_e, 'res>(
         &'s self,
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
-        executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
-                                                                  // with current field's selection set)
+        executor: Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
+                                                  // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
     where
-        's: 'res,
         'i: 'res,
         'e: 'res,
-        'e: 'ref_e,
     {
         if Self::name(info) == Some(type_name) {
             self.resolve_into_stream(info, &executor).await
@@ -305,10 +304,11 @@ fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, 
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
 ) -> BoxFuture<'fut, Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>>
 where
-    'i: 'res,
+//    'i: 'res,
     'inf: 'res,
     'e: 'res,
-    'e: 'ref_e,
+//    'e: 'ref_e,
+    'i: 'fut,
     'e: 'fut,
     'ref_e: 'fut,
     'res: 'fut,
@@ -345,7 +345,6 @@ where
     S: ScalarValue + Send + Sync + 'static,
     CtxT: Send + Sync,
     for<'b> &'b S: ScalarRefValue<'b>,
-    'i: 'res,
     'inf: 'res,
     'e: 'res,
 {
@@ -463,33 +462,34 @@ where
                 .fragment_by_name(spread.name.item)
                 .expect("Fragment could not be found");
 
-            //            let sub_exec = executor.type_sub_executor(
-            //                Some(fragment.type_condition.item),
-            //                Some(&fragment.selection_set[..]),
-            //            );
-            //
-            //            let obj = instance
-            //                .resolve_into_type_stream(
-            //                    info,
-            //                    fragment.type_condition.item,
-            //                    &sub_exec
-            //                ).await;
-            //
-            //            match obj {
-            //                Ok(val) => {
-            //                    match val {
-            //                        Value::Object(o) => {
-            //                            for (k, v) in o {
-            //                                merge_key_into(&mut object, &k, v);
-            //                            }
-            //                        }
-            //                        // since this was a wrapper of current function,
-            //                        // we'll rather get an object or nothing
-            //                        _ => unreachable!(),
-            //                    }
-            //                }
-            //                Err(e) => return Err(e),
-            //            }
+            let sub_exec = executor
+                .type_sub_executor(
+                    Some(fragment.type_condition.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+            let obj = instance
+                .resolve_into_type_stream(
+                    info,
+                    fragment.type_condition.item,
+                    sub_exec
+                ).await;
+
+            match obj {
+                Ok(val) => {
+                    match val {
+                        Value::Object(o) => {
+                            for (k, v) in o {
+                                merge_key_into(&mut object, &k, v);
+                            }
+                        }
+                        // since this was a wrapper of current function,
+                        // we'll rather get an object or nothing
+                        _ => unreachable!(),
+                    }
+                }
+                Err(e) => return Err(e),
+            }
         }
         Selection::InlineFragment(Spanning {
             item: ref fragment, ..
@@ -506,7 +506,11 @@ where
 
             if let Some(ref type_condition) = fragment.type_condition {
                 let sub_result = instance
-                    .resolve_into_type_stream(info, type_condition.item, &sub_exec)
+                    .resolve_into_type_stream(
+                        info,
+                        type_condition.item,
+                        sub_exec
+                    )
                     .await;
 
                 if let Ok(Value::Object(obj)) = sub_result {
@@ -519,7 +523,7 @@ where
             } else {
                 if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
-                        .resolve_into_type_stream(info, type_name.clone(), &sub_exec)
+                        .resolve_into_type_stream(info, type_name.clone(), sub_exec)
                         .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {

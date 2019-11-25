@@ -513,7 +513,7 @@ where
 
     #[doc(hidden)]
     pub fn field_sub_executor<'s>(
-        &'a self,
+        &'s self,
         field_alias: &'a str,
         field_name: &'s str,
         location: SourcePosition,
@@ -622,7 +622,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
+    pub fn fragment_by_name<'s>(&'s self, name: &str) -> Option<&'s Fragment<'a, S>> {
         self.fragments.get(name)
     }
 
