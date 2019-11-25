@@ -8,6 +8,8 @@ use crate::parser::SourcePosition;
 
 /// Query validation error
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+//todo: maybe remove clone
+#[derive(Clone)]
 pub struct RuleError {
     locations: Vec<SourcePosition>,
     message: String,

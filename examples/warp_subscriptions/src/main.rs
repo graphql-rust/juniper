@@ -228,6 +228,13 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
         use juniper::Value;
         match field_name {
             "users" => futures::FutureExt::boxed(async move {
+                return Err(FieldError::new(
+                    "some field error from handler",
+                    Value::Scalar(DefaultScalarValue::String(
+                        "some additional string".to_string(),
+                    )),
+                ));
+
                 let res: Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>> = {
                     {
                         let mut counter = 0;

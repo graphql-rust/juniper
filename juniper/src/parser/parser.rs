@@ -4,6 +4,8 @@ use crate::parser::{Lexer, LexerError, Spanning, Token};
 
 /// Error while parsing a GraphQL query
 #[derive(Debug, PartialEq)]
+//todo: maybe remove clone
+#[derive(Clone)]
 pub enum ParseError<'a> {
     /// An unexpected token occurred in the source
     UnexpectedToken(Token<'a>),

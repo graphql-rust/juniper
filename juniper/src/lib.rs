@@ -193,6 +193,7 @@ pub use crate::{
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
+#[derive(Clone)]
 #[allow(missing_docs)]
 pub enum GraphQLError<'a> {
     ParseError(Spanning<ParseError<'a>>),

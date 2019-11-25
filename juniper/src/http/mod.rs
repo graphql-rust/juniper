@@ -229,38 +229,54 @@ where
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
+    //todo: enum for both errors
     Result<Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>, GraphQLError<'a>>,
 )
 where
     S: 'static;
 
 #[cfg(feature = "async")]
-impl<'a, S> StreamGraphQLResponse<'a, S> {
+impl<'a, S> StreamGraphQLResponse<'a, S>
+    where
+        S: value::ScalarValue
+{
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
     pub fn into_inner(
         self,
-    ) -> Result<Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>, GraphQLError<'a>> {
+    ) -> Result<
+            Result<
+                Value<ValuesResultStream<'a, S>>,
+                ExecutionError<S>
+            >,
+            GraphQLError<'a>
+        >
+    {
         self.0
     }
 
     /// Return reference to self's errors (if any)
-    pub fn graphql_errors<'err>(&'err self) -> Option<&'err GraphQLError<'a>> {
-        self.0.as_ref().err()
-    }
+    pub fn errors(&self) -> Option<StreamError<S>> {
+        if self.0.is_ok() {
+            let sub_result = self
+                .0
+                .as_ref()
+                .ok()
+                .unwrap();
 
-    /// Return error that happened while trying to resolve stream.
-    /// Returns None if errors didn't happen
-    pub fn execution_error<'err>(&'err self) -> Option<&'err ExecutionError<S>> {
-        if let Ok(result) = self.0.as_ref() {
-            if let Err(e) = result {
-                Some(e)
-            } else {
-                None
+            match sub_result {
+                Ok(_) => None,
+                Err(e) => Some(
+                    StreamError::Execution(e.clone())
+                ),
             }
-        } else {
-            None
+        }
+        else {
+            Some(StreamError::GraphQL(
+                self.0.as_ref().err().unwrap().clone()
+            ))
         }
     }
+
 }
 
 #[cfg(feature = "async")]
@@ -375,6 +391,15 @@ where
             }
         }
     }
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum StreamError<'a, S>
+    where S: crate::ScalarValue
+{
+    Execution(ExecutionError<S>),
+    GraphQL(GraphQLError<'a>),
 }
 
 #[cfg(any(test, feature = "expose-test-schema"))]
