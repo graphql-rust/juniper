@@ -371,7 +371,7 @@ where
         &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+    ) -> Value<ValuesResultStream<'res, S>>
     where
         'i: 'res,
         'v: 'res,
@@ -381,7 +381,13 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        self.subscribe(info, value).await
+        match self.subscribe(info, value).await {
+            Ok(v) => v,
+            Err(e) => {
+                self.push_error(e);
+                Value::Null
+            }
+        }
     }
 
     /// Resolve a single arbitrary value into `Value<ValuesStream>`
@@ -390,7 +396,7 @@ where
         &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'i: 'res,
         'v: 'res,
@@ -400,7 +406,9 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        value.resolve_into_stream(info, self).await
+        Ok(
+            value.resolve_into_stream(info, self).await
+        )
     }
 }
 
@@ -733,6 +741,10 @@ where
         }
     }
 
+    // todo: add docs
+    /// This function does not clone Executor's `errors` because
+    /// existing errors will most likely not needed to be accessed by
+    /// user
     pub fn as_owned_executor(&self) -> SubscriptionsExecutor<'a, CtxT, S> {
         SubscriptionsExecutor::from_data(ExecutorDataVariables {
             fragments: self.fragments.clone(),
@@ -1019,7 +1031,10 @@ pub async fn execute_validated_subscription<
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-) -> Result<Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>, GraphQLError<'res>>
+) -> Result<
+        (Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>),
+        GraphQLError<'res>
+    >
 where
     'd: 'e,
     'rn: 'e,
@@ -1114,7 +1129,10 @@ where
         };
     }
 
-    Ok(value)
+    let mut errors = errors.into_inner().unwrap();
+    errors.sort();
+
+    Ok((value, errors))
 }
 
 /// Find document's operation (returns error

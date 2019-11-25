@@ -230,7 +230,10 @@ where
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
     //todo: enum for both errors
-    Result<Result<Value<ValuesResultStream<'a, S>>, ExecutionError<S>>, GraphQLError<'a>>,
+    Result<
+        (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
+        GraphQLError<'a>
+    >
 )
 where
     S: 'static;
@@ -244,10 +247,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
     pub fn into_inner(
         self,
     ) -> Result<
-            Result<
-                Value<ValuesResultStream<'a, S>>,
-                ExecutionError<S>
-            >,
+            (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
             GraphQLError<'a>
         >
     {
@@ -257,16 +257,16 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
     /// Return reference to self's errors (if any)
     pub fn errors(&self) -> Option<StreamError<S>> {
         if self.0.is_ok() {
-            let sub_result = self
+            let (_, errors_vec) = self
                 .0
                 .as_ref()
-                .ok()
                 .unwrap();
 
-            match sub_result {
-                Ok(_) => None,
-                Err(e) => Some(
-                    StreamError::Execution(e.clone())
+            // todo: return all errors
+            match errors_vec.len() {
+                0 => None,
+                _ => Some(
+                    StreamError::Execution(errors_vec[0].clone())
                 ),
             }
         }
@@ -300,13 +300,7 @@ where
         use std::iter::FromIterator as _;
 
         let val = match self.0 {
-            Ok(val) => {
-                if let Ok(v) = val {
-                    v
-                } else {
-                    return None;
-                }
-            }
+            Ok((v, _)) => v,
             Err(_) => return None,
         };
 

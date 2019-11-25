@@ -229,12 +229,10 @@ where
         &'s self,
         info: &'i Self::TypeInfo,
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+    ) -> Value<ValuesResultStream<'res, S>>
     where
-//        's: 'res,
         'i: 'res,
         'e: 'res,
-//        'e: 'ref_e,
     {
         if executor.current_selection_set().is_some() {
             resolve_selection_set_into_stream(self, info, executor).await
@@ -279,15 +277,15 @@ where
         &'s self,
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
-        executor: Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
+        executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
                                                   // with current field's selection set)
-    ) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'i: 'res,
         'e: 'res,
     {
         if Self::name(info) == Some(type_name) {
-            self.resolve_into_stream(info, &executor).await
+            Ok(self.resolve_into_stream(info, executor).await)
         } else {
             panic!("resolve_into_type_stream must be implemented");
         }
@@ -302,12 +300,10 @@ fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, 
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
-) -> BoxFuture<'fut, Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>>
+) -> BoxFuture<'fut, Value<ValuesResultStream<'res, S>>>
 where
-//    'i: 'res,
     'inf: 'res,
     'e: 'res,
-//    'e: 'ref_e,
     'i: 'fut,
     'e: 'fut,
     'ref_e: 'fut,
@@ -324,7 +320,9 @@ where
 }
 
 #[cfg(feature = "async")]
-/// Selection set resolver logic
+/// Selection set default resolver logic.
+/// Returns `Value::Null` if cannot keep resolving. Otherwise pushes
+/// errors to `Executor`.
 pub(crate) async fn resolve_selection_set_into_stream_recursive<
     'i,
     'inf,
@@ -338,7 +336,7 @@ pub(crate) async fn resolve_selection_set_into_stream_recursive<
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
-) -> Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>
+) -> Value<ValuesResultStream<'res, S>>
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
@@ -375,7 +373,7 @@ where
         }) => {
             if is_excluded(&f.directives, &executor.variables()) {
                 // continue;
-                return Ok(Value::Null);
+                return Value::Null;
             }
 
             let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
@@ -387,7 +385,7 @@ where
                     Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
                 );
                 // continue;
-                return Ok(Value::Null);
+                return Value::Null;
             }
 
             let meta_field = meta_type
@@ -434,15 +432,14 @@ where
 
             match res {
                 Ok(Value::Null) if is_non_null => {
-                    return Err(sub_exec.generate_error(FieldError::new(
-                        "Null value on non-null field",
-                        Value::Null,
-                    )))
+                    return Value::Null;
                 }
                 Ok(v) => merge_key_into(&mut object, &f.name.item, v),
                 Err(e) => {
+                    sub_exec.push_error_at(e, start_pos.clone());
+
                     if meta_field.field_type.is_non_null() {
-                        return Err(sub_exec.generate_error(e));
+                        return Value::Null;
                     }
 
                     object.add_field(f.name.item, Value::Null);
@@ -451,11 +448,12 @@ where
         }
 
         Selection::FragmentSpread(Spanning {
-            item: ref spread, ..
+            item: ref spread,
+            start: ref start_pos, ..
         }) => {
             if is_excluded(&spread.directives, &executor.variables()) {
                 // continue;
-                return Ok(Value::Null);
+                return Value::Null;
             }
 
             let fragment = executor
@@ -472,7 +470,7 @@ where
                 .resolve_into_type_stream(
                     info,
                     fragment.type_condition.item,
-                    sub_exec
+                    &sub_exec
                 ).await;
 
             match obj {
@@ -488,15 +486,17 @@ where
                         _ => unreachable!(),
                     }
                 }
-                Err(e) => return Err(e),
+                Err(e) =>
+                    sub_exec.push_error_at(e, start_pos.clone()),
             }
         }
         Selection::InlineFragment(Spanning {
-            item: ref fragment, ..
+            item: ref fragment,
+            start: ref start_pos, ..
         }) => {
             if is_excluded(&fragment.directives, &executor.variables()) {
                 // continue;
-                return Ok(Value::Null);
+                return Value::Null;
             }
 
             let sub_exec = executor.type_sub_executor(
@@ -509,7 +509,7 @@ where
                     .resolve_into_type_stream(
                         info,
                         type_condition.item,
-                        sub_exec
+                        &sub_exec
                     )
                     .await;
 
@@ -518,12 +518,12 @@ where
                         merge_key_into(&mut object, &k, v);
                     }
                 } else if let Err(e) = sub_result {
-                    return Err(e);
+                    sub_exec.push_error_at(e, start_pos.clone());
                 }
             } else {
                 if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
-                        .resolve_into_type_stream(info, type_name.clone(), sub_exec)
+                        .resolve_into_type_stream(info, type_name.clone(), &sub_exec)
                         .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
@@ -531,18 +531,15 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        return Err(e);
+                        sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    return Err(executor.generate_error(FieldError::new(
-                        "unknown type condition on fragment",
-                        Value::Null,
-                    )));
+                    return Value::Null;
                 }
             }
         }
     }
     //    }
 
-    Ok(Value::Object(object))
+    Value::Object(object)
 }

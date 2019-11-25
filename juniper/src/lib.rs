@@ -336,7 +336,10 @@ pub async fn subscribe<'d, 'rn, 'ctx, 'ref_e, 'e, 'res, S, CtxT, QueryT, Mutatio
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-) -> Result<Result<Value<ValuesResultStream<'res, S>>, ExecutionError<S>>, GraphQLError<'res>>
+) -> Result<
+        (Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>),
+        GraphQLError<'res>
+    >
 where
     'd: 'e,
     'rn: 'e,
