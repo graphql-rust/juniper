@@ -9,11 +9,10 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{
-    DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinatorStruct, Value,
-    ValuesResultStream,
-};
+use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinatorStruct, Value, ValuesResultStream, GraphQLType};
 use juniper_warp::playground_filter;
+use std::convert::Infallible;
+use std::any::Any;
 
 #[derive(Clone)]
 struct Context {}
@@ -157,6 +156,7 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
         trait GraphQLTraitAsync<T> {
             type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
         }
+
         impl<T, Type> GraphQLTraitAsync<T> for Type
         where
             Type: futures::Stream<Item = T>,
@@ -190,6 +190,52 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
 
     fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
         "Subscription".to_string()
+    }
+}
+
+type TypeAlias = Result<
+    Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>,
+    FieldError
+>;
+
+//trait Foo<I>
+//{
+//    fn to_result(self) -> Result<
+//        Pin<Box<dyn Stream<Item = I> + Send>>,
+//        FieldError
+//    >;
+//}
+//
+//impl<T, I> Foo<I> for T
+//{
+//    fn to_result(self) -> Result<Self, FieldError> {
+//        Ok(self)
+//    }
+//}
+//
+//impl<T, E, I> Foo<I> for Result<T, E>
+//where E: Into<FieldError>
+//{
+//    fn to_result(self)
+//        -> Result<T, FieldError>
+//    { self.into() }
+//}
+
+trait IntoResult<T, E> {
+    fn into_result(self) -> Result<T, E>;
+}
+
+impl<T, E> IntoResult<T, E> for Result<T, E> {
+    fn into_result(self) -> Result<T, E> {
+        self
+    }
+}
+
+impl<T, I> IntoResult<T, Infallible> for T
+where T: Stream<Item = I>
+{
+    fn into_result(self) -> Result<T, Infallible> {
+        Ok(self)
     }
 }
 
@@ -228,37 +274,39 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
         use juniper::Value;
         match field_name {
             "users" => futures::FutureExt::boxed(async move {
-                return Err(FieldError::new(
-                    "some field error from handler",
-                    Value::Scalar(DefaultScalarValue::String(
-                        "some additional string".to_string(),
-                    )),
-                ));
-
-                let res: Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>> = {
+                let exec_res: TypeAlias = {
                     {
-                        let mut counter = 0;
-                        let stream =
-                            Interval::new_interval(Duration::from_secs(5)).map(move |_| {
-                                counter += 1;
-                                if counter == 2 {
-                                    Err(FieldError::new(
-                                        "some field error from handler",
-                                        Value::Scalar(DefaultScalarValue::String(
-                                            "some additional string".to_string(),
-                                        )),
-                                    ))
-                                } else {
-                                    Ok(User {
-                                        id: counter,
-                                        kind: UserKind::Admin,
-                                        name: "stream user".to_string(),
-                                    })
-                                }
-                            });
-                        Box::pin(stream)
+//                        let mut counter = 0;
+//                        let stream =
+//                            Interval::new_interval(Duration::from_secs(5)).map(move |_| {
+//                                counter += 1;
+//                                if counter == 2 {
+//                                    Err(FieldError::new(
+//                                        "some field error from handler",
+//                                        Value::Scalar(DefaultScalarValue::String(
+//                                            "some additional string".to_string(),
+//                                        )),
+//                                    ))
+//                                } else {
+//                                    Ok(User {
+//                                        id: counter,
+//                                        kind: UserKind::Admin,
+//                                        name: "stream user".to_string(),
+//                                    })
+//                                }
+//                            });
+//                        Box::pin(stream)
+                        Err(FieldError::new(
+                            "some field error from handler",
+                            Value::Scalar(DefaultScalarValue::String(
+                                "some additional string".to_string(),
+                            )),
+                        ))
                     }
                 };
+
+                let res = //exec_res;
+                    IntoResult::into_result(exec_res)?;
 
                 let f = res.then(move |res| {
                     let exec = executor.clone();
