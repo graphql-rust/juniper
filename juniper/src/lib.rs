@@ -176,6 +176,7 @@ pub use crate::{
         DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
         ScalarValue, Value,
     },
+    macros::subscription_helpers::{IntoResult, GraphQLTraitAsync},
 };
 
 /// A pinned, boxed future that can be polled.

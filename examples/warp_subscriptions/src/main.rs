@@ -9,7 +9,7 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinatorStruct, Value, ValuesResultStream, GraphQLType};
+use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinatorStruct, Value, ValuesResultStream, GraphQLType, FieldResult};
 use juniper_warp::playground_filter;
 use std::convert::Infallible;
 use std::any::Any;
@@ -137,47 +137,6 @@ struct Subscription;
 //    }
 //}
 
-struct MyStruct;
-struct MyStruct2;
-struct MyStruct3;
-struct MyStruct4;
-
-trait GraphQLTraitAsync<T> {
-    type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
-}
-
-impl<T, I> GraphQLTraitAsync<MyStruct> for T
-    where
-        T: futures::Stream<Item = I>,
-        I: GraphQLType,
-{
-    type Item = I;
-}
-
-impl<Ty, T, E> GraphQLTraitAsync<MyStruct2> for Ty
-    where
-        Ty: futures::Stream<Item = Result<T, E>>,
-        T: GraphQLType,
-{
-    type Item = T;
-}
-
-impl<T, I, E> GraphQLTraitAsync<MyStruct3> for Result<T, E>
-    where
-        T: futures::Stream<Item = I>,
-        I: juniper::GraphQLType<juniper::DefaultScalarValue>,
-{
-    type Item = I;
-}
-
-impl<T, E, I, ER> GraphQLTraitAsync<MyStruct4> for Result<T, E>
-    where
-        T: futures::Stream<Item = Result<I, ER>>,
-        I: juniper::GraphQLType<juniper::DefaultScalarValue>,
-{
-    type Item = I;
-}
-
 impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
     type Context = Context;
     type TypeInfo = ();
@@ -196,7 +155,7 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
     {
         let fields = vec![
             registry.field_convert::<
-               <TypeAlias as GraphQLTraitAsync<_>>::Item,
+               <TypeAlias as juniper::GraphQLTraitAsync<_, DefaultScalarValue>>::Item,
                 _,
                 Self::Context
             >("users",info)
@@ -250,23 +209,7 @@ type TypeAlias = //Result<
 //    { self.into() }
 //}
 
-trait IntoResult<T, E> {
-    fn into_result(self) -> Result<T, E>;
-}
 
-impl<T, E> IntoResult<T, E> for Result<T, E> {
-    fn into_result(self) -> Result<T, E> {
-        self
-    }
-}
-
-impl<T, I> IntoResult<T, Infallible> for T
-where T: Stream<Item = I>
-{
-    fn into_result(self) -> Result<T, Infallible> {
-        Ok(self)
-    }
-}
 
 impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscription {
     fn resolve_field_into_stream<'args, 'ref_e, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
@@ -334,7 +277,7 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
                     }
                 };
 
-                let res = IntoResult::into_result(exec_res)?;
+                let res = juniper::IntoResult::into_result(exec_res)?;
 
                 let f = res.then(move |res| {
                     let exec = executor.clone();
