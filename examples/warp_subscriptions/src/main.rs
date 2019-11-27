@@ -157,17 +157,25 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
             type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
         }
 
-        impl<T, Type> GraphQLTraitAsync<T> for Type
+        impl<T, I> GraphQLTraitAsync<T> for T
         where
-            Type: futures::Stream<Item = T>,
-            T: juniper::GraphQLType<juniper::DefaultScalarValue>,
+            T: futures::Stream<Item = I>,
+            I: GraphQLType,
         {
-            type Item = T;
+            type Item = T::Item;
+        }
+
+        impl<T, I, E> GraphQLTraitAsync<T> for Result<T, E>
+            where
+                T: futures::Stream<Item = I>,
+                I: juniper::GraphQLType<juniper::DefaultScalarValue>,
+        {
+            type Item = I;
         }
 
         let fields = vec![
             registry.field_convert::<
-                <Pin<Box<dyn Stream<Item=User> + Send>> as GraphQLTraitAsync<_>>::Item,
+               <TypeAlias as GraphQLTraitAsync<_>>::Item,
                 _,
                 Self::Context
             >("users",info)
@@ -193,10 +201,10 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
     }
 }
 
-type TypeAlias = Result<
-    Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>,
-    FieldError
->;
+type TypeAlias = //Result<
+    Pin<Box<dyn Stream<Item = User> + Send>>;
+//    FieldError
+//>;
 
 //trait Foo<I>
 //{
@@ -276,10 +284,10 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
             "users" => futures::FutureExt::boxed(async move {
                 let exec_res: TypeAlias = {
                     {
-//                        let mut counter = 0;
-//                        let stream =
-//                            Interval::new_interval(Duration::from_secs(5)).map(move |_| {
-//                                counter += 1;
+                        let mut counter = 0;
+                        let stream =
+                            Interval::new_interval(Duration::from_secs(5)).map(move |_| {
+                                counter += 1;
 //                                if counter == 2 {
 //                                    Err(FieldError::new(
 //                                        "some field error from handler",
@@ -288,25 +296,24 @@ impl juniper::GraphQLSubscriptionType<juniper::DefaultScalarValue> for Subscript
 //                                        )),
 //                                    ))
 //                                } else {
-//                                    Ok(User {
-//                                        id: counter,
-//                                        kind: UserKind::Admin,
-//                                        name: "stream user".to_string(),
-//                                    })
+                                    User {
+                                        id: counter,
+                                        kind: UserKind::Admin,
+                                        name: "stream user".to_string(),
+                                    }
 //                                }
-//                            });
-//                        Box::pin(stream)
-                        Err(FieldError::new(
-                            "some field error from handler",
-                            Value::Scalar(DefaultScalarValue::String(
-                                "some additional string".to_string(),
-                            )),
-                        ))
+                            });
+                        Box::pin(stream)
+//                        Err(FieldError::new(
+//                            "some field error from handler",
+//                            Value::Scalar(DefaultScalarValue::String(
+//                                "some additional string".to_string(),
+//                            )),
+//                        ))
                     }
                 };
 
-                let res = //exec_res;
-                    IntoResult::into_result(exec_res)?;
+                let res = IntoResult::into_result(exec_res)?;
 
                 let f = res.then(move |res| {
                     let exec = executor.clone();
