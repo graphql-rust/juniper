@@ -250,12 +250,12 @@ where
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    async fn resolve_field_into_stream<'args, 'e, 'res>(
+    async fn resolve_field_into_stream<'args, 'e, 'ref_e, 'res>(
         &self,
         _: &Self::TypeInfo,     // this subscription's type info
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
-        e: SubscriptionsExecutor<'e, Self::Context, S>, // field's executor (subscription's sub-executor
+        _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
                                                         // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
@@ -407,12 +407,12 @@ where
                 start_pos.clone(),
                 f.selection_set.as_ref().map(|x| &x[..]),
             );
-            let owned_sub_exec = executor.owned_field_sub_executor(
-                response_name,
-                f.name.item,
-                start_pos.clone(),
-                f.selection_set.clone(),
-            );
+//            let owned_sub_exec = executor.owned_field_sub_executor(
+//                response_name,
+//                f.name.item,
+//                start_pos.clone(),
+//                f.selection_set.clone(),
+//            );
 
             let args = Arguments::new(
                 f.arguments.as_ref().map(|m| {
@@ -427,7 +427,7 @@ where
             let is_non_null = meta_field.field_type.is_non_null();
 
             let res = instance
-                .resolve_field_into_stream(info, f.name.item, args, owned_sub_exec)
+                .resolve_field_into_stream(info, f.name.item, args, &sub_exec)
                 .await;
 
             match res {
