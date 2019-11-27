@@ -427,14 +427,18 @@ where
             let is_non_null = meta_field.field_type.is_non_null();
 
             let res = instance
-                .resolve_field_into_stream(info, f.name.item, args, owned_sub_exec)
-                .await;
+                .resolve_field_into_stream(
+                    info,
+                    f.name.item,
+                    args,
+                    owned_sub_exec
+                ).await;
 
             match res {
                 Ok(Value::Null) if is_non_null => {
                     return Value::Null;
                 }
-                Ok(v) => merge_key_into(&mut object, &f.name.item, v),
+                Ok(v) => merge_key_into(&mut object, response_name, v),
                 Err(e) => {
                     sub_exec.push_error_at(e, start_pos.clone());
 

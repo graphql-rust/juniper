@@ -30,6 +30,7 @@ where
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
 pub struct SubscriptionsExecutor<'a, CtxT, S> {
+    // todo: move all variables to here
     pub(crate) variables: ExecutorDataVariables<'a, CtxT, S>,
 }
 
