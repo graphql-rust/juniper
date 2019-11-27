@@ -1182,6 +1182,7 @@ impl GraphQLTypeDefiniton {
                         futures::FutureExt::boxed(async move {
                             let res #_type = { #code };
                             let res = #juniper_crate_name::IntoResult::into_result(res)?;
+                            let executor= executor.as_owned_executor();
                             let f = res.then(move |res| {
                                 let executor = executor.clone();
                                 let res2: #juniper_crate_name::FieldResult<_, #scalar> =
@@ -1258,12 +1259,15 @@ impl GraphQLTypeDefiniton {
             #where_clause
             {
                 #[allow(unused_variables)]
-                fn resolve_field_into_stream<'args, 'e, 'res, 'life0, 'life1, 'life2, 'async_trait>(
+                fn resolve_field_into_stream<
+                    'args, 'e, 'ref_e, 'res,
+                    'life0, 'life1, 'life2, 'async_trait,
+                >(
                     &'life0 self,
                     info: &'life1 Self::TypeInfo,
                     field_name: &'life2 str,
                     arguments: #juniper_crate_name::Arguments<'args, #scalar>,
-                    executor: #juniper_crate_name::SubscriptionsExecutor<'e, Self::Context, #scalar>,
+                    executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<
                             Output = Result<
@@ -1274,8 +1278,10 @@ impl GraphQLTypeDefiniton {
                     >>
                     where
                         'e: 'res,
-                        'res: 'async_trait,
                         'args: 'async_trait,
+                        'e: 'async_trait,
+                        'ref_e: 'async_trait,
+                        'res: 'async_trait,
                         'life0: 'async_trait,
                         'life1: 'async_trait,
                         'life2: 'async_trait,

@@ -407,12 +407,6 @@ where
                 start_pos.clone(),
                 f.selection_set.as_ref().map(|x| &x[..]),
             );
-//            let owned_sub_exec = executor.owned_field_sub_executor(
-//                response_name,
-//                f.name.item,
-//                start_pos.clone(),
-//                f.selection_set.clone(),
-//            );
 
             let args = Arguments::new(
                 f.arguments.as_ref().map(|m| {
