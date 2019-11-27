@@ -1,3 +1,4 @@
+use crate::ast::Fragment;
 use crate::parser::Spanning;
 use crate::types::base::{is_excluded, merge_key_into};
 use crate::Arguments;
@@ -7,7 +8,6 @@ use crate::{
 };
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::ast::Fragment;
 
 pub trait SubscriptionCoordinator {
     type ArgsData;
@@ -278,7 +278,7 @@ where
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
-                                                  // with current field's selection set)
+                                                                  // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'i: 'res,
@@ -427,12 +427,8 @@ where
             let is_non_null = meta_field.field_type.is_non_null();
 
             let res = instance
-                .resolve_field_into_stream(
-                    info,
-                    f.name.item,
-                    args,
-                    owned_sub_exec
-                ).await;
+                .resolve_field_into_stream(info, f.name.item, args, owned_sub_exec)
+                .await;
 
             match res {
                 Ok(Value::Null) if is_non_null => {
@@ -453,7 +449,8 @@ where
 
         Selection::FragmentSpread(Spanning {
             item: ref spread,
-            start: ref start_pos, ..
+            start: ref start_pos,
+            ..
         }) => {
             if is_excluded(&spread.directives, &executor.variables()) {
                 // continue;
@@ -464,18 +461,14 @@ where
                 .fragment_by_name(spread.name.item)
                 .expect("Fragment could not be found");
 
-            let sub_exec = executor
-                .type_sub_executor(
-                    Some(fragment.type_condition.item),
-                    Some(&fragment.selection_set[..]),
-                );
+            let sub_exec = executor.type_sub_executor(
+                Some(fragment.type_condition.item),
+                Some(&fragment.selection_set[..]),
+            );
 
             let obj = instance
-                .resolve_into_type_stream(
-                    info,
-                    fragment.type_condition.item,
-                    &sub_exec
-                ).await;
+                .resolve_into_type_stream(info, fragment.type_condition.item, &sub_exec)
+                .await;
 
             match obj {
                 Ok(val) => {
@@ -490,13 +483,13 @@ where
                         _ => unreachable!(),
                     }
                 }
-                Err(e) =>
-                    sub_exec.push_error_at(e, start_pos.clone()),
+                Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
             }
         }
         Selection::InlineFragment(Spanning {
             item: ref fragment,
-            start: ref start_pos, ..
+            start: ref start_pos,
+            ..
         }) => {
             if is_excluded(&fragment.directives, &executor.variables()) {
                 // continue;
@@ -510,11 +503,7 @@ where
 
             if let Some(ref type_condition) = fragment.type_condition {
                 let sub_result = instance
-                    .resolve_into_type_stream(
-                        info,
-                        type_condition.item,
-                        &sub_exec
-                    )
+                    .resolve_into_type_stream(info, type_condition.item, &sub_exec)
                     .await;
 
                 if let Ok(Value::Object(obj)) = sub_result {

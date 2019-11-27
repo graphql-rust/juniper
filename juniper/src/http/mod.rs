@@ -229,27 +229,20 @@ where
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<
-        (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
-        GraphQLError<'a>
-    >
+    Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 )
 where
     S: 'static;
 
 #[cfg(feature = "async")]
 impl<'a, S> StreamGraphQLResponse<'a, S>
-    where
-        S: value::ScalarValue
+where
+    S: value::ScalarValue,
 {
     /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
     pub fn into_inner(
         self,
-    ) -> Result<
-            (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
-            GraphQLError<'a>
-        >
-    {
+    ) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>> {
         self.0
     }
 }
@@ -273,20 +266,16 @@ where
         self,
     ) -> Result<
         Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>,
-        StreamError<'a, S>
+        StreamError<'a, S>,
     > {
         use std::iter::FromIterator as _;
 
         let val = match self.0 {
-            Ok((v, err_vec)) => {
-                match err_vec.len() {
-                    0 => v,
-                    _ => return Err(StreamError::Execution(err_vec)),
-                }
+            Ok((v, err_vec)) => match err_vec.len() {
+                0 => v,
+                _ => return Err(StreamError::Execution(err_vec)),
             },
-            Err(e) => {
-                return Err(StreamError::GraphQL(e))
-            }
+            Err(e) => return Err(StreamError::GraphQL(e)),
         };
 
         match val {
@@ -375,7 +364,8 @@ where
 #[derive(Serialize, Debug)]
 #[serde(untagged)]
 pub enum StreamError<'a, S>
-    where S: crate::ScalarValue
+where
+    S: crate::ScalarValue,
 {
     Execution(Vec<ExecutionError<S>>),
     GraphQL(GraphQLError<'a>),

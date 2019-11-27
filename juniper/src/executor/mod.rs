@@ -402,9 +402,7 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        Ok(
-            value.resolve_into_stream(info, self).await
-        )
+        Ok(value.resolve_into_stream(info, self).await)
     }
 }
 
@@ -1027,10 +1025,7 @@ pub async fn execute_validated_subscription<
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-) -> Result<
-        (Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>),
-        GraphQLError<'res>
-    >
+) -> Result<(Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>), GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,

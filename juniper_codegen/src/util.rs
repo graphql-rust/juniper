@@ -1301,7 +1301,6 @@ impl GraphQLTypeDefiniton {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;

@@ -166,6 +166,7 @@ pub use crate::{
         Registry, Variables,
     },
     introspection::IntrospectionFormat,
+    macros::subscription_helpers::{ExtractTypeFromStream, IntoResult},
     schema::{meta, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, TypeKind},
@@ -176,7 +177,6 @@ pub use crate::{
         DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
         ScalarValue, Value,
     },
-    macros::subscription_helpers::{IntoResult, ExtractTypeFromStream},
 };
 
 /// A pinned, boxed future that can be polled.
@@ -336,10 +336,7 @@ pub async fn subscribe<'d, 'rn, 'ctx, 'ref_e, 'e, 'res, S, CtxT, QueryT, Mutatio
     root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
     variables: Variables<S>,
     context: &'ctx CtxT,
-) -> Result<
-        (Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>),
-        GraphQLError<'res>
-    >
+) -> Result<(Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>), GraphQLError<'res>>
 where
     'd: 'e,
     'rn: 'e,

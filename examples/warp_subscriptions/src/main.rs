@@ -9,10 +9,13 @@ use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
-use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinatorStruct, Value, ValuesResultStream, GraphQLType, FieldResult};
+use juniper::{
+    DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLType, RootNode,
+    SubscriptionCoordinatorStruct, Value, ValuesResultStream,
+};
 use juniper_warp::playground_filter;
-use std::convert::Infallible;
 use std::any::Any;
+use std::convert::Infallible;
 
 #[derive(Clone)]
 struct Context {}
@@ -123,7 +126,6 @@ impl Query {
     }
 }
 
-
 type TypeAlias = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
 
 struct Subscription;
@@ -131,33 +133,32 @@ struct Subscription;
 #[juniper::subscription(Context = Context)]
 impl Subscription {
     async fn users() -> TypeAlias {
-//        Err(FieldError::new(
-//            "some field error from handler",
-//            Value::Scalar(
-//                DefaultScalarValue::String("some additional string".to_string())
-//            )
-//        ))
+        //        Err(FieldError::new(
+        //            "some field error from handler",
+        //            Value::Scalar(
+        //                DefaultScalarValue::String("some additional string".to_string())
+        //            )
+        //        ))
 
         {
             let mut counter = 0;
-            let stream =
-                Interval::new_interval(Duration::from_secs(5)).map(move |_| {
-                    counter += 1;
-                    if counter == 2 {
-                        Err(FieldError::new(
-                            "some field error from handler",
-                            Value::Scalar(DefaultScalarValue::String(
-                                "some additional string".to_string(),
-                            )),
-                        ))
-                    } else {
-                        Ok(User {
-                            id: counter,
-                            kind: UserKind::Admin,
-                            name: "stream user".to_string(),
-                        })
-                    }
-                });
+            let stream = Interval::new_interval(Duration::from_secs(5)).map(move |_| {
+                counter += 1;
+                if counter == 2 {
+                    Err(FieldError::new(
+                        "some field error from handler",
+                        Value::Scalar(DefaultScalarValue::String(
+                            "some additional string".to_string(),
+                        )),
+                    ))
+                } else {
+                    Ok(User {
+                        id: counter,
+                        kind: UserKind::Admin,
+                        name: "stream user".to_string(),
+                    })
+                }
+            });
             Box::pin(stream)
         }
     }
