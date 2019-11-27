@@ -137,6 +137,47 @@ struct Subscription;
 //    }
 //}
 
+struct MyStruct;
+struct MyStruct2;
+struct MyStruct3;
+struct MyStruct4;
+
+trait GraphQLTraitAsync<T> {
+    type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
+}
+
+impl<T, I> GraphQLTraitAsync<MyStruct> for T
+    where
+        T: futures::Stream<Item = I>,
+        I: GraphQLType,
+{
+    type Item = I;
+}
+
+impl<Ty, T, E> GraphQLTraitAsync<MyStruct2> for Ty
+    where
+        Ty: futures::Stream<Item = Result<T, E>>,
+        T: GraphQLType,
+{
+    type Item = T;
+}
+
+impl<T, I, E> GraphQLTraitAsync<MyStruct3> for Result<T, E>
+    where
+        T: futures::Stream<Item = I>,
+        I: juniper::GraphQLType<juniper::DefaultScalarValue>,
+{
+    type Item = I;
+}
+
+impl<T, E, I, ER> GraphQLTraitAsync<MyStruct4> for Result<T, E>
+    where
+        T: futures::Stream<Item = Result<I, ER>>,
+        I: juniper::GraphQLType<juniper::DefaultScalarValue>,
+{
+    type Item = I;
+}
+
 impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
     type Context = Context;
     type TypeInfo = ();
@@ -153,26 +194,6 @@ impl juniper::GraphQLType<juniper::DefaultScalarValue> for Subscription {
         juniper::DefaultScalarValue: 'r,
         for<'z> &'z juniper::DefaultScalarValue: juniper::ScalarRefValue<'z>,
     {
-        trait GraphQLTraitAsync<T> {
-            type Item: juniper::GraphQLType<juniper::DefaultScalarValue>;
-        }
-
-        impl<T, I> GraphQLTraitAsync<T> for T
-        where
-            T: futures::Stream<Item = I>,
-            I: GraphQLType,
-        {
-            type Item = T::Item;
-        }
-
-        impl<T, I, E> GraphQLTraitAsync<T> for Result<T, E>
-            where
-                T: futures::Stream<Item = I>,
-                I: juniper::GraphQLType<juniper::DefaultScalarValue>,
-        {
-            type Item = I;
-        }
-
         let fields = vec![
             registry.field_convert::<
                <TypeAlias as GraphQLTraitAsync<_>>::Item,
