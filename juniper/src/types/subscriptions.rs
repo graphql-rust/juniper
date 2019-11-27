@@ -4,7 +4,7 @@ use crate::types::base::{is_excluded, merge_key_into};
 use crate::Arguments;
 use crate::{
     BoxFuture, ExecutionError, Executor, FieldError, GraphQLType, Object, ScalarRefValue,
-    ScalarValue, Selection, SubscriptionsExecutor, Value, ValuesResultStream,
+    ScalarValue, Selection, OwnedExecutor, Value, ValuesResultStream,
 };
 use std::collections::HashMap;
 use std::sync::Arc;

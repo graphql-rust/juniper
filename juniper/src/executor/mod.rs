@@ -25,7 +25,7 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::executor::executor_wrappers::{ExecutorDataVariables, SubscriptionsExecutor};
+use crate::executor::executor_wrappers::OwnedExecutor;
 use std::sync::Arc;
 
 pub mod executor_wrappers;
@@ -555,10 +555,10 @@ where
         field_name: &'s str,
         location: SourcePosition,
         selection_set: Option<Vec<Selection<'a, S>>>,
-    ) -> SubscriptionsExecutor<'a, CtxT, S> {
+    ) -> OwnedExecutor<'a, CtxT, S> {
         let field_path = FieldPath::Field(field_alias, location, Arc::clone(&self.field_path));
 
-        SubscriptionsExecutor::from_data(ExecutorDataVariables {
+        OwnedExecutor {
             fragments: self.fragments.clone(),
             variables: self.variables.clone(),
             current_selection_set: selection_set.clone(),
@@ -575,7 +575,7 @@ where
             context: self.context,
             errors: RwLock::new(vec![]),
             field_path: Arc::new(field_path),
-        })
+        }
     }
 
     #[doc(hidden)]
@@ -739,8 +739,8 @@ where
     /// This function does not clone Executor's `errors` because
     /// existing errors will most likely not needed to be accessed by
     /// user
-    pub fn as_owned_executor(&self) -> SubscriptionsExecutor<'a, CtxT, S> {
-        SubscriptionsExecutor::from_data(ExecutorDataVariables {
+    pub fn as_owned_executor(&self) -> OwnedExecutor<'a, CtxT, S> {
+        OwnedExecutor {
             fragments: self.fragments.clone(),
             variables: self.variables.clone(),
             current_selection_set: self.current_selection_set.map(|x| x.to_vec()),
@@ -750,7 +750,7 @@ where
             context: self.context,
             errors: RwLock::new(vec![]),
             field_path: Arc::clone(&self.field_path),
-        })
+        }
     }
 }
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     ast::Selection,
-    executor::executor_wrappers::SubscriptionsExecutor,
+    executor::executor_wrappers::OwnedExecutor,
     executor::{ExecutionResult, Executor, FieldError, ValuesResultStream},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
