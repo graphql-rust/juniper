@@ -21,7 +21,6 @@ impl<T, I> IntoResult<T, Infallible> for T
     }
 }
 
-//todo: think of a little bit better names
 pub struct StreamItem;
 pub struct StreamResult;
 pub struct ResultStreamItem;
