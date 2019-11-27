@@ -349,9 +349,6 @@ where
     let selection_set = executor
         .current_selection_set()
         .expect("Executor's selection set is none");
-    if selection_set.len() > 1 {
-        panic!("multiple subscriptions are not implemented yet");
-    }
 
     let mut object: Object<ValuesResultStream<'res, S>> =
         Object::with_capacity(selection_set.len());
@@ -364,153 +361,136 @@ where
         )
         .expect("Type not found in schema");
 
-    //        for selection in selection_set {
-    match selection_set[0] {
-        Selection::Field(Spanning {
-            item: ref f,
-            start: ref start_pos,
-            ..
-        }) => {
-            if is_excluded(&f.directives, &executor.variables()) {
-                // continue;
-                return Value::Null;
-            }
+    for selection in selection_set {
+        match selection {
+            Selection::Field(Spanning {
+                item: ref f,
+                start: ref start_pos,
+                ..
+            }) => {
+                if is_excluded(&f.directives, &executor.variables()) {
+                     continue;
+                }
 
-            let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
+                let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
-            if f.name.item == "__typename" {
-                let typename = Value::scalar(instance.concrete_type_name(executor.context(), info));
-                object.add_field(
+                if f.name.item == "__typename" {
+                    let typename = Value::scalar(instance.concrete_type_name(executor.context(), info));
+                    object.add_field(
+                        response_name,
+                        Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
+                    );
+                     continue;
+                }
+
+                let meta_field = meta_type
+                    .field_by_name(f.name.item)
+                    .unwrap_or_else(|| {
+                        panic!(format!(
+                            "Field {} not found on type {:?}",
+                            f.name.item,
+                            meta_type.name()
+                        ))
+                    })
+                    .clone();
+
+                let exec_vars = executor.variables();
+
+                let sub_exec = executor.field_sub_executor(
                     response_name,
-                    Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
+                    f.name.item,
+                    start_pos.clone(),
+                    f.selection_set.as_ref().map(|x| &x[..]),
                 );
-                // continue;
-                return Value::Null;
-            }
 
-            let meta_field = meta_type
-                .field_by_name(f.name.item)
-                .unwrap_or_else(|| {
-                    panic!(format!(
-                        "Field {} not found on type {:?}",
-                        f.name.item,
-                        meta_type.name()
-                    ))
-                })
-                .clone();
+                let args = Arguments::new(
+                    f.arguments.as_ref().map(|m| {
+                        m.item
+                            .iter()
+                            .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(&exec_vars)))
+                            .collect()
+                    }),
+                    &meta_field.arguments,
+                );
 
-            let exec_vars = executor.variables();
+                let is_non_null = meta_field.field_type.is_non_null();
 
-            let sub_exec = executor.field_sub_executor(
-                response_name,
-                f.name.item,
-                start_pos.clone(),
-                f.selection_set.as_ref().map(|x| &x[..]),
-            );
-
-            let args = Arguments::new(
-                f.arguments.as_ref().map(|m| {
-                    m.item
-                        .iter()
-                        .map(|&(ref k, ref v)| (k.item, v.item.clone().into_const(&exec_vars)))
-                        .collect()
-                }),
-                &meta_field.arguments,
-            );
-
-            let is_non_null = meta_field.field_type.is_non_null();
-
-            let res = instance
-                .resolve_field_into_stream(info, f.name.item, args, &sub_exec)
-                .await;
-
-            match res {
-                Ok(Value::Null) if is_non_null => {
-                    return Value::Null;
-                }
-                Ok(v) => merge_key_into(&mut object, response_name, v),
-                Err(e) => {
-                    sub_exec.push_error_at(e, start_pos.clone());
-
-                    if meta_field.field_type.is_non_null() {
-                        return Value::Null;
-                    }
-
-                    object.add_field(f.name.item, Value::Null);
-                }
-            }
-        }
-
-        Selection::FragmentSpread(Spanning {
-            item: ref spread,
-            start: ref start_pos,
-            ..
-        }) => {
-            if is_excluded(&spread.directives, &executor.variables()) {
-                // continue;
-                return Value::Null;
-            }
-
-            let fragment = executor
-                .fragment_by_name(spread.name.item)
-                .expect("Fragment could not be found");
-
-            let sub_exec = executor.type_sub_executor(
-                Some(fragment.type_condition.item),
-                Some(&fragment.selection_set[..]),
-            );
-
-            let obj = instance
-                .resolve_into_type_stream(info, fragment.type_condition.item, &sub_exec)
-                .await;
-
-            match obj {
-                Ok(val) => {
-                    match val {
-                        Value::Object(o) => {
-                            for (k, v) in o {
-                                merge_key_into(&mut object, &k, v);
-                            }
-                        }
-                        // since this was a wrapper of current function,
-                        // we'll rather get an object or nothing
-                        _ => unreachable!(),
-                    }
-                }
-                Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
-            }
-        }
-        Selection::InlineFragment(Spanning {
-            item: ref fragment,
-            start: ref start_pos,
-            ..
-        }) => {
-            if is_excluded(&fragment.directives, &executor.variables()) {
-                // continue;
-                return Value::Null;
-            }
-
-            let sub_exec = executor.type_sub_executor(
-                fragment.type_condition.as_ref().map(|c| c.item),
-                Some(&fragment.selection_set[..]),
-            );
-
-            if let Some(ref type_condition) = fragment.type_condition {
-                let sub_result = instance
-                    .resolve_into_type_stream(info, type_condition.item, &sub_exec)
+                let res = instance
+                    .resolve_field_into_stream(info, f.name.item, args, &sub_exec)
                     .await;
 
-                if let Ok(Value::Object(obj)) = sub_result {
-                    for (k, v) in obj {
-                        merge_key_into(&mut object, &k, v);
+                match res {
+                    Ok(Value::Null) if is_non_null => {
+                        return Value::Null;
                     }
-                } else if let Err(e) = sub_result {
-                    sub_exec.push_error_at(e, start_pos.clone());
+                    Ok(v) => merge_key_into(&mut object, response_name, v),
+                    Err(e) => {
+                        sub_exec.push_error_at(e, start_pos.clone());
+
+                        if meta_field.field_type.is_non_null() {
+                            return Value::Null;
+                        }
+
+                        object.add_field(f.name.item, Value::Null);
+                    }
                 }
-            } else {
-                if let Some(type_name) = meta_type.name() {
+            }
+
+            Selection::FragmentSpread(Spanning {
+                item: ref spread,
+                start: ref start_pos,
+                ..
+            }) => {
+                if is_excluded(&spread.directives, &executor.variables()) {
+                     continue;
+                }
+
+                let fragment = executor
+                    .fragment_by_name(spread.name.item)
+                    .expect("Fragment could not be found");
+
+                let sub_exec = executor.type_sub_executor(
+                    Some(fragment.type_condition.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                let obj = instance
+                    .resolve_into_type_stream(info, fragment.type_condition.item, &sub_exec)
+                    .await;
+
+                match obj {
+                    Ok(val) => {
+                        match val {
+                            Value::Object(o) => {
+                                for (k, v) in o {
+                                    merge_key_into(&mut object, &k, v);
+                                }
+                            }
+                            // since this was a wrapper of current function,
+                            // we'll rather get an object or nothing
+                            _ => unreachable!(),
+                        }
+                    }
+                    Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
+                }
+            }
+            Selection::InlineFragment(Spanning {
+                item: ref fragment,
+                start: ref start_pos,
+                ..
+            }) => {
+                if is_excluded(&fragment.directives, &executor.variables()) {
+                     continue;
+                }
+
+                let sub_exec = executor.type_sub_executor(
+                    fragment.type_condition.as_ref().map(|c| c.item),
+                    Some(&fragment.selection_set[..]),
+                );
+
+                if let Some(ref type_condition) = fragment.type_condition {
                     let sub_result = instance
-                        .resolve_into_type_stream(info, type_name.clone(), &sub_exec)
+                        .resolve_into_type_stream(info, type_condition.item, &sub_exec)
                         .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
@@ -521,12 +501,25 @@ where
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
                 } else {
-                    return Value::Null;
+                    if let Some(type_name) = meta_type.name() {
+                        let sub_result = instance
+                            .resolve_into_type_stream(info, type_name.clone(), &sub_exec)
+                            .await;
+
+                        if let Ok(Value::Object(obj)) = sub_result {
+                            for (k, v) in obj {
+                                merge_key_into(&mut object, &k, v);
+                            }
+                        } else if let Err(e) = sub_result {
+                            sub_exec.push_error_at(e, start_pos.clone());
+                        }
+                    } else {
+                        return Value::Null;
+                    }
                 }
             }
         }
     }
-    //    }
 
     Value::Object(object)
 }
