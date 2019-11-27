@@ -27,7 +27,7 @@ pub struct StreamResult;
 pub struct ResultStreamItem;
 pub struct ResultStreamResult;
 
-pub trait GraphQLTraitAsync<T, S>
+pub trait ExtractTypeFromStream<T, S>
 where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
@@ -35,7 +35,7 @@ where
     type Item: GraphQLType<S>;
 }
 
-impl<T, I, S> GraphQLTraitAsync<StreamItem, S> for T
+impl<T, I, S> ExtractTypeFromStream<StreamItem, S> for T
     where
         T: futures::Stream<Item = I>,
         I: GraphQLType<S>,
@@ -45,7 +45,7 @@ impl<T, I, S> GraphQLTraitAsync<StreamItem, S> for T
     type Item = I;
 }
 
-impl<Ty, T, E, S> GraphQLTraitAsync<StreamResult, S> for Ty
+impl<Ty, T, E, S> ExtractTypeFromStream<StreamResult, S> for Ty
     where
         Ty: futures::Stream<Item = Result<T, E>>,
         T: GraphQLType<S>,
@@ -55,7 +55,7 @@ impl<Ty, T, E, S> GraphQLTraitAsync<StreamResult, S> for Ty
     type Item = T;
 }
 
-impl<T, I, E, S> GraphQLTraitAsync<ResultStreamItem, S> for Result<T, E>
+impl<T, I, E, S> ExtractTypeFromStream<ResultStreamItem, S> for Result<T, E>
     where
         T: futures::Stream<Item = I>,
         I: GraphQLType<S>,
@@ -65,7 +65,7 @@ impl<T, I, E, S> GraphQLTraitAsync<ResultStreamItem, S> for Result<T, E>
     type Item = I;
 }
 
-impl<T, E, I, ER, S> GraphQLTraitAsync<ResultStreamResult, S> for Result<T, E>
+impl<T, E, I, ER, S> ExtractTypeFromStream<ResultStreamResult, S> for Result<T, E>
     where
         T: futures::Stream<Item = Result<I, ER>>,
         I: GraphQLType<S>,

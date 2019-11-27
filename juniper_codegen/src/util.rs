@@ -1029,6 +1029,20 @@ impl GraphQLTypeDefiniton {
             .map(|ctx| quote!( #ctx ))
             .unwrap_or_else(|| quote!(()));
 
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
                 let arg_type = &arg._type;
@@ -1073,23 +1087,15 @@ impl GraphQLTypeDefiniton {
 
             let field_name = &field.name;
 
-            let _type_name = &field._type;
+            let type_name = &field._type;
 
             let _type;
-            if let Some(t) = extract_ok_type_from_std_result(_type_name) {
-                if field.is_async {
-                    _type = quote!(<#t as GraphQLTraitAsync<_>>::Item);
-                } else {
-                    //todo
-                    panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
-                }
+
+            if field.is_async {
+                _type = quote!(<#type_name as #juniper_crate_name::ExtractTypeFromStream<_, #scalar>>::Item);
             } else {
-                if field.is_async {
-                    _type = quote!(<#_type_name as GraphQLTraitAsync<_>>::Item);
-                } else {
-                    //todo
-                    panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
-                }
+                //todo
+                panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
             }
 
             quote! {
@@ -1100,20 +1106,6 @@ impl GraphQLTypeDefiniton {
                     #deprecation
             }
         });
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
 
         let description = self
             .description
@@ -1178,27 +1170,18 @@ impl GraphQLTypeDefiniton {
                 let name = &field.name;
                 let code = &field.resolver_code;
 
-                let return_error_if_res_is_error;
                 let _type;
                 if field.is_type_inferred {
-                    return_error_if_res_is_error = quote!(let res = res?;);
                     _type = quote!();
                 } else {
                     let _type_name = &field._type;
                     _type = quote!(: #_type_name);
-
-                    if extract_ok_type_from_std_result(_type_name).is_some() {
-                        return_error_if_res_is_error = quote!(let res = res?;);
-                    }
-                    else {
-                        return_error_if_res_is_error = quote!();
-                    }
                 };
                 quote!(
                     #name => {
                         futures::FutureExt::boxed(async move {
                             let res #_type = { #code };
-                            #return_error_if_res_is_error
+                            let res = #juniper_crate_name::IntoResult::into_result(res)?;
                             let f = res.then(move |res| {
                                 let executor = executor.clone();
                                 let res2: #juniper_crate_name::FieldResult<_, #scalar> =
@@ -1226,21 +1209,6 @@ impl GraphQLTypeDefiniton {
 
             });
 
-        let graphqltraitasync_implementation = quote!(
-            trait GraphQLTraitAsync<T>
-            {
-                type Item: #juniper_crate_name::GraphQLType<#scalar>;
-            }
-
-            impl<T, Type> GraphQLTraitAsync<T> for Type
-                where
-                    Type: futures::Stream<Item = T>,
-                    T: #juniper_crate_name::GraphQLType<#scalar>
-            {
-                type Item = T;
-            }
-        );
-
         let graphql_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
@@ -1259,8 +1227,6 @@ impl GraphQLTypeDefiniton {
                         where #scalar : 'r,
                         for<'z> &'z #scalar: #juniper_crate_name::ScalarRefValue<'z>,
                     {
-                        #graphqltraitasync_implementation
-
                         let fields = vec![
                             #( #field_definitions ),*
                         ];
@@ -1297,15 +1263,14 @@ impl GraphQLTypeDefiniton {
                     info: &'life1 Self::TypeInfo,
                     field_name: &'life2 str,
                     arguments: #juniper_crate_name::Arguments<'args, #scalar>,
-                    executor: std::sync::Arc<#juniper_crate_name::SubscriptionsExecutor<'e, Self::Context, #scalar>>,
+                    executor: #juniper_crate_name::SubscriptionsExecutor<'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<
                             Output = Result<
                                 #juniper_crate_name::Value<#juniper_crate_name::ValuesResultStream<'res, #scalar>>,
                                 #juniper_crate_name::FieldError<#scalar>
                             >
-                        >
-                        + Send + 'async_trait
+                        > + Send + 'async_trait
                     >>
                     where
                         'e: 'res,
@@ -1328,8 +1293,6 @@ impl GraphQLTypeDefiniton {
                 }
             }
         );
-        #[cfg(not(feature = "async"))]
-        let async_subscription_implementation = quote!();
 
         quote!(
             #graphql_implementation
@@ -1338,55 +1301,6 @@ impl GraphQLTypeDefiniton {
     }
 }
 
-/// Extract "T" from "Result<T, E>"
-fn extract_ok_type_from_std_result(ty: &syn::Type) -> Option<&syn::Type> {
-    use syn::{GenericArgument, Path, PathArguments, PathSegment};
-
-    fn extract_type_path(ty: &syn::Type) -> Option<&Path> {
-        match *ty {
-            syn::Type::Path(ref typepath) if typepath.qself.is_none() => Some(&typepath.path),
-            _ => None,
-        }
-    }
-
-    /// Extract "T, E" from "Result<T, E>"
-    fn extract_result_segment(path: &Path) -> Option<&PathSegment> {
-        let idents_of_path = path
-            .segments
-            .iter()
-            .into_iter()
-            .fold(String::new(), |mut acc, v| {
-                acc.push_str(&v.ident.to_string());
-                acc.push('|');
-                acc
-            });
-        vec![
-            "Result|",
-            "std|result|Result|",
-            "core|result|Result|",
-            "FieldResult|",
-            "juniper|FieldResult|",
-        ]
-        .into_iter()
-        .find(|s| &idents_of_path == *s)
-        .and_then(|_| path.segments.last())
-    }
-
-    extract_type_path(ty)
-        .and_then(|path| extract_result_segment(path))
-        .and_then(|path_segment| {
-            let type_params = &path_segment.arguments;
-            // It should have only angle-bracketed params. We need the first one. ("T" in "<T, E>")
-            match *type_params {
-                PathArguments::AngleBracketed(ref params) => params.args.first(),
-                _ => None,
-            }
-        })
-        .and_then(|generic_arg| match *generic_arg {
-            GenericArgument::Type(ref ty) => Some(ty),
-            _ => None,
-        })
-}
 
 #[cfg(test)]
 mod test {

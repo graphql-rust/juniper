@@ -250,7 +250,7 @@ where
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    async fn resolve_field_into_stream<'args, 'ref_e, 'e, 'res>(
+    async fn resolve_field_into_stream<'args, 'e, 'res>(
         &self,
         _: &Self::TypeInfo,     // this subscription's type info
         _: &str,                // field's type name
