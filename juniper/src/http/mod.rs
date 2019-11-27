@@ -229,7 +229,6 @@ where
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    //todo: enum for both errors
     Result<
         (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
         GraphQLError<'a>
@@ -253,30 +252,6 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
     {
         self.0
     }
-
-    /// Return reference to self's errors (if any)
-    pub fn errors(&self) -> Option<StreamError<S>> {
-        if self.0.is_ok() {
-            let (_, errors_vec) = self
-                .0
-                .as_ref()
-                .unwrap();
-
-            // todo: return all errors
-            match errors_vec.len() {
-                0 => None,
-                _ => Some(
-                    StreamError::Execution(errors_vec[0].clone())
-                ),
-            }
-        }
-        else {
-            Some(StreamError::GraphQL(
-                self.0.as_ref().err().unwrap().clone()
-            ))
-        }
-    }
-
 }
 
 #[cfg(feature = "async")]
@@ -296,18 +271,28 @@ where
     ///     other `Value::Object` - default implementation __panics__
     pub fn into_stream(
         self,
-    ) -> Option<Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>> {
+    ) -> Result<
+        Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>,
+        StreamError<'a, S>
+    > {
         use std::iter::FromIterator as _;
 
         let val = match self.0 {
-            Ok((v, _)) => v,
-            Err(_) => return None,
+            Ok((v, err_vec)) => {
+                match err_vec.len() {
+                    0 => v,
+                    _ => return Err(StreamError::Execution(err_vec)),
+                }
+            },
+            Err(e) => {
+                return Err(StreamError::GraphQL(e))
+            }
         };
 
         match val {
-            Value::Null => None,
+            Value::Null => Err(StreamError::NoneValue),
             Value::Scalar(stream) => {
-                Some(Box::pin(stream.map(|value| {
+                Ok(Box::pin(stream.map(|value| {
                     match value {
                         Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
                         // todo: not return random error
@@ -318,11 +303,11 @@ where
             // todo: remove these and add
             //       // TODO: implement these
             //       (current implementation might be confusing)
-            Value::List(_) => None,
+            Value::List(_) => return Err(StreamError::ListValue),
             Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
                 if key_values.len() == 0 {
-                    return None;
+                    return Err(StreamError::EmptyObject);
                 }
 
                 let mut filled_count = 0;
@@ -381,19 +366,23 @@ where
                     },
                 );
 
-                Some(Box::pin(stream))
+                Ok(Box::pin(stream))
             }
         }
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[serde(untagged)]
 pub enum StreamError<'a, S>
     where S: crate::ScalarValue
 {
-    Execution(ExecutionError<S>),
+    Execution(Vec<ExecutionError<S>>),
     GraphQL(GraphQLError<'a>),
+    NoneValue,
+    //todo: remove ListValue
+    ListValue,
+    EmptyObject,
 }
 
 #[cfg(any(test, feature = "expose-test-schema"))]

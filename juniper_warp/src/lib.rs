@@ -471,30 +471,30 @@ where
 
                     let response_stream = graphql_request.subscribe(&schema, &context).await;
 
-                    if let Some(error) = response_stream.errors() {
-                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-                            r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                            request_id,
-                            serde_json::ser::to_string(&error).unwrap()
-                        )))));
+                    let stream = match response_stream.into_stream()
+                        {
+                            Ok(s) => s,
+                            Err(error) => {
+                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+                                    r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                                    request_id,
+                                    serde_json::ser::to_string(&error).unwrap()
+                                )))));
 
-                        let close_text = format!(
-                            r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                            request_id
-                        );
+                                let close_text = format!(
+                                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                    request_id
+                                );
 
-                        // send message that we are closing channel
-                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
+                                // send message that we are closing channel
+                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
 
-                        // close channel
-                        let _ = ws_tx.unbounded_send(None);
+                                // close channel
+                                let _ = ws_tx.unbounded_send(None);
 
-                        return;
-                    }
-
-                    let stream = response_stream
-                        .into_stream()
-                        .expect("Response stream is none");
+                                return;
+                            },
+                        };
 
                     stream
                         .take_while(move |response| {
