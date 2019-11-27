@@ -25,7 +25,8 @@ pub struct OwnedExecutor<'a, CtxT, S> {
 }
 
 impl<'a, CtxT, S> Clone for OwnedExecutor<'a, CtxT, S>
-where S: Clone
+where
+    S: Clone,
 {
     fn clone(&self) -> Self {
         Self {
@@ -58,10 +59,7 @@ where
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set.clone(),
             current_type: match type_name {
-                Some(type_name) => self
-                    .schema
-                    .type_by_name(type_name)
-                    .expect("Type not found"),
+                Some(type_name) => self.schema.type_by_name(type_name).expect("Type not found"),
                 None => self.current_type.clone(),
             },
             schema: self.schema,

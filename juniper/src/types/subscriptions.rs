@@ -3,8 +3,8 @@ use crate::parser::Spanning;
 use crate::types::base::{is_excluded, merge_key_into};
 use crate::Arguments;
 use crate::{
-    BoxFuture, ExecutionError, Executor, FieldError, GraphQLType, Object, ScalarRefValue,
-    ScalarValue, Selection, OwnedExecutor, Value, ValuesResultStream,
+    BoxFuture, ExecutionError, Executor, FieldError, GraphQLType, Object, OwnedExecutor,
+    ScalarRefValue, ScalarValue, Selection, Value, ValuesResultStream,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -72,6 +72,7 @@ where
     }
 }
 
+//todo: update docs once done
 /**
 *
 * This trait replaces GraphQLType`'s resolver logic with asynchronous subscription
@@ -256,7 +257,7 @@ where
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
         _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
-                                                        // with current field's selection set)
+                                                           // with current field's selection set)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'e: 'res,
@@ -323,7 +324,7 @@ where
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes
 /// errors to `Executor`.
-pub(crate) async fn resolve_selection_set_into_stream_recursive<
+async fn resolve_selection_set_into_stream_recursive<
     'i,
     'inf,
     'ref_e,
@@ -369,18 +370,19 @@ where
                 ..
             }) => {
                 if is_excluded(&f.directives, &executor.variables()) {
-                     continue;
+                    continue;
                 }
 
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
                 if f.name.item == "__typename" {
-                    let typename = Value::scalar(instance.concrete_type_name(executor.context(), info));
+                    let typename =
+                        Value::scalar(instance.concrete_type_name(executor.context(), info));
                     object.add_field(
                         response_name,
                         Value::Scalar(Box::pin(futures::stream::once(async { Ok(typename) }))),
                     );
-                     continue;
+                    continue;
                 }
 
                 let meta_field = meta_type
@@ -442,7 +444,7 @@ where
                 ..
             }) => {
                 if is_excluded(&spread.directives, &executor.variables()) {
-                     continue;
+                    continue;
                 }
 
                 let fragment = executor
@@ -480,7 +482,7 @@ where
                 ..
             }) => {
                 if is_excluded(&fragment.directives, &executor.variables()) {
-                     continue;
+                    continue;
                 }
 
                 let sub_exec = executor.type_sub_executor(

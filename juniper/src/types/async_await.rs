@@ -182,7 +182,7 @@ where
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
 #[cfg(feature = "async")]
-pub(crate) fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
+fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
@@ -215,7 +215,7 @@ enum AsyncValue<S> {
 }
 
 #[cfg(feature = "async")]
-pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
+async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],

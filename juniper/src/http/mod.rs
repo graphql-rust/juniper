@@ -229,7 +229,10 @@ where
 #[cfg(feature = "async")]
 /// Wrapper around the asynchronous result from executing a GraphQL subscription
 pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
-    Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+    Result<
+        (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
+        GraphQLError<'a>
+    >,
 )
 where
     S: 'static;
@@ -271,9 +274,18 @@ where
         use std::iter::FromIterator as _;
 
         let val = match self.0 {
-            Ok((v, err_vec)) => match err_vec.len() {
+            Ok(
+                (v, err_vec)
+            ) => match err_vec.len() {
                 0 => v,
-                _ => return Err(StreamError::Execution(err_vec)),
+                _ => {
+                    let err_stream = futures::stream::once(async {
+                        GraphQLResponse::from_result(Ok(
+                            (Value::Null, err_vec)
+                        ))
+                    });
+                    return Ok(Box::pin(err_stream));
+                },
             },
             Err(e) => return Err(StreamError::GraphQL(e)),
         };

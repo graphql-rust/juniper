@@ -37,6 +37,7 @@ Check the LICENSE file for details.
 */
 
 #![deny(missing_docs)]
+//todo: get back
 //#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 

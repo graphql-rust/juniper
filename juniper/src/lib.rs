@@ -160,10 +160,10 @@ use crate::{
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
     executor::{
-        executor_wrappers::OwnedExecutor, Applies, Context, ExecutionError,
-        ExecutionResult, Executor, FieldError, FieldResult, FromContext, IntoFieldError,
-        IntoResolvable, LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue,
-        Registry, Variables,
+        executor_wrappers::OwnedExecutor, Applies, Context, ExecutionError, ExecutionResult,
+        Executor, FieldError, FieldResult, FromContext, IntoFieldError, IntoResolvable,
+        LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue, Registry,
+        Variables,
     },
     introspection::IntrospectionFormat,
     macros::subscription_helpers::{ExtractTypeFromStream, IntoResult},

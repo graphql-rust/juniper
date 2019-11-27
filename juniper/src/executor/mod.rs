@@ -404,13 +404,7 @@ where
     {
         Ok(value.resolve_into_stream(info, self).await)
     }
-}
 
-impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
-where
-    S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
-{
     /// Resolve a single arbitrary value, mapping the context to a new type
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
@@ -546,35 +540,6 @@ where
                 location,
                 Arc::clone(&self.field_path),
             )),
-        }
-    }
-
-    pub fn owned_field_sub_executor<'s>(
-        &'s self,
-        field_alias: &'a str,
-        field_name: &'s str,
-        location: SourcePosition,
-        selection_set: Option<Vec<Selection<'a, S>>>,
-    ) -> OwnedExecutor<'a, CtxT, S> {
-        let field_path = FieldPath::Field(field_alias, location, Arc::clone(&self.field_path));
-
-        OwnedExecutor {
-            fragments: self.fragments.clone(),
-            variables: self.variables.clone(),
-            current_selection_set: selection_set.clone(),
-            parent_selection_set: self.current_selection_set.map(|x| x.to_vec()),
-            current_type: self.schema.make_type(
-                &self
-                    .current_type
-                    .innermost_concrete()
-                    .field_by_name(field_name)
-                    .expect("Field not found on inner type")
-                    .field_type,
-            ),
-            schema: self.schema,
-            context: self.context,
-            errors: RwLock::new(vec![]),
-            field_path: Arc::new(field_path),
         }
     }
 
