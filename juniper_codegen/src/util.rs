@@ -1457,26 +1457,4 @@ mod test {
         assert_eq!(is_valid_name("__Atest90"), true);
     }
 
-    #[test]
-    fn test_extract_ok_type_from_std_result() {
-        let no_result = syn::parse2(quote!(Box<OkVal>)).unwrap();
-        assert_eq!(extract_ok_type_from_std_result(&no_result), None);
-
-        let result_ok = syn::parse2(quote!(OkVal)).unwrap();
-
-        let result = syn::parse2(quote!(Result<OkVal, ErrVal>)).unwrap();
-        assert_eq!(extract_ok_type_from_std_result(&result), Some(&result_ok));
-
-        let std_result = syn::parse2(quote!(std::result::Result<OkVal, ErrVal>)).unwrap();
-        assert_eq!(
-            extract_ok_type_from_std_result(&std_result),
-            Some(&result_ok)
-        );
-
-        let core_result = syn::parse2(quote!(core::result::Result<OkVal, ErrVal>)).unwrap();
-        assert_eq!(
-            extract_ok_type_from_std_result(&core_result),
-            Some(&result_ok)
-        );
-    }
 }
