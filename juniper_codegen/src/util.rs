@@ -1094,7 +1094,7 @@ impl GraphQLTypeDefiniton {
             if field.is_async {
                 _type = quote!(<#type_name as #juniper_crate_name::ExtractTypeFromStream<_, #scalar>>::Item);
             } else {
-                //todo
+                //TODO
                 panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
             }
 

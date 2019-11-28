@@ -295,12 +295,12 @@ where
                 Ok(Box::pin(stream.map(|value| {
                     match value {
                         Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
-                        // todo: not return random error
+                        // TODO#433: not return random error
                         Err(e) => GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
                     }
                 })))
             }
-            // todo: remove these and add
+            // TODO#433: remove these and add
             //       // TODO: implement these
             //       (current implementation might be confusing)
             Value::List(_) => return Err(StreamError::ListValue),
@@ -338,7 +338,7 @@ where
                                         }
                                     }
                                 },
-                                    // todo: not panic on errors
+                                    // TODO#433: not panic on errors
                                     _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
                             }
                             }
@@ -348,7 +348,7 @@ where
                             let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
                             let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
                             let ready_vec_iterator = ready_vec.into_iter().map(|el| {
-                                //todo: not return null
+                                //TODO#433: not return null
                                 let (name, val) = el.unwrap();
                                 if let Ok(value) = val {
                                     (name, value)
@@ -373,7 +373,7 @@ where
     }
 }
 
-//todo: consider re-looking at fields after StreamGraphQLResponse::into_stream
+//TODO#433: consider re-looking at fields after StreamGraphQLResponse::into_stream
 //      was re-implemented
 /// Errors that can be returned from `StreamGraphQLResponse`
 #[derive(Serialize, Debug)]

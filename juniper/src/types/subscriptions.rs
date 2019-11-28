@@ -7,7 +7,7 @@ use crate::{
 };
 use std::collections::HashMap;
 
-//todo: update docs once done
+//TODO#433: update docs once done
 /**
 *
 * This trait replaces GraphQLType`'s resolver logic with asynchronous subscription
