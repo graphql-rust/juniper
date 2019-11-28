@@ -10,8 +10,8 @@ use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
 use juniper::{
-    DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLType, RootNode,
-    Value, ValuesResultStream,
+    DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLType, RootNode, Value,
+    ValuesResultStream,
 };
 use juniper_warp::playground_filter;
 use std::any::Any;

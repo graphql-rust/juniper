@@ -28,8 +28,8 @@ pub use self::look_ahead::{
 use crate::executor::owned_executor::OwnedExecutor;
 use std::sync::Arc;
 
-pub mod owned_executor;
 mod look_ahead;
+pub mod owned_executor;
 
 /// A type registry used to build schemas
 ///

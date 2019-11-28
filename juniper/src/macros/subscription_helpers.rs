@@ -41,7 +41,6 @@ pub struct ResultStreamItem;
 /// with streams of results of values inside.
 pub struct ResultStreamResult;
 
-
 /// This trait is used in `juniper::subscription` macro to get stream's
 /// item type that implements `GraphQLType` from type alias provided
 /// by user.

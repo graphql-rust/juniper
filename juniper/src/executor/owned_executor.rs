@@ -5,8 +5,7 @@ use crate::parser::SourcePosition;
 use crate::{
     ast::Fragment,
     schema::model::{SchemaType, TypeType},
-    ExecutionError, Executor, Selection,
-    Variables,
+    ExecutionError, Executor, Selection, Variables,
 };
 use std::sync::Arc;
 

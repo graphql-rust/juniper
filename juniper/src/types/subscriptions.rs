@@ -2,8 +2,8 @@ use crate::parser::Spanning;
 use crate::types::base::{is_excluded, merge_key_into};
 use crate::Arguments;
 use crate::{
-    BoxFuture, Executor, FieldError, GraphQLType, Object,
-    ScalarRefValue, ScalarValue, Selection, Value, ValuesResultStream,
+    BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarRefValue, ScalarValue, Selection,
+    Value, ValuesResultStream,
 };
 
 // TODO#433: update this after `async-await` will be refactored
@@ -259,16 +259,7 @@ where
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes
 /// errors to `Executor`.
-async fn resolve_selection_set_into_stream_recursive<
-    'i,
-    'inf,
-    'ref_e,
-    'e,
-    'res,
-    T,
-    CtxT,
-    S,
->(
+async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,

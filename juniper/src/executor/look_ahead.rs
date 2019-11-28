@@ -455,7 +455,8 @@ mod tests {
     }
 
     fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, Fragment<'a, S>>
-    where S: Clone
+    where
+        S: Clone,
     {
         let mut fragments = HashMap::new();
         for d in doc {

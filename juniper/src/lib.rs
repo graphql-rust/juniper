@@ -109,12 +109,11 @@ extern crate uuid;
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
-pub use juniper_codegen::{
-    object, union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-    GraphQLScalarValue, ScalarValue,
-};
 #[cfg(feature = "async")]
 pub use juniper_codegen::subscription;
+pub use juniper_codegen::{
+    object, union, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
+};
 
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
@@ -163,10 +162,9 @@ use crate::{
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
     executor::{
-        owned_executor::OwnedExecutor, Applies, Context, ExecutionError, ExecutionResult,
-        Executor, FieldError, FieldResult, FromContext, IntoFieldError, IntoResolvable,
-        LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue, Registry,
-        Variables,
+        owned_executor::OwnedExecutor, Applies, Context, ExecutionError, ExecutionResult, Executor,
+        FieldError, FieldResult, FromContext, IntoFieldError, IntoResolvable, LookAheadArgument,
+        LookAheadMethods, LookAheadSelection, LookAheadValue, Registry, Variables,
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
@@ -187,12 +185,9 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 #[cfg(feature = "async")]
 pub use crate::{
     executor::ValuesResultStream,
-    types::async_await::GraphQLTypeAsync,
-    types::subscriptions::{
-        GraphQLSubscriptionType,
-    },
     macros::subscription_helpers::{ExtractTypeFromStream, IntoResult},
-
+    types::async_await::GraphQLTypeAsync,
+    types::subscriptions::GraphQLSubscriptionType,
 };
 
 /// An error that prevented query execution

@@ -1,6 +1,6 @@
 use juniper_codegen::{object_internal, GraphQLObjectInternal};
 
-use crate::{Context, FieldResult, FieldError, ExecutionError};
+use crate::{Context, ExecutionError, FieldError, FieldResult};
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -20,23 +20,18 @@ struct MyQuery;
 #[object_internal(context = MyContext)]
 impl MyQuery {}
 
-    use std::iter::{self, FromIterator};
+use std::iter::{self, FromIterator};
 
-    use futures::{self, stream::StreamExt as _};
-    use juniper_codegen::subscription_internal;
+use futures::{self, stream::StreamExt as _};
+use juniper_codegen::subscription_internal;
 
-    use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
+use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
 
-    use super::*;
+use super::*;
 use std::pin::Pin;
 
-type AsyncSchema = RootNode<
-    'static,
-    MyQuery,
-    EmptyMutation<MyContext>,
-    MySubscription,
-    DefaultScalarValue,
->;
+type AsyncSchema =
+    RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
 // Copied from `src/executor_tests/async_await/mod.rs`.
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
@@ -64,9 +59,7 @@ impl MySubscription {
     async fn error_human() -> Result<HumanStream, FieldError> {
         Err(FieldError::new(
             "handler error",
-            Value::Scalar(DefaultScalarValue::String(
-                "more details".to_string(),
-            )),
+            Value::Scalar(DefaultScalarValue::String("more details".to_string())),
         ))
     }
 
@@ -95,9 +88,14 @@ impl MySubscription {
 /// Create all variables, execute subscription
 /// and collect returned iterators.
 /// Panics if query is invalid (GraphQLError is returned)
-fn create_and_execute(query: String) -> Result<
-    (Vec<String>, Vec<Vec<FieldResult<Value<DefaultScalarValue>>>>),
-    Vec<ExecutionError<DefaultScalarValue>>
+fn create_and_execute(
+    query: String,
+) -> Result<
+    (
+        Vec<String>,
+        Vec<Vec<FieldResult<Value<DefaultScalarValue>>>>,
+    ),
+    Vec<ExecutionError<DefaultScalarValue>>,
 > {
     let request = GraphQLRequest::new(query, None, None);
 
@@ -190,7 +188,7 @@ fn returns_error() {
             name
         }
     }"#
-        .to_string();
+    .to_string();
 
     let response = create_and_execute(query);
 
@@ -201,9 +199,10 @@ fn returns_error() {
     let expected_error = ExecutionError::new(
         crate::parser::SourcePosition::new(23, 1, 8),
         &vec!["errorHuman"],
-        FieldError::new("handler error", Value::Scalar(DefaultScalarValue::String(
-            "more details".to_string(),
-        ))),
+        FieldError::new(
+            "handler error",
+            Value::Scalar(DefaultScalarValue::String("more details".to_string())),
+        ),
     );
 }
 
@@ -214,7 +213,7 @@ fn can_access_context() {
                 id
               }
         }"#
-        .to_string();
+    .to_string();
 
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
@@ -245,7 +244,7 @@ fn resolves_typed_inline_fragments() {
                 }
              }
            }"#
-        .to_string();
+    .to_string();
 
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
@@ -276,7 +275,7 @@ fn resolves_nontyped_inline_fragments() {
                 }
              }
            }"#
-        .to_string();
+    .to_string();
 
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
@@ -306,7 +305,7 @@ fn can_access_arguments() {
                 name
               }
         }"#
-        .to_string();
+    .to_string();
 
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
@@ -340,7 +339,7 @@ fn type_alias() {
             name
         }
     }"#
-        .to_string();
+    .to_string();
 
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
