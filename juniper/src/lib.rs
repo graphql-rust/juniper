@@ -166,7 +166,6 @@ pub use crate::{
         Variables,
     },
     introspection::IntrospectionFormat,
-    macros::subscription_helpers::{ExtractTypeFromStream, IntoResult},
     schema::{meta, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, TypeKind},
@@ -190,6 +189,8 @@ pub use crate::{
         GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator,
         SubscriptionCoordinatorStruct,
     },
+    macros::subscription_helpers::{ExtractTypeFromStream, IntoResult},
+
 };
 
 /// An error that prevented query execution

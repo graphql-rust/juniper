@@ -291,7 +291,7 @@ where
         };
 
         match val {
-            Value::Null => Err(StreamError::NoneValue),
+            Value::Null => Err(StreamError::NullValue),
             Value::Scalar(stream) => {
                 Ok(Box::pin(stream.map(|value| {
                     match value {
@@ -373,17 +373,29 @@ where
     }
 }
 
+//todo: consider re-looking at fields after StreamGraphQLResponse::into_stream
+//      was re-implemented
+/// Errors that can be returned from `StreamGraphQLResponse`
 #[derive(Serialize, Debug)]
 #[serde(untagged)]
 pub enum StreamError<'a, S>
 where
     S: crate::ScalarValue,
 {
+    /// ExecutionError
     Execution(Vec<ExecutionError<S>>),
+
+    /// GraphQLError
     GraphQL(GraphQLError<'a>),
-    NoneValue,
-    //todo: remove ListValue
+
+    /// If got Value::Null
+    NullValue,
+
+    /// If got Value::List. It is here because
+    /// into_stream is not yet implemented for Value::List
     ListValue,
+
+    /// If got Value::Object with length of 0
     EmptyObject,
 }
 

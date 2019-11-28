@@ -5,8 +5,8 @@ use crate::parser::SourcePosition;
 use crate::{
     ast::Fragment,
     schema::model::{SchemaType, TypeType},
-    DefaultScalarValue, ExecutionError, Executor, FieldError, ScalarRefValue, ScalarValue,
-    Selection, Value, ValuesResultStream, Variables,
+    ExecutionError, Executor, Selection,
+    Variables,
 };
 use std::sync::Arc;
 

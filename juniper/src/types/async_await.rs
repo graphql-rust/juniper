@@ -1,12 +1,8 @@
-use std::sync::Arc;
-
 use crate::{
     ast::Selection,
-    executor::executor_wrappers::OwnedExecutor,
-    executor::{ExecutionResult, Executor, FieldError, ValuesResultStream},
+    executor::{ExecutionResult, Executor},
     parser::Spanning,
     value::{Object, ScalarRefValue, ScalarValue, Value},
-    ExecutionError,
 };
 
 #[cfg(feature = "async")]

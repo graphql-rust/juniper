@@ -13,7 +13,7 @@ mod scalar;
 #[macro_use]
 mod union;
 
-//todo: move this somewhere more appropriate
+#[cfg(feature = "async")]
 pub mod subscription_helpers;
 
 #[cfg(test)]

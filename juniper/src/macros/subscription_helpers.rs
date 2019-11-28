@@ -1,4 +1,4 @@
-use crate::{DefaultScalarValue, GraphQLType, ScalarRefValue, ScalarValue};
+use crate::{GraphQLType, ScalarRefValue, ScalarValue};
 use futures::Stream;
 use std::convert::Infallible;
 
@@ -6,6 +6,7 @@ use std::convert::Infallible;
 /// This is useful in subscription macros when user can provide type alias for
 /// Stream or Result<Stream, _> and then a function on Stream should be called.
 pub trait IntoResult<T, E> {
+    /// Turn current type into a generic result
     fn into_result(self) -> Result<T, E>;
 }
 
@@ -49,6 +50,9 @@ where
     S: ScalarValue,
     for<'b> &'b S: ScalarRefValue<'b>,
 {
+    /// Stream's return Value that will be returned if
+    /// no errors occured. Is used to determine field type in
+    /// `#[juniper::subscription]`
     type Item: GraphQLType<S>;
 }
 

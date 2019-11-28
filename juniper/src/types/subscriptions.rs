@@ -1,13 +1,11 @@
-use crate::ast::Fragment;
 use crate::parser::Spanning;
 use crate::types::base::{is_excluded, merge_key_into};
 use crate::Arguments;
 use crate::{
-    BoxFuture, ExecutionError, Executor, FieldError, GraphQLType, Object, OwnedExecutor,
+    BoxFuture, Executor, FieldError, GraphQLType, Object,
     ScalarRefValue, ScalarValue, Selection, Value, ValuesResultStream,
 };
 use std::collections::HashMap;
-use std::sync::Arc;
 
 pub trait SubscriptionCoordinator {
     type ArgsData;
