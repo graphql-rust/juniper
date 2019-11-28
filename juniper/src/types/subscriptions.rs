@@ -7,69 +7,6 @@ use crate::{
 };
 use std::collections::HashMap;
 
-pub trait SubscriptionCoordinator {
-    type ArgsData;
-    type Connection: SubscriptionConnection;
-    type Id;
-
-    fn subscribe(&mut self, data: Self::ArgsData) -> Self::Id;
-
-    fn get_connection(&mut self, id: Self::Id) -> Option<&Self::Connection>;
-}
-
-pub trait SubscriptionConnection {
-    type ArgsData;
-
-    fn new() -> Self;
-
-    fn subscribe(&mut self, data: Self::ArgsData);
-
-    fn unsubscribe(&mut self, data: Self::ArgsData);
-
-    fn close(&mut self, data: Self::ArgsData);
-}
-
-pub struct SubscriptionCoordinatorStruct<T>
-where
-    T: SubscriptionConnection,
-{
-    connections: HashMap<u64, T>,
-    last_index: u64,
-}
-
-impl<T> SubscriptionCoordinatorStruct<T>
-where
-    T: SubscriptionConnection,
-{
-    pub fn new() -> Self {
-        Self {
-            connections: HashMap::new(),
-            last_index: 0,
-        }
-    }
-}
-
-impl<T> SubscriptionCoordinator for SubscriptionCoordinatorStruct<T>
-where
-    T: SubscriptionConnection,
-{
-    type ArgsData = ();
-    type Connection = T;
-    type Id = u64;
-
-    fn subscribe(&mut self, data: Self::ArgsData) -> Self::Id {
-        let sub = T::new();
-        let index = self.last_index + 1;
-        self.connections.insert(index, sub);
-        self.last_index = index;
-        index
-    }
-
-    fn get_connection(&mut self, id: Self::Id) -> Option<&Self::Connection> {
-        self.connections.get(&id)
-    }
-}
-
 //todo: update docs once done
 /**
 *

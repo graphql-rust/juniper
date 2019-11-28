@@ -186,8 +186,7 @@ pub use crate::{
     executor::ValuesResultStream,
     types::async_await::GraphQLTypeAsync,
     types::subscriptions::{
-        GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator,
-        SubscriptionCoordinatorStruct,
+        GraphQLSubscriptionType,
     },
     macros::subscription_helpers::{ExtractTypeFromStream, IntoResult},
 
