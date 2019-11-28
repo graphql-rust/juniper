@@ -331,3 +331,37 @@ fn can_access_arguments() {
     assert_eq!(names, vec!["humanWithArgs"]);
     assert_eq!(collected_values, expected_values);
 }
+
+#[test]
+fn type_alias() {
+    let query = r#"subscription {
+        aliasedHuman: asyncHuman(id: "1") {
+            id
+            name
+        }
+    }"#
+        .to_string();
+
+    let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
+
+    let mut iterator_count = 0;
+    let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
+        move || {
+            iterator_count += 1;
+            match iterator_count {
+                1 => Some((
+                    "id",
+                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
+                )),
+                2 => Some((
+                    "name",
+                    Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
+                )),
+                _ => None,
+            }
+        },
+    ))))]];
+
+    assert_eq!(names, vec!["aliasedHuman"]);
+    assert_eq!(collected_values, expected_values);
+}
