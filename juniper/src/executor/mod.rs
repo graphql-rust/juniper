@@ -677,10 +677,12 @@ where
             .unwrap_or_default()
     }
 
-    // TODO#433: add docs
-    /// This function does not clone Executor's `errors` because
-    /// existing errors will most likely not needed to be accessed by
-    /// user
+    /// Create new `OwnedExecutor` and clone all
+    /// current data (except for errors) there
+    ///
+    /// New empty vector is created for `errors` because
+    /// existing errors most likely won't be needed to
+    /// be accessed by user in OwnedExecutor
     pub fn as_owned_executor(&self) -> OwnedExecutor<'a, CtxT, S> {
         OwnedExecutor {
             fragments: self.fragments.clone(),

@@ -37,8 +37,7 @@ Check the LICENSE file for details.
 */
 
 #![deny(missing_docs)]
-//TODO#433: get back
-//#![deny(warnings)]
+#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 #[cfg(feature = "async")]
@@ -376,23 +375,30 @@ where
     get_filter.or(post_filter).unify().boxed()
 }
 
-/// Wrapper around different errors `juniper_warp`'s premade filters return
-/// Needed because `warp::reject::Reject` is not implemented for
-/// these errors
-// TODO#433: better docs
+/// Wrapper around different errors `juniper_warp`'s premade filters
+/// return.
 pub enum JuniperWarpError {
-    /// Wrapper around `serde_json::error::Error`
+    /// Error that occured when serializing or
+    /// deserializing JSON data.
     Serde(serde_json::error::Error),
 
-    /// Wrapper around `tokio_threadpool::BlockingError`
+    /// Error raised by `tokio_threadpool` if the thread pool
+    /// has been shutdown
     TokioBlockingError(tokio_threadpool::BlockingError),
 }
+
 impl warp::reject::Reject for JuniperWarpError {}
 
 impl std::fmt::Debug for JuniperWarpError {
-    // TODO#433: better debug
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "JuniperWarpError")
+        match self {
+            JuniperWarpError::Serde(e) => {
+                write!(f, "JuniperWarpError::Serde({})", e)
+            },
+            JuniperWarpError::TokioBlockingError(_) => {
+                write!(f, "JuniperWarpError::TokioBlockingError")
+            },
+        }
     }
 }
 

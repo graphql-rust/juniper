@@ -255,15 +255,7 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
 where
     S: value::ScalarValue + Send,
 {
-    /// Converts `Self` into default `Stream` for implementantion
-    ///
-    /// Default `Stream` implementantion based on value's type:
-    ///     `Value::Null` - stream with a single wrapped `Value::Null`
-    ///     `Value::Scalar` - wrapped underlying stream
-    ///     `Value::List` - default implementantion is not provided
-    ///     `Value::Object(Value::Scalar(stream))` - creates new object out of each returned values.
-    ///                                              Stops when at least one stream stops
-    ///     other `Value::Object` - default implementation __panics__
+    /// Converts `Self` into default `Stream` implementantion
     pub fn into_stream(
         self,
     ) -> Result<
@@ -277,14 +269,7 @@ where
                 (v, err_vec)
             ) => match err_vec.len() {
                 0 => v,
-                _ => {
-                    let err_stream = futures::stream::once(async {
-                        GraphQLResponse::from_result(Ok(
-                            (Value::Null, err_vec)
-                        ))
-                    });
-                    return Ok(Box::pin(err_stream));
-                },
+                _ => return Err(StreamError::Execution(err_vec)),
             },
             Err(e) => return Err(StreamError::GraphQL(e)),
         };
@@ -296,13 +281,12 @@ where
                     match value {
                         Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
                         // TODO#433: not return random error
-                        Err(e) => GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
+                        Err(_) => GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
                     }
                 })))
             }
-            // TODO#433: remove these and add
-            //       // TODO: implement these
-            //       (current implementation might be confusing)
+            // TODO#433: remove these and add // TODO: implement these
+            //           (current implementation might be confusing)
             Value::List(_) => return Err(StreamError::ListValue),
             Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
@@ -333,9 +317,7 @@ where
                                             *val = Some((field_name.clone(), value));
                                             filled_count += 1;
                                         }
-                                        Poll::Pending => {
-                                            //check back later
-                                        }
+                                        Poll::Pending => { /* check back later */ }
                                     }
                                 },
                                     // TODO#433: not panic on errors
@@ -348,7 +330,6 @@ where
                             let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
                             let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
                             let ready_vec_iterator = ready_vec.into_iter().map(|el| {
-                                //TODO#433: not return null
                                 let (name, val) = el.unwrap();
                                 if let Ok(value) = val {
                                     (name, value)
@@ -373,8 +354,8 @@ where
     }
 }
 
-//TODO#433: consider re-looking at fields after StreamGraphQLResponse::into_stream
-//      was re-implemented
+//TODO#433: consider re-looking at fields after
+//          StreamGraphQLResponse::into_stream was re-implemented
 /// Errors that can be returned from `StreamGraphQLResponse`
 #[derive(Serialize, Debug)]
 #[serde(untagged)]
