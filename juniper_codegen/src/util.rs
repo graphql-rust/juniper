@@ -1266,7 +1266,7 @@ impl GraphQLTypeDefiniton {
                     &'life0 self,
                     info: &'life1 Self::TypeInfo,
                     field_name: &'life2 str,
-                    arguments: #juniper_crate_name::Arguments<'args, #scalar>,
+                    args: #juniper_crate_name::Arguments<'args, #scalar>,
                     executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<

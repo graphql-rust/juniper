@@ -11,5 +11,5 @@ mod schema_introspection;
 #[cfg(test)]
 mod type_info_tests;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "async"))]
 mod subscription;

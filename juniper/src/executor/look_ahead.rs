@@ -454,11 +454,13 @@ mod tests {
         )
     }
 
-    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {
+    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, Fragment<'a, S>>
+    where S: Clone
+    {
         let mut fragments = HashMap::new();
         for d in doc {
             if let crate::ast::Definition::Fragment(ref f) = *d {
-                let f = &f.item;
+                let f = f.item.clone();
                 fragments.insert(f.name.item, f);
             }
         }
