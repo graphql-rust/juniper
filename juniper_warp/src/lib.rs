@@ -469,7 +469,7 @@ where
 
                 warp::spawn(async move {
                     let payload = request.payload.expect("could not deserialize payload");
-                    let request_id = request.id.unwrap_or("1".to_string());
+                    let request_id = request.id.unwrap_or("1".to_owned());
 
                     let graphql_request =
                         GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
@@ -513,7 +513,7 @@ where
 
                                 // send message that we are closing channel
                                 let _ = ws_tx
-                                    .unbounded_send(Some(Ok(Message::text(close_text.clone()))));
+                                    .unbounded_send(Some(Ok(Message::text(close_text))));
 
                                 // close channel
                                 let _ = ws_tx.unbounded_send(None);
@@ -525,7 +525,7 @@ where
                                 );
 
                                 let _ = ws_tx
-                                    .unbounded_send(Some(Ok(Message::text(response_text.clone()))));
+                                    .unbounded_send(Some(Ok(Message::text(response_text))));
                             }
                             async move { !closed }
                         })

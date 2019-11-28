@@ -431,7 +431,7 @@ where
                 } else {
                     if let Some(type_name) = meta_type.name() {
                         let sub_result = instance
-                            .resolve_into_type_stream(info, type_name.clone(), &sub_exec)
+                            .resolve_into_type_stream(info, type_name, &sub_exec)
                             .await;
 
                         if let Ok(Value::Object(obj)) = sub_result {

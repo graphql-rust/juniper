@@ -285,7 +285,7 @@ where
             Value::List(_) => return Err(StreamError::ListValue),
             Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
-                if key_values.len() == 0 {
+                if key_values.is_empty() {
                     return Err(StreamError::EmptyObject);
                 }
 

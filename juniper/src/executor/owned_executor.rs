@@ -34,7 +34,7 @@ where
             current_selection_set: self.current_selection_set.clone(),
             parent_selection_set: self.parent_selection_set.clone(),
             current_type: self.current_type.clone(),
-            schema: self.schema.clone(),
+            schema: self.schema,
             context: self.context,
             errors: RwLock::new(vec![]),
             field_path: self.field_path.clone(),
@@ -121,7 +121,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn as_executor<'e>(&'e self) -> Executor<'e, 'e, CtxT, S> {
+    pub fn as_executor(&self) -> Executor<'_, '_, CtxT, S> {
         Executor {
             fragments: &self.fragments,
             variables: &self.variables,

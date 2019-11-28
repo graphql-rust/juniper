@@ -690,7 +690,7 @@ where
             current_selection_set: self.current_selection_set.map(|x| x.to_vec()),
             parent_selection_set: self.parent_selection_set.map(|x| x.to_vec()),
             current_type: self.current_type.clone(),
-            schema: self.schema.clone(),
+            schema: self.schema,
             context: self.context,
             errors: RwLock::new(vec![]),
             field_path: Arc::clone(&self.field_path),
@@ -704,7 +704,7 @@ impl<'a> FieldPath<'a> {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
-                acc.push(name.to_string());
+                acc.push((*name).to_owned());
             }
         }
     }
