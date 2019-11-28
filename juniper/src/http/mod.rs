@@ -255,7 +255,6 @@ impl<'a, S> StreamGraphQLResponse<'a, S>
 where
     S: value::ScalarValue + Send,
 {
-    // todo: not panic on errors
     /// Converts `Self` into default `Stream` for implementantion
     ///
     /// Default `Stream` implementantion based on value's type:
@@ -339,7 +338,8 @@ where
                                         }
                                     }
                                 },
-                                _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
+                                    // todo: not panic on errors
+                                    _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
                             }
                             }
                         }

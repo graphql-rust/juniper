@@ -2,7 +2,7 @@ use crate::{GraphQLType, ScalarRefValue, ScalarValue};
 use futures::Stream;
 use std::convert::Infallible;
 
-/// Trait for converting `T` to `Ok(T)` if T is not Result.
+/// Trait for converting  `T` to `Ok(T)` if T is not Result.
 /// This is useful in subscription macros when user can provide type alias for
 /// Stream or Result<Stream, _> and then a function on Stream should be called.
 pub trait IntoResult<T, E> {

@@ -677,29 +677,6 @@ where
             .unwrap_or_default()
     }
 
-    #[doc(hidden)]
-    /// Generate an error to the execution engine at the current executor location
-    pub fn generate_error(&self, error: FieldError<S>) -> ExecutionError<S> {
-        self.generate_error_at(error, self.location().clone())
-    }
-
-    #[doc(hidden)]
-    /// Add an error to the execution engine at a specific location
-    pub fn generate_error_at(
-        &self,
-        error: FieldError<S>,
-        location: SourcePosition,
-    ) -> ExecutionError<S> {
-        let mut path = Vec::new();
-        self.field_path.construct_path(&mut path);
-
-        ExecutionError {
-            location,
-            path,
-            error,
-        }
-    }
-
     // todo: add docs
     /// This function does not clone Executor's `errors` because
     /// existing errors will most likely not needed to be accessed by
