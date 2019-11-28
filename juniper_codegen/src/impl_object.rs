@@ -2,6 +2,10 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}
+
 /// Generate code for the juniper::object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
@@ -124,6 +128,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let mut args = Vec::new();
                 let mut resolve_parts = Vec::new();
+                let mut contextPresent = false;
 
                 for arg in method.sig.inputs {
                     match arg {
@@ -163,6 +168,12 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 .unwrap_or(false)
                             {
                                 println!("test");
+                                if !context_type.clone().map(|ctx| match ctx {
+                                                                    syn::Type::Path(typepath) => {typepath.path.segments.first().unwrap().ident.to_string() == "SchemaType"}
+                                                                    _ =>  false
+                                                                }).unwrap() {
+                                contextPresent = true;
+                                                                }
                                 resolve_parts.push(quote!( let #arg_ident = executor.context(); ));
                             }
                             // Make sure the user does not specify the Context
@@ -206,28 +217,56 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let body = &method.block;
                 let return_ty = &method.sig.output;
-                let resolver_code = quote!(
-                    let context = executor.context();
-                    (|| #return_ty {
-                        #( #resolve_parts )*
-                        #body
-                    })()
-                );
 
                 let ident = &method.sig.ident;
                 let name = attrs
                            .name
                            .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
-
-                definition.fields.push(util::GraphQLTypeDefinitionField {
-                    name,
-                    _type,
-                    args,
-                    authorization: authorization,
-                    description: attrs.description,
-                    deprecation: attrs.deprecation,
-                    resolver_code,
-                });
+                if !contextPresent {
+                    let resolver_code = quote!(
+                        (|| #return_ty {
+                            #( #resolve_parts )*
+                            #body
+                        })()
+            /*                     (|| #return_ty {
+                                    
+                                    a();
+                                })() */
+                    );
+                    definition.fields.push(util::GraphQLTypeDefinitionField {
+                        name,
+                        _type,
+                        args,
+                        authorization: authorization,
+                        description: attrs.description,
+                        deprecation: attrs.deprecation,
+                        resolver_code,
+                    });
+                }
+                else {
+                    let resolver_code = quote!(
+                        let a = (|| #return_ty {
+                            #( #resolve_parts )*
+                            #body
+                        });
+                        (|| #return_ty {
+                            let context = executor.context();
+                            {
+                                context.authorize([&"a"]);
+                                return a();
+                            }
+                        })()
+                    );
+                    definition.fields.push(util::GraphQLTypeDefinitionField {
+                        name,
+                        _type,
+                        args,
+                        authorization: authorization,
+                        description: attrs.description,
+                        deprecation: attrs.deprecation,
+                        resolver_code,
+                    });
+                }
             }
             _ => {
                 panic!("Invalid item for GraphQL Object: only type declarations and methods are allowed");

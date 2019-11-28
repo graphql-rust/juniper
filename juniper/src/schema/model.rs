@@ -6,7 +6,7 @@ use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
 use crate::{
     ast::Type,
-    executor::{Context, Registry},
+    executor::{Context, Registry, FieldError},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarRefValue, ScalarValue},

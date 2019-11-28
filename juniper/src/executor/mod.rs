@@ -328,7 +328,12 @@ pub trait FromContext<T> {
 }
 
 /// Marker trait for types that can act as context objects for `GraphQL` types.
-pub trait Context {}
+pub trait Context {
+    fn authorize(&self, permissions: &[&str]) -> Result<(), FieldError> {
+        println!("WIP");
+        Ok(())
+    }
+}
 
 impl<'a, C: Context> Context for &'a C {}
 

@@ -758,12 +758,7 @@ impl GraphQLTypeDefiniton {
             };
             quote!(
                 #name => {
-                    let res = { 
-                        if executor.context().authorize() == false {
-                            panic!("test");
-                        }
-                        #code
-                    };
+                    let res = { #code };
                     #juniper_crate_name::IntoResolvable::into(
                         res,
                         executor.context()
