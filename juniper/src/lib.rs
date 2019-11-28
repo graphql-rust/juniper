@@ -163,7 +163,7 @@ use crate::{
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
     executor::{
-        executor_wrappers::OwnedExecutor, Applies, Context, ExecutionError, ExecutionResult,
+        owned_executor::OwnedExecutor, Applies, Context, ExecutionError, ExecutionResult,
         Executor, FieldError, FieldResult, FromContext, IntoFieldError, IntoResolvable,
         LookAheadArgument, LookAheadMethods, LookAheadSelection, LookAheadValue, Registry,
         Variables,

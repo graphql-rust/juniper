@@ -25,10 +25,10 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::executor::executor_wrappers::OwnedExecutor;
+use crate::executor::owned_executor::OwnedExecutor;
 use std::sync::Arc;
 
-pub mod executor_wrappers;
+pub mod owned_executor;
 mod look_ahead;
 
 /// A type registry used to build schemas
