@@ -3,17 +3,16 @@
 //! NOTE: this uses tokio 0.2.alpha
 //!
 
-use std::{pin::Pin, sync::Arc};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::{Future, FutureExt as _, Stream};
-use warp::{http::Response, Filter};
+use tokio::timer::Interval;
+use warp::{Filter, http::Response};
 
 use juniper::{
     DefaultScalarValue, EmptyMutation, FieldError, RootNode,
 };
 use juniper_warp::playground_filter;
-use tokio::timer::Interval;
-use std::time::Duration;
 
 #[derive(Clone)]
 struct Context {}
