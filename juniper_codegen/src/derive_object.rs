@@ -22,10 +22,12 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
         ast.attrs.clone()
     ) {
         Ok(authorization) => authorization,
-        Err(err) => panic!(
-            "Invalid authorization attribute on field \n{}",
+        Err(err) => {
+            panic!(
+            "Invalid authorization attribute on field\n{}",
             err
-        )
+            );
+        }
     };
     let attrs = match util::ObjectAttributes::from_attrs(&ast.attrs) {
         Ok(a) => a,
@@ -61,7 +63,6 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
                 &self . #field_name
             );
             Some(util::GraphQLTypeDefinitionField {
-                authorization: authorization.clone(),
                 name,  
                 _type: field.ty,
                 args: Vec::new(),

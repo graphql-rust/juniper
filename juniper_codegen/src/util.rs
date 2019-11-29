@@ -643,7 +643,6 @@ impl GraphQLAuthorization {
 pub struct GraphQLTypeDefinitionField {
     pub name: String,
     pub _type: syn::Type,
-    pub authorization: GraphQLAuthorization,
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
@@ -752,10 +751,7 @@ impl GraphQLTypeDefiniton {
         let resolve_matches = self.fields.iter().map(|field| {
             let name = &field.name;
             let code = &field.resolver_code;
-            let _authorization_function = match &field.authorization.function {
-                Some(function) => function,
-                None => panic!("osecour")
-            };
+
             quote!(
                 #name => {
                     let res = { #code };

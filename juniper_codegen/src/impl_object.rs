@@ -2,10 +2,6 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>())
-}
-
 /// Generate code for the juniper::object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
@@ -108,7 +104,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 ) {
                     Ok(authorization) => authorization,
                     Err(err) => {
-                        println!("{:#?}", method);
                         panic!(
                         "Invalid authorization attribute on field {}:\n{}",
                         method.sig.ident, err
@@ -170,8 +165,8 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 if !context_type
                                     .clone()
                                     .map(|ctx|  match ctx {
-                                                    syn::Type::Path(typepath) => {typepath.path.segments.first().unwrap().ident.to_string() == "SchemaType"}
-                                                    _ =>  false
+                                        syn::Type::Path(typepath) => {typepath.path.segments.first().unwrap().ident.to_string() == "SchemaType"}
+                                        _ =>  false
                                     }).unwrap()
                                 {
                                     context_present = true;
@@ -249,7 +244,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     name,
                     _type,
                     args,
-                    authorization: authorization,
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,
