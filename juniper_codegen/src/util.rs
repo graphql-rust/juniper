@@ -599,15 +599,14 @@ impl Default for AuthorizationType {
 #[derive(Debug, Clone)]
 pub struct GraphQLAuthorization {
     pub ty: AuthorizationType,
-    pub function: Option<String>,
     pub args: Option<Vec<String>>
 }
 
 impl parse::Parse for GraphQLAuthorization {
     fn parse(_input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
+        println!("youhou");
         let output = Self {
             ty: AuthorizationType::Authorized,
-            function: Some("test".to_owned()),
             args: Some(vec!("test1".to_owned(), "test2".to_owned())),
         };
         Ok(output)
@@ -617,7 +616,6 @@ impl parse::Parse for GraphQLAuthorization {
 impl Default for GraphQLAuthorization {
     fn default() -> Self { GraphQLAuthorization {
         ty: AuthorizationType::Authorized,
-        function: Some("test".to_owned()),
         args: Some(vec!("test1".to_owned(), "test2".to_owned()))
     }
     }
@@ -625,17 +623,16 @@ impl Default for GraphQLAuthorization {
 
 impl GraphQLAuthorization {
     pub fn from_attrs(
-        _attrs: Vec<syn::Attribute>
+        attrs: Vec<syn::Attribute>
     ) -> syn::parse::Result<Self> {
-/*         let attr_opt = attrs.into_iter().find(|attr| 
+        let attr_opt = attrs.into_iter().find(|attr| 
            attr.path.is_ident("authorized_with")
         || attr.path.is_ident("authorized")
         || attr.path.is_ident("authorized_public"));
-        let mut output = match attr_opt {
-            Some(attr) => Ok(attr.parse_args()?),
-            None => Ok(Self::default()),
-        }; */
-        Ok(Self::default())
+        Ok(match attr_opt {
+            Some(attr) => attr.parse_args()?,
+            None => Self::default(),
+        })
     }
 }
 

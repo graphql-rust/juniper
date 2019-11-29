@@ -222,6 +222,19 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     })()
                 );
                 if context_present {
+                    println!("{:#?}", authorization.ty);
+                    let authorize_check = match authorization.ty {
+                        util::AuthorizationType::Authorized =>
+                        quote!(
+                            let context = executor.context();
+                            match context.authorize(&[]) {
+                                Ok(()) => user_code,
+                                _ => unimplemented!(),
+                                /* THIS IS TEMPORARY */
+                            }
+                        ),
+                        _ => quote!(user_code)
+                    };
                     resolver_code = quote!(
                         let user_code =
                         (|| #return_ty {
@@ -229,12 +242,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             #body
                         })();
                         (|| #return_ty {
-                            let context = executor.context();
-                            match context.authorize(&["a"]) {
-                                Ok(()) => user_code,
-                                _ => unimplemented!(),
-                                /* THIS IS TEMPORARY */
-                            }
+                            #authorize_check
                         })()
                     );
                 }
