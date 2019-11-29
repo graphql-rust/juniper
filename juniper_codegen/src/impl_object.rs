@@ -241,7 +241,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                             let context = executor.context();
                             match context.authorize(&["a"]) {
                                 Ok(()) => user_code,
-                                _ => panic!("implement error handling"),
+                                _ => unimplemented!(),
                                 /* THIS IS TEMPORARY */
                             }
                         })()
