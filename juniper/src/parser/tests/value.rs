@@ -7,7 +7,7 @@ use juniper_codegen::{
 use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
     EmptySubscription,
 };
 

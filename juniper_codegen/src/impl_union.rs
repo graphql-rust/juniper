@@ -76,7 +76,8 @@ pub fn impl_union(
     if item.items.len() != 1 {
         return Err(MacroError::new(
             item.span(),
-            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }".to_string(),
+            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
+                .to_string(),
         ));
     }
 
@@ -135,19 +136,6 @@ pub fn impl_union(
         });
 
     let mut generics = item.generics.clone();
-    if attrs.scalar.is_some() {
-        // A custom scalar type was specified.
-        // Therefore, we always insert a where clause that marks the scalar as
-        // compatible with ScalarValueRef.
-        // This is done to prevent the user from having to specify this
-        // manually.
-        let where_clause = generics
-            .where_clause
-            .get_or_insert(syn::parse_quote!(where));
-        where_clause
-            .predicates
-            .push(syn::parse_quote!(for<'__b> &'__b #scalar: #juniper::ScalarRefValue<'__b>));
-    }
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 

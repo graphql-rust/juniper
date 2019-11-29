@@ -7,7 +7,7 @@ use crate::{
     schema::model::SchemaType,
     types::scalars::EmptyMutation,
     validation::test_harness::{MutationRoot, QueryRoot},
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue},
     EmptySubscription,
 };
 

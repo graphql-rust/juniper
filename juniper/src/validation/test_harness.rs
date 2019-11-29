@@ -304,7 +304,6 @@ where
 impl<S> GraphQLType<S> for CatOrDog
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -326,7 +325,6 @@ where
 impl<S> GraphQLType<S> for Intelligent
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -348,7 +346,6 @@ where
 impl<S> GraphQLType<S> for Human
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -382,7 +379,6 @@ where
 impl<S> GraphQLType<S> for Alien
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -416,7 +412,6 @@ where
 impl<S> GraphQLType<S> for DogOrHuman
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -438,7 +433,6 @@ where
 impl<S> GraphQLType<S> for HumanOrAlien
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -460,7 +454,6 @@ where
 impl<S> GraphQLType<S> for ComplexInput
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -492,9 +485,6 @@ where
     S: ScalarValue,
 {
     fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>, //        S: 'a,
-                                           //        &'a S: ScalarRefValue<'a>
     {
         let obj = match v.to_object_value() {
             Some(o) => o,
@@ -517,7 +507,6 @@ where
 impl<S> GraphQLType<S> for ComplicatedArgs
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -581,7 +570,6 @@ where
 impl<S> GraphQLType<S> for QueryRoot
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -615,7 +603,6 @@ where
 impl<S> GraphQLType<S> for MutationRoot
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -646,7 +633,6 @@ where
 impl<S> GraphQLType<S> for SubscriptionRoot
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -673,7 +659,6 @@ pub fn validate<'a, Q, M, Sub, V, F, S>(
     factory: F,
 ) -> Vec<RuleError>
 where
-    for<'b> &'b S: ScalarRefValue<'b>,
     S: ScalarValue + Send + Sync + 'a + 'static,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
@@ -728,7 +713,6 @@ where
 pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
     S: ScalarValue + Send + Sync + 'a + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {

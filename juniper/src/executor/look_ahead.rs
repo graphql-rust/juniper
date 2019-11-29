@@ -436,6 +436,7 @@ mod tests {
         value::{DefaultScalarValue, ScalarValue},
     };
     use std::collections::HashMap;
+    use crate::validation::test_harness::SubscriptionRoot;
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
     where
