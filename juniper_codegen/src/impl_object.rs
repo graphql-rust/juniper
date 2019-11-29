@@ -128,7 +128,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let mut args = Vec::new();
                 let mut resolve_parts = Vec::new();
-                let mut contextPresent = false;
+                let mut context_present = false;
 
                 for arg in method.sig.inputs {
                     match arg {
@@ -167,13 +167,15 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                                 .map(|ctx| util::type_is_ref_of(&captured.ty, ctx))
                                 .unwrap_or(false)
                             {
-                                println!("test");
-                                if !context_type.clone().map(|ctx| match ctx {
-                                                                    syn::Type::Path(typepath) => {typepath.path.segments.first().unwrap().ident.to_string() == "SchemaType"}
-                                                                    _ =>  false
-                                                                }).unwrap() {
-                                contextPresent = true;
-                                                                }
+                                if !context_type
+                                    .clone()
+                                    .map(|ctx|  match ctx {
+                                                    syn::Type::Path(typepath) => {typepath.path.segments.first().unwrap().ident.to_string() == "SchemaType"}
+                                                    _ =>  false
+                                    }).unwrap()
+                                {
+                                    context_present = true;
+                                }
                                 resolve_parts.push(quote!( let #arg_ident = executor.context(); ));
                             }
                             // Make sure the user does not specify the Context
@@ -222,51 +224,36 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 let name = attrs
                            .name
                            .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
-                if !contextPresent {
-                    let resolver_code = quote!(
-                        (|| #return_ty {
-                            #( #resolve_parts )*
-                            #body
-                        })()
-            /*                     (|| #return_ty {
-                                    
-                                    a();
-                                })() */
-                    );
-                    definition.fields.push(util::GraphQLTypeDefinitionField {
-                        name,
-                        _type,
-                        args,
-                        authorization: authorization,
-                        description: attrs.description,
-                        deprecation: attrs.deprecation,
-                        resolver_code,
-                    });
-                }
-                else {
-                    let resolver_code = quote!(
+                let mut resolver_code = quote!(
+                    (|| #return_ty {
+                        #( #resolve_parts )*
+                        #body
+                    })()
+                );
+                if context_present {
+                    resolver_code = quote!(
                         let a = (|| #return_ty {
                             #( #resolve_parts )*
                             #body
-                        });
+                            });
                         (|| #return_ty {
                             let context = executor.context();
                             {
-                                context.authorize([&"a"]);
+                                context.authorize(&["a"]);
                                 return a();
                             }
                         })()
                     );
-                    definition.fields.push(util::GraphQLTypeDefinitionField {
-                        name,
-                        _type,
-                        args,
-                        authorization: authorization,
-                        description: attrs.description,
-                        deprecation: attrs.deprecation,
-                        resolver_code,
-                    });
                 }
+                definition.fields.push(util::GraphQLTypeDefinitionField {
+                    name,
+                    _type,
+                    args,
+                    authorization: authorization,
+                    description: attrs.description,
+                    deprecation: attrs.deprecation,
+                    resolver_code,
+                });
             }
             _ => {
                 panic!("Invalid item for GraphQL Object: only type declarations and methods are allowed");
