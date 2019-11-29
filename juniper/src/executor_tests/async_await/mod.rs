@@ -1,4 +1,4 @@
-use crate::{RootNode, Value};
+use crate::{EmptySubscription, RootNode, Value};
 
 #[derive(crate::GraphQLEnumInternal)]
 enum UserKind {
@@ -81,7 +81,7 @@ fn run<O>(f: impl std::future::Future<Output = O>) -> O {
 
 #[test]
 fn async_simple() {
-    let schema = RootNode::new(Query, Mutation);
+    let schema = RootNode::new(Query, Mutation, EmptySubscription::new());
     let doc = r#"
         query { 
             fieldSync

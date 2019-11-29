@@ -188,7 +188,7 @@ where
     pub(super) fn build_from_selection(
         s: &'a Selection<'a, S>,
         vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     ) -> Option<LookAheadSelection<'a, S>> {
         Self::build_from_selection_with_parent(s, None, vars, fragments)
     }
@@ -197,7 +197,7 @@ where
         s: &'a Selection<'a, S>,
         parent: Option<&mut Self>,
         vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     ) -> Option<LookAheadSelection<'a, S>> {
         let empty: &[Selection<S>] = &[];
         match *s {
@@ -441,7 +441,10 @@ mod tests {
     where
         S: ScalarValue,
     {
-        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
+        crate::parse_document_source(
+            q,
+            &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
+        )
     }
 
     fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {

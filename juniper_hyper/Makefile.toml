@@ -1,4 +1,4 @@
-# Testing for juniper_hyper is disabled due to a bug in rustc # which causes 
+# Testing for juniper_hyper is disabled due to a bug in rustc which causes
 # an internal compiler error.
 # TODO: remove this file completely once the crate compiles again.
 

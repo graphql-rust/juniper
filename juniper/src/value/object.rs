@@ -82,13 +82,32 @@ impl<S> Object<S> {
         self.key_value_list
             .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
         for (_, ref mut value) in &mut self.key_value_list {
-            match value {
-                Value::Object(ref mut o) => {
-                    o.sort_by_field();
-                }
-                _ => {}
+            if let Value::Object(ref mut o) = value {
+                o.sort_by_field();
             }
         }
+    }
+
+    /// Converts Object value into a Vec of underlying fields
+    pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
+        self.key_value_list
+    }
+
+    /// Creates Object out of iterator over `(K, Option<Value<S>>)`.
+    /// If any of returned values are `None`, then `None` is returned instead
+    /// of an Object.
+    pub fn try_from_iter<I, K>(iter: I) -> Option<Self>
+    where
+        I: IntoIterator<Item = (K, Option<Value<S>>)>,
+        K: Into<String>,
+    {
+        Some(Self {
+            key_value_list: iter
+                .into_iter()
+                .map(|(k, v)| v.map(|v| (k.into(), v)))
+                .take_while(|x| x.is_some())
+                .collect::<Option<Vec<_>>>()?,
+        })
     }
 }
 
