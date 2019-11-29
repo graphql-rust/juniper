@@ -232,15 +232,17 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 );
                 if context_present {
                     resolver_code = quote!(
-                        let a = (|| #return_ty {
+                        let user_code =
+                        (|| #return_ty {
                             #( #resolve_parts )*
                             #body
-                            });
+                        })();
                         (|| #return_ty {
                             let context = executor.context();
-                            {
-                                context.authorize(&["a"]);
-                                return a();
+                            match context.authorize(&["a"]) {
+                                Ok(()) => user_code,
+                                _ => panic!("implement error handling"),
+                                /* THIS IS TEMPORARY */
                             }
                         })()
                     );
