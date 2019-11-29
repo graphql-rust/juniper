@@ -752,7 +752,7 @@ mod tests {
             expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
             expect_passes_rule_with_schema, RuleError,
         },
-        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+        value::{DefaultScalarValue, ScalarValue},
     };
 
     #[test]
@@ -1379,7 +1379,6 @@ mod tests {
     impl<S> GraphQLType<S> for SomeBox
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1405,7 +1404,6 @@ mod tests {
     impl<S> GraphQLType<S> for StringBox
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1437,7 +1435,6 @@ mod tests {
     impl<S> GraphQLType<S> for IntBox
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1469,7 +1466,6 @@ mod tests {
     impl<S> GraphQLType<S> for NonNullStringBox1
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1491,7 +1487,6 @@ mod tests {
     impl<S> GraphQLType<S> for NonNullStringBox1Impl
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1523,7 +1518,6 @@ mod tests {
     impl<S> GraphQLType<S> for NonNullStringBox2
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1545,7 +1539,6 @@ mod tests {
     impl<S> GraphQLType<S> for NonNullStringBox2Impl
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1577,7 +1570,6 @@ mod tests {
     impl<S> GraphQLType<S> for Node
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1602,7 +1594,6 @@ mod tests {
     impl<S> GraphQLType<S> for Edge
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1624,7 +1615,6 @@ mod tests {
     impl<S> GraphQLType<S> for Connection
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();
@@ -1646,7 +1636,6 @@ mod tests {
     impl<S> GraphQLType<S> for QueryRoot
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         type Context = ();
         type TypeInfo = ();

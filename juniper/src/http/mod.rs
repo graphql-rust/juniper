@@ -20,7 +20,7 @@ use crate::{
     ast::InputValue,
     executor::ExecutionError,
     value,
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
 
@@ -97,7 +97,6 @@ where
         SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let op = self.operation_name();
         let vars = self.variables();
@@ -120,7 +119,6 @@ where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
         SubscriptionT: GraphQLType<S, Context = CtxT>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(crate::execute(
             &self.query,
@@ -150,7 +148,6 @@ where
         SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let op = self.operation_name();
         let vars = &self.variables();

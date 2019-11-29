@@ -7,7 +7,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
-    value::{DefaultScalarValue, Object, ScalarRefValue, ScalarValue, Value},
+    value::{DefaultScalarValue, Object, ScalarValue, Value},
 };
 
 /// GraphQL type kind
@@ -112,7 +112,6 @@ where
     pub fn get<T>(&self, key: &str) -> Option<T>
     where
         T: FromInputValue<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         match self.args {
             Some(ref args) => match args.get(key) {
@@ -234,7 +233,6 @@ impl GraphQLType for User
 pub trait GraphQLType<S = DefaultScalarValue>: Sized
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// The expected context type for this GraphQL type
     ///
@@ -355,7 +353,6 @@ pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
 where
     T: GraphQLType<S, Context = CtxT>,
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let meta_type = executor
         .schema()
@@ -508,7 +505,6 @@ pub(super) fn is_excluded<S>(
 ) -> bool
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     if let Some(ref directives) = *directives {
         for &Spanning {

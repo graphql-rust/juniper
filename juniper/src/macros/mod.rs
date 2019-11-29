@@ -10,8 +10,6 @@ mod object;
 mod interface;
 #[macro_use]
 mod scalar;
-#[macro_use]
-mod union;
 
 #[cfg(feature = "async")]
 pub mod subscription_helpers;

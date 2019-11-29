@@ -2,7 +2,7 @@ use crate::parser::Spanning;
 use crate::types::base::{is_excluded, merge_key_into};
 use crate::Arguments;
 use crate::{
-    BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarRefValue, ScalarValue, Selection,
+    BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection,
     Value, ValuesResultStream,
 };
 
@@ -152,7 +152,6 @@ where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// In order to resolve selection set on object types, default
     /// implementation calls `resolve_field_into_stream` every time a field
@@ -248,7 +247,6 @@ where
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync + 'static,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
         instance, info, executor,
@@ -269,7 +267,6 @@ where
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync + 'static,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
     'inf: 'res,
     'e: 'res,
 {

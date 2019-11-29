@@ -7,9 +7,7 @@ mod scalar;
 
 pub use self::object::Object;
 
-pub use self::scalar::{
-    DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarRefValue, ScalarValue,
-};
+pub use self::scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue};
 
 /// Serializable value returned from query and field execution.
 ///
@@ -104,12 +102,12 @@ where
     }
 
     /// View the underlying float value, if present.
-    #[deprecated(since = "0.11.0", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_float_value(&self) -> Option<f64>
-    where
-        for<'a> &'a S: ScalarRefValue<'a>,
-    {
-        self.as_scalar_value::<f64>().cloned()
+where {
+        match self {
+            Value::Scalar(ref s) => s.as_float(),
+            _ => None,
+        }
     }
 
     /// View the underlying object value, if present.
@@ -155,7 +153,6 @@ where
     }
 
     /// View the underlying string value, if present.
-    #[deprecated(since = "0.11.0", note = "Use `Value::as_scalar_value` instead")]
     pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
     where
         Option<&'a String>: From<&'a S>,

@@ -73,7 +73,6 @@ where
 fn parse_value<S>(s: &str, meta: &MetaType<S>) -> Spanning<InputValue<S>>
 where
     S: ScalarValue,
-    for<'a> &'a S: ScalarRefValue<'a>,
 {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));

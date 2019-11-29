@@ -60,7 +60,7 @@ use warp::{filters::BoxedFilter, Filter};
 
 #[cfg(feature = "async")]
 use juniper::http::GraphQLRequest;
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
+use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -76,7 +76,6 @@ where
 impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -227,7 +226,6 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
@@ -312,7 +310,6 @@ pub fn make_graphql_filter_async<Query, Mutation, Subscription, Context, S>(
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + Sync + 'static,
     Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Query::TypeInfo: Send + Sync,
@@ -411,7 +408,6 @@ pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
 ) -> impl Future<Output = ()> + Send
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Clone + Send + Sync + 'static,
     Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
     Query::TypeInfo: Send + Sync,
@@ -549,7 +545,6 @@ where
 struct WsPayload<S>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     id: Option<String>,
     #[serde(rename(deserialize = "type"))]
@@ -563,7 +558,6 @@ where
 struct GraphQLPayload<S>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     variables: Option<InputValue<S>>,
     extensions: Option<HashMap<String, String>>,

@@ -114,7 +114,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::GraphQLType<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             type Context = ();
             type TypeInfo = ();
@@ -128,7 +127,6 @@ fn impl_scalar_struct(
                 registry: &mut #crate_name::Registry<'r, S>,
             ) -> #crate_name::meta::MetaType<'r, S>
             where
-                for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
                 S: 'r,
             {
                 registry.build_scalar_type::<Self>(info)
@@ -149,7 +147,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::ToInputValue<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             fn to_input_value(&self) -> #crate_name::InputValue<S> {
                 #crate_name::ToInputValue::to_input_value(&self.0)
@@ -159,7 +156,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::FromInputValue<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             fn from_input_value(v: &#crate_name::InputValue<S>) -> Option<#ident> {
                 let inner: #inner_ty = #crate_name::FromInputValue::from_input_value(v)?;
@@ -170,7 +166,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::ParseScalarValue<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             fn from_str<'a>(
                 value: #crate_name::parser::ScalarToken<'a>,

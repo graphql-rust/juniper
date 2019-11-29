@@ -10,7 +10,7 @@ use crate::{
     parser::{ParseError, ScalarToken},
     schema::model::SchemaType,
     types::base::TypeKind,
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
 };
 
 /// Whether an item is deprecated, with context.
@@ -395,7 +395,6 @@ where
     pub fn new<T>(name: Cow<'a, str>) -> Self
     where
         T: FromInputValue<S> + ParseScalarValue<S> + 'a,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         ScalarMeta {
             name,
@@ -491,7 +490,6 @@ where
     pub fn new<T>(name: Cow<'a, str>, values: &[EnumValue]) -> Self
     where
         T: FromInputValue<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         EnumMeta {
             name,
@@ -575,9 +573,7 @@ where
 {
     /// Build a new input type with the specified name and input fields
     pub fn new<T: FromInputValue<S>>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+where {
         InputObjectMeta {
             name,
             description: None,
@@ -765,7 +761,6 @@ impl<'a, S: fmt::Debug> fmt::Debug for InputObjectMeta<'a, S> {
 fn try_parse_fn<S, T>(v: &InputValue<S>) -> bool
 where
     T: FromInputValue<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     <T as FromInputValue<S>>::from_input_value(v).is_some()
 }

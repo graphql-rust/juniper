@@ -2,7 +2,7 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
     parser::Spanning,
-    value::{Object, ScalarRefValue, ScalarValue, Value},
+    value::{Object, ScalarValue, Value},
 };
 
 #[cfg(feature = "async")]
@@ -104,13 +104,11 @@ impl GraphQLTypeAsync<DefaultScalarValue> for Query {
 }
 ```
 */
-#[async_trait::async_trait]
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve the provided selection set against the current object.
     /// This method is called by executor and should call other methods on this
@@ -127,14 +125,14 @@ where
     ///
     /// For non-object types, the selection set will be `None` and default
     /// implementation will panic.
-    async fn resolve_async<'a>(
+    fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, 'a, Self::Context, S>,
-    ) -> Value<S> {
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, Value<S>> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_async(self, info, selection_set, executor).await
+            resolve_selection_set_into_async(self, info, selection_set, executor)
         } else {
             panic!("resolve() must be implemented by non-object output types");
         }
@@ -144,14 +142,14 @@ where
     /// future that resolves into value instead of value.
     ///
     /// The default implementation panics.
-    async fn resolve_field_async<'a>(
+    fn resolve_field_async<'a>(
         &'a self,
         _: &'a Self::TypeInfo,   // this query's type info
         _: &'a str,              // field's type name
         _: &'a Arguments<'a, S>, // field's arguments
         _: &'a Executor<'a, 'a, Self::Context, S>, // field's executor (query's sub-executor
                                  // with current field's selection set)
-    ) -> ExecutionResult<S> {
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
@@ -160,15 +158,18 @@ where
     ///
     /// Default implementation resolves fragments with the same type as `Self`
     /// and panics otherwise.
-    async fn resolve_into_type_async<'a>(
+    fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, 'a, Self::Context, S>,
-    ) -> ExecutionResult<S> {
-        if Self::name(info) == Some(type_name) {
-            Ok(self.resolve_async(info, selection_set, executor).await)
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        if Self::name(info).unwrap() == type_name {
+            Box::pin(async move {
+                let res = self.resolve_async(info, selection_set, executor).await;
+                Ok(res)
+            })
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
         }
@@ -190,7 +191,6 @@ where
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
     'e: 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     Box::pin(resolve_selection_set_into_async_recursive(
         instance,
@@ -222,7 +222,6 @@ where
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     use futures::stream::{FuturesOrdered, StreamExt as _};
 

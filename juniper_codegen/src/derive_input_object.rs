@@ -157,6 +157,25 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
     let mut from_inputs = TokenStream::new();
     let mut to_inputs = TokenStream::new();
 
+    let (_, ty_generics, _) = generics.split_for_impl();
+
+    let mut generics = generics.clone();
+
+    let scalar = if let Some(scalar) = attrs.scalar {
+        scalar
+    } else {
+        generics.params.push(parse_quote!(__S));
+        {
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_path::ScalarValue));
+        }
+        Ident::new("__S", Span::call_site())
+    };
+
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+
     for field in fields {
         let field_ty = &field.ty;
         let field_attrs = ObjFieldAttrs::from_input(field);
@@ -241,7 +260,7 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
                     #from_input_default
                     Some(ref v) => #juniper_path::FromInputValue::from_input_value(v).unwrap(),
                     None => {
-                        #juniper_path::FromInputValue::from_input_value(&#juniper_path::InputValue::null())
+                        #juniper_path::FromInputValue::from_input_value(&#juniper_path::InputValue::<#scalar>::null())
                             .unwrap()
                     },
                 }
@@ -253,28 +272,6 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
             (#name, self.#field_ident.to_input_value()),
         });
     }
-
-    let (_, ty_generics, _) = generics.split_for_impl();
-
-    let mut generics = generics.clone();
-
-    let scalar = if let Some(scalar) = attrs.scalar {
-        scalar
-    } else {
-        generics.params.push(parse_quote!(__S));
-        {
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_path::ScalarValue));
-            where_clause
-                .predicates
-                .push(parse_quote!(for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>));
-        }
-        Ident::new("__S", Span::call_site())
-    };
-
-    let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let body = quote! {
         impl#impl_generics #juniper_path::GraphQLType<#scalar> for #ident #ty_generics
@@ -306,8 +303,6 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
         #where_clause
         {
             fn from_input_value(value: &#juniper_path::InputValue<#scalar>) -> Option<Self>
-            where
-                for<'__b> &'__b #scalar: #juniper_path::ScalarRefValue<'__b>
             {
                 if let Some(obj) = value.to_object_value() {
                     let item = #ident {

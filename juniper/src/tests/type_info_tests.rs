@@ -7,7 +7,7 @@ use crate::{
         base::{Arguments, GraphQLType},
         scalars::EmptyMutation,
     },
-    value::{ScalarRefValue, ScalarValue, Value},
+    value::{ScalarValue, Value},
     EmptySubscription,
 };
 
@@ -23,7 +23,6 @@ pub struct Node {
 impl<S> GraphQLType<S> for Node
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = NodeTypeInfo;

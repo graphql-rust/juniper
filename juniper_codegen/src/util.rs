@@ -811,9 +811,6 @@ impl GraphQLTypeDefiniton {
             // This is done to prevent the user from having to specify this
             // manually.
             let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            where_clause.predicates.push(
-                parse_quote!(for<'__b> &'__b #scalar: #juniper_crate_name::ScalarRefValue<'__b>),
-            );
         } else if self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
@@ -825,12 +822,6 @@ impl GraphQLTypeDefiniton {
             where_clause
                 .predicates
                 .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-            // Insert a where clause that marks the scalar as
-            // compatible with ScalarValueRef.
-            // Same as in branch above.
-            where_clause
-                .predicates
-                .push(parse_quote!(for<'__b> &'__b __S: #juniper_crate_name::ScalarRefValue<'__b>));
         }
 
         let type_generics_tokens = if self.include_type_generics {
@@ -928,17 +919,14 @@ impl GraphQLTypeDefiniton {
                 impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
                     #where_async
                 {
-                    fn resolve_field_async<'b, 'async_trait>(
+                    fn resolve_field_async<'b>(
                         &'b self,
                         info: &'b Self::TypeInfo,
                         field: &'b str,
                         args: &'b #juniper_crate_name::Arguments<#scalar>,
                         executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> futures::future::BoxFuture<'async_trait, #juniper_crate_name::ExecutionResult<#scalar>>
-                        where
-                        #scalar: Send + Sync,
-                        'b: 'async_trait,
-                        Self: 'async_trait,
+                    ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
+                        where #scalar: Send + Sync,
                     {
                         use futures::future;
                         use #juniper_crate_name::GraphQLType;
@@ -975,7 +963,6 @@ impl GraphQLTypeDefiniton {
                     registry: &mut #juniper_crate_name::Registry<'r, #scalar>
                 ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
                     where #scalar : 'r,
-                    for<'z> &'z #scalar: #juniper_crate_name::ScalarRefValue<'z>,
                 {
                     let fields = vec![
                         #( #field_definitions ),*
@@ -1134,9 +1121,6 @@ impl GraphQLTypeDefiniton {
             // This is done to prevent the user from having to specify this
             // manually.
             let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            where_clause.predicates.push(
-                parse_quote!(for<'__b> &'__b #scalar: #juniper_crate_name::ScalarRefValue<'__b>),
-            );
         } else if self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
@@ -1148,12 +1132,6 @@ impl GraphQLTypeDefiniton {
             where_clause
                 .predicates
                 .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-            // Insert a where clause that marks the scalar as
-            // compatible with ScalarValueRef.
-            // Same as in branch above.
-            where_clause
-                .predicates
-                .push(parse_quote!(for<'__b> &'__b __S: #juniper_crate_name::ScalarRefValue<'__b>));
         }
 
         let type_generics_tokens = if self.include_type_generics {
@@ -1226,7 +1204,6 @@ impl GraphQLTypeDefiniton {
                         registry: &mut #juniper_crate_name::Registry<'r, #scalar>
                     ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
                         where #scalar : 'r,
-                        for<'z> &'z #scalar: #juniper_crate_name::ScalarRefValue<'z>,
                     {
                         let fields = vec![
                             #( #field_definitions ),*

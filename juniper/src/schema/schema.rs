@@ -2,7 +2,7 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
     types::base::{Arguments, GraphQLType, TypeKind},
-    value::{ScalarRefValue, ScalarValue, Value},
+    value::{ScalarValue, Value},
 };
 
 use crate::schema::{
@@ -20,7 +20,6 @@ where
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = QueryT::TypeInfo;
@@ -32,7 +31,6 @@ where
     fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         QueryT::meta(info, registry)
     }
@@ -79,7 +77,6 @@ where
 }
 
 #[cfg(feature = "async")]
-#[async_trait::async_trait]
 impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
@@ -91,22 +88,23 @@ where
     SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'a,
-    for<'c> &'c S: ScalarRefValue<'c>,
 {
-    async fn resolve_field_async<'b>(
+    fn resolve_field_async<'b>(
         &'b self,
-        info: &'b <Self as crate::GraphQLType<S>>::TypeInfo,
+        info: &'b Self::TypeInfo,
         field_name: &'b str,
-        arguments: &'b Arguments<'b, S>,
-        executor: &'b Executor<'b, 'b, <Self as crate::GraphQLType<S>>::Context, S>,
-    ) -> ExecutionResult<S> {
+        arguments: &'b Arguments<S>,
+        executor: &'b Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
+        use futures::future::ready;
         match field_name {
-            "__schema" | "__type" => self.resolve_field(info, field_name, arguments, executor),
-            _ => {
-                self.query_type
-                    .resolve_field_async(info, field_name, arguments, executor)
-                    .await
+            "__schema" | "__type" => {
+                let v = self.resolve_field(info, field_name, arguments, executor);
+                Box::pin(ready(v))
             }
+            _ => self
+                .query_type
+                .resolve_field_async(info, field_name, arguments, executor),
         }
     }
 }

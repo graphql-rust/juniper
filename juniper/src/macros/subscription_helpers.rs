@@ -1,4 +1,4 @@
-use crate::{GraphQLType, ScalarRefValue, ScalarValue};
+use crate::{GraphQLType, ScalarValue};
 use futures::Stream;
 use std::convert::Infallible;
 
@@ -47,7 +47,6 @@ pub struct ResultStreamResult;
 pub trait ExtractTypeFromStream<T, S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Stream's return Value that will be returned if
     /// no errors occured. Is used to determine field type in
@@ -60,7 +59,6 @@ where
     T: futures::Stream<Item = I>,
     I: GraphQLType<S>,
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Item = I;
 }
@@ -70,7 +68,6 @@ where
     Ty: futures::Stream<Item = Result<T, E>>,
     T: GraphQLType<S>,
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Item = T;
 }
@@ -80,7 +77,6 @@ where
     T: futures::Stream<Item = I>,
     I: GraphQLType<S>,
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Item = I;
 }
@@ -90,7 +86,6 @@ where
     T: futures::Stream<Item = Result<I, ER>>,
     I: GraphQLType<S>,
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Item = I;
 }

@@ -9,7 +9,7 @@ use crate::{
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue},
 };
 
 /// Root query node of a schema
@@ -25,7 +25,6 @@ pub struct RootNode<
     S = DefaultScalarValue,
 > where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     #[doc(hidden)]
     pub query_type: QueryT,
@@ -93,15 +92,12 @@ where
     SubscriptionT: GraphQLType<S, TypeInfo = ()>,
     SubscriptionT::Context: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Construct a new root node from query and mutation nodes
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
     pub fn new(query_obj: QueryT, mutation_obj: MutationT, subscription_obj: SubscriptionT) -> Self
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         RootNode::new_with_info(query_obj, mutation_obj, subscription_obj, (), (), ())
     }
@@ -115,7 +111,6 @@ where
     SubscriptionT::Context: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync + 'a + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Construct a new root node from query and mutation nodes,
     /// while also providing type info objects for the query and
@@ -128,8 +123,6 @@ where
         mutation_info: MutationT::TypeInfo,
         subscription_info: SubscriptionT::TypeInfo,
     ) -> Self
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         RootNode {
             query_type: query_obj,
@@ -158,7 +151,6 @@ impl<'a, S> SchemaType<'a, S> {
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S>,
         SubscriptionT: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let mut directives = FnvHashMap::default();
         let query_type_name: String;
@@ -468,7 +460,6 @@ where
     fn new_skip(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Self::new(
             "skip",
@@ -484,7 +475,6 @@ where
     fn new_include(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Self::new(
             "include",

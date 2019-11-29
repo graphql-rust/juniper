@@ -118,8 +118,8 @@ use std::{error::Error, fmt, io::Read};
 use serde_json::error::Error as SerdeError;
 
 use juniper::{
-    http, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode,
-    ScalarRefValue, ScalarValue,
+    http, serde::Deserialize, DefaultScalarValue,
+    GraphQLType, InputValue, RootNode, ScalarValue,
 };
 
 #[derive(serde_derive::Deserialize)]
@@ -146,7 +146,6 @@ where
 impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
@@ -198,7 +197,6 @@ where
 pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S = DefaultScalarValue>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
@@ -253,7 +251,6 @@ impl<'a, CtxFactory, Query, Mutation, CtxT, S>
     GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
 where
     S: ScalarValue + 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
@@ -340,7 +337,6 @@ impl<'a, CtxFactory, Query, Mutation, CtxT, S> Handler
     for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
 where
     S: ScalarValue + Sync + Send + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,

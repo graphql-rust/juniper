@@ -10,7 +10,7 @@ use crate::{
     },
     types::{base::GraphQLType, scalars::ID},
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
-    value::{ScalarRefValue, ScalarValue},
+    value::ScalarValue,
     EmptySubscription,
 };
 
@@ -71,7 +71,6 @@ struct ComplexInput {
 impl<S> GraphQLType<S> for Being
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -95,7 +94,6 @@ where
 impl<S> GraphQLType<S> for Pet
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -119,7 +117,6 @@ where
 impl<S> GraphQLType<S> for Canine
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -143,7 +140,6 @@ where
 impl<S> GraphQLType<S> for DogCommand
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -174,8 +170,6 @@ where
     S: ScalarValue,
 {
     fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         match v.as_enum_value() {
             Some("SIT") => Some(DogCommand::Sit),
@@ -189,7 +183,6 @@ where
 impl<S> GraphQLType<S> for Dog
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -235,7 +228,6 @@ where
 impl<S> GraphQLType<S> for FurColor
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -266,12 +258,7 @@ impl<S> FromInputValue<S> for FurColor
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor>
-    where
-        //        S: 'a,
-        //        &'a S: ScalarRefValue<'a>,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor> {
         match v.as_enum_value() {
             Some("BROWN") => Some(FurColor::Brown),
             Some("BLACK") => Some(FurColor::Black),
@@ -285,7 +272,6 @@ where
 impl<S> GraphQLType<S> for Cat
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -752,7 +738,6 @@ where
 pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
 where
     S: ScalarValue + Send + Sync + 'a + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
@@ -769,7 +754,6 @@ where
 pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
     S: ScalarValue + Send + Sync + 'a + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -784,7 +768,6 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     expected_errors: &[RuleError],
 ) where
     S: ScalarValue + Send + Sync + 'a + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,

@@ -114,7 +114,6 @@ pub use juniper_codegen::subscription;
 pub use juniper_codegen::{
     object, union, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
 };
-
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
@@ -174,7 +173,7 @@ pub use crate::{
     },
     validation::RuleError,
     value::{
-        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarRefValue,
+        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue,
         ScalarValue, Value,
     },
 };
@@ -211,7 +210,6 @@ fn parse_and_validate_document<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
 ) -> Result<Vec<crate::ast::Definition<'a, S>>, GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
@@ -248,7 +246,6 @@ fn parse_and_validate_document_async<'a, QueryT, MutationT, SubscriptionT, CtxT,
 ) -> Result<Vec<crate::ast::Definition<'a, S>>, GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT>,
@@ -290,7 +287,6 @@ pub fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
@@ -318,7 +314,6 @@ where
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let document = parse_and_validate_document_async(document_source, root_node, variables)?;
 
@@ -349,7 +344,6 @@ where
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let document = parse_and_validate_document_async(document_source, root_node, &variables)?;
 
@@ -371,7 +365,6 @@ pub fn introspect<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,

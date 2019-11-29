@@ -14,7 +14,6 @@ use crate::{
 fn parse_document<S>(s: &str) -> Document<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     parse_document_source(
         s,
@@ -26,7 +25,6 @@ where
 fn parse_document_error<'a, S>(s: &'a str) -> Spanning<ParseError<'a>>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     match parse_document_source::<S>(
         s,
