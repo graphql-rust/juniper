@@ -104,28 +104,9 @@ impl Query {
             name: "user1".into(),
         }]
     }
-
-    /// Fetch a URL and return the response body text.
-    async fn request(url: String) -> Result<String, FieldError> {
-        use futures::{
-            compat::{Future01CompatExt, Stream01CompatExt},
-            stream::TryStreamExt,
-        };
-
-        let res = reqwest::r#async::Client::new()
-            .get(&url)
-            .send()
-            .compat()
-            .await?;
-
-        let body_raw = res.into_body().compat().try_concat().await?;
-        let body = std::str::from_utf8(&body_raw).unwrap_or("invalid utf8");
-        Ok(body.to_string())
-    }
 }
 
 type TypeAlias = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
-//type TypeAlias = Pin<Box<dyn Stream<Item = User> + Send>>;
 
 struct Subscription;
 
@@ -162,7 +143,7 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    ::std::env::set_var("RUST_LOG", "warp_async");
+    ::std::env::set_var("RUST_LOG", "warp_subscriptions");
     env_logger::init();
 
     let log = warp::log("warp_server");
@@ -182,7 +163,7 @@ async fn main() {
     let s_schema = Arc::new(schema());
     let qm_graphql_filter = juniper_warp::make_graphql_filter_async(qm_schema, state.boxed());
 
-    println!("Listening on 127.0.0.1:8080");
+    log::info!("Listening on 127.0.0.1:8080");
 
     let routes = (warp::path("subscriptions")
         .and(warp::ws())
@@ -190,7 +171,7 @@ async fn main() {
         .and(warp::any().map(move || Arc::clone(&s_schema)))
         .map(|ws: warp::ws::Ws, ctx: Context, schema: Arc<Schema>| {
             ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                println!("ws connected");
+                log::info!("ws connected");
                 juniper_warp::graphql_subscriptions_async(websocket, schema, ctx).boxed()
             })
         }))
