@@ -1107,14 +1107,7 @@ impl GraphQLTypeDefiniton {
 
         let mut generics = self.generics.clone();
 
-        if self.scalar.is_some() {
-            // A custom scalar type was specified.
-            // Therefore, we always insert a where clause that marks the scalar as
-            // compatible with ScalarValueRef.
-            // This is done to prevent the user from having to specify this
-            // manually.
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-        } else if self.generic_scalar {
+        if self.scalar.is_none() && self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
 
