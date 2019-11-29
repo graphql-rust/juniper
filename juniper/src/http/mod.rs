@@ -3,17 +3,25 @@
 pub mod graphiql;
 pub mod playground;
 
+#[cfg(feature = "async")]
+use std::pin::Pin;
+
+#[cfg(feature = "async")]
+use futures::{stream::Stream, stream::StreamExt as _, Poll};
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},
 };
 use serde_derive::{Deserialize, Serialize};
 
+#[cfg(feature = "async")]
+use crate::executor::ValuesResultStream;
 use crate::{
     ast::InputValue,
     executor::ExecutionError,
+    value,
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
+    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -70,19 +78,47 @@ where
         }
     }
 
+    /// Execute a GraphQL subscription using the specified schema and context
+    ///
+    /// This is a wrapper around the `subscribe_async` function exposed
+    /// at the top level of this crate.
+    #[cfg(feature = "async")]
+    pub async fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
+    ) -> StreamGraphQLResponse<'a, S>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+    {
+        let op = self.operation_name();
+        let vars = self.variables();
+        let res = crate::subscribe(&self.query, op, root_node, vars, context).await;
+
+        StreamGraphQLResponse(res)
+    }
+
     /// Execute a GraphQL request using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         GraphQLResponse(crate::execute(
             &self.query,
@@ -93,18 +129,24 @@ where
         ))
     }
 
+    /// Execute a GraphQL request asynchronously using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute_async` function exposed at the
+    /// top level of this crate.
     #[cfg(feature = "async")]
-    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync,
+        S: ScalarValue + Send + Sync + 'static,
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
         let op = self.operation_name();
@@ -127,6 +169,11 @@ impl<'a, S> GraphQLResponse<'a, S>
 where
     S: ScalarValue,
 {
+    /// Constructs new `GraphQLResponse` using the given result
+    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
+        Self(r)
+    }
+
     /// Constructs an error response outside of the normal execution flow
     pub fn error(error: FieldError<S>) -> Self {
         GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
@@ -174,6 +221,155 @@ where
             }
         }
     }
+}
+
+#[cfg(feature = "async")]
+/// Wrapper around the asynchronous result from executing a GraphQL subscription
+pub struct StreamGraphQLResponse<'a, S = DefaultScalarValue>(
+    Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
+)
+where
+    S: 'static;
+
+#[cfg(feature = "async")]
+impl<'a, S> StreamGraphQLResponse<'a, S>
+where
+    S: value::ScalarValue,
+{
+    /// Convert `StreamGraphQLResponse` to `Value<ValuesStream>`
+    pub fn into_inner(
+        self,
+    ) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>> {
+        self.0
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'a, S> StreamGraphQLResponse<'a, S>
+where
+    S: value::ScalarValue + Send,
+{
+    /// Converts `Self` into default `Stream` implementantion
+    pub fn into_stream(
+        self,
+    ) -> Result<
+        Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a>>,
+        StreamError<'a, S>,
+    > {
+        use std::iter::FromIterator as _;
+
+        let val = match self.0 {
+            Ok((v, err_vec)) => match err_vec.len() {
+                0 => v,
+                _ => return Err(StreamError::Execution(err_vec)),
+            },
+            Err(e) => return Err(StreamError::GraphQL(e)),
+        };
+
+        match val {
+            Value::Null => Err(StreamError::NullValue),
+            Value::Scalar(stream) => {
+                Ok(Box::pin(stream.map(|value| {
+                    match value {
+                        Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
+                        // TODO#433: not return random error
+                        Err(_) => GraphQLResponse::from_result(Err(GraphQLError::IsSubscription)),
+                    }
+                })))
+            }
+            // TODO#433: remove these and add // TODO: implement these
+            //           (current implementation might be confusing)
+            Value::List(_) => return Err(StreamError::ListValue),
+            Value::Object(obj) => {
+                let mut key_values = obj.into_key_value_list();
+                if key_values.is_empty() {
+                    return Err(StreamError::EmptyObject);
+                }
+
+                let mut filled_count = 0;
+                let mut ready_vector = Vec::with_capacity(key_values.len());
+                for _ in 0..key_values.len() {
+                    ready_vector.push(None);
+                }
+
+                let stream = futures::stream::poll_fn(
+                    move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
+                        for i in 0..ready_vector.len() {
+                            let val = &mut ready_vector[i];
+                            if val.is_none() {
+                                let (field_name, ref mut stream_val) = &mut key_values[i];
+
+                                match stream_val {
+                                Value::Scalar(stream) => {
+                                    match Pin::new(stream).poll_next(&mut ctx) {
+                                        Poll::Ready(None) => {
+                                            return Poll::Ready(None);
+                                        },
+                                        Poll::Ready(Some(value)) => {
+                                            *val = Some((field_name.clone(), value));
+                                            filled_count += 1;
+                                        }
+                                        Poll::Pending => { /* check back later */ }
+                                    }
+                                },
+                                    // TODO#433: not panic on errors
+                                    _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
+                            }
+                            }
+                        }
+                        if filled_count == key_values.len() {
+                            filled_count = 0;
+                            let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
+                            let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
+                            let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                                let (name, val) = el.unwrap();
+                                if let Ok(value) = val {
+                                    (name, value)
+                                } else {
+                                    (name, Value::Null)
+                                }
+                            });
+                            let obj = Object::from_iter(ready_vec_iterator);
+                            return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                                Value::Object(obj),
+                                vec![],
+                            )))));
+                        } else {
+                            return Poll::Pending;
+                        }
+                    },
+                );
+
+                Ok(Box::pin(stream))
+            }
+        }
+    }
+}
+
+//TODO#433: consider re-looking at fields after
+//          StreamGraphQLResponse::into_stream was re-implemented
+/// Errors that can be returned from `StreamGraphQLResponse`
+#[derive(Serialize, Debug)]
+#[serde(untagged)]
+pub enum StreamError<'a, S>
+where
+    S: crate::ScalarValue,
+{
+    /// ExecutionError
+    Execution(Vec<ExecutionError<S>>),
+
+    /// GraphQLError
+    GraphQL(GraphQLError<'a>),
+
+    /// If got Value::Null
+    NullValue,
+
+    /// If got Value::List. It is here because
+    /// into_stream is not yet implemented for Value::List
+    ListValue,
+
+    /// If got Value::Object with length of 0
+    EmptyObject,
 }
 
 #[cfg(any(test, feature = "expose-test-schema"))]

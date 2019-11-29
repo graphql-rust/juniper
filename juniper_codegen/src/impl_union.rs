@@ -130,16 +130,35 @@ pub fn impl_union(
         .scalar
         .as_ref()
         .map(|s| quote!( #s ))
-        .unwrap_or_else(|| { quote! { #juniper::DefaultScalarValue } });
+        .unwrap_or_else(|| {
+            quote! { #juniper::DefaultScalarValue }
+        });
 
-    let generics = item.generics.clone();
+    let mut generics = item.generics.clone();
+    if attrs.scalar.is_some() {
+        // A custom scalar type was specified.
+        // Therefore, we always insert a where clause that marks the scalar as
+        // compatible with ScalarValueRef.
+        // This is done to prevent the user from having to specify this
+        // manually.
+        let where_clause = generics
+            .where_clause
+            .get_or_insert(syn::parse_quote!(where));
+        where_clause
+            .predicates
+            .push(syn::parse_quote!(for<'__b> &'__b #scalar: #juniper::ScalarRefValue<'__b>));
+    }
+
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let description = match attrs.description.as_ref() {
         Some(value) => quote!( .description( #value ) ),
         None => quote!(),
     };
-    let context = attrs.context.map(|c| quote!{ #c } ).unwrap_or_else(|| quote!{ () });
+    let context = attrs
+        .context
+        .map(|c| quote! { #c })
+        .unwrap_or_else(|| quote! { () });
 
     let output = quote! {
         impl #impl_generics #juniper::GraphQLType<#scalar> for #ty #where_clause

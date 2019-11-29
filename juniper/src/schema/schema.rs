@@ -13,11 +13,13 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, CtxT, S, QueryT, MutationT> GraphQLType<S> for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
     type Context = CtxT;
     type TypeInfo = QueryT::TypeInfo;
@@ -75,15 +77,17 @@ where
 }
 
 #[cfg(feature = "async")]
-impl<'a, CtxT, S, QueryT, MutationT> crate::GraphQLTypeAsync<S>
-    for RootNode<'a, QueryT, MutationT, S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Send + Sync + 'static,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
+    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'a,
 {
     fn resolve_field_async<'b>(
         &'b self,
@@ -92,7 +96,7 @@ where
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
-        use futures::future::{ready, FutureExt};
+        use futures::future::ready;
         match field_name {
             "__schema" | "__type" => {
                 let v = self.resolve_field(info, field_name, arguments, executor);
@@ -121,7 +125,10 @@ where
             .into_iter()
             .filter(|t| {
                 t.to_concrete()
-                    .map(|t| t.name() != Some("_EmptyMutation"))
+                    .map(|t| {
+                        !(t.name() == Some("_EmptyMutation")
+                            || t.name() == Some("_EmptySubscription"))
+                    })
                     .unwrap_or(false)
             })
             .collect::<Vec<_>>()

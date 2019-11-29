@@ -666,10 +666,6 @@ pub struct GraphQLTypeDefiniton {
 }
 
 impl GraphQLTypeDefiniton {
-    fn has_async_field(&self) -> bool {
-        self.fields.iter().any(|field| field.is_async)
-    }
-
     pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
@@ -809,6 +805,12 @@ impl GraphQLTypeDefiniton {
         let mut generics = self.generics.clone();
 
         if self.scalar.is_some() {
+            // A custom scalar type was specified.
+            // Therefore, we always insert a where clause that marks the scalar as
+            // compatible with ScalarValueRef.
+            // This is done to prevent the user from having to specify this
+            // manually.
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
         } else if self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
@@ -1002,6 +1004,284 @@ impl GraphQLTypeDefiniton {
         );
         output
     }
+
+    pub fn into_subscription_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+
+        let name = &self.name;
+        let ty = &self._type;
+        let context = self
+            .context
+            .as_ref()
+            .map(|ctx| quote!( #ctx ))
+            .unwrap_or_else(|| quote!(()));
+
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
+        let field_definitions = self.fields.iter().map(|field| {
+            let args = field.args.iter().map(|arg| {
+                let arg_type = &arg._type;
+                let arg_name = &arg.name;
+
+                let description = match arg.description.as_ref() {
+                    Some(value) => quote!( .description( #value ) ),
+                    None => quote!(),
+                };
+
+                match arg.default.as_ref() {
+                    Some(value) => quote!(
+                        .argument(
+                            registry.arg_with_default::<#arg_type>(#arg_name, &#value, info)
+                                #description
+                        )
+                    ),
+                    None => quote!(
+                        .argument(
+                            registry.arg::<#arg_type>(#arg_name, info)
+                                #description
+                        )
+                    ),
+                }
+            });
+
+            let description = match field.description.as_ref() {
+                Some(description) => quote!( .description(#description) ),
+                None => quote!(),
+            };
+
+            let deprecation = match field.deprecation.as_ref() {
+                Some(deprecation) => {
+                    if let Some(reason) = deprecation.reason.as_ref() {
+                        quote!( .deprecated(Some(#reason)) )
+                    } else {
+                        quote!( .deprecated(None) )
+                    }
+                }
+                None => quote!(),
+            };
+
+            let field_name = &field.name;
+
+            let type_name = &field._type;
+
+            let _type;
+
+            if field.is_async {
+                _type = quote!(<#type_name as #juniper_crate_name::ExtractTypeFromStream<_, #scalar>>::Item);
+            } else {
+                //TODO: do something with synchronous resolvers
+                panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
+            }
+
+            quote! {
+                registry
+                    .field_convert::<#_type, _, Self::Context>(#field_name, info)
+                    #(#args)*
+                    #description
+                    #deprecation
+            }
+        });
+
+        let description = self
+            .description
+            .as_ref()
+            .map(|description| quote!( .description(#description) ));
+
+        let interfaces = self.interfaces.as_ref().map(|items| {
+            quote!(
+                .interfaces(&[
+                    #( registry.get_type::< #items >(&()) ,)*
+                ])
+            )
+        });
+
+        // Preserve the original type_generics before modification,
+        // since alteration makes them invalid if self.generic_scalar
+        // is specified.
+        let (_, type_generics, _) = self.generics.split_for_impl();
+
+        let mut generics = self.generics.clone();
+
+        if self.scalar.is_some() {
+            // A custom scalar type was specified.
+            // Therefore, we always insert a where clause that marks the scalar as
+            // compatible with ScalarValueRef.
+            // This is done to prevent the user from having to specify this
+            // manually.
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+        } else if self.generic_scalar {
+            // No custom scalar specified, but always generic specified.
+            // Therefore we inject the generic scalar.
+
+            generics.params.push(parse_quote!(__S));
+
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            // Insert ScalarValue constraint.
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
+        }
+
+        let type_generics_tokens = if self.include_type_generics {
+            Some(type_generics)
+        } else {
+            None
+        };
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let resolve_matches_async = self.fields
+            .iter()
+            .filter(|field| field.is_async)
+            .map(|field| {
+                let name = &field.name;
+                let code = &field.resolver_code;
+
+                let _type;
+                if field.is_type_inferred {
+                    _type = quote!();
+                } else {
+                    let _type_name = &field._type;
+                    _type = quote!(: #_type_name);
+                };
+                quote!(
+                    #name => {
+                        futures::FutureExt::boxed(async move {
+                            let res #_type = { #code };
+                            let res = #juniper_crate_name::IntoResult::into_result(res)?;
+                            let executor= executor.as_owned_executor();
+                            let f = res.then(move |res| {
+                                let executor = executor.clone();
+                                let res2: #juniper_crate_name::FieldResult<_, #scalar> =
+                                    #juniper_crate_name::IntoResolvable::into(res, executor.context());
+                                async move {
+                                    let ex = executor.as_executor();
+                                    match res2 {
+                                        Ok(Some((ctx, r))) => {
+                                            let sub = ex.replaced_context(ctx);
+                                            sub.resolve_with_ctx_async(&(), &r).await
+                                        }
+                                        Ok(None) => Ok(Value::null()),
+                                        Err(e) => Err(e),
+                                    }
+                                }
+                            });
+                            Ok(
+                                #juniper_crate_name::Value::Scalar::<
+                                    #juniper_crate_name::ValuesResultStream
+                                >(Box::pin(f))
+                            )
+                        })
+                    }
+                )
+
+            });
+
+        let graphql_implementation = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                    type Context = #context;
+                    type TypeInfo = ();
+
+                    fn name(_: &Self::TypeInfo) -> Option<&str> {
+                        Some(#name)
+                    }
+
+                    fn meta<'r>(
+                        info: &Self::TypeInfo,
+                        registry: &mut #juniper_crate_name::Registry<'r, #scalar>
+                    ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
+                        where #scalar : 'r,
+                    {
+                        let fields = vec![
+                            #( #field_definitions ),*
+                        ];
+                        let meta = registry.build_object_type::<#ty>( info, &fields )
+                            #description
+                            #interfaces;
+                        meta.into_meta()
+                    }
+
+                    fn resolve_field(
+                        &self,
+                        _: &(),
+                        _: &str,
+                        _: &#juniper_crate_name::Arguments<#scalar>,
+                        _: &#juniper_crate_name::Executor<Self::Context, #scalar>,
+                    ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                        panic!("Called `resolve_field` on subscription object");
+                    }
+
+
+                    fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
+                        #name.to_string()
+                    }
+            }
+        );
+
+        let async_subscription_implementation = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics_tokens
+            #where_clause
+            {
+                #[allow(unused_variables)]
+                fn resolve_field_into_stream<
+                    'args, 'e, 'ref_e, 'res,
+                    'life0, 'life1, 'life2, 'async_trait,
+                >(
+                    &'life0 self,
+                    info: &'life1 Self::TypeInfo,
+                    field_name: &'life2 str,
+                    args: #juniper_crate_name::Arguments<'args, #scalar>,
+                    executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
+                ) -> std::pin::Pin<Box<
+                        dyn futures::future::Future<
+                            Output = Result<
+                                #juniper_crate_name::Value<#juniper_crate_name::ValuesResultStream<'res, #scalar>>,
+                                #juniper_crate_name::FieldError<#scalar>
+                            >
+                        > + Send + 'async_trait
+                    >>
+                    where
+                        'e: 'res,
+                        'args: 'async_trait,
+                        'e: 'async_trait,
+                        'ref_e: 'async_trait,
+                        'res: 'async_trait,
+                        'life0: 'async_trait,
+                        'life1: 'async_trait,
+                        'life2: 'async_trait,
+                        Self: 'async_trait,
+                {
+                    use #juniper_crate_name::Value;
+                    use futures::stream::StreamExt as _;
+
+                    match field_name {
+                            #( #resolve_matches_async )*
+                            _ => {
+                                panic!("Field {} not found on type {}", field_name, "GraphQLSubscriptionType");
+                            }
+                        }
+                }
+            }
+        );
+
+        quote!(
+            #graphql_implementation
+            #async_subscription_implementation
+        )
+    }
 }
 
 #[cfg(test)]
@@ -1153,4 +1433,5 @@ mod test {
         assert_eq!(is_valid_name("aTest"), true);
         assert_eq!(is_valid_name("__Atest90"), true);
     }
+
 }

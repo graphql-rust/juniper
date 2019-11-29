@@ -11,6 +11,7 @@ use crate::{
     types::{base::GraphQLType, scalars::ID},
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
+    EmptySubscription,
 };
 
 struct Being;
@@ -39,6 +40,8 @@ struct TestInput {
 }
 
 pub(crate) struct MutationRoot;
+
+pub(crate) struct SubscriptionRoot;
 
 #[derive(Debug)]
 enum DogCommand {
@@ -166,7 +169,8 @@ impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand> {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand>
+    {
         match v.as_enum_value() {
             Some("SIT") => Some(DogCommand::Sit),
             Some("HEEL") => Some(DogCommand::Heel),
@@ -300,6 +304,7 @@ where
 impl<S> GraphQLType<S> for CatOrDog
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -321,6 +326,7 @@ where
 impl<S> GraphQLType<S> for Intelligent
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -342,6 +348,7 @@ where
 impl<S> GraphQLType<S> for Human
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -375,6 +382,7 @@ where
 impl<S> GraphQLType<S> for Alien
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -408,6 +416,7 @@ where
 impl<S> GraphQLType<S> for DogOrHuman
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -429,6 +438,7 @@ where
 impl<S> GraphQLType<S> for HumanOrAlien
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -450,6 +460,7 @@ where
 impl<S> GraphQLType<S> for ComplexInput
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -480,7 +491,11 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput> {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput>
+    where
+        for<'b> &'b S: ScalarRefValue<'b>, //        S: 'a,
+                                           //        &'a S: ScalarRefValue<'a>
+    {
         let obj = match v.to_object_value() {
             Some(o) => o,
             None => return None,
@@ -502,6 +517,7 @@ where
 impl<S> GraphQLType<S> for ComplicatedArgs
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -565,6 +581,7 @@ where
 impl<S> GraphQLType<S> for QueryRoot
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -598,6 +615,7 @@ where
 impl<S> GraphQLType<S> for MutationRoot
 where
     S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -625,15 +643,46 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, V, F, S>(r: Q, m: M, q: &'a str, factory: F) -> Vec<RuleError>
+impl<S> GraphQLType<S> for SubscriptionRoot
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue,
+    for<'b> &'b S: ScalarRefValue<'b>,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("SubscriptionRoot")
+    }
+
+    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        let fields = [];
+
+        registry.build_object_type::<Self>(i, &fields).into_meta()
+    }
+}
+
+pub fn validate<'a, Q, M, Sub, V, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    q: &'a str,
+    factory: F,
+) -> Vec<RuleError>
+where
+    for<'b> &'b S: ScalarRefValue<'b>,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
+    Sub: GraphQLType<S, TypeInfo = ()>,
+    <Sub as crate::GraphQLType<S>>::Context: Send + Sync,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let mut root = RootNode::new(r, m);
+    let mut root = RootNode::new(r, m, s);
 
     root.schema.add_directive(DirectiveType::new(
         "onQuery",
@@ -678,7 +727,8 @@ where
 
 pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
+    for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -687,13 +737,13 @@ where
 
 pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m, EmptySubscription::<S>::new(), q, factory);
 
     if !errs.is_empty() {
         print_errors(&errs);
@@ -703,7 +753,7 @@ where
 
 pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -717,13 +767,13 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     q: &'a str,
     expected_errors: &[RuleError],
 ) where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'a + 'static,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m, EmptySubscription::<S>::new(), q, factory);
 
     if errs.is_empty() {
         panic!("Expected rule to fail, but no errors were found");

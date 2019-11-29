@@ -54,7 +54,7 @@ use rocket::{
 use juniper::{http, InputValue};
 
 use juniper::{
-    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, 
+    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode,
     ScalarValue,
 };
 
