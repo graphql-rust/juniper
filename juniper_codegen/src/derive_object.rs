@@ -63,7 +63,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
                 &self . #field_name
             );
             Some(util::GraphQLTypeDefinitionField {
-                name,  
+                name,
                 _type: field.ty,
                 args: Vec::new(),
                 description: field_attrs.description,

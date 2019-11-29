@@ -10,6 +10,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
             panic!("Invalid attributes:\n{}", e);
         }
     };
+
     let item = match syn::parse::<syn::Item>(body) {
         Ok(item) => item,
         Err(err) => {
@@ -214,11 +215,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let body = &method.block;
                 let return_ty = &method.sig.output;
-
-                let ident = &method.sig.ident;
-                let name = attrs
-                           .name
-                           .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
                 let mut resolver_code = quote!(
                     (|| #return_ty {
                         #( #resolve_parts )*
@@ -242,6 +238,12 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         })()
                     );
                 }
+
+                let ident = &method.sig.ident;
+                let name = attrs
+                           .name
+                           .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
+
                 definition.fields.push(util::GraphQLTypeDefinitionField {
                     name,
                     _type,
