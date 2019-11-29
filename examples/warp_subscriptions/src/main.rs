@@ -111,7 +111,7 @@ struct Subscription;
 
 #[juniper::subscription(Context = Context)]
 impl Subscription {
-    async fn users(argument_one: String, argument_two: i32) -> TypeAlias {
+    async fn users() -> TypeAlias {
         let mut counter = 0;
         let stream = Interval::new_interval(Duration::from_secs(5)).map(move |_| {
             counter += 1;

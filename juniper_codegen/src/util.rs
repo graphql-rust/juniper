@@ -1145,7 +1145,7 @@ impl GraphQLTypeDefiniton {
                     #name => {
                         futures::FutureExt::boxed(async move {
                             let res #_type = { #code };
-                            let res = #juniper_crate_name::IntoResult::into_result(res)?;
+                            let res = #juniper_crate_name::IntoFieldResult::<_, #scalar>::into_result(res)?;
                             let executor= executor.as_owned_executor();
                             let f = res.then(move |res| {
                                 let executor = executor.clone();
