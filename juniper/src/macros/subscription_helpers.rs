@@ -1,4 +1,4 @@
-use crate::{GraphQLType, ScalarValue, FieldError};
+use crate::{FieldError, GraphQLType, ScalarValue};
 use futures::Stream;
 
 /// Trait for converting  `T` to `Ok(T)` if T is not Result.
@@ -10,7 +10,9 @@ pub trait IntoFieldResult<T, S> {
 }
 
 impl<T, E, S> IntoFieldResult<T, S> for Result<T, E>
-where E: Into<FieldError<S>> {
+where
+    E: Into<FieldError<S>>,
+{
     fn into_result(self) -> Result<T, FieldError<S>> {
         self.map_err(|e| e.into())
     }

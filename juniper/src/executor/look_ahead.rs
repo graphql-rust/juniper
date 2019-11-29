@@ -428,6 +428,7 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::validation::test_harness::SubscriptionRoot;
     use crate::{
         ast::Document,
         parser::UnlocatedParseResult,
@@ -436,7 +437,6 @@ mod tests {
         value::{DefaultScalarValue, ScalarValue},
     };
     use std::collections::HashMap;
-    use crate::validation::test_harness::SubscriptionRoot;
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
     where

@@ -1,6 +1,5 @@
 use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap,
-    fmt::Display, sync::Arc, sync::RwLock,
+    borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::Arc, sync::RwLock,
 };
 
 use fnv::FnvHashMap;
@@ -11,7 +10,6 @@ use crate::{
         Selection, ToInputValue, Type,
     },
     executor::owned_executor::OwnedExecutor,
-    GraphQLError,
     parser::{SourcePosition, Spanning},
     schema::{
         meta::{
@@ -23,6 +21,7 @@ use crate::{
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
+    GraphQLError,
 };
 
 pub use self::look_ahead::{

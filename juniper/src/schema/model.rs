@@ -97,8 +97,11 @@ where
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
-    pub fn new(query_obj: QueryT, mutation_obj: MutationT, subscription_obj: SubscriptionT) -> Self
-    {
+    pub fn new(
+        query_obj: QueryT,
+        mutation_obj: MutationT,
+        subscription_obj: SubscriptionT,
+    ) -> Self {
         RootNode::new_with_info(query_obj, mutation_obj, subscription_obj, (), (), ())
     }
 }
@@ -122,8 +125,7 @@ where
         query_info: QueryT::TypeInfo,
         mutation_info: MutationT::TypeInfo,
         subscription_info: SubscriptionT::TypeInfo,
-    ) -> Self
-    {
+    ) -> Self {
         RootNode {
             query_type: query_obj,
             mutation_type: mutation_obj,

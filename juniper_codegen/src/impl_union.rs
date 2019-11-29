@@ -67,7 +67,6 @@ pub fn impl_union(
     attrs: TokenStream,
     body: TokenStream,
 ) -> Result<TokenStream, MacroError> {
-
     // We are re-using the object attributes since they are almost the same.
     let attrs = syn::parse::<util::ObjectAttributes>(attrs)?;
 
@@ -93,7 +92,7 @@ pub fn impl_union(
             "Expected a path ending in a simple type identifier".to_string(),
         )
     })?;
-    let name = attrs.name.unwrap_or_else(||  ty_ident.to_string());
+    let name = attrs.name.unwrap_or_else(|| ty_ident.to_string());
 
     let juniper = util::juniper_path(is_internal);
 

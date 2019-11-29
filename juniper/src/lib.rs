@@ -172,10 +172,7 @@ pub use crate::{
         scalars::{EmptyMutation, EmptySubscription, ID},
     },
     validation::RuleError,
-    value::{
-        DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue,
-        ScalarValue, Value,
-    },
+    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
 };
 
 /// A pinned, boxed future that can be polled.

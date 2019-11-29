@@ -508,8 +508,7 @@ where
                                 );
 
                                 // send message that we are closing channel
-                                let _ = ws_tx
-                                    .unbounded_send(Some(Ok(Message::text(close_text))));
+                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text))));
 
                                 // close channel
                                 let _ = ws_tx.unbounded_send(None);
@@ -520,8 +519,8 @@ where
                                     request_id, response_text
                                 );
 
-                                let _ = ws_tx
-                                    .unbounded_send(Some(Ok(Message::text(response_text))));
+                                let _ =
+                                    ws_tx.unbounded_send(Some(Ok(Message::text(response_text))));
                             }
                             async move { !closed }
                         })

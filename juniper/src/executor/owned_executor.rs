@@ -1,14 +1,14 @@
-use std::{collections::HashMap, sync::{RwLock, Arc}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
     ast::Fragment,
-    ExecutionError, Executor,
-    schema::model::{SchemaType, TypeType}, Selection, Variables,
+    schema::model::{SchemaType, TypeType},
+    ExecutionError, Executor, Selection, Variables,
 };
-use crate::{
-    executor::FieldPath,
-    parser::SourcePosition,
-};
+use crate::{executor::FieldPath, parser::SourcePosition};
 
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance

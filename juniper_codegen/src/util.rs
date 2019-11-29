@@ -1419,5 +1419,4 @@ mod test {
         assert_eq!(is_valid_name("aTest"), true);
         assert_eq!(is_valid_name("__Atest90"), true);
     }
-
 }

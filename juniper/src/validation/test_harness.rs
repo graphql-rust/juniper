@@ -169,8 +169,7 @@ impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand>
-    {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand> {
         match v.as_enum_value() {
             Some("SIT") => Some(DogCommand::Sit),
             Some("HEEL") => Some(DogCommand::Heel),
@@ -484,8 +483,7 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput>
-    {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput> {
         let obj = match v.to_object_value() {
             Some(o) => o,
             None => return None,

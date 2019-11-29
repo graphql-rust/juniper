@@ -176,7 +176,6 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-
     for field in fields {
         let field_ty = &field.ty;
         let field_attrs = ObjFieldAttrs::from_input(field);

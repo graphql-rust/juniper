@@ -7,11 +7,9 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::{Future, FutureExt as _, Stream};
 use tokio::timer::Interval;
-use warp::{Filter, http::Response};
+use warp::{http::Response, Filter};
 
-use juniper::{
-    DefaultScalarValue, EmptyMutation, FieldError, RootNode,
-};
+use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
 use juniper_warp::playground_filter;
 
 #[derive(Clone)]
