@@ -558,6 +558,7 @@ impl FieldAttributes {
             Some(attr) => attr.parse_args()?,
             None => Self::default(),
         };
+
         // Check for regular doc comment.
         if output.description.is_none() {
             output.description = doc_comment;

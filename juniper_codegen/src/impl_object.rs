@@ -241,8 +241,8 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
 
                 let ident = &method.sig.ident;
                 let name = attrs
-                           .name
-                           .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
+                        .name
+                        .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
 
                 definition.fields.push(util::GraphQLTypeDefinitionField {
                     name,
