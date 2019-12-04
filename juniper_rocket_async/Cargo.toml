@@ -18,7 +18,9 @@ async = [ "juniper/async" ]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { version = "0.14.1", default-features = false, path = "../juniper"}
+juniper = { version = "0.14.1", default-features = false, path = "../juniper" }
+
+graphql_batch_request = { version = "0.1.0", features = ["async"], path = "../graphql_batch_request" }
 
 futures = { version = "=0.3.1", features = ["compat"] }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }

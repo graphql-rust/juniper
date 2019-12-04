@@ -16,6 +16,7 @@ serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
 juniper = { version = "0.14.1", default-features = false, path = "../juniper"}
+graphql_batch_request = { version = "0.1.0", path = "../graphql_batch_request" }
 
 rocket = { version = "0.4.0" }
 

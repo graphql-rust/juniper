@@ -53,115 +53,15 @@ use rocket::{
 
 use juniper::{http, InputValue};
 
-use juniper::{
-    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, 
-    ScalarValue,
-};
+use juniper::{DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue};
+
+use graphql_batch_request::GraphQLBatchRequest;
 
 #[cfg(feature = "async")]
 use juniper::GraphQLTypeAsync;
 
 #[cfg(feature = "async")]
 use futures::future::{FutureExt, TryFutureExt};
-
-#[derive(Debug, serde_derive::Deserialize, PartialEq)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue + Sync + Send,
-{
-    Single(http::GraphQLRequest<S>),
-    Batch(Vec<http::GraphQLRequest<S>>),
-}
-
-#[derive(serde_derive::Serialize)]
-#[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
-where
-    S: ScalarValue + Sync + Send,
-{
-    Single(http::GraphQLResponse<'a, S>),
-    Batch(Vec<http::GraphQLResponse<'a, S>>),
-}
-
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue + Send + Sync,
-{
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-    {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
-            }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-
-    #[cfg(feature = "async")]
-    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
-        &'a self,
-        root_node: &'a RootNode<'_, QueryT, MutationT, S>,
-        context: &'a CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-    {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_async(root_node, context).await)
-            }
-            &GraphQLBatchRequest::Batch(ref requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute_async(root_node, context))
-                    .collect::<Vec<_>>();
-
-                GraphQLBatchResponse::Batch(futures::future::join_all(futures).await)
-            }
-        }
-    }
-
-    pub fn operation_names(&self) -> Vec<Option<&str>> {
-        match self {
-            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
-            GraphQLBatchRequest::Batch(reqs) => {
-                reqs.iter().map(|req| req.operation_name()).collect()
-            }
-        }
-    }
-}
-
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue + Send + Sync,
-{
-    fn is_ok(&self) -> bool {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses
-                .iter()
-                .fold(true, |ok, response| ok && response.is_ok()),
-        }
-    }
-}
 
 /// Simple wrapper around an incoming GraphQL request
 ///
