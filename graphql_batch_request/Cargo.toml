@@ -1,0 +1,18 @@
+[package]
+name = "graphql_batch_request"
+version = "0.1.0"
+authors = ["Eric Mark Martin <ericmarkmartin@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+async = [ "juniper/async", "futures" ]
+
+[dependencies]
+juniper = { version = "0.14.1", default-features = false, path = "../juniper" }
+serde = { version = "1.0.2" }
+serde_json = { version = "1.0.2" }
+serde_derive = { version = "1.0.2" }
+
+futures = { version = "=0.3.1", optional = true, features = ["compat"] }

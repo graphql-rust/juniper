@@ -10,6 +10,7 @@ members = [
   "juniper_iron",
   "juniper_rocket",
   "juniper_warp",
+  "graphql_batch_request",
 ]
 exclude = [
   "docs/book/tests",
