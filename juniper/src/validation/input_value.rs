@@ -66,8 +66,8 @@ fn validate_var_defs<S>(
                     errors.append(&mut unify_value(name.item, &name.start, v, &ct, schema, Path::Root));
                 }
             }
-            _ => panic!(
-                r#"Variable "${}" expected value of type "{}" which cannot be used as an input type."#,
+            _ => unreachable!(
+                r#"Variable "${}" has invalid input type "{}" after document validation."#,
                 name.item, def.var_type.item,
             ),
         }
