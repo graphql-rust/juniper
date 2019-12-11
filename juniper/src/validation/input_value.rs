@@ -57,13 +57,19 @@ fn validate_var_defs<S>(
                     errors.push(RuleError::new(
                         &format!(
                             r#"Variable "${}" of required type "{}" was not provided."#,
-                            name.item,
-                            def.var_type.item,
+                            name.item, def.var_type.item,
                         ),
                         &[name.start],
                     ));
                 } else if let Some(v) = values.get(name.item) {
-                    errors.append(&mut unify_value(name.item, &name.start, v, &ct, schema, Path::Root));
+                    errors.append(&mut unify_value(
+                        name.item,
+                        &name.start,
+                        v,
+                        &ct,
+                        schema,
+                        Path::Root,
+                    ));
                 }
             }
             _ => unreachable!(
