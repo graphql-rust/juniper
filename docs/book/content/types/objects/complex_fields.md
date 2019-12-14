@@ -25,6 +25,14 @@ impl Person {
     }
 }
 
+// Note that this syntax generates an implementation of the GraphQLType trait,
+// the base impl of your struct can still be written like usual:
+impl Person {
+    pub fn hidden_from_graphql(&self) {
+        // [...]
+    }
+}
+
 # fn main() { }
 ```
 
