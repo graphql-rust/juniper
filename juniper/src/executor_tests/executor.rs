@@ -1067,7 +1067,7 @@ mod named_operations {
 
     #[crate::graphql_object_internal]
     impl Schema {
-        fn a() -> &str {
+        fn a(p: Option<String>) -> &str {
             "b"
         }
     }
@@ -1112,7 +1112,8 @@ mod named_operations {
     #[test]
     fn uses_named_operation_if_name_provided() {
         let schema = RootNode::new(Schema, EmptyMutation::<()>::new());
-        let doc = r"query Example { first: a } query OtherExample { second: a }";
+        let doc =
+            r"query Example($p: String!) { first: a(p: $p) } query OtherExample { second: a }";
 
         let vars = vec![].into_iter().collect();
 
