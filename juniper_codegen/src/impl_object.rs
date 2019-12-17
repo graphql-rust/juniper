@@ -58,7 +58,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         .or(util::get_doc_comment(&_impl.attrs));
 
     let mut definition = util::GraphQLTypeDefiniton {
-        name: name,
+        name,
         _type: target_type.clone(),
         context: impl_attrs.context,
         scalar: impl_attrs.scalar,
