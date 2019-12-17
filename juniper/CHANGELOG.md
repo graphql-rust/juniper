@@ -1,5 +1,9 @@
 # master
 
+- No changes yet
+
+# [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
+
 - Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
 - Correctly handle raw identifiers in field and argument names.
 

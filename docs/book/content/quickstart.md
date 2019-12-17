@@ -8,7 +8,7 @@ This page will give you a short introduction to the concepts in Juniper.
 
 ```toml
 [dependencies]
-juniper = "0.14"
+juniper = "0.14.2"
 ```
 
 ## Schema example
