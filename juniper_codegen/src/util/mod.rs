@@ -509,9 +509,7 @@ impl parse::Parse for FieldAttribute {
                 } else {
                     None
                 };
-                Ok(FieldAttribute::Deprecation(DeprecationAttr {
-                    reason: reason,
-                }))
+                Ok(FieldAttribute::Deprecation(DeprecationAttr { reason }))
             }
             "skip" => Ok(FieldAttribute::Skip(ident)),
             "arguments" => {
