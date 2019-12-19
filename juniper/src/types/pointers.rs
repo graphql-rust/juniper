@@ -216,6 +216,25 @@ where
     }
 }
 
+#[cfg(feature = "async")]
+impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
+where
+    S: ScalarValue + Send + Sync,
+    T: crate::GraphQLTypeAsync<S>,
+    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Sync + Send,
+    <T as crate::types::base::GraphQLType<S>>::Context: Sync + Send,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        use futures::future;
+        (**self).resolve_async(info, selection_set, executor)
+    }
+}
+
 impl<T, S> ToInputValue<S> for Arc<T>
 where
     S: Debug,
