@@ -241,7 +241,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         })();
                         (|| #return_ty {
                             let context = executor.context();
-                            let default_ret: #t;
+                            let default_ret: #t = #t::default();
                             match context.authorize(&["a"]) {
                                 Ok(()) => user_code,
                                 _ => default_ret,
