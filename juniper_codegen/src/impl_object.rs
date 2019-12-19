@@ -221,6 +221,17 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         #body
                     })()
                 );
+                
+                let t = match return_ty {
+                    syn::ReturnType::Type(_, ty) => ty,
+                    syn::ReturnType::Default => {
+                        panic!(
+                            "Invalid field method {}: must return a value",
+                            method.sig.ident
+                        );
+                    }
+                };
+
                 if context_present {
                     resolver_code = quote!(
                         let user_code =
@@ -230,10 +241,11 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         })();
                         (|| #return_ty {
                             let context = executor.context();
+                            let default_ret: #t;
                             match context.authorize(&["a"]) {
                                 Ok(()) => user_code,
-                                _ => unimplemented!(),
-                                /* THIS IS TEMPORARY */
+                                _ => default_ret,
+                                /* HERE */
                             }
                         })()
                     );
