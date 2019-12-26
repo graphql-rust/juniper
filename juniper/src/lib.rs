@@ -228,7 +228,7 @@ where
         }
     }
 
-    execute_validated_query(document, operation_name, root_node, variables, context)
+    execute_validated_query(&document, operation, root_node, variables, context)
 }
 
 /// Execute a query in a provided schema
