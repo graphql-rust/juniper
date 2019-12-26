@@ -664,7 +664,6 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    for<'c> &'c S: ScalarRefValue<'c>,
 {
     let mut fragments = vec![];
     for def in document.iter() {
