@@ -194,13 +194,10 @@ impl<'a> fmt::Display for GraphQLError<'a> {
         match self {
             GraphQLError::ParseError(error) => write!(f, "{}", error),
             GraphQLError::ValidationError(errors) => {
-                let msgs = errors
-                    .iter()
-                    .map(|error| format!("{}", error))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-
-                write!(f, "{}", msgs)
+                for error in errors {
+                    writeln!(f, "{}", error)?;
+                }
+                Ok(())
             }
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
             GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
