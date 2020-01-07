@@ -61,6 +61,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,
+                is_crossedge: field_attrs.is_crossedge,
             })
         }
     });

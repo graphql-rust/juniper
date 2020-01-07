@@ -175,6 +175,7 @@ fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
             resolver_code,
             is_type_inferred: false,
             is_async,
+            is_crossedge: attrs.is_crossedge,
         });
     }
     definition

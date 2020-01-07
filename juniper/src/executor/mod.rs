@@ -1132,6 +1132,7 @@ where
             arguments: None,
             field_type: self.get_type::<T>(info),
             deprecation_status: DeprecationStatus::Current,
+            is_crossedge: false,
         }
     }
 
@@ -1150,6 +1151,7 @@ where
             arguments: None,
             field_type: self.get_type::<I>(info),
             deprecation_status: DeprecationStatus::Current,
+            is_crossedge: false,
         }
     }
 

@@ -167,6 +167,8 @@ pub struct Field<'a, S> {
     pub field_type: Type<'a>,
     #[doc(hidden)]
     pub deprecation_status: DeprecationStatus,
+    #[doc(hidden)]
+    pub is_crossedge: bool,
 }
 
 /// Metadata for an argument to a field
@@ -649,6 +651,12 @@ impl<'a, S> Field<'a, S> {
     /// This overwrites the deprecation reason if any was previously set.
     pub fn deprecated(mut self, reason: Option<&str>) -> Self {
         self.deprecation_status = DeprecationStatus::Deprecated(reason.map(ToOwned::to_owned));
+        self
+    }
+
+    /// Marks the field as a cross-edge.
+    pub fn crossedge(mut self) -> Self {
+        self.is_crossedge = true;
         self
     }
 }

@@ -461,6 +461,7 @@ enum FieldAttribute {
     Deprecation(DeprecationAttr),
     Skip(syn::Ident),
     Arguments(HashMap<String, FieldAttributeArgument>),
+    CrossEdge,
 }
 
 impl parse::Parse for FieldAttribute {
@@ -509,6 +510,7 @@ impl parse::Parse for FieldAttribute {
                     .collect();
                 Ok(FieldAttribute::Arguments(map))
             }
+            "crossedge" => Ok(FieldAttribute::CrossEdge),
             other => Err(input.error(format!("Unknown attribute: {}", other))),
         }
     }
@@ -523,6 +525,7 @@ pub struct FieldAttributes {
     pub skip: bool,
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
+    pub is_crossedge: bool,
 }
 
 impl parse::Parse for FieldAttributes {
@@ -535,6 +538,7 @@ impl parse::Parse for FieldAttributes {
             deprecation: None,
             skip: false,
             arguments: Default::default(),
+            is_crossedge: false,
         };
 
         for item in items {
@@ -553,6 +557,9 @@ impl parse::Parse for FieldAttributes {
                 }
                 FieldAttribute::Arguments(args) => {
                     output.arguments = args;
+                }
+                FieldAttribute::CrossEdge => {
+                    output.is_crossedge = true;
                 }
             }
         }
@@ -614,6 +621,7 @@ pub struct GraphQLTypeDefinitionField {
     pub resolver_code: proc_macro2::TokenStream,
     pub is_type_inferred: bool,
     pub is_async: bool,
+    pub is_crossedge: bool,
 }
 
 pub fn unraw(s: &str) -> String {
@@ -710,6 +718,11 @@ impl GraphQLTypeDefiniton {
                 None => quote!(),
             };
 
+            let crossedge = match field.is_crossedge {
+                true => quote!( .crossedge() ),
+                false => quote!(),
+            };
+
             let field_name = unraw(&field.name);
 
             let _type = &field._type;
@@ -719,6 +732,7 @@ impl GraphQLTypeDefiniton {
                     #(#args)*
                     #description
                     #deprecation
+                    #crossedge
             }
         });
 
