@@ -24,7 +24,7 @@ quote = "1.0.2"
 proc-macro-error = "0.3.4"
 
 [dev-dependencies]
-juniper = { version = "0.14.2", path = "../juniper" }
+juniper = { version = "0.14.2", path = "../juniper", features = ["async"] }
 futures = { version = "=0.3.1" }
 
 [badges]
