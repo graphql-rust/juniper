@@ -8,6 +8,10 @@ documentation = "https://docs.rs/juniper_hyper"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+# Fake feature to help CI.
+async = []
+
 [dependencies]
 serde = "1.0"
 serde_json = "1.0"

@@ -11,6 +11,10 @@ documentation = "https://docs.rs/juniper_rocket"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+# Fake feature to help CI.
+async = []
+
 [dependencies]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
