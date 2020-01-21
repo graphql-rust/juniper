@@ -15,7 +15,7 @@ edition = "2018"
 proc-macro = true
 
 [features]
-async = ["juniper/async"]
+async = []
 
 [dependencies]
 proc-macro2 = "1.0.1"
