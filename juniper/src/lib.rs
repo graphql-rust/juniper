@@ -249,7 +249,7 @@ where
     CtxT: Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
-    
+
     let operation = get_operation(&document, operation_name)?;
 
     {
