@@ -111,9 +111,7 @@ fn async_simple() {
             "fieldAsyncPlain": "field_async_plain",
             "fieldSync": "field_sync",
             "user": {
-                "kind": "USER",
-                // "name": "user1",
-                // "delayed": true,
+                "name": "user1",
             },
         }),
     );

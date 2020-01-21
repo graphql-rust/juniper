@@ -25,6 +25,11 @@
 - Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
 - Correctly handle raw identifiers in field and argument names.
 
+# [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
+
+- Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
+- Correctly handle raw identifiers in field and argument names.
+
 # [[0.14.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.1)
 
 - Fix panic when an invalid scalar is used by a client [#434](https://github.com/graphql-rust/juniper/pull/434)
