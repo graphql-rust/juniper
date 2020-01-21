@@ -105,6 +105,7 @@ pub fn execute(query: &str, vars: Variables) -> QueryResult {
     juniper::execute(query, None, &root, &vars, &ctx).map_err(|e| format!("{:?}", e))
 }
 
+#[cfg(feature = "async")]
 pub async fn execute_async(query: &str, vars: Variables) -> QueryResult {
     let root = new_schema();
     let ctx = Context::new();
