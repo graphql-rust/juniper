@@ -41,20 +41,21 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
     </script>
     "#;
 
-    format!(r#"
+    format!(
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
     <title>GraphQL</title>
     {stylesheet_source}
-    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/graphiql@0.17.2/graphiql.min.css">
+    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/graphiql@0.17.5/graphiql.min.css">
 </head>
 <body>
     <div id="app"></div>
     <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.3/fetch.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/react/16.10.2/umd/react.production.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/react-dom/16.10.2/umd/react-dom.production.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/graphiql@0.17.2/graphiql.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/graphiql@0.17.5/graphiql.min.js"></script>
     <script>var GRAPHQL_URL = '{graphql_url}';</script>
     {fetcher_source}
 </body>
@@ -62,5 +63,6 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
 "#,
         graphql_url = graphql_endpoint_url,
         stylesheet_source = stylesheet_source,
-        fetcher_source = fetcher_source)
+        fetcher_source = fetcher_source
+    )
 }

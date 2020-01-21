@@ -10,7 +10,7 @@ use crate::{
     },
     types::{base::GraphQLType, scalars::ID},
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
-    value::{ScalarRefValue, ScalarValue},
+    value::ScalarValue,
 };
 
 struct Being;
@@ -68,7 +68,6 @@ struct ComplexInput {
 impl<S> GraphQLType<S> for Being
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -92,7 +91,6 @@ where
 impl<S> GraphQLType<S> for Pet
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -116,7 +114,6 @@ where
 impl<S> GraphQLType<S> for Canine
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -140,7 +137,6 @@ where
 impl<S> GraphQLType<S> for DogCommand
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -170,10 +166,7 @@ impl<S> FromInputValue<S> for DogCommand
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<DogCommand> {
         match v.as_enum_value() {
             Some("SIT") => Some(DogCommand::Sit),
             Some("HEEL") => Some(DogCommand::Heel),
@@ -186,7 +179,6 @@ where
 impl<S> GraphQLType<S> for Dog
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -232,7 +224,6 @@ where
 impl<S> GraphQLType<S> for FurColor
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -263,12 +254,7 @@ impl<S> FromInputValue<S> for FurColor
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor>
-    where
-        //        S: 'a,
-        //        &'a S: ScalarRefValue<'a>,
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<FurColor> {
         match v.as_enum_value() {
             Some("BROWN") => Some(FurColor::Brown),
             Some("BLACK") => Some(FurColor::Black),
@@ -282,7 +268,6 @@ where
 impl<S> GraphQLType<S> for Cat
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -315,7 +300,6 @@ where
 impl<S> GraphQLType<S> for CatOrDog
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -337,7 +321,6 @@ where
 impl<S> GraphQLType<S> for Intelligent
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -359,7 +342,6 @@ where
 impl<S> GraphQLType<S> for Human
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -393,7 +375,6 @@ where
 impl<S> GraphQLType<S> for Alien
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -427,7 +408,6 @@ where
 impl<S> GraphQLType<S> for DogOrHuman
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -449,7 +429,6 @@ where
 impl<S> GraphQLType<S> for HumanOrAlien
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -471,7 +450,6 @@ where
 impl<S> GraphQLType<S> for ComplexInput
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -502,11 +480,7 @@ impl<S> FromInputValue<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>, //        S: 'a,
-                                           //        &'a S: ScalarRefValue<'a>
-    {
+    fn from_input_value<'a>(v: &InputValue<S>) -> Option<ComplexInput> {
         let obj = match v.to_object_value() {
             Some(o) => o,
             None => return None,
@@ -528,7 +502,6 @@ where
 impl<S> GraphQLType<S> for ComplicatedArgs
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -592,7 +565,6 @@ where
 impl<S> GraphQLType<S> for QueryRoot
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -626,7 +598,6 @@ where
 impl<S> GraphQLType<S> for MutationRoot
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -656,7 +627,6 @@ where
 
 pub fn validate<'a, Q, M, V, F, S>(r: Q, m: M, q: &'a str, factory: F) -> Vec<RuleError>
 where
-    for<'b> &'b S: ScalarRefValue<'b>,
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
@@ -709,7 +679,6 @@ where
 pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
     S: ScalarValue + 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -719,7 +688,6 @@ where
 pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
 where
     S: ScalarValue + 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
@@ -736,7 +704,6 @@ where
 pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
     S: ScalarValue + 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -751,7 +718,6 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     expected_errors: &[RuleError],
 ) where
     S: ScalarValue + 'a,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,

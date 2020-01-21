@@ -1,15 +1,15 @@
 use std::{collections::HashSet, fmt};
 
 use crate::{
-    ast::{Definition, Document, InputValue, VariableDefinitions},
+    ast::{InputValue, Operation, VariableDefinitions},
     executor::Variables,
-    parser::SourcePosition,
+    parser::{SourcePosition, Spanning},
     schema::{
         meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta},
         model::{SchemaType, TypeType},
     },
     validation::RuleError,
-    value::{ScalarRefValue, ScalarValue},
+    value::ScalarValue,
 };
 
 #[derive(Debug)]
@@ -21,21 +21,16 @@ enum Path<'a> {
 
 pub fn validate_input_values<S>(
     values: &Variables<S>,
-    document: &Document<S>,
+    operation: &Spanning<Operation<S>>,
     schema: &SchemaType<S>,
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errs = vec![];
 
-    for def in document {
-        if let Definition::Operation(ref op) = *def {
-            if let Some(ref vars) = op.item.variable_definitions {
-                validate_var_defs(values, &vars.item, schema, &mut errs);
-            }
-        }
+    if let Some(ref vars) = operation.item.variable_definitions {
+        validate_var_defs(values, &vars.item, schema, &mut errs);
     }
 
     errs.sort();
@@ -49,7 +44,6 @@ fn validate_var_defs<S>(
     errors: &mut Vec<RuleError>,
 ) where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     for &(ref name, ref def) in var_defs.iter() {
         let raw_type_name = def.var_type.item.innermost_name();
@@ -61,22 +55,25 @@ fn validate_var_defs<S>(
                     errors.push(RuleError::new(
                         &format!(
                             r#"Variable "${}" of required type "{}" was not provided."#,
-                            name.item,
-                            def.var_type.item,
+                            name.item, def.var_type.item,
                         ),
                         &[name.start],
                     ));
                 } else if let Some(v) = values.get(name.item) {
-                    errors.append(&mut unify_value(name.item, &name.start, v, &ct, schema, Path::Root));
+                    errors.append(&mut unify_value(
+                        name.item,
+                        &name.start,
+                        v,
+                        &ct,
+                        schema,
+                        Path::Root,
+                    ));
                 }
             }
-            _ => errors.push(RuleError::new(
-                &format!(
-                    r#"Variable "${}" expected value of type "{}" which cannot be used as an input type."#,
-                    name.item, def.var_type.item,
-                ),
-                &[ name.start ],
-            )),
+            _ => unreachable!(
+                r#"Variable "${}" has invalid input type "{}" after document validation."#,
+                name.item, def.var_type.item,
+            ),
         }
     }
 }
@@ -91,7 +88,6 @@ fn unify_value<'a, S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
 
@@ -222,12 +218,13 @@ fn unify_enum<'a, S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
+
     match *value {
-        InputValue::Scalar(ref scalar) if scalar.is_type::<String>() => {
-            if let Some(ref name) = <&S as Into<Option<&String>>>::into(scalar) {
+        // TODO: avoid this bad duplicate as_str() call. (value system refactor)
+        InputValue::Scalar(ref scalar) if scalar.as_str().is_some() => {
+            if let Some(ref name) = scalar.as_str() {
                 if !meta.values.iter().any(|ev| &ev.name == *name) {
                     errors.push(unification_error(
                         var_name,
@@ -268,7 +265,6 @@ fn unify_input_object<'a, S>(
 ) -> Vec<RuleError>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut errors: Vec<RuleError> = vec![];
 

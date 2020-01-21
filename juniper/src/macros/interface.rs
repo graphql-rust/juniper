@@ -61,12 +61,12 @@ impl Character for Droid {
     fn id(&self) -> &str { &self.id }
 }
 
-#[juniper::object(Context = Database)]
+#[juniper::graphql_object(Context = Database)]
 impl Human {
     fn id(&self) -> &str { &self.id }
 }
 
-#[juniper::object(
+#[juniper::graphql_object(
     name = "Droid",
     Context = Database,
 )]
@@ -145,7 +145,7 @@ macro_rules! graphql_interface {
                     info: &Self::TypeInfo,
                     registry: &mut $crate::Registry<'r, $crate::__juniper_insert_generic!($($scalar)+)>
                 ) -> $crate::meta::MetaType<'r, $crate::__juniper_insert_generic!($($scalar)+)>
-                where for<'__b> &'__b $crate::__juniper_insert_generic!($($scalar)+): $crate::ScalarRefValue<'__b>,
+                where
                     $crate::__juniper_insert_generic!($($scalar)+): 'r
                 {
                     // Ensure all child types are registered

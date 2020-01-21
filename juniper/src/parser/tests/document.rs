@@ -6,13 +6,12 @@ use crate::{
     schema::model::SchemaType,
     types::scalars::EmptyMutation,
     validation::test_harness::{MutationRoot, QueryRoot},
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue},
 };
 
 fn parse_document<S>(s: &str) -> Document<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     parse_document_source(s, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
         .expect(&format!("Parse error on input {:#?}", s))
@@ -21,7 +20,6 @@ where
 fn parse_document_error<'a, S>(s: &'a str) -> Spanning<ParseError<'a>>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     match parse_document_source::<S>(s, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &())) {
         Ok(doc) => panic!("*No* parse error on input {:#?} =>\n{:#?}", s, doc),
@@ -151,7 +149,7 @@ fn errors() {
 fn issue_427_panic_is_not_expected() {
     struct QueryWithoutFloat;
 
-    #[crate::object_internal]
+    #[crate::graphql_object_internal]
     impl QueryWithoutFloat {
         fn echo(value: String) -> String {
             value

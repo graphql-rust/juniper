@@ -1,14 +1,20 @@
 [workspace]
 # Order is important as this is the order the crates will be released.
 members = [
+  "juniper_benchmarks",
   "juniper_codegen",
   "juniper",
   "integration_tests/juniper_tests",
+  "integration_tests/async_await",
   "juniper_hyper",
   "juniper_iron",
   "juniper_rocket",
-  "juniper_warp",
 ]
 exclude = [
   "docs/book/tests",
+  # TODO enable warp
+  "juniper_warp",
+  "examples/warp_async",
+  # TODO enable async tests
+  "juniper_rocket_async",
 ]

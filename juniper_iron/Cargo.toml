@@ -1,6 +1,6 @@
 [package]
 name = "juniper_iron"
-version = "0.6.1"
+version = "0.6.2"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -11,11 +11,15 @@ documentation = "https://docs.rs/juniper_iron"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+# Fake feature to help CI.
+async = []
+
 [dependencies]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
-juniper = { version = "0.14.1", path = "../juniper" }
+juniper = { version = "0.14.2", path = "../juniper" }
 
 urlencoded = { version = ">= 0.5, < 0.7" }
 iron = ">= 0.5, < 0.7"
@@ -29,6 +33,6 @@ url = "2"
 percent-encoding = "2"
 
 [dev-dependencies.juniper]
-version = "0.14.1"
+version = "0.14.2"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"

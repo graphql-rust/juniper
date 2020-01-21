@@ -110,11 +110,39 @@ fn impl_scalar_struct(
         None => quote!(),
     };
 
+    #[cfg(feature = "async")]
+    let _async = quote!(
+
+        impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
+        where
+            __S: #crate_name::ScalarValue + Send + Sync,
+            Self: #crate_name::GraphQLType<__S> + Send + Sync,
+            Self::Context: Send + Sync,
+            Self::TypeInfo: Send + Sync,
+        {
+            fn resolve_async<'a>(
+                &'a self,
+                info: &'a Self::TypeInfo,
+                selection_set: Option<&'a [#crate_name::Selection<__S>]>,
+                executor: &'a #crate_name::Executor<Self::Context, __S>,
+            ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
+                use #crate_name::GraphQLType;
+                use futures::future;
+                let v = self.resolve(info, selection_set, executor);
+                Box::pin(future::ready(v))
+            }
+        }
+    );
+
+    #[cfg(not(feature = "async"))]
+    let _async = quote!();
+
     quote!(
+        #_async
+
         impl<S> #crate_name::GraphQLType<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             type Context = ();
             type TypeInfo = ();
@@ -128,7 +156,6 @@ fn impl_scalar_struct(
                 registry: &mut #crate_name::Registry<'r, S>,
             ) -> #crate_name::meta::MetaType<'r, S>
             where
-                for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
                 S: 'r,
             {
                 registry.build_scalar_type::<Self>(info)
@@ -141,7 +168,7 @@ fn impl_scalar_struct(
                 info: &(),
                 selection: Option<&[#crate_name::Selection<S>]>,
                 executor: &#crate_name::Executor<Self::Context, S>,
-            ) -> #crate_name::Value<S> {
+            ) -> #crate_name::ExecutionResult<S> {
                 #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
             }
         }
@@ -149,7 +176,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::ToInputValue<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             fn to_input_value(&self) -> #crate_name::InputValue<S> {
                 #crate_name::ToInputValue::to_input_value(&self.0)
@@ -159,7 +185,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::FromInputValue<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             fn from_input_value(v: &#crate_name::InputValue<S>) -> Option<#ident> {
                 let inner: #inner_ty = #crate_name::FromInputValue::from_input_value(v)?;
@@ -170,7 +195,6 @@ fn impl_scalar_struct(
         impl<S> #crate_name::ParseScalarValue<S> for #ident
         where
             S: #crate_name::ScalarValue,
-            for<'__b> &'__b S: #crate_name::ScalarRefValue<'__b>,
         {
             fn from_str<'a>(
                 value: #crate_name::parser::ScalarToken<'a>,

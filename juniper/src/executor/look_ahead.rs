@@ -1,7 +1,7 @@
 use crate::{
     ast::{Directive, Fragment, InputValue, Selection},
     parser::Spanning,
-    value::{ScalarRefValue, ScalarValue},
+    value::ScalarValue,
 };
 
 use std::collections::HashMap;
@@ -117,7 +117,6 @@ pub struct LookAheadSelection<'a, S: 'a> {
 impl<'a, S> Default for LookAheadSelection<'a, S>
 where
     S: ScalarValue,
-    &'a S: ScalarRefValue<'a>,
 {
     fn default() -> Self {
         LookAheadSelection {
@@ -132,7 +131,6 @@ where
 impl<'a, S> LookAheadSelection<'a, S>
 where
     S: ScalarValue,
-    &'a S: ScalarRefValue<'a>,
 {
     fn should_include<'b, 'c>(
         directives: Option<&'b Vec<Spanning<Directive<S>>>>,
@@ -157,9 +155,7 @@ where
                                 if let LookAheadValue::Scalar(s) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    <&S as Into<Option<&bool>>>::into(s)
-                                        .cloned()
-                                        .unwrap_or(false)
+                                    s.as_boolean().unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -174,9 +170,7 @@ where
                                 if let LookAheadValue::Scalar(b) =
                                     LookAheadValue::from_input_value(&v.item, vars)
                                 {
-                                    <&S as Into<Option<&bool>>>::into(b)
-                                        .map(::std::ops::Not::not)
-                                        .unwrap_or(false)
+                                    b.as_boolean().map(::std::ops::Not::not).unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -439,14 +433,13 @@ mod tests {
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot},
-        value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+        value::{DefaultScalarValue, ScalarValue},
     };
     use std::collections::HashMap;
 
     fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<Document<S>>
     where
         S: ScalarValue,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
     }

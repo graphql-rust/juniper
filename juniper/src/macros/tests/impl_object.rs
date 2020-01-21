@@ -12,7 +12,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[crate::object_internal(Context=Context)]
+#[crate::graphql_object_internal(Context=Context)]
 impl<'a> WithLifetime<'a> {
     fn value(&'a self) -> &'a str {
         self.value
@@ -21,7 +21,7 @@ impl<'a> WithLifetime<'a> {
 
 struct WithContext;
 
-#[crate::object_internal(Context=Context)]
+#[crate::graphql_object_internal(Context=Context)]
 impl WithContext {
     fn ctx(ctx: &Context) -> bool {
         ctx.flag1
@@ -33,10 +33,12 @@ struct Query {
     b: bool,
 }
 
-#[crate::object_internal(
+#[crate::graphql_object_internal(
     scalar = crate::DefaultScalarValue,
     name = "Query", 
     context = Context,
+    // FIXME: make async work
+    noasync
 )]
 /// Query Description.
 impl<'a> Query {
@@ -113,7 +115,7 @@ impl<'a> Query {
 #[derive(Default)]
 struct Mutation;
 
-#[crate::object_internal(context = Context)]
+#[crate::graphql_object_internal(context = Context)]
 impl Mutation {
     fn empty() -> bool {
         true

@@ -21,7 +21,6 @@ jobs:
     - script: |
         export CARGO_HOME="$HOME/.cargo"
         curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $RUSTUP_TOOLCHAIN
-        source /usr/local/cargo/env;
         echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
       displayName: Install rust
   - ${{ if eq(parameters.name, 'Windows') }}:
@@ -61,7 +60,6 @@ jobs:
     # Not Windows.
     - script: |
         export PATH="$PATH:$HOME/.cargo/bin";
-        source /usr/local/cargo/env;
         cargo make workspace-ci-flow --no-workspace
       env: { CARGO_MAKE_RUN_CODECOV: true }
       displayName: Build and run tests

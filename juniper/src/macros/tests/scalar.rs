@@ -27,7 +27,7 @@ graphql_scalar!(DefaultName where Scalar = <S> {
     }
 
     from_input_value(v: &InputValue) -> Option<DefaultName> {
-        v.as_scalar_value::<i32>().map(|i| DefaultName(*i))
+        v.as_scalar_value().and_then(|s| s.as_int()).map(|i| DefaultName(i))
     }
 
     from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -80,7 +80,7 @@ graphql_scalar!(ScalarDescription  {
     }
 });
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName(0)

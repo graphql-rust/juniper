@@ -13,7 +13,7 @@ graphql_scalar!(Url where Scalar = <S>{
     }
 
     from_input_value(v: &InputValue) -> Option<Url> {
-        v.as_scalar_value::<String>()
+        v.as_string_value()
          .and_then(|s| Url::parse(s).ok())
     }
 

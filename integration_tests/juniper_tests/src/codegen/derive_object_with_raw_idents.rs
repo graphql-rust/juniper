@@ -11,7 +11,7 @@ use juniper::{
 
 pub struct Query;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Query {
     fn r#type(r#fn: MyInputType) -> Vec<String> {
         unimplemented!()

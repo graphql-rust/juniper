@@ -62,7 +62,7 @@ impl<'a> ToInputValue for &'a Fake {
     }
 }
 
-impl<'a> GraphQLType for &'a Fake {
+impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
     type Context = ();
     type TypeInfo = ();
 
@@ -93,7 +93,10 @@ struct WithLifetime<'a> {
 
 #[test]
 fn test_derived_input_object() {
-    assert_eq!(<Input as GraphQLType>::name(&()), Some("MyInput"));
+    assert_eq!(
+        <Input as GraphQLType<DefaultScalarValue>>::name(&()),
+        Some("MyInput")
+    );
 
     // Validate meta info.
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());

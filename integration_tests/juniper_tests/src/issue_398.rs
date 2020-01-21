@@ -3,7 +3,7 @@ use juniper::*;
 
 struct Query;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Query {
     fn users(executor: &Executor) -> Vec<User> {
         // This doesn't cause a panic
@@ -19,7 +19,7 @@ struct User {
     country: Country,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl User {
     fn country(&self, executor: &Executor) -> &Country {
         // This panics!
@@ -33,7 +33,7 @@ struct Country {
     id: i32,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Country {
     fn id(&self) -> i32 {
         self.id

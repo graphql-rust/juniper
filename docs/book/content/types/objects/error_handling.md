@@ -25,7 +25,7 @@ struct Example {
     filename: PathBuf,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Example {
     fn contents() -> FieldResult<String> {
         let mut file = File::open(&self.filename)?;
@@ -143,7 +143,7 @@ struct Example {
     whatever: Option<bool>,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Example {
     fn whatever() -> Result<bool, CustomError> {
       if let Some(value) = self.whatever {
