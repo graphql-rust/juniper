@@ -9,10 +9,11 @@ members = [
   "juniper_hyper",
   "juniper_iron",
   "juniper_rocket",
-  "juniper_warp",
 ]
 exclude = [
   "docs/book/tests",
+  # TODO enable warp
+  "juniper_warp",
   "examples/warp_async",
   # TODO enable async tests
   "juniper_rocket_async",
