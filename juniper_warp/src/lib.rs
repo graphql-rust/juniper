@@ -74,11 +74,11 @@ where
         QueryT: juniper::GraphQLType<S, Context = CtxT>,
         MutationT: juniper::GraphQLType<S, Context = CtxT>,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute(root_node, context))
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
                     .map(|request| request.execute(root_node, context))
@@ -161,7 +161,6 @@ where
 /// # use juniper::{EmptyMutation, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
-/// # fn main() {
 /// type UserId = String;
 /// # #[derive(Debug)]
 /// struct AppState(Vec<i64>);
@@ -201,7 +200,6 @@ where
 /// let graphql_endpoint = warp::path("graphql")
 ///     .and(warp::post2())
 ///     .and(graphql_filter);
-/// # }
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, S>,
@@ -227,7 +225,7 @@ where
                     })
                 })
                 .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+                .map_err(warp::reject::custom),
             )
         };
 
@@ -261,12 +259,12 @@ where
                 })
             })
             .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+            .map_err(warp::reject::custom),
         )
     };
 
     let get_filter = warp::get2()
-        .and(context_extractor.clone())
+        .and(context_extractor)
         .and(warp::filters::query::query())
         .and_then(handle_get_request);
 
@@ -336,7 +334,7 @@ where
                 })
             })
             .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+            .map_err(warp::reject::custom),
         )
     };
 
@@ -378,9 +376,7 @@ type Response =
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #
-/// # fn main() {
 /// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql"));
-/// # }
 /// ```
 pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,
