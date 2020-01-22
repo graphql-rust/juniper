@@ -5,18 +5,17 @@ authors = ["Christoph Herzog <chris@theduke.at>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [[bench]]
 name = "benchmark"
 harness = false
 
 [features]
-async = ["juniper/async", "futures"]
+async = []
 
 [dependencies]
-juniper = { path = "../juniper" }
-futures = { version = "=0.3.1", optional = true }
+juniper = { path = "../juniper", features = ["async"] }
+futures =  "=0.3.1"
 
 [dev-dependencies]
 criterion = "0.2.11"
-tokio = "=0.2.0-alpha.6"
+tokio = { version = "0.2.0", features = ["rt-threaded", "rt-core"] }
