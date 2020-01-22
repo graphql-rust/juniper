@@ -35,8 +35,7 @@ impl User {
     }
 
     async fn delayed() -> bool {
-        let when = tokio::clock::now() + std::time::Duration::from_millis(100);
-        tokio::timer::delay(when).await;
+        tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
         true
     }
 }
@@ -62,8 +61,7 @@ impl Query {
     }
 
     async fn delayed() -> bool {
-        let when = tokio::clock::now() + std::time::Duration::from_millis(100);
-        tokio::timer::delay(when).await;
+        tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
         true
     }
 }
@@ -73,14 +71,8 @@ struct Mutation;
 #[crate::graphql_object_internal]
 impl Mutation {}
 
-fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-    tokio::runtime::current_thread::Runtime::new()
-        .unwrap()
-        .block_on(f)
-}
-
-#[test]
-fn async_simple() {
+#[tokio::test]
+async fn async_simple() {
     let schema = RootNode::new(Query, Mutation);
     let doc = r#"
         query { 
@@ -94,9 +86,9 @@ fn async_simple() {
     "#;
 
     let vars = Default::default();
-    let f = crate::execute_async(doc, None, &schema, &vars, &());
-
-    let (res, errs) = run(f).unwrap();
+    let (res, errs) = crate::execute_async(doc, None, &schema, &vars, &())
+        .await
+        .unwrap();
 
     assert!(errs.is_empty());
 

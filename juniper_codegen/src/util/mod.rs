@@ -930,7 +930,7 @@ impl GraphQLTypeDefiniton {
                     ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
                         where #scalar: Send + Sync,
                     {
-                        //use futures::future;
+                        use futures::future;
                         use #juniper_crate_name::GraphQLType;
                         match field {
                             #( #resolve_matches_async )*

@@ -5,10 +5,10 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion, Parameter
 use juniper::{graphql_value, InputValue, ToInputValue, Value};
 use juniper_benchmarks as j;
 
-fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
-    const QUERY: &'static str = r#"
+fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
+    const ASYNC_QUERY: &'static str = r#"
         query Query($id: Int) {
-            user(id: $id) {
+            users_async_instant(ids: [$id]!) {
                 id
                 kind
                 username
@@ -17,8 +17,19 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
         }
     "#;
 
+    const SYNC_QUERY: &'static str = r#"
+    query Query($id: Int) {
+        users_sync_instant(ids: [$id]!) {
+            id
+            kind
+            username
+            email
+        }
+    }
+"#;
+
     c.bench(
-        "Sync vs Async - Single User Flat - Instant",
+        "Sync vs Async - Users Flat - Instant",
         ParameterizedBenchmark::new(
             "Sync",
             |b, count| {
@@ -28,7 +39,7 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
                 let ids = InputValue::list(ids);
                 b.iter(|| {
                     j::execute(
-                        QUERY,
+                        SYNC_QUERY,
                         vec![("ids".to_string(), ids.clone())].into_iter().collect(),
                     )
                 })
@@ -36,7 +47,10 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
             vec![1, 10],
         )
         .with_function("Async - Single Thread", |b, count| {
-            let mut rt = tokio::runtime::current_thread::Runtime::new().unwrap();
+            let mut rt = tokio::runtime::Builder::new()
+                .basic_scheduler()
+                .build()
+                .unwrap();
 
             let ids = (0..*count)
                 .map(|x| InputValue::scalar(x as i32))
@@ -45,14 +59,17 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
 
             b.iter(|| {
                 let f = j::execute_async(
-                    QUERY,
+                    ASYNC_QUERY,
                     vec![("ids".to_string(), ids.clone())].into_iter().collect(),
                 );
                 rt.block_on(f)
             })
         })
         .with_function("Async - Threadpool", |b, count| {
-            let rt = tokio::runtime::Runtime::new().unwrap();
+            let mut rt = tokio::runtime::Builder::new()
+                .threaded_scheduler()
+                .build()
+                .unwrap();
 
             let ids = (0..*count)
                 .map(|x| InputValue::scalar(x as i32))
@@ -61,7 +78,7 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
 
             b.iter(|| {
                 let f = j::execute_async(
-                    QUERY,
+                    ASYNC_QUERY,
                     vec![("ids".to_string(), ids.clone())].into_iter().collect(),
                 );
                 rt.block_on(f)
@@ -70,5 +87,5 @@ fn bench_sync_vs_async_single_user_flat_instant(c: &mut Criterion) {
     );
 }
 
-criterion_group!(benches, bench_sync_vs_async_single_user_flat_instant);
+criterion_group!(benches, bench_sync_vs_async_users_flat_instant);
 criterion_main!(benches);

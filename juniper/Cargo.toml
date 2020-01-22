@@ -48,4 +48,4 @@ uuid = { version = ">= 0.7, < 0.8", optional = true }
 [dev-dependencies]
 bencher = "0.1.2"
 serde_json = { version = "1.0.2" }
-tokio = "=0.2.0-alpha.6"
+tokio = { version = "0.2", features = ["macros", "rt-core", "time"] }
