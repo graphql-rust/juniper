@@ -2,7 +2,7 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
-/// Generate code for the juniper::object macro.
+/// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
         Ok(attrs) => attrs,
@@ -20,7 +20,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     let mut _impl = match item {
         syn::Item::Impl(_impl) => _impl,
         _ => {
-            panic!("#[juniper::object] can only be applied to impl blocks");
+            panic!("#[juniper::graphql_object] can only be applied to impl blocks");
         }
     };
 
@@ -41,27 +41,13 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         }
     }
 
-    let name = match impl_attrs.name.as_ref() {
-        Some(type_name) => type_name.clone(),
-        None => {
-            let error_msg = "Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")";
-
-            let path = match &*_impl.self_ty {
-                syn::Type::Path(ref type_path) => &type_path.path,
-                syn::Type::Reference(ref reference) => match &*reference.elem {
-                    syn::Type::Path(ref type_path) => &type_path.path,
-                    syn::Type::TraitObject(ref trait_obj) => {
-                        match trait_obj.bounds.iter().nth(0).unwrap() {
-                            syn::TypeParamBound::Trait(ref trait_bound) => &trait_bound.path,
-                            _ => panic!(error_msg),
-                        }
-                    }
-                    _ => panic!(error_msg),
-                },
-                _ => panic!(error_msg),
-            };
-
-            path.segments.iter().last().unwrap().ident.to_string()
+    let name = if let Some(name) = impl_attrs.name.as_ref() {
+        name.to_string()
+    } else {
+        if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
+            ident.to_string()
+        } else {
+            panic!("Could not determine a name for the object type: specify one with #[juniper::graphql_object(name = \"SomeName\")");
         }
     };
 
@@ -86,6 +72,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         },
         include_type_generics: false,
         generic_scalar: false,
+        no_async: impl_attrs.no_async,
     };
 
     for item in _impl.items {
@@ -100,6 +87,8 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                         );
                     }
                 };
+
+                let is_async = method.sig.asyncness.is_some();
 
                 let attrs = match util::FieldAttributes::from_attrs(
                     method.attrs,
@@ -194,12 +183,9 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 }
 
                 let body = &method.block;
-                let return_ty = &method.sig.output;
                 let resolver_code = quote!(
-                    (|| #return_ty {
-                        #( #resolve_parts )*
-                        #body
-                    })()
+                    #( #resolve_parts )*
+                    #body
                 );
 
                 let ident = &method.sig.ident;
@@ -214,6 +200,8 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                     description: attrs.description,
                     deprecation: attrs.deprecation,
                     resolver_code,
+                    is_type_inferred: false,
+                    is_async,
                 });
             }
             _ => {

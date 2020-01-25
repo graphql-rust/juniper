@@ -10,8 +10,8 @@ use fnv::FnvHashMap;
 
 use crate::{
     ast::{
-        Definition, Document, Fragment, FromInputValue, InputValue, OperationType, Selection,
-        ToInputValue, Type,
+        Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
+        Selection, ToInputValue, Type,
     },
     parser::SourcePosition,
     value::Value,
@@ -28,7 +28,7 @@ use crate::schema::{
 
 use crate::{
     types::{base::GraphQLType, name::Name},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
 };
 
 mod look_ahead;
@@ -37,6 +37,7 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
+use crate::parser::Spanning;
 
 /// A type registry used to build schemas
 ///
@@ -241,7 +242,6 @@ impl<S> IntoFieldError<S> for FieldError<S> {
 pub trait IntoResolvable<'a, S, T: GraphQLType<S>, C>: Sized
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     #[doc(hidden)]
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S>;
@@ -252,7 +252,6 @@ where
     T: GraphQLType<S>,
     S: ScalarValue,
     T::Context: FromContext<C>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some((FromContext::from(ctx), self)))
@@ -264,7 +263,6 @@ where
     S: ScalarValue,
     T: GraphQLType<S>,
     T::Context: FromContext<C>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, ctx: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(|v: T| Some((<T::Context as FromContext<C>>::from(ctx), v)))
@@ -276,7 +274,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for (&'a T::Context, T)
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         Ok(Some(self))
@@ -287,7 +284,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C> for Option<(&'a T::Context
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
@@ -298,7 +294,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, T, C> for FieldResult<(&'a T::Context, T
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, T)>, S> {
         self.map(Some)
@@ -310,7 +305,6 @@ impl<'a, S, T, C> IntoResolvable<'a, S, Option<T>, C>
 where
     S: ScalarValue,
     T: GraphQLType<S>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     fn into(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
@@ -358,7 +352,6 @@ where
 impl<'a, CtxT, S> Executor<'a, CtxT, S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     /// Resolve a single arbitrary value, mapping the context to a new type
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
@@ -375,7 +368,38 @@ where
     where
         T: GraphQLType<S, Context = CtxT>,
     {
-        Ok(value.resolve(info, self.current_selection_set, self))
+        value.resolve(info, self.current_selection_set, self)
+    }
+
+    /// Resolve a single arbitrary value into an `ExecutionResult`
+    #[cfg(feature = "async")]
+    pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
+    where
+        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        value
+            .resolve_async(info, self.current_selection_set, self)
+            .await
+    }
+
+    /// Resolve a single arbitrary value, mapping the context to a new type
+    #[cfg(feature = "async")]
+    pub async fn resolve_with_ctx_async<NewCtxT, T>(
+        &self,
+        info: &T::TypeInfo,
+        value: &T,
+    ) -> ExecutionResult<S>
+    where
+        T: crate::GraphQLTypeAsync<S, Context = NewCtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        S: Send + Sync,
+        NewCtxT: FromContext<CtxT> + Send + Sync,
+    {
+        let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
+        e.resolve_async(info, value).await
     }
 
     /// Resolve a single arbitrary value into a return value
@@ -386,6 +410,26 @@ where
         T: GraphQLType<S, Context = CtxT>,
     {
         match self.resolve(info, value) {
+            Ok(v) => v,
+            Err(e) => {
+                self.push_error(e);
+                Value::null()
+            }
+        }
+    }
+
+    /// Resolve a single arbitrary value into a return value
+    ///
+    /// If the field fails to resolve, `null` will be returned.
+    #[cfg(feature = "async")]
+    pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
+    where
+        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        match self.resolve_async(info, value).await {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
@@ -486,7 +530,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name(&self, name: &str) -> Option<&'a Fragment<S>> {
+    pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
         self.fragments.get(name).cloned()
     }
 
@@ -615,9 +659,9 @@ impl<S> ExecutionError<S> {
     }
 }
 
-pub fn execute_validated_query<'a, QueryT, MutationT, CtxT, S>(
-    document: Document<S>,
-    operation_name: Option<&str>,
+pub fn execute_validated_query<'a, 'b, QueryT, MutationT, CtxT, S>(
+    document: &'b Document<S>,
+    operation: &'b Spanning<Operation<S>>,
     root_node: &RootNode<QueryT, MutationT, S>,
     variables: &Variables<S>,
     context: &CtxT,
@@ -626,39 +670,16 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     let mut fragments = vec![];
-    let mut operation = None;
-
-    for def in document {
+    for def in document.iter() {
         match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    operation = Some(op);
-                }
-            }
             Definition::Fragment(f) => fragments.push(f),
+            _ => (),
         };
     }
 
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type == OperationType::Subscription {
-        return Err(GraphQLError::IsSubscription);
-    }
-
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
+    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
         defs.item
             .items
             .iter()
@@ -687,7 +708,7 @@ where
             final_vars = &all_vars;
         }
 
-        let root_type = match op.item.operation_type {
+        let root_type = match operation.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
             OperationType::Mutation => root_node
                 .schema
@@ -702,16 +723,16 @@ where
                 .map(|f| (f.item.name.item, &f.item))
                 .collect(),
             variables: final_vars,
-            current_selection_set: Some(&op.item.selection_set[..]),
+            current_selection_set: Some(&operation.item.selection_set[..]),
             parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: FieldPath::Root(op.start),
+            field_path: FieldPath::Root(operation.start),
         };
 
-        value = match op.item.operation_type {
+        value = match operation.item.operation_type {
             OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
             OperationType::Mutation => {
                 executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
@@ -724,6 +745,139 @@ where
     errors.sort();
 
     Ok((value, errors))
+}
+
+#[cfg(feature = "async")]
+pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, CtxT, S>(
+    document: &'b Document<'a, S>,
+    operation: &'b Spanning<Operation<'_, S>>,
+    root_node: &RootNode<'a, QueryT, MutationT, S>,
+    variables: &Variables<S>,
+    context: &CtxT,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+{
+    let mut fragments = vec![];
+    for def in document.iter() {
+        match def {
+            Definition::Fragment(f) => fragments.push(f),
+            _ => (),
+        };
+    }
+
+    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+        defs.item
+            .items
+            .iter()
+            .filter_map(|&(ref name, ref def)| {
+                def.default_value
+                    .as_ref()
+                    .map(|i| (name.item.to_owned(), i.item.clone()))
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
+    });
+
+    let errors = RwLock::new(Vec::new());
+    let value;
+
+    {
+        let mut all_vars;
+        let mut final_vars = variables;
+
+        if let Some(defaults) = default_variable_values {
+            all_vars = variables.clone();
+
+            for (name, value) in defaults {
+                all_vars.entry(name).or_insert(value);
+            }
+
+            final_vars = &all_vars;
+        }
+
+        let root_type = match operation.item.operation_type {
+            OperationType::Query => root_node.schema.query_type(),
+            OperationType::Mutation => root_node
+                .schema
+                .mutation_type()
+                .expect("No mutation type found"),
+            OperationType::Subscription => unreachable!(),
+        };
+
+        let executor = Executor {
+            fragments: &fragments
+                .iter()
+                .map(|f| (f.item.name.item, &f.item))
+                .collect(),
+            variables: final_vars,
+            current_selection_set: Some(&operation.item.selection_set[..]),
+            parent_selection_set: None,
+            current_type: root_type,
+            schema: &root_node.schema,
+            context,
+            errors: &errors,
+            field_path: FieldPath::Root(operation.start),
+        };
+
+        value = match operation.item.operation_type {
+            OperationType::Query => {
+                executor
+                    .resolve_into_value_async(&root_node.query_info, &root_node)
+                    .await
+            }
+            OperationType::Mutation => {
+                executor
+                    .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
+                    .await
+            }
+            OperationType::Subscription => unreachable!(),
+        };
+    }
+
+    let mut errors = errors.into_inner().unwrap();
+    errors.sort();
+
+    Ok((value, errors))
+}
+
+pub fn get_operation<'a, 'b, S>(
+    document: &'b Document<'b, S>,
+    operation_name: Option<&str>,
+) -> Result<&'b Spanning<Operation<'b, S>>, GraphQLError<'a>>
+where
+    S: ScalarValue,
+{
+    let mut operation = None;
+    for def in document {
+        match def {
+            Definition::Operation(op) => {
+                if operation_name.is_none() && operation.is_some() {
+                    return Err(GraphQLError::MultipleOperationsProvided);
+                }
+
+                let move_op = operation_name.is_none()
+                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
+
+                if move_op {
+                    operation = Some(op);
+                }
+            }
+            _ => (),
+        };
+    }
+    let op = match operation {
+        Some(op) => op,
+        None => return Err(GraphQLError::UnknownOperationName),
+    };
+    if op.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+    Ok(op)
 }
 
 impl<'r, S> Registry<'r, S>
@@ -742,7 +896,6 @@ where
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
@@ -764,7 +917,6 @@ where
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Field {
             name: name.to_owned(),
@@ -783,7 +935,6 @@ where
     ) -> Field<'r, S>
     where
         I: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Field {
             name: name.to_owned(),
@@ -798,7 +949,6 @@ where
     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
@@ -815,7 +965,6 @@ where
     ) -> Argument<'r, S>
     where
         T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
@@ -833,26 +982,22 @@ where
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement name()");
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> ListMeta<'r>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    pub fn build_list_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> ListMeta<'r> {
         let of_type = self.get_type::<T>(info);
         ListMeta::new(of_type)
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
-    where
-        for<'b> &'b S: ScalarRefValue<'b>,
-    {
+    pub fn build_nullable_type<T: GraphQLType<S>>(
+        &mut self,
+        info: &T::TypeInfo,
+    ) -> NullableMeta<'r> {
         let of_type = self.get_type::<T>(info);
         NullableMeta::new(of_type)
     }
@@ -868,7 +1013,6 @@ where
     ) -> ObjectMeta<'r, S>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
@@ -885,7 +1029,6 @@ where
     ) -> EnumMeta<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Enum types must be named. Implement name()");
 
@@ -901,7 +1044,6 @@ where
     ) -> InterfaceMeta<'r, S>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
@@ -914,7 +1056,6 @@ where
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
         T: GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
@@ -929,7 +1070,6 @@ where
     ) -> InputObjectMeta<'r, S>
     where
         T: FromInputValue<S> + GraphQLType<S>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 

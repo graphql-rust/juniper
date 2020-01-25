@@ -206,10 +206,33 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
         });
     }
 
+    #[cfg(feature = "async")]
+    let _async = quote!(
+        impl<__S> #juniper_path::GraphQLTypeAsync<__S> for #ident
+            where
+                __S: #juniper_path::ScalarValue + Send + Sync,
+        {
+            fn resolve_async<'a>(
+                &'a self,
+                info: &'a Self::TypeInfo,
+                selection_set: Option<&'a [#juniper_path::Selection<__S>]>,
+                executor: &'a #juniper_path::Executor<Self::Context, __S>,
+            ) -> #juniper_path::BoxFuture<'a, #juniper_path::ExecutionResult<__S>> {
+                use #juniper_path::GraphQLType;
+                use futures::future;
+                let v = self.resolve(info, selection_set, executor);
+                future::FutureExt::boxed(future::ready(v))
+            }
+        }
+    );
+
+    #[cfg(not(feature = "async"))]
+    let _async = quote!();
+
     let body = quote! {
         impl<__S> #juniper_path::GraphQLType<__S> for #ident
-        where __S: #juniper_path::ScalarValue,
-            for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
+        where __S:
+            #juniper_path::ScalarValue,
         {
             type Context = ();
             type TypeInfo = ();
@@ -234,19 +257,19 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 _: &(),
                 _: Option<&[#juniper_path::Selection<__S>]>,
                 _: &#juniper_path::Executor<Self::Context, __S>
-            ) -> #juniper_path::Value<__S> {
-                match self {
+            ) -> #juniper_path::ExecutionResult<__S> {
+                let v = match self {
                     #resolves
-                }
+                };
+                Ok(v)
             }
         }
 
         impl<__S: #juniper_path::ScalarValue> #juniper_path::FromInputValue<__S> for #ident {
             fn from_input_value(v: &#juniper_path::InputValue<__S>) -> Option<#ident>
-                where for<'__b> &'__b __S: #juniper_path::ScalarRefValue<'__b>
             {
                 match v.as_enum_value().or_else(|| {
-                    v.as_scalar_value::<String>().map(|s| s as &str)
+                    v.as_string_value()
                 }) {
                     #from_inputs
                     _ => None,
@@ -261,6 +284,9 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
                 }
             }
         }
+
+        #_async
     };
+
     body
 }

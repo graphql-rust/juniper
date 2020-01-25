@@ -37,6 +37,13 @@ impl ScalarValue for MyScalarValue {
         }
     }
 
+    fn as_str(&self) -> Option<&str> {
+        match *self {
+            MyScalarValue::String(ref s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
     fn as_float(&self) -> Option<f64> {
         match *self {
             MyScalarValue::Int(ref i) => Some(*i as f64),
@@ -153,7 +160,7 @@ juniper::graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
 
 struct TestType;
 
-#[juniper::object(
+#[juniper::graphql_object(
     Scalar = MyScalarValue
 )]
 impl TestType {

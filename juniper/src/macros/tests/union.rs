@@ -1,12 +1,3 @@
-use std::marker::PhantomData;
-
-use crate::{
-    ast::InputValue,
-    schema::model::RootNode,
-    types::scalars::EmptyMutation,
-    value::{DefaultScalarValue, Object, Value},
-};
-
 /*
 
 Syntax to validate:
@@ -16,8 +7,17 @@ Syntax to validate:
 * Custom name vs. default name
 * Optional commas between items
 * Optional trailing commas on instance resolvers
+*
+*/
 
- */
+use std::marker::PhantomData;
+
+use crate::{
+    ast::InputValue,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    value::{DefaultScalarValue, Object, Value},
+};
 
 struct Concrete;
 
@@ -35,73 +35,62 @@ enum WithGenerics<T> {
 enum DescriptionFirst {
     Concrete(Concrete),
 }
-enum ResolversFirst {
-    Concrete(Concrete),
-}
-
-enum CommasWithTrailing {
-    Concrete(Concrete),
-}
-enum ResolversWithTrailingComma {
-    Concrete(Concrete),
-}
 
 struct Root;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Concrete {
     fn simple() -> i32 {
         123
     }
 }
 
-graphql_union!(CustomName: () as "ACustomNamedUnion" |&self| {
-    instance_resolvers: |&_| {
-        &Concrete => match *self { CustomName::Concrete(ref c) => Some(c) }
+#[crate::graphql_union_internal(name = "ACustomNamedUnion")]
+impl CustomName {
+    fn resolve(&self) {
+        match self {
+            Concrete => match *self {
+                CustomName::Concrete(ref c) => Some(c),
+            },
+        }
     }
-});
+}
 
-graphql_union!(<'a> WithLifetime<'a>: () as "WithLifetime"  |&self| {
-    instance_resolvers: |&_| {
-        Concrete => match *self { WithLifetime::Int(_) => Some(Concrete) }
+#[crate::graphql_union_internal]
+impl<'a> WithLifetime<'a> {
+    fn resolve(&self) {
+        match self {
+            Concrete => match *self {
+                WithLifetime::Int(_) => Some(&Concrete),
+            },
+        }
     }
-});
+}
 
-graphql_union!(<T> WithGenerics<T>: () as "WithGenerics"  |&self| {
-    instance_resolvers: |&_| {
-        Concrete => match *self { WithGenerics::Generic(_) => Some(Concrete) }
+#[crate::graphql_union_internal]
+impl<T> WithGenerics<T> {
+    fn resolve(&self) {
+        match self {
+            Concrete => match *self {
+                WithGenerics::Generic(_) => Some(&Concrete),
+            },
+        }
     }
-});
+}
 
-graphql_union!(DescriptionFirst: () |&self| {
-    description: "A description"
-    instance_resolvers: |&_| {
-        &Concrete => match *self { DescriptionFirst::Concrete(ref c) => Some(c) }
+#[crate::graphql_union_internal(description = "A description")]
+impl DescriptionFirst {
+    fn resolve(&self) {
+        match self {
+            Concrete => match *self {
+                DescriptionFirst::Concrete(ref c) => Some(c),
+            },
+        }
     }
-});
+}
 
-graphql_union!(ResolversFirst: () |&self| {
-    instance_resolvers: |&_| {
-        &Concrete => match *self { ResolversFirst::Concrete(ref c) => Some(c) }
-    }
-    description: "A description"
-});
-
-graphql_union!(CommasWithTrailing: () |&self| {
-    instance_resolvers: |&_| {
-        &Concrete => match *self { CommasWithTrailing::Concrete(ref c) => Some(c) }
-    },
-    description: "A description",
-});
-
-graphql_union!(ResolversWithTrailingComma: () |&self| {
-    instance_resolvers: |&_| {
-        &Concrete => match *self { ResolversWithTrailingComma::Concrete(ref c) => Some(c) },
-    }
-    description: "A description"
-});
-
-#[crate::object_internal]
+// FIXME: make async work
+#[crate::graphql_object_internal(noasync)]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName::Concrete(Concrete)
@@ -114,15 +103,6 @@ impl<'a> Root {
     }
     fn description_first() -> DescriptionFirst {
         DescriptionFirst::Concrete(Concrete)
-    }
-    fn resolvers_first() -> ResolversFirst {
-        ResolversFirst::Concrete(Concrete)
-    }
-    fn commas_with_trailing() -> CommasWithTrailing {
-        CommasWithTrailing::Concrete(Concrete)
-    }
-    fn resolvers_with_trailing_comma() -> ResolversWithTrailingComma {
-        ResolversWithTrailingComma::Concrete(Concrete)
     }
 }
 
@@ -226,66 +206,6 @@ fn introspect_description_first() {
         assert_eq!(
             union.get_field_value("name"),
             Some(&Value::scalar("DescriptionFirst"))
-        );
-        assert_eq!(
-            union.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(possible_types.contains(&Value::object(
-            vec![("name", Value::scalar("Concrete"))]
-                .into_iter()
-                .collect(),
-        )));
-    });
-}
-
-#[test]
-fn introspect_resolvers_first() {
-    run_type_info_query("ResolversFirst", |union, possible_types| {
-        assert_eq!(
-            union.get_field_value("name"),
-            Some(&Value::scalar("ResolversFirst"))
-        );
-        assert_eq!(
-            union.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(possible_types.contains(&Value::object(
-            vec![("name", Value::scalar("Concrete"))]
-                .into_iter()
-                .collect(),
-        )));
-    });
-}
-
-#[test]
-fn introspect_commas_with_trailing() {
-    run_type_info_query("CommasWithTrailing", |union, possible_types| {
-        assert_eq!(
-            union.get_field_value("name"),
-            Some(&Value::scalar("CommasWithTrailing"))
-        );
-        assert_eq!(
-            union.get_field_value("description"),
-            Some(&Value::scalar("A description"))
-        );
-
-        assert!(possible_types.contains(&Value::object(
-            vec![("name", Value::scalar("Concrete"))]
-                .into_iter()
-                .collect(),
-        )));
-    });
-}
-
-#[test]
-fn introspect_resolvers_with_trailing_comma() {
-    run_type_info_query("ResolversWithTrailingComma", |union, possible_types| {
-        assert_eq!(
-            union.get_field_value("name"),
-            Some(&Value::scalar("ResolversWithTrailingComma"))
         );
         assert_eq!(
             union.get_field_value("description"),

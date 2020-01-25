@@ -1,17 +1,42 @@
 # master
 
-- All error types now implement `std::error::Error`:
-  - `FieldError`
+## Features
+
+- Support raw identifiers in field and argument names. (#[object] macro)
+
+- Most error types now implement `std::error::Error`:
   - `GraphQLError`
   - `LexerError`
   - `ParseError`
   - `RuleError`
-- `impl From<T> for FieldError where T: Display` has been removed in favor of:
-  - `impl From<String> for FieldError`
-  - `impl From<&str> for FieldError`
-  - `FieldError::from_error`
 
 See [#419](https://github.com/graphql-rust/juniper/pull/419).
+
+## Breaking Changes
+
+- remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
+
+- Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
+
+- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro
+
+- ScalarRefValue trait  removed
+  Trait was not required.
+
+- Changed return type of GraphQLType::resolve to `ExecutionResult`
+  This was done to unify the return type of all resolver methods
+  The previous `Value` return type was just an internal artifact of 
+  error handling.
+
+# [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
+
+- Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
+- Correctly handle raw identifiers in field and argument names.
+
+# [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
+
+- Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
+- Correctly handle raw identifiers in field and argument names.
 
 # [[0.14.1] 2019-10-24](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.1)
 

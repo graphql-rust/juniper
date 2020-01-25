@@ -7,37 +7,44 @@ impl juniper::Context for Context {}
 
 pub struct Query;
 
-graphql_object!(Query: Context |&self| {
-    field users(&executor) -> Vec<User> {
+#[graphql_object(
+    Context = Context
+)]
+impl Query {
+    fn users(exec: &Executor) -> Vec<User> {
         let lh = executor.look_ahead();
         assert_eq!(lh.field_name(), "users");
         vec![User]
     }
 
-    field countries(&executor) -> Vec<Country> {
+    fn countries(exec: &Executor) -> Vec<Country> {
         let lh = executor.look_ahead();
         assert_eq!(lh.field_name(), "countries");
         vec![Country]
     }
-});
+}
 
 #[derive(Clone)]
 pub struct User;
 
-graphql_object!(User: Context |&self| {
-    field id() -> i32 {
+#[graphql_object(
+    Context = Context
+)]
+impl User {
+    fn id() -> i32 {
         1
     }
-});
+}
 
 #[derive(Clone)]
 pub struct Country;
 
-graphql_object!(Country: Context |&self| {
-    field id() -> i32 {
+#[graphql_object]
+impl Country {
+    fn id() -> i32 {
         2
     }
-});
+}
 
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>>;
 

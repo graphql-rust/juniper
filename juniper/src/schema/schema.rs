@@ -2,7 +2,7 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
     types::base::{Arguments, GraphQLType, TypeKind},
-    value::{ScalarRefValue, ScalarValue, Value},
+    value::{ScalarValue, Value},
 };
 
 use crate::schema::{
@@ -18,7 +18,6 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = CtxT;
     type TypeInfo = QueryT::TypeInfo;
@@ -30,7 +29,6 @@ where
     fn meta<'r>(info: &QueryT::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         QueryT::meta(info, registry)
     }
@@ -61,25 +59,59 @@ where
         info: &Self::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<Self::Context, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         use crate::{types::base::resolve_selection_set_into, value::Object};
         if let Some(selection_set) = selection_set {
             let mut result = Object::with_capacity(selection_set.len());
             if resolve_selection_set_into(self, info, selection_set, executor, &mut result) {
-                Value::Object(result)
+                Ok(Value::Object(result))
             } else {
-                Value::null()
+                Ok(Value::null())
             }
         } else {
+            // TODO: this panic seems useless, investigate why it is here.
             panic!("resolve() must be implemented by non-object output types");
         }
     }
 }
 
-#[crate::object_internal(
+#[cfg(feature = "async")]
+impl<'a, CtxT, S, QueryT, MutationT> crate::GraphQLTypeAsync<S>
+    for RootNode<'a, QueryT, MutationT, S>
+where
+    S: ScalarValue + Send + Sync,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+{
+    fn resolve_field_async<'b>(
+        &'b self,
+        info: &'b Self::TypeInfo,
+        field_name: &'b str,
+        arguments: &'b Arguments<S>,
+        executor: &'b Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
+        use futures::future::{ready, FutureExt};
+        match field_name {
+            "__schema" | "__type" => {
+                let v = self.resolve_field(info, field_name, arguments, executor);
+                Box::pin(ready(v))
+            }
+            _ => self
+                .query_type
+                .resolve_field_async(info, field_name, arguments, executor),
+        }
+    }
+}
+
+#[crate::graphql_object_internal(
     name = "__Schema"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> SchemaType<'a, S>
 where
@@ -113,10 +145,12 @@ where
     }
 }
 
-#[crate::object_internal(
+#[crate::graphql_object_internal(
     name = "__Type"
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> TypeType<'a, S>
 where
@@ -244,10 +278,12 @@ where
     }
 }
 
-#[crate::object_internal(
+#[crate::graphql_object_internal(
     name = "__Field",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> Field<'a, S>
 where
@@ -281,10 +317,12 @@ where
     }
 }
 
-#[crate::object_internal(
+#[crate::graphql_object_internal(
     name = "__InputValue",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> Argument<'a, S>
 where
@@ -308,9 +346,11 @@ where
     }
 }
 
-#[crate::object_internal(
+#[crate::graphql_object_internal(
     name = "__EnumValue",
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> EnumValue
 where
@@ -333,10 +373,12 @@ where
     }
 }
 
-#[crate::object_internal(
+#[crate::graphql_object_internal(
     name = "__Directive",
     Context = SchemaType<'a, S>,
     Scalar = S,
+    // FIXME: make this redundant.
+    noasync,
 )]
 impl<'a, S> DirectiveType<'a, S>
 where

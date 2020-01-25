@@ -41,10 +41,14 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use futures::{future::poll_fn, Future};
-use juniper::{DefaultScalarValue, InputValue, ScalarRefValue, ScalarValue};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
+
+#[cfg(feature = "async")]
+use futures03::future::{FutureExt, TryFutureExt};
+
+use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -60,7 +64,6 @@ where
 impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
@@ -71,16 +74,47 @@ where
         QueryT: juniper::GraphQLType<S, Context = CtxT>,
         MutationT: juniper::GraphQLType<S, Context = CtxT>,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute(root_node, context))
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
                     .map(|request| request.execute(root_node, context))
                     .collect(),
             ),
+        }
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a juniper::RootNode<'a, QueryT, MutationT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        match self {
+            &GraphQLBatchRequest::Single(ref request) => {
+                let res = request.execute_async(root_node, context).await;
+                GraphQLBatchResponse::Single(res)
+            }
+            &GraphQLBatchRequest::Batch(ref requests) => {
+                let futures = requests
+                    .iter()
+                    .map(|request| request.execute_async(root_node, context))
+                    .collect::<Vec<_>>();
+                let responses = futures03::future::join_all(futures).await;
+
+                GraphQLBatchResponse::Batch(responses)
+            }
         }
     }
 }
@@ -127,7 +161,6 @@ where
 /// # use juniper::{EmptyMutation, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
-/// # fn main() {
 /// type UserId = String;
 /// # #[derive(Debug)]
 /// struct AppState(Vec<i64>);
@@ -135,7 +168,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::object(
+/// #[juniper::graphql_object(
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {
@@ -167,7 +200,6 @@ where
 /// let graphql_endpoint = warp::path("graphql")
 ///     .and(warp::post2())
 ///     .and(graphql_filter);
-/// # }
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, S>,
@@ -175,7 +207,6 @@ pub fn make_graphql_filter<Query, Mutation, Context, S>(
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
-    for<'b> &'b S: ScalarRefValue<'b>,
     Context: Send + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
@@ -194,7 +225,7 @@ where
                     })
                 })
                 .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-                .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+                .map_err(warp::reject::custom),
             )
         };
 
@@ -228,7 +259,82 @@ where
                 })
             })
             .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(e)),
+            .map_err(warp::reject::custom),
+        )
+    };
+
+    let get_filter = warp::get2()
+        .and(context_extractor)
+        .and(warp::filters::query::query())
+        .and_then(handle_get_request);
+
+    get_filter.or(post_filter).unify().boxed()
+}
+
+/// FIXME: docs
+#[cfg(feature = "async")]
+pub fn make_graphql_filter_async<Query, Mutation, Context, S>(
+    schema: juniper::RootNode<'static, Query, Mutation, S>,
+    context_extractor: BoxedFilter<(Context,)>,
+) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Context: Send + Sync + 'static,
+    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation::TypeInfo: Send + Sync,
+{
+    let schema = Arc::new(schema);
+    let post_schema = schema.clone();
+
+    let handle_post_request =
+        move |context: Context, request: GraphQLBatchRequest<S>| -> Response {
+            let schema = post_schema.clone();
+
+            let f = async move {
+                let res = request.execute_async(&schema, &context).await;
+
+                match serde_json::to_vec(&res) {
+                    Ok(json) => Ok(build_response(Ok((json, res.is_ok())))),
+                    Err(e) => Err(warp::reject::custom(e)),
+                }
+            };
+
+            Box::new(f.boxed().compat())
+        };
+
+    let post_filter = warp::post2()
+        .and(context_extractor.clone())
+        .and(warp::body::json())
+        .and_then(handle_post_request);
+
+    let handle_get_request = move |context: Context,
+                                   mut request: std::collections::HashMap<String, String>|
+          -> Response {
+        let schema = schema.clone();
+        Box::new(
+            poll_fn(move || {
+                tokio_threadpool::blocking(|| {
+                    let variables = match request.remove("variables") {
+                        None => None,
+                        Some(vs) => serde_json::from_str(&vs)?,
+                    };
+
+                    let graphql_request = juniper::http::GraphQLRequest::new(
+                        request.remove("query").ok_or_else(|| {
+                            failure::format_err!("Missing GraphQL query string in query parameters")
+                        })?,
+                        request.get("operation_name").map(|s| s.to_owned()),
+                        variables,
+                    );
+
+                    let response = graphql_request.execute(&schema, &context);
+                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
+                })
+            })
+            .and_then(|result| ::futures::future::done(Ok(build_response(result))))
+            .map_err(warp::reject::custom),
         )
     };
 
@@ -270,9 +376,7 @@ type Response =
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #
-/// # fn main() {
 /// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql"));
-/// # }
 /// ```
 pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,

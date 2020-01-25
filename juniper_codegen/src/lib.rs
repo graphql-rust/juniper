@@ -4,17 +4,19 @@
 //! You should not depend on juniper_codegen directly.
 //! You only need the `juniper` crate.
 
-#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.1")]
+#![doc(html_root_url = "https://docs.rs/juniper_codegen/0.14.2")]
 #![recursion_limit = "1024"]
 
 extern crate proc_macro;
+
+mod util;
 
 mod derive_enum;
 mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
 mod impl_object;
-mod util;
+mod impl_union;
 
 use proc_macro::TokenStream;
 
@@ -104,12 +106,6 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[deprecated(note = "ScalarValue has been renamed to GraphQLScalarValue")]
-#[proc_macro_derive(ScalarValue)]
-pub fn derive_scalar_value_deprecated(input: TokenStream) -> TokenStream {
-    derive_scalar_value(input)
-}
-
 #[proc_macro_derive(GraphQLScalarValueInternal)]
 #[doc(hidden)]
 pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
@@ -139,7 +135,7 @@ More advanced use cases are introduced step by step.
 struct Query;
 
 // We prefix the impl Block with the procedural macro.
-#[juniper::object]
+#[juniper::graphql_object]
 impl Query {
 
     // A **warning**: only GraphQL fields can be specified in this impl block.
@@ -190,7 +186,7 @@ impl Person {
     }
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Person {
     fn first_name(&self) -> &str {
         &self.first_name
@@ -230,7 +226,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::object(
+#[juniper::graphql_object(
     // Here we specify the context type for this object.
     Context = Context,
 )]
@@ -260,7 +256,7 @@ struct InternalQuery;
 // Doc comments can be used to specify graphql documentation.
 /// GRAPHQL DOCUMENTATION.
 /// More info for GraphQL users....
-#[juniper::object(
+#[juniper::graphql_object(
     // You can rename the type for GraphQL by specifying the name here.
     name = "Query",
     // You can also specify a description here.
@@ -323,7 +319,7 @@ struct WithLifetime<'a> {
     value: &'a str,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl<'a> WithLifetime<'a> {
     fn value(&self) -> &str {
         self.value
@@ -344,7 +340,7 @@ You can easily specify a custom scalar though.
 
 struct Query;
 
-#[juniper::object(
+#[juniper::graphql_object(
     Scalar = MyCustomScalar,
 )]
 impl Query {
@@ -352,9 +348,27 @@ impl Query {
 }
 ```
 
+## Raw identifiers
+
+You can use [raw identifiers](https://doc.rust-lang.org/stable/edition-guide/rust-2018/module-system/raw-identifiers.html)
+if you want a GrahpQL field that happens to be a Rust keyword:
+
+```
+struct User {
+    r#type: String,
+}
+
+#[juniper::graphql_object]
+impl User {
+    fn r#type(&self) -> &str {
+        &self.r#type
+    }
+}
+```
+
 */
 #[proc_macro_attribute]
-pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, false);
     gen.into()
 }
@@ -362,7 +376,28 @@ pub fn object(args: TokenStream, input: TokenStream) -> TokenStream {
 /// A proc macro for defining a GraphQL object.
 #[doc(hidden)]
 #[proc_macro_attribute]
-pub fn object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, true);
     gen.into()
+}
+
+#[proc_macro_attribute]
+#[proc_macro_error::proc_macro_error]
+pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let output = match impl_union::impl_union(false, attrs, body) {
+        Ok(toks) => toks,
+        Err(err) => proc_macro_error::abort!(err),
+    };
+    output
+}
+
+#[doc(hidden)]
+#[proc_macro_attribute]
+#[proc_macro_error::proc_macro_error]
+pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let output = match impl_union::impl_union(true, attrs, body) {
+        Ok(toks) => toks,
+        Err(err) => proc_macro_error::abort!(err),
+    };
+    output
 }

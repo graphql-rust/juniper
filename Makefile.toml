@@ -1,6 +1,7 @@
 # https://github.com/sagiegurari/cargo-make#automatically-extend-workspace-makefile
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
+CARGO_MAKE_CARGO_ALL_FEATURES = ""
 
 #
 # Run `RELEASE_LEVEL=(patch|major|minor) cargo make release` to push a new release of every crate.
@@ -86,3 +87,12 @@ condition = { env_set = [ "RELEASE_LEVEL" ] }
 description = "Run `cargo-release` for every crate, but only make changes locally"
 command = "cargo-release"
 args = ["release", "--config", "${CARGO_MAKE_WORKING_DIRECTORY}/../_build/release.toml", "--no-confirm", "--skip-publish", "--skip-push", "--skip-tag", "${RELEASE_LEVEL}"]
+
+[tasks.test-verbose]
+dependencies = ["test-async-verbose"]
+
+[tasks.test-async-verbose]
+description = "Runs cargo test with async feature"
+category = "Test"
+command = "cargo"
+args = ["test", "--verbose", "--features", "async", "@@split(CARGO_MAKE_CARGO_BUILD_TEST_FLAGS, )"]

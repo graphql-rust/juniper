@@ -7,6 +7,8 @@ pre-release-replacements = [
   # Juniper's changelog
   {file="CHANGELOG.md", search="# master", replace="# master\n\n- No changes yet\n\n# [[{{version}}] {{date}}](https://github.com/graphql-rust/juniper/releases/tag/{{crate_name}}-{{version}})"},
   {file="src/lib.rs", search="docs.rs/juniper/[a-z0-9\\.-]+", replace="docs.rs/juniper/{{version}}"},
+  # docs
+  {file="../docs/book/content/quickstart.md", search="juniper = \"[^\"]+\"", replace="juniper = \"{{version}}\""},
   # codegen
   {file="../juniper_codegen/Cargo.toml", search="juniper = \\{ version = \"[^\"]+\"", replace="juniper = { version = \"{{version}}\""},
   # Tests.

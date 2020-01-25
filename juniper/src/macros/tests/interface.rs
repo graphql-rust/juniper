@@ -44,7 +44,7 @@ struct ResolversWithTrailingComma;
 
 struct Root;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Concrete {
     fn simple() -> i32 {
         0
@@ -113,7 +113,10 @@ graphql_interface!(ResolversWithTrailingComma: () |&self| {
     field simple() -> i32 { 0 }
 });
 
-#[crate::object_internal]
+#[crate::graphql_object_internal(
+    // FIXME: make async work
+    noasync
+)]
 impl<'a> Root {
     fn custom_name() -> CustomName {
         CustomName {}

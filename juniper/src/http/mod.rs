@@ -12,7 +12,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::{
     ast::InputValue,
     executor::ExecutionError,
-    value::{DefaultScalarValue, ScalarRefValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
 };
 
@@ -83,7 +83,6 @@ where
         S: ScalarValue,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         GraphQLResponse(crate::execute(
             &self.query,
@@ -92,6 +91,26 @@ where
             &self.variables(),
             context,
         ))
+    }
+
+    #[cfg(feature = "async")]
+    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+        &'a self,
+        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLResponse<'a, S>
+    where
+        S: ScalarValue + Send + Sync,
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+    {
+        let op = self.operation_name();
+        let vars = &self.variables();
+        let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
+        GraphQLResponse(res)
     }
 }
 

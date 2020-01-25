@@ -8,7 +8,7 @@ This page will give you a short introduction to the concepts in Juniper.
 
 ```toml
 [dependencies]
-juniper = "0.11"
+juniper = "0.14.2"
 ```
 
 ## Schema example
@@ -74,7 +74,7 @@ impl juniper::Context for Context {}
 
 struct Query;
 
-#[juniper::object(
+#[juniper::graphql_object(
     // Here we specify the context type for the object.
     // We need to do this in every type that
     // needs access to the context.
@@ -105,7 +105,7 @@ impl Query {
 
 struct Mutation;
 
-#[juniper::object(
+#[juniper::graphql_object(
     Context = Context,
 )]
 impl Mutation {
@@ -156,7 +156,7 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[juniper::object(
+#[juniper::graphql_object(
     Context = Ctx,
 )]
 impl Query {

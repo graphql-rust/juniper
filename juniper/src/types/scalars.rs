@@ -3,11 +3,11 @@ use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
-    executor::{Executor, Registry},
+    executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::base::GraphQLType,
-    value::{ParseScalarResult, ScalarRefValue, ScalarValue, Value},
+    value::{ParseScalarResult, ScalarValue, Value},
 };
 
 /// An ID as defined by the GraphQL specification
@@ -169,7 +169,6 @@ where
 impl<'a, S> GraphQLType<S> for &'a str
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = ();
     type TypeInfo = ();
@@ -181,7 +180,6 @@ where
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         registry.build_scalar_type::<String>(&()).into_meta()
     }
@@ -191,8 +189,24 @@ where
         _: &(),
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
-    ) -> Value<S> {
-        Value::scalar(String::from(*self))
+    ) -> ExecutionResult<S> {
+        Ok(Value::scalar(String::from(*self)))
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
+where
+    S: ScalarValue + Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        use futures::future;
+        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
     }
 }
 
@@ -297,7 +311,6 @@ unsafe impl<T> Send for EmptyMutation<T> {}
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
-    for<'b> &'b S: ScalarRefValue<'b>,
 {
     type Context = T;
     type TypeInfo = ();
@@ -309,10 +322,20 @@ where
     fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
     where
         S: 'r,
-        for<'b> &'b S: ScalarRefValue<'b>,
     {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
+}
+
+#[cfg(feature = "async")]
+impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
+where
+    S: ScalarValue + Send + Sync,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+{
 }
 
 #[cfg(test)]
