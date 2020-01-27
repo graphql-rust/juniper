@@ -69,6 +69,7 @@ pub struct DirectiveType<'a, S> {
     pub arguments: Vec<Argument<'a, S>>,
 }
 
+
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
 #[graphql(name = "__DirectiveLocation")]
 pub enum DirectiveLocation {

@@ -1,16 +1,16 @@
 use fnv::FnvHashMap;
 use juniper::{DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
-#[derive(juniper::GraphQLScalarValue, PartialEq, Eq, Debug)]
+#[derive(juniper::ScalarValue, PartialEq, Eq, Debug)]
 #[graphql(transparent)]
 struct UserId(String);
 
-#[derive(juniper::GraphQLScalarValue, PartialEq, Eq, Debug)]
+#[derive(juniper::ScalarValue, PartialEq, Eq, Debug)]
 #[graphql(transparent, name = "MyUserId", description = "custom description...")]
 struct CustomUserId(String);
 
 /// The doc comment...
-#[derive(juniper::GraphQLScalarValue, PartialEq, Eq, Debug)]
+#[derive(juniper::ScalarValue, PartialEq, Eq, Debug)]
 #[graphql(transparent)]
 struct IdWithDocComment(i32);
 

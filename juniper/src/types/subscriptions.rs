@@ -145,6 +145,7 @@ use crate::{
  }
  ```
 */
+//todo: remove async_trait (?)
 #[async_trait::async_trait]
 pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 where

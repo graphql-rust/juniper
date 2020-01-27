@@ -57,7 +57,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// This custom derive macro implements the #[derive(GraphQLScalarValue)]
+/// This custom derive macro implements the #[derive(ScalarValue)]
 /// derive.
 ///
 /// This can be used for two purposes.
@@ -70,7 +70,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// // Deriving GraphQLScalar is all that is required.
-/// #[derive(juniper::GraphQLScalarValue)]
+/// #[derive(juniper::ScalarValue)]
 /// struct UserId(String);
 ///
 /// #[derive(juniper::GraphQLObject)]
@@ -83,7 +83,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// /// Doc comments are used for the GraphQL type description.
-/// #[derive(juniper::GraphQLScalarValue)]
+/// #[derive(juniper::ScalarValue)]
 /// #[graphql(
 ///    transparent,
 ///    // Set a custom GraphQL name.
@@ -99,7 +99,7 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 ///
 /// TODO: write documentation.
 ///
-#[proc_macro_derive(GraphQLScalarValue, attributes(graphql))]
+#[proc_macro_derive(ScalarValue, attributes(graphql))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, false);

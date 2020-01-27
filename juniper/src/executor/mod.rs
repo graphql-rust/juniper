@@ -28,7 +28,6 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::parser::Spanning;
 
 mod look_ahead;
 pub mod owned_executor;
@@ -639,34 +638,37 @@ where
                     }
                 });
                 if let Some(p) = found_field {
-                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
+                    todo!();
+                    None
+//                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
                 } else {
                     None
                 }
             })
             .filter(|s| s.is_some())
             .unwrap_or_else(|| {
-                Some(LookAheadSelection {
-                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
-                    alias: None,
-                    arguments: Vec::new(),
-                    children: self
-                        .current_selection_set
-                        .map(|s| {
-                            s.iter()
-                                .map(|s| ChildSelection {
-                                    inner: LookAheadSelection::build_from_selection(
-                                        s,
-                                        self.variables,
-                                        self.fragments,
-                                    )
-                                    .expect("a child selection"),
-                                    applies_for: Applies::All,
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_else(Vec::new),
-                })
+                todo!();
+//                Some(LookAheadSelection {
+//                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
+//                    alias: None,
+//                    arguments: Vec::new(),
+//                    children: self
+//                        .current_selection_set
+//                        .map(|s| {
+//                            s.iter()
+//                                .map(|s| ChildSelection {
+//                                    inner: LookAheadSelection::build_from_selection(
+//                                        &s,
+//                                        self.variables,
+//                                        self.fragments,
+//                                    )
+//                                    .expect("a child selection"),
+//                                    applies_for: Applies::All,
+//                                })
+//                                .collect()
+//                        })
+//                        .unwrap_or_else(Vec::new),
+//                })
             })
             .unwrap_or_default()
     }
@@ -738,7 +740,7 @@ impl<S> ExecutionError<S> {
 
 /// Create new `Executor` and start query/mutation execution
 /// Returns `IsSubscription` error if subscription is passed
-pub fn execute_validated_query<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
+pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<S>,
     //todo: operation_name: Option<&str>,
     operation: &'b Spanning<Operation<S>>,
@@ -801,7 +803,7 @@ where
         let executor = Executor {
             fragments: &fragments
                 .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&operation.item.selection_set[..]),
@@ -810,7 +812,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(op.start)),
+            field_path: Arc::new(FieldPath::Root(operation.start)),
         };
 
         value = match operation.item.operation_type {
@@ -833,7 +835,9 @@ where
 #[cfg(feature = "async")]
 pub async fn execute_validated_query_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: Document<'a, S>,
-    operation_name: Option<&str>,
+    //todo: rename to operation and find out what's with lifetimes
+    operation_name: &'a Spanning<Operation<'_, S>>,
+//    operation_name: Option<&str>,
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
@@ -856,7 +860,7 @@ where
         };
     }
 
-    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+    let default_variable_values = operation_name.item.variable_definitions.as_ref().map(|defs| {
         defs.item
             .items
             .iter()
@@ -885,7 +889,7 @@ where
             final_vars = &all_vars;
         }
 
-        let root_type = match operation.item.operation_type {
+        let root_type = match operation_name.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
             OperationType::Mutation => root_node
                 .schema
@@ -897,19 +901,20 @@ where
         let executor = Executor {
             fragments: &fragments
                 .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                //todo: do something with these clone
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
-            current_selection_set: Some(&operation.item.selection_set[..]),
+            current_selection_set: Some(&operation_name.item.selection_set[..]),
             parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(op.start)),
+            field_path: Arc::new(FieldPath::Root(operation_name.start)),
         };
 
-        value = match operation.item.operation_type {
+        value = match operation_name.item.operation_type {
             OperationType::Query => {
                 executor
                     .resolve_into_value_async(&root_node.query_info, &root_node)
@@ -1003,86 +1008,103 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    let mut operation = None;
-
-    let mut fragments = vec![];
-
-    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
-
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type != OperationType::Subscription {
-        return Err(GraphQLError::UnknownOperationName);
-    }
-
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|&(ref name, ref def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = final_vars;
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = all_vars;
-        }
-
-        let root_type = match op.item.operation_type {
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No subscription type found"),
-            _ => unreachable!(),
-        };
-
-        let executor: Executor<'_, 'e, CtxT, S> = Executor {
-            fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
-                .collect(),
-            variables: &final_vars,
-            current_selection_set: Some(&op.item.selection_set[..]),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: &errors,
-            field_path: Arc::new(FieldPath::Root(op.start)),
-        };
-
-        value = match op.item.operation_type {
-            OperationType::Subscription => {
-                executor
-                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-                    .await
-            }
-            _ => unreachable!(),
-        };
-    }
-
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
-
-    Ok((value, errors))
+//    let mut operation = None;
+//
+//    let mut fragments = vec![];
+//
+//    for def in document {
+//        match def {
+//            Definition::Operation(op) => {
+//                if operation_name.is_none() && operation.is_some() {
+//                    return Err(GraphQLError::MultipleOperationsProvided);
+//                }
+//
+//                let move_op = operation_name.is_none()
+//                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
+//
+//                if move_op {
+//                    *operation = Some(op);
+//                }
+//            }
+//            Definition::Fragment(f) => fragments.push(f),
+//        };
+//    }
+//
+//    let op = match operation {
+//        Some(op) => op,
+//        None => return Err(GraphQLError::UnknownOperationName),
+//    };
+//
+//    if op.item.operation_type != OperationType::Subscription {
+//        return Err(GraphQLError::UnknownOperationName);
+//    }
+//
+//    let default_variable_values = op.item.variable_definitions.map(|defs| {
+//        defs.item
+//            .items
+//            .iter()
+//            .filter_map(|&(ref name, ref def)| {
+//                def.default_value
+//                    .as_ref()
+//                    .map(|i| (name.item.to_owned(), i.item.clone()))
+//            })
+//            .collect::<HashMap<String, InputValue<S>>>()
+//    });
+//
+//    let errors = RwLock::new(Vec::new());
+//    let value;
+//    {
+//        let mut all_vars;
+//        let mut final_vars = variables;
+//
+//        if let Some(defaults) = default_variable_values {
+//            all_vars = final_vars;
+//
+//            for (name, value) in defaults {
+//                all_vars.entry(name).or_insert(value);
+//            }
+//
+//            final_vars = all_vars;
+//        }
+//
+//        let root_type = match op.item.operation_type {
+//            OperationType::Subscription => root_node
+//                .schema
+//                .subscription_type()
+//                .expect("No subscription type found"),
+//            _ => unreachable!(),
+//        };
+//
+//        let executor: Executor<'_, 'e, CtxT, S> = Executor {
+//            fragments: &fragments
+//                .into_iter()
+//                .map(|f| (f.item.name.item, f.item))
+//                .collect(),
+//            variables: &final_vars,
+//            current_selection_set: Some(&op.item.selection_set[..]),
+//            parent_selection_set: None,
+//            current_type: root_type,
+//            schema: &root_node.schema,
+//            context,
+//            errors: &errors,
+//            field_path: Arc::new(FieldPath::Root(op.start)),
+//        };
+//
+//        value = match op.item.operation_type {
+//            OperationType::Subscription => {
+//                executor
+//                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+//                    .await
+//            }
+//            _ => unreachable!(),
+//        };
+//    }
+//
+//    let mut errors = errors.into_inner().unwrap();
+//    errors.sort();
+//
+//    Ok((value, errors))
+    todo!()
 }
 
 //todo(?): fn parse_document_definitions<'a, 'b, S>(

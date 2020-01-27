@@ -172,7 +172,8 @@ where
         if Self::name(info).unwrap() == type_name {
             Box::pin(async move {
                 let res = self.resolve_async(info, selection_set, executor).await;
-                Ok(res)
+//                Ok(res)
+                todo!()
             })
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
