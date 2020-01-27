@@ -638,37 +638,38 @@ where
                     }
                 });
                 if let Some(p) = found_field {
-                    todo!();
-                    None
-//                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
+                    LookAheadSelection::build_from_selection(
+                        &p,
+                        self.variables,
+                        self.fragments
+                    )
                 } else {
                     None
                 }
             })
             .filter(|s| s.is_some())
             .unwrap_or_else(|| {
-                todo!();
-//                Some(LookAheadSelection {
-//                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
-//                    alias: None,
-//                    arguments: Vec::new(),
-//                    children: self
-//                        .current_selection_set
-//                        .map(|s| {
-//                            s.iter()
-//                                .map(|s| ChildSelection {
-//                                    inner: LookAheadSelection::build_from_selection(
-//                                        &s,
-//                                        self.variables,
-//                                        self.fragments,
-//                                    )
-//                                    .expect("a child selection"),
-//                                    applies_for: Applies::All,
-//                                })
-//                                .collect()
-//                        })
-//                        .unwrap_or_else(Vec::new),
-//                })
+                Some(LookAheadSelection {
+                    name: self.current_type.innermost_concrete().name().unwrap_or(""),
+                    alias: None,
+                    arguments: Vec::new(),
+                    children: self
+                        .current_selection_set
+                        .map(|s| {
+                            s.iter()
+                                .map(|s| ChildSelection {
+                                    inner: LookAheadSelection::build_from_selection(
+                                        &s,
+                                        self.variables,
+                                        self.fragments,
+                                    )
+                                    .expect("a child selection"),
+                                    applies_for: Applies::All,
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_else(Vec::new),
+                })
             })
             .unwrap_or_default()
     }
@@ -741,8 +742,7 @@ impl<S> ExecutionError<S> {
 /// Create new `Executor` and start query/mutation execution
 /// Returns `IsSubscription` error if subscription is passed
 pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
-    document: Document<S>,
-    //todo: operation_name: Option<&str>,
+    document: &'b Document<S>,
     operation: &'b Spanning<Operation<S>>,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
@@ -833,11 +833,9 @@ where
 /// Create new `Executor` and start asynchronous query execution
 /// Returns `IsSubscription` error if subscription is passed
 #[cfg(feature = "async")]
-pub async fn execute_validated_query_async<'a, QueryT, MutationT, SubscriptionT, CtxT, S>(
-    document: Document<'a, S>,
-    //todo: rename to operation and find out what's with lifetimes
-    operation_name: &'a Spanning<Operation<'_, S>>,
-//    operation_name: Option<&str>,
+pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
+    document: &'b Document<'a, S>,
+    operation: &'b Spanning<Operation<'_, S>>,
     root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
@@ -860,7 +858,7 @@ where
         };
     }
 
-    let default_variable_values = operation_name.item.variable_definitions.as_ref().map(|defs| {
+    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
         defs.item
             .items
             .iter()
@@ -889,7 +887,7 @@ where
             final_vars = &all_vars;
         }
 
-        let root_type = match operation_name.item.operation_type {
+        let root_type = match operation.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
             OperationType::Mutation => root_node
                 .schema
@@ -905,16 +903,16 @@ where
                 .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
-            current_selection_set: Some(&operation_name.item.selection_set[..]),
+            current_selection_set: Some(&operation.item.selection_set[..]),
             parent_selection_set: None,
             current_type: root_type,
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation_name.start)),
+            field_path: Arc::new(FieldPath::Root(operation.start)),
         };
 
-        value = match operation_name.item.operation_type {
+        value = match operation.item.operation_type {
             OperationType::Query => {
                 executor
                     .resolve_into_value_async(&root_node.query_info, &root_node)

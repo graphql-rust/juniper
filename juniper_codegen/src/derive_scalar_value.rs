@@ -71,7 +71,7 @@ pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
         Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal),
         Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal),
         Data::Union(_) => {
-            panic!("#[derive(ScalarValue)] may not be applied to unions");
+            panic!("#[derive(GraphQLScalarValue)] may not be applied to unions");
         }
     }
 }
@@ -86,7 +86,7 @@ fn impl_scalar_struct(
             fields.unnamed.first().unwrap()
         }
         _ => {
-            panic!("#[derive(ScalarValue)] may only be applied to enums or tuple structs with a single field");
+            panic!("#[derive(GraphQLScalarValue)] may only be applied to enums or tuple structs with a single field");
         }
     };
     let ident = &ast.ident;
