@@ -1,4 +1,4 @@
-use crate::{RootNode, Value};
+use crate::{EmptySubscription, RootNode, Value};
 
 #[derive(crate::GraphQLEnumInternal)]
 enum UserKind {

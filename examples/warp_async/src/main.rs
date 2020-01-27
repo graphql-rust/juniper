@@ -2,13 +2,11 @@
 //! This example demonstrates async/await usage with warp.
 //! NOTE: this uses tokio 0.1 , not the alpha tokio 0.2.
 
-use juniper::{EmptyMutation, RootNode, FieldError};
+use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
-struct Context {
-
-}
+struct Context {}
 impl juniper::Context for Context {}
 
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
@@ -48,18 +46,19 @@ struct Query;
 #[juniper::graphql_object(Context = Context)]
 impl Query {
     async fn users() -> Vec<User> {
-        vec![
-            User{
-                id: 1,
-                kind: UserKind::Admin,
-                name: "user1".into(),
-            },
-        ]
+        vec![User {
+            id: 1,
+            kind: UserKind::Admin,
+            name: "user1".into(),
+        }]
     }
 
     /// Fetch a URL and return the response body text.
     async fn request(url: String) -> Result<String, FieldError> {
-        use futures::{ compat::{Stream01CompatExt, Future01CompatExt}, stream::TryStreamExt};
+        use futures::{
+            compat::{Future01CompatExt, Stream01CompatExt},
+            stream::TryStreamExt as _,
+        };
 
         let res = reqwest::r#async::Client::new()
             .get(&url)
@@ -73,10 +72,10 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>>, EmptySubscription<Context>;
 
 fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation::<Context>::new())
+    Schema::new(Query, EmptyMutation::<Context>::new(), EmptySubscription::<Context>::new())
 }
 
 fn main() {
@@ -95,7 +94,7 @@ fn main() {
 
     log::info!("Listening on 127.0.0.1:8080");
 
-    let state = warp::any().map(move || Context{} );
+    let state = warp::any().map(move || Context {});
     let graphql_filter = juniper_warp::make_graphql_filter_async(schema(), state.boxed());
 
     warp::serve(

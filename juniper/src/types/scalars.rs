@@ -338,6 +338,56 @@ where
 {
 }
 
+/// Utillity type to define read-only schemas
+///
+/// If you instantiate `RootNode` with this as the subscription,
+/// no subscription will be generated for the schema.
+pub struct EmptySubscription<T> {
+    phantom: PhantomData<T>,
+}
+
+// This is safe due to never using `T`.
+unsafe impl<T> Send for EmptySubscription<T> {}
+
+impl<T> EmptySubscription<T> {
+    /// Construct a new empty subscription
+    pub fn new() -> Self {
+        EmptySubscription {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<S, T> GraphQLType<S> for EmptySubscription<T>
+where
+    S: ScalarValue,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("_EmptySubscription")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
+    }
+}
+
+#[cfg(feature = "async")]
+impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Self: GraphQLType<S> + Send + Sync,
+    Self::TypeInfo: Send + Sync,
+    Self::Context: Send + Sync,
+    T: Send + Sync,
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::{EmptyMutation, ID};
@@ -392,5 +442,11 @@ mod tests {
     fn empty_mutation_is_send() {
         fn check_if_send<T: Send>() {}
         check_if_send::<EmptyMutation<()>>();
+    }
+
+    #[test]
+    fn empty_subscription_is_send() {
+        fn check_if_send<T: Send>() {}
+        check_if_send::<EmptySubscription<()>>();
     }
 }

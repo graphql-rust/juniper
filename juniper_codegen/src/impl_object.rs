@@ -4,6 +4,22 @@ use quote::quote;
 
 /// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
+    let definition = create(args, body, "GraphQLObject");
+    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
+    definition.into_tokens(juniper_crate_name).into()
+}
+
+/// Generate code for the juniper::subscription macro.
+pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
+    let definition = create(args, body, "GraphQLSubscription");
+
+    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
+    definition
+        .into_subscription_tokens(juniper_crate_name)
+        .into()
+}
+
+fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQLTypeDefiniton {
     let impl_attrs = match syn::parse::<util::ObjectAttributes>(args) {
         Ok(attrs) => attrs,
         Err(e) => {
@@ -32,8 +48,11 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
                 .map(|segment| segment.ident.to_string())
                 .collect::<Vec<_>>()
                 .join(".");
-            if !(name == "GraphQLObject" || name == "juniper.GraphQLObject") {
-                panic!("The impl block must implement the 'GraphQLObject' trait");
+            if !(name == obj_name || name == format!("juniper.{}", obj_name)) {
+                panic!(format!(
+                    "The impl block must implement the '{}' trait",
+                    name
+                ));
             }
         }
         None => {
@@ -209,6 +228,6 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
             }
         }
     }
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_tokens(juniper_crate_name).into()
+
+    definition
 }

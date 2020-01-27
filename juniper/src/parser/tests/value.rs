@@ -8,6 +8,7 @@ use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
+    EmptySubscription,
 };
 
 use crate::{
@@ -75,7 +76,7 @@ where
 {
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).expect(&format!("Lexer error on input {:#?}", s));
-    let schema = SchemaType::new::<Query, EmptyMutation<()>>(&(), &());
+    let schema = SchemaType::new::<Query, EmptyMutation<()>, EmptySubscription<()>>(&(), &(), &());
 
     parse_value_literal(&mut parser, false, &schema, Some(meta))
         .expect(&format!("Parse error on input {:#?}", s))

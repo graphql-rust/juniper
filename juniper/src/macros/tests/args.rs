@@ -3,7 +3,7 @@ use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Value},
 };
 
@@ -162,7 +162,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) =
         crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");

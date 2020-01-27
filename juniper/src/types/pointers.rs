@@ -5,7 +5,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
     types::base::{Arguments, GraphQLType},
-    value::ScalarValue,
+    value::{ScalarValue, Value},
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
@@ -213,25 +213,6 @@ where
         executor: &Executor<T::Context, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
-    }
-}
-
-#[cfg(feature = "async")]
-impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
-where
-    S: ScalarValue + Send + Sync,
-    T: crate::GraphQLTypeAsync<S>,
-    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Sync + Send,
-    <T as crate::types::base::GraphQLType<S>>::Context: Sync + Send,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        use futures::future;
-        (**self).resolve_async(info, selection_set, executor)
     }
 }
 

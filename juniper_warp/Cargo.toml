@@ -12,7 +12,7 @@ edition = "2018"
 async = [ "juniper/async", "futures03" ]
 
 [dependencies]
-warp = "0.1.8"
+warp = "0.2"
 juniper = { version = "0.14.2", path = "../juniper", default-features = false  }
 serde_json = "1.0.24"
 serde_derive = "1.0.75"
@@ -20,7 +20,7 @@ failure = "0.1.2"
 # TODO: rebase juniper_warp to futures 3 once warp supports it
 futures = "0.1.29"
 serde = "1.0.75"
-tokio-threadpool = "0.1.7"
+tokio-threadpool = "0.1.16"
 
 futures03 = { version = "=0.3.1", optional = true, package = "futures", features = ["compat"] }
 

@@ -428,6 +428,7 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::validation::test_harness::SubscriptionRoot;
     use crate::{
         ast::Document,
         parser::UnlocatedParseResult,

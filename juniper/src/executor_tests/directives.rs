@@ -1,13 +1,13 @@
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
 };
 
 struct TestType;
 
-#[crate::graphql_object_internal]
+#[crate::object_internal]
 impl TestType {
     fn a() -> &str {
         "a"
@@ -22,7 +22,11 @@ fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) =
         crate::execute(query, None, &schema, &vars, &()).expect("Execution failed");

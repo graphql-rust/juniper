@@ -1,33 +1,130 @@
 use crate::{
-    ast::{Directive, FromInputValue, InputValue, Selection},
+    ast::Selection,
+    executor::{ExecutionResult, Executor},
+    parser::Spanning,
     value::{Object, ScalarValue, Value},
 };
 
-use crate::{
-    executor::{ExecutionResult, Executor},
-    parser::Spanning,
-};
-
+#[cfg(feature = "async")]
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
+/**
+This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
+
+Convenience macros related to asynchronous queries/mutations expand into an
+implementation of this trait and `GraphQLType` for the given type.
+
+This trait's execution logic is similar to `GraphQLType`.
+
+## Manual implementation example
+
+```rust
+use async_trait::async_trait;
+use juniper::{
+    meta::MetaType, DefaultScalarValue, FieldError,
+    GraphQLType, GraphQLTypeAsync, Registry, Value, ValuesIterator,
+};
+
+#[derive(Debug)]
+struct User {
+    id: String,
+    name: String,
+    friend_ids: Vec<String>,
+}
+
+#[juniper::object]
+impl User {}
+
+struct Query;
+
+// GraphQLType should be implemented in order to add `Query`
+// to `juniper::RootNode`. In this example it is implemented manually
+// to show that only `name` and `meta` methods are used, not the ones
+// containing execution logic.
+impl GraphQLType for Query {
+    type Context = ();
+    type TypeInfo = ();
+
+    fn name(_: &Self::TypeInfo) -> Option<&str> {
+        Some("Query")
+    }
+
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r>
+    where
+        juniper::DefaultScalarValue: 'r,
+    {
+        let fields = vec![registry.field_convert::<User, _, Self::Context>("users", info)];
+        let meta = registry.build_object_type::<Query>(info, &fields);
+        meta.into_meta()
+    }
+}
+
+// async_trait[1] is used in this example for convenience, though this trait
+// can be implemented without async_trait (subscription macros do not
+// use async_trait, for example)
+// [1](https://github.com/dtolnay/async-trait)
+#[async_trait]
+impl GraphQLTypeAsync<DefaultScalarValue> for Query {
+    // This function is called every time a field is found
+    async fn resolve_field_async<'a>(
+        &'a self,
+        type_info: &'a <Self as GraphQLType>::TypeInfo,
+        field_name: &'a str,
+        args: &'a juniper::Arguments<'a>,
+        executor: &'a juniper::Executor<'a, <Self as GraphQLType>::Context>,
+    ) -> juniper::ExecutionResult {
+        match field_name {
+            "users" => {
+                let user = User {
+                    id: "1".to_string(),
+                    name: "user".to_string(),
+                    friend_ids: vec!["2".to_string(), "3".to_string(), "4".to_string()],
+                };
+                // Pass returned object as context and keep resolving query to
+                // filter out unnecessary fields.
+                let res: Result<Option<(&<Self as GraphQLType>::Context, _)>, _> =
+                    juniper::IntoResolvable::into(user, executor.context());
+                match res {
+                    Ok(Some((ctx, r))) => {
+                        let sub = executor.replaced_context(ctx);
+                        sub.resolve_with_ctx_async::<<Self as GraphQLType>::Context, _>(&(), &r)
+                            .await
+                    }
+                    Ok(None) => Ok(juniper::Value::null()),
+                    Err(e) => Err(e),
+                }
+            },
+            // panicking here because juniper should return field does not exist
+            // error while parsing subscription query
+            _ => panic!("Field {:?} not found on type Query"),
+        }
+    }
+}
+```
+*/
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
 {
-    fn resolve_field_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        field_name: &'a str,
-        arguments: &'a Arguments<S>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, ExecutionResult<S>> {
-        panic!("resolve_field must be implemented by object types");
-    }
-
+    /// Resolve the provided selection set against the current object.
+    /// This method is called by executor and should call other methods on this
+    /// trait (if needed).
+    ///
+    /// It is similar to `GraphQLType::resolve` except that it
+    /// returns a future which resolves into a single value.
+    ///
+    ///  ## Default implementation
+    ///
+    /// For object types, the default implementation calls `resolve_field_async`
+    /// on each field and `resolve_into_type_async` for each fragment in
+    /// provided selection set.
+    ///
+    /// For non-object types, the selection set will be `None` and default
+    /// implementation will panic.
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -45,15 +142,38 @@ where
         }
     }
 
+    /// This method is similar to `GraphQLType::resolve_field`, but it returns
+    /// future that resolves into value instead of value.
+    ///
+    /// The default implementation panics.
+    fn resolve_field_async<'a>(
+        &'a self,
+        _: &'a Self::TypeInfo,   // this query's type info
+        _: &'a str,              // field's type name
+        _: &'a Arguments<'a, S>, // field's arguments
+        _: &'a Executor<'a, 'a, Self::Context, S>, // field's executor (query's sub-executor
+                                 // with current field's selection set)
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        panic!("resolve_field must be implemented by object types");
+    }
+
+    /// This method is similar to `GraphQLType::resolve_into_type`, but it
+    /// returns future that resolves into value instead of value.
+    ///
+    /// Default implementation resolves fragments with the same type as `Self`
+    /// and panics otherwise.
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         if Self::name(info).unwrap() == type_name {
-            self.resolve_async(info, selection_set, executor)
+            Box::pin(async move {
+                let res = self.resolve_async(info, selection_set, executor).await;
+                Ok(res)
+            })
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
         }
@@ -63,11 +183,11 @@ where
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
 #[cfg(feature = "async")]
-pub(crate) fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
+fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
-    executor: &'e Executor<'e, CtxT, S>,
+    executor: &'e Executor<'e, 'e, CtxT, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
@@ -95,11 +215,11 @@ enum AsyncValue<S> {
 }
 
 #[cfg(feature = "async")]
-pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
+async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: &'a Executor<'a, 'a, CtxT, S>,
 ) -> Value<S>
 where
     T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -107,7 +227,7 @@ where
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::{FuturesOrdered, StreamExt as _};
 
     let mut object = Object::with_capacity(selection_set.len());
 
