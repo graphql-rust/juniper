@@ -1,6 +1,7 @@
-// todo: make sure proc macro tests cover all
+// TODO: make sure proc macro tests cover all
 //       variants of the below
 
+/*
 use std::marker::PhantomData;
 
 use crate::{
@@ -11,10 +12,9 @@ use crate::{
     value::{DefaultScalarValue, Object, Value},
 };
 
-/*
 
-Syntax to validate:
-
+* Syntax to validate:
+*
 * Order of items: fields, description, interfaces
 * Optional Generics/lifetimes
 * Custom name vs. default name
@@ -23,6 +23,7 @@ Syntax to validate:
 
  */
 
+/*
 struct CustomName;
 graphql_object!(CustomName: () as "ACustomNamedType" |&self| {
     field simple() -> i32 { 0 }
@@ -455,3 +456,4 @@ fn introspect_ctx_switch() {
         })));
     });
 }
+*/

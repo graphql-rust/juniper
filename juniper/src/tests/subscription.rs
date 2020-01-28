@@ -1,4 +1,4 @@
-use juniper_codegen::{object_internal, GraphQLObjectInternal};
+use juniper_codegen::GraphQLInputObjectInternal;
 
 use crate::{Context, ExecutionError, FieldError, FieldResult};
 
@@ -6,7 +6,7 @@ use crate::{Context, ExecutionError, FieldError, FieldResult};
 pub struct MyContext(i32);
 impl Context for MyContext {}
 
-#[derive(GraphQLObjectInternal)]
+#[derive(GraphQLInputObjectInternal)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
 #[derive(Clone)]
 struct Human {
@@ -35,7 +35,7 @@ type AsyncSchema =
 
 // Copied from `src/executor_tests/async_await/mod.rs`.
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-    tokio::runtime::current_thread::Runtime::new()
+    tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(f)
 }

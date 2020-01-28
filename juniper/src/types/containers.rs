@@ -192,7 +192,6 @@ where
         .list_contents()
         .expect("Current type is not a list type")
         .is_non_null();
-
     let mut result = Vec::with_capacity(iter.len());
 
     for o in iter {

@@ -69,7 +69,6 @@ pub struct DirectiveType<'a, S> {
     pub arguments: Vec<Argument<'a, S>>,
 }
 
-
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
 #[graphql(name = "__DirectiveLocation")]
 pub enum DirectiveLocation {
@@ -85,7 +84,8 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<'a, QueryT, MutationT, SubscriptionT, S>
+    RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + Send + Sync + 'a + 'static,
     QueryT: GraphQLType<S, TypeInfo = ()>,

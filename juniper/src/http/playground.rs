@@ -2,7 +2,6 @@
 
 /// Generate the HTML source to show a GraphQL Playground interface
 // source: https://github.com/prisma/graphql-playground/blob/master/packages/graphql-playground-html/withAnimation.html
-//todo: optional subcriptions url
 pub fn playground_source(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&str>,

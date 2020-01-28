@@ -5,10 +5,11 @@ use crate::{
     executor::Variables,
     parser::SourcePosition,
     schema::model::RootNode,
+    //todo: maybe join imports
     types::scalars::EmptyMutation,
+    EmptySubscription,
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
-    EmptySubscription,
     GraphQLError::ValidationError,
 };
 
@@ -879,6 +880,7 @@ fn allow_non_null_lists_of_non_null_to_contain_values() {
     );
 }
 
+//todo: find out where this test came from
 #[test]
 fn does_not_allow_invalid_types_to_be_used_as_values() {
     let schema = RootNode::new(
@@ -906,6 +908,7 @@ fn does_not_allow_invalid_types_to_be_used_as_values() {
     );
 }
 
+//todo: find out where this test came from
 #[test]
 fn does_not_allow_unknown_types_to_be_used_as_values() {
     let schema = RootNode::new(
@@ -1168,7 +1171,6 @@ fn input_object_with_default_values() {
 
 mod integers {
     use super::*;
-    use crate::EmptySubscription;
 
     #[test]
     fn positive_and_negative_should_work() {
@@ -1250,7 +1252,6 @@ mod integers {
 
 mod floats {
     use super::*;
-    use crate::EmptySubscription;
 
     #[test]
     fn float_values_should_work() {

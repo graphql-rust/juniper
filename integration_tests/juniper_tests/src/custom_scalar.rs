@@ -11,7 +11,7 @@ use juniper::{
 };
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, juniper::ScalarValue)]
+#[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
 enum MyScalarValue {
     Int(i32),
     Long(i64),

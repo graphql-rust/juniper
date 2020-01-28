@@ -1,5 +1,6 @@
 use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::Arc, sync::RwLock,
+    borrow::Cow, cmp::Ordering, collections::HashMap,
+    fmt::Display, sync::Arc, sync::RwLock,
 };
 
 use fnv::FnvHashMap;
@@ -25,8 +26,8 @@ use crate::{
 };
 
 pub use self::look_ahead::{
-    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
-    LookAheadSelection, LookAheadValue,
+    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument,
+    LookAheadMethods, LookAheadSelection, LookAheadValue,
 };
 
 mod look_ahead;
@@ -584,13 +585,17 @@ where
         &self.current_type
     }
 
+    //todo; consider returning &'r Variables<S> {
     #[doc(hidden)]
     pub fn variables(&self) -> &Variables<S> {
         self.variables
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name<'s>(&'s self, name: &str) -> Option<&'s Fragment<'a, S>> {
+    pub fn fragment_by_name<'s>(
+        &'s self,
+        name: &str
+    ) -> Option<&'s Fragment<'a, S>> {
         self.fragments.get(name)
     }
 
@@ -701,6 +706,7 @@ where
 
 impl<'a> FieldPath<'a> {
     fn construct_path(&self, acc: &mut Vec<String>) {
+        //todo: seems fishy
         match &*self {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
@@ -806,7 +812,7 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
+                .iter()
                 .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
@@ -904,8 +910,7 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                //todo: do something with these clone
+                .iter()
                 .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
@@ -973,7 +978,7 @@ where
 
 /// Initialize new `Executor` and start asynchronous subscription execution
 /// Returns `NotSubscription` error if query or mutation is passed
-// todo: different lifetime for each variable
+// todo: different lifetime for each variable (?)
 #[cfg(feature = "async")]
 pub async fn execute_validated_subscription<
     'r, 'exec_ref, 'd, 'op,
@@ -1049,12 +1054,11 @@ where
             _ => unreachable!(),
         };
 
-//        let executor: Executor<'_, 'r, _, _> = loop {};
         let executor: Executor<'_, 'r, _, _> = Executor {
             fragments: &fragments
-                .into_iter()
-                //todo: do something with these clone
+                .iter()
                 .map(|f|
+
                     (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
@@ -1081,7 +1085,6 @@ where
     errors.sort();
 
     Ok((value, errors))
-//    todo!()
 }
 
 impl<'r, S> Registry<'r, S>

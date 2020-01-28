@@ -1,4 +1,3 @@
-use crate::validation::test_harness::SubscriptionRoot;
 use crate::{
     ast::{
         Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
@@ -6,7 +5,7 @@ use crate::{
     parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
     schema::model::SchemaType,
     types::scalars::EmptyMutation,
-    validation::test_harness::{MutationRoot, QueryRoot},
+    validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
     value::{DefaultScalarValue, ScalarValue},
     EmptySubscription,
 };
@@ -164,11 +163,9 @@ fn issue_427_panic_is_not_expected() {
         }
     }
 
-    let schema = SchemaType::new::<QueryWithoutFloat, EmptyMutation<()>, EmptySubscription<()>>(
-        &(),
-        &(),
-        &(),
-    );
+    let schema = SchemaType::new::
+        <QueryWithoutFloat, EmptyMutation<()>, EmptySubscription<()>>
+        (&(), &(), &(), );
     let parse_result = parse_document_source(r##"{ echo(value: 123.0) }"##, &schema);
 
     assert_eq!(

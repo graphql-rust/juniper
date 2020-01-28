@@ -7,10 +7,10 @@ pub mod model;
 //#[cfg(test)]
 //mod query_tests;
 //pub mod schema;
-#[cfg(test)]
-mod schema_introspection;
-#[cfg(test)]
-mod type_info_tests;
+//#[cfg(test)]
+//mod schema_introspection;
+//#[cfg(test)]
+//mod type_info_tests;
 
 #[cfg(all(test, feature = "async"))]
 mod subscription;

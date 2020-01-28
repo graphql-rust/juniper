@@ -390,7 +390,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{EmptyMutation, ID};
+    use super::{EmptyMutation, EmptySubscription, ID};
     use crate::{
         parser::ScalarToken,
         value::{DefaultScalarValue, ParseScalarValue},

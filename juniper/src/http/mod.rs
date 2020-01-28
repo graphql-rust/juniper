@@ -23,7 +23,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
-use futures::task::Poll;
+
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -285,7 +285,7 @@ where
                     }
                 })))
             }
-            // TODO#433: remove these and add // TODO: implement these
+            // TODO#433: remove this implementation and add // TODO: implement these
             //           (current implementation might be confusing)
             Value::List(_) => return Err(StreamError::ListValue),
             Value::Object(obj) => {

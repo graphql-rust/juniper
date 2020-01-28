@@ -1,14 +1,11 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::{Arc, RwLock}};
 
 use crate::{
     ast::Fragment,
     schema::model::{SchemaType, TypeType},
     ExecutionError, Executor, Selection, Variables,
+    executor::FieldPath, parser::SourcePosition
 };
-use crate::{executor::FieldPath, parser::SourcePosition};
 
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance
@@ -145,7 +142,6 @@ where
     }
 
     #[doc(hidden)]
-    /// The current location of the executor
     pub fn location(&self) -> &SourcePosition {
         self.field_path.location()
     }

@@ -310,6 +310,8 @@ where
         }
     }
 
+    //todo: return error if got not a subscription
+
     executor::execute_validated_subscription(
         &document,
         operation,
