@@ -1,7 +1,5 @@
-// todo#433: add subscriptions example
 //!
-//! This example demonstrates asynchronous subscriptions usage with warp.
-//! NOTE: this uses tokio 0.2.alpha
+//! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
 //!
 
 use std::{pin::Pin, sync::Arc, time::Duration};

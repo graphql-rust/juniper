@@ -1,7 +1,7 @@
 use crate::{
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, ExecutionResult, Executor, FieldError, GraphQLType, Object, ScalarValue,
+    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue,
     Selection, Value, ValuesResultStream,
 };
 

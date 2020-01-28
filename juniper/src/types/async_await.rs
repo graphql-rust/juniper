@@ -9,7 +9,6 @@ use crate::{
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
-use futures::StreamExt;
 
 /**
 This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.

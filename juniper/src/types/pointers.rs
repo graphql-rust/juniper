@@ -5,7 +5,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
     types::base::{Arguments, GraphQLType},
-    value::{ScalarValue, Value},
+    value::ScalarValue,
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
@@ -231,7 +231,6 @@ where
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        use futures::future;
         (**self).resolve_async(info, selection_set, executor)
     }
 }

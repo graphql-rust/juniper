@@ -258,7 +258,7 @@ where
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
+        _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
@@ -277,7 +277,7 @@ where
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
+        _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
@@ -296,7 +296,7 @@ where
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
+        _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = async move {

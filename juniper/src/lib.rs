@@ -180,7 +180,6 @@ pub use crate::{
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
-use crate::ast::Operation;
 #[cfg(feature = "async")]
 pub use crate::{
     executor::ValuesResultStream,
