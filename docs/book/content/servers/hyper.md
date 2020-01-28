@@ -1,6 +1,6 @@
 # Integrating with Hyper
 
-[Hyper] is a is a fast HTTP implementation that many other Rust web frameworks
+[Hyper] is a fast HTTP implementation that many other Rust web frameworks
 leverage. It offers asynchronous I/O via the tokio runtime and works on
 Rust's stable channel.
 
