@@ -1,3 +1,6 @@
+#[cfg(feature = "async")]
+use futures;
+
 // Trait.
 
 #[derive(juniper::GraphQLObject)]
