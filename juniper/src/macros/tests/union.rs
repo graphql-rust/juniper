@@ -15,9 +15,9 @@ use std::marker::PhantomData;
 use crate::{
     ast::InputValue,
     schema::model::RootNode,
-    //todo: consider merging imports
-    types::scalars::EmptyMutation, EmptySubscription,
+    types::scalars::EmptyMutation,
     value::{DefaultScalarValue, Object, Value},
+    EmptySubscription,
 };
 
 struct Concrete;

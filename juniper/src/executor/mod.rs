@@ -1,6 +1,9 @@
 use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap,
-    fmt::Display, sync::Arc, sync::RwLock,
+    borrow::Cow,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::Display,
+    sync::{Arc, RwLock},
 };
 
 use fnv::FnvHashMap;
@@ -26,8 +29,8 @@ use crate::{
 };
 
 pub use self::look_ahead::{
-    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument,
-    LookAheadMethods, LookAheadSelection, LookAheadValue,
+    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+    LookAheadSelection, LookAheadValue,
 };
 
 mod look_ahead;
@@ -468,11 +471,7 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_value_async<T>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T
-    ) -> Value<S>
+    pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -592,10 +591,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name<'s>(
-        &'s self,
-        name: &str
-    ) -> Option<&'s Fragment<'a, S>> {
+    pub fn fragment_by_name<'s>(&'s self, name: &str) -> Option<&'s Fragment<'a, S>> {
         self.fragments.get(name)
     }
 
@@ -647,11 +643,7 @@ where
                     }
                 });
                 if let Some(p) = found_field {
-                    LookAheadSelection::build_from_selection(
-                        &p,
-                        self.variables,
-                        self.fragments
-                    )
+                    LookAheadSelection::build_from_selection(&p, self.variables, self.fragments)
                 } else {
                     None
                 }
@@ -981,8 +973,15 @@ where
 // todo: different lifetime for each variable (?)
 #[cfg(feature = "async")]
 pub async fn execute_validated_subscription<
-    'r, 'exec_ref, 'd, 'op,
-    QueryT, MutationT, SubscriptionT, CtxT, S
+    'r,
+    'exec_ref,
+    'd,
+    'op,
+    QueryT,
+    MutationT,
+    SubscriptionT,
+    CtxT,
+    S,
 >(
     document: &Document<'d, S>,
     operation: &Spanning<Operation<'op, S>>,
@@ -1006,25 +1005,21 @@ where
     let mut fragments = vec![];
     for def in document.iter() {
         match def {
-            Definition::Fragment(f) =>
-                fragments.push(f),
+            Definition::Fragment(f) => fragments.push(f),
             _ => (),
         };
     }
 
-    let default_variable_values =
-        operation.item.variable_definitions.as_ref()
-            .map(|defs| {
-            defs.item
-                .items
-                .iter()
-                .filter_map(|&(ref name, ref def)| {
-                    def.default_value
-                        .as_ref()
-                        .map(|i|
-                            (name.item.to_owned(), i.item.clone()))
-                })
-                .collect::<HashMap<String, InputValue<S>>>()
+    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+        defs.item
+            .items
+            .iter()
+            .filter_map(|&(ref name, ref def)| {
+                def.default_value
+                    .as_ref()
+                    .map(|i| (name.item.to_owned(), i.item.clone()))
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
     });
 
     let errors = RwLock::new(Vec::new());
@@ -1034,9 +1029,7 @@ where
         let mut all_vars;
         let mut final_vars = variables;
 
-        if let Some(defaults)
-            = default_variable_values
-        {
+        if let Some(defaults) = default_variable_values {
             all_vars = variables.clone();
 
             for (name, value) in defaults {
@@ -1057,9 +1050,7 @@ where
         let executor: Executor<'_, 'r, _, _> = Executor {
             fragments: &fragments
                 .iter()
-                .map(|f|
-
-                    (f.item.name.item, f.item.clone()))
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&operation.item.selection_set[..]),
@@ -1072,12 +1063,12 @@ where
         };
 
         value = match operation.item.operation_type {
-            OperationType::Subscription => executor
-                    .resolve_into_stream(
-                        &root_node.subscription_info,
-                        &root_node.subscription_type
-                    ).await,
-            _ => unreachable!()
+            OperationType::Subscription => {
+                executor
+                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+                    .await
+            }
+            _ => unreachable!(),
         };
     }
 

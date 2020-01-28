@@ -98,7 +98,7 @@ struct Query;
 impl Query {
     async fn users(id: i32) -> Vec<User> {
         vec![User {
-            id: id,
+            id,
             kind: UserKind::Admin,
             name: "user1".into(),
         }]
@@ -114,23 +114,22 @@ struct Subscription;
 impl Subscription {
     async fn users() -> TypeAlias {
         let mut counter = 0;
-        let stream = tokio::time::interval(Duration::from_secs(5))
-            .map(move |_| {
-                counter += 1;
-                if counter == 2 {
-                    Err(FieldError::new(
-                        "some field error from handler",
-                        Value::Scalar(DefaultScalarValue::String(
-                            "some additional string".to_string(),
-                        )),
-                    ))
-                } else {
-                    Ok(User {
-                        id: counter,
-                        kind: UserKind::Admin,
-                        name: "stream user".to_string(),
-                    })
-                }
+        let stream = tokio::time::interval(Duration::from_secs(5)).map(move |_| {
+            counter += 1;
+            if counter == 2 {
+                Err(FieldError::new(
+                    "some field error from handler",
+                    Value::Scalar(DefaultScalarValue::String(
+                        "some additional string".to_string(),
+                    )),
+                ))
+            } else {
+                Ok(User {
+                    id: counter,
+                    kind: UserKind::Admin,
+                    name: "stream user".to_string(),
+                })
+            }
         });
         Box::pin(stream)
     }
@@ -143,8 +142,7 @@ fn schema() -> Schema {
 }
 
 #[tokio::main]
-async fn main()
-{
+async fn main() {
     ::std::env::set_var("RUST_LOG", "warp_subscriptions");
     env_logger::init();
 
@@ -167,18 +165,16 @@ async fn main()
 
     log::info!("Listening on 127.0.0.1:8080");
 
-    let routes = (
-        warp::path("subscriptions")
-            .and(warp::ws())
-            .and(state2.clone())
-            .and(warp::any().map(move || Arc::clone(&s_schema)))
-            .map(|ws: warp::ws::Ws, ctx: Context, schema: Arc<Schema>| {
-                ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                    log::info!("ws connected");
-                    juniper_warp::graphql_subscriptions_async(websocket, schema, ctx).boxed()
-                })
+    let routes = (warp::path("subscriptions")
+        .and(warp::ws())
+        .and(state2.clone())
+        .and(warp::any().map(move || Arc::clone(&s_schema)))
+        .map(|ws: warp::ws::Ws, ctx: Context, schema: Arc<Schema>| {
+            ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
+                log::info!("ws connected");
+                juniper_warp::graphql_subscriptions_async(websocket, schema, ctx).boxed()
             })
-    )
+        }))
     .or(warp::post()
         .and(warp::path("graphql"))
         .and(qm_graphql_filter))

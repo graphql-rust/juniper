@@ -84,8 +84,7 @@ pub enum DirectiveLocation {
     InlineFragment,
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT, S>
-    RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + Send + Sync + 'a + 'static,
     QueryT: GraphQLType<S, TypeInfo = ()>,

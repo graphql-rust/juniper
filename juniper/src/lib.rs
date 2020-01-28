@@ -112,8 +112,8 @@ extern crate uuid;
 #[cfg(feature = "async")]
 pub use juniper_codegen::subscription;
 pub use juniper_codegen::{
-    graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject,
-    GraphQLObject, GraphQLScalarValue,
+    graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+    GraphQLScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
@@ -180,6 +180,7 @@ pub use crate::{
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
+use crate::ast::Operation;
 #[cfg(feature = "async")]
 pub use crate::{
     executor::ValuesResultStream,
@@ -187,7 +188,6 @@ pub use crate::{
     types::async_await::GraphQLTypeAsync,
     types::subscriptions::GraphQLSubscriptionType,
 };
-use crate::ast::Operation;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -295,10 +295,8 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    let document: crate::ast::Document<'a, S> = parse_document_source(
-        document_source,
-        &root_node.schema
-    )?;
+    let document: crate::ast::Document<'a, S> =
+        parse_document_source(document_source, &root_node.schema)?;
 
     let operation = get_operation(&document, operation_name)?;
 
@@ -312,13 +310,8 @@ where
 
     //todo: return error if got not a subscription
 
-    executor::execute_validated_subscription(
-        &document,
-        operation,
-        root_node,
-        variables,
-        context
-    ).await
+    executor::execute_validated_subscription(&document, operation, root_node, variables, context)
+        .await
 }
 
 /// Execute the reference introspection query in the provided schema

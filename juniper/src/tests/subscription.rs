@@ -35,9 +35,7 @@ type AsyncSchema =
 
 // Copied from `src/executor_tests/async_await/mod.rs`.
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(f)
+    tokio::runtime::Runtime::new().unwrap().block_on(f)
 }
 
 type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
@@ -77,8 +75,8 @@ impl MySubscription {
     async fn human_with_args(id: String, name: String) -> HumanStream {
         Box::pin(futures::stream::once(async {
             Human {
-                id: id,
-                name: name,
+                id,
+                name,
                 home_planet: "default home planet".to_string(),
             }
         }))

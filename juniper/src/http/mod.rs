@@ -25,7 +25,6 @@ use crate::{
 };
 use std::task::Poll;
 
-
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
 /// For POST, you can use Serde to deserialize the incoming JSON data directly
@@ -153,13 +152,7 @@ where
     {
         let op = self.operation_name();
         let vars = &self.variables();
-        let res = crate::execute_async(
-            &self.query,
-            op,
-            root_node,
-            vars,
-            context
-        ).await;
+        let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
 
         GraphQLResponse(res)
     }

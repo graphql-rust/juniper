@@ -361,7 +361,7 @@ where
 
                 Ok((serde_json::to_vec(&response)?, response.is_ok()))
             }
-                .map(|result| -> Result<_, warp::reject::Rejection> { Ok(build_response(result)) })
+            .map(|result| -> Result<_, warp::reject::Rejection> { Ok(build_response(result)) })
         };
 
     let get_filter = warp::get()

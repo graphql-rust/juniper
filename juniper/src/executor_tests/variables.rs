@@ -5,11 +5,10 @@ use crate::{
     executor::Variables,
     parser::SourcePosition,
     schema::model::RootNode,
-    //todo: maybe join imports
     types::scalars::EmptyMutation,
-    EmptySubscription,
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
+    EmptySubscription,
     GraphQLError::ValidationError,
 };
 

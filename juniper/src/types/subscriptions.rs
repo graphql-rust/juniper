@@ -1,4 +1,9 @@
-use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, ExecutionResult};
+use crate::{
+    parser::Spanning,
+    types::base::{is_excluded, merge_key_into},
+    Arguments, BoxFuture, ExecutionResult, Executor, FieldError, GraphQLType, Object, ScalarValue,
+    Selection, Value, ValuesResultStream,
+};
 
 // TODO#433: update this after `async-await` will be refactored
 /**
