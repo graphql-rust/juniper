@@ -110,7 +110,7 @@ extern crate uuid;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 #[cfg(feature = "async")]
-pub use juniper_codegen::subscription;
+pub use juniper_codegen::graphql_subscription;
 pub use juniper_codegen::{
     graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
     GraphQLScalarValue,
@@ -275,6 +275,8 @@ where
         .await
 }
 
+// todo: not allow introspection accept fields with subfields when
+//      subfields are not specified
 /// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
 pub async fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(

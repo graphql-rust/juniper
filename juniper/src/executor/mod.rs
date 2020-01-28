@@ -1,9 +1,6 @@
 use std::{
-    borrow::Cow,
-    cmp::Ordering,
-    collections::HashMap,
-    fmt::Display,
-    sync::{Arc, RwLock},
+    borrow::Cow, cmp::Ordering, collections::HashMap,
+    fmt::Display,sync::{Arc, RwLock},
 };
 
 use fnv::FnvHashMap;
@@ -586,7 +583,7 @@ where
 
     //todo; consider returning &'r Variables<S> {
     #[doc(hidden)]
-    pub fn variables(&self) -> &Variables<S> {
+    pub fn variables(&self) -> &'r Variables<S> {
         self.variables
     }
 

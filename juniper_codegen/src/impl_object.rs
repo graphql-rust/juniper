@@ -9,7 +9,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     definition.into_tokens(juniper_crate_name).into()
 }
 
-/// Generate code for the juniper::subscription macro.
+/// Generate code for the juniper::graphql_subscription macro.
 pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let definition = create(args, body, "GraphQLSubscription");
 

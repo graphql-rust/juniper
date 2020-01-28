@@ -23,7 +23,7 @@ impl MyQuery {}
 use std::iter::{self, FromIterator};
 
 use futures::{self, stream::StreamExt as _};
-use juniper_codegen::subscription_internal;
+use juniper_codegen::graphql_subscription_internal as graphql_subscription;
 
 use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
 
@@ -42,7 +42,7 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[subscription_internal(context = MyContext)]
+#[graphql_subscription(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
         Box::pin(futures::stream::once(async {

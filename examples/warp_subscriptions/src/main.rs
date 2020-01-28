@@ -1,6 +1,4 @@
-//!
 //! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
-//!
 
 use std::{pin::Pin, sync::Arc, time::Duration};
 
@@ -15,15 +13,15 @@ struct Context {}
 
 impl juniper::Context for Context {}
 
+/// Kind of a User
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
-/// UserKind sample docs
 enum UserKind {
     Admin,
     User,
     Guest,
 }
 
-/// Sample User representation
+/// User representation
 struct User {
     id: i32,
     kind: UserKind,
@@ -44,8 +42,6 @@ impl User {
         &self.name
     }
 
-    //todo: not allow introspection accept fields with subfields when
-    //      subfields are not specified
     async fn friends(&self) -> Vec<User> {
         if self.id == 1 {
             return vec![
@@ -107,8 +103,7 @@ type TypeAlias = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
 
 struct Subscription;
 
-//todo: rename to graphql_subscription
-#[juniper::subscription(Context = Context)]
+#[juniper::graphql_subscription(Context = Context)]
 impl Subscription {
     async fn users() -> TypeAlias {
         let mut counter = 0;
