@@ -1,9 +1,4 @@
-use crate::{
-    parser::Spanning,
-    types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value,
-    ValuesResultStream,
-};
+use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, ExecutionResult};
 
 // TODO#433: update this after `async-await` will be refactored
 /**
@@ -164,13 +159,15 @@ where
         &'s self,
         info: &'i Self::TypeInfo,
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-    ) -> Value<ValuesResultStream<'res, S>>
+        //todo: ExecutionResult-like (?)
+    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'i: 'res,
         'e: 'res,
     {
         if executor.current_selection_set().is_some() {
-            resolve_selection_set_into_stream(self, info, executor).await
+            let v = resolve_selection_set_into_stream(self, info, executor).await;
+            Ok(v)
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -220,7 +217,7 @@ where
         'e: 'res,
     {
         if Self::name(info) == Some(type_name) {
-            Ok(self.resolve_into_stream(info, executor).await)
+            self.resolve_into_stream(info, executor).await
         } else {
             panic!("resolve_into_type_stream must be implemented");
         }

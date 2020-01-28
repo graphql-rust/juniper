@@ -295,7 +295,10 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    let document = parse_document_source(document_source, &root_node.schema)?;
+    let document: crate::ast::Document<'a, S> = parse_document_source(
+        document_source,
+        &root_node.schema
+    )?;
 
     let operation = get_operation(&document, operation_name)?;
 
@@ -307,14 +310,13 @@ where
         }
     }
 
-    todo!()
-//    executor::execute_validated_subscription(
-//        &document,
-//        operation,
-//        root_node,
-//        variables,
-//        context
-//    ).await
+    executor::execute_validated_subscription(
+        &document,
+        operation,
+        root_node,
+        variables,
+        context
+    ).await
 }
 
 /// Execute the reference introspection query in the provided schema
