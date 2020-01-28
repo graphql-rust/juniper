@@ -418,7 +418,7 @@ where
 {
     let (sink_tx, sink_rx) = websocket.split();
     let (ws_tx, ws_rx) = mpsc::unbounded();
-    warp::spawn(
+    tokio::task::spawn(
         ws_rx
             .take_while(|x: &Option<_>| {
                 // keep this stream until `None` is received
@@ -463,7 +463,7 @@ where
             "start" => {
                 let ws_tx = ws_tx.clone();
 
-                warp::spawn(async move {
+                tokio::task::spawn(async move {
                     let payload = request.payload.expect("could not deserialize payload");
                     let request_id = request.id.unwrap_or("1".to_owned());
 

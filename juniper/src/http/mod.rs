@@ -23,6 +23,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
+use std::task::Poll;
 
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.

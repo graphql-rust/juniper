@@ -21,6 +21,7 @@ failure = "0.1.2"
 futures = "0.1.29"
 serde = "1.0.75"
 tokio-threadpool = "0.1.16"
+tokio = { version = "0.2", features = ["blocking", "fs", "stream", "sync", "time"] }
 
 futures03 = { version = "=0.3.1", optional = true, package = "futures", features = ["compat"] }
 
