@@ -1,6 +1,9 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
 use juniper::*;
 
+#[cfg(feature = "async")]
+use futures;
+
 struct Query;
 
 #[juniper::graphql_object]
