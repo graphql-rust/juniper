@@ -7,7 +7,9 @@ use hyper::{
     header::{self, HeaderValue},
     Body, Method, Request, Response, StatusCode,
 };
-use juniper::{http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarValue, GraphQLTypeAsync};
+#[cfg(feature = "async")]
+use juniper::GraphQLTypeAsync;
+use juniper::{http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarValue};
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
