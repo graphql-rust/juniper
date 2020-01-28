@@ -43,7 +43,7 @@ serde = { version = "1.0.8" }
 serde_derive = { version = "1.0.2" }
 serde_json = { version="1.0.2", optional = true }
 url = { version = "2", optional = true }
-uuid = { version = ">= 0.7, < 0.8", optional = true }
+uuid = { version = "0.8", optional = true }
 
 [dev-dependencies]
 bencher = "0.1.2"
