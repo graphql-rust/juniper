@@ -101,7 +101,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe(&self.query, op, root_node, vars, context).await;
+        let res = crate::subscribe(&self.query, op, root_node, &vars, context).await;
 
         StreamGraphQLResponse(res)
     }

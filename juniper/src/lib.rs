@@ -239,7 +239,6 @@ where
     }
 
     execute_validated_query(&document, operation, root_node, variables, context)
-
 }
 
 /// Execute a query in a provided schema
@@ -279,19 +278,14 @@ where
 
 /// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
-pub async fn subscribe<'d, 'rn, 'ctx, 'ref_e, 'e, 'res, S, CtxT, QueryT, MutationT, SubscriptionT>(
-    document_source: &'d str,
+pub async fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
-    variables: Variables<S>,
-    context: &'ctx CtxT,
-) -> Result<(Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>), GraphQLError<'res>>
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &'a CtxT,
+) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    'd: 'e,
-    'rn: 'e,
-    'ctx: 'e,
-    'e: 'res,
-    'ref_e: 'e,
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
@@ -313,9 +307,14 @@ where
         }
     }
 
-//    executor::execute_validated_query_async(&document, operation, root_node, &variables, context)
-//        .await
-    todo!("execute subscription")
+    todo!()
+//    executor::execute_validated_subscription(
+//        &document,
+//        operation,
+//        root_node,
+//        variables,
+//        context
+//    ).await
 }
 
 /// Execute the reference introspection query in the provided schema
