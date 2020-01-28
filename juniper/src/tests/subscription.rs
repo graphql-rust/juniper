@@ -1,12 +1,12 @@
-use juniper_codegen::GraphQLInputObjectInternal;
+use juniper_codegen::{graphql_object_internal, GraphQLObjectInternal, graphql_subscription_internal};
 
-use crate::{Context, ExecutionError, FieldError, FieldResult};
+use crate::{Context, ExecutionError, FieldError, FieldResult, GraphQLTypeAsync};
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
 impl Context for MyContext {}
 
-#[derive(GraphQLInputObjectInternal)]
+#[derive(GraphQLObjectInternal)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
 #[derive(Clone)]
 struct Human {
@@ -17,7 +17,7 @@ struct Human {
 
 struct MyQuery;
 
-#[object_internal(context = MyContext)]
+#[graphql_object_internal(context = MyContext)]
 impl MyQuery {}
 
 use std::iter::{self, FromIterator};
@@ -30,7 +30,7 @@ use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, Roo
 use super::*;
 use std::pin::Pin;
 
-type AsyncSchema =
+type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
 // Copied from `src/executor_tests/async_await/mod.rs`.
@@ -42,7 +42,7 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[graphql_subscription(context = MyContext)]
+#[graphql_subscription_internal(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
         Box::pin(futures::stream::once(async {
@@ -97,7 +97,7 @@ fn create_and_execute(
 > {
     let request = GraphQLRequest::new(query, None, None);
 
-    let root_node = AsyncSchema::new(MyQuery, EmptyMutation::new(), MySubscription);
+    let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
 
     let mut context = MyContext(2);
 
