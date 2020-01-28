@@ -5,7 +5,7 @@ extern crate juniper_hyper;
 extern crate pretty_env_logger;
 
 use hyper::{
-    service::{service_fn, make_service_fn},
+    service::{make_service_fn, service_fn},
     Body, Method, Response, Server, StatusCode,
 };
 use juniper::{
@@ -34,7 +34,9 @@ async fn main() {
                 async move {
                     match (req.method(), req.uri().path()) {
                         (&Method::GET, "/") => juniper_hyper::graphiql("/graphql").await,
-                        (&Method::GET, "/graphql") | (&Method::POST, "/graphql") => juniper_hyper::graphql(root_node, ctx, req).await,
+                        (&Method::GET, "/graphql") | (&Method::POST, "/graphql") => {
+                            juniper_hyper::graphql(root_node, ctx, req).await
+                        }
                         _ => {
                             let mut response = Response::new(Body::empty());
                             *response.status_mut() = StatusCode::NOT_FOUND;
