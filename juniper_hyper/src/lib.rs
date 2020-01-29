@@ -391,9 +391,10 @@ impl Error for GraphQLRequestError {
         }
     }
 }
-
+#[cfg(feature = "async")]
 #[cfg(test)]
 mod tests {
+    use futures;
     use hyper::{
         service::{make_service_fn, service_fn},
         Body, Method, Response, Server, StatusCode,
@@ -443,6 +444,7 @@ mod tests {
         }
     }
 
+    
     #[tokio::test]
     async fn test_hyper_integration() {
         let addr: SocketAddr = ([127, 0, 0, 1], 3001).into();
