@@ -1,11 +1,4 @@
-use crate::{
-    ast::InputValue,
-    executor::Variables,
-    schema::model::RootNode,
-    tests::{model::Database, schema::Query},
-    types::scalars::EmptyMutation,
-    value::Value,
-};
+use crate::{ast::InputValue, executor::Variables, schema::model::RootNode, tests::{model::Database, schema::Query}, types::scalars::EmptyMutation, value::Value, EmptySubscription};
 
 #[test]
 fn test_hero_name() {
@@ -16,7 +9,11 @@ fn test_hero_name() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -37,7 +34,11 @@ fn test_hero_name() {
 #[test]
 fn test_hero_field_order() {
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let doc = r#"
         {
@@ -111,7 +112,11 @@ fn test_hero_name_and_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -173,7 +178,11 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -334,7 +343,11 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
 fn test_query_name() {
     let doc = r#"{ human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -360,7 +373,11 @@ fn test_query_name() {
 fn test_query_alias_single() {
     let doc = r#"{ luke: human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -390,7 +407,11 @@ fn test_query_alias_multiple() {
             leia: human(id: "1003") { name }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -435,7 +456,11 @@ fn test_query_alias_multiple_with_fragment() {
             homePlanet
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -477,7 +502,11 @@ fn test_query_alias_multiple_with_fragment() {
 fn test_query_name_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let vars = vec![("someId".to_owned(), InputValue::scalar("1000"))]
         .into_iter()
@@ -507,7 +536,11 @@ fn test_query_name_variable() {
 fn test_query_name_invalid_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let vars = vec![("someId".to_owned(), InputValue::scalar("some invalid id"))]
         .into_iter()
@@ -526,7 +559,11 @@ fn test_query_name_invalid_variable() {
 fn test_query_friends_names() {
     let doc = r#"{ human(id: "1000") { friends { name } } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -583,7 +620,11 @@ fn test_query_inline_fragments_droid() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -620,7 +661,11 @@ fn test_query_inline_fragments_human() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),
@@ -654,7 +699,11 @@ fn test_object_typename() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database),

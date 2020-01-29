@@ -581,7 +581,6 @@ where
         &self.current_type
     }
 
-    //todo; consider returning &'r Variables<S> {
     #[doc(hidden)]
     pub fn variables(&self) -> &'r Variables<S> {
         self.variables
@@ -695,8 +694,7 @@ where
 
 impl<'a> FieldPath<'a> {
     fn construct_path(&self, acc: &mut Vec<String>) {
-        //todo: seems fishy
-        match &*self {
+        match self {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
@@ -753,6 +751,11 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
+
+    if operation.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+
     let mut fragments = vec![];
     for def in document.iter() {
         match def {
@@ -849,6 +852,10 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
+    if operation.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+
     let mut fragments = vec![];
     for def in document.iter() {
         match def {
@@ -856,8 +863,6 @@ where
             _ => (),
         };
     }
-
-    //todo: return if operation type is a subscription
 
     let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
         defs.item
@@ -967,7 +972,6 @@ where
 
 /// Initialize new `Executor` and start asynchronous subscription execution
 /// Returns `NotSubscription` error if query or mutation is passed
-// todo: different lifetime for each variable (?)
 #[cfg(feature = "async")]
 pub async fn execute_validated_subscription<
     'r,
@@ -999,6 +1003,10 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'r,
 {
+    if operation.item.operation_type != OperationType::Subscription {
+        return Err(GraphQLError::NotSubscription);
+    }
+
     let mut fragments = vec![];
     for def in document.iter() {
         match def {

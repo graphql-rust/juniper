@@ -27,6 +27,7 @@ pub fn validate_input_values<S>(
 where
     S: ScalarValue,
 {
+
     let mut errs = vec![];
 
     if let Some(ref vars) = operation.item.variable_definitions {
@@ -37,6 +38,7 @@ where
     errs
 }
 
+// todo: do not accept fields with subfields when subfields are not specified (?)
 fn validate_var_defs<S>(
     values: &Variables<S>,
     var_defs: &VariableDefinitions<S>,

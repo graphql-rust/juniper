@@ -4,7 +4,7 @@ pub mod graphiql;
 pub mod playground;
 
 #[cfg(feature = "async")]
-use std::pin::Pin;
+use {std::pin::Pin, std::task::Poll as _};
 
 #[cfg(feature = "async")]
 use futures::{stream::Stream, stream::StreamExt as _};
@@ -23,7 +23,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
-use std::task::Poll;
+use futures::task::Poll;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///

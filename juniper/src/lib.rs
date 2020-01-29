@@ -237,6 +237,7 @@ where
         }
     }
 
+
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 
@@ -275,8 +276,6 @@ where
         .await
 }
 
-// todo: not allow introspection accept fields with subfields when
-//      subfields are not specified
 /// Execute subscription asynchronously in a provided schema
 #[cfg(feature = "async")]
 pub async fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
@@ -308,8 +307,6 @@ where
             return Err(GraphQLError::ValidationError(errors));
         }
     }
-
-    //todo: return error if got not a subscription
 
     executor::execute_validated_subscription(&document, operation, root_node, variables, context)
         .await

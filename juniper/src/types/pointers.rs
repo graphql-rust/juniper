@@ -216,7 +216,6 @@ where
     }
 }
 
-//todo: maybe remove (?)
 #[cfg(feature = "async")]
 impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
 where

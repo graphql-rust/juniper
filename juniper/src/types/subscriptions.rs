@@ -164,7 +164,6 @@ where
         &'s self,
         info: &'i Self::TypeInfo,
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-        //todo: ExecutionResult-like (?)
     ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
     where
         'i: 'res,
