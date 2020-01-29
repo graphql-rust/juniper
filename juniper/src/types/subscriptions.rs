@@ -5,7 +5,6 @@ use crate::{
     Selection, Value, ValuesResultStream,
 };
 
-// TODO#433: update this after `async-await` will be refactored
 /**
 
  This trait replaces GraphQLType`'s resolver logic with asynchronous subscription
@@ -16,136 +15,8 @@ use crate::{
  implementation of this trait and `GraphQLType` for the given type.
 
  See trait methods for more detailed explanation on how this trait works.
-
- ## Manual implementation example
-
- The following example demonstrates how to implement `GraphQLSubscriptionType`
- with default resolver logic (without overwriting `resolve_into_stream`) manually.
-
- Juniper's subscription macros do not overwrite `resolve_into_stream`
-
-
- ```rust
- use async_trait::async_trait;
- use juniper::{
-     GraphQLType, GraphQLSubscriptionType, Value, ValuesResultStream,
-     FieldError, Registry, meta::MetaType, DefaultScalarValue,
-     FieldResult, Executor,
- };
-
- #[derive(Debug)]
- struct User { id: String, name: String, friend_ids: Vec<String> }
-
- #[juniper::object]
- impl User {}
-
- struct Subscription;
-
- // `GraphQLType` should be implemented in order to use this type in `juniper::RootNode`.
- // In this example it is implemented manually to show that only `name` and `meta` methods
- // are used, not the ones containing execution logic.
-
- // Note: `juniper::GraphQLTypeAsync` should not be implemented for asynchronous
- // subscriptions, as it only contains asynchronous query/mutation execution logic.
- impl GraphQLType for Subscription {
-     type Context = ();
-     type TypeInfo = ();
-
-     fn name(_: &Self::TypeInfo) -> Option<&str> {
-         Some("Subscription")
-     }
-
-     fn meta<'r>(
-         info: &Self::TypeInfo,
-         registry: &mut Registry<'r>
-     ) -> MetaType<'r>
-         where DefaultScalarValue: 'r,
-     {
-         let fields = vec![
-             registry.field_convert::<User, _, Self::Context>("users", info),
-         ];
-         let meta = registry.build_object_type::<Subscription>(info, &fields);
-         meta.into_meta()
-     }
- }
-
- // async_trait[1] is used in this example for convenience, though this trait
- // can be implemented without async_trait (subscription macros do not
- // use async_trait, for example)
- // [1](https://github.com/dtolnay/async-trait)
- #[async_trait]
- impl GraphQLSubscriptionType<DefaultScalarValue> for Subscription {
-     // This function will be called for every field by default
-     async fn resolve_field_into_stream<'args, 'e, 'ref_e, 'res>(
-         &self,
-         info: &<Self as GraphQLType>::TypeInfo,
-         field_name: &str,
-         arguments: &juniper::Arguments<'args>,
-         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-     ) -> Result<Value<ValuesResultStream<'res>>, FieldError>
-     where 'e: 'res,
-     {
-         use futures::stream::StreamExt as _;
-         match field_name {
-             "users" => {
-                 let users_stream = futures::stream::once(async {
-                     User {
-                         id: "1".to_string(),
-                         name: "stream user".to_string(),
-                         friend_ids: vec!["2".to_string(), "3".to_string(), "4".to_string()]
-                     }
-                 });
-
-                 // Each `User` that is returned from the stream should be
-                 // resolved in order to to filter out fields that were not requested.
-                 // This could be done by treating each returned `User` as
-                 // a separate asychronous query, which was executed up to returning `User`
-
-                 // Executor should be converted to OwnedExecutor since this stream
-                 // will be returned
-                 let executor= executor.as_owned_executor();
-
-                 let f = res.then(|res| {
-                    // OwnedExecutor should be cloned here since this closure is FnMut
-                    let exec = executor.clone();
-
-                    // Check if returned object can be replaced by `exec`'s context...
-                    let res2: juniper::FieldResult<_, juniper::DefaultScalarValue> =
-                        juniper::IntoResolvable::into(res, exec.context());
-
-                    async move {
-                        let ex = exec.as_executor();
-                        match res2 {
-                            // ...if managed to replace then resolve
-                            //    and return resolved item
-                            Ok(Some((ctx, r))) => {
-                                let sub = ex.replaced_context(ctx);
-                                sub.resolve_with_ctx_async(&(), &r).await
-                            }
-                            Ok(None) => Ok(Value::null()),
-                            // ...otherwise return the error
-                            Err(e) => Err(e),
-                        }
-                    }
-                });
-
-                // Return Value::Scalar since we have only one stream
-                Ok(Value::Scalar::<ValuesResultStream>(
-                    Box::pin(f),
-                ))
-             },
-             _ => {
-                 // panicking here because should be safe since juniper returns
-                 // 'field does not exist' error while parsing subscription query
-                 // if such field does not exist on type
-                 panic!("Field {} not found on type GraphQLSubscriptionType", &field_name);
-             }
-         }
-     }
- }
- ```
 */
-//todo: remove async_trait (?)
+//TODO#433: remove async_trait (?)
 #[async_trait::async_trait]
 pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 where

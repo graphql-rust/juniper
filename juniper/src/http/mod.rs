@@ -279,7 +279,7 @@ where
                     }
                 })))
             }
-            // TODO#433: remove this implementation and add // TODO: implement these
+            // TODO#433: remove this implementation and add a // TODO: implement these
             //           (current implementation might be confusing)
             Value::List(_) => return Err(StreamError::ListValue),
             Value::Object(obj) => {

@@ -648,7 +648,6 @@ fn playground_response(
         .expect("response is valid")
 }
 
-// TODO#433: update tests once `juniper::schema` compiles
 #[cfg(test)]
 mod tests {
     use warp::{http, test::request};
