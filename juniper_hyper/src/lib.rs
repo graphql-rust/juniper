@@ -3,6 +3,8 @@
 #[cfg(test)]
 extern crate reqwest;
 
+#[cfg(feature = "async")]
+use futures;
 use hyper::{
     header::{self, HeaderValue},
     Body, Method, Request, Response, StatusCode,
