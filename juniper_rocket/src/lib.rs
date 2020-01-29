@@ -266,7 +266,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => query = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -278,7 +278,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => operation_name = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -289,11 +289,11 @@ where
                         let decoded;
                         match value.url_decode() {
                             Ok(v) => decoded = v,
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                         variables = Some(
                             serde_json::from_str::<InputValue<_>>(&decoded)
-                                .map_err(|err| err.description().to_owned())?,
+                                .map_err(|err| err.to_string())?,
                         );
                     }
                 }
