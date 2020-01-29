@@ -405,7 +405,7 @@ mod tests {
         EmptyMutation, RootNode,
     };
     use reqwest::{self, Response as ReqwestResponse};
-    use std::{net::SocketAddr, sync::Arc, time::Duration, thread};
+    use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
 
     struct TestHyperIntegration;
 
@@ -444,7 +444,6 @@ mod tests {
         }
     }
 
-    
     #[tokio::test]
     async fn test_hyper_integration() {
         let addr: SocketAddr = ([127, 0, 0, 1], 3001).into();
@@ -485,6 +484,7 @@ mod tests {
         let (shutdown_fut, shutdown) = futures::future::abortable(async {
             tokio::time::delay_for(Duration::from_secs(60)).await;
         });
+
         let server = Server::bind(&addr)
             .serve(new_service)
             .with_graceful_shutdown(async {

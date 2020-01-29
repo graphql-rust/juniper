@@ -24,7 +24,6 @@ futures = { version = "0.3", optional = true }
 [dev-dependencies]
 pretty_env_logger = "0.2"
 reqwest = "0.9"
-tokio-test = "0.2"
 
 [dev-dependencies.juniper]
 version = "0.14.2"
