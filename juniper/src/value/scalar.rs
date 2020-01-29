@@ -9,7 +9,7 @@ pub type ParseScalarResult<'a, S = DefaultScalarValue> = Result<S, ParseError<'a
 /// A trait used to convert a `ScalarToken` into a certain scalar value type
 pub trait ParseScalarValue<S = DefaultScalarValue> {
     /// See the trait documentation
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S>;
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S>;
 }
 
 /// A trait marking a type that could be used as internal representation of

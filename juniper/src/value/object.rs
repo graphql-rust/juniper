@@ -82,8 +82,11 @@ impl<S> Object<S> {
         self.key_value_list
             .sort_by(|(key1, _), (key2, _)| key1.cmp(key2));
         for (_, ref mut value) in &mut self.key_value_list {
-            if let Value::Object(ref mut o) = value {
-                o.sort_by_field();
+            match value {
+                Value::Object(ref mut o) => {
+                    o.sort_by_field();
+                }
+                _ => {}
             }
         }
     }

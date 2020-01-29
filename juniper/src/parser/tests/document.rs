@@ -1,4 +1,3 @@
-use crate::validation::test_harness::SubscriptionRoot;
 use crate::{
     ast::{
         Arguments, Definition, Document, Field, InputValue, Operation, OperationType, Selection,
