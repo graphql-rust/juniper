@@ -422,7 +422,11 @@ mod fromform_tests {
 
     #[test]
     fn test_variables_invalid_json() {
-        check_error("query=test&variables=NOT_JSON", "expected value at line 1 column 1", false);
+        check_error(
+            "query=test&variables=NOT_JSON",
+            "expected value at line 1 column 1",
+            false,
+        );
     }
 
     #[test]
