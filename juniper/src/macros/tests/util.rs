@@ -1,6 +1,5 @@
 use crate::{DefaultScalarValue, GraphQLType, RootNode, Value, Variables};
 use std::default::Default;
-use crate::ast::OperationType::Subscription;
 
 pub fn run_query<Query, Mutation, Subscription, Context>(query: &str) -> Value
 where

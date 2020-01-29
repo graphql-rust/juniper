@@ -486,7 +486,7 @@ mod dynamic_context_switching {
 
     #[crate::graphql_object_internal(Context = OuterContext)]
     impl Schema {
-        fn item_opt(context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
+        fn item_opt(_context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
         }
 
@@ -1148,7 +1148,7 @@ mod named_operations {
 
     #[crate::graphql_object_internal]
     impl Schema {
-        fn a(p: Option<String>) -> &str {
+        fn a(_p: Option<String>) -> &str {
             "b"
         }
     }

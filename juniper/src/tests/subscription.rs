@@ -1,6 +1,17 @@
-use juniper_codegen::{graphql_object_internal, GraphQLObjectInternal, graphql_subscription_internal};
+use std::{
+    pin::Pin, iter::{self, FromIterator},
+};
 
-use crate::{Context, ExecutionError, FieldError, FieldResult, GraphQLTypeAsync};
+use juniper_codegen::{
+    graphql_object_internal, GraphQLObjectInternal, graphql_subscription_internal
+};
+use futures::{self, stream::StreamExt as _};
+
+use crate::{
+    Context, ExecutionError, FieldError, FieldResult, http::GraphQLRequest,
+    DefaultScalarValue, EmptyMutation, Object, RootNode, Value
+};
+
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -20,15 +31,6 @@ struct MyQuery;
 #[graphql_object_internal(context = MyContext)]
 impl MyQuery {}
 
-use std::iter::{self, FromIterator};
-
-use futures::{self, stream::StreamExt as _};
-use juniper_codegen::graphql_subscription_internal as graphql_subscription;
-
-use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
-
-use super::*;
-use std::pin::Pin;
 
 type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
@@ -99,7 +101,7 @@ fn create_and_execute(
 
     let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
 
-    let mut context = MyContext(2);
+    let context = MyContext(2);
 
     let response = run(request.subscribe(&root_node, &context)).into_inner();
 
@@ -202,6 +204,9 @@ fn returns_error() {
             Value::Scalar(DefaultScalarValue::String("more details".to_string())),
         ),
     );
+
+    assert_eq!(returned_errors.len(), 1);
+    assert_eq!(returned_errors[0], expected_error);
 }
 
 #[test]

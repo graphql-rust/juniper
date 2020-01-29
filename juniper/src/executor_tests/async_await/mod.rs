@@ -1,4 +1,4 @@
-use crate::{schema::model::DirectiveLocation::Subscription, EmptySubscription, RootNode, Value};
+use crate::{EmptySubscription, RootNode, Value};
 
 #[derive(crate::GraphQLEnumInternal)]
 enum UserKind {
@@ -7,8 +7,10 @@ enum UserKind {
     Guest,
 }
 
+// TODO: implement GraphQLType for u64
+#[allow(dead_code)]
 struct User {
-    id: u64,
+    id: u64 ,
     name: String,
     kind: UserKind,
 }
