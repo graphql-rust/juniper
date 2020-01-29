@@ -1,6 +1,9 @@
 use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap,
-    fmt::Display,sync::{Arc, RwLock},
+    borrow::Cow,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::Display,
+    sync::{Arc, RwLock},
 };
 
 use fnv::FnvHashMap;
@@ -751,7 +754,6 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
-
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
     }

@@ -1,5 +1,5 @@
 use super::util;
-use crate::{graphql_value, EmptyMutation, RootNode, EmptySubscription};
+use crate::{graphql_value, EmptyMutation, EmptySubscription, RootNode};
 
 #[derive(Default)]
 struct Context {
@@ -134,8 +134,7 @@ impl Subscription {
 
 #[test]
 fn object_introspect() {
-    let res = util::run_info_query
-        ::<Query, Mutation, Subscription, Context>("Query");
+    let res = util::run_info_query::<Query, Mutation, Subscription, Context>("Query");
     assert_eq!(
         res,
         crate::graphql_value!({

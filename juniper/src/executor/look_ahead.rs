@@ -441,11 +441,15 @@ mod tests {
     where
         S: ScalarValue,
     {
-        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()))
+        crate::parse_document_source(
+            q,
+            &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
+        )
     }
 
     fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, Fragment<'a, S>>
-        where S: Clone,
+    where
+        S: Clone,
     {
         let mut fragments = HashMap::new();
         for d in doc {

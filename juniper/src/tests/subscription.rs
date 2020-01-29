@@ -1,17 +1,17 @@
 use std::{
-    pin::Pin, iter::{self, FromIterator},
+    iter::{self, FromIterator},
+    pin::Pin,
 };
 
-use juniper_codegen::{
-    graphql_object_internal, GraphQLObjectInternal, graphql_subscription_internal
-};
 use futures::{self, stream::StreamExt as _};
+use juniper_codegen::{
+    graphql_object_internal, graphql_subscription_internal, GraphQLObjectInternal,
+};
 
 use crate::{
-    Context, ExecutionError, FieldError, FieldResult, http::GraphQLRequest,
-    DefaultScalarValue, EmptyMutation, Object, RootNode, Value
+    http::GraphQLRequest, Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError,
+    FieldResult, Object, RootNode, Value,
 };
-
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -30,7 +30,6 @@ struct MyQuery;
 
 #[graphql_object_internal(context = MyContext)]
 impl MyQuery {}
-
 
 type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;

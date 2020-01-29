@@ -1,4 +1,11 @@
-use crate::{ast::InputValue, executor::FieldResult, schema::model::RootNode, types::scalars::EmptyMutation, value::{DefaultScalarValue, Object, Value}, EmptySubscription};
+use crate::{
+    ast::InputValue,
+    executor::FieldResult,
+    schema::model::RootNode,
+    types::scalars::EmptyMutation,
+    value::{DefaultScalarValue, Object, Value},
+    EmptySubscription,
+};
 
 struct Interface;
 #[derive(Debug)]

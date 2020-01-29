@@ -30,6 +30,7 @@ struct Point {
 }
 
 #[crate::graphql_object_internal]
+#[allow(unused_variables)]
 impl Root {
     fn simple() -> i32 {
         0

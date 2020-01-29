@@ -47,6 +47,8 @@ use std::{
 };
 use std::{pin::Pin, sync::Arc};
 
+// TODO#433: update this once juniper subscriptions' implementation is finished
+
 use futures::future::poll_fn;
 #[cfg(feature = "async")]
 use futures03::{channel::mpsc, stream::StreamExt as _};

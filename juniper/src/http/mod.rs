@@ -4,7 +4,7 @@ pub mod graphiql;
 pub mod playground;
 
 #[cfg(feature = "async")]
-use {std::pin::Pin, std::task::Poll as _};
+use std::pin::Pin;
 
 #[cfg(feature = "async")]
 use futures::{stream::Stream, stream::StreamExt as _};

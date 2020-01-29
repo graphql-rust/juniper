@@ -27,7 +27,6 @@ pub fn validate_input_values<S>(
 where
     S: ScalarValue,
 {
-
     let mut errs = vec![];
 
     if let Some(ref vars) = operation.item.variable_definitions {

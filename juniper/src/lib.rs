@@ -237,7 +237,6 @@ where
         }
     }
 
-
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 

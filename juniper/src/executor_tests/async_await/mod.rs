@@ -10,7 +10,7 @@ enum UserKind {
 // TODO: implement GraphQLType for u64
 #[allow(dead_code)]
 struct User {
-    id: u64 ,
+    id: u64,
     name: String,
     kind: UserKind,
 }

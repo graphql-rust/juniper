@@ -11,7 +11,7 @@ where
     let schema = RootNode::new(
         Query::default(),
         Mutation::default(),
-        Subscription::default()
+        Subscription::default(),
     );
     let (result, errs) =
         crate::execute(query, None, &schema, &Variables::new(), &Context::default())
@@ -50,8 +50,7 @@ where
     "#,
         type_name
     );
-    let result = run_query
-        ::<Query, Mutation, Subscription, Context>(&query);
+    let result = run_query::<Query, Mutation, Subscription, Context>(&query);
     result
         .as_object_value()
         .expect("Result is not an object")
