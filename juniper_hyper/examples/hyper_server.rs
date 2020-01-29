@@ -1,4 +1,3 @@
-extern crate futures;
 extern crate hyper;
 extern crate juniper;
 extern crate juniper_hyper;
