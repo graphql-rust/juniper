@@ -301,7 +301,7 @@ where
                     })
                     .collect();
 
-                let is_ok = results.iter().all(|&(is_ok, _)| is_ok);
+                let is_ok = !results.iter().any(|&(is_ok, _)| !is_ok);
                 let bodies: Vec<_> = results.into_iter().map(|(_, body)| body).collect();
                 let body = hyper::Body::from(format!("[{}]", bodies.join(",")));
                 (is_ok, body)
