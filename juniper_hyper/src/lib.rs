@@ -405,7 +405,7 @@ mod tests {
         EmptyMutation, RootNode,
     };
     use reqwest::{self, Response as ReqwestResponse};
-    use std::{net::SocketAddr, sync::Arc, time::Duration};
+    use std::{net::SocketAddr, sync::Arc, time::Duration, thread};
 
     struct TestHyperIntegration;
 
@@ -488,17 +488,15 @@ mod tests {
         let server = Server::bind(&addr)
             .serve(new_service)
             .with_graceful_shutdown(async {
-                shutdown_fut.await;
+                shutdown_fut.await.unwrap_err();
             });
 
-        let run = async move {
-            tokio::time::delay_for(Duration::from_millis(10)).await; // wait 10ms for server to bind
+        tokio::task::spawn_blocking(move || {
+            thread::sleep(Duration::from_millis(10)); // wait 10ms for server to bind
             let integration = TestHyperIntegration;
             http_tests::run_http_test_suite(&integration);
             shutdown.abort();
-        };
-
-        tokio::spawn(run);
+        });
 
         if let Err(e) = server.await {
             eprintln!("server error: {}", e);
