@@ -26,3 +26,20 @@ graphql_scalar!(ObjectId where Scalar = <S> {
         }
     }
 });
+
+#[cfg(test)]
+mod test {
+    use crate::{value::DefaultScalarValue, InputValue};
+    use bson::oid::ObjectId;
+
+    #[test]
+    fn objectid_from_input_value() {
+        let raw = "53e37d08776f724e42000000";
+        let input: InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
+
+        let parsed: ObjectId = crate::FromInputValue::from_input_value(&input).unwrap();
+        let id = ObjectId::with_string(raw).unwrap();
+
+        assert_eq!(parsed, id);
+    }
+}
