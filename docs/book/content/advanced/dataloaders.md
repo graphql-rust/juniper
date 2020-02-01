@@ -182,4 +182,6 @@ pub async fn graphql(
 }
 ```
 
+### Further Example:
+
 For a full example using Dataloaders and Context check out [jayy-lmao/rust-graphql-docker](https://github.com/jayy-lmao/rust-graphql-docker).
