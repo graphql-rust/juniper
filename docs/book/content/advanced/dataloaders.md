@@ -34,8 +34,11 @@ SELECT id, name FROM cults WHERE id = 2;
 Once the list of users has been returned, a separate query is run to find the cult of each user.
 You can see how this could quickly become a problem.
 
-A common solution to this is to introduce a **dataloader**. A dataloader batches resolver execution (and _can_ even cache it).
-This can be done with Juniper using the crate [cksac/dataloader-rs](https://github.com/cksac/dataloader-rs). 
+A common solution to this is to introduce a **dataloader**.
+This can be done with Juniper using the crate [cksac/dataloader-rs](https://github.com/cksac/dataloader-rs), which has two types of dataloaders; cached and non-cached. This example will explore the non-cached option.
+
+
+### What does it look like [example]?
 
 !FILENAME Cargo.toml
 
@@ -116,17 +119,67 @@ impl Cult {
 
   // To call the dataloader 
   pub async fn cult_by_id(ctx: &Context, id: i32) -> Cult {
-    ctx.cult_loader.cult_by_id.load(id).await.unwrap()
+    ctx.cult_loader.load(id).await.unwrap()
   }
 }
 
 ```
 
-As seen immediately above, when a new `PersonBatcher` is instantiated,
-it can be called with `.load(id)` to return a `Future` which resolves to a value with `await`.
+### How do I call them?
 
-A **Dataloader** should be created in context, either at the server start, or on a per-request basis.
-If it is created within a resolver then it will be created for each time it needs to resolve a field,
-and therefore will never batch more than the single object it is evaluating the field of.
+Once created, a dataloader has the functions `.load()` and `.load_many()`.
+When called these return a Future.
+In the above example `cult_loader.load(id: i32)` returns `Future<Cult>`. If  we had used `cult_loader.load_may(Vec<i32>)` it would have returned `Future<Vec<Cult>>`.
+
+
+### Where do I create my dataloaders?
+
+**Dataloaders** should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user. Alternatively, you can create them per auth context.
+Creating dataloaders within individual resolvers will prevent batching from occurring and will nullify the benefits of the dataloader.
+
+For example:
+
+_When you declare your context_
+```rust, ignore
+use juniper;
+
+#[derive(Clone)]
+pub struct Context {
+    pub cult_loader: CultLoader,
+}
+
+impl juniper::Context for Context {}
+
+impl Context {
+    pub fn new(cult_loader: CultLoader) -> Self {
+        Self {
+            cult_data,
+        }
+    }
+}
+```
+
+_Your handler for GraphQL (Note: instantiating context here keeps it per-request)_
+```rust, ignore
+pub async fn graphql(
+    st: web::Data<Arc<Schema>>,
+    data: web::Json<GraphQLRequest>,
+) -> Result<HttpResponse, Error> {
+    let mut rt = futures::executor::LocalPool::new();
+
+    // Context setup
+    let cult_loader = get_loader();
+    let ctx = Context::new(cult_loader);
+
+    // Execute
+    let future_execute = data.execute_async(&st, &ctx); // Important not to miss execute_async
+    let res = rt.run_until(future_execute);
+    let json = serde_json::to_string(&res).map_err(error::ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok()
+        .content_type("application/json")
+        .body(json))
+}
+```
 
 For a full example using Dataloaders and Context check out [jayy-lmao/rust-graphql-docker](https://github.com/jayy-lmao/rust-graphql-docker).
