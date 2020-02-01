@@ -38,7 +38,7 @@ A common solution to this is to introduce a **dataloader**.
 This can be done with Juniper using the crate [cksac/dataloader-rs](https://github.com/cksac/dataloader-rs), which has two types of dataloaders; cached and non-cached. This example will explore the non-cached option.
 
 
-### What does it look like [example]?
+### What does it look like?
 
 !FILENAME Cargo.toml
 
