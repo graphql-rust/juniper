@@ -30,6 +30,7 @@ graphql-parser-integration = ["graphql-parser"]
 default = [
     "bson",
     "chrono",
+    "chrono-tz",
     "url",
     "uuid",
     "schema-language",
@@ -41,6 +42,7 @@ juniper_codegen = { version = "0.14.2", path = "../juniper_codegen"  }
 
 bson = { version = "1.0.0", optional = true }
 chrono = { version = "0.4.0", optional = true }
+chrono-tz = { version = "^0.5.0", optional = true }
 fnv = "1.0.3"
 futures = "0.3.1"
 indexmap = { version = "1.0.0", features = ["serde-1"] }
