@@ -1,10 +1,6 @@
 /*!
 
-# Supported types
-
-| Rust Type               | JSON Serialization     | Notes                                     |
-|-------------------------|------------------------|-------------------------------------------|
-| `Tz`                    | Tz database name       |                                           |
+Adds Tz as a scalar represented by its database name
 
 */
 use chrono_tz::Tz;
@@ -15,7 +11,7 @@ use crate::{
     Value,
 };
 
-graphql_scalar!(Tz as "Tz" where Scalar = <S>{
+graphql_scalar!(Tz as "Tz" where Scalar = <S> {
     description: "Tz"
 
     resolve(&self) -> Value {
@@ -62,5 +58,20 @@ mod test {
     #[test]
     fn tz_from_input_value_invalid() {
         tz_input_test("Abc/Xyz", None);
+    }
+
+    #[test]
+    fn tz_from_input_value_invalid_with_forward_slash() {
+        tz_input_test("Abc/Xyz", None);
+    }
+
+    #[test]
+    fn tz_from_input_value_invalid_with_number() {
+        tz_input_test("8086", None);
+    }
+
+    #[test]
+    fn tz_from_input_value_invalid_with_no_forward_slash() {
+        tz_input_test("AbcXyz", None);
     }
 }

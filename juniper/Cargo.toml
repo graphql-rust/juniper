@@ -30,7 +30,6 @@ graphql-parser-integration = ["graphql-parser"]
 default = [
     "bson",
     "chrono",
-    "chrono-tz",
     "url",
     "uuid",
     "schema-language",

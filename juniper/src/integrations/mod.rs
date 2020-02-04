@@ -7,7 +7,7 @@ pub mod serde;
 pub mod chrono;
 
 #[cfg(feature = "chrono-tz")]
-/// GraphQL support for [chrono-tz](https://https://github.com/chronotope/chrono-tz) types.
+/// GraphQL support for [chrono-tz](https://github.com/chronotope/chrono-tz) types.
 pub mod chrono_tz;
 
 #[cfg(feature = "url")]
