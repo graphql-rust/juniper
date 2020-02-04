@@ -134,7 +134,7 @@ In the above example `cult_loader.load(id: i32)` returns `Future<Cult>`. If  we 
 
 ### Where do I create my dataloaders?
 
-**Dataloaders** should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user. Alternatively, you can create them per auth context.
+**Dataloaders** should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user/ outside of its authenticated scope.
 Creating dataloaders within individual resolvers will prevent batching from occurring and will nullify the benefits of the dataloader.
 
 For example:
