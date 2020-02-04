@@ -1,4 +1,4 @@
-use juniper::{graphql_value, RootNode, Value, GraphQLError};
+use juniper::{graphql_value, GraphQLError, RootNode, Value};
 
 #[derive(juniper::GraphQLEnum)]
 enum UserKind {
@@ -112,7 +112,6 @@ async fn async_simple() {
     );
 }
 
-
 #[tokio::test]
 async fn async_field_validation_error() {
     let schema = RootNode::new(Query, Mutation);
@@ -131,14 +130,13 @@ async fn async_field_validation_error() {
     "#;
 
     let vars = Default::default();
-    let result = juniper::execute_async(doc, None, &schema, &vars, &())
-        .await;
+    let result = juniper::execute_async(doc, None, &schema, &vars, &()).await;
     assert!(result.is_err());
 
     let error = result.err().unwrap();
     let is_validation_error = match error {
         GraphQLError::ValidationError(_) => true,
-        _ => false
+        _ => false,
     };
     assert!(is_validation_error);
 }
