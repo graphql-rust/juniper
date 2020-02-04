@@ -1,6 +1,9 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
 use juniper::*;
 
+#[cfg(feature = "async")]
+use futures;
+
 pub struct Context;
 
 impl juniper::Context for Context {}
