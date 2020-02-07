@@ -2,8 +2,36 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
+use std::{convert::From, fmt};
 
 use crate::util;
+
+#[derive(Debug)]
+pub struct ResolveFnError(String);
+
+impl From<&str> for ResolveFnError {
+    fn from(item: &str) -> Self {
+        ResolveFnError(item.to_string())
+    }
+}
+
+impl From<String> for ResolveFnError {
+    fn from(item: String) -> Self {
+        ResolveFnError(item)
+    }
+}
+
+impl fmt::Display for ResolveFnError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.as_str())
+    }
+}
+
+impl std::error::Error for ResolveFnError {
+    fn description(&self) -> &str {
+        self.0.as_str()
+    }
+}
 
 pub struct ImplBlock {
     pub attrs: util::ObjectAttributes,
@@ -17,20 +45,28 @@ pub struct ImplBlock {
 }
 
 impl ImplBlock {
-    /// Parse a 'fn resolve()' metho declaration found in union or interface
-    /// impl blocks.
+    /// Check if the block has the special `resolve()` method.
+    pub fn has_resolve_method(&self) -> bool {
+        self.methods
+            .iter()
+            .position(|m| m.sig.ident == "resolve")
+            .is_some()
+    }
+
+    /// Parse a 'fn resolve()' method declaration found in union or interface
+    /// `impl` blocks.
     /// Returns the variable definitions needed for the resolve body.
     pub fn parse_resolve_method(
         &self,
         method: &syn::ImplItemMethod,
-    ) -> Vec<proc_macro2::TokenStream> {
+    ) -> Result<Vec<proc_macro2::TokenStream>, ResolveFnError> {
         if method.sig.ident != "resolve" {
-            panic!("Expect a method named 'fn resolve(...)");
+            return Err("Expect a method named 'fn resolve(...)".into());
         }
 
         let _type = match &method.sig.output {
             syn::ReturnType::Type(_, _) => {
-                panic!("resolve() method must not have a declared return type");
+                return Err("resolve() method must not have a declared return type".into());
             }
             syn::ReturnType::Default => {}
         };
@@ -48,7 +84,7 @@ impl ImplBlock {
                 }
             }
             _ => {
-                panic!("Expected a '&self' argument");
+                return Err("Expected a '&self' argument".into());
             }
         }
 
@@ -57,10 +93,11 @@ impl ImplBlock {
         for arg in arguments {
             match arg {
                 syn::FnArg::Receiver(_) => {
-                    panic!(
+                    return Err(format!(
                         "Malformed method signature {}: self receiver must be the first argument",
                         method.sig.ident
-                    );
+                    )
+                    .into());
                 }
                 syn::FnArg::Typed(captured) => {
                     let (arg_ident, _is_mut) = match &*captured.pat {
@@ -96,18 +133,18 @@ impl ImplBlock {
                         .map(|ctx| ctx == &*captured.ty)
                         .unwrap_or(false)
                     {
-                        panic!(
+                        return Err(format!(
                             "Invalid context argument: to access the context, you need to specify the type as a reference.\nDid you mean &{}?",
                             quote!(captured.ty),
-                        );
+                        ).into());
                     } else {
-                        panic!("Invalid argument for 'resolve' method: only executor or context are allowed");
+                        return Err("Invalid argument for 'resolve' method: only executor or context are allowed".into());
                     }
                 }
             }
         }
 
-        resolve_parts
+        Ok(resolve_parts)
     }
 
     pub fn parse(attr_tokens: TokenStream, body: TokenStream) -> ImplBlock {
@@ -159,7 +196,7 @@ impl ImplBlock {
                     methods.push(method);
                 }
                 _ => {
-                    panic!("Invalid item for GraphQL Object: only type declarations and methods are allowed");
+                    panic!("Invalid item: only type declarations and methods are allowed");
                 }
             }
         }
