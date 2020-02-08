@@ -25,7 +25,7 @@ path = "benches/bench.rs"
 
 [features]
 async = ["juniper_codegen/async", "futures"]
-expose-test-schema = []
+expose-test-schema = ["serde_json"]
 default = [
     "chrono",
     "url",
