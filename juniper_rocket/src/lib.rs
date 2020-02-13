@@ -216,7 +216,7 @@ impl GraphQLResponse {
     ///     request: Form<juniper_rocket::GraphQLRequest>,
     ///     schema: State<Schema>,
     /// ) -> juniper_rocket::GraphQLResponse {
-    ///     if cookies.get_private("user_id").is_none() {
+    ///     if cookies.get("user_id").is_none() {
     ///         let err = FieldError::new("User is not logged in", Value::null());
     ///         return juniper_rocket::GraphQLResponse::error(err);
     ///     }
