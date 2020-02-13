@@ -1,0 +1,60 @@
+name: Book
+
+on:
+  pull_request:
+    paths:
+      - 'docs/book/**'
+  push:
+    paths:
+      - 'docs/book/**'
+
+jobs:
+  tests:
+    name: Test code examples
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Test via skeptic
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path docs/book/tests/Cargo.toml
+
+  deploy:
+    name: Deploy book on gh-pages
+    needs: [tests]
+    if: github.ref == 'refs/heads/master'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install mdBook
+        uses: peaceiris/actions-mdbook@v1
+
+      - name: Render book
+        run: |
+          mdbook build -d gh-pages/master docs/book
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v2.5.1
+        with:
+          emptyCommits: false
+          keepFiles: true
+        env:
+          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: docs/book/gh-pages
