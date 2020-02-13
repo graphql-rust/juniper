@@ -77,16 +77,31 @@ pub fn impl_union(
             quote! { #crate_name::DefaultScalarValue }
         });
 
-    if _impl.methods.len() != 1 {
+    if !_impl.has_resolve_method() {
         return Err(MacroError::new(
             _impl.target_type.span(),
             "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
                 .to_string(),
         ));
     }
-    let method = _impl.methods.first().unwrap();
 
-    let resolve_args = _impl.parse_resolve_method(method);
+    let method = _impl
+        .methods
+        .iter()
+        .find(|&m| _impl.parse_resolve_method(&m).is_ok());
+
+    if _impl.methods.is_empty() || !method.is_some() {
+        return Err(MacroError::new(
+            _impl.target_type.span(),
+            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
+                .to_string(),
+        ));
+    }
+
+    let method = method.expect("checked above");
+    let resolve_args = _impl
+        .parse_resolve_method(method)
+        .expect("Invalid impl body: expected one method with signature: fn resolve(&self) { ... }");
 
     let stmts = &method.block.stmts;
     let body_raw = quote!( #( #stmts )* );

@@ -39,10 +39,7 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
 
-use std::{
-    error::Error,
-    io::{Cursor, Read},
-};
+use std::io::{Cursor, Read};
 
 use rocket::{
     data::{FromDataSimple, Outcome as FromDataOutcome},
@@ -219,7 +216,7 @@ impl GraphQLResponse {
     ///     request: Form<juniper_rocket::GraphQLRequest>,
     ///     schema: State<Schema>,
     /// ) -> juniper_rocket::GraphQLResponse {
-    ///     if cookies.get_private("user_id").is_none() {
+    ///     if cookies.get("user_id").is_none() {
     ///         let err = FieldError::new("User is not logged in", Value::null());
     ///         return juniper_rocket::GraphQLResponse::error(err);
     ///     }
@@ -266,7 +263,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => query = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -278,7 +275,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => operation_name = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -289,11 +286,11 @@ where
                         let decoded;
                         match value.url_decode() {
                             Ok(v) => decoded = v,
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                         variables = Some(
                             serde_json::from_str::<InputValue<_>>(&decoded)
-                                .map_err(|err| err.description().to_owned())?,
+                                .map_err(|err| err.to_string())?,
                         );
                     }
                 }
@@ -425,7 +422,11 @@ mod fromform_tests {
 
     #[test]
     fn test_variables_invalid_json() {
-        check_error("query=test&variables=NOT_JSON", "JSON error", false);
+        check_error(
+            "query=test&variables=NOT_JSON",
+            "expected value at line 1 column 1",
+            false,
+        );
     }
 
     #[test]

@@ -409,8 +409,6 @@ macro_rules! graphql_scalar {
             }
         );
 
-
-        #[cfg(feature = "async")]
         $crate::__juniper_impl_trait!(
             impl <$($scalar)+> GraphQLTypeAsync for $name
                 where (

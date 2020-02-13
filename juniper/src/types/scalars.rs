@@ -1,3 +1,5 @@
+#[cfg(feature = "async")]
+use futures;
 use serde_derive::{Deserialize, Serialize};
 use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 

@@ -1,5 +1,8 @@
 extern crate serde_json;
 
+#[cfg(feature = "async")]
+use futures;
+
 #[cfg(test)]
 use juniper::parser::Spanning;
 #[cfg(test)]
