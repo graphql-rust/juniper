@@ -3,10 +3,8 @@
 #[cfg(test)]
 extern crate reqwest;
 
-use futures::future::Either;
 use hyper::{
     header::{self, HeaderValue},
-    rt::Stream,
     Body, Method, Request, Response, StatusCode,
 };
 use juniper::{
@@ -15,85 +13,84 @@ use juniper::{
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
-use tokio::prelude::*;
 use url::form_urlencoded;
 
-pub fn graphql<CtxT, QueryT, MutationT, S>(
+pub async fn graphql<CtxT, QueryT, MutationT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
     request: Request<Body>,
-) -> impl Future<Item = Response<Body>, Error = hyper::Error>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
+) -> Result<Response<Body>, hyper::Error>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        CtxT: Send + Sync + 'static,
+        QueryT: GraphQLType<S, Context=CtxT> + Send + Sync + 'static,
+        MutationT: GraphQLType<S, Context=CtxT> + Send + Sync + 'static,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
 {
     match request.method() {
-        &Method::GET => Either::A(Either::A(
-            future::done(
-                request
-                    .uri()
-                    .query()
-                    .map(|q| gql_request_from_get(q).map(GraphQLRequest::Single))
-                    .unwrap_or_else(|| {
-                        Err(GraphQLRequestError::Invalid(
-                            "'query' parameter is missing".to_string(),
-                        ))
-                    }),
-            )
-            .and_then(move |gql_req| {
-                execute_request(root_node, context, gql_req).map_err(|_| {
-                    unreachable!("thread pool has shut down?!");
-                })
-            })
-            .or_else(|err| future::ok(render_error(err))),
-        )),
-        &Method::POST => Either::A(Either::B(
-            request
-                .into_body()
-                .concat2()
-                .or_else(|err| future::done(Err(GraphQLRequestError::BodyHyper(err))))
+        &Method::GET => {
+            let res = request
+                .uri()
+                .query()
+                .map(|q| gql_request_from_get(q).map(GraphQLRequest::Single))
+                .unwrap_or_else(|| {
+                    Err(GraphQLRequestError::Invalid(
+                        "'query' parameter is missing".to_string(),
+                    ))
+                });
+
+            match res {
+                Ok(gql_req) => {
+                    execute_request(root_node, context, gql_req).await
+                        .map_err(|_| unreachable!("thread pool has shut down?!"))
+                }
+                Err(err) => Ok(render_error(err))
+            }
+        }
+        &Method::POST => {
+            let res = hyper::body::to_bytes(request).await
+                .or_else(|err| Err(GraphQLRequestError::BodyHyper(err)))
                 .and_then(move |chunk| {
-                    future::done({
-                        String::from_utf8(chunk.iter().cloned().collect::<Vec<u8>>())
-                            .map_err(GraphQLRequestError::BodyUtf8)
-                            .and_then(|input| {
-                                serde_json::from_str::<GraphQLRequest<S>>(&input)
-                                    .map_err(GraphQLRequestError::BodyJSONError)
-                            })
-                    })
-                })
-                .and_then(move |gql_req| {
-                    execute_request(root_node, context, gql_req).map_err(|_| {
-                        unreachable!("thread pool has shut down?!");
-                    })
-                })
-                .or_else(|err| future::ok(render_error(err))),
-        )),
-        _ => return Either::B(future::ok(new_response(StatusCode::METHOD_NOT_ALLOWED))),
+                    String::from_utf8(chunk.iter().cloned().collect::<Vec<u8>>())
+                        .map_err(GraphQLRequestError::BodyUtf8)
+                        .and_then(|input| {
+                            serde_json::from_str::<GraphQLRequest<S>>(&input)
+                                .map_err(GraphQLRequestError::BodyJSONError)
+                        })
+                });
+
+            match res {
+                Ok(gql_req) => {
+                    execute_request(root_node, context, gql_req).await
+                        .map_err(|_| unreachable!("thread pool has shut down?!"))
+                }
+                Err(err) => {
+                    Ok(render_error(err))
+                }
+            }
+        }
+        _ => Ok(new_response(StatusCode::METHOD_NOT_ALLOWED)),
     }
 }
 
-pub fn graphiql(
+pub async fn graphiql(
     graphql_endpoint: &str,
-) -> impl Future<Item = Response<Body>, Error = hyper::Error> {
+) -> Result<Response<Body>, hyper::Error> {
     let mut resp = new_html_response(StatusCode::OK);
     // XXX: is the call to graphiql_source blocking?
     *resp.body_mut() = Body::from(juniper::graphiql::graphiql_source(graphql_endpoint));
-    future::ok(resp)
+    Ok(resp)
 }
 
-pub fn playground(
+pub async fn playground(
     graphql_endpoint: &str,
-) -> impl Future<Item = Response<Body>, Error = hyper::Error> {
+) -> Result<Response<Body>, hyper::Error> {
     let mut resp = new_html_response(StatusCode::OK);
     *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
         graphql_endpoint,
     ));
-    future::ok(resp)
+    Ok(resp)
 }
 
 fn render_error(err: GraphQLRequestError) -> Response<Body> {
@@ -103,38 +100,39 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-fn execute_request<CtxT, QueryT, MutationT, S>(
+async fn execute_request<CtxT, QueryT, MutationT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
     request: GraphQLRequest<S>,
-) -> impl Future<Item = Response<Body>, Error = tokio_threadpool::BlockingError>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
+) -> Result<Response<Body>, hyper::Error>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        CtxT: Send + Sync + 'static,
+        QueryT: GraphQLType<S, Context=CtxT> + Send + Sync + 'static,
+        MutationT: GraphQLType<S, Context=CtxT> + Send + Sync + 'static,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
 {
-    request.execute(root_node, context).map(|(is_ok, body)| {
-        let code = if is_ok {
-            StatusCode::OK
-        } else {
-            StatusCode::BAD_REQUEST
-        };
-        let mut resp = new_response(code);
-        resp.headers_mut().insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("application/json"),
-        );
-        *resp.body_mut() = body;
-        resp
-    })
+    request.execute(root_node, context).await
+        .map(|(is_ok, body)| {
+            let code = if is_ok {
+                StatusCode::OK
+            } else {
+                StatusCode::BAD_REQUEST
+            };
+            let mut resp = new_response(code);
+            resp.headers_mut().insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/json"),
+            );
+            *resp.body_mut() = body;
+            resp
+        })
 }
 
 fn gql_request_from_get<S>(input: &str) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError>
-where
-    S: ScalarValue,
+    where
+        S: ScalarValue,
 {
     let mut query = None;
     let operation_name = None;
@@ -158,10 +156,10 @@ where
                 }
                 match serde_json::from_str::<InputValue<S>>(&value)
                     .map_err(GraphQLRequestError::Variables)
-                {
-                    Ok(parsed_variables) => variables = Some(parsed_variables),
-                    Err(e) => return Err(e),
-                }
+                    {
+                        Ok(parsed_variables) => variables = Some(parsed_variables),
+                        Err(e) => return Err(e),
+                    }
             }
             _ => continue,
         }
@@ -200,51 +198,47 @@ fn new_html_response(code: StatusCode) -> Response<Body> {
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
+    where
+        S: ScalarValue,
 {
     Single(JuniperGraphQLRequest<S>),
     Batch(Vec<JuniperGraphQLRequest<S>>),
 }
 
 impl<S> GraphQLRequest<S>
-where
-    S: ScalarValue,
+    where
+        S: ScalarValue,
 {
-    fn execute<'a, CtxT: 'a, QueryT, MutationT>(
+    async fn execute<'a, CtxT: 'a, QueryT, MutationT>(
         self,
         root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
         context: Arc<CtxT>,
-    ) -> impl Future<Item = (bool, hyper::Body), Error = tokio_threadpool::BlockingError> + 'a
-    where
-        S: 'a,
-        QueryT: GraphQLType<S, Context = CtxT> + 'a,
-        MutationT: GraphQLType<S, Context = CtxT> + 'a,
+    ) -> Result<(bool, hyper::Body), hyper::Error>
+        where
+            S: 'a,
+            QueryT: GraphQLType<S, Context=CtxT> + 'a,
+            MutationT: GraphQLType<S, Context=CtxT> + 'a,
     {
         match self {
-            GraphQLRequest::Single(request) => Either::A(future::poll_fn(move || {
-                let res = futures::try_ready!(tokio_threadpool::blocking(
-                    || request.execute(&root_node, &context)
-                ));
+            GraphQLRequest::Single(request) => {
+                let res = request.execute(&root_node, &context);
                 let is_ok = res.is_ok();
                 let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
-                Ok(Async::Ready((is_ok, body)))
-            })),
+                Ok((is_ok, body))
+            }
             GraphQLRequest::Batch(requests) => {
-                Either::B(
-                    future::join_all(requests.into_iter().map(move |request| {
+                requests
+                    .into_iter()
+                    .map(move |request| {
                         // TODO: these clones are sad
                         let root_node = root_node.clone();
                         let context = context.clone();
-                        future::poll_fn(move || {
-                            let res = futures::try_ready!(tokio_threadpool::blocking(
-                                || request.execute(&root_node, &context)
-                            ));
-                            let is_ok = res.is_ok();
-                            let body = serde_json::to_string_pretty(&res).unwrap();
-                            Ok(Async::Ready((is_ok, body)))
-                        })
-                    }))
+                        let res = request.execute(&root_node, &context);
+                        let is_ok = res.is_ok();
+                        let body = serde_json::to_string_pretty(&res).unwrap();
+                        Ok((is_ok, body))
+                    })
+                    .collect::<Result<Vec<(bool, String)>, hyper::Error>>()
                     .map(|results| {
                         let is_ok = results.iter().all(|&(is_ok, _)| is_ok);
                         // concatenate json bodies as array
@@ -252,8 +246,7 @@ where
                         let bodies: Vec<_> = results.into_iter().map(|(_, body)| body).collect();
                         let body = hyper::Body::from(format!("[{}]", bodies.join(",")));
                         (is_ok, body)
-                    }),
-                )
+                    })
             }
         }
     }
@@ -304,19 +297,12 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
-    use futures::{
-        future::{self, Either},
-        Future,
-    };
-    use hyper::{service::service_fn, Body, Method, Response, Server, StatusCode};
-    use juniper::{
-        http::tests as http_tests,
-        tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
-    };
+    use hyper::{service::{service_fn, make_service_fn}, Body, Method, Response, Server, StatusCode};
+    use juniper::{http::tests as http_tests, tests::{model::Database, schema::Query}, EmptyMutation, RootNode, ScalarValue, GraphQLType};
     use reqwest::{self, Response as ReqwestResponse};
-    use std::{sync::Arc, thread, time};
-    use tokio::runtime::Runtime;
+    use std::{sync::Arc, thread};
+    use futures_channel::oneshot;
+    use std::sync::mpsc;
 
     struct TestHyperIntegration;
 
@@ -355,46 +341,94 @@ mod tests {
         }
     }
 
+    async fn routes<CtxT, QueryT, MutationT, S>(
+        req: hyper::Request<Body>,
+        root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
+        context: Arc<CtxT>,
+    ) -> Result<Response<Body>, hyper::Error>
+        where
+            S: ScalarValue + Send + Sync + 'static,
+            CtxT: Send + Sync + 'static,
+            QueryT: GraphQLType<S, Context=CtxT> + Send + Sync + 'static,
+            MutationT: GraphQLType<S, Context=CtxT> + Send + Sync + 'static,
+            QueryT::TypeInfo: Send + Sync,
+            MutationT::TypeInfo: Send + Sync,
+    {
+        let matches = {
+            let path = req.uri().path();
+            match req.method() {
+                &Method::POST | &Method::GET => path == "/graphql" || path == "/graphql/",
+                _ => false,
+            }
+        };
+        if matches {
+            super::graphql(root_node, context, req).await
+        } else {
+            let mut response = Response::new(Body::empty());
+            *response.status_mut() = StatusCode::NOT_FOUND;
+            Ok(response)
+        }
+    }
+
     #[test]
     fn test_hyper_integration() {
-        let addr = ([127, 0, 0, 1], 3001).into();
+        let (addr_tx, addr_rx) = mpsc::channel();
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
 
-        let db = Arc::new(Database::new());
-        let root_node = Arc::new(RootNode::new(Query, EmptyMutation::<Database>::new()));
 
-        let new_service = move || {
-            let root_node = root_node.clone();
-            let ctx = db.clone();
-            service_fn(move |req| {
-                let root_node = root_node.clone();
-                let ctx = ctx.clone();
-                let matches = {
-                    let path = req.uri().path();
-                    match req.method() {
-                        &Method::POST | &Method::GET => path == "/graphql" || path == "/graphql/",
-                        _ => false,
-                    }
-                };
-                if matches {
-                    Either::A(super::graphql(root_node, ctx, req))
-                } else {
-                    let mut response = Response::new(Body::empty());
-                    *response.status_mut() = StatusCode::NOT_FOUND;
-                    Either::B(future::ok(response))
-                }
+        let thread_name = format!(
+            "test-server-{}",
+            thread::current()
+                .name()
+                .unwrap_or("<unknown test case name>")
+        );
+        let thread = thread::Builder::new()
+            .name(thread_name)
+            .spawn(move || {
+                let mut rt = tokio::runtime::Builder::new()
+                    .enable_io()
+                    .enable_time()
+                    .basic_scheduler()
+                    .build()
+                    .expect("rt new");
+
+                rt.block_on(async move {
+                    let addr = ([127, 0, 0, 1], 3001).into();
+
+                    let db = Arc::new(Database::new());
+                    let root_node = Arc::new(RootNode::new(Query, EmptyMutation::<Database>::new()));
+
+                    let new_service = make_service_fn(move |_| {
+                        let root_node = root_node.clone();
+                        let ctx = db.clone();
+                        async {
+                            Ok::<_, hyper::Error>(service_fn(move |req| {
+                                routes(req, root_node.clone(), ctx.clone())
+                            }))
+                        }
+                    });
+
+                    let server = Server::bind(&addr)
+                        .serve(new_service);
+
+                    addr_tx.send(server.local_addr()).expect("server addr tx");
+
+                    server
+                        .with_graceful_shutdown(async {
+                            let _ = shutdown_rx.await;
+                        })
+                        .await
+                })
+                .expect("serve()");
             })
-        };
-        let server = Server::bind(&addr)
-            .serve(new_service)
-            .map_err(|e| eprintln!("server error: {}", e));
+            .expect("thread spawn");
 
-        let mut runtime = Runtime::new().unwrap();
-        runtime.spawn(server);
-        thread::sleep(time::Duration::from_millis(10)); // wait 10ms for server to bind
-
+        let _ = addr_rx.recv().expect("server addr rx");
         let integration = TestHyperIntegration;
         http_tests::run_http_test_suite(&integration);
 
-        runtime.shutdown_now().wait().unwrap();
+        // shutdown server
+        drop(shutdown_tx);
+        drop(thread);
     }
 }

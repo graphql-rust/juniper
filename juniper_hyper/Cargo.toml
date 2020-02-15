@@ -18,15 +18,15 @@ serde_json = "1.0"
 serde_derive = "1.0"
 url = "2"
 juniper = { version = "0.14.2", default-features = false, path = "../juniper"}
-
-futures = "0.1"
-tokio = "0.1.8"
-hyper = "0.12"
-tokio-threadpool = "0.1.7"
+hyper = "0.13.2"
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
 reqwest = "0.9"
+tokio = { version = "0.2.2", features = ["macros", "io-std", "rt-util", "sync", "time", "test-util"] }
+#futures = "0.3.4"
+futures-channel = "0.3.4"
+futures-util = "0.3.4"
 
 [dev-dependencies.juniper]
 version = "0.14.2"
