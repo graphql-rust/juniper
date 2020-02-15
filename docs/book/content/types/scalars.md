@@ -35,6 +35,7 @@ crates. They are enabled via features that are on by default.
 * uuid::Uuid
 * chrono::DateTime
 * url::Url
+* bson::oid::ObjectId
 
 ## newtype pattern
 

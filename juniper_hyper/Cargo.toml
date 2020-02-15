@@ -9,8 +9,7 @@ repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
 [features]
-# Fake feature to help CI.
-async = []
+async = ["juniper/async", "futures"]
 
 [dependencies]
 serde = "1.0"
@@ -24,7 +23,6 @@ hyper = "0.13.2"
 pretty_env_logger = "0.2"
 reqwest = "0.9"
 tokio = { version = "0.2.2", features = ["macros", "io-std", "rt-util", "sync", "time", "test-util"] }
-#futures = "0.3.4"
 futures-channel = "0.3.4"
 futures-util = "0.3.4"
 
@@ -32,3 +30,7 @@ futures-util = "0.3.4"
 version = "0.14.2"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"
+
+[dev-dependencies.tokio]
+version = "0.2"
+features = ["macros"]

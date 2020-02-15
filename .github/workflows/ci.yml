@@ -1,0 +1,163 @@
+name: CI
+
+on: [pull_request, push]
+
+jobs:
+  ###################################################
+  # Formatting
+  ###################################################
+
+  format:
+    name: Check formatting
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+          profile: minimal
+          override: true
+
+      - name: Run rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
+  ###################################################
+  # Main Builds
+  ###################################################
+
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable, beta, nightly]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+
+      - name: Install cargo-make (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
+
+      - name: Install cargo-make (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          _build/cargo-make.sh "0.20.0" "x86_64-apple-darwin"
+
+      - name: Install cargo-make (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          _build\cargo-make.ps1 -version "0.20.0" -target "x86_64-pc-windows-msvc"
+
+      - name: Build and run tests
+        env:
+          RUSTFLAGS: "-C link-dead-code"
+          CARGO_MAKE_RUN_CODECOV: true
+        run: |
+          cargo make workspace-ci-flow --no-workspace
+
+  ###################################################
+  # WASM Builds
+  ###################################################
+
+  wasm:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          profile: minimal
+          override: true
+
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --target wasm32-unknown-unknown --package juniper --package juniper_codegen
+
+  ###################################################
+  # Releases
+  ###################################################
+
+  release:
+    name: Check release automation
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 20
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Install cargo-make
+        run: |
+          _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
+
+      - name: Install cargo-release
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: --version=0.11.2 cargo-release
+
+      - name: Setup git
+        run: |
+          git config --global user.email "juniper@example.com"
+          git config --global user.name "Release Test Bot"
+
+      - name: Dry run mode
+        env:
+          RELEASE_LEVEL: minor
+        run: |
+          cargo make release-dry-run
+
+      - name: Local test mode
+        env:
+          RELEASE_LEVEL: minor
+        run: |
+          cargo make release-local-test
+
+      - name: Echo local changes
+        run: |
+          git --no-pager log -p HEAD...HEAD~20
+
+      - name: Run tests
+        run: |
+          cargo make workspace-ci-flow --no-workspace

@@ -2,8 +2,10 @@ extern crate juniper;
 
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+
 use std::sync::Arc;
 use juniper::{tests::{model::Database, schema::Query}, EmptyMutation, RootNode, ScalarValue, GraphQLType};
+
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type HyperResult<T> = std::result::Result<T, GenericError>;
@@ -53,6 +55,7 @@ async fn main() -> HyperResult<()> {
             Ok::<_, GenericError>(service_fn(move |req| {
                 // Clone again to ensure that client outlives this closure.
                 response_examples(req, db.clone(), root_node.clone())
+
             }))
         }
     });

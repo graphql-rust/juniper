@@ -7,6 +7,8 @@ use hyper::{
     header::{self, HeaderValue},
     Body, Method, Request, Response, StatusCode,
 };
+#[cfg(feature = "async")]
+use juniper::GraphQLTypeAsync;
 use juniper::{
     http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue,
     GraphQLType, InputValue, RootNode, ScalarValue,
@@ -294,7 +296,7 @@ impl Error for GraphQLRequestError {
         }
     }
 }
-
+#[cfg(feature = "async")]
 #[cfg(test)]
 mod tests {
     use hyper::{service::{service_fn, make_service_fn}, Body, Method, Response, Server, StatusCode};
