@@ -371,16 +371,6 @@ impl fmt::Display for GraphQLRequestError {
 }
 
 impl Error for GraphQLRequestError {
-    fn description(&self) -> &str {
-        match *self {
-            GraphQLRequestError::BodyHyper(ref err) => err.description(),
-            GraphQLRequestError::BodyUtf8(ref err) => err.description(),
-            GraphQLRequestError::BodyJSONError(ref err) => err.description(),
-            GraphQLRequestError::Variables(ref err) => err.description(),
-            GraphQLRequestError::Invalid(ref err) => err,
-        }
-    }
-
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             GraphQLRequestError::BodyHyper(ref err) => Some(err),
