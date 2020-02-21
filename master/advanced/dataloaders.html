@@ -1,11 +1,9 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Dataloaders - Juniper - GraphQL Server for Rust</title>
-        
-
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,12 +30,9 @@
 
         
     </head>
-    <body>
+    <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
-        </script>
+        <script type="text/javascript">var path_to_root = "../";</script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -58,13 +53,10 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
-            html.classList.remove('light')
-            html.classList.add(theme);
-            html.classList.add('js');
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
@@ -80,10 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded affix "><a href="../index.html">Introduction</a></li><li class="expanded affix "><a href="../quickstart.html">Quickstart</a></li><li class="expanded affix "><a href="../types/index.html">Type System</a></li><li class="expanded "><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="expanded "><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="expanded "><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="expanded "><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="expanded "><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="expanded "><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="expanded "><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li class="expanded "><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li class="expanded "><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li class="expanded "><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li class="expanded "><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li class="expanded "><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li class="expanded "><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li class="expanded "><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li class="expanded "><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li class="expanded "><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li class="expanded "><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li class="expanded "><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li class="expanded "><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li class="expanded "><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li class="expanded "><a href="../advanced/dataloaders.html" class="active"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
-            </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html" class="active"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -100,7 +89,7 @@
                                 <i class="fa fa-paint-brush"></i>
                             </button>
                             <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -113,13 +102,12 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1>
+                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
 
                         <div class="right-buttons">
                             <a href="../print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
-                            
                         </div>
                     </div>
                 </div>
@@ -148,7 +136,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#avoiding-the-n1-problem-with-dataloaders" id="avoiding-the-n1-problem-with-dataloaders">Avoiding the N+1 Problem With Dataloaders</a></h1>
+                        <a class="header" href="#avoiding-the-n1-problem-with-dataloaders" id="avoiding-the-n1-problem-with-dataloaders"><h1>Avoiding the N+1 Problem With Dataloaders</h1></a>
 <p>A common issue with graphql servers is how the resolvers query their datasource.
 his issue results in a large number of unneccessary database queries or http requests.
 Say you were wanting to list a bunch of cults people were in</p>
@@ -178,7 +166,7 @@ SELECT id, name FROM cults WHERE id = 2;
 You can see how this could quickly become a problem.</p>
 <p>A common solution to this is to introduce a <strong>dataloader</strong>.
 This can be done with Juniper using the crate <a href="https://github.com/cksac/dataloader-rs">cksac/dataloader-rs</a>, which has two types of dataloaders; cached and non-cached. This example will explore the non-cached option.</p>
-<h3><a class="header" href="#what-does-it-look-like" id="what-does-it-look-like">What does it look like?</a></h3>
+<a class="header" href="#what-does-it-look-like" id="what-does-it-look-like"><h3>What does it look like?</h3></a>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
 actix-identity = &quot;0.2&quot;
@@ -259,11 +247,11 @@ impl Cult {
 }
 
 </code></pre>
-<h3><a class="header" href="#how-do-i-call-them" id="how-do-i-call-them">How do I call them?</a></h3>
+<a class="header" href="#how-do-i-call-them" id="how-do-i-call-them"><h3>How do I call them?</h3></a>
 <p>Once created, a dataloader has the functions <code>.load()</code> and <code>.load_many()</code>.
 When called these return a Future.
 In the above example <code>cult_loader.load(id: i32)</code> returns <code>Future&lt;Cult&gt;</code>. If  we had used <code>cult_loader.load_may(Vec&lt;i32&gt;)</code> it would have returned <code>Future&lt;Vec&lt;Cult&gt;&gt;</code>.</p>
-<h3><a class="header" href="#where-do-i-create-my-dataloaders" id="where-do-i-create-my-dataloaders">Where do I create my dataloaders?</a></h3>
+<a class="header" href="#where-do-i-create-my-dataloaders" id="where-do-i-create-my-dataloaders"><h3>Where do I create my dataloaders?</h3></a>
 <p><strong>Dataloaders</strong> should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user/ outside of its authenticated scope.
 Creating dataloaders within individual resolvers will prevent batching from occurring and will nullify the benefits of the dataloader.</p>
 <p>For example:</p>
@@ -306,7 +294,7 @@ impl Context {
         .body(json))
 }
 </code></pre>
-<h3><a class="header" href="#further-example" id="further-example">Further Example:</a></h3>
+<a class="header" href="#further-example" id="further-example"><h3>Further Example:</h3></a>
 <p>For a full example using Dataloaders and Context check out <a href="https://github.com/jayy-lmao/rust-graphql-docker">jayy-lmao/rust-graphql-docker</a>.</p>
 
                     </main>
@@ -340,14 +328,6 @@ impl Context {
 
         
 
-        
-
-        
-        
-        
-        <script type="text/javascript">
-            window.playpen_copyable = true;
-        </script>
         
 
         

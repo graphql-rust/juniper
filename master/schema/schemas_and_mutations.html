@@ -1,11 +1,9 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Schemas and mutations - Juniper - GraphQL Server for Rust</title>
-        
-
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,12 +30,9 @@
 
         
     </head>
-    <body>
+    <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
-        </script>
+        <script type="text/javascript">var path_to_root = "../";</script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -58,13 +53,10 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
-            html.classList.remove('light')
-            html.classList.add(theme);
-            html.classList.add('js');
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
@@ -80,10 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded affix "><a href="../index.html">Introduction</a></li><li class="expanded affix "><a href="../quickstart.html">Quickstart</a></li><li class="expanded affix "><a href="../types/index.html">Type System</a></li><li class="expanded "><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="expanded "><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="expanded "><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="expanded "><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="expanded "><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="expanded "><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="expanded "><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li class="expanded "><a href="../schema/schemas_and_mutations.html" class="active"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li class="expanded "><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li class="expanded "><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li class="expanded "><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li class="expanded "><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li class="expanded "><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li class="expanded "><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li class="expanded "><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li class="expanded "><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li class="expanded "><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li class="expanded "><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li class="expanded "><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li class="expanded "><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li class="expanded "><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
-            </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <ol class="chapter"><li class="affix"><a href="../index.html">Introduction</a></li><li class="affix"><a href="../quickstart.html">Quickstart</a></li><li class="affix"><a href="../types/index.html">Type System</a></li><li><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="../schema/schemas_and_mutations.html" class="active"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li><a href="../advanced/dataloaders.html"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -100,7 +89,7 @@
                                 <i class="fa fa-paint-brush"></i>
                             </button>
                             <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -113,13 +102,12 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1>
+                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
 
                         <div class="right-buttons">
                             <a href="../print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
-                            
                         </div>
                     </div>
                 </div>
@@ -148,7 +136,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#schemas" id="schemas">Schemas</a></h1>
+                        <a class="header" href="#schemas" id="schemas"><h1>Schemas</h1></a>
 <p>A schema consists of two types: a query object and a mutation object (Juniper
 does not support subscriptions yet). These two define the root query fields
 and mutations of the schema, respectively.</p>
@@ -162,40 +150,40 @@ themselves.</p>
 <p>When the schema is first created, Juniper will traverse the entire object graph
 and register all types it can find. This means that if you define a GraphQL
 object somewhere but never references it, it will not be exposed in a schema.</p>
-<h2><a class="header" href="#the-query-root" id="the-query-root">The query root</a></h2>
+<a class="header" href="#the-query-root" id="the-query-root"><h2>The query root</h2></a>
 <p>The query root is just a GraphQL object. You define it like any other GraphQL
 object in Juniper, most commonly using the <code>object</code> proc macro:</p>
-<pre><pre class="playpen"><code class="language-rust"><span class="boring">use juniper::FieldResult;
-</span><span class="boring">#[derive(juniper::GraphQLObject)] struct User { name: String }
-</span>struct Root;
+<pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
+struct Root;
 
 #[juniper::graphql_object]
 impl Root {
     fn userWithUsername(username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
         // Look up user in database...
-<span class="boring">unimplemented!()
-</span>    }
+# unimplemented!()
+    }
 }
 
-<span class="boring">fn main() { }
-</span></code></pre></pre>
-<h2><a class="header" href="#mutations" id="mutations">Mutations</a></h2>
+# fn main() { }
+</code></pre></pre>
+<a class="header" href="#mutations" id="mutations"><h2>Mutations</h2></a>
 <p>Mutations are <em>also</em> just GraphQL objects. Each mutation is a single field that
 usually performs some mutating side-effect, such as updating a database.</p>
-<pre><pre class="playpen"><code class="language-rust"><span class="boring">use juniper::FieldResult;
-</span><span class="boring">#[derive(juniper::GraphQLObject)] struct User { name: String }
-</span>struct Mutations;
+<pre><pre class="playpen"><code class="language-rust"># use juniper::FieldResult;
+# #[derive(juniper::GraphQLObject)] struct User { name: String }
+struct Mutations;
 
 #[juniper::graphql_object]
 impl Mutations {
     fn signUpUser(name: String, email: String) -&gt; FieldResult&lt;User&gt; {
         // Validate inputs and save user in database...
-<span class="boring">unimplemented!()
-</span>    }
+# unimplemented!()
+    }
 }
 
-<span class="boring">fn main() { }
-</span></code></pre></pre>
+# fn main() { }
+</code></pre></pre>
 
                     </main>
 
@@ -236,14 +224,6 @@ impl Mutations {
 
         
 
-        
-
-        
-        
-        
-        <script type="text/javascript">
-            window.playpen_copyable = true;
-        </script>
         
 
         

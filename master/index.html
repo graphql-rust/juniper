@@ -1,11 +1,9 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Introduction - Juniper - GraphQL Server for Rust</title>
-        
-
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,12 +30,9 @@
 
         
     </head>
-    <body>
+    <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
-            var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
-        </script>
+        <script type="text/javascript">var path_to_root = "";</script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -58,13 +53,10 @@
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script type="text/javascript">
             var theme;
-            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
-            if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
-            html.classList.remove('no-js')
-            html.classList.remove('light')
-            html.classList.add(theme);
-            html.classList.add('js');
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
@@ -80,10 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded affix "><a href="index.html" class="active">Introduction</a></li><li class="expanded affix "><a href="quickstart.html">Quickstart</a></li><li class="expanded affix "><a href="types/index.html">Type System</a></li><li class="expanded "><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="expanded "><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="expanded "><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="expanded "><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="expanded "><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="expanded "><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="expanded "><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="expanded "><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="expanded "><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="expanded "><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li class="expanded "><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li class="expanded "><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li class="expanded "><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li class="expanded "><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li class="expanded "><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li class="expanded "><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li class="expanded "><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li class="expanded "><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li class="expanded "><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li class="expanded "><a href="advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li class="expanded "><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li class="expanded "><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li class="expanded "><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li class="expanded "><a href="advanced/dataloaders.html"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
-            </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <ol class="chapter"><li class="affix"><a href="index.html">Introduction</a></li><li class="affix"><a href="quickstart.html">Quickstart</a></li><li class="affix"><a href="types/index.html">Type System</a></li><li><a href="types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li><a href="types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li><a href="types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li><a href="types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li><a href="types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li><a href="types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li><a href="types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li><a href="types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li><a href="types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li><a href="types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li><a href="schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li><a href="servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li><a href="servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li><a href="servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li><a href="servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li><a href="servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li><a href="servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li><a href="servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li><a href="advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li><a href="advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li><a href="advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li><a href="advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li><a href="advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li><a href="advanced/dataloaders.html"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -100,7 +89,7 @@
                                 <i class="fa fa-paint-brush"></i>
                             </button>
                             <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                                 <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -113,13 +102,12 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1>
+                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1> 
 
                         <div class="right-buttons">
                             <a href="print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
-                            
                         </div>
                     </div>
                 </div>
@@ -148,7 +136,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#juniper" id="juniper">Juniper</a></h1>
+                        <a class="header" href="#juniper" id="juniper"><h1>Juniper</h1></a>
 <p>Juniper is a <a href="http://graphql.org">GraphQL</a> server library for Rust. Build type-safe and fast API
 servers with minimal boilerplate and configuration.</p>
 <p><a href="http://graphql.org">GraphQL</a> is a data query language developed by Facebook intended to
@@ -164,7 +152,7 @@ embedded <a href="https://github.com/graphql/graphiql">Graphiql</a> for easy deb
 <li><a href="https://crates.io/crates/juniper">Cargo crate</a></li>
 <li><a href="https://docs.rs/juniper">API Reference</a></li>
 </ul>
-<h2><a class="header" href="#features" id="features">Features</a></h2>
+<a class="header" href="#features" id="features"><h2>Features</h2></a>
 <p>Juniper supports the full GraphQL query language according to the
 <a href="http://facebook.github.io/graphql">specification</a>, including interfaces, unions, schema
 introspection, and validations.
@@ -173,8 +161,8 @@ It does not, however, support the schema language.</p>
 non-null types by default. A field of type <code>Vec&lt;Episode&gt;</code> will be converted into
 <code>[Episode!]!</code>. The corresponding Rust type for e.g. <code>[Episode]</code> would be
 <code>Option&lt;Vec&lt;Option&lt;Episode&gt;&gt;&gt;</code>.</p>
-<h2><a class="header" href="#integrations" id="integrations">Integrations</a></h2>
-<h3><a class="header" href="#data-types" id="data-types">Data types</a></h3>
+<a class="header" href="#integrations" id="integrations"><h2>Integrations</h2></a>
+<a class="header" href="#data-types" id="data-types"><h3>Data types</h3></a>
 <p>Juniper has automatic integration with some very common Rust crates to make
 building schemas a breeze. The types from these crates will be usable in
 your Schemas automatically.</p>
@@ -184,14 +172,14 @@ your Schemas automatically.</p>
 <li><a href="https://crates.io/crates/chrono">chrono</a></li>
 <li><a href="https://crates.io/crates/bson">bson</a></li>
 </ul>
-<h3><a class="header" href="#web-frameworks" id="web-frameworks">Web Frameworks</a></h3>
+<a class="header" href="#web-frameworks" id="web-frameworks"><h3>Web Frameworks</h3></a>
 <ul>
 <li><a href="https://hyper.rs">hyper</a></li>
 <li><a href="https://rocket.rs">rocket</a></li>
 <li><a href="http://ironframework.io">iron</a></li>
 <li><a href="https://github.com/seanmonstar/warp">warp</a></li>
 </ul>
-<h2><a class="header" href="#api-stability" id="api-stability">API Stability</a></h2>
+<a class="header" href="#api-stability" id="api-stability"><h2>API Stability</h2></a>
 <p>Juniper has not reached 1.0 yet, thus some API instability should be expected.</p>
 
                     </main>
@@ -200,10 +188,6 @@ your Schemas automatically.</p>
                         <!-- Mobile navigation buttons -->
                         
 
-                        
-                            <a rel="next" href="quickstart.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -215,24 +199,12 @@ your Schemas automatically.</p>
                 
 
                 
-                    <a href="quickstart.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
-                
             </nav>
 
         </div>
 
         
 
-        
-
-        
-        
-        
-        <script type="text/javascript">
-            window.playpen_copyable = true;
-        </script>
         
 
         
