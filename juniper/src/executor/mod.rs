@@ -1,4 +1,10 @@
-use std::{borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::RwLock};
+use std::{
+    borrow::Cow,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::{self, Debug, Display},
+    sync::RwLock,
+};
 
 use fnv::FnvHashMap;
 

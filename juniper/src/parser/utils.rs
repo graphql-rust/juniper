@@ -90,6 +90,14 @@ impl<T> Spanning<T> {
     }
 }
 
+impl<T: fmt::Display> fmt::Display for Spanning<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}. At {}", self.item, self.start)
+    }
+}
+
+impl<T: std::error::Error> std::error::Error for Spanning<T> {}
+
 impl SourcePosition {
     #[doc(hidden)]
     pub fn new(index: usize, line: usize, col: usize) -> SourcePosition {
@@ -140,5 +148,11 @@ impl SourcePosition {
     /// Zero-based index: the first column is column zero.
     pub fn column(&self) -> usize {
         self.col
+    }
+}
+
+impl fmt::Display for SourcePosition {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}:{}", self.line, self.col)
     }
 }
