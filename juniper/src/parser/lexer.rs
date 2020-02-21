@@ -538,3 +538,5 @@ impl fmt::Display for LexerError {
         }
     }
 }
+
+impl std::error::Error for LexerError {}
