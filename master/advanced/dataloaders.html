@@ -1,0 +1,371 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Dataloaders - Juniper - GraphQL Server for Rust</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Documentation for juniper, a GraphQL server library for Rust.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded affix "><a href="../index.html">Introduction</a></li><li class="expanded affix "><a href="../quickstart.html">Quickstart</a></li><li class="expanded affix "><a href="../types/index.html">Type System</a></li><li class="expanded "><a href="../types/objects/defining_objects.html"><strong aria-hidden="true">1.</strong> Defining objects</a></li><li><ol class="section"><li class="expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">1.1.</strong> Complex fields</a></li><li class="expanded "><a href="../types/objects/using_contexts.html"><strong aria-hidden="true">1.2.</strong> Using contexts</a></li><li class="expanded "><a href="../types/objects/error_handling.html"><strong aria-hidden="true">1.3.</strong> Error handling</a></li></ol></li><li class="expanded "><a href="../types/other-index.html"><strong aria-hidden="true">2.</strong> Other types</a></li><li><ol class="section"><li class="expanded "><a href="../types/enums.html"><strong aria-hidden="true">2.1.</strong> Enums</a></li><li class="expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">2.2.</strong> Interfaces</a></li><li class="expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">2.3.</strong> Input objects</a></li><li class="expanded "><a href="../types/scalars.html"><strong aria-hidden="true">2.4.</strong> Scalars</a></li><li class="expanded "><a href="../types/unions.html"><strong aria-hidden="true">2.5.</strong> Unions</a></li></ol></li><li class="expanded "><a href="../schema/schemas_and_mutations.html"><strong aria-hidden="true">3.</strong> Schemas and mutations</a></li><li class="expanded "><a href="../servers/index.html"><strong aria-hidden="true">4.</strong> Adding A Server</a></li><li><ol class="section"><li class="expanded "><a href="../servers/official.html"><strong aria-hidden="true">4.1.</strong> Official Server Integrations</a></li><li><ol class="section"><li class="expanded "><a href="../servers/warp.html"><strong aria-hidden="true">4.1.1.</strong> Warp</a></li><li class="expanded "><a href="../servers/rocket.html"><strong aria-hidden="true">4.1.2.</strong> Rocket</a></li><li class="expanded "><a href="../servers/iron.html"><strong aria-hidden="true">4.1.3.</strong> Iron</a></li><li class="expanded "><a href="../servers/hyper.html"><strong aria-hidden="true">4.1.4.</strong> Hyper</a></li></ol></li><li class="expanded "><a href="../servers/third-party.html"><strong aria-hidden="true">4.2.</strong> Third Party Integrations</a></li></ol></li><li class="expanded "><a href="../advanced/index.html"><strong aria-hidden="true">5.</strong> Advanced Topics</a></li><li><ol class="section"><li class="expanded "><a href="../advanced/introspection.html"><strong aria-hidden="true">5.1.</strong> Introspection</a></li><li class="expanded "><a href="../advanced/non_struct_objects.html"><strong aria-hidden="true">5.2.</strong> Non-struct objects</a></li><li class="expanded "><a href="../advanced/objects_and_generics.html"><strong aria-hidden="true">5.3.</strong> Objects and generics</a></li><li class="expanded "><a href="../advanced/multiple_ops_per_request.html"><strong aria-hidden="true">5.4.</strong> Multiple operations per request</a></li><li class="expanded "><a href="../advanced/dataloaders.html" class="active"><strong aria-hidden="true">5.5.</strong> Dataloaders</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Juniper - GraphQL Server for Rust</h1>
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#avoiding-the-n1-problem-with-dataloaders" id="avoiding-the-n1-problem-with-dataloaders">Avoiding the N+1 Problem With Dataloaders</a></h1>
+<p>A common issue with graphql servers is how the resolvers query their datasource.
+his issue results in a large number of unneccessary database queries or http requests.
+Say you were wanting to list a bunch of cults people were in</p>
+<pre><code class="language-graphql">query {
+  persons {
+    id
+    name
+    cult {
+      id
+      name
+    }
+  }
+}
+</code></pre>
+<p>What would be executed by a SQL database would be:</p>
+<pre><code class="language-sql">SELECT id, name, cult_id FROM persons;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 2;
+SELECT id, name FROM cults WHERE id = 2;
+SELECT id, name FROM cults WHERE id = 2;
+# ...
+</code></pre>
+<p>Once the list of users has been returned, a separate query is run to find the cult of each user.
+You can see how this could quickly become a problem.</p>
+<p>A common solution to this is to introduce a <strong>dataloader</strong>.
+This can be done with Juniper using the crate <a href="https://github.com/cksac/dataloader-rs">cksac/dataloader-rs</a>, which has two types of dataloaders; cached and non-cached. This example will explore the non-cached option.</p>
+<h3><a class="header" href="#what-does-it-look-like" id="what-does-it-look-like">What does it look like?</a></h3>
+<p>!FILENAME Cargo.toml</p>
+<pre><code class="language-toml">[dependencies]
+actix-identity = &quot;0.2&quot;
+actix-rt = &quot;1.0&quot;
+actix-web = {version = &quot;2.0&quot;, features = []}
+juniper = { git = &quot;https://github.com/graphql-rust/juniper&quot;, branch = &quot;async-await&quot;, features = [&quot;async&quot;] }
+futures = &quot;0.3&quot;
+postgres = &quot;0.15.2&quot;
+dataloader = &quot;0.6.0&quot;
+</code></pre>
+<pre><code class="language-rust ignore">use dataloader::Loader;
+use dataloader::{BatchFn, BatchFuture};
+use futures::{future, FutureExt as _};
+use std::collections::HashMap;
+use postgres::{Connection, TlsMode};
+use std::env;
+
+pub fn get_db_conn() -&gt; Connection {
+    let pg_connection_string = env::var(&quot;DATABASE_URI&quot;).expect(&quot;need a db uri&quot;);
+    println!(&quot;Connecting to {}&quot;, pg_connection_string);
+    let conn = Connection::connect(&amp;pg_connection_string[..], TlsMode::None).unwrap();
+    println!(&quot;Connection is fine&quot;);
+    conn
+}
+
+#[derive(Debug, Clone)]
+pub struct Cult {
+  pub id: i32,
+  pub name: String,
+}
+
+pub fn get_cult_by_ids(hashmap: &amp;mut HashMap&lt;i32, Cult&gt;, ids: Vec&lt;i32&gt;) {
+  let conn = get_db_conn();
+  for row in &amp;conn
+    .query(&quot;SELECT id, name FROM cults WHERE id = ANY($1)&quot;, &amp;[&amp;ids])
+    .unwrap()
+  {
+    let cult = Cult {
+      id: row.get(0),
+      name: row.get(1),
+    };
+    hashmap.insert(cult.id, cult);
+  }
+}
+
+pub struct CultBatcher;
+
+impl BatchFn&lt;i32, Cult&gt; for CultBatcher {
+  type Error = ();
+
+  fn load(&amp;self, keys: &amp;[i32]) -&gt; BatchFuture&lt;Cult, Self::Error&gt; {
+    println!(&quot;load batch {:?}&quot;, keys);
+    // A hashmap is used, as we need to return an array which maps each original key to a Cult.
+    let mut cult_hashmap = HashMap::new();
+    get_cult_by_ids(&amp;mut cult_hashmap, keys.to_vec());
+
+    future::ready(keys.iter().map(|key| cult_hashmap[key].clone()).collect())
+        .unit_error()
+        .boxed()
+  }
+}
+
+pub type CultLoader = Loader&lt;i32, Cult, (), CultBatcher&gt;;
+
+// To create a new loader
+pub fn get_loader() -&gt; CultLoader {
+    Loader::new(CultBatcher)
+}
+
+#[juniper::graphql_object(Context = Context)]
+impl Cult {
+  //  your resolvers
+
+  // To call the dataloader 
+  pub async fn cult_by_id(ctx: &amp;Context, id: i32) -&gt; Cult {
+    ctx.cult_loader.load(id).await.unwrap()
+  }
+}
+
+</code></pre>
+<h3><a class="header" href="#how-do-i-call-them" id="how-do-i-call-them">How do I call them?</a></h3>
+<p>Once created, a dataloader has the functions <code>.load()</code> and <code>.load_many()</code>.
+When called these return a Future.
+In the above example <code>cult_loader.load(id: i32)</code> returns <code>Future&lt;Cult&gt;</code>. If  we had used <code>cult_loader.load_may(Vec&lt;i32&gt;)</code> it would have returned <code>Future&lt;Vec&lt;Cult&gt;&gt;</code>.</p>
+<h3><a class="header" href="#where-do-i-create-my-dataloaders" id="where-do-i-create-my-dataloaders">Where do I create my dataloaders?</a></h3>
+<p><strong>Dataloaders</strong> should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user/ outside of its authenticated scope.
+Creating dataloaders within individual resolvers will prevent batching from occurring and will nullify the benefits of the dataloader.</p>
+<p>For example:</p>
+<p><em>When you declare your context</em></p>
+<pre><code class="language-rust ignore">use juniper;
+
+#[derive(Clone)]
+pub struct Context {
+    pub cult_loader: CultLoader,
+}
+
+impl juniper::Context for Context {}
+
+impl Context {
+    pub fn new(cult_loader: CultLoader) -&gt; Self {
+        Self {
+            cult_loader
+        }
+    }
+}
+</code></pre>
+<p><em>Your handler for GraphQL (Note: instantiating context here keeps it per-request)</em></p>
+<pre><code class="language-rust ignore">pub async fn graphql(
+    st: web::Data&lt;Arc&lt;Schema&gt;&gt;,
+    data: web::Json&lt;GraphQLRequest&gt;,
+) -&gt; Result&lt;HttpResponse, Error&gt; {
+    let mut rt = futures::executor::LocalPool::new();
+
+    // Context setup
+    let cult_loader = get_loader();
+    let ctx = Context::new(cult_loader);
+
+    // Execute
+    let future_execute = data.execute_async(&amp;st, &amp;ctx); 
+    let res = rt.run_until(future_execute);
+    let json = serde_json::to_string(&amp;res).map_err(error::ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok()
+        .content_type(&quot;application/json&quot;)
+        .body(json))
+}
+</code></pre>
+<h3><a class="header" href="#further-example" id="further-example">Further Example:</a></h3>
+<p>For a full example using Dataloaders and Context check out <a href="https://github.com/jayy-lmao/rust-graphql-docker">jayy-lmao/rust-graphql-docker</a>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../advanced/multiple_ops_per_request.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../advanced/multiple_ops_per_request.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
