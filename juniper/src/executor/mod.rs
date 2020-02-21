@@ -569,7 +569,8 @@ where
     /// Add an error to the execution engine at the current executor location
     #[cfg(feature = "async")]
     pub async fn push_error_async(&self, error: FieldError<S>) {
-        self.push_error_at_async(error, self.location().clone()).await;
+        self.push_error_at_async(error, self.location().clone())
+            .await;
     }
 
     /// Add an error to the execution engine at a specific location
