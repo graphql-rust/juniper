@@ -18,7 +18,7 @@ be done in a couple of different ways:
 
 ### Downcasting via accessor methods
 
-```rust
+```rust,ignore
 #[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
@@ -76,7 +76,7 @@ If you can afford an extra database lookup when the concrete class is requested,
 you can do away with the downcast methods and use the context instead. Here,
 we'll use two hashmaps, but this could be two tables and some SQL calls instead:
 
-```rust
+```rust,ignore
 # use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
 #[graphql(Context = Database)]
@@ -130,7 +130,7 @@ This removes the need of downcast methods, but still requires some repetition.
 Continuing on from the last example, the trait itself seems a bit unneccesary.
 Maybe it can just be a struct containing the ID?
 
-```rust
+```rust,ignore
 # use std::collections::HashMap;
 #[derive(juniper::GraphQLObject)]
 #[graphql(Context = "Database")]
@@ -178,7 +178,7 @@ Using enums and pattern matching lies half-way between using traits and using
 placeholder objects. We don't need the extra database call in this case, so
 we'll remove it.
 
-```rust
+```rust,ignore
 #[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
