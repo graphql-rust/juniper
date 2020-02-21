@@ -66,6 +66,8 @@ where
     schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
     errors: &'a RwLock<Vec<ExecutionError<S>>>,
+    #[cfg(feature = "async")]
+    async_errors: &'a futures::lock::Mutex<Vec<ExecutionError<S>>>,
     field_path: FieldPath<'a>,
 }
 
@@ -426,7 +428,7 @@ where
         match self.resolve_async(info, value).await {
             Ok(v) => v,
             Err(e) => {
-                self.push_error(e);
+                self.push_error_async(e).await;
                 Value::null()
             }
         }
@@ -446,6 +448,8 @@ where
             schema: self.schema,
             context: ctx,
             errors: self.errors,
+            #[cfg(feature = "async")]
+            async_errors: self.async_errors,
             field_path: self.field_path.clone(),
         }
     }
@@ -474,6 +478,8 @@ where
             schema: self.schema,
             context: self.context,
             errors: self.errors,
+            #[cfg(feature = "async")]
+            async_errors: self.async_errors,
             field_path: FieldPath::Field(field_alias, location, &self.field_path),
         }
     }
@@ -496,6 +502,8 @@ where
             schema: self.schema,
             context: self.context,
             errors: self.errors,
+            #[cfg(feature = "async")]
+            async_errors: self.async_errors,
             field_path: self.field_path.clone(),
         }
     }
@@ -544,6 +552,27 @@ where
         self.field_path.construct_path(&mut path);
 
         let mut errors = self.errors.write().unwrap();
+
+        errors.push(ExecutionError {
+            location,
+            path,
+            error,
+        });
+    }
+
+    /// Add an error to the execution engine at the current executor location
+    #[cfg(feature = "async")]
+    pub async fn push_error_async(&self, error: FieldError<S>) {
+        self.push_error_at_async(error, self.location().clone()).await;
+    }
+
+    /// Add an error to the execution engine at a specific location
+    #[cfg(feature = "async")]
+    pub async fn push_error_at_async(&self, error: FieldError<S>, location: SourcePosition) {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        let mut errors = self.async_errors.lock().await;
 
         errors.push(ExecutionError {
             location,
@@ -686,6 +715,8 @@ where
     });
 
     let errors = RwLock::new(Vec::new());
+    #[cfg(feature = "async")]
+    let async_errors = futures::lock::Mutex::new(Vec::new());
     let value;
 
     {
@@ -723,6 +754,8 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
+            #[cfg(feature = "async")]
+            async_errors: &async_errors,
             field_path: FieldPath::Root(operation.start),
         };
 
@@ -778,6 +811,8 @@ where
     });
 
     let errors = RwLock::new(Vec::new());
+    #[cfg(feature = "async")]
+    let async_errors = futures::lock::Mutex::new(Vec::new());
     let value;
 
     {
@@ -815,6 +850,8 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
+            #[cfg(feature = "async")]
+            async_errors: &async_errors,
             field_path: FieldPath::Root(operation.start),
         };
 
@@ -833,10 +870,10 @@ where
         };
     }
 
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
+    let mut async_errors = async_errors.into_inner();
+    async_errors.sort();
 
-    Ok((value, errors))
+    Ok((value, async_errors))
 }
 
 pub fn get_operation<'a, 'b, S>(
