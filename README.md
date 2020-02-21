@@ -14,7 +14,7 @@ serve mobile and web application frontends.
 
 _Juniper_ makes it possible to write GraphQL servers in Rust that are
 type-safe and blazingly fast. We also try to make declaring and resolving
-GraphQL schemas as convenient as possible as Rust will allow.
+GraphQL schemas as convenient as Rust will allow.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
