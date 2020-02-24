@@ -371,7 +371,7 @@ impl fmt::Display for GraphQLRequestError {
 }
 
 impl Error for GraphQLRequestError {
-    fn cause(&self) -> Option<&dyn Error> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         match *self {
             GraphQLRequestError::BodyHyper(ref err) => Some(err),
             GraphQLRequestError::BodyUtf8(ref err) => Some(err),
