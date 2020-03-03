@@ -7,7 +7,7 @@ pub mod playground;
 use std::pin::Pin;
 
 #[cfg(feature = "async")]
-use futures::{stream::Stream, stream::StreamExt as _, Poll};
+use futures::{stream::Stream, stream::StreamExt as _};
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},
@@ -23,6 +23,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
 };
+use futures::task::Poll;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -100,7 +101,7 @@ where
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe(&self.query, op, root_node, vars, context).await;
+        let res = crate::subscribe(&self.query, op, root_node, &vars, context).await;
 
         StreamGraphQLResponse(res)
     }
@@ -152,6 +153,7 @@ where
         let op = self.operation_name();
         let vars = &self.variables();
         let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
+
         GraphQLResponse(res)
     }
 }
@@ -277,7 +279,7 @@ where
                     }
                 })))
             }
-            // TODO#433: remove these and add // TODO: implement these
+            // TODO#433: remove this implementation and add a // TODO: implement these
             //           (current implementation might be confusing)
             Value::List(_) => return Err(StreamError::ListValue),
             Value::Object(obj) => {

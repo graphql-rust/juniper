@@ -1,5 +1,9 @@
 use std::{
-    borrow::Cow, cmp::Ordering, collections::HashMap, fmt::Display, sync::Arc, sync::RwLock,
+    borrow::Cow,
+    cmp::Ordering,
+    collections::HashMap,
+    fmt::Display,
+    sync::{Arc, RwLock},
 };
 
 use fnv::FnvHashMap;
@@ -28,7 +32,6 @@ pub use self::look_ahead::{
     Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
     LookAheadSelection, LookAheadValue,
 };
-use crate::parser::Spanning;
 
 mod look_ahead;
 pub mod owned_executor;
@@ -357,7 +360,7 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_stream<'s, 'i, 'v, 'res, T>(
+    pub async fn resolve_into_stream<'i, 'v, 'res, T>(
         &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
@@ -396,7 +399,7 @@ where
         CtxT: Send + Sync,
         S: Send + Sync + 'static,
     {
-        Ok(value.resolve_into_stream(info, self).await)
+        value.resolve_into_stream(info, self).await
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
@@ -582,7 +585,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> &Variables<S> {
+    pub fn variables(&self) -> &'r Variables<S> {
         self.variables
     }
 
@@ -656,7 +659,7 @@ where
                             s.iter()
                                 .map(|s| ChildSelection {
                                     inner: LookAheadSelection::build_from_selection(
-                                        s,
+                                        &s,
                                         self.variables,
                                         self.fragments,
                                     )
@@ -694,7 +697,7 @@ where
 
 impl<'a> FieldPath<'a> {
     fn construct_path(&self, acc: &mut Vec<String>) {
-        match &*self {
+        match self {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
@@ -751,18 +754,16 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
-    let mut fragments = vec![];
-    let mut operation = None;
-
-    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
-
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type == OperationType::Subscription {
+    if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
+    }
+
+    let mut fragments = vec![];
+    for def in document.iter() {
+        match def {
+            Definition::Fragment(f) => fragments.push(f),
+            _ => (),
+        };
     }
 
     let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
@@ -805,8 +806,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .iter()
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&operation.item.selection_set[..]),
@@ -853,18 +854,16 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    let mut fragments = vec![];
-    let mut operation = None;
-
-    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
-
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type == OperationType::Subscription {
+    if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
+    }
+
+    let mut fragments = vec![];
+    for def in document.iter() {
+        match def {
+            Definition::Fragment(f) => fragments.push(f),
+            _ => (),
+        };
     }
 
     let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
@@ -907,8 +906,8 @@ where
 
         let executor = Executor {
             fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
+                .iter()
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&operation.item.selection_set[..]),
@@ -941,160 +940,10 @@ where
     Ok((value, errors))
 }
 
-/// Initialize new `Executor` and start asynchronous subscription execution
-/// Returns `NotSubscription` error if query or mutation is passed
-#[cfg(feature = "async")]
-pub async fn execute_validated_subscription<
-    'd,
-    'rn,
-    'ctx,
-    'res,
-    'e,
-    QueryT,
-    MutationT,
-    SubscriptionT,
-    CtxT,
-    S,
->(
-    document: Document<'d, S>,
+pub fn get_operation<'d, 'b, 'e, S>(
+    document: &'b Document<'d, S>,
     operation_name: Option<&str>,
-    root_node: &'rn RootNode<'rn, QueryT, MutationT, SubscriptionT, S>,
-    variables: Variables<S>,
-    context: &'ctx CtxT,
-) -> Result<(Value<ValuesResultStream<'res, S>>, Vec<ExecutionError<S>>), GraphQLError<'res>>
-where
-    'd: 'e,
-    'rn: 'e,
-    'ctx: 'e,
-    'e: 'res,
-    'd: 'res,
-    'rn: 'res,
-    'ctx: 'res,
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
-{
-    let mut operation = None;
-
-    let mut fragments = vec![];
-
-    parse_document_definitions(document, operation_name, &mut fragments, &mut operation)?;
-
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-
-    if op.item.operation_type != OperationType::Subscription {
-        return Err(GraphQLError::UnknownOperationName);
-    }
-
-    let default_variable_values = op.item.variable_definitions.map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|&(ref name, ref def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.to_owned(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = final_vars;
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = all_vars;
-        }
-
-        let root_type = match op.item.operation_type {
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No subscription type found"),
-            _ => unreachable!(),
-        };
-
-        let executor: Executor<'_, 'e, CtxT, S> = Executor {
-            fragments: &fragments
-                .into_iter()
-                .map(|f| (f.item.name.item, f.item))
-                .collect(),
-            variables: &final_vars,
-            current_selection_set: Some(&op.item.selection_set[..]),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: &errors,
-            field_path: Arc::new(FieldPath::Root(op.start)),
-        };
-
-        value = match op.item.operation_type {
-            OperationType::Subscription => {
-                executor
-                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-                    .await
-            }
-            _ => unreachable!(),
-        };
-    }
-
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
-
-    Ok((value, errors))
-}
-
-/// Find document's operation (returns error
-/// if multiple operations provided)
-/// and collect fragments to `fragments` vector
-fn parse_document_definitions<'a, 'b, S>(
-    document: Document<'b, S>,
-    operation_name: Option<&str>,
-    fragments: &mut Vec<Spanning<Fragment<'b, S>>>,
-    operation: &mut Option<Spanning<Operation<'b, S>>>,
-) -> Result<(), GraphQLError<'a>> {
-    for def in document {
-        match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    *operation = Some(op);
-                }
-            }
-            Definition::Fragment(f) => fragments.push(f),
-        };
-    }
-
-    Ok(())
-}
-
-pub fn get_operation<'a, 'b, S>(
-    document: &'b Document<'b, S>,
-    operation_name: Option<&str>,
-) -> Result<&'b Spanning<Operation<'b, S>>, GraphQLError<'a>>
+) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError<'e>>
 where
     S: ScalarValue,
 {
@@ -1120,10 +969,120 @@ where
         Some(op) => op,
         None => return Err(GraphQLError::UnknownOperationName),
     };
-    if op.item.operation_type == OperationType::Subscription {
-        return Err(GraphQLError::IsSubscription);
-    }
     Ok(op)
+}
+
+/// Initialize new `Executor` and start asynchronous subscription execution
+/// Returns `NotSubscription` error if query or mutation is passed
+#[cfg(feature = "async")]
+pub async fn execute_validated_subscription<
+    'r,
+    'exec_ref,
+    'd,
+    'op,
+    QueryT,
+    MutationT,
+    SubscriptionT,
+    CtxT,
+    S,
+>(
+    document: &Document<'d, S>,
+    operation: &Spanning<Operation<'op, S>>,
+    root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &'r CtxT,
+) -> Result<(Value<ValuesResultStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
+where
+    'r: 'exec_ref,
+    'd: 'r,
+    'op: 'd,
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'r,
+{
+    if operation.item.operation_type != OperationType::Subscription {
+        return Err(GraphQLError::NotSubscription);
+    }
+
+    let mut fragments = vec![];
+    for def in document.iter() {
+        match def {
+            Definition::Fragment(f) => fragments.push(f),
+            _ => (),
+        };
+    }
+
+    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+        defs.item
+            .items
+            .iter()
+            .filter_map(|&(ref name, ref def)| {
+                def.default_value
+                    .as_ref()
+                    .map(|i| (name.item.to_owned(), i.item.clone()))
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
+    });
+
+    let errors = RwLock::new(Vec::new());
+    let value;
+
+    {
+        let mut all_vars;
+        let mut final_vars = variables;
+
+        if let Some(defaults) = default_variable_values {
+            all_vars = variables.clone();
+
+            for (name, value) in defaults {
+                all_vars.entry(name).or_insert(value);
+            }
+
+            final_vars = &all_vars;
+        }
+
+        let root_type = match operation.item.operation_type {
+            OperationType::Subscription => root_node
+                .schema
+                .subscription_type()
+                .expect("No subscription type found"),
+            _ => unreachable!(),
+        };
+
+        let executor: Executor<'_, 'r, _, _> = Executor {
+            fragments: &fragments
+                .iter()
+                .map(|f| (f.item.name.item, f.item.clone()))
+                .collect(),
+            variables: final_vars,
+            current_selection_set: Some(&operation.item.selection_set[..]),
+            parent_selection_set: None,
+            current_type: root_type,
+            schema: &root_node.schema,
+            context,
+            errors: &errors,
+            field_path: Arc::new(FieldPath::Root(operation.start)),
+        };
+
+        value = match operation.item.operation_type {
+            OperationType::Subscription => {
+                executor
+                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+                    .await
+            }
+            _ => unreachable!(),
+        };
+    }
+
+    let mut errors = errors.into_inner().unwrap();
+    errors.sort();
+
+    Ok((value, errors))
 }
 
 impl<'r, S> Registry<'r, S>

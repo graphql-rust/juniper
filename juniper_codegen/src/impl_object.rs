@@ -9,7 +9,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
     definition.into_tokens(juniper_crate_name).into()
 }
 
-/// Generate code for the juniper::subscription macro.
+/// Generate code for the juniper::graphql_subscription macro.
 pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let definition = create(args, body, "GraphQLSubscription");
 
@@ -36,7 +36,7 @@ fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQL
     let mut _impl = match item {
         syn::Item::Impl(_impl) => _impl,
         _ => {
-            panic!("#[juniper::object] can only be applied to impl blocks");
+            panic!("#[juniper::graphql_object] can only be applied to impl blocks");
         }
     };
 

@@ -47,6 +47,8 @@ use std::{
 };
 use std::{pin::Pin, sync::Arc};
 
+// TODO#433: update this once juniper subscriptions' implementation is finished
+
 use futures::future::poll_fn;
 #[cfg(feature = "async")]
 use futures03::{channel::mpsc, stream::StreamExt as _};
@@ -361,7 +363,7 @@ where
 
                 Ok((serde_json::to_vec(&response)?, response.is_ok()))
             }
-                .map(|result| -> Result<_, warp::reject::Rejection> { Ok(build_response(result)) })
+            .map(|result| -> Result<_, warp::reject::Rejection> { Ok(build_response(result)) })
         };
 
     let get_filter = warp::get()
@@ -418,7 +420,7 @@ where
 {
     let (sink_tx, sink_rx) = websocket.split();
     let (ws_tx, ws_rx) = mpsc::unbounded();
-    warp::spawn(
+    tokio::task::spawn(
         ws_rx
             .take_while(|x: &Option<_>| {
                 // keep this stream until `None` is received
@@ -463,7 +465,7 @@ where
             "start" => {
                 let ws_tx = ws_tx.clone();
 
-                warp::spawn(async move {
+                tokio::task::spawn(async move {
                     let payload = request.payload.expect("could not deserialize payload");
                     let request_id = request.id.unwrap_or("1".to_owned());
 
@@ -648,7 +650,6 @@ fn playground_response(
         .expect("response is valid")
 }
 
-// TODO#433: update tests once `juniper::schema` compiles
 #[cfg(test)]
 mod tests {
     use warp::{http, test::request};

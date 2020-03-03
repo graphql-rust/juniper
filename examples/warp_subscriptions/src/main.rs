@@ -1,12 +1,8 @@
-//!
-//! This example demonstrates asynchronous subscriptions usage with warp.
-//! NOTE: this uses tokio 0.2.alpha
-//!
+//! This example demonstrates asynchronous subscriptions with warp and tokio 0.2
 
 use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::{Future, FutureExt as _, Stream};
-use tokio::timer::Interval;
 use warp::{http::Response, Filter};
 
 use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
@@ -17,22 +13,22 @@ struct Context {}
 
 impl juniper::Context for Context {}
 
+/// Kind of a User
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
-/// UserKind sample docs
 enum UserKind {
     Admin,
     User,
     Guest,
 }
 
-/// Sample User representation
+/// User representation
 struct User {
     id: i32,
     kind: UserKind,
     name: String,
 }
 
-#[juniper::object(Context = Context)]
+#[juniper::graphql_object(Context = Context)]
 impl User {
     fn id(&self) -> i32 {
         self.id
@@ -92,11 +88,11 @@ impl User {
 
 struct Query;
 
-#[juniper::object(Context = Context)]
+#[juniper::graphql_object(Context = Context)]
 impl Query {
     async fn users(id: i32) -> Vec<User> {
         vec![User {
-            id: id,
+            id,
             kind: UserKind::Admin,
             name: "user1".into(),
         }]
@@ -107,11 +103,11 @@ type TypeAlias = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
 
 struct Subscription;
 
-#[juniper::subscription(Context = Context)]
+#[juniper::graphql_subscription(Context = Context)]
 impl Subscription {
     async fn users() -> TypeAlias {
         let mut counter = 0;
-        let stream = Interval::new_interval(Duration::from_secs(5)).map(move |_| {
+        let stream = tokio::time::interval(Duration::from_secs(5)).map(move |_| {
             counter += 1;
             if counter == 2 {
                 Err(FieldError::new(
@@ -182,4 +178,6 @@ async fn main() {
     .with(log);
 
     warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
+
+    ()
 }
