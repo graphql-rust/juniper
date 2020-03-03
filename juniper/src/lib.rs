@@ -185,7 +185,7 @@ pub use crate::{
     executor::ValuesResultStream,
     macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
     types::async_await::GraphQLTypeAsync,
-    types::subscriptions::GraphQLSubscriptionType,
+    types::subscriptions::{GraphQLSubscriptionType, SubscriptionCoordinator, SubscriptionConnection},
 };
 
 /// An error that prevented query execution

@@ -1,15 +1,24 @@
-use crate::{
-    parser::Spanning,
-    types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value,
-    ValuesResultStream,
-};
+use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, RootNode, Variables, GraphQLError};
 
 pub trait SubscriptionCoordinator {
-    fn subscribe(&self) -> Box<dyn SubscriptionConnection>;
+
+    type Connection;
+
+    //todo: this should create subscription connection which
+    //      should resolve itself into stream and into graphql stream
+    //      and handle unsubscribe
+    fn subscribe<'a, S, CtxT>(
+        &self,
+        document_source: &'a str,
+        operation_name: Option<&str>,
+        variables: &Variables<S>,
+        context: &'a CtxT,
+    ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>>;
 }
 
-pub trait SubscriptionConnection {}
+// todo: unregister connection on destruction
+pub trait SubscriptionConnection {
+}
 
 // TODO#433: update this after `async-await` will be refactored
 /**

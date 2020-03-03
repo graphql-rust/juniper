@@ -84,26 +84,25 @@ where
     /// This is a wrapper around the `subscribe_async` function exposed
     /// at the top level of this crate.
     #[cfg(feature = "async")]
-    pub async fn subscribe<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub async fn subscribe<'a, CtxT, CoordinatorT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        coordinator: &CoordinatorT,
         context: &'a CtxT,
-    ) -> StreamGraphQLResponse<'a, S>
+    ) -> Result<CoordinatorT::Connection, GraphQLError<'a>>
     where
         S: ScalarValue + Send + Sync + 'static,
-        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
+        CoordinatorT: crate::SubscriptionCoordinator + Send + Sync,
         CtxT: Send + Sync,
     {
         let op = self.operation_name();
         let vars = self.variables();
-        let res = crate::subscribe(&self.query, op, root_node, &vars, context).await;
 
-        StreamGraphQLResponse(res)
+        coordinator.subscribe(
+            &self.query,
+            op,
+            &vars,
+            context
+        ).await
     }
 
     /// Execute a GraphQL request using the specified schema and context

@@ -178,6 +178,4 @@ async fn main() {
     .with(log);
 
     warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
-
-    ()
 }
