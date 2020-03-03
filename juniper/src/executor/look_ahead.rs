@@ -428,12 +428,11 @@ impl<'a, S> LookAheadMethods<S> for LookAheadSelection<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::SubscriptionRoot;
     use crate::{
         ast::Document,
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
-        validation::test_harness::{MutationRoot, QueryRoot},
+        validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
         value::{DefaultScalarValue, ScalarValue},
     };
     use std::collections::HashMap;

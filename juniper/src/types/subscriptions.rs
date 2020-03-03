@@ -9,9 +9,7 @@ pub trait SubscriptionCoordinator {
     fn subscribe(&self) -> Box<dyn SubscriptionConnection>;
 }
 
-pub trait SubscriptionConnection {
-
-}
+pub trait SubscriptionConnection {}
 
 // TODO#433: update this after `async-await` will be refactored
 /**

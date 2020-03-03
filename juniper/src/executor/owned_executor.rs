@@ -5,10 +5,11 @@ use std::{
 
 use crate::{
     ast::Fragment,
+    executor::FieldPath,
+    parser::SourcePosition,
     schema::model::{SchemaType, TypeType},
     ExecutionError, Executor, Selection, Variables,
 };
-use crate::{executor::FieldPath, parser::SourcePosition};
 
 /// `Executor` wrapper to keep all `Executor`'s data
 /// and `Executor` instance

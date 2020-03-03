@@ -77,8 +77,8 @@ impl MySubscription {
     async fn human_with_args(id: String, name: String) -> HumanStream {
         Box::pin(futures::stream::once(async {
             Human {
-                id: id,
-                name: name,
+                id,
+                name,
                 home_planet: "default home planet".to_string(),
             }
         }))
