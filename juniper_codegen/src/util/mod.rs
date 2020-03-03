@@ -1,3 +1,5 @@
+pub mod parse_impl;
+
 use quote::quote;
 use std::collections::HashMap;
 use syn::{
@@ -507,9 +509,7 @@ impl parse::Parse for FieldAttribute {
                 } else {
                     None
                 };
-                Ok(FieldAttribute::Deprecation(DeprecationAttr {
-                    reason: reason,
-                }))
+                Ok(FieldAttribute::Deprecation(DeprecationAttr { reason }))
             }
             "skip" => Ok(FieldAttribute::Skip(ident)),
             "arguments" => {
@@ -666,6 +666,11 @@ pub struct GraphQLTypeDefiniton {
 }
 
 impl GraphQLTypeDefiniton {
+    #[allow(unused)]
+    fn has_async_field(&self) -> bool {
+        self.fields.iter().any(|field| field.is_async)
+    }
+
     pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
@@ -857,6 +862,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
+                            use futures::future;
                             future::FutureExt::boxed(f)
                         },
                     )
@@ -873,6 +879,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
+                            use futures::future;
                             future::FutureExt::boxed(f)
                         )
                     } else {
@@ -882,6 +889,7 @@ impl GraphQLTypeDefiniton {
                                 Ok(None) => Ok(#juniper_crate_name::Value::null()),
                                 Err(e) => Err(e),
                             };
+                            use futures::future;
                             future::FutureExt::boxed(future::ready(v))
                         )
                     };

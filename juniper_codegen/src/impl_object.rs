@@ -2,7 +2,7 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
-/// Generate code for the juniper::object macro.
+/// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let definition = create(args, body, "GraphQLObject");
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
@@ -56,7 +56,7 @@ fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQL
             }
         }
         None => {
-            //            panic!(format!("The impl block must implement the '{}' trait", name))
+            // panic!("The impl block must implement the 'GraphQLObject' trait");
         }
     }
 
@@ -66,7 +66,7 @@ fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQL
         if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
             ident.to_string()
         } else {
-            panic!("Could not determine a name for the object type: specify one with #[juniper::object(name = \"SomeName\")");
+            panic!("Could not determine a name for the object type: specify one with #[juniper::graphql_object(name = \"SomeName\")");
         }
     };
 
@@ -77,7 +77,7 @@ fn create(args: TokenStream, body: TokenStream, obj_name: &str) -> util::GraphQL
         .or(util::get_doc_comment(&_impl.attrs));
 
     let mut definition = util::GraphQLTypeDefiniton {
-        name: name,
+        name,
         _type: target_type.clone(),
         context: impl_attrs.context,
         scalar: impl_attrs.scalar,

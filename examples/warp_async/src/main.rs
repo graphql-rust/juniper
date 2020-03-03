@@ -22,7 +22,7 @@ struct User {
     name: String,
 }
 
-#[juniper::object(Context = Context)]
+#[juniper::graphql_object(Context = Context)]
 impl User {
     fn id(&self) -> i32 {
         self.id
@@ -43,7 +43,7 @@ impl User {
 
 struct Query;
 
-#[juniper::object(Context = Context)]
+#[juniper::graphql_object(Context = Context)]
 impl Query {
     async fn users() -> Vec<User> {
         vec![User {

@@ -42,14 +42,15 @@ impl Character for Droid {
     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
 }
 
-juniper::graphql_union!(<'a> &'a Character: () as "Character" where Scalar = <S> |&self| { 
-    instance_resolvers: |_| {
-        // The left hand side indicates the concrete type T, the right hand
-        // side should be an expression returning Option<T>
-        &Human => self.as_human(),
-        &Droid => self.as_droid(),
+#[juniper::graphql_union]
+impl<'a> GraphQLUnion for &'a dyn Character {
+    fn resolve(&self) {
+        match self {
+            Human => self.as_human(),
+            Droid => self.as_droid(),
+        }
     }
-});
+}
 
 # fn main() {}
 ```
@@ -93,12 +94,18 @@ impl Character for Droid {
     fn id(&self) -> &str { self.id.as_str() }
 }
 
-juniper::graphql_union!(<'a> &'a Character: Database as "Character" where Scalar = <S> |&self| {
-    instance_resolvers: |&context| {
-        &Human => context.humans.get(self.id()),
-        &Droid => context.droids.get(self.id()),
+
+#[juniper::graphql_union(
+    Context = Database
+)]
+impl<'a> GraphQLUnion for &'a dyn Character {
+    fn resolve(&self, context: &Database) {
+        match self {
+            Human => context.humans.get(self.id()),
+            Droid => context.droids.get(self.id()),
+        }
     }
-});
+}
 
 # fn main() {}
 ```
@@ -132,12 +139,17 @@ struct Character {
     id: String,
 }
 
-juniper::graphql_union!(Character: Database where Scalar = <S> |&self| {
-    instance_resolvers: |&context| {
-        &Human => context.humans.get(&self.id),
-        &Droid => context.droids.get(&self.id),
+#[juniper::graphql_union(
+    Context = Database,
+)]
+impl GraphQLUnion for Character {
+    fn resolve(&self, context: &Database) {
+        match self {
+            Human => { context.humans.get(&self.id) },
+            Droid => { context.droids.get(&self.id) },
+        }
     }
-});
+}
 
 # fn main() {}
 ```
@@ -163,12 +175,15 @@ enum Character {
     Droid(Droid),
 }
 
-juniper::graphql_union!(Character: () where Scalar = <S> |&self| {
-    instance_resolvers: |_| {
-        &Human => match *self { Character::Human(ref h) => Some(h), _ => None },
-        &Droid => match *self { Character::Droid(ref d) => Some(d), _ => None },
+#[juniper::graphql_union]
+impl Character {
+    fn resolve(&self) {
+        match self {
+            Human => { match *self { Character::Human(ref h) => Some(h), _ => None } },
+            Droid => { match *self { Character::Droid(ref d) => Some(d), _ => None } },
+        }
     }
-});
+}
 
 # fn main() {}
 ```

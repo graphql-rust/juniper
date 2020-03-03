@@ -1,5 +1,6 @@
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
+    executor::ExecutionResult,
     schema::meta::MetaType,
     value::{ScalarValue, Value},
 };
@@ -33,10 +34,10 @@ where
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         match *self {
-            Some(ref obj) => executor.resolve_into_value(info, obj),
-            None => Value::null(),
+            Some(ref obj) => executor.resolve(info, obj),
+            None => Ok(Value::null()),
         }
     }
 }
@@ -94,7 +95,7 @@ where
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
     }
 }
@@ -161,7 +162,7 @@ where
         info: &T::TypeInfo,
         _: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         resolve_into_list(executor, info, self.iter())
     }
 }
@@ -180,7 +181,7 @@ fn resolve_into_list<S, T, I>(
     executor: &Executor<T::Context, S>,
     info: &T::TypeInfo,
     iter: I,
-) -> Value<S>
+) -> ExecutionResult<S>
 where
     S: ScalarValue,
     I: Iterator<Item = T> + ExactSizeIterator,
@@ -191,19 +192,22 @@ where
         .list_contents()
         .expect("Current type is not a list type")
         .is_non_null();
-
     let mut result = Vec::with_capacity(iter.len());
 
     for o in iter {
-        let value = executor.resolve_into_value(info, &o);
-        if stop_on_null && value.is_null() {
-            return value;
+        match executor.resolve(info, &o) {
+            Ok(value) => {
+                if stop_on_null && value.is_null() {
+                    return Ok(value);
+                } else {
+                    result.push(value)
+                }
+            }
+            Err(e) => return Err(e),
         }
-
-        result.push(value);
     }
 
-    Value::list(result)
+    Ok(Value::list(result))
 }
 
 #[cfg(feature = "async")]
@@ -211,7 +215,7 @@ async fn resolve_into_list_async<'a, S, T, I>(
     executor: &'a Executor<'a, 'a, T::Context, S>,
     info: &'a T::TypeInfo,
     items: I,
-) -> Value<S>
+) -> ExecutionResult<S>
 where
     S: ScalarValue + Send + Sync,
     I: Iterator<Item = T> + ExactSizeIterator,
@@ -235,12 +239,12 @@ where
     let mut values = Vec::with_capacity(futures.len());
     while let Some(value) = futures.next().await {
         if stop_on_null && value.is_null() {
-            return value;
+            return Ok(value);
         }
         values.push(value);
     }
 
-    Value::list(values)
+    Ok(Value::list(values))
 }
 
 #[cfg(feature = "async")]
@@ -256,7 +260,7 @@ where
         info: &'a Self::TypeInfo,
         _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
         Box::pin(f)
     }
@@ -275,7 +279,7 @@ where
         info: &'a Self::TypeInfo,
         _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = resolve_into_list_async(executor, info, self.iter());
         Box::pin(f)
     }
@@ -294,12 +298,13 @@ where
         info: &'a Self::TypeInfo,
         _: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         let f = async move {
-            match *self {
+            let value = match *self {
                 Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
                 None => Value::null(),
-            }
+            };
+            Ok(value)
         };
         Box::pin(f)
     }

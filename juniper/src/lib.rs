@@ -88,7 +88,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [chrono]: https://crates.io/crates/chrono
 
 */
-#![doc(html_root_url = "https://docs.rs/juniper/0.14.1")]
+#![doc(html_root_url = "https://docs.rs/juniper/0.14.2")]
 #![warn(missing_docs)]
 
 #[doc(hidden)]
@@ -112,14 +112,15 @@ extern crate uuid;
 #[cfg(feature = "async")]
 pub use juniper_codegen::subscription;
 pub use juniper_codegen::{
-    object, union, GraphQLEnum, GraphQLInputObject, GraphQLObject, GraphQLScalarValue, ScalarValue,
+    graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+    GraphQLScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    object_internal, union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
-    GraphQLScalarValueInternal,
+    graphql_object_internal, graphql_union_internal, GraphQLEnumInternal,
+    GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
 
 #[macro_use]
@@ -153,6 +154,7 @@ mod executor_tests;
 pub use crate::util::to_camel_case;
 
 use crate::{
+    executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
@@ -212,13 +214,6 @@ where
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
-    {
-        let errors = validate_input_values(variables, &document, &root_node.schema);
-
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
 
     {
         let mut ctx = ValidatorContext::new(&root_node.schema, &document);
@@ -230,7 +225,17 @@ where
         }
     }
 
-    Ok(document)
+    let operation = get_operation(&document, operation_name)?;
+
+    {
+        let errors = validate_input_values(variables, operation, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    execute_validated_query(&document, operation, root_node, variables, context)
 }
 
 /// This is the same as `parse_and_validate_document`,
@@ -253,68 +258,18 @@ where
     CtxT: Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
+
+    let operation = get_operation(&document, operation_name)?;
+
     {
-        let errors = validate_input_values(variables, &document, &root_node.schema);
+        let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
             return Err(GraphQLError::ValidationError(errors));
         }
     }
 
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
-
-        let errors = ctx.into_errors();
-        if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
-        }
-    }
-
-    Ok(document)
-}
-
-/// Execute a query in a provided schema
-pub fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
-    document_source: &'a str,
-    operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &CtxT,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT>,
-    MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
-{
-    let document = parse_and_validate_document(document_source, root_node, variables)?;
-
-    executor::execute_validated_query(document, operation_name, root_node, variables, context)
-}
-
-/// Execute query asynchronously in a provided schema
-#[cfg(feature = "async")]
-pub async fn execute_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
-    document_source: &'a str,
-    operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &CtxT,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Send + Sync,
-{
-    let document = parse_and_validate_document_async(document_source, root_node, variables)?;
-
-    executor::execute_validated_query_async(document, operation_name, root_node, variables, context)
+    executor::execute_validated_query_async(&document, operation, root_node, variables, context)
         .await
 }
 
@@ -356,7 +311,7 @@ where
 
 /// Execute the reference introspection query in the provided schema
 pub fn introspect<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, S>,
     context: &CtxT,
     format: IntrospectionFormat,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>

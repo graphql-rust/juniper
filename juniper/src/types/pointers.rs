@@ -5,7 +5,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
     types::base::{Arguments, GraphQLType},
-    value::{ScalarValue, Value},
+    value::ScalarValue,
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
@@ -52,7 +52,7 @@ where
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
@@ -124,7 +124,7 @@ where
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<CtxT, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
     }
 }
@@ -152,7 +152,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, Value<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
     }
 }
@@ -211,8 +211,27 @@ where
         info: &T::TypeInfo,
         selection_set: Option<&[Selection<S>]>,
         executor: &Executor<T::Context, S>,
-    ) -> Value<S> {
+    ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
+where
+    S: ScalarValue + Send + Sync,
+    T: crate::GraphQLTypeAsync<S>,
+    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Sync + Send,
+    <T as crate::types::base::GraphQLType<S>>::Context: Sync + Send,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        use futures::future;
+        (**self).resolve_async(info, selection_set, executor)
     }
 }
 

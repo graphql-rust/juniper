@@ -242,10 +242,7 @@ impl Database {
             ),
         );
 
-        Database {
-            humans: humans,
-            droids: droids,
-        }
+        Database { humans, droids }
     }
 
     pub fn get_hero(&self, episode: Option<Episode>) -> &dyn Character {

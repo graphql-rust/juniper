@@ -3,7 +3,7 @@ use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
-    executor::{Executor, Registry},
+    executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::base::GraphQLType,
@@ -189,8 +189,8 @@ where
         _: &(),
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
-    ) -> Value<S> {
-        Value::scalar(String::from(*self))
+    ) -> ExecutionResult<S> {
+        Ok(Value::scalar(String::from(*self)))
     }
 }
 
@@ -204,7 +204,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::Value<S>> {
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
         use futures::future;
         future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
     }

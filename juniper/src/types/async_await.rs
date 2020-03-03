@@ -130,9 +130,13 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, Value<S>> {
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
         if let Some(selection_set) = selection_set {
-            resolve_selection_set_into_async(self, info, selection_set, executor)
+            Box::pin(async move {
+                let value =
+                    resolve_selection_set_into_async(self, info, selection_set, executor).await;
+                Ok(value)
+            })
         } else {
             panic!("resolve() must be implemented by non-object output types");
         }
@@ -166,10 +170,7 @@ where
         executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         if Self::name(info).unwrap() == type_name {
-            Box::pin(async move {
-                let res = self.resolve_async(info, selection_set, executor).await;
-                Ok(res)
-            })
+            self.resolve_async(info, selection_set, executor)
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
         }

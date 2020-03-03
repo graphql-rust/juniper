@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.14.1"
+version = "0.14.2"
 authors = [
     "Magnus Hallin <mhallin@fastmail.com>",
     "Christoph Herzog <chris@theduke.at>",
@@ -33,7 +33,7 @@ default = [
 ]
 
 [dependencies]
-juniper_codegen = { version = "0.14.1", path = "../juniper_codegen"  }
+juniper_codegen = { version = "0.14.2", path = "../juniper_codegen"  }
 
 async-trait = "0.1.16" # TODO#433 this crate might not be needed after rebase
 chrono = { version = "0.4.0", optional = true }
@@ -46,9 +46,9 @@ serde = { version = "1.0.8" }
 serde_derive = { version = "1.0.2" }
 serde_json = { version="1.0.2", optional = true }
 url = { version = "2", optional = true }
-uuid = { version = "0.7", optional = true }
+uuid = { version = ">= 0.7, < 0.8", optional = true }
 
 [dev-dependencies]
 bencher = "0.1.2"
 serde_json = { version = "1.0.2" }
-tokio = "=0.2.0-alpha.6"
+tokio = { version = "0.2", features = ["macros", "rt-core", "time"] }

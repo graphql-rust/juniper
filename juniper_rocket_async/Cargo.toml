@@ -1,0 +1,30 @@
+[package]
+name = "juniper_rocket"
+version = "0.5.1"
+authors = [
+    "Magnus Hallin <mhallin@fastmail.com>",
+    "Christoph Herzog <chris@theduke.at>",
+]
+description = "Juniper GraphQL integration with Rocket"
+license = "BSD-2-Clause"
+documentation = "https://docs.rs/juniper_rocket"
+repository = "https://github.com/graphql-rust/juniper"
+edition = "2018"
+
+[features]
+async = [ "juniper/async" ]
+
+[dependencies]
+serde = { version = "1.0.2" }
+serde_json = { version = "1.0.2" }
+serde_derive = { version = "1.0.2" }
+juniper = { version = "0.14.1", default-features = false, path = "../juniper"}
+
+futures = { version = "=0.3.1", features = ["compat"] }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
+tokio = "0.2"
+
+[dev-dependencies.juniper]
+version = "0.14.1"
+features = ["expose-test-schema", "serde_json"]
+path = "../juniper"

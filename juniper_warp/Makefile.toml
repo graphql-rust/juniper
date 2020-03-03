@@ -1,3 +1,7 @@
+
+[env]
+CARGO_MAKE_CARGO_ALL_FEATURES = ""
+
 [tasks.build-verbose]
 condition = { rust_version = { min = "1.29.0" } }
 

@@ -213,7 +213,7 @@ mod integration_test {
     fn test_serialization() {
         struct Root;
 
-        #[crate::object_internal]
+        #[crate::graphql_object_internal]
         impl Root {
             fn exampleNaiveDate() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)

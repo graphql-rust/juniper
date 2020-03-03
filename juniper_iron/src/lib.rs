@@ -37,7 +37,7 @@ use juniper::{Context, EmptyMutation};
 # struct QueryRoot;
 # struct Database { users: HashMap<String, User> }
 #
-# #[juniper::object( Context = Database )]
+# #[juniper::graphql_object( Context = Database )]
 # impl User {
 #     fn id(&self) -> FieldResult<&String> {
 #         Ok(&self.id)
@@ -54,7 +54,7 @@ use juniper::{Context, EmptyMutation};
 #     }
 # }
 #
-# #[juniper::object( Context = Database )]
+# #[juniper::graphql_object( Context = Database )]
 # impl QueryRoot {
 #     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
@@ -155,11 +155,11 @@ where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute(root_node, context))
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
                     .map(|request| request.execute(root_node, context))
@@ -174,11 +174,11 @@ where
     S: ScalarValue,
 {
     fn is_ok(&self) -> bool {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses
-                .iter()
-                .fold(true, |ok, response| ok && response.is_ok()),
+        match *self {
+            GraphQLBatchResponse::Single(ref response) => response.is_ok(),
+            GraphQLBatchResponse::Batch(ref responses) => {
+                responses.iter().all(|response| response.is_ok())
+            }
         }
     }
 }
@@ -263,7 +263,7 @@ where
     /// the schema needs to execute the query.
     pub fn new(context_factory: CtxFactory, query: Query, mutation: Mutation) -> Self {
         GraphQLHandler {
-            context_factory: context_factory,
+            context_factory,
             root_node: RootNode::new(query, mutation),
         }
     }
@@ -513,9 +513,9 @@ mod tests {
         let body = response::extract_body_to_string(response);
 
         http_tests::TestResponse {
-            status_code: status_code,
+            status_code,
             body: Some(body),
-            content_type: content_type,
+            content_type,
         }
     }
 

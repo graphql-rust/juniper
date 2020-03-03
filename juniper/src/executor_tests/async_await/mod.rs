@@ -13,7 +13,7 @@ struct User {
     kind: UserKind,
 }
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl User {
     async fn name(&self) -> &str {
         &self.name
@@ -35,15 +35,14 @@ impl User {
     }
 
     async fn delayed() -> bool {
-        let when = tokio::clock::now() + std::time::Duration::from_millis(100);
-        tokio::timer::delay(when).await;
+        tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
         true
     }
 }
 
 struct Query;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Query {
     fn field_sync(&self) -> &'static str {
         "field_sync"
@@ -62,25 +61,18 @@ impl Query {
     }
 
     async fn delayed() -> bool {
-        let when = tokio::clock::now() + std::time::Duration::from_millis(100);
-        tokio::timer::delay(when).await;
+        tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
         true
     }
 }
 
 struct Mutation;
 
-#[crate::object_internal]
+#[crate::graphql_object_internal]
 impl Mutation {}
 
-fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-    tokio::runtime::current_thread::Runtime::new()
-        .unwrap()
-        .block_on(f)
-}
-
-#[test]
-fn async_simple() {
+#[tokio::test]
+async fn async_simple() {
     let schema = RootNode::new(Query, Mutation, EmptySubscription::new());
     let doc = r#"
         query { 
@@ -94,9 +86,9 @@ fn async_simple() {
     "#;
 
     let vars = Default::default();
-    let f = crate::execute_async(doc, None, &schema, &vars, &());
-
-    let (res, errs) = run(f).unwrap();
+    let (res, errs) = crate::execute_async(doc, None, &schema, &vars, &())
+        .await
+        .unwrap();
 
     assert!(errs.is_empty());
 
@@ -111,9 +103,7 @@ fn async_simple() {
             "fieldAsyncPlain": "field_async_plain",
             "fieldSync": "field_sync",
             "user": {
-                "kind": "USER",
-                // "name": "user1",
-                // "delayed": true,
+                "name": "user1",
             },
         }),
     );

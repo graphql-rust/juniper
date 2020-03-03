@@ -27,7 +27,7 @@ object in Juniper, most commonly using the `object` proc macro:
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Root;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Root {
     fn userWithUsername(username: String) -> FieldResult<Option<User>> {
         // Look up user in database...
@@ -48,7 +48,7 @@ usually performs some mutating side-effect, such as updating a database.
 # #[derive(juniper::GraphQLObject)] struct User { name: String }
 struct Mutations;
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl Mutations {
     fn signUpUser(name: String, email: String) -> FieldResult<User> {
         // Validate inputs and save user in database...

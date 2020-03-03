@@ -1,5 +1,5 @@
 use juniper::{
-    object, subscription, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, Value,
+    graphql_object, subscription, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, Value,
     Variables,
 };
 
@@ -57,12 +57,12 @@ impl User {
     }
 }
 
-#[object(Context = Context)]
+#[graphql_object(Context = Context)]
 impl User {}
 
 pub struct Query;
 
-#[object(Context = Context)]
+#[graphql_object(Context = Context)]
 impl Query {
     fn user_sync_instant(id: i32) -> Result<User, FieldError> {
         Ok(User::new(id))
@@ -93,7 +93,7 @@ impl Query {
 
 pub struct Mutation;
 
-#[object(Context = Context)]
+#[graphql_object(Context = Context)]
 impl Mutation {}
 
 pub struct Subscription;

@@ -257,6 +257,8 @@ where
 ///
 /// # fn main() {
 /// # let _: V =
+/// graphql_value!(None);
+/// # let _: V =
 /// graphql_value!(1234);
 /// # let _: V =
 /// graphql_value!("test");

@@ -61,12 +61,12 @@ impl Character for Droid {
     fn id(&self) -> &str { &self.id }
 }
 
-#[juniper::object(Context = Database)]
+#[juniper::graphql_object(Context = Database)]
 impl Human {
     fn id(&self) -> &str { &self.id }
 }
 
-#[juniper::object(
+#[juniper::graphql_object(
     name = "Droid",
     Context = Database,
 )]

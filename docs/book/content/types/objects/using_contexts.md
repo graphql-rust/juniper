@@ -57,7 +57,7 @@ struct User {
 
 
 // Assign Database as the context type for User
-#[juniper::object(
+#[juniper::graphql_object(
     Context = Database,
 )]
 impl User {
