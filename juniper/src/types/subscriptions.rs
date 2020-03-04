@@ -1,17 +1,18 @@
 use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, RootNode, Variables, GraphQLError};
+use crate::http::GraphQLRequest;
 
-pub trait SubscriptionCoordinator {
+pub trait SubscriptionCoordinator<CtxT, S>
+    where S: ScalarValue
+{
 
     type Connection;
 
     //todo: this should create subscription connection which
     //      should resolve itself into stream and into graphql stream
     //      and handle unsubscribe
-    fn subscribe<'a, S, CtxT>(
+    fn subscribe<'a>(
         &self,
-        document_source: &'a str,
-        operation_name: Option<&str>,
-        variables: &Variables<S>,
+        req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
     ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>>;
 }

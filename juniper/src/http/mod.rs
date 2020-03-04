@@ -79,28 +79,18 @@ where
         }
     }
 
-    /// Execute a GraphQL subscription using the specified schema and context
-    ///
-    /// This is a wrapper around the `subscribe_async` function exposed
-    /// at the top level of this crate.
-    #[cfg(feature = "async")]
     pub async fn subscribe<'a, CtxT, CoordinatorT>(
         &'a self,
         coordinator: &CoordinatorT,
         context: &'a CtxT,
     ) -> Result<CoordinatorT::Connection, GraphQLError<'a>>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        CoordinatorT: crate::SubscriptionCoordinator + Send + Sync,
-        CtxT: Send + Sync,
+        where
+            S: ScalarValue + Send + Sync + 'static,
+            CoordinatorT: crate::SubscriptionCoordinator<CtxT, S> + Send + Sync,
+            CtxT: Send + Sync,
     {
-        let op = self.operation_name();
-        let vars = self.variables();
-
         coordinator.subscribe(
-            &self.query,
-            op,
-            &vars,
+            self,
             context
         ).await
     }
@@ -156,6 +146,42 @@ where
         GraphQLResponse(res)
     }
 }
+
+/// Execute a GraphQL subscription using the specified schema and context
+///
+/// This is a wrapper around the `subscribe_async` function exposed
+/// at the top level of this crate.
+#[cfg(feature = "async")]
+pub async fn resolve_into_stream<'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
+    req: &'a GraphQLRequest<S>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    context: &'a CtxT,
+) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+    //todo: consider importing without 'crate::'
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+{
+    let op = req.operation_name();
+    let vars = req.variables();
+    let res = crate::subscribe(
+        &req.query,
+        op,
+        root_node,
+        &vars,
+        context
+    ).await;
+
+    //todo: return Connection::from(res) (?)
+    res
+}
+
 
 /// Simple wrapper around the result from executing a GraphQL query
 ///
