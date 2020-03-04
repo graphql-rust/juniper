@@ -16,13 +16,7 @@ use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "async")]
 use crate::executor::ValuesResultStream;
-use crate::{
-    ast::InputValue,
-    executor::ExecutionError,
-    value,
-    value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
-};
+use crate::{ast::InputValue, executor::ExecutionError, value, value::{DefaultScalarValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables, SubscriptionConnection};
 use futures::task::Poll;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -81,9 +75,9 @@ where
 
     pub async fn subscribe<'a, CtxT, CoordinatorT>(
         &'a self,
-        coordinator: &CoordinatorT,
+        coordinator: &'a CoordinatorT,
         context: &'a CtxT,
-    ) -> Result<CoordinatorT::Connection, GraphQLError<'a>>
+    ) -> Result<Box<dyn SubscriptionConnection + 'a>, GraphQLError<'a>>
         where
             S: ScalarValue + Send + Sync + 'static,
             CoordinatorT: crate::SubscriptionCoordinator<CtxT, S> + Send + Sync,
@@ -152,12 +146,18 @@ where
 /// This is a wrapper around the `subscribe_async` function exposed
 /// at the top level of this crate.
 #[cfg(feature = "async")]
-pub async fn resolve_into_stream<'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
-    req: &'a GraphQLRequest<S>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-    context: &'a CtxT,
-) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
+    req: &'req GraphQLRequest<S>,
+    root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    context: &'ctx CtxT,
+) -> Result<
+        (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
+        GraphQLError<'a>
+    >
     where
+        'req: 'a,
+        'rn: 'a,
+        'ctx: 'a,
         S: ScalarValue + Send + Sync + 'static,
     //todo: consider importing without 'crate::'
         QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

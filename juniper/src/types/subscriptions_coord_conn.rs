@@ -1,4 +1,4 @@
-use crate::{SubscriptionCoordinator, Variables, BoxFuture, GraphQLError, ScalarValue, GraphQLTypeAsync, GraphQLSubscriptionType};
+use crate::{SubscriptionCoordinator, Variables, BoxFuture, GraphQLError, ScalarValue, GraphQLTypeAsync, GraphQLSubscriptionType, Value, ValuesResultStream, ExecutionError, SubscriptionConnection};
 use crate::http::GraphQLRequest;
 
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
@@ -28,24 +28,52 @@ impl <'a, QueryT, MutationT, SubscriptionT, CtxT, S>
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
 {
-    type Connection = Connection;
-
     fn subscribe<'c>(
-        &self,
+        &'c self,
         req: &'c GraphQLRequest<S>,
         context: &'c CtxT,
-    ) -> BoxFuture<'c, Result<Self::Connection, GraphQLError<'c>>>
+    ) -> BoxFuture<'c, Result<Box<dyn SubscriptionConnection + 'c>, GraphQLError<'c>>>
     {
-        crate::http::resolve_into_stream(
-            req,
-            self.root_node,
-            context,
-        );
+        let rn = self.root_node;
 
-        todo!()
+        Box::pin(async move {
+            let req  = req;
+            let ctx= context;
+
+            let res= crate::http::resolve_into_stream(
+                req,
+                rn,
+                ctx,
+            )
+                .await?;
+
+            let c: Box<dyn SubscriptionConnection + 'c> = Box::new(
+                Connection::from(res)
+            );
+
+            Ok(c)
+        })
+
     }
 }
 
-pub struct Connection {
+pub struct Connection<'a, S> {
+    stream: Value<ValuesResultStream<'a, S>>,
+    err: Vec<ExecutionError<S>>,
+}
+
+impl<'a, S>
+    From<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)>
+    for Connection<'a, S>
+{
+    fn from((s, e): (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)) -> Self {
+        Self {
+            stream: s,
+            err: e,
+        }
+    }
+}
+
+impl<'a, S> SubscriptionConnection for Connection<'a, S> {
 
 }
