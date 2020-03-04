@@ -140,7 +140,9 @@
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
 the <code>object</code> procedural macro. This macro lets you define GraphQL object
-fields in a Rust <code>impl</code> block for a type. Continuing with the
+fields in a Rust <code>impl</code> block for a type. Note that only GraphQL fields
+can be specified in this <code>impl</code> block. If you want to define normal methods on the struct,
+you have to do so in a separate, normal <code>impl</code> block. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
 <pre><pre class="playpen"><code class="language-rust">
