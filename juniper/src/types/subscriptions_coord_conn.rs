@@ -4,6 +4,7 @@ use std::pin::Pin;
 use futures::task::Poll;
 use crate::http::GraphQLResponse;
 use futures::{StreamExt, Stream};
+use std::any::Any;
 
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
@@ -17,6 +18,27 @@ where
     CtxT: Send + Sync,
 {
     root_node: &'a crate::RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+}
+
+impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+    Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+{
+    pub fn new(
+        root_node: &'a crate::RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+    ) -> Self {
+        Self {
+            root_node
+        }
+    }
 }
 
 impl <'a, QueryT, MutationT, SubscriptionT, CtxT, S>
@@ -36,7 +58,9 @@ impl <'a, QueryT, MutationT, SubscriptionT, CtxT, S>
         &'c self,
         req: &'c GraphQLRequest<S>,
         context: &'c CtxT,
-    ) -> BoxFuture<'c, Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>>
+//    ) -> BoxFuture<'c, Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>>
+//todo: return box<result> or T
+    ) -> BoxFuture<'c, Result<crate::Connection<'c, S>, GraphQLError<'c>>>
     {
         let rn = self.root_node;
 
@@ -51,11 +75,13 @@ impl <'a, QueryT, MutationT, SubscriptionT, CtxT, S>
             )
                 .await?;
 
-            let c: Box<dyn SubscriptionConnection<S> + 'c> = Box::new(
-                Connection::from(res)
-            );
+//            let c: Box<dyn SubscriptionConnection<S> + 'c> = Box::new(
+//                Connection::from(res)
+//            );
 
-            Ok(c)
+            Ok(
+                Connection::from(res)
+            )
         })
 
     }

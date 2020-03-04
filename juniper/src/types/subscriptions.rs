@@ -1,11 +1,11 @@
 use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, RootNode, Variables, GraphQLError, ExecutionError};
 use crate::http::{GraphQLRequest, GraphQLResponse};
 use std::pin::Pin;
+use std::any::Any;
 
 pub trait SubscriptionCoordinator<CtxT, S>
     where S: ScalarValue
 {
-
     //todo: this should create subscription connection which
     //      should resolve itself into stream and into graphql stream
     //      and handle unsubscribe
@@ -15,7 +15,8 @@ pub trait SubscriptionCoordinator<CtxT, S>
         context: &'c CtxT,
     ) -> BoxFuture<
             'c,
-            Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>
+//            Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>
+            Result<crate::Connection<'c, S>, GraphQLError<'c>>
         >;
 }
 
@@ -24,7 +25,8 @@ pub trait SubscriptionConnection<'a, S> {
     fn into_stream(self) ->
         Result<
             Pin<Box<
-                dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a
+                dyn futures::Stream<Item = GraphQLResponse<'static, S>>
+                + Send + 'a
             >>,
             Vec<ExecutionError<S>>,
         >;

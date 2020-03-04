@@ -18,6 +18,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::executor::ValuesResultStream;
 use crate::{ast::InputValue, executor::ExecutionError, value, value::{DefaultScalarValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables, SubscriptionConnection};
 use futures::task::Poll;
+use std::any::Any;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -77,7 +78,8 @@ where
         &'a self,
         coordinator: &'a CoordinatorT,
         context: &'a CtxT,
-    ) -> Result<Box<dyn SubscriptionConnection<'_, S> + 'a>, GraphQLError<'a>>
+//    ) -> Result<Box<dyn SubscriptionConnection<'_, S> + 'a>, GraphQLError<'a>>
+    ) -> Result<crate::Connection<'_, S>, GraphQLError<'a>>
         where
             S: ScalarValue + Send + Sync + 'static,
             CoordinatorT: crate::SubscriptionCoordinator<CtxT, S> + Send + Sync,
