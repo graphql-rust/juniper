@@ -77,7 +77,7 @@ where
         &'a self,
         coordinator: &'a CoordinatorT,
         context: &'a CtxT,
-    ) -> Result<Box<dyn SubscriptionConnection + 'a>, GraphQLError<'a>>
+    ) -> Result<Box<dyn SubscriptionConnection<'_, S> + 'a>, GraphQLError<'a>>
         where
             S: ScalarValue + Send + Sync + 'static,
             CoordinatorT: crate::SubscriptionCoordinator<CtxT, S> + Send + Sync,

@@ -1,5 +1,6 @@
 use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, RootNode, Variables, GraphQLError, ExecutionError};
-use crate::http::GraphQLRequest;
+use crate::http::{GraphQLRequest, GraphQLResponse};
+use std::pin::Pin;
 
 pub trait SubscriptionCoordinator<CtxT, S>
     where S: ScalarValue
@@ -14,13 +15,19 @@ pub trait SubscriptionCoordinator<CtxT, S>
         context: &'c CtxT,
     ) -> BoxFuture<
             'c,
-            Result<Box<dyn SubscriptionConnection + 'c>, GraphQLError<'c>>
+            Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>
         >;
 }
 
 // todo: unregister connection on destruction
-pub trait SubscriptionConnection {
-
+pub trait SubscriptionConnection<'a, S> {
+    fn into_stream(self) ->
+        Result<
+            Pin<Box<
+                dyn futures::Stream<Item = GraphQLResponse<'static, S>> + Send + 'a
+            >>,
+            Vec<ExecutionError<S>>,
+        >;
 }
 
 // TODO#433: update this after `async-await` will be refactored
