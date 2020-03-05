@@ -47,8 +47,6 @@ use std::{
 };
 use std::{pin::Pin, sync::Arc};
 
-use juniper_subscriptions::Coordinator;
-
 // TODO#433: update this once juniper subscriptions' implementation is finished
 
 use futures::future::poll_fn;
@@ -474,7 +472,7 @@ where
                     let graphql_request =
                         GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
 
-                    let coordinator = Coordinator::new(&schema);
+                    let coordinator = juniper_subscriptions::Coordinator::new(&schema);
                     let response_stream = graphql_request.subscribe(
                         &coordinator,
                         &context
@@ -484,63 +482,64 @@ where
 
                     use juniper::SubscriptionConnection as _;
 
-                    let stream = match
-                        response_stream.into_stream()
-                    {
-                        Ok(s) => s,
-                        Err(error) => {
-                            todo!("handle error")
-//                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-//                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
-//                                request_id,
-//                                serde_json::ser::to_string(&error).unwrap()
-//                            )))));
+                    todo!();
+//                    let stream = match
+//                        response_stream.into_stream()
+//                    {
+//                        Ok(s) => s,
+//                        Err(error) => {
+//                            todo!("handle error")
+////                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+////                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
+////                                request_id,
+////                                serde_json::ser::to_string(&error).unwrap()
+////                            )))));
+////
+////                            let close_text = format!(
+////                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
+////                                request_id
+////                            );
+////
+////                            // send message that we are closing channel
+////                            let _ =
+////                                ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
+////
+////                            // close channel
+////                            let _ = ws_tx.unbounded_send(None);
+////
+////                            return;
+//                        }
+//                    };
 //
-//                            let close_text = format!(
-//                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-//                                request_id
-//                            );
+//                    stream
+//                        .take_while(move |response| {
+//                            let request_id = request_id.clone();
+//                            let closed = got_close_signal.load(Ordering::Relaxed);
+//                            if closed {
+//                                let close_text = format!(
+//                                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
+//                                    request_id
+//                                );
 //
-//                            // send message that we are closing channel
-//                            let _ =
-//                                ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
+//                               //  send message that we are closing channel
+//                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text))));
 //
-//                            // close channel
-//                            let _ = ws_tx.unbounded_send(None);
+//                                // close channel
+//                                let _ = ws_tx.unbounded_send(None);
+//                            } else {
+//                                let mut response_text = serde_json::to_string(&response).unwrap();
+//                                response_text = format!(
+//                                    r#"{{"type":"data","id":"{}","payload":{} }}"#,
+//                                    request_id, response_text
+//                                );
 //
-//                            return;
-                        }
-                    };
-
-                    stream
-                        .take_while(move |response| {
-                            let request_id = request_id.clone();
-                            let closed = got_close_signal.load(Ordering::Relaxed);
-                            if closed {
-                                let close_text = format!(
-                                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                    request_id
-                                );
-
-                               //  send message that we are closing channel
-                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text))));
-
-                                // close channel
-                                let _ = ws_tx.unbounded_send(None);
-                            } else {
-                                let mut response_text = serde_json::to_string(&response).unwrap();
-                                response_text = format!(
-                                    r#"{{"type":"data","id":"{}","payload":{} }}"#,
-                                    request_id, response_text
-                                );
-
-                                let _ =
-                                    ws_tx.unbounded_send(Some(Ok(Message::text(response_text))));
-                            }
-                            async move { !closed }
-                        })
-                        .for_each(|_| async {})
-                        .await;
+//                                let _ =
+//                                    ws_tx.unbounded_send(Some(Ok(Message::text(response_text))));
+//                            }
+//                            async move { !closed }
+//                        })
+//                        .for_each(|_| async {})
+//                        .await;
                 });
             }
             "stop" => {

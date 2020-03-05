@@ -20,15 +20,8 @@ pub trait SubscriptionCoordinator<CtxT, S>
 }
 
 // todo: unregister connection on destruction
-pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'static, S>> {
-    fn into_stream(self) ->
-        Result<
-            Pin<Box<
-                dyn futures::Stream<Item = GraphQLResponse<'static, S>>
-                + Send + 'a
-            >>,
-            Vec<ExecutionError<S>>,
-        >;
+pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'static, S>>
+{
 }
 
 // TODO#433: update this after `async-await` will be refactored
