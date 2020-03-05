@@ -15,13 +15,12 @@ pub trait SubscriptionCoordinator<CtxT, S>
         context: &'c CtxT,
     ) -> BoxFuture<
             'c,
-//            Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>
-            Result<crate::Connection<'c, S>, GraphQLError<'c>>
+            Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>
         >;
 }
 
 // todo: unregister connection on destruction
-pub trait SubscriptionConnection<'a, S> {
+pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'static, S>> {
     fn into_stream(self) ->
         Result<
             Pin<Box<

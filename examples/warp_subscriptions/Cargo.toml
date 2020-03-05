@@ -17,6 +17,7 @@ warp = "0.2.1"
 
 juniper_codegen = { path = "../../juniper_codegen", features = ["async"] }
 juniper = { path = "../../juniper", features = ["async"] }
+juniper_subscriptions = { path = "../../juniper_subscriptions"}
 juniper_warp = { path = "../../juniper_warp", features = ["async"] }
 
 #juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
