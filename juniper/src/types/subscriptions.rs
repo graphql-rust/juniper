@@ -3,24 +3,31 @@ use crate::http::{GraphQLRequest, GraphQLResponse};
 use std::pin::Pin;
 use std::any::Any;
 
-pub trait SubscriptionCoordinator<CtxT, S>
+pub trait SubscriptionCoordinator<'a, CtxT, S>
     where S: ScalarValue
 {
+
+    type Connection: SubscriptionConnection<'a, S>;
+
     //todo: this should create subscription connection which
     //      should resolve itself into stream and into graphql stream
     //      and handle unsubscribe
-    fn subscribe<'c>(
-        &'c self,
-        req: &'c GraphQLRequest<S>,
-        context: &'c CtxT,
+    fn subscribe(
+        &'a self,
+        req: &'a GraphQLRequest<S>,
+        context: &'a CtxT,
     ) -> BoxFuture<
-            'c,
-            Result<Box<dyn SubscriptionConnection<S> + 'c>, GraphQLError<'c>>
+            'a,
+            Result<
+                Self::Connection,
+                GraphQLError<'a>
+            >
         >;
 }
 
 // todo: unregister connection on destruction
-pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'static, S>>
+pub trait SubscriptionConnection<'a, S>:
+    futures::Stream<Item = GraphQLResponse<'a, S>>
 {
 }
 

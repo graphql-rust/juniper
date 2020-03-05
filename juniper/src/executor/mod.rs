@@ -220,6 +220,7 @@ pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S
 
 /// Boxed `futures::Stream` of `Value`s
 #[cfg(feature = "async")]
+//todo: make lifetime static (?)
 pub type ValuesResultStream<'a, S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<Value<S>, S>> + Send + 'a>>;
 

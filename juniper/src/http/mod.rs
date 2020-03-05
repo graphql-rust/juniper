@@ -74,22 +74,6 @@ where
         }
     }
 
-    pub async fn subscribe<'a, CtxT, CoordinatorT>(
-        &'a self,
-        coordinator: &'a CoordinatorT,
-        context: &'a CtxT,
-    ) -> Result<Box<dyn SubscriptionConnection<'_, S> + 'a>, GraphQLError<'a>>
-        where
-            S: ScalarValue + Send + Sync + 'static,
-            CoordinatorT: crate::SubscriptionCoordinator<CtxT, S> + Send + Sync,
-            CtxT: Send + Sync,
-    {
-        coordinator.subscribe(
-            self,
-            context
-        ).await
-    }
-
     /// Execute a GraphQL request using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
