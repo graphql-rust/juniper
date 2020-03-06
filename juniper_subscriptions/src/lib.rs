@@ -1,8 +1,18 @@
 // todo: update docs
 
+#![warn(missing_docs)]
+//#![deny(missing_docs)]
+//#![deny(warnings)] todo: turn on
+#![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.14.2")]
+
 use std::{iter::FromIterator, pin::Pin};
 
-use juniper::{http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesResultStream, FieldError};
+use juniper::{
+    http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError,
+    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue,
+    SubscriptionConnection, SubscriptionCoordinator, Value,
+    ValuesResultStream
+};
 
 use futures::task::Poll;
 use futures::Stream;
@@ -49,7 +59,7 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S> SubscriptionCoordinator<'a, CtxT, S>
     for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync + 'a,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -81,8 +91,22 @@ where
     }
 }
 
+/// todo: add description
+///
+/// Implements [`SubscriptionConnection`].
+///
+/// Yields [`GraphQLResponse`]s from [`futures::Stream`] depending on [`Value`]
+/// in the following order:
+///
+/// [`Value::Null`] - returns [`Value::Null`] once
+/// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
+/// [`Value::List`] - resolves each stream from the list using current logic and returns
+///                   values in the order received
+/// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 pub struct Connection<'a, S> {
-    values_stream: Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
+    values_stream: Pin<Box<
+        dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a
+    >>,
 }
 
 impl<'a, S> Connection<'a, S>
@@ -96,14 +120,13 @@ where
     }
 }
 
-//todo: pass by reference
+//todo: test
 fn parse_stream<'a, S>(
-    stream: Value<ValuesResultStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Pin<
-    Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>,
->
+    stream: Value<ValuesResultStream<'a, S>>,
+    errors: Vec<ExecutionError<S>>
+) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
 where
-//todo: not clone
-    S: ScalarValue + Send + Sync + 'a + Clone,
+    S: ScalarValue + Send + Sync + 'a,
 {
     use futures::stream::{self, StreamExt as _};
 
@@ -132,16 +155,17 @@ where
             Box::pin(stream::select_all(streams))
         },
         Value::Object(obj) => {
+            let obj_len = obj.field_count();
             let mut key_values = obj.into_key_value_list();
-            if key_values.is_empty() {
+            if obj_len == 0 {
                 return Box::pin(stream::once(async move {
                     GraphQLResponse::from_result(Ok((Value::Null, errors)))
                 }));
             }
 
             let mut filled_count = 0;
-            let mut ready_vector = Vec::with_capacity(key_values.len());
-            for _ in 0..key_values.len() {
+            let mut ready_vector = Vec::with_capacity(obj_len);
+            for _ in 0..obj_len {
                 ready_vector.push(None);
             }
 
@@ -165,14 +189,15 @@ where
                                         Poll::Pending => { /* check back later */ }
                                     }
                                 },
-                                // todo: not panic on errors
-                                _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
+                                //todo: return error
+                                _ => return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                                     Value::Null, errors.clone())))))
                             }
                         }
                     }
-                    if filled_count == key_values.len() {
+                    if filled_count == obj_len {
                         filled_count = 0;
-                        let new_vec = (0..key_values.len()).map(|_| None).collect::<Vec<_>>();
+                        let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
                         let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
                         let ready_vec_iterator = ready_vec.into_iter().map(|el| {
                             let (name, val) = el.unwrap();

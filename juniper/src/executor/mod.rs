@@ -623,6 +623,7 @@ where
         });
     }
 
+    /// Returns new [`ExecutionError`] at the current place
     pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
