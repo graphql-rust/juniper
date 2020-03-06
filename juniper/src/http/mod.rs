@@ -4,10 +4,6 @@ pub mod graphiql;
 pub mod playground;
 
 #[cfg(feature = "async")]
-use std::pin::Pin;
-
-#[cfg(feature = "async")]
-use futures::{stream::Stream, stream::StreamExt as _};
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},
@@ -15,15 +11,13 @@ use serde::{
 use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "async")]
-use crate::executor::ValuesResultStream;
 use crate::{
-    ast::InputValue,
-    executor::ExecutionError,
-    value,
+    ast::InputValue, executor::ExecutionError,
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
+    FieldError, GraphQLError, GraphQLType, RootNode,
+    Value, Variables, GraphQLTypeAsync, GraphQLSubscriptionType,
+    executor::ValuesResultStream,
 };
-use std::any::Any;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -115,9 +109,9 @@ where
     ) -> GraphQLResponse<'a, S>
     where
         S: ScalarValue + Send + Sync + 'static,
-        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
-        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
         SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
@@ -131,9 +125,11 @@ where
     }
 }
 
-/// Execute a GraphQL subscription using the specified schema and context
+/// Resolve a GraphQL subscription into `Value<ValuesResultStream<S>`
+/// using the specified schema and context
 ///
-/// This is a wrapper around the `subscribe_async` function exposed
+/// todo: remove the following (?)
+/// This is a wrapper around the `subscribe` function exposed
 /// at the top level of this crate.
 #[cfg(feature = "async")]
 pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
@@ -146,21 +142,23 @@ where
     'rn: 'a,
     'ctx: 'a,
     S: ScalarValue + Send + Sync + 'static,
-    //todo: consider importing without 'crate::'
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
     let op = req.operation_name();
     let vars = req.variables();
-    let res = crate::subscribe(&req.query, op, root_node, &vars, context).await;
 
-    //todo: return Connection::from(res) (?)
-    res
+    crate::subscribe(
+        &req.query,
+        op, root_node,
+        &vars,
+        context
+    ).await
 }
 
 /// Simple wrapper around the result from executing a GraphQL query

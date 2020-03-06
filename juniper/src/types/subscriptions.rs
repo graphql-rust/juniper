@@ -1,29 +1,34 @@
-use crate::http::{GraphQLRequest, GraphQLResponse};
 use crate::{
+    http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, ExecutionError, Executor, FieldError, GraphQLError, GraphQLType, Object,
-    RootNode, ScalarValue, Selection, Value, ValuesResultStream, Variables,
+    Arguments, BoxFuture, Executor, FieldError, GraphQLError, GraphQLType, Object,
+    ScalarValue, Selection, Value, ValuesResultStream,
 };
-use std::any::Any;
-use std::pin::Pin;
 
+/// Global subscription coordinator. Should contain the schema and create new
+/// [`SubscriptionConnection`] for every subscription.
+/// Depending on implementation, it can keep track of opened subscription connections
+/// and have max subscription limits / concurrency limits/subscription de-duplication,
+/// reconnection on connection loss / buffering / re-synchronisation, etc.
 pub trait SubscriptionCoordinator<'a, CtxT, S>
 where
     S: ScalarValue,
 {
+    /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`] returns
     type Connection: SubscriptionConnection<'a, S>;
 
+    /// Return [`SubscriptionConnection`] based on given [`GraphQLRequest`]
     fn subscribe(
         &'a self,
-        req: &'a GraphQLRequest<S>,
-        context: &'a CtxT,
+        _: &'a GraphQLRequest<S>,
+        _: &'a CtxT,
     ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>>;
 }
 
+/// Connection yielding [`GraphQLResponse`]s which can be sent over the wire.
 pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
 
-// TODO#433: update this after `async-await` will be refactored
 /**
 
  This trait replaces GraphQLType`'s resolver logic with asynchronous subscription

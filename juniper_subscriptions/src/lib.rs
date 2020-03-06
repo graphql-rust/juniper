@@ -1,17 +1,17 @@
 // todo: update docs
+
+use std::{iter::FromIterator, pin::Pin};
+
 use juniper::{
-    http::GraphQLRequest, BoxFuture, Context, ExecutionError, GraphQLError,
+    http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError,
     GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
-    SubscriptionCoordinator, Value, ValuesResultStream, Variables,
+    SubscriptionCoordinator, Value, ValuesResultStream,
 };
 
 use futures::task::Poll;
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use juniper::http::GraphQLResponse;
-use std::any::Any;
-use std::borrow::BorrowMut;
-use std::iter::FromIterator;
-use std::pin::Pin;
+
 
 /// [`SubscriptionCoordinator`]:
 ///    ?️ global coordinator
@@ -103,8 +103,6 @@ where
     S: ScalarValue + Send + Sync + 'a,
 {
     pub fn from_valuesresultstream(stream: Value<ValuesResultStream<'a, S>>) -> Self {
-        use futures::stream;
-
         let values_stream: Pin<
             Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>,
         > = match stream {
@@ -143,7 +141,7 @@ where
                                             Poll::Pending => { /* check back later */ }
                                         }
                                     },
-                                    // TODO#433: not panic on errors
+                                    // todo: not panic on errors
                                     _ => panic!("into_stream supports only Value::Scalar returned in Value::Object")
                                 }
                             }

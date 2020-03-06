@@ -47,7 +47,7 @@ use std::{
 };
 use std::{pin::Pin, sync::Arc};
 
-// TODO#433: update this once juniper subscriptions' implementation is finished
+// todo: update this once juniper subscriptions' implementation is finished
 
 use futures::future::poll_fn;
 #[cfg(feature = "async")]
@@ -63,7 +63,6 @@ use warp::{filters::BoxedFilter, Filter};
 #[cfg(feature = "async")]
 use juniper::http::GraphQLRequest;
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
-use juniper_subscriptions::Connection;
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -480,8 +479,6 @@ where
                         .subscribe(&graphql_request, &context)
                         .await
                         .unwrap();
-
-                    use juniper::SubscriptionConnection as _;
 
                     //                    let stream =
                     //                        match response_stream.into_stream()
