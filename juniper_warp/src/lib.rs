@@ -476,46 +476,44 @@ where
                     use juniper::SubscriptionCoordinator as _;
 
                     let coordinator = juniper_subscriptions::Coordinator::new(&schema);
-                    let response_stream = coordinator.subscribe(
-                        &graphql_request,
-                        &context
-                    )
+                    let response_stream = coordinator
+                        .subscribe(&graphql_request, &context)
                         .await
                         .unwrap();
 
                     use juniper::SubscriptionConnection as _;
 
-//                    let stream =
-//                        match response_stream.into_stream()
-//                    {
-//                        Ok(s) => s,
-//                        Err(error) => {
-//                            todo!("handle error")
-////                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-////                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
-////                                request_id,
-////                                serde_json::ser::to_string(&error).unwrap()
-////                            )))));
-////
-////                            let close_text = format!(
-////                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-////                                request_id
-////                            );
-////
-////                            // send message that we are closing channel
-////                            let _ =
-////                                ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
-////
-////                            // close channel
-////                            let _ = ws_tx.unbounded_send(None);
-////
-////                            return;
-//                        }
-//                    };
-//
+                    //                    let stream =
+                    //                        match response_stream.into_stream()
+                    //                    {
+                    //                        Ok(s) => s,
+                    //                        Err(error) => {
+                    //                            todo!("handle error")
+                    ////                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+                    ////                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                    ////                                request_id,
+                    ////                                serde_json::ser::to_string(&error).unwrap()
+                    ////                            )))));
+                    ////
+                    ////                            let close_text = format!(
+                    ////                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                    ////                                request_id
+                    ////                            );
+                    ////
+                    ////                            // send message that we are closing channel
+                    ////                            let _ =
+                    ////                                ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
+                    ////
+                    ////                            // close channel
+                    ////                            let _ = ws_tx.unbounded_send(None);
+                    ////
+                    ////                            return;
+                    //                        }
+                    //                    };
+                    //
 
-                    response_stream.
-                        take_while(move |response| {
+                    response_stream
+                        .take_while(move |response| {
                             let request_id = request_id.clone();
                             let closed = got_close_signal.load(Ordering::Relaxed);
                             if closed {
@@ -524,7 +522,7 @@ where
                                     request_id
                                 );
 
-                               //  send message that we are closing channel
+                                //  send message that we are closing channel
                                 let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text))));
 
                                 // close channel

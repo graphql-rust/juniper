@@ -16,7 +16,13 @@ use serde_derive::{Deserialize, Serialize};
 
 #[cfg(feature = "async")]
 use crate::executor::ValuesResultStream;
-use crate::{ast::InputValue, executor::ExecutionError, value, value::{DefaultScalarValue, ScalarValue}, FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables};
+use crate::{
+    ast::InputValue,
+    executor::ExecutionError,
+    value,
+    value::{DefaultScalarValue, ScalarValue},
+    FieldError, GraphQLError, GraphQLType, Object, RootNode, Value, Variables,
+};
 use std::any::Any;
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -134,38 +140,28 @@ pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, S
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     context: &'ctx CtxT,
-) -> Result<
-        (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>),
-        GraphQLError<'a>
-    >
-    where
-        'req: 'a,
-        'rn: 'a,
-        'ctx: 'a,
-        S: ScalarValue + Send + Sync + 'static,
+) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    'req: 'a,
+    'rn: 'a,
+    'ctx: 'a,
+    S: ScalarValue + Send + Sync + 'static,
     //todo: consider importing without 'crate::'
-        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
 {
     let op = req.operation_name();
     let vars = req.variables();
-    let res = crate::subscribe(
-        &req.query,
-        op,
-        root_node,
-        &vars,
-        context
-    ).await;
+    let res = crate::subscribe(&req.query, op, root_node, &vars, context).await;
 
     //todo: return Connection::from(res) (?)
     res
 }
-
 
 /// Simple wrapper around the result from executing a GraphQL query
 ///
@@ -233,7 +229,6 @@ where
         }
     }
 }
-
 
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]

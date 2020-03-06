@@ -1,31 +1,27 @@
-use crate::{parser::Spanning, types::base::{is_excluded, merge_key_into}, Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value, ValuesResultStream, RootNode, Variables, GraphQLError, ExecutionError};
 use crate::http::{GraphQLRequest, GraphQLResponse};
-use std::pin::Pin;
+use crate::{
+    parser::Spanning,
+    types::base::{is_excluded, merge_key_into},
+    Arguments, BoxFuture, ExecutionError, Executor, FieldError, GraphQLError, GraphQLType, Object,
+    RootNode, ScalarValue, Selection, Value, ValuesResultStream, Variables,
+};
 use std::any::Any;
+use std::pin::Pin;
 
 pub trait SubscriptionCoordinator<'a, CtxT, S>
-    where S: ScalarValue
+where
+    S: ScalarValue,
 {
-
     type Connection: SubscriptionConnection<'a, S>;
 
     fn subscribe(
         &'a self,
         req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
-    ) -> BoxFuture<
-            'a,
-            Result<
-                Self::Connection,
-                GraphQLError<'a>
-            >
-        >;
+    ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>>;
 }
 
-pub trait SubscriptionConnection<'a, S>:
-    futures::Stream<Item = GraphQLResponse<'a, S>>
-{
-}
+pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
 
 // TODO#433: update this after `async-await` will be refactored
 /**
@@ -65,18 +61,13 @@ where
         'res: 'f,
     {
         if executor.current_selection_set().is_some() {
-            Box::pin(async move {
-                Ok(
-                    resolve_selection_set_into_stream(self, info, executor)
-                        .await
-                )
-
-            })
+            Box::pin(
+                async move { Ok(resolve_selection_set_into_stream(self, info, executor).await) },
+            )
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
     }
-
 
     /// This method is called by Self's `resolve_into_stream` default
     /// implementation every time any field is found in selection set.
@@ -130,7 +121,7 @@ where
     {
         Box::pin(async move {
             if Self::name(info) == Some(type_name) {
-                    self.resolve_into_stream(info, executor).await
+                self.resolve_into_stream(info, executor).await
             } else {
                 panic!("resolve_into_type_stream must be implemented");
             }

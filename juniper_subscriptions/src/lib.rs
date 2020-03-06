@@ -1,13 +1,17 @@
 // todo: update docs
-use juniper::{SubscriptionCoordinator, Variables, BoxFuture, GraphQLError, ScalarValue, GraphQLTypeAsync, GraphQLSubscriptionType, Value, ValuesResultStream, ExecutionError, SubscriptionConnection, http::GraphQLRequest, Object, Context};
+use juniper::{
+    http::GraphQLRequest, BoxFuture, Context, ExecutionError, GraphQLError,
+    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
+    SubscriptionCoordinator, Value, ValuesResultStream, Variables,
+};
 
-use std::pin::Pin;
 use futures::task::Poll;
+use futures::{Stream, StreamExt};
 use juniper::http::GraphQLResponse;
-use futures::{StreamExt, Stream};
 use std::any::Any;
-use std::iter::FromIterator;
 use std::borrow::BorrowMut;
+use std::iter::FromIterator;
+use std::pin::Pin;
 
 /// [`SubscriptionCoordinator`]:
 ///    ?️ global coordinator
@@ -16,15 +20,15 @@ use std::borrow::BorrowMut;
 ///   ✔️ handles subscription start
 ///     todo: maintains a global subscription id
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
 {
     root_node: &'a juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
 }
@@ -41,17 +45,12 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    pub fn new(
-        root_node: &'a juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>
-    ) -> Self {
-        Self {
-            root_node
-        }
+    pub fn new(root_node: &'a juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
+        Self { root_node }
     }
 }
 
-impl <'a, QueryT, MutationT, SubscriptionT, CtxT, S>
-    SubscriptionCoordinator<'a, CtxT, S>
+impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S> SubscriptionCoordinator<'a, CtxT, S>
     for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -69,43 +68,29 @@ where
         &'a self,
         req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
-    ) -> BoxFuture<'a,
-            Result<Connection<'a, S>, GraphQLError<'a>>
-        >
-    {
+    ) -> BoxFuture<'a, Result<Connection<'a, S>, GraphQLError<'a>>> {
         let rn = self.root_node;
 
         Box::pin(async move {
             let req = req;
-            let ctx= context;
+            let ctx = context;
 
-            let res = juniper::http::resolve_into_stream(
-                req,
-                rn,
-                ctx,
-            ).await?;
+            let res = juniper::http::resolve_into_stream(req, rn, ctx).await?;
 
-            let c  = Connection::from(res);
+            let c = Connection::from(res);
 
             Ok(c)
         })
-
     }
 }
 
 pub struct Connection<'a, S> {
-    values_stream: Pin<Box<
-        dyn futures::Stream<
-            Item = GraphQLResponse<'a, S>
-        > + Send + 'a
-    >>,
+    values_stream: Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
 }
 
-impl<'a, S>
-    From<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)>
-for Connection<'a, S>
-    where
-        S: ScalarValue + Send + Sync + 'a,
+impl<'a, S> From<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)> for Connection<'a, S>
+where
+    S: ScalarValue + Send + Sync + 'a,
 {
     //todo: find out why Vec<ExecutionError<S>> is needed and not ignore it
     fn from((s, e): (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)) -> Self {
@@ -114,17 +99,15 @@ for Connection<'a, S>
 }
 
 impl<'a, S> Connection<'a, S>
-    where
-        S: ScalarValue + Send + Sync + 'a,
+where
+    S: ScalarValue + Send + Sync + 'a,
 {
-    pub fn from_valuesresultstream(
-        stream: Value<ValuesResultStream<'a, S>>
-    ) -> Self {
+    pub fn from_valuesresultstream(stream: Value<ValuesResultStream<'a, S>>) -> Self {
         use futures::stream;
 
-        let values_stream: Pin<Box<
-            dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a
-        >> = match stream {
+        let values_stream: Pin<
+            Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>,
+        > = match stream {
             Value::Null => todo!(),
             Value::Scalar(_) => todo!(),
             Value::List(_) => todo!(),
@@ -189,37 +172,31 @@ impl<'a, S> Connection<'a, S>
                 );
 
                 Box::pin(stream)
-            },
+            }
         };
 
-        Self {
-            values_stream
-        }
+        Self { values_stream }
     }
 }
 
-impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S>
-    where
-        S: ScalarValue + Send + Sync + 'a
+impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S> where
+    S: ScalarValue + Send + Sync + 'a
 {
 }
 
-
 impl<'a, S> futures::Stream for Connection<'a, S>
-    where
-        S: ScalarValue + Send + Sync + 'a
+where
+    S: ScalarValue + Send + Sync + 'a,
 {
     type Item = GraphQLResponse<'a, S>;
 
     fn poll_next(
         self: Pin<&mut Self>,
-        cx: &mut futures::task::Context<'_>
+        cx: &mut futures::task::Context<'_>,
     ) -> Poll<Option<Self::Item>> {
         // this is safe as stream is only mutated here and is not moved anywhere
-        let Connection { values_stream} =
-            unsafe { self.get_unchecked_mut() };
+        let Connection { values_stream } = unsafe { self.get_unchecked_mut() };
         let values_stream = unsafe { Pin::new_unchecked(values_stream) };
         values_stream.poll_next(cx)
-
     }
 }
