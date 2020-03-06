@@ -62,24 +62,25 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    type Connection = Connection<'a, S>;
+    type Connection = Result<Connection<'a, S>, Vec<ExecutionError<S>>>;
 
+    //todo: return one error type enum (?)
     fn subscribe(
         &'a self,
         req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
-    ) -> BoxFuture<'a, Result<Connection<'a, S>, GraphQLError<'a>>> {
+    ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>> {
         let rn = self.root_node;
 
         Box::pin(async move {
             let req = req;
             let ctx = context;
 
-            let res = juniper::http::resolve_into_stream(req, rn, ctx).await?;
+            let (stream, errors) =
+                juniper::http::resolve_into_stream(req, rn, ctx)
+                    .await?;
 
-            let c = Connection::from(res);
-
-            Ok(c)
+            Ok(Ok(Connection::from_stream(stream, errors)))
         })
     }
 }
@@ -88,25 +89,19 @@ pub struct Connection<'a, S> {
     values_stream: Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
 }
 
-impl<'a, S> From<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)> for Connection<'a, S>
-where
-    S: ScalarValue + Send + Sync + 'a,
-{
-    //todo: find out why Vec<ExecutionError<S>> is needed and not ignore it
-    fn from((s, e): (Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>)) -> Self {
-        Self::from_valuesresultstream(s)
-    }
-}
-
 impl<'a, S> Connection<'a, S>
 where
     S: ScalarValue + Send + Sync + 'a,
 {
-    pub fn from_valuesresultstream(stream: Value<ValuesResultStream<'a, S>>) -> Self {
+    pub fn from_stream(stream: Value<ValuesResultStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
+        use futures::stream;
+
         let values_stream: Pin<
             Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>,
         > = match stream {
-            Value::Null => todo!(),
+            Value::Null => Box::pin(stream::once(async move {
+                GraphQLResponse::from_result(Ok((Value::Null, errors)))
+            })),
             Value::Scalar(_) => todo!(),
             Value::List(_) => todo!(),
             Value::Object(obj) => {

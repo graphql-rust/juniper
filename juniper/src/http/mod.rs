@@ -97,7 +97,8 @@ where
         ))
     }
 
-    /// Execute a GraphQL request asynchronously using the specified schema and context
+    /// Execute a GraphQL request asynchronously using the specified schema
+    /// and context
     ///
     /// This is a simple wrapper around the `execute_async` function exposed at the
     /// top level of this crate.

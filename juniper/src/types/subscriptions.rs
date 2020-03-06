@@ -16,7 +16,7 @@ where
     S: ScalarValue,
 {
     /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`] returns
-    type Connection: SubscriptionConnection<'a, S>;
+    type Connection;
 
     /// Return [`SubscriptionConnection`] based on given [`GraphQLRequest`]
     fn subscribe(

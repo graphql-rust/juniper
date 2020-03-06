@@ -475,9 +475,11 @@ where
                     use juniper::SubscriptionCoordinator as _;
 
                     let coordinator = juniper_subscriptions::Coordinator::new(&schema);
-                    let response_stream = coordinator
+                    let response_stream= coordinator
                         .subscribe(&graphql_request, &context)
                         .await
+                        //todo: not unwrap errors
+                        .unwrap()
                         .unwrap();
 
                     //                    let stream =
