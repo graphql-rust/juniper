@@ -1164,10 +1164,12 @@ impl GraphQLTypeDefiniton {
                                     match res2 {
                                         Ok(Some((ctx, r))) => {
                                             let sub = ex.replaced_context(ctx);
-                                            sub.resolve_with_ctx_async(&(), &r).await
+                                            sub.resolve_with_ctx_async(&(), &r)
+                                                .await
+                                                .map_err(|e| ex.new_error(e))
                                         }
                                         Ok(None) => Ok(Value::null()),
-                                        Err(e) => Err(e),
+                                        Err(e) => Err(ex.new_error(e)),
                                     }
                                 }
                             });

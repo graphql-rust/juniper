@@ -218,11 +218,13 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
+//todo: better names
 /// Boxed `futures::Stream` of `Value`s
 #[cfg(feature = "async")]
-//todo: make lifetime static (?)
 pub type ValuesResultStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn futures::Stream<Item = FieldResult<Value<S>, S>> + Send + 'a>>;
+    std::pin::Pin<Box<dyn futures::Stream<Item =
+        Result<Value<S>, ExecutionError<S>>
+    > + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -618,6 +620,18 @@ where
             error,
         });
     }
+
+    pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        ExecutionError {
+            location: self.location().clone(),
+            path,
+            error,
+        }
+    }
+
 
     /// Construct a lookahead selection for the current selection.
     ///

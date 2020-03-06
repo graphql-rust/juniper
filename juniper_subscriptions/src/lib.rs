@@ -2,11 +2,7 @@
 
 use std::{iter::FromIterator, pin::Pin};
 
-use juniper::{
-    http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError,
-    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
-    SubscriptionCoordinator, Value, ValuesResultStream,
-};
+use juniper::{http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesResultStream, FieldError};
 
 use futures::task::Poll;
 use futures::Stream;
@@ -94,7 +90,7 @@ where
     S: ScalarValue + Send + Sync + 'a,
 {
     pub fn from_stream(stream: Value<ValuesResultStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
-        use futures::stream;
+        use futures::stream::{self, StreamExt as _};
 
         let values_stream: Pin<
             Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>,
@@ -102,12 +98,27 @@ where
             Value::Null => Box::pin(stream::once(async move {
                 GraphQLResponse::from_result(Ok((Value::Null, errors)))
             })),
-            Value::Scalar(_) => todo!(),
-            Value::List(_) => todo!(),
+            Value::Scalar(s) =>
+                Box::pin(s.map(|res| {
+                    match res {
+                        Ok(val) => GraphQLResponse::from_result(Ok(
+                                (val, vec![])
+                            )),
+                        Err(err) => GraphQLResponse::from_result(Ok(
+                            (Value::Null, vec![err])
+                        ))
+                    }
+                })),
+            Value::List(list) => {
+                todo!()
+            },
             Value::Object(obj) => {
                 let mut key_values = obj.into_key_value_list();
                 if key_values.is_empty() {
-                    todo!();
+                    todo!()
+//                    Box::pin(stream::once(async move {
+//                        GraphQLResponse::from_result(Ok((Value::Null, errors)))
+//                    }));
                 }
 
                 let mut filled_count = 0;
