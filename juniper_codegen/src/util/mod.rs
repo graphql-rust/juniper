@@ -1231,12 +1231,11 @@ impl GraphQLTypeDefiniton {
             {
                 #[allow(unused_variables)]
                 fn resolve_field_into_stream<
-                    'args, 'e, 'ref_e, 'res,
-                    'life0, 'life1, 'life2, 'async_trait,
+                    'args, 'e, 'ref_e, 'res, 'f,
                 >(
-                    &'life0 self,
-                    info: &'life1 Self::TypeInfo,
-                    field_name: &'life2 str,
+                    &self,
+                    info: &Self::TypeInfo,
+                    field_name: &str,
                     args: #juniper_crate_name::Arguments<'args, #scalar>,
                     executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
@@ -1245,18 +1244,13 @@ impl GraphQLTypeDefiniton {
                                 #juniper_crate_name::Value<#juniper_crate_name::ValuesResultStream<'res, #scalar>>,
                                 #juniper_crate_name::FieldError<#scalar>
                             >
-                        > + Send + 'async_trait
+                        > + Send + 'f
                     >>
                     where
                         'e: 'res,
-                        'args: 'async_trait,
-                        'e: 'async_trait,
-                        'ref_e: 'async_trait,
-                        'res: 'async_trait,
-                        'life0: 'async_trait,
-                        'life1: 'async_trait,
-                        'life2: 'async_trait,
-                        Self: 'async_trait,
+                        'args: 'f,
+                        'ref_e: 'f,
+                        'res: 'f,
                 {
                     use #juniper_crate_name::Value;
                     use futures::stream::StreamExt as _;

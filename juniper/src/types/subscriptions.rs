@@ -9,9 +9,6 @@ pub trait SubscriptionCoordinator<'a, CtxT, S>
 
     type Connection: SubscriptionConnection<'a, S>;
 
-    //todo: this should create subscription connection which
-    //      should resolve itself into stream and into graphql stream
-    //      and handle unsubscribe
     fn subscribe(
         &'a self,
         req: &'a GraphQLRequest<S>,
@@ -25,7 +22,6 @@ pub trait SubscriptionCoordinator<'a, CtxT, S>
         >;
 }
 
-// todo: unregister connection on destruction
 pub trait SubscriptionConnection<'a, S>:
     futures::Stream<Item = GraphQLResponse<'a, S>>
 {
@@ -43,8 +39,6 @@ pub trait SubscriptionConnection<'a, S>:
 
  See trait methods for more detailed explanation on how this trait works.
 */
-//TODO#433: remove async_trait (?)
-#[async_trait::async_trait]
 pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -58,22 +52,31 @@ where
     ///
     /// For non-object types, the selection set will be `None`
     /// and default implementation will panic.
-    async fn resolve_into_stream<'s, 'i, 'ref_e, 'e, 'res>(
+    fn resolve_into_stream<'s, 'i, 'ref_e, 'e, 'res, 'f>(
         &'s self,
         info: &'i Self::TypeInfo,
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
+    ) -> BoxFuture<'f, Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>>
     where
-        'i: 'res,
         'e: 'res,
+        'i: 'res,
+        's: 'f,
+        'ref_e: 'f,
+        'res: 'f,
     {
         if executor.current_selection_set().is_some() {
-            let v = resolve_selection_set_into_stream(self, info, executor).await;
-            Ok(v)
+            Box::pin(async move {
+                Ok(
+                    resolve_selection_set_into_stream(self, info, executor)
+                        .await
+                )
+
+            })
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
     }
+
 
     /// This method is called by Self's `resolve_into_stream` default
     /// implementation every time any field is found in selection set.
@@ -84,16 +87,19 @@ where
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    async fn resolve_field_into_stream<'args, 'e, 'ref_e, 'res>(
+    fn resolve_field_into_stream<'args, 'e, 'ref_e, 'res, 'f>(
         &self,
         _: &Self::TypeInfo,     // this subscription's type info
         _: &str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
         _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
                                                            // with current field's selection set)
-    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
+    ) -> BoxFuture<'f, Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>>
     where
         'e: 'res,
+        'args: 'f,
+        'ref_e: 'f,
+        'res: 'f,
     {
         panic!("resolve_field_into_stream must be implemented");
     }
@@ -107,22 +113,28 @@ where
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    async fn resolve_into_type_stream<'s, 'i, 'tn, 'e, 'ref_e, 'res>(
+    fn resolve_into_type_stream<'s, 'i, 'tn, 'e, 'ref_e, 'res, 'f>(
         &'s self,
         info: &'i Self::TypeInfo, // this subscription's type info
         type_name: &'tn str,      // fragment's type name
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
                                                                   // with current field's selection set)
-    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
+    ) -> BoxFuture<'f, Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>>
     where
         'i: 'res,
         'e: 'res,
+        's: 'f,
+        'tn: 'f,
+        'ref_e: 'f,
+        'res: 'f,
     {
-        if Self::name(info) == Some(type_name) {
-            self.resolve_into_stream(info, executor).await
-        } else {
-            panic!("resolve_into_type_stream must be implemented");
-        }
+        Box::pin(async move {
+            if Self::name(info) == Some(type_name) {
+                    self.resolve_into_stream(info, executor).await
+            } else {
+                panic!("resolve_into_type_stream must be implemented");
+            }
+        })
     }
 }
 

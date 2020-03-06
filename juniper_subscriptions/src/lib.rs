@@ -9,6 +9,12 @@ use std::any::Any;
 use std::iter::FromIterator;
 use std::borrow::BorrowMut;
 
+/// [`SubscriptionCoordinator`]:
+///    ?️ global coordinator
+///   ✔️ contains the schema
+///     todo: keeps track of subscription connections
+///   ✔️ handles subscription start
+///     todo: maintains a global subscription id
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
     where
         S: ScalarValue + Send + Sync + 'static,
@@ -77,8 +83,7 @@ where
                 req,
                 rn,
                 ctx,
-            )
-                .await?;
+            ).await?;
 
             let c  = Connection::from(res);
 
@@ -210,6 +215,7 @@ impl<'a, S> futures::Stream for Connection<'a, S>
         self: Pin<&mut Self>,
         cx: &mut futures::task::Context<'_>
     ) -> Poll<Option<Self::Item>> {
+        // this is safe as stream is only mutated here and is not moved anywhere
         let Connection { values_stream} =
             unsafe { self.get_unchecked_mut() };
         let values_stream = unsafe { Pin::new_unchecked(values_stream) };
