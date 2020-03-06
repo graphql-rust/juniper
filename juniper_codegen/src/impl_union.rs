@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 
 use proc_macro_error::MacroError;
 use quote::quote;
+use syn::parse_quote;
 use syn::spanned::Spanned;
 
 use crate::util;
@@ -151,9 +152,15 @@ pub fn impl_union(
         .unwrap_or_else(|| quote! { () });
 
     let ty = _impl.target_type;
+    let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+    where_async
+        .predicates
+        .push(parse_quote!( #scalar: Send + Sync ));
+    where_async.predicates.push(parse_quote!(Self: Send + Sync));
 
-    let output = quote! {
-        impl #impl_generics #crate_name::GraphQLType<#scalar> for #ty #where_clause
+    let output = quote!(
+        impl #impl_generics #crate_name::GraphQLType<#scalar> for #ty
+        #where_clause
         {
             type Context = #context;
             type TypeInfo = ();
@@ -198,11 +205,28 @@ pub fn impl_union(
 
                 #( #resolve_into_type )*
 
-                 panic!("Concrete type not handled by instance resolvers on {}", #name);
+                panic!("Concrete type not handled by instance resolvers on {}", #name);
             }
         }
 
+        impl #impl_generics #crate_name::GraphQLTypeAsync<#scalar> for #ty
+        #where_async
+        {
+            fn resolve_async<'a>(
+                &'a self,
+                info: &'a Self::TypeInfo,
+                selection_set: Option<&'a [#crate_name::Selection<#scalar>]>,
+                executor: &'a #crate_name::Executor<Self::Context, #scalar>,
+            ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<#scalar>>
+                where #scalar: Send + Sync,
+            {
+                use futures::future;
+                use #crate_name::GraphQLType;
+                let v = self.resolve(info, selection_set, executor);
+                futures::FutureExt::boxed(future::ready(v))
+            }
+        }
+    );
 
-    };
     Ok(output.into())
 }
