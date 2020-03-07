@@ -3,20 +3,21 @@
 pub mod graphiql;
 pub mod playground;
 
-#[cfg(feature = "async")]
 use serde::{
     de::Deserialize,
     ser::{self, Serialize, SerializeMap},
 };
 use serde_derive::{Deserialize, Serialize};
 
-#[cfg(feature = "async")]
 use crate::{
     ast::InputValue, executor::ExecutionError,
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode,
-    Value, Variables, GraphQLTypeAsync, GraphQLSubscriptionType,
-    executor::ValuesStream,
+    Value, Variables,
+};
+#[cfg(feature = "async")]
+use crate::{
+    GraphQLTypeAsync, GraphQLSubscriptionType, executor::ValuesStream,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.

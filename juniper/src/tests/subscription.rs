@@ -99,7 +99,11 @@ fn create_and_execute(
 > {
     let request = GraphQLRequest::new(query, None, None);
 
-    let root_node = AsyncSchema::new(MyQuery, EmptyMutation::new(), MySubscription);
+    let root_node = AsyncSchema::new(
+        MyQuery,
+        EmptyMutation::new(),
+        MySubscription
+    );
 
     let mut context = MyContext(2);
 
