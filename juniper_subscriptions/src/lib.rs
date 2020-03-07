@@ -95,14 +95,6 @@ where
 ///
 /// Implements [`SubscriptionConnection`].
 ///
-/// Yields [`GraphQLResponse`]s from [`futures::Stream`] depending on [`Value`]
-/// in the following order:
-///
-/// [`Value::Null`] - returns [`Value::Null`] once
-/// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
-/// [`Value::List`] - resolves each stream from the list using current logic and returns
-///                   values in the order received
-/// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 pub struct Connection<'a, S> {
     values_stream: Pin<Box<
         dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a
@@ -115,13 +107,20 @@ where
 {
     pub fn from_stream(stream: Value<ValuesResultStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
         Self {
-            values_stream: parse_stream(stream, errors)
+            values_stream: whole_responses_stream(stream, errors)
         }
     }
 }
 
 //todo: test
-fn parse_stream<'a, S>(
+/// Creates [`futures::Stream`] that yields [`GraphQLResponse`]s depending on the given [`Value`]:
+///
+/// [`Value::Null`] - returns [`Value::Null`] once
+/// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
+/// [`Value::List`] - resolves each stream from the list using current logic and returns
+///                   values in the order received
+/// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
+fn whole_responses_stream<'a, S>(
     stream: Value<ValuesResultStream<'a, S>>,
     errors: Vec<ExecutionError<S>>
 ) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
@@ -149,7 +148,7 @@ where
             let mut streams = vec![];
             for s in list.into_iter() {
                 streams.push(
-                    parse_stream(s, errors.clone())
+                    whole_responses_stream(s, errors.clone())
                 );
             };
             Box::pin(stream::select_all(streams))
@@ -223,6 +222,114 @@ where
     }
 }
 
+//todo implement:
+/// Creates [`futures::Stream`] that yields [`GraphQLResponse`]s depending on the given [`Value`]:
+///
+/// [`Value::Null`] - returns [`Value::Null`] once
+/// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
+/// [`Value::List`] - resolves each stream from the list using current logic and returns
+///                   values in the order received
+/// [`Value::Object`] - waits while at least one field of the [`Object`] is returned,
+///                     then yields the object with only this field
+fn fastest_responses_stream<'a, S>(
+    stream: Value<ValuesResultStream<'a, S>>,
+    errors: Vec<ExecutionError<S>>
+) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
+where
+    S: ScalarValue + Send + Sync + 'a,
+{
+    use futures::stream::{self, StreamExt as _};
+
+    match stream {
+        Value::Null => Box::pin(stream::once(async move {
+            GraphQLResponse::from_result(Ok((Value::Null, errors)))
+        })),
+        Value::Scalar(s) =>
+            Box::pin(s.map(|res| {
+                match res {
+                    Ok(val) => GraphQLResponse::from_result(Ok(
+                        (val, vec![])
+                    )),
+                    Err(err) => GraphQLResponse::from_result(Ok(
+                        (Value::Null, vec![err])
+                    ))
+                }
+            })),
+        Value::List(list) => {
+            let mut streams = vec![];
+            for s in list.into_iter() {
+                streams.push(
+                    whole_responses_stream(s, errors.clone())
+                );
+            };
+            Box::pin(stream::select_all(streams))
+        },
+        Value::Object(obj) => {
+            let obj_len = obj.field_count();
+            let mut key_values = obj.into_key_value_list();
+            if obj_len == 0 {
+                return Box::pin(stream::once(async move {
+                    GraphQLResponse::from_result(Ok((Value::Null, errors)))
+                }));
+            }
+
+            let mut filled_count = 0;
+            let mut ready_vector = Vec::with_capacity(obj_len);
+            for _ in 0..obj_len {
+                ready_vector.push(None);
+            }
+
+            let stream = futures::stream::poll_fn(
+                move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
+                    for i in 0..ready_vector.len() {
+                        let val = &mut ready_vector[i];
+                        if val.is_none() {
+                            let (field_name, ref mut stream_val) = &mut key_values[i];
+
+                            match stream_val {
+                                Value::Scalar(stream) => {
+                                    match Pin::new(stream).poll_next(&mut ctx) {
+                                        Poll::Ready(None) => {
+                                            *val = None;
+                                        },
+                                        Poll::Ready(Some(value)) => {
+                                            *val = Some((field_name.clone(), value));
+                                            filled_count += 1;
+                                        }
+                                        Poll::Pending => { *val = None; }
+                                    }
+                                },
+                                //todo: return error
+                                _ => return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                                     Value::Null, errors.clone())))))
+                            }
+                        }
+                    }
+
+                    filled_count = 0;
+                    let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
+                    let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
+                    let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                        let (name, val) = el.unwrap();
+                        if let Ok(value) = val {
+                            (name, value)
+                        } else {
+                            (name, Value::Null)
+                        }
+                    });
+                    let obj = Object::from_iter(ready_vec_iterator);
+                    return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                        Value::Object(obj),
+                        vec![],
+                    )))));
+                },
+            );
+
+            Box::pin(stream)
+        }
+    }
+}
+
 impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S> where
     S: ScalarValue + Send + Sync + 'a
 {
@@ -244,3 +351,4 @@ where
         values_stream.poll_next(cx)
     }
 }
+
