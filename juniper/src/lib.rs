@@ -182,7 +182,7 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 
 #[cfg(feature = "async")]
 pub use crate::{
-    executor::ValuesResultStream,
+    executor::ValuesStream,
     macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
     types::async_await::GraphQLTypeAsync,
     types::subscriptions::{
@@ -285,7 +285,7 @@ pub async fn resolve_into_stream<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'a CtxT,
-) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     S: ScalarValue + Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

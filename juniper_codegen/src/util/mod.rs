@@ -1175,7 +1175,7 @@ impl GraphQLTypeDefiniton {
                             });
                             Ok(
                                 #juniper_crate_name::Value::Scalar::<
-                                    #juniper_crate_name::ValuesResultStream
+                                    #juniper_crate_name::ValuesStream
                                 >(Box::pin(f))
                             )
                         })
@@ -1243,7 +1243,7 @@ impl GraphQLTypeDefiniton {
                 ) -> std::pin::Pin<Box<
                         dyn futures::future::Future<
                             Output = Result<
-                                #juniper_crate_name::Value<#juniper_crate_name::ValuesResultStream<'res, #scalar>>,
+                                #juniper_crate_name::Value<#juniper_crate_name::ValuesStream<'res, #scalar>>,
                                 #juniper_crate_name::FieldError<#scalar>
                             >
                         > + Send + 'f

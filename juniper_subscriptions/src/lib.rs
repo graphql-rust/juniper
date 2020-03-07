@@ -13,7 +13,7 @@ use juniper::{
     http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError,
     GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue,
     SubscriptionConnection, SubscriptionCoordinator, Value,
-    ValuesResultStream
+    ValuesStream
 };
 
 use futures::task::Poll;
@@ -109,7 +109,7 @@ where
     S: ScalarValue + Send + Sync + 'a,
 {
     /// Creates new [`Connection`] from values stream and errors
-    pub fn from_stream(stream: Value<ValuesResultStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
+    pub fn from_stream(stream: Value<ValuesStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
         Self {
             values_stream: whole_responses_stream(stream, errors)
         }
@@ -125,7 +125,7 @@ where
 ///                   values in the order received
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
 fn whole_responses_stream<'a, S>(
-    stream: Value<ValuesResultStream<'a, S>>,
+    stream: Value<ValuesStream<'a, S>>,
     errors: Vec<ExecutionError<S>>
 ) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
 where

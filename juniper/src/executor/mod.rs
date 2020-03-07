@@ -220,10 +220,9 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-//todo: better names
-/// Boxed `futures::Stream` of `Value`s
+/// Boxed `futures::Stream` of `Result<Value<S>, ExecutionError<S>>`
 #[cfg(feature = "async")]
-pub type ValuesResultStream<'a, S = DefaultScalarValue> =
+pub type ValuesStream<'a, S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item =
         Result<Value<S>, ExecutionError<S>>
     > + Send + 'a>>;
@@ -369,7 +368,7 @@ where
         &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
-    ) -> Value<ValuesResultStream<'res, S>>
+    ) -> Value<ValuesStream<'res, S>>
     where
         'i: 'res,
         'v: 'res,
@@ -394,7 +393,7 @@ where
         &'r self,
         info: &'i T::TypeInfo,
         value: &'v T,
-    ) -> Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>
+    ) -> Result<Value<ValuesStream<'res, S>>, FieldError<S>>
     where
         'i: 'res,
         'v: 'res,
@@ -1009,7 +1008,7 @@ pub async fn resolve_validated_subscription<
     root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'r CtxT,
-) -> Result<(Value<ValuesResultStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
+) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
 where
     'r: 'exec_ref,
     'd: 'r,

@@ -16,7 +16,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode,
     Value, Variables, GraphQLTypeAsync, GraphQLSubscriptionType,
-    executor::ValuesResultStream,
+    executor::ValuesStream,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -126,14 +126,14 @@ where
     }
 }
 
-/// Resolve a GraphQL subscription into `Value<ValuesResultStream<S>`
+/// Resolve a GraphQL subscription into `Value<ValuesStream<S>`
 /// using the specified schema and context
 #[cfg(feature = "async")]
 pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     context: &'ctx CtxT,
-) -> Result<(Value<ValuesResultStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
     'req: 'a,
     'rn: 'a,

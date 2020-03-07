@@ -3,7 +3,7 @@ use crate::{
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
     Arguments, BoxFuture, Executor, FieldError, GraphQLError, GraphQLType, Object,
-    ScalarValue, Selection, Value, ValuesResultStream,
+    ScalarValue, Selection, Value, ValuesStream,
 };
 
 /// Global subscription coordinator. Should contain the schema and create new
@@ -57,7 +57,7 @@ where
         &'s self,
         info: &'i Self::TypeInfo,
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>,
-    ) -> BoxFuture<'f, Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>>
+    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
     where
         'e: 'res,
         'i: 'res,
@@ -90,7 +90,7 @@ where
         _: Arguments<'args, S>, // field's arguments
         _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
                                                            // with current field's selection set)
-    ) -> BoxFuture<'f, Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>>
+    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
     where
         'e: 'res,
         'args: 'f,
@@ -115,7 +115,7 @@ where
         type_name: &'tn str,      // fragment's type name
         executor: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // fragment's executor (subscription's sub-executor
                                                                   // with current field's selection set)
-    ) -> BoxFuture<'f, Result<Value<ValuesResultStream<'res, S>>, FieldError<S>>>
+    ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
     where
         'i: 'res,
         'e: 'res,
@@ -142,7 +142,7 @@ fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, 
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
-) -> BoxFuture<'fut, Value<ValuesResultStream<'res, S>>>
+) -> BoxFuture<'fut, Value<ValuesStream<'res, S>>>
 where
     'inf: 'res,
     'e: 'res,
@@ -168,7 +168,7 @@ async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res,
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
-) -> Value<ValuesResultStream<'res, S>>
+) -> Value<ValuesStream<'res, S>>
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
@@ -181,7 +181,7 @@ where
         .current_selection_set()
         .expect("Executor's selection set is none");
 
-    let mut object: Object<ValuesResultStream<'res, S>> =
+    let mut object: Object<ValuesStream<'res, S>> =
         Object::with_capacity(selection_set.len());
     let meta_type = executor
         .schema()
