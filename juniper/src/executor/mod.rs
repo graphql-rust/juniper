@@ -77,8 +77,7 @@ where
 ///
 /// All execution errors contain the source position in the query of the field
 /// that failed to resolve. It also contains the field stack.
-// todo: not clone
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct ExecutionError<S> {
     location: SourcePosition,
     path: Vec<String>,
@@ -140,8 +139,7 @@ where
 ///     Ok(s)
 /// }
 /// ```
-//todo: not clone
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct FieldError<S = DefaultScalarValue> {
     message: String,
     extensions: Value<S>,

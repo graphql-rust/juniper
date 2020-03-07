@@ -12,8 +12,7 @@ use std::{iter::FromIterator, pin::Pin};
 use juniper::{
     http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError,
     GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue,
-    SubscriptionConnection, SubscriptionCoordinator, Value,
-    ValuesStream
+    SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream
 };
 
 use futures::task::Poll;
@@ -21,12 +20,7 @@ use futures::Stream;
 use juniper::http::GraphQLResponse;
 
 
-/// [`SubscriptionCoordinator`]:
-///    ?️ global coordinator
-///   ✔️ contains the schema
-///     todo: keeps track of subscription connections
-///   ✔️ handles subscription start
-///     todo: maintains a global subscription id
+/// [`SubscriptionCoordinator`] implementation
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -71,9 +65,8 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    type Connection = Result<Connection<'a, S>, Vec<ExecutionError<S>>>;
+    type Connection = Connection<'a, S>;
 
-    //todo: return one error type enum (?)
     fn subscribe(
         &'a self,
         req: &'a GraphQLRequest<S>,
@@ -89,19 +82,14 @@ where
                 juniper::http::resolve_into_stream(req, rn, ctx)
                     .await?;
 
-            Ok(Ok(Connection::from_stream(stream, errors)))
+            Ok(Connection::from_stream(stream, errors))
         })
     }
 }
 
-/// todo: add description
-///
-/// Implements [`SubscriptionConnection`].
-///
+/// Connection implementing [`SubscriptionConnection`].
 pub struct Connection<'a, S> {
-    values_stream: Pin<Box<
-        dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a
-    >>,
+    stream: Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
 }
 
 impl<'a, S> Connection<'a, S>
@@ -111,7 +99,7 @@ where
     /// Creates new [`Connection`] from values stream and errors
     pub fn from_stream(stream: Value<ValuesStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
         Self {
-            values_stream: whole_responses_stream(stream, errors)
+            stream: whole_responses_stream(stream, errors)
         }
     }
 }
@@ -124,6 +112,7 @@ where
 /// [`Value::List`] - resolves each stream from the list using current logic and returns
 ///                   values in the order received
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
+/// `Value::Object<Value::Object<_>>` - returns error if [`Value::Object`] consists of sub-objects
 fn whole_responses_stream<'a, S>(
     stream: Value<ValuesStream<'a, S>>,
     errors: Vec<ExecutionError<S>>
@@ -133,9 +122,15 @@ where
 {
     use futures::stream::{self, StreamExt as _};
 
+    if !errors.is_empty() {
+        return Box::pin(stream::once(async move {
+            GraphQLResponse::from_result(Ok((Value::Null, errors)))
+        }));
+    }
+
     match stream {
         Value::Null => Box::pin(stream::once(async move {
-            GraphQLResponse::from_result(Ok((Value::Null, errors)))
+            GraphQLResponse::from_result(Ok((Value::Null, vec![])))
         })),
         Value::Scalar(s) =>
             Box::pin(s.map(|res| {
@@ -152,7 +147,7 @@ where
             let mut streams = vec![];
             for s in list.into_iter() {
                 streams.push(
-                    whole_responses_stream(s, errors.clone())
+                    whole_responses_stream(s, vec![])
                 );
             };
             Box::pin(stream::select_all(streams))
@@ -162,7 +157,7 @@ where
             let mut key_values = obj.into_key_value_list();
             if obj_len == 0 {
                 return Box::pin(stream::once(async move {
-                    GraphQLResponse::from_result(Ok((Value::Null, errors)))
+                    GraphQLResponse::from_result(Ok((Value::Null, vec![])))
                 }));
             }
 
@@ -192,9 +187,10 @@ where
                                         Poll::Pending => { /* check back later */ }
                                     }
                                 },
-                                //todo: return error
-                                _ => return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
-                                     Value::Null, errors.clone())))))
+                                _ => {
+                                    *val = Some((field_name.clone(), Ok(Value::Null)));
+                                    filled_count += 1;
+                                }
                             }
                         }
                     }
@@ -242,9 +238,9 @@ where
         cx: &mut futures::task::Context<'_>,
     ) -> Poll<Option<Self::Item>> {
         // this is safe as stream is only mutated here and is not moved anywhere
-        let Connection { values_stream } = unsafe { self.get_unchecked_mut() };
-        let values_stream = unsafe { Pin::new_unchecked(values_stream) };
-        values_stream.poll_next(cx)
+        let Connection { stream } = unsafe { self.get_unchecked_mut() };
+        let stream = unsafe { Pin::new_unchecked(stream) };
+        stream.poll_next(cx)
     }
 }
 

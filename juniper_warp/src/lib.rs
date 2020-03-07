@@ -479,7 +479,6 @@ where
                         .subscribe(&graphql_request, &context)
                         .await
                         //todo: not unwrap errors
-                        .unwrap()
                         .unwrap();
 
                     //                    let stream =
