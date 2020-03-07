@@ -361,7 +361,7 @@ impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
 where
     S: ScalarValue,
 {
-    /// Resolve a single arbitrary value into a return stream
+    /// Resolve a single arbitrary value into a stream of [`Value`]s
     ///
     /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
@@ -990,10 +990,10 @@ where
     Ok(op)
 }
 
-/// Initialize new `Executor` and start asynchronous subscription execution
+/// Initialize new `Executor` and start resolving subscription into stream asynchronously.
 /// Returns `NotSubscription` error if query or mutation is passed
 #[cfg(feature = "async")]
-pub async fn execute_validated_subscription<
+pub async fn resolve_validated_subscription<
     'r,
     'exec_ref,
     'd,

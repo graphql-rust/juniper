@@ -277,9 +277,9 @@ where
         .await
 }
 
-/// Execute subscription asynchronously in a provided schema
+/// Parse `document_source` and make sure it does not contain any errors
 #[cfg(feature = "async")]
-pub async fn subscribe<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+pub async fn resolve_into_stream<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
@@ -309,7 +309,7 @@ where
         }
     }
 
-    executor::execute_validated_subscription(&document, operation, root_node, variables, context)
+    executor::resolve_validated_subscription(&document, operation, root_node, variables, context)
         .await
 }
 

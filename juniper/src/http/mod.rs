@@ -128,10 +128,6 @@ where
 
 /// Resolve a GraphQL subscription into `Value<ValuesResultStream<S>`
 /// using the specified schema and context
-///
-/// todo: remove the following (?)
-/// This is a wrapper around the `subscribe` function exposed
-/// at the top level of this crate.
 #[cfg(feature = "async")]
 pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,
@@ -154,7 +150,7 @@ where
     let op = req.operation_name();
     let vars = req.variables();
 
-    crate::subscribe(
+    crate::resolve_into_stream(
         &req.query,
         op, root_node,
         &vars,
