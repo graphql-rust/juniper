@@ -115,7 +115,7 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {

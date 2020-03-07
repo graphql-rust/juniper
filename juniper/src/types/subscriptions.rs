@@ -44,7 +44,7 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
 {
     /// In order to resolve selection set on object types, default
     /// implementation calls `resolve_field_into_stream` every time a field
@@ -152,7 +152,7 @@ where
     'res: 'fut,
     T: GraphQLSubscriptionType<S, Context = CtxT>,
     T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
@@ -172,7 +172,7 @@ async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res,
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
     'inf: 'res,
     'e: 'res,

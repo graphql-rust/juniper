@@ -12,10 +12,7 @@ use crate::{
     ast::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
-    },
-    executor::owned_executor::OwnedExecutor,
-    parser::{SourcePosition, Spanning},
-    schema::{
+    }, parser::{SourcePosition, Spanning}, schema::{
         meta::{
             Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
             InterfaceMeta, ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta,
@@ -25,16 +22,19 @@ use crate::{
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
-    GraphQLError,
+    GraphQLError, GraphQLSubscriptionType
 };
 
-pub use self::look_ahead::{
-    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
-    LookAheadSelection, LookAheadValue,
+pub use self::{
+    owned_executor::OwnedExecutor,
+    look_ahead::{
+        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        LookAheadSelection, LookAheadValue,
+    }
 };
 
 mod look_ahead;
-pub mod owned_executor;
+mod owned_executor;
 
 /// A type registry used to build schemas
 ///
@@ -56,7 +56,6 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-#[derive(Clone)]
 pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
@@ -218,7 +217,7 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-/// Boxed `futures::Stream` of `Result<Value<S>, ExecutionError<S>>`
+/// Boxed `futures::Stream` yielding `Result<Value<S>, ExecutionError<S>>`
 #[cfg(feature = "async")]
 pub type ValuesStream<'a, S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item =
@@ -371,10 +370,10 @@ where
         'i: 'res,
         'v: 'res,
         'a: 'res,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        S: Send + Sync + 'static,
+        S: Send + Sync,
     {
         match self.subscribe(info, value).await {
             Ok(v) => v,
@@ -385,21 +384,21 @@ where
         }
     }
 
-    /// Resolve a single arbitrary value into `Value<ValuesStream>`
+    /// Resolve a single arbitrary value into a stream of [`Value`]s
+    /// Calls `resolve_into_stream` on `T`
     #[cfg(feature = "async")]
-    pub async fn subscribe<'s, 'i, 'v, 'res, T>(
+    pub async fn subscribe<'s, 't, 'res, T>(
         &'r self,
-        info: &'i T::TypeInfo,
-        value: &'v T,
+        info: &'t T::TypeInfo,
+        value: &'t T,
     ) -> Result<Value<ValuesStream<'res, S>>, FieldError<S>>
     where
-        'i: 'res,
-        'v: 'res,
+        't: 'res,
         'a: 'res,
-        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        T: GraphQLSubscriptionType<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        S: Send + Sync + 'static,
+        S: Send + Sync,
     {
         value.resolve_into_stream(info, self).await
     }
@@ -473,7 +472,11 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
+    pub async fn resolve_into_value_async<T>(
+        &self,
+        info: &T::TypeInfo,
+        value: &T
+    ) -> Value<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -693,8 +696,9 @@ where
     /// current data (except for errors) there
     ///
     /// New empty vector is created for `errors` because
-    /// existing errors most likely won't be needed to
-    /// be accessed by user in OwnedExecutor
+    /// existing errors won't be needed to be accessed by user
+    /// in OwnedExecutor as existing errors will be returned in
+    /// `execute_query`/`execute_mutation`/`subscribe`
     pub fn as_owned_executor(&self) -> OwnedExecutor<'a, CtxT, S> {
         OwnedExecutor {
             fragments: self.fragments.clone(),
@@ -764,7 +768,7 @@ pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
@@ -860,12 +864,12 @@ pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, Subscripti
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
@@ -937,7 +941,7 @@ where
         value = match operation.item.operation_type {
             OperationType::Query => {
                 executor
-                    .resolve_into_value_async(&root_node.query_info, &root_node)
+                    .resolve_into_value_async(&root_node.query_info, &root_node.query_type)
                     .await
             }
             OperationType::Mutation => {
@@ -1011,12 +1015,12 @@ where
     'r: 'exec_ref,
     'd: 'r,
     'op: 'd,
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'r,
 {
