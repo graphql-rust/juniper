@@ -11,8 +11,7 @@ use crate::{
     ExecutionError, Executor, Selection, Variables,
 };
 
-/// `Executor` wrapper to keep all `Executor`'s data
-/// and `Executor` instance
+/// `Executor` owning all its variables
 pub struct OwnedExecutor<'a, CtxT, S> {
     pub(super) fragments: HashMap<&'a str, Fragment<'a, S>>,
     pub(super) variables: Variables<S>,
@@ -76,11 +75,6 @@ where
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name<'b>(&'b self, name: &str) -> Option<&'b Fragment<'a, S>> {
-        self.fragments.get(name)
-    }
-
-    #[doc(hidden)]
     pub fn field_sub_executor(
         &self,
         field_alias: &'a str,
@@ -113,16 +107,6 @@ where
     }
 
     #[doc(hidden)]
-    pub fn context(&self) -> &'a CtxT {
-        self.context
-    }
-
-    #[doc(hidden)]
-    pub fn schema(&self) -> &'a SchemaType<S> {
-        self.schema
-    }
-
-    #[doc(hidden)]
     pub fn as_executor(&self) -> Executor<'_, '_, CtxT, S> {
         Executor {
             fragments: &self.fragments,
@@ -143,6 +127,23 @@ where
             errors: &self.errors,
             field_path: Arc::clone(&self.field_path),
         }
+    }
+}
+
+impl<'a, CtxT, S> OwnedExecutor<'a, CtxT, S> {
+    #[doc(hidden)]
+    pub fn fragment_by_name<'b>(&'b self, name: &str) -> Option<&'b Fragment<'a, S>> {
+        self.fragments.get(name)
+    }
+
+    #[doc(hidden)]
+    pub fn context(&self) -> &'a CtxT {
+        self.context
+    }
+
+    #[doc(hidden)]
+    pub fn schema(&self) -> &'a SchemaType<S> {
+        self.schema
     }
 
     #[doc(hidden)]

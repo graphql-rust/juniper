@@ -10,15 +10,14 @@ use serde::{
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{
-    ast::InputValue, executor::ExecutionError,
+    ast::InputValue,
+    executor::ExecutionError,
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode,
-    Value, Variables,
+    FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
 };
+
 #[cfg(feature = "async")]
-use crate::{
-    GraphQLTypeAsync, GraphQLSubscriptionType, executor::ValuesStream,
-};
+use crate::{executor::ValuesStream, GraphQLSubscriptionType, GraphQLTypeAsync};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -115,14 +114,13 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
         let op = self.operation_name();
         let vars = &self.variables();
         let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
-
         GraphQLResponse(res)
     }
 }
@@ -151,12 +149,7 @@ where
     let op = req.operation_name();
     let vars = req.variables();
 
-    crate::resolve_into_stream(
-        &req.query,
-        op, root_node,
-        &vars,
-        context
-    ).await
+    crate::resolve_into_stream(&req.query, op, root_node, &vars, context).await
 }
 
 /// Simple wrapper around the result from executing a GraphQL query

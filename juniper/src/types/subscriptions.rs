@@ -2,8 +2,8 @@ use crate::{
     http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLError, GraphQLType, Object,
-    ScalarValue, Selection, Value, ValuesStream,
+    Arguments, BoxFuture, Executor, FieldError, GraphQLError, GraphQLType, Object, ScalarValue,
+    Selection, Value, ValuesStream,
 };
 
 /// Global subscription coordinator. Should contain the schema and create new
@@ -181,8 +181,7 @@ where
         .current_selection_set()
         .expect("Executor's selection set is none");
 
-    let mut object: Object<ValuesStream<'res, S>> =
-        Object::with_capacity(selection_set.len());
+    let mut object: Object<ValuesStream<'res, S>> = Object::with_capacity(selection_set.len());
     let meta_type = executor
         .schema()
         .concrete_type_by_name(

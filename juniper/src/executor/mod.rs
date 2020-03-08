@@ -12,7 +12,9 @@ use crate::{
     ast::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
-    }, parser::{SourcePosition, Spanning}, schema::{
+    },
+    parser::{SourcePosition, Spanning},
+    schema::{
         meta::{
             Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
             InterfaceMeta, ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta,
@@ -22,15 +24,15 @@ use crate::{
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
-    GraphQLError, GraphQLSubscriptionType
+    GraphQLError, GraphQLSubscriptionType,
 };
 
 pub use self::{
-    owned_executor::OwnedExecutor,
     look_ahead::{
         Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue,
-    }
+    },
+    owned_executor::OwnedExecutor,
 };
 
 mod look_ahead;
@@ -220,9 +222,7 @@ pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S
 /// Boxed `futures::Stream` yielding `Result<Value<S>, ExecutionError<S>>`
 #[cfg(feature = "async")]
 pub type ValuesStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn futures::Stream<Item =
-        Result<Value<S>, ExecutionError<S>>
-    > + Send + 'a>>;
+    std::pin::Pin<Box<dyn futures::Stream<Item = Result<Value<S>, ExecutionError<S>>> + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -472,11 +472,7 @@ where
     ///
     /// If the field fails to resolve, `null` will be returned.
     #[cfg(feature = "async")]
-    pub async fn resolve_into_value_async<T>(
-        &self,
-        info: &T::TypeInfo,
-        value: &T
-    ) -> Value<S>
+    pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
@@ -634,7 +630,6 @@ where
             error,
         }
     }
-
 
     /// Construct a lookahead selection for the current selection.
     ///
@@ -869,7 +864,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {

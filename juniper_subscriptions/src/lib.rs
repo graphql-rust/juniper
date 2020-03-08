@@ -10,15 +10,13 @@
 use std::{iter::FromIterator, pin::Pin};
 
 use juniper::{
-    http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError,
-    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue,
-    SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream
+    http::GraphQLRequest, BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType,
+    GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value,
+    ValuesStream,
 };
 
-use futures::task::Poll;
-use futures::Stream;
+use futures::{task::Poll, Stream};
 use juniper::http::GraphQLResponse;
-
 
 /// [`SubscriptionCoordinator`] implementation
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
@@ -78,9 +76,7 @@ where
             let req = req;
             let ctx = context;
 
-            let (stream, errors) =
-                juniper::http::resolve_into_stream(req, rn, ctx)
-                    .await?;
+            let (stream, errors) = juniper::http::resolve_into_stream(req, rn, ctx).await?;
 
             Ok(Connection::from_stream(stream, errors))
         })
@@ -99,7 +95,7 @@ where
     /// Creates new [`Connection`] from values stream and errors
     pub fn from_stream(stream: Value<ValuesStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
         Self {
-            stream: whole_responses_stream(stream, errors)
+            stream: whole_responses_stream(stream, errors),
         }
     }
 }
@@ -115,7 +111,7 @@ where
 /// `Value::Object<Value::Object<_>>` - returns error if [`Value::Object`] consists of sub-objects
 fn whole_responses_stream<'a, S>(
     stream: Value<ValuesStream<'a, S>>,
-    errors: Vec<ExecutionError<S>>
+    errors: Vec<ExecutionError<S>>,
 ) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
 where
     S: ScalarValue + Send + Sync + 'a,
@@ -132,26 +128,17 @@ where
         Value::Null => Box::pin(stream::once(async move {
             GraphQLResponse::from_result(Ok((Value::Null, vec![])))
         })),
-        Value::Scalar(s) =>
-            Box::pin(s.map(|res| {
-                match res {
-                    Ok(val) => GraphQLResponse::from_result(Ok(
-                        (val, vec![])
-                    )),
-                    Err(err) => GraphQLResponse::from_result(Ok(
-                        (Value::Null, vec![err])
-                    ))
-                }
-            })),
+        Value::Scalar(s) => Box::pin(s.map(|res| match res {
+            Ok(val) => GraphQLResponse::from_result(Ok((val, vec![]))),
+            Err(err) => GraphQLResponse::from_result(Ok((Value::Null, vec![err]))),
+        })),
         Value::List(list) => {
             let mut streams = vec![];
             for s in list.into_iter() {
-                streams.push(
-                    whole_responses_stream(s, vec![])
-                );
-            };
+                streams.push(whole_responses_stream(s, vec![]));
+            }
             Box::pin(stream::select_all(streams))
-        },
+        }
         Value::Object(obj) => {
             let obj_len = obj.field_count();
             let mut key_values = obj.into_key_value_list();
@@ -179,14 +166,14 @@ where
                                     match Pin::new(stream).poll_next(&mut ctx) {
                                         Poll::Ready(None) => {
                                             return Poll::Ready(None);
-                                        },
+                                        }
                                         Poll::Ready(Some(value)) => {
                                             *val = Some((field_name.clone(), value));
                                             filled_count += 1;
                                         }
                                         Poll::Pending => { /* check back later */ }
                                     }
-                                },
+                                }
                                 _ => {
                                     *val = Some((field_name.clone(), Ok(Value::Null)));
                                     filled_count += 1;
@@ -243,4 +230,3 @@ where
         stream.poll_next(cx)
     }
 }
-

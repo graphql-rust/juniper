@@ -162,7 +162,9 @@ mod field_execution {
 
 mod merge_parallel_fragments {
     use crate::{
-        schema::model::RootNode, types::scalars::EmptyMutation, value::Value, EmptySubscription,
+        schema::model::RootNode,
+        types::scalars::{EmptyMutation, EmptySubscription},
+        value::Value,
     };
 
     struct Type;
