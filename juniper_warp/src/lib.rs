@@ -45,7 +45,6 @@ use serde::Deserialize;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
-#[cfg(feature = "async")]
 use futures03::future::{FutureExt, TryFutureExt};
 
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
@@ -87,7 +86,6 @@ where
         }
     }
 
-    #[cfg(feature = "async")]
     pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a juniper::RootNode<'a, QueryT, MutationT, S>,
@@ -272,7 +270,6 @@ where
 }
 
 /// FIXME: docs
-#[cfg(feature = "async")]
 pub fn make_graphql_filter_async<Query, Mutation, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, S>,
     context_extractor: BoxedFilter<(Context,)>,

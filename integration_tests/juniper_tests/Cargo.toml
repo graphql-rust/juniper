@@ -4,12 +4,9 @@ version = "0.1.0"
 publish = false
 edition = "2018"
 
-[features]
-async = ["juniper/async", "futures"]
-
 [dependencies]
 juniper = { path = "../../juniper" }
-futures = { version = "0.3.1", optional = true }
+futures = "0.3.1"
 
 [dev-dependencies]
 serde_json = { version = "1" }
