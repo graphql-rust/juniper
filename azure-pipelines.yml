@@ -6,7 +6,7 @@ jobs:
   - job: check_formatting
     displayName: Check formatting
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: 'ubuntu-latest'
     steps:
       - script: |
           export CARGO_HOME="$HOME/.cargo"
@@ -24,7 +24,7 @@ jobs:
   - job: run_book_tests
     displayName: Book code example tests
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: 'ubuntu-latest'
     steps:
       - script: |
           export CARGO_HOME="$HOME/.cargo"
@@ -38,7 +38,7 @@ jobs:
   - job: build_book_master
     displayName: Build rendered book on master branch and push to Github
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: 'ubuntu-latest'
     dependsOn: run_book_tests
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     variables:
@@ -59,17 +59,17 @@ jobs:
   - template: _build/azure-pipelines-template.yml
     parameters:
       name: Linux
-      vmImage: ubuntu-16.04
+      vmImage: 'ubuntu-latest'
 
   - template: _build/azure-pipelines-template.yml
     parameters:
       name: macOS
-      vmImage: macOS-10.13
+      vmImage: 'macOS-latest'
 
   - template: _build/azure-pipelines-template.yml
     parameters:
       name: Windows
-      vmImage: vs2017-win2016
+      vmImage: 'windows-latest'
 
   ###################################################
   # Releases
@@ -78,7 +78,7 @@ jobs:
   - job: check_release_automation
     displayName: Check release automation
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: 'ubuntu-latest'
     steps:
       - script: |
           export CARGO_HOME="$HOME/.cargo"
