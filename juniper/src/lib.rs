@@ -184,7 +184,6 @@ pub use crate::{
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
-#[cfg(feature = "async")]
 pub use crate::types::async_await::GraphQLTypeAsync;
 
 /// An error that prevented query execution
@@ -258,7 +257,6 @@ where
 }
 
 /// Execute a query in a provided schema
-#[cfg(feature = "async")]
 pub async fn execute_async<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,

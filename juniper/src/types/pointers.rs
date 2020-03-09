@@ -129,7 +129,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'e, S, T> crate::GraphQLTypeAsync<S> for &'e T
 where
     S: ScalarValue + Send + Sync,
@@ -216,7 +215,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
 where
     S: ScalarValue + Send + Sync,
@@ -230,7 +228,6 @@ where
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        use futures::future;
         (**self).resolve_async(info, selection_set, executor)
     }
 }
