@@ -863,7 +863,7 @@ impl GraphQLTypeDefiniton {
                                 }
                             };
                             use futures::future;
--                           future::FutureExt::boxed(f)
+                            future::FutureExt::boxed(f)
                         },
                     )
                 } else {
