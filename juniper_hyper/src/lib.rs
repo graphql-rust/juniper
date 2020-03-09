@@ -3,17 +3,14 @@
 #[cfg(test)]
 extern crate reqwest;
 
-#[cfg(feature = "async")]
 use futures;
 use hyper::{
     header::{self, HeaderValue},
     Body, Method, Request, Response, StatusCode,
 };
-#[cfg(feature = "async")]
-use juniper::GraphQLTypeAsync;
 use juniper::{
     http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue,
-    GraphQLType, InputValue, RootNode, ScalarValue,
+    GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
@@ -53,7 +50,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 pub async fn graphql_async<CtxT, QueryT, MutationT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
@@ -164,7 +160,6 @@ where
     resp
 }
 
-#[cfg(feature = "async")]
 async fn execute_request_async<CtxT, QueryT, MutationT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
     context: Arc<CtxT>,
@@ -309,7 +304,6 @@ where
         }
     }
 
-    #[cfg(feature = "async")]
     async fn execute_async<'a, CtxT: 'a, QueryT, MutationT>(
         self,
         root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
@@ -381,7 +375,7 @@ impl Error for GraphQLRequestError {
         }
     }
 }
-#[cfg(feature = "async")]
+
 #[cfg(test)]
 mod tests {
     use futures;

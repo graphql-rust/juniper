@@ -1,6 +1,5 @@
 extern crate serde_json;
 
-#[cfg(feature = "async")]
 use futures;
 
 #[cfg(test)]

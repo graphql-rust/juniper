@@ -93,7 +93,6 @@ where
         ))
     }
 
-    #[cfg(feature = "async")]
     pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, S>,

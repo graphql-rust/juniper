@@ -6,7 +6,7 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-juniper = { path = "../../../juniper", features = ["async"] }
+juniper = { path = "../../../juniper" }
 juniper_iron = { path = "../../../juniper_iron" }
 futures = "0.3.1"
 

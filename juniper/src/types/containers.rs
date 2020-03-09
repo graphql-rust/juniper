@@ -210,7 +210,6 @@ where
     Ok(Value::list(result))
 }
 
-#[cfg(feature = "async")]
 async fn resolve_into_list_async<'a, S, T, I>(
     executor: &'a Executor<'a, T::Context, S>,
     info: &'a T::TypeInfo,
@@ -247,7 +246,6 @@ where
     Ok(Value::list(values))
 }
 
-#[cfg(feature = "async")]
 impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Vec<T>
 where
     T: crate::GraphQLTypeAsync<S, Context = CtxT>,
@@ -266,7 +264,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for &[T]
 where
     T: crate::GraphQLTypeAsync<S, Context = CtxT>,
@@ -285,7 +282,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Option<T>
 where
     T: crate::GraphQLTypeAsync<S, Context = CtxT>,

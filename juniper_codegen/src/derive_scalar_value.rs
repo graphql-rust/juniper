@@ -110,7 +110,6 @@ fn impl_scalar_struct(
         None => quote!(),
     };
 
-    #[cfg(feature = "async")]
     let _async = quote!(
 
         impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
@@ -133,9 +132,6 @@ fn impl_scalar_struct(
             }
         }
     );
-
-    #[cfg(not(feature = "async"))]
-    let _async = quote!();
 
     quote!(
         #_async

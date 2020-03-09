@@ -8,9 +8,6 @@ documentation = "https://docs.rs/juniper_warp"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
-[features]
-async = [ "juniper/async", "futures03" ]
-
 [dependencies]
 warp = "0.1.8"
 juniper = { version = "0.14.2", path = "../juniper", default-features = false  }

@@ -8,8 +8,5 @@ condition = { channels = ["nightly"] }
 [tasks.test-verbose]
 condition = { channels = ["nightly"] }
 
-[tasks.test-async-verbose]
-condition = { channels = ["nightly"] }
-
 [tasks.ci-coverage-flow]
 condition = { channels = ["nightly"] }
