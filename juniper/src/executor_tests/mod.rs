@@ -5,8 +5,7 @@ mod introspection;
 mod variables;
 
 // FIXME: re-enable
-#[cfg(not(feature = "async"))]
+#[cfg(TODO)]
 mod interfaces_unions;
 
-#[cfg(feature = "async")]
 mod async_await;

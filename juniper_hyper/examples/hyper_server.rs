@@ -1,8 +1,3 @@
-extern crate hyper;
-extern crate juniper;
-extern crate juniper_hyper;
-extern crate pretty_env_logger;
-
 use hyper::{
     service::{make_service_fn, service_fn},
     Body, Method, Response, Server, StatusCode,

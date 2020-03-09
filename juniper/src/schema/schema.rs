@@ -75,7 +75,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'a, CtxT, S, QueryT, MutationT> crate::GraphQLTypeAsync<S>
     for RootNode<'a, QueryT, MutationT, S>
 where
@@ -93,7 +92,7 @@ where
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
-        use futures::future::{ready, FutureExt};
+        use futures::future::ready;
         match field_name {
             "__schema" | "__type" => {
                 let v = self.resolve_field(info, field_name, arguments, executor);

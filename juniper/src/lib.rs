@@ -162,6 +162,7 @@ use crate::{
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
 };
+use std::fmt;
 
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
@@ -183,7 +184,6 @@ pub use crate::{
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
-#[cfg(feature = "async")]
 pub use crate::types::async_await::GraphQLTypeAsync;
 
 /// An error that prevented query execution
@@ -197,6 +197,26 @@ pub enum GraphQLError<'a> {
     UnknownOperationName,
     IsSubscription,
 }
+
+impl<'a> fmt::Display for GraphQLError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GraphQLError::ParseError(error) => write!(f, "{}", error),
+            GraphQLError::ValidationError(errors) => {
+                for error in errors {
+                    writeln!(f, "{}", error)?;
+                }
+                Ok(())
+            }
+            GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
+            GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
+            GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
+            GraphQLError::IsSubscription => write!(f, "Subscription are not currently supported"),
+        }
+    }
+}
+
+impl<'a> std::error::Error for GraphQLError<'a> {}
 
 /// Execute a query in a provided schema
 pub fn execute<'a, S, CtxT, QueryT, MutationT>(
@@ -237,7 +257,6 @@ where
 }
 
 /// Execute a query in a provided schema
-#[cfg(feature = "async")]
 pub async fn execute_async<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,

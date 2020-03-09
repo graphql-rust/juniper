@@ -9,7 +9,6 @@ use juniper::{
     GraphQLType, RootNode, Value, Variables,
 };
 
-#[cfg(feature = "async")]
 use futures;
 
 pub struct Query;

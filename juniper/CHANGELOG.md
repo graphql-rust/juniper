@@ -4,6 +4,14 @@
 
 - Support raw identifiers in field and argument names. (#[object] macro)
 
+- Most error types now implement `std::error::Error`:
+  - `GraphQLError`
+  - `LexerError`
+  - `ParseError`
+  - `RuleError`
+
+See [#419](https://github.com/graphql-rust/juniper/pull/419).
+
 ## Breaking Changes
 
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
