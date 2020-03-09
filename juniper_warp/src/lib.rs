@@ -451,7 +451,6 @@ where
         if msg.is_close() {
             return futures03::future::ready(());
         }
-        let coordinator = coordinator.clone();
         let context = context.clone();
         let got_close_signal = got_close_signal.clone();
 

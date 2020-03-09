@@ -81,12 +81,12 @@ where
 impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+    SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'a,
 {
