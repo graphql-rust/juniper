@@ -1007,7 +1007,7 @@ impl GraphQLTypeDefiniton {
 #[cfg(test)]
 mod test {
     use super::*;
-    use quote::__rt::*;
+    use quote::__private::*;
     use syn::{Ident, LitStr};
 
     fn strs_to_strings(source: Vec<&str>) -> Vec<String> {
