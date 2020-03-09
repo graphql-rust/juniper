@@ -862,8 +862,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
-                            use futures::future;
-                            future::FutureExt::boxed(f)
+                            std::pin::Pin::new(Box::new(f))
                         },
                     )
                 } else {
