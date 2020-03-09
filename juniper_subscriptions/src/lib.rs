@@ -30,7 +30,7 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    root_node: &'a juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
@@ -46,7 +46,7 @@ where
     CtxT: Send + Sync,
 {
     /// Builds new [`Coordinator`] with specified root_node
-    pub fn new(root_node: &'a juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
+    pub fn new(root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
         Self { root_node }
     }
 }
@@ -70,13 +70,18 @@ where
         req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
     ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>> {
-        let rn = self.root_node;
+        let rn = &self.root_node;
 
         Box::pin(async move {
             let req = req;
             let ctx = context;
 
-            let (stream, errors) = juniper::http::resolve_into_stream(req, rn, ctx).await?;
+            let (stream, errors)
+            = juniper::http::resolve_into_stream(
+                req,
+                rn,
+                ctx
+            ).await?;
 
             Ok(Connection::from_stream(stream, errors))
         })

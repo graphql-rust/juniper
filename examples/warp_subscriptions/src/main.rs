@@ -7,6 +7,7 @@ use warp::{http::Response, Filter};
 
 use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
 use juniper_warp::playground_filter;
+use juniper_subscriptions::Coordinator;
 
 #[derive(Clone)]
 struct Context {}
@@ -153,24 +154,32 @@ async fn main() {
     let qm_schema = schema();
 
     let state2 = warp::any().map(move || Context {});
-    let s_schema = Arc::new(schema());
     let qm_graphql_filter = juniper_warp::make_graphql_filter_async(qm_schema, state.boxed());
+
+    let coordinator = Arc::new(juniper_subscriptions::Coordinator::new(schema()));
 
     log::info!("Listening on 127.0.0.1:8080");
 
-    let routes = (warp::path("subscriptions")
-        .and(warp::ws())
-        .and(state2.clone())
-        .and(warp::any().map(move || Arc::clone(&s_schema)))
-        .map(|ws: warp::ws::Ws, ctx: Context, schema: Arc<Schema>| {
-            ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                log::info!("ws connected");
-                juniper_warp::graphql_subscriptions_async(websocket, schema, ctx).boxed()
-            })
-        }))
-    .or(warp::post()
+    let routes =
+//        (warp::path("subscriptions")
+//        .and(warp::ws())
+//        .and(state2.clone())
+//        .and(warp::any().map(move || Arc::clone(&coordinator)))
+//        .map(|ws: warp::ws::Ws, ctx: Context, coordinator: Arc<Coordinator<'static, _, _, _, _, _>>| {
+//            ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
+//                log::info!("ws connected");
+//                juniper_warp::graphql_subscriptions_async(
+//                    websocket,
+//                    coordinator,
+//                    ctx
+//                ).boxed()
+//            })
+//        }))
+//    .or(
+        warp::post()
         .and(warp::path("graphql"))
-        .and(qm_graphql_filter))
+        .and(qm_graphql_filter)
+//    )
     .or(warp::get()
         .and(warp::path("playground"))
         .and(playground_filter("/graphql", Some("/subscriptions"))))
