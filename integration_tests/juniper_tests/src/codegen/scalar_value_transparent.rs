@@ -1,5 +1,4 @@
 use fnv::FnvHashMap;
-#[cfg(feature = "async")]
 use futures;
 use juniper::{DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 

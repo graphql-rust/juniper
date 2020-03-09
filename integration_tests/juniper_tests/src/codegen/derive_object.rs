@@ -7,7 +7,6 @@ use juniper::{DefaultScalarValue, GraphQLObject};
 #[cfg(test)]
 use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
 
-#[cfg(feature = "async")]
 use futures;
 
 #[derive(GraphQLObject, Debug, PartialEq)]

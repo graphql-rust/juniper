@@ -372,7 +372,6 @@ where
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -386,7 +385,6 @@ where
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
-    #[cfg(feature = "async")]
     pub async fn resolve_with_ctx_async<NewCtxT, T>(
         &self,
         info: &T::TypeInfo,
@@ -421,7 +419,6 @@ where
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    #[cfg(feature = "async")]
     pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -747,7 +744,6 @@ where
     Ok((value, errors))
 }
 
-#[cfg(feature = "async")]
 pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, CtxT, S>(
     document: &'b Document<'a, S>,
     operation: &'b Spanning<Operation<'_, S>>,

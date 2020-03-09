@@ -52,15 +52,10 @@ use rocket::{
 };
 
 use juniper::{http, InputValue};
-
 use juniper::{
     serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
 };
-
-#[cfg(feature = "async")]
 use juniper::GraphQLTypeAsync;
-
-#[cfg(feature = "async")]
 use futures::future::{FutureExt, TryFutureExt};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
@@ -110,7 +105,6 @@ where
         }
     }
 
-    #[cfg(feature = "async")]
     pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, S>,
@@ -213,7 +207,6 @@ where
     }
 
     /// Asynchronously execute an incoming GraphQL query
-    #[cfg(feature = "async")]
     pub async fn execute_async<CtxT, QueryT, MutationT>(
         &self,
         root_node: &RootNode<'_, QueryT, MutationT, S>,

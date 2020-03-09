@@ -7,9 +7,6 @@ condition = { channels = ["nightly"], env = { "TARGET" = "x86_64-pc-windows-msvc
 [tasks.test-verbose]
 condition = { channels = ["nightly"] }
 
-[tasks.test-async-verbose]
-condition = { channels = ["nightly"] }
-
 [tasks.test-verbose.windows]
 condition = { channels = ["nightly"], env = { "TARGET" = "x86_64-pc-windows-msvc" } }
 
