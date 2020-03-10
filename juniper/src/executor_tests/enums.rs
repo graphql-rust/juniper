@@ -37,7 +37,7 @@ where
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(query, None, &schema, &vars, &()).expect("Execution failed");
+        crate::execute_sync(query, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -82,7 +82,7 @@ fn does_not_accept_string_literals() {
     let query = r#"{ toString(color: "RED") }"#;
     let vars = vec![].into_iter().collect();
 
-    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
+    let error = crate::execute_sync(query, None, &schema, &vars, &()).unwrap_err();
 
     assert_eq!(
         error,
@@ -118,7 +118,7 @@ fn does_not_accept_incorrect_enum_name_in_variables() {
         .into_iter()
         .collect();
 
-    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
+    let error = crate::execute_sync(query, None, &schema, &vars, &()).unwrap_err();
 
     assert_eq!(
         error,
@@ -138,7 +138,7 @@ fn does_not_accept_incorrect_type_in_variables() {
         .into_iter()
         .collect();
 
-    let error = crate::execute(query, None, &schema, &vars, &()).unwrap_err();
+    let error = crate::execute_sync(query, None, &schema, &vars, &()).unwrap_err();
 
     assert_eq!(
         error,

@@ -87,7 +87,7 @@ async fn async_simple() {
     "#;
 
     let vars = Default::default();
-    let (res, errs) = juniper::execute_async(doc, None, &schema, &vars, &())
+    let (res, errs) = juniper::execute(doc, None, &schema, &vars, &())
         .await
         .unwrap();
 
@@ -130,7 +130,7 @@ async fn async_field_validation_error() {
     "#;
 
     let vars = Default::default();
-    let result = juniper::execute_async(doc, None, &schema, &vars, &()).await;
+    let result = juniper::execute(doc, None, &schema, &vars, &()).await;
     assert!(result.is_err());
 
     let error = result.err().unwrap();

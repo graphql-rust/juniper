@@ -5,7 +5,7 @@ use juniper::Object;
 
 #[cfg(test)]
 use juniper::{
-    self, execute, graphql_value, DefaultScalarValue, EmptyMutation, GraphQLInputObject,
+    self, execute_sync, graphql_value, DefaultScalarValue, EmptyMutation, GraphQLInputObject,
     GraphQLType, RootNode, Value, Variables,
 };
 
@@ -98,7 +98,7 @@ fn run_type_info_query(doc: &str) -> Value {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

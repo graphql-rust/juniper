@@ -23,7 +23,7 @@ fn test_introspection_query_type_name() {
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__schema": {
@@ -50,7 +50,7 @@ fn test_introspection_type_name() {
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -76,7 +76,7 @@ fn test_introspection_specific_object_type_name_and_kind() {
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -103,7 +103,7 @@ fn test_introspection_specific_interface_type_name_and_kind() {
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -130,7 +130,7 @@ fn test_introspection_documentation() {
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &database),
         Ok((
             graphql_value!({
                 "__type": {
@@ -159,7 +159,7 @@ fn test_introspection_directives() {
     let database = Database::new();
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
-    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database).unwrap();
+    let mut result = crate::execute_sync(q, None, &schema, &Variables::new(), &database).unwrap();
     sort_schema_value(&mut result.0);
 
     let mut expected = graphql_value!({
@@ -203,7 +203,7 @@ fn test_introspection_possible_types() {
     let database = Database::new();
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
-    let result = crate::execute(doc, None, &schema, &Variables::new(), &database);
+    let result = crate::execute_sync(doc, None, &schema, &Variables::new(), &database);
 
     let (result, errors) = result.ok().expect("Query returned error");
 

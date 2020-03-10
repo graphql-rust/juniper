@@ -4,7 +4,7 @@ extern crate juniper;
 
 use bencher::Bencher;
 
-use juniper::{execute, tests::model::Database, EmptyMutation, RootNode, Variables};
+use juniper::{execute_sync, tests::model::Database, EmptyMutation, RootNode, Variables};
 
 fn query_type_name(b: &mut Bencher) {
     let database = Database::new();
@@ -19,7 +19,7 @@ fn query_type_name(b: &mut Bencher) {
           }
         }"#;
 
-    b.iter(|| execute(doc, None, &schema, &Variables::new(), &database));
+    b.iter(|| execute_sync(doc, None, &schema, &Variables::new(), &database));
 }
 
 fn introspection_query(b: &mut Bencher) {
@@ -120,7 +120,7 @@ fn introspection_query(b: &mut Bencher) {
   }
 "#;
 
-    b.iter(|| execute(doc, None, &schema, &Variables::new(), &database));
+    b.iter(|| execute_sync(doc, None, &schema, &Variables::new(), &database));
 }
 
 benchmark_group!(queries, query_type_name, introspection_query);

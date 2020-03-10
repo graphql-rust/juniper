@@ -75,18 +75,18 @@ where
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
             GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
+                    .map(|request| request.execute_sync(root_node, context))
                     .collect(),
             ),
         }
     }
 
-    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+    pub async fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a juniper::RootNode<'a, QueryT, MutationT, S>,
         context: &'a CtxT,
@@ -101,13 +101,13 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                let res = request.execute_async(root_node, context).await;
+                let res = request.execute(root_node, context).await;
                 GraphQLBatchResponse::Single(res)
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 let futures = requests
                     .iter()
-                    .map(|request| request.execute_async(root_node, context))
+                    .map(|request| request.execute(root_node, context))
                     .collect::<Vec<_>>();
                 let responses = futures03::future::join_all(futures).await;
 
@@ -218,7 +218,7 @@ where
             Box::new(
                 poll_fn(move || {
                     tokio_threadpool::blocking(|| {
-                        let response = request.execute(&schema, &context);
+                        let response = request.execute_sync(&schema, &context);
                         Ok((serde_json::to_vec(&response)?, response.is_ok()))
                     })
                 })
@@ -252,7 +252,7 @@ where
                         variables,
                     );
 
-                    let response = graphql_request.execute(&schema, &context);
+                    let response = graphql_request.execute_sync(&schema, &context);
                     Ok((serde_json::to_vec(&response)?, response.is_ok()))
                 })
             })
@@ -290,7 +290,7 @@ where
             let schema = post_schema.clone();
 
             let f = async move {
-                let res = request.execute_async(&schema, &context).await;
+                let res = request.execute(&schema, &context).await;
 
                 match serde_json::to_vec(&res) {
                     Ok(json) => Ok(build_response(Ok((json, res.is_ok())))),
@@ -326,7 +326,7 @@ where
                         variables,
                     );
 
-                    let response = graphql_request.execute(&schema, &context);
+                    let response = graphql_request.execute_sync(&schema, &context);
                     Ok((serde_json::to_vec(&response)?, response.is_ok()))
                 })
             })

@@ -175,7 +175,7 @@ fn main() {
     let ctx = Ctx(Episode::NewHope);
 
     // Run the executor.
-    let (res, _errors) = juniper::execute(
+    let (res, _errors) = juniper::execute_sync(
         "query { favoriteEpisode }",
         None,
         &Schema::new(Query, EmptyMutation::new()),

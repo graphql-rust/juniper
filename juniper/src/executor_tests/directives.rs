@@ -25,7 +25,7 @@ where
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(query, None, &schema, &vars, &()).expect("Execution failed");
+        crate::execute_sync(query, None, &schema, &vars, &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

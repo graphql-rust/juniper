@@ -2,9 +2,7 @@ extern crate serde_json;
 
 use futures;
 
-#[cfg(test)]
 use juniper::parser::Spanning;
-#[cfg(test)]
 use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
 use juniper::{
     parser::{ParseError, ScalarToken, Token},
@@ -175,14 +173,13 @@ impl TestType {
     }
 }
 
-#[cfg(test)]
-fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
+async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
-    let (result, errs) = execute(query, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = execute(query, None, &schema, &vars, &()).await.expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -193,26 +190,25 @@ where
     f(obj);
 }
 
-#[cfg(test)]
-fn run_query<F>(query: &str, f: F)
+async fn run_query<F>(query: &str, f: F)
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    run_variable_query(query, Variables::new(), f);
+    run_variable_query(query, Variables::new(), f).await;
 }
 
-#[test]
-fn querying_long() {
+#[tokio::test]
+async fn querying_long() {
     run_query("{ longField }", |result| {
         assert_eq!(
             result.get_field_value("longField"),
             Some(&Value::scalar((::std::i32::MAX as i64) + 1))
         );
-    });
+    }).await;
 }
 
-#[test]
-fn querying_long_arg() {
+#[tokio::test]
+async fn querying_long_arg() {
     run_query(
         &format!(
             "{{ longWithArg(longArg: {}) }}",
@@ -224,11 +220,11 @@ fn querying_long_arg() {
                 Some(&Value::scalar((::std::i32::MAX as i64) + 3))
             );
         },
-    );
+    ).await;
 }
 
-#[test]
-fn querying_long_variable() {
+#[tokio::test]
+async fn querying_long_variable() {
     run_variable_query(
         "query q($test: Long!){ longWithArg(longArg: $test) }",
         vec![(
@@ -243,7 +239,7 @@ fn querying_long_variable() {
                 Some(&Value::scalar((::std::i32::MAX as i64) + 42))
             );
         },
-    );
+    ).await;
 }
 
 #[test]

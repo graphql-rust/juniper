@@ -5,7 +5,7 @@ use juniper::Object;
 use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
-use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
+use juniper::{self, execute_sync, EmptyMutation, GraphQLType, RootNode, Value, Variables};
 
 use futures;
 
@@ -195,7 +195,7 @@ fn test_derived_object() {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     assert_eq!(
-        execute(doc, None, &schema, &Variables::new(), &()),
+        execute_sync(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
                 vec![(
@@ -227,7 +227,7 @@ fn test_cannot_query_skipped_field() {
             }
         }"#;
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
-    execute(doc, None, &schema, &Variables::new(), &()).unwrap();
+    execute_sync(doc, None, &schema, &Variables::new(), &()).unwrap();
 }
 
 #[test]
@@ -239,7 +239,7 @@ fn test_skipped_field_siblings_unaffected() {
             }
         }"#;
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
-    execute(doc, None, &schema, &Variables::new(), &()).unwrap();
+    execute_sync(doc, None, &schema, &Variables::new(), &()).unwrap();
 }
 
 #[test]
@@ -257,7 +257,7 @@ fn test_derived_object_nested() {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     assert_eq!(
-        execute(doc, None, &schema, &Variables::new(), &()),
+        execute_sync(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
                 vec![(
@@ -336,7 +336,7 @@ where
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

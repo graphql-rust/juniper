@@ -238,7 +238,7 @@ mod integration_test {
         let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
         let (result, errs) =
-            crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+            crate::execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
         assert_eq!(errs, []);
 

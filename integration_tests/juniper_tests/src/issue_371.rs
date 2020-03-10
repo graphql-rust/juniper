@@ -56,7 +56,7 @@ fn users() {
 
     let query = r#"{ users { id } }"#;
 
-    let (_, errors) = juniper::execute(
+    let (_, errors) = juniper::execute_sync(
         query,
         None,
         &Schema::new(Query, EmptyMutation::<Context>::new()),
@@ -74,7 +74,7 @@ fn countries() {
 
     let query = r#"{ countries { id } }"#;
 
-    let (_, errors) = juniper::execute(
+    let (_, errors) = juniper::execute_sync(
         query,
         None,
         &Schema::new(Query, EmptyMutation::new()),
@@ -97,7 +97,7 @@ fn both() {
     }
     "#;
 
-    let (_, errors) = juniper::execute(
+    let (_, errors) = juniper::execute_sync(
         query,
         None,
         &Schema::new(Query, EmptyMutation::<Context>::new()),
@@ -120,7 +120,7 @@ fn both_in_different_order() {
     }
     "#;
 
-    let (_, errors) = juniper::execute(
+    let (_, errors) = juniper::execute_sync(
         query,
         None,
         &Schema::new(Query, EmptyMutation::<Context>::new()),
