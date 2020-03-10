@@ -84,8 +84,8 @@ mod interface {
         }
     }
 
-    #[test]
-    fn test() {
+    #[tokio::test]
+    async fn test() {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
@@ -116,8 +116,9 @@ mod interface {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute_sync(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -229,8 +230,8 @@ mod union {
         }
     }
 
-    #[test]
-    fn test_unions() {
+    #[tokio::test]
+    async fn test_unions() {
         let schema = RootNode::new(
             Schema {
                 pets: vec![
@@ -263,8 +264,9 @@ mod union {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute_sync(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
