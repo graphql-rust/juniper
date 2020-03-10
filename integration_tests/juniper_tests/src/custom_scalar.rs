@@ -2,12 +2,11 @@ extern crate serde_json;
 
 use futures;
 
-use juniper::parser::Spanning;
-use juniper::{execute, EmptyMutation, Object, RootNode, Variables};
 use juniper::{
-    parser::{ParseError, ScalarToken, Token},
+    execute,
+    parser::{ParseError, ScalarToken, Spanning, Token},
     serde::de,
-    InputValue, ParseScalarResult, ScalarValue, Value,
+    EmptyMutation, InputValue, Object, ParseScalarResult, RootNode, ScalarValue, Value, Variables,
 };
 use std::fmt;
 
@@ -179,7 +178,9 @@ where
 {
     let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
 
-    let (result, errs) = execute(query, None, &schema, &vars, &()).await.expect("Execution failed");
+    let (result, errs) = execute(query, None, &schema, &vars, &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -204,7 +205,8 @@ async fn querying_long() {
             result.get_field_value("longField"),
             Some(&Value::scalar((::std::i32::MAX as i64) + 1))
         );
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -220,7 +222,8 @@ async fn querying_long_arg() {
                 Some(&Value::scalar((::std::i32::MAX as i64) + 3))
             );
         },
-    ).await;
+    )
+    .await;
 }
 
 #[tokio::test]
@@ -239,7 +242,8 @@ async fn querying_long_variable() {
                 Some(&Value::scalar((::std::i32::MAX as i64) + 42))
             );
         },
-    ).await;
+    )
+    .await;
 }
 
 #[test]

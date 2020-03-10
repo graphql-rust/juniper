@@ -295,7 +295,11 @@ where
         )
     }
 
-    fn execute_sync(&self, context: &CtxT, request: GraphQLBatchRequest<S>) -> IronResult<Response> {
+    fn execute_sync(
+        &self,
+        context: &CtxT,
+        request: GraphQLBatchRequest<S>,
+    ) -> IronResult<Response> {
         let response = request.execute_sync(&self.root_node, context);
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();

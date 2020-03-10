@@ -1147,7 +1147,8 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = crate::execute_sync(doc, Some("UnknownExample"), &schema, &vars, &()).unwrap_err();
+        let err =
+            crate::execute_sync(doc, Some("UnknownExample"), &schema, &vars, &()).unwrap_err();
 
         assert_eq!(err, GraphQLError::UnknownOperationName);
     }

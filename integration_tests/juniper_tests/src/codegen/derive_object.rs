@@ -5,7 +5,7 @@ use juniper::Object;
 use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
-use juniper::{self, execute_sync, EmptyMutation, GraphQLType, RootNode, Value, Variables};
+use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
 
 use futures;
 
@@ -170,8 +170,8 @@ fn test_doc_comment_override() {
     );
 }
 
-#[test]
-fn test_derived_object() {
+#[tokio::test]
+async fn test_derived_object() {
     assert_eq!(
         <Obj as GraphQLType<DefaultScalarValue>>::name(&()),
         Some("MyObj")
@@ -195,7 +195,7 @@ fn test_derived_object() {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     assert_eq!(
-        execute_sync(doc, None, &schema, &Variables::new(), &()),
+        execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
             Value::object(
                 vec![(
@@ -217,9 +217,9 @@ fn test_derived_object() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[should_panic]
-fn test_cannot_query_skipped_field() {
+async fn test_cannot_query_skipped_field() {
     let doc = r#"
         {
             skippedFieldObj {
@@ -227,11 +227,13 @@ fn test_cannot_query_skipped_field() {
             }
         }"#;
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
-    execute_sync(doc, None, &schema, &Variables::new(), &()).unwrap();
+    execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 }
 
-#[test]
-fn test_skipped_field_siblings_unaffected() {
+#[tokio::test]
+async fn test_skipped_field_siblings_unaffected() {
     let doc = r#"
         {
             skippedFieldObj {
@@ -239,11 +241,13 @@ fn test_skipped_field_siblings_unaffected() {
             }
         }"#;
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
-    execute_sync(doc, None, &schema, &Variables::new(), &()).unwrap();
+    execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 }
 
-#[test]
-fn test_derived_object_nested() {
+#[tokio::test]
+async fn test_derived_object_nested() {
     let doc = r#"
         {
             nested {
@@ -257,7 +261,7 @@ fn test_derived_object_nested() {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
     assert_eq!(
-        execute_sync(doc, None, &schema, &Variables::new(), &()),
+        execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
             Value::object(
                 vec![(
@@ -329,14 +333,15 @@ fn check_descriptions(
 }
 
 #[cfg(test)]
-fn run_type_info_query<F>(doc: &str, f: F)
+async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),
 {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
-    let (result, errs) =
-        execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
