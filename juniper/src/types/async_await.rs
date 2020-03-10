@@ -12,7 +12,7 @@ use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
-// TODO: docs.
+/// TODO: docs.
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -206,6 +206,8 @@ where
                     continue;
                 }
 
+                println!("WHATEVR");
+
                 // TODO: prevent duplicate boxing.
                 let f = async move {
                     let fragment = &executor
@@ -248,7 +250,14 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            merge_key_into(&mut object, &k, v);
+                            // TODO: prevent duplicate boxing.
+                            let f = async move {
+                                AsyncValue::Field(AsyncField {
+                                    name: k,
+                                    value: Some(v),
+                                })
+                            };
+                            async_values.push(Box::pin(f));
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
@@ -274,7 +283,7 @@ where
         match item {
             AsyncValue::Field(AsyncField { name, value }) => {
                 if let Some(value) = value {
-                    object.add_field(&name, value);
+                    merge_key_into(&mut object, &name, value);
                 } else {
                     return Value::null();
                 }
