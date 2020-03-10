@@ -285,7 +285,7 @@ impl Context {
     let ctx = Context::new(cult_loader);
 
     // Execute
-    let future_execute = data.execute_async(&amp;st, &amp;ctx); 
+    let future_execute = data.execute(&amp;st, &amp;ctx); 
     let res = rt.run_until(future_execute);
     let json = serde_json::to_string(&amp;res).map_err(error::ErrorInternalServerError)?;
 
