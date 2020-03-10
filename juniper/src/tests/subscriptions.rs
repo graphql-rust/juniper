@@ -1,6 +1,6 @@
 use juniper_codegen::GraphQLObjectInternal;
 
-use crate::{Context, ExecutionError, FieldError, FieldResult};
+use crate::{Context, ExecutionError, FieldError, FieldResult, SubscriptionCoordinator, SubscriptionConnection};
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -20,24 +20,122 @@ struct MyQuery;
 #[crate::graphql_object_internal(context = MyContext)]
 impl MyQuery {}
 
+struct Coordinator {
+    root_node: AsyncSchema
+}
 
-use futures::{self, stream::StreamExt as _};
+impl Coordinator {
+    pub fn new(root_node: AsyncSchema) -> Self {
+        Self { root_node }
+    }
+}
+
+impl<'a> SubscriptionCoordinator<'a, MyContext, DefaultScalarValue> for Coordinator {
+    type Connection = Connection<'a>;
+
+    fn subscribe(
+        &'a self,
+        req: &'a GraphQLRequest<DefaultScalarValue>,
+        ctx: &'a MyContext
+    ) -> Pin<Box<dyn futures::Future<
+            Output = Result<Self::Connection, crate::GraphQLError<'a>>
+        > + Send + 'a >>
+    {
+        use futures::stream::Stream as _;
+        use std::iter::FromIterator as _;
+
+        let rn = &self.root_node;
+
+        Box::pin(async move {
+            let req = req;
+
+            let (mut val, _)
+                = crate::http::resolve_into_stream(
+                req,
+                rn,
+                ctx
+            ).await?;
+
+
+            let obj = if let Value::Object(mut obj) = val
+                    {
+                        let mut values = Vec::new();
+                        for (name, stream) in obj.iter_mut() {
+                            if let Value::Scalar(strm) = stream {
+                                values.push((
+                                    name.to_owned(),
+                                     match strm
+                                         .take(1)
+                                         .collect::<Vec<_>>()
+                                         .await[0]
+                                         {
+                                             Ok(v) => v,
+                                             Err(_) => panic!("Error collecting object's field")
+                                         }
+                                ))
+                            }
+                            else {
+                                todo!("Items other than Value::Object<Value::Scalar> are not supported in tests")
+                            }
+                        };
+
+                        crate::Object::from_iter(values.into_iter())
+                    }
+                    else {
+                        todo!("Items other than Value::Object are not supported in tests")
+                    };
+
+
+            Ok(Connection {
+                item: GraphQLResponse::from_result(Ok((Value::Object(obj), vec![]))),
+                is_used: false,
+            })
+        })
+    }
+}
+
+struct Connection<'a> {
+    item: GraphQLResponse<'a>,
+    is_used: bool
+}
+
+impl<'a> SubscriptionConnection<'a, DefaultScalarValue> for Connection<'a> {}
+
+impl<'a> futures::Stream for Connection<'a> {
+    type Item = GraphQLResponse<'a>;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut futures::task::Context<'_>,
+    )
+        -> futures::task::Poll<Option<Self::Item>> {
+        use futures::task::Poll;
+        if self.is_used {
+            Poll::Ready(None)
+        }
+        else {
+            Poll::Ready(Some(self.item.clone()))
+        }
+    }
+}
+
+use futures::{self, stream::StreamExt as _, StreamExt};
 use juniper_codegen::graphql_subscription_internal;
 
 use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
 
 use super::*;
 use std::pin::Pin;
+use crate::http::GraphQLResponse;
 
 type AsyncSchema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
-//// Copied from `src/executor_tests/async_await/mod.rs`.
-//fn run<O>(f: impl std::future::Future<Output = O>) -> O {
-//    tokio::runtime::current_thread::Runtime::new()
-//        .unwrap()
-//        .block_on(f)
-//}
+fn run<O>(f: impl std::future::Future<Output = O>) -> O {
+    let mut rt = tokio::runtime::Runtime::new().unwrap();
+
+    rt.block_on(f)
+}
 
 type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
@@ -96,18 +194,28 @@ fn create_and_execute(
     ),
     Vec<ExecutionError<DefaultScalarValue>>,
 > {
-//    let request = GraphQLRequest::new(query, None, None);
-//
-//    let root_node = AsyncSchema::new(
-//        MyQuery,
-//        EmptyMutation::new(),
-//        MySubscription
-//    );
-//
-//    let mut context = MyContext(2);
-//
-//    let response = run(request.subscribe(&root_node, &context)).into_inner();
-//
+    let request = GraphQLRequest::new(query, None, None);
+
+    let root_node = AsyncSchema::new(
+        MyQuery,
+        EmptyMutation::new(),
+        MySubscription
+    );
+
+    let mut context = MyContext(2);
+
+    let coordinator = Coordinator::new(
+        root_node
+    );
+
+    let response = run(coordinator.subscribe(
+            &request,
+            &context
+        )
+    );
+
+    todo!()
+
 //    assert!(response.is_ok());
 //
 //    let (values, errors) = response.unwrap();
@@ -147,7 +255,6 @@ fn create_and_execute(
 //    }
 //
 //    Ok((names, collected_values))
-    todo!()
 }
 
 //#[test]

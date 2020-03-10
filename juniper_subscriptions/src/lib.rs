@@ -45,7 +45,7 @@ where
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
-    /// Builds new [`Coordinator`] with specified root_node
+    /// Builds new [`Coordinator`] with specified `root_node`
     pub fn new(root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
         Self { root_node }
     }
@@ -73,9 +73,6 @@ where
         let rn = &self.root_node;
 
         Box::pin(async move {
-            let req = req;
-            let ctx = context;
-
             let (stream, errors)
             = juniper::http::resolve_into_stream(
                 req,

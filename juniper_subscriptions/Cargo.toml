@@ -2,18 +2,15 @@
 name = "juniper_subscriptions"
 version = "0.14.2"
 authors = ["nWacky <gosha.evtushenko@gmail.com>"]
-# todo: better description
-description = "Juniper Subscription Coordinator and Connection implementation"
+description = "Juniper SubscriptionCoordinator and SubscriptionConnection implementations"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_subscriptions"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
-#[features]
-#async = [ "juniper/async", "futures03" ]
 
 [dependencies]
-juniper = { version = "0.14.2", path = "../juniper", default-features = false, features = ["async"] }
+juniper = {  version = "0.14.2", path = "../juniper", default-features = false, features = ["async"] }
 futures = { version = "=0.3.1", features = ["compat"] }
 
 #[dev-dependencies]
