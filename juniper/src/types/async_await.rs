@@ -21,10 +21,9 @@ This trait's execution logic is similar to `GraphQLType`.
 ## Manual implementation example
 
 ```rust
-use async_trait::async_trait;
 use juniper::{
     meta::MetaType, DefaultScalarValue, FieldError,
-    GraphQLType, GraphQLTypeAsync, Registry, Value, ValuesIterator,
+    GraphQLType, GraphQLTypeAsync, Registry, Value,
 };
 
 #[derive(Debug)]
@@ -34,7 +33,7 @@ struct User {
     friend_ids: Vec<String>,
 }
 
-#[juniper::object]
+#[juniper::graphql_object]
 impl User {}
 
 struct Query;
@@ -65,41 +64,42 @@ impl GraphQLType for Query {
 // can be implemented without async_trait (subscription macros do not
 // use async_trait, for example)
 // [1](https://github.com/dtolnay/async-trait)
-#[async_trait]
 impl GraphQLTypeAsync<DefaultScalarValue> for Query {
     // This function is called every time a field is found
-    async fn resolve_field_async<'a>(
+    fn resolve_field_async<'a>(
         &'a self,
-        type_info: &'a <Self as GraphQLType>::TypeInfo,
+        info: &'a Self::TypeInfo,
         field_name: &'a str,
-        args: &'a juniper::Arguments<'a>,
-        executor: &'a juniper::Executor<'a, <Self as GraphQLType>::Context>,
-    ) -> juniper::ExecutionResult {
-        match field_name {
-            "users" => {
-                let user = User {
-                    id: "1".to_string(),
-                    name: "user".to_string(),
-                    friend_ids: vec!["2".to_string(), "3".to_string(), "4".to_string()],
-                };
-                // Pass returned object as context and keep resolving query to
-                // filter out unnecessary fields.
-                let res: Result<Option<(&<Self as GraphQLType>::Context, _)>, _> =
-                    juniper::IntoResolvable::into(user, executor.context());
-                match res {
-                    Ok(Some((ctx, r))) => {
-                        let sub = executor.replaced_context(ctx);
-                        sub.resolve_with_ctx_async::<<Self as GraphQLType>::Context, _>(&(), &r)
-                            .await
+        arguments: &'a juniper::Arguments<DefaultScalarValue>,
+        executor: &'a juniper::Executor<Self::Context, DefaultScalarValue>,
+    ) -> juniper::BoxFuture<'a, juniper::ExecutionResult<DefaultScalarValue>> {
+        Box::pin(async move {
+            match field_name {
+                "users" => {
+                    let user = User {
+                        id: "1".to_string(),
+                        name: "user".to_string(),
+                        friend_ids: vec!["2".to_string(), "3".to_string(), "4".to_string()],
+                    };
+                    // Pass returned object as context and keep resolving query to
+                    // filter out unnecessary fields.
+                    let res: Result<Option<(&<Self as GraphQLType>::Context, _)>, _> =
+                        juniper::IntoResolvable::into(user, executor.context());
+                    match res {
+                        Ok(Some((ctx, r))) => {
+                            let sub = executor.replaced_context(ctx);
+                            sub.resolve_with_ctx_async::<<Self as GraphQLType>::Context, _>(&(), &r)
+                                .await
+                        }
+                        Ok(None) => Ok(juniper::Value::null()),
+                        Err(e) => Err(e),
                     }
-                    Ok(None) => Ok(juniper::Value::null()),
-                    Err(e) => Err(e),
-                }
-            },
-            // panicking here because juniper should return field does not exist
-            // error while parsing subscription query
-            _ => panic!("Field {:?} not found on type Query"),
-        }
+                },
+                // panicking here because juniper should return field does not exist
+                // error while parsing subscription query
+                _ => panic!("Field {:?} not found on type Query"),
+            }
+        })
     }
 }
 ```
