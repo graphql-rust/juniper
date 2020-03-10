@@ -50,44 +50,46 @@ impl Country {
 
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>>;
 
-#[test]
-fn users() {
+#[tokio::test]
+async fn users() {
     let ctx = Context;
 
     let query = r#"{ users { id } }"#;
 
-    let (_, errors) = juniper::execute_sync(
+    let (_, errors) = juniper::execute(
         query,
         None,
         &Schema::new(Query, EmptyMutation::<Context>::new()),
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
-fn countries() {
+#[tokio::test]
+async fn countries() {
     let ctx = Context;
 
     let query = r#"{ countries { id } }"#;
 
-    let (_, errors) = juniper::execute_sync(
+    let (_, errors) = juniper::execute(
         query,
         None,
         &Schema::new(Query, EmptyMutation::new()),
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
-fn both() {
+#[tokio::test]
+async fn both() {
     let ctx = Context;
 
     let query = r#"
@@ -97,20 +99,21 @@ fn both() {
     }
     "#;
 
-    let (_, errors) = juniper::execute_sync(
+    let (_, errors) = juniper::execute(
         query,
         None,
         &Schema::new(Query, EmptyMutation::<Context>::new()),
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
-fn both_in_different_order() {
+#[tokio::test]
+async fn both_in_different_order() {
     let ctx = Context;
 
     let query = r#"
@@ -120,13 +123,14 @@ fn both_in_different_order() {
     }
     "#;
 
-    let (_, errors) = juniper::execute_sync(
+    let (_, errors) = juniper::execute(
         query,
         None,
         &Schema::new(Query, EmptyMutation::<Context>::new()),
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
