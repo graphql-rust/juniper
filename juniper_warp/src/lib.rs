@@ -37,33 +37,19 @@ Check the LICENSE file for details.
 */
 
 #![deny(missing_docs)]
-//#![deny(warnings)] todo: turn on
+#![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-#[cfg(feature = "async")]
-use std::{
-    collections::HashMap,
-    sync::atomic::{AtomicBool, Ordering},
-};
-use std::{pin::Pin, sync::Arc};
-
-// todo: update this once juniper subscriptions' implementation is finished
-
-use futures::future::poll_fn;
-#[cfg(feature = "async")]
-use futures03::{channel::mpsc, stream::StreamExt as _};
-use futures03::{future::FutureExt as _, Future};
+use std::pin::Pin;
+use futures::{future::poll_fn, Future as _};
 use serde::Deserialize;
-#[cfg(feature = "async")]
-use serde::Serialize;
-#[cfg(feature = "async")]
-use warp::ws::Message;
+use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
 #[cfg(feature = "async")]
-use juniper::http::GraphQLRequest;
+use futures03::future::FutureExt;
+
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
-use juniper_subscriptions::Coordinator;
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -78,7 +64,7 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue,
 {
     pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -181,7 +167,6 @@ where
 /// # use juniper::{EmptyMutation, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
-/// # fn main() {
 /// type UserId = String;
 /// # #[derive(Debug)]
 /// struct AppState(Vec<i64>);
@@ -189,7 +174,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::object(
+/// #[juniper::graphql_object(
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {
@@ -221,7 +206,6 @@ where
 /// let graphql_endpoint = warp::path("graphql")
 ///     .and(warp::post())
 ///     .and(graphql_filter);
-/// # }
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
@@ -235,8 +219,6 @@ where
     Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Context: Send + Sync,
 {
-    use futures::future::Future;
-
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
 
@@ -375,6 +357,22 @@ where
     get_filter.or(post_filter).unify().boxed()
 }
 
+fn build_response(
+    response: Result<(Vec<u8>, bool), failure::Error>,
+) -> warp::http::Response<Vec<u8>> {
+    match response {
+        Ok((body, is_ok)) => warp::http::Response::builder()
+            .status(if is_ok { 200 } else { 400 })
+            .header("content-type", "application/json")
+            .body(body)
+            .expect("response is valid"),
+        Err(_) => warp::http::Response::builder()
+            .status(warp::http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(Vec::new())
+            .expect("status code is valid"),
+    }
+}
+
 /// Wrapper around different errors `juniper_warp`'s premade filters
 /// return.
 pub enum JuniperWarpError {
@@ -400,200 +398,8 @@ impl std::fmt::Debug for JuniperWarpError {
     }
 }
 
-/// Listen to `websocket`'s messages and do one of the following:
-///  - execute subscription and return values from stream
-///  - stop stream and close ws connection
-#[cfg(feature = "async")]
-pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
-    websocket: warp::ws::WebSocket,
-    coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
-    context: Context,
-) -> impl Future<Output = ()> + Send
-where
-    S: ScalarValue + Send + Sync + 'static,
-    Context: Clone + Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-    Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-    Subscription::TypeInfo: Send + Sync,
-{
-    let (sink_tx, sink_rx) = websocket.split();
-    let (ws_tx, ws_rx) = mpsc::unbounded();
-    tokio::task::spawn(
-        ws_rx
-            .take_while(|x: &Option<_>| {
-                // keep this stream until `None` is received
-                let keep_going = x.is_some();
-                futures03::future::ready(keep_going)
-            })
-            .map(|x| x.unwrap())
-            .forward(sink_tx)
-            .map(|result| {
-                if let Err(e) = result {
-                    failure::format_err!("websocket send error: {}", e);
-                }
-            }),
-    );
-
-    let coordinator = Arc::new(coordinator);
-    let context = Arc::new(context);
-    let got_close_signal = Arc::new(AtomicBool::new(false));
-
-    sink_rx.for_each(move |msg| {
-        if msg.is_err() {
-            println!("message is error: {:?}", msg);
-            return futures03::future::ready(());
-        }
-        let msg = msg.unwrap();
-
-        if msg.is_close() {
-            return futures03::future::ready(());
-        }
-        let context = context.clone();
-        let got_close_signal = got_close_signal.clone();
-
-        let msg = msg.to_str().unwrap();
-
-        let coordinator = coordinator.clone();
-        let context = context.clone();
-        let request: WsPayload<S> = serde_json::from_str(msg).unwrap();
-
-        match request.type_name.as_str() {
-            "connection_init" => {}
-            "start" => {
-                let ws_tx = ws_tx.clone();
-
-                tokio::task::spawn(async move {
-                    let payload = request.payload.expect("could not deserialize payload");
-                    let request_id = request.id.unwrap_or("1".to_owned());
-
-                    let graphql_request =
-                        GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
-
-                    use juniper::SubscriptionCoordinator as _;
-
-                    let response_stream = match coordinator
-                        .subscribe(&graphql_request, &context)
-                        .await {
-                        Ok(s) => s,
-                        Err(err) => {
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                                request_id,
-                                serde_json::ser::to_string(&err).unwrap()
-                            )))));
-
-                            let close_text = format!(
-                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                request_id
-                            );
-
-                            // send message that we are closing channel
-                            let _ =
-                                ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
-
-                            // close channel
-                            let _ = ws_tx.unbounded_send(None);
-
-                            return;
-                        }
-                    };
-
-                    response_stream
-                        .take_while(move |response| {
-                            let request_id = request_id.clone();
-                            let closed = got_close_signal.load(Ordering::Relaxed);
-                            if closed {
-                                let close_text = format!(
-                                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                    request_id
-                                );
-
-                                //  send message that we are closing channel
-                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_text))));
-
-                                // close channel
-                                let _ = ws_tx.unbounded_send(None);
-                            } else {
-                                let mut response_text = serde_json::to_string(&response).unwrap();
-                                response_text = format!(
-                                    r#"{{"type":"data","id":"{}","payload":{} }}"#,
-                                    request_id, response_text
-                                );
-
-                                let _ =
-                                    ws_tx.unbounded_send(Some(Ok(Message::text(response_text))));
-                            }
-                            async move { !closed }
-                        })
-                        .for_each(|_| async {})
-                        .await;
-                });
-            }
-            "stop" => {
-                got_close_signal.store(true, Ordering::Relaxed);
-            }
-            _ => panic!("unknown type"),
-        }
-
-        futures03::future::ready(())
-    })
-}
-
-#[cfg(feature = "async")]
-#[derive(Deserialize)]
-#[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
-struct WsPayload<S>
-where
-    S: ScalarValue + Send + Sync + 'static,
-{
-    id: Option<String>,
-    #[serde(rename(deserialize = "type"))]
-    type_name: String,
-    payload: Option<GraphQLPayload<S>>,
-}
-
-#[cfg(feature = "async")]
-#[derive(Debug, Deserialize)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-struct GraphQLPayload<S>
-where
-    S: ScalarValue + Send + Sync + 'static,
-{
-    variables: Option<InputValue<S>>,
-    extensions: Option<HashMap<String, String>>,
-    #[serde(rename(deserialize = "operationName"))]
-    operaton_name: Option<String>,
-    query: Option<String>,
-}
-
-#[cfg(feature = "async")]
-#[derive(Serialize)]
-struct Output {
-    data: String,
-    variables: String,
-}
-
-fn build_response(
-    response: Result<(Vec<u8>, bool), failure::Error>,
-) -> warp::http::Response<Vec<u8>> {
-    match response {
-        Ok((body, is_ok)) => warp::http::Response::builder()
-            .status(if is_ok { 200 } else { 400 })
-            .header("content-type", "application/json")
-            .body(body)
-            .expect("response is valid"),
-        Err(_) => warp::http::Response::builder()
-            .status(warp::http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Vec::new())
-            .expect("status code is valid"),
-    }
-}
-
 type Response = Pin<
-    Box<dyn Future<Output = Result<warp::http::Response<Vec<u8>>, warp::reject::Rejection>> + Send>,
+    Box<dyn futures03::Future<Output = Result<warp::http::Response<Vec<u8>>, warp::reject::Rejection>> + Send>,
 >;
 
 /// Create a filter that replies with an HTML page containing GraphiQL. This does not handle routing, so you can mount it on any endpoint.
@@ -623,7 +429,7 @@ fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
         .body(juniper::http::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
-        .expect("response is valid")
+        .expect("response is invalid")
 }
 
 /// Create a filter that replies with an HTML page containing GraphQL Playground. This does not handle routing, so you can mount it on any endpoint.

@@ -83,7 +83,7 @@ where
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
         SubscriptionT: GraphQLType<S, Context = CtxT>,
@@ -109,7 +109,7 @@ where
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync,
         QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
