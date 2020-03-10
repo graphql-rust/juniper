@@ -86,7 +86,7 @@ fn test_execution() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -130,7 +130,7 @@ fn enum_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -239,7 +239,7 @@ fn interface_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -386,7 +386,7 @@ fn object_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -593,7 +593,7 @@ fn scalar_introspection() {
     let schema = RootNode::new(Root, EmptyMutation::<()>::new());
 
     let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
 
     assert_eq!(errs, []);
 

@@ -145,7 +145,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
 {
-    let (is_ok, body) = request.execute(root_node, context);
+    let (is_ok, body) = request.execute_sync(root_node, context);
     let code = if is_ok {
         StatusCode::OK
     } else {
@@ -173,7 +173,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
 {
-    let (is_ok, body) = request.execute_async(root_node, context).await;
+    let (is_ok, body) = request.execute(root_node, context).await;
     let code = if is_ok {
         StatusCode::OK
     } else {
@@ -267,7 +267,7 @@ impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
 {
-    fn execute<'a, CtxT: 'a, QueryT, MutationT>(
+    fn execute_sync<'a, CtxT: 'a, QueryT, MutationT>(
         self,
         root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
         context: Arc<CtxT>,
@@ -279,7 +279,7 @@ where
     {
         match self {
             GraphQLRequest::Single(request) => {
-                let res = request.execute(&root_node, &context);
+                let res = request.execute_sync(&root_node, &context);
                 let is_ok = res.is_ok();
                 let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
                 (is_ok, body)
@@ -289,7 +289,7 @@ where
                     .into_iter()
                     .map(move |request| {
                         let root_node = root_node.clone();
-                        let res = request.execute(&root_node, &context);
+                        let res = request.execute_sync(&root_node, &context);
                         let is_ok = res.is_ok();
                         let body = serde_json::to_string_pretty(&res).unwrap();
                         (is_ok, body)
@@ -304,7 +304,7 @@ where
         }
     }
 
-    async fn execute_async<'a, CtxT: 'a, QueryT, MutationT>(
+    async fn execute<'a, CtxT: 'a, QueryT, MutationT>(
         self,
         root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
         context: Arc<CtxT>,
@@ -319,7 +319,7 @@ where
     {
         match self {
             GraphQLRequest::Single(request) => {
-                let res = request.execute_async(&root_node, &context).await;
+                let res = request.execute(&root_node, &context).await;
                 let is_ok = res.is_ok();
                 let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
                 (is_ok, body)
@@ -327,7 +327,7 @@ where
             GraphQLRequest::Batch(requests) => {
                 let futures = requests
                     .iter()
-                    .map(|request| request.execute_async(&root_node, &context))
+                    .map(|request| request.execute(&root_node, &context))
                     .collect::<Vec<_>>();
                 let results = futures::future::join_all(futures).await;
 

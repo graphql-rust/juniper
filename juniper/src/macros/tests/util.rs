@@ -9,7 +9,7 @@ where
 {
     let schema = RootNode::new(Query::default(), Mutation::default());
     let (result, errs) =
-        crate::execute(query, None, &schema, &Variables::new(), &Context::default())
+        crate::execute_sync(query, None, &schema, &Variables::new(), &Context::default())
             .expect("Execution failed");
 
     assert_eq!(errs, []);

@@ -146,7 +146,7 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, S>,
         context: &CtxT,
@@ -157,12 +157,12 @@ where
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
             GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
+                    .map(|request| request.execute_sync(root_node, context))
                     .collect(),
             ),
         }
@@ -295,8 +295,12 @@ where
         )
     }
 
-    fn execute(&self, context: &CtxT, request: GraphQLBatchRequest<S>) -> IronResult<Response> {
-        let response = request.execute(&self.root_node, context);
+    fn execute_sync(
+        &self,
+        context: &CtxT,
+        request: GraphQLBatchRequest<S>,
+    ) -> IronResult<Response> {
+        let response = request.execute_sync(&self.root_node, context);
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();
         let status = if response.is_ok() {
@@ -351,7 +355,7 @@ where
             _ => return Ok(Response::with(status::MethodNotAllowed)),
         };
 
-        self.execute(&context, graphql_request)
+        self.execute_sync(&context, graphql_request)
     }
 }
 

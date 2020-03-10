@@ -219,7 +219,7 @@ impl<'a> fmt::Display for GraphQLError<'a> {
 impl<'a> std::error::Error for GraphQLError<'a> {}
 
 /// Execute a query in a provided schema
-pub fn execute<'a, S, CtxT, QueryT, MutationT>(
+pub fn execute_sync<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &'a RootNode<QueryT, MutationT, S>,
@@ -257,7 +257,7 @@ where
 }
 
 /// Execute a query in a provided schema
-pub async fn execute_async<'a, S, CtxT, QueryT, MutationT>(
+pub async fn execute<'a, S, CtxT, QueryT, MutationT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &'a RootNode<'a, QueryT, MutationT, S>,
@@ -309,7 +309,7 @@ where
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
 {
-    execute(
+    execute_sync(
         match format {
             IntrospectionFormat::All => INTROSPECTION_QUERY,
             IntrospectionFormat::WithoutDescriptions => INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS,

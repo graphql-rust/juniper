@@ -172,7 +172,7 @@ pub async fn graphql(
     let ctx = Context::new(cult_loader);
 
     // Execute
-    let future_execute = data.execute_async(&st, &ctx); 
+    let future_execute = data.execute(&st, &ctx); 
     let res = rt.run_until(future_execute);
     let json = serde_json::to_string(&res).map_err(error::ErrorInternalServerError)?;
 

@@ -269,7 +269,7 @@ fn object_query() {
     let schema = RootNode::new(Query { b: true }, EmptyMutation::<Context>::new());
     let vars = std::collections::HashMap::new();
 
-    let (result, errs) = crate::execute(doc, None, &schema, &vars, &Context { flag1: true })
+    let (result, errs) = crate::execute_sync(doc, None, &schema, &vars, &Context { flag1: true })
         .expect("Execution failed");
     assert_eq!(errs, []);
     assert_eq!(
