@@ -809,7 +809,8 @@ impl GraphQLTypeDefiniton {
 
         let mut generics = self.generics.clone();
 
-        if self.scalar.is_none() && self.generic_scalar {
+        if self.scalar.is_some() {
+        } else if self.generic_scalar {
             // No custom scalar specified, but always generic specified.
             // Therefore we inject the generic scalar.
 

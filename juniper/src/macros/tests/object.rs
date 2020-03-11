@@ -1,5 +1,5 @@
 // TODO: make sure proc macro tests cover all
-// variants of the below
+//       variants of the below
 
 /*
 use std::marker::PhantomData;
@@ -13,8 +13,8 @@ use crate::{
 };
 
 
-Syntax to validate:
-
+* Syntax to validate:
+*
 * Order of items: fields, description, interfaces
 * Optional Generics/lifetimes
 * Custom name vs. default name

@@ -1194,7 +1194,6 @@ mod integers {
 
 mod floats {
     use super::*;
-    use crate::EmptySubscription;
 
     #[test]
     fn float_values_should_work() {

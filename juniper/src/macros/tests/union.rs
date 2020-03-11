@@ -17,6 +17,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::EmptyMutation,
     value::{DefaultScalarValue, Object, Value},
+    EmptySubscription,
 };
 
 struct Concrete;

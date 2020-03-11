@@ -4,6 +4,7 @@ use crate::{
     schema::model::RootNode,
     types::scalars::EmptyMutation,
     value::{DefaultScalarValue, Object, Value},
+    EmptySubscription,
 };
 
 struct Interface;
@@ -159,7 +160,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
     let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();

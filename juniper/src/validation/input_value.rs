@@ -37,6 +37,7 @@ where
     errs
 }
 
+// TODO: do not accept fields with subfields when subfields are not specified (?)
 fn validate_var_defs<S>(
     values: &Variables<S>,
     var_defs: &VariableDefinitions<S>,

@@ -147,7 +147,6 @@ impl<'a, CtxT, S> OwnedExecutor<'a, CtxT, S> {
     }
 
     #[doc(hidden)]
-    /// The current location of the executor
     pub fn location(&self) -> &SourcePosition {
         self.field_path.location()
     }

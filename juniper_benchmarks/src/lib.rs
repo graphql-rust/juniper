@@ -98,7 +98,7 @@ impl Mutation {}
 
 pub struct Subscription;
 
-#[subscription(Context = Context)]
+#[graphql_subscription(Context = Context)]
 impl Subscription {}
 
 pub fn new_schema() -> juniper::RootNode<'static, Query, Mutation, Subscription> {
