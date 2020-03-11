@@ -5,10 +5,9 @@ use crate::{
     schema::{meta::MetaType, model::RootNode},
     types::{
         base::{Arguments, GraphQLType},
-        scalars::EmptyMutation,
+        scalars::{EmptyMutation, EmptySubscription},
     },
     value::{ScalarValue, Value},
-    EmptySubscription,
 };
 
 pub struct NodeTypeInfo {

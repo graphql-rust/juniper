@@ -112,7 +112,7 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
@@ -125,7 +125,6 @@ where
 
 /// Resolve a GraphQL subscription into `Value<ValuesStream<S>`
 /// using the specified schema and context
-
 pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,

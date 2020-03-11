@@ -410,7 +410,6 @@ pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStr
 }
 
 /// A proc macro for defining a GraphQL subscription.
-
 #[proc_macro_attribute]
 pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_subscription(args, input, false);
@@ -418,7 +417,6 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
 }
 
 /// A proc macro for defining GraphQL subscription inside `juniper` crate.
-
 #[proc_macro_attribute]
 pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_subscription(args, input, true);

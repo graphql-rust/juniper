@@ -73,7 +73,7 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>>, EmptySubscription<Context>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::<Context>::new(), EmptySubscription::<Context>::new())

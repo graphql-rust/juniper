@@ -85,7 +85,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'a,
 {

@@ -1,3 +1,8 @@
+//! Helper types for converting types to `Result<T, FieldError<E>>`.
+//!
+//! Used in `#[graphql_subscription]` macros to convert result type aliases on
+//! subscription handlers to a concrete return type.
+
 use crate::{FieldError, GraphQLType, ScalarValue};
 use futures::Stream;
 

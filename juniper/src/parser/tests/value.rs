@@ -8,7 +8,6 @@ use crate::{
     ast::{FromInputValue, InputValue, Type},
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
-    EmptySubscription,
 };
 
 use crate::{
@@ -16,7 +15,7 @@ use crate::{
         meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
         model::SchemaType,
     },
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
 };
 
 #[derive(GraphQLEnum)]

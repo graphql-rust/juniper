@@ -24,7 +24,7 @@ use crate::{
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
-    GraphQLError, GraphQLSubscriptionType,
+    GraphQLError,
 };
 
 pub use self::{
@@ -369,7 +369,7 @@ where
         'i: 'res,
         'v: 'res,
         'a: 'res,
-        T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -385,7 +385,6 @@ where
 
     /// Resolve a single arbitrary value into a stream of [`Value`]s
     /// Calls `resolve_into_stream` on `T`
-
     pub async fn subscribe<'s, 't, 'res, T>(
         &'r self,
         info: &'t T::TypeInfo,
@@ -394,7 +393,7 @@ where
     where
         't: 'res,
         'a: 'res,
-        T: GraphQLSubscriptionType<S, Context = CtxT>,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -615,7 +614,7 @@ where
         });
     }
 
-    /// Returns new [`ExecutionError`] at the current place
+    /// Returns new [`ExecutionError`] at current position
     pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
@@ -762,7 +761,7 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
-    SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
     if operation.item.operation_type == OperationType::Subscription {
         return Err(GraphQLError::IsSubscription);
@@ -846,7 +845,6 @@ where
 
 /// Create new `Executor` and start asynchronous query execution
 /// Returns `IsSubscription` error if subscription is passed
-
 pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: &'b Document<'a, S>,
     operation: &'b Spanning<Operation<'_, S>>,
@@ -860,7 +858,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
@@ -1011,7 +1009,7 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync + 'r,
 {

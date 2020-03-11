@@ -657,11 +657,10 @@ pub fn validate<'a, Q, M, Sub, V, F, S>(
     factory: F,
 ) -> Vec<RuleError>
 where
-    S: ScalarValue + Send + Sync + 'a + 'static,
+    S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     Sub: GraphQLType<S, TypeInfo = ()>,
-    <Sub as crate::GraphQLType<S>>::Context: Send + Sync,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -710,7 +709,7 @@ where
 
 pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
-    S: ScalarValue + Send + Sync + 'a + 'static,
+    S: ScalarValue + 'a,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -719,13 +718,13 @@ where
 
 pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
 where
-    S: ScalarValue + Send + Sync + 'a + 'static,
+    S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, EmptySubscription::<S>::new(), q, factory);
+    let errs = validate(r, m, q, factory);
 
     if !errs.is_empty() {
         print_errors(&errs);
@@ -735,7 +734,7 @@ where
 
 pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
-    S: ScalarValue + Send + Sync + 'a + 'static,
+    S: ScalarValue + 'a,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
@@ -749,7 +748,7 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     q: &'a str,
     expected_errors: &[RuleError],
 ) where
-    S: ScalarValue + Send + Sync + 'a + 'static,
+    S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,

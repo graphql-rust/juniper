@@ -2,6 +2,7 @@ use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
+//todo: update from master
 /// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
     let definition = create(args, body, "GraphQLObject");
