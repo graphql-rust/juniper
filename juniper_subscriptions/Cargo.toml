@@ -10,7 +10,7 @@ edition = "2018"
 
 
 [dependencies]
-juniper = {  version = "0.14.2", path = "../juniper", default-features = false, features = ["async"] }
+juniper = { version = "0.14.2", path = "../juniper", default-features = false }
 futures = { version = "=0.3.1", features = ["compat"] }
 
 #[dev-dependencies]

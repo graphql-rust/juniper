@@ -114,7 +114,7 @@ extern crate bson;
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
-#[cfg(feature = "async")]
+
 pub use juniper_codegen::graphql_subscription;
 pub use juniper_codegen::{
     graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
@@ -221,7 +221,8 @@ impl<'a> fmt::Display for GraphQLError<'a> {
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
             GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
             GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
-            GraphQLError::IsSubscription => write!(f, "Subscription are not currently supported"),
+            GraphQLError::IsSubscription => write!(f, "Operation is a subscription"),
+            GraphQLError::NotSubscription => write!(f, "Operation is not a subscription"),
         }
     }
 }
@@ -312,7 +313,7 @@ where
 }
 
 /// Parse `document_source` and make sure it does not contain any errors
-#[cfg(feature = "async")]
+
 pub async fn resolve_into_stream<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,

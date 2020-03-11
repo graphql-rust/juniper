@@ -1,6 +1,5 @@
 use juniper::{
-    graphql_object, subscription, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum,
-    Value, Variables,
+    graphql_object, DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, Value, Variables,
 };
 
 pub type QueryResult = Result<
@@ -96,13 +95,8 @@ pub struct Mutation;
 #[graphql_object(Context = Context)]
 impl Mutation {}
 
-pub struct Subscription;
-
-#[graphql_subscription(Context = Context)]
-impl Subscription {}
-
-pub fn new_schema() -> juniper::RootNode<'static, Query, Mutation, Subscription> {
-    juniper::RootNode::new(Query, Mutation, Subscription)
+pub fn new_schema() -> juniper::RootNode<'static, Query, Mutation> {
+    juniper::RootNode::new(Query, Mutation)
 }
 
 pub fn execute_sync(query: &str, vars: Variables) -> QueryResult {

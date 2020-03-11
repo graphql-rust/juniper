@@ -40,13 +40,16 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-use std::pin::Pin;
-use futures::{future::poll_fn, Future as _};
-use serde::Deserialize;
-use std::sync::Arc;
-use warp::{filters::BoxedFilter, Filter};
+use std::{pin::Pin, sync::Arc};
 
-use futures03::future::FutureExt;
+// TODO#433: update this once juniper subscriptions' implementation is finished
+
+use futures::future::poll_fn;
+
+use futures03::{future::FutureExt as _, Future};
+use serde::Deserialize;
+
+use warp::{filters::BoxedFilter, Filter};
 
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 
@@ -63,9 +66,9 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue,
+    S: ScalarValue + Send + Sync + 'static,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a juniper::RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
@@ -165,6 +168,7 @@ where
 /// # use juniper::{EmptyMutation, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
+/// # fn main() {
 /// type UserId = String;
 /// # #[derive(Debug)]
 /// struct AppState(Vec<i64>);
@@ -172,7 +176,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::graphql_object(
+/// #[juniper::object(
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {
@@ -204,6 +208,7 @@ where
 /// let graphql_endpoint = warp::path("graphql")
 ///     .and(warp::post())
 ///     .and(graphql_filter);
+/// # }
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
@@ -217,6 +222,8 @@ where
     Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Context: Send + Sync,
 {
+    use futures::future::Future;
+
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
 
@@ -339,14 +346,12 @@ where
                     variables,
                 );
 
-                    let response = graphql_request.execute_sync(&schema, &context);
-                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                })
-            })
-            .and_then(|result| ::futures::future::done(Ok(build_response(result))))
-            .map_err(warp::reject::custom),
-        )
-    };
+                let response = graphql_request.execute(&schema, &context).await;
+
+                Ok((serde_json::to_vec(&response)?, response.is_ok()))
+            }
+            .map(|result| -> Result<_, warp::reject::Rejection> { Ok(build_response(result)) })
+        };
 
     let get_filter = warp::get()
         .and(context_extractor.clone())
@@ -354,22 +359,6 @@ where
         .and_then(handle_get_request);
 
     get_filter.or(post_filter).unify().boxed()
-}
-
-fn build_response(
-    response: Result<(Vec<u8>, bool), failure::Error>,
-) -> warp::http::Response<Vec<u8>> {
-    match response {
-        Ok((body, is_ok)) => warp::http::Response::builder()
-            .status(if is_ok { 200 } else { 400 })
-            .header("content-type", "application/json")
-            .body(body)
-            .expect("response is valid"),
-        Err(_) => warp::http::Response::builder()
-            .status(warp::http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Vec::new())
-            .expect("status code is valid"),
-    }
 }
 
 /// Wrapper around different errors `juniper_warp`'s premade filters
@@ -397,8 +386,24 @@ impl std::fmt::Debug for JuniperWarpError {
     }
 }
 
+fn build_response(
+    response: Result<(Vec<u8>, bool), failure::Error>,
+) -> warp::http::Response<Vec<u8>> {
+    match response {
+        Ok((body, is_ok)) => warp::http::Response::builder()
+            .status(if is_ok { 200 } else { 400 })
+            .header("content-type", "application/json")
+            .body(body)
+            .expect("response is valid"),
+        Err(_) => warp::http::Response::builder()
+            .status(warp::http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(Vec::new())
+            .expect("status code is valid"),
+    }
+}
+
 type Response = Pin<
-    Box<dyn futures03::Future<Output = Result<warp::http::Response<Vec<u8>>, warp::reject::Rejection>> + Send>,
+    Box<dyn Future<Output = Result<warp::http::Response<Vec<u8>>, warp::reject::Rejection>> + Send>,
 >;
 
 /// Create a filter that replies with an HTML page containing GraphiQL. This does not handle routing, so you can mount it on any endpoint.
@@ -428,7 +433,7 @@ fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
         .body(juniper::http::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
-        .expect("response is invalid")
+        .expect("response is valid")
 }
 
 /// Create a filter that replies with an HTML page containing GraphQL Playground. This does not handle routing, so you can mount it on any endpoint.

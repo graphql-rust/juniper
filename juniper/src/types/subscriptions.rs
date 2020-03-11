@@ -137,7 +137,7 @@ where
 // Wrapper function around `resolve_selection_set_into_stream_recursive`.
 // This wrapper is necessary because async fns can not be recursive.
 // Panics if executor's current selection set is None
-#[cfg(feature = "async")]
+
 fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
@@ -160,7 +160,7 @@ where
     ))
 }
 
-#[cfg(feature = "async")]
+
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes
 /// errors to `Executor`.

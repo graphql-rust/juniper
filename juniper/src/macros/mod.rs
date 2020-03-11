@@ -9,7 +9,7 @@ mod interface;
 #[macro_use]
 mod scalar;
 
-#[cfg(feature = "async")]
+
 pub mod subscription_helpers;
 
 #[cfg(test)]

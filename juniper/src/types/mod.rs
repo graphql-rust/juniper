@@ -6,5 +6,5 @@ pub mod scalars;
 pub mod utilities;
 
 pub mod async_await;
-#[cfg(feature = "async")]
+
 pub mod subscriptions;

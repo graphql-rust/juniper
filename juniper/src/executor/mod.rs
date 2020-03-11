@@ -2,9 +2,8 @@ use std::{
     borrow::Cow,
     cmp::Ordering,
     collections::HashMap,
-    fmt::{self, Debug, Display},
-    sync::{Arc, RwLock,
-},
+    fmt::{Debug, Display},
+    sync::{Arc, RwLock},
 };
 
 use fnv::FnvHashMap;
@@ -221,7 +220,6 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
 /// Boxed `futures::Stream` yielding `Result<Value<S>, ExecutionError<S>>`
-#[cfg(feature = "async")]
 pub type ValuesStream<'a, S = DefaultScalarValue> =
     std::pin::Pin<Box<dyn futures::Stream<Item = Result<Value<S>, ExecutionError<S>>> + Send + 'a>>;
 
@@ -361,7 +359,7 @@ where
     /// Resolve a single arbitrary value into a stream of [`Value`]s
     ///
     /// If the field fails to resolve, `null` will be returned.
-    #[cfg(feature = "async")]
+
     pub async fn resolve_into_stream<'i, 'v, 'res, T>(
         &'r self,
         info: &'i T::TypeInfo,
@@ -387,7 +385,7 @@ where
 
     /// Resolve a single arbitrary value into a stream of [`Value`]s
     /// Calls `resolve_into_stream` on `T`
-    #[cfg(feature = "async")]
+
     pub async fn subscribe<'s, 't, 'res, T>(
         &'r self,
         info: &'t T::TypeInfo,
@@ -848,7 +846,7 @@ where
 
 /// Create new `Executor` and start asynchronous query execution
 /// Returns `IsSubscription` error if subscription is passed
-#[cfg(feature = "async")]
+
 pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: &'b Document<'a, S>,
     operation: &'b Spanning<Operation<'_, S>>,
@@ -986,7 +984,7 @@ where
 
 /// Initialize new `Executor` and start resolving subscription into stream asynchronously.
 /// Returns `NotSubscription` error if query or mutation is passed
-#[cfg(feature = "async")]
+
 pub async fn resolve_validated_subscription<
     'r,
     'exec_ref,

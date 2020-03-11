@@ -5,7 +5,7 @@ use crate::{
     value::{Object, ScalarValue, Value},
 };
 
-#[cfg(feature = "async")]
+
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
@@ -179,7 +179,7 @@ where
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
-#[cfg(feature = "async")]
+
 fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
@@ -211,7 +211,7 @@ enum AsyncValue<S> {
     Nested(Value<S>),
 }
 
-#[cfg(feature = "async")]
+
 async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
