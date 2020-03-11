@@ -2,9 +2,8 @@ use crate::{
     ast::InputValue,
     executor::FieldResult,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    EmptySubscription,
 };
 
 struct Interface;

@@ -13,8 +13,8 @@ use crate::{
 };
 
 
-* Syntax to validate:
-*
+Syntax to validate:
+
 * Order of items: fields, description, interfaces
 * Optional Generics/lifetimes
 * Custom name vs. default name

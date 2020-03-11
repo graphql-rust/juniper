@@ -77,7 +77,7 @@ where
             = juniper::http::resolve_into_stream(
                 req,
                 rn,
-                ctx
+                context
             ).await?;
 
             Ok(Connection::from_stream(stream, errors))

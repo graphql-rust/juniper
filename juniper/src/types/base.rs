@@ -126,7 +126,7 @@ where
 /**
 Primary trait used to expose Rust types in a GraphQL schema
 
-All of the convenience macros ultimately expand into an implementation of
+Synchronous query/mutation related convenience macros ultimately expand into an implementation of
 this trait for the given type. The macros remove duplicated definitions of
 fields and arguments, and add type checks on all resolve functions
 automatically. This can all be done manually.
@@ -341,6 +341,12 @@ where
     }
 }
 
+/// Resolver logic for queries'/mutations' selection set.
+/// Calls appropriate resolver method for each field or fragment found
+/// and then merges returned values into `result` or pushes errors to
+/// field's/fragment's sub executor.
+///
+/// Returns false if any errors occured and true otherwise.
 pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
@@ -544,8 +550,8 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
                     dest_list
                         .iter_mut()
                         .zip(src_list.into_iter())
-                        .for_each(|(d, s)| match d {
-                            &mut Value::Object(ref mut d_obj) => {
+                        .for_each(|(d, s)| match *d {
+                            Value::Object(ref mut d_obj) => {
                                 if let Value::Object(s_obj) = s {
                                     merge_maps(d_obj, s_obj);
                                 }

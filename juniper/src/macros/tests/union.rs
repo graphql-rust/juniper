@@ -15,9 +15,8 @@ use std::marker::PhantomData;
 use crate::{
     ast::InputValue,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    EmptySubscription,
 };
 
 struct Concrete;
