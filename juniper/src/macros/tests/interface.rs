@@ -171,8 +171,9 @@ where
         .into_iter()
         .collect();
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &vars, &()).await.expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -209,7 +210,8 @@ async fn introspect_custom_name() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -226,7 +228,8 @@ async fn introspect_with_lifetime() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -243,7 +246,8 @@ async fn introspect_with_generics() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -263,7 +267,8 @@ async fn introspect_description_first() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -283,7 +288,8 @@ async fn introspect_fields_first() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -303,7 +309,8 @@ async fn introspect_interfaces_first() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -323,7 +330,8 @@ async fn introspect_commas_with_trailing() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -343,7 +351,8 @@ async fn introspect_commas_on_meta() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -363,5 +372,6 @@ async fn introspect_resolvers_with_trailing_comma() {
                 .into_iter()
                 .collect(),
         )));
-    }).await;
+    })
+    .await;
 }

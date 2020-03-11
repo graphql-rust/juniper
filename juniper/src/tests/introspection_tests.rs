@@ -159,7 +159,9 @@ async fn test_introspection_directives() {
     let database = Database::new();
     let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
 
-    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database).await.unwrap();
+    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database)
+        .await
+        .unwrap();
     sort_schema_value(&mut result.0);
 
     let mut expected = graphql_value!({
