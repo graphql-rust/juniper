@@ -20,6 +20,91 @@ struct MyQuery;
 #[crate::graphql_object_internal(context = MyContext)]
 impl MyQuery {}
 
+struct Coordinator {
+    root_node: AsyncSchema,
+}
+
+impl Coordinator {
+    pub fn new(root_node: AsyncSchema) -> Self {
+        Self { root_node }
+    }
+}
+
+impl<'a> SubscriptionCoordinator<'a, MyContext, DefaultScalarValue> for Coordinator {
+    type Connection = Connection<'a>;
+
+    fn subscribe(
+        &'a self,
+        req: &'a GraphQLRequest<DefaultScalarValue>,
+        ctx: &'a MyContext,
+    ) -> Pin<
+        Box<
+            dyn futures::Future<Output = Result<Self::Connection, crate::GraphQLError<'a>>>
+                + Send
+                + 'a,
+        >,
+    > {
+        use futures::stream::Stream as _;
+        use std::iter::FromIterator as _;
+
+        let rn = &self.root_node;
+
+        Box::pin(async move {
+            let req = req;
+
+            let (mut val, _) = crate::http::resolve_into_stream(req, rn, ctx).await?;
+
+            let obj = if let Value::Object(mut obj) = val {
+                let mut values = Vec::new();
+                for (name, stream) in obj.iter_mut() {
+                    if let Value::Scalar(strm) = stream {
+                        values.push((
+                            name.to_owned(),
+                            match strm.take(1).collect::<Vec<_>>().await[0] {
+                                Ok(v) => v,
+                                Err(_) => panic!("Error collecting object's field"),
+                            },
+                        ))
+                    } else {
+                        panic!("Items other than Value::Object<Value::Scalar> are not supported in tests")
+                    }
+                }
+
+                crate::Object::from_iter(values.into_iter())
+            } else {
+                panic!("Items other than Value::Object are not supported in tests")
+            };
+
+            Ok(Connection {
+                item: GraphQLResponse::from_result(Ok((Value::Object(obj), vec![]))),
+                is_used: false,
+            })
+        })
+    }
+}
+
+struct Connection<'a> {
+    item: GraphQLResponse<'a>,
+    is_used: bool,
+}
+
+impl<'a> SubscriptionConnection<'a, DefaultScalarValue> for Connection<'a> {}
+
+impl<'a> futures::Stream for Connection<'a> {
+    type Item = GraphQLResponse<'a>;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut futures::task::Context<'_>,
+    ) -> futures::task::Poll<Option<Self::Item>> {
+        use futures::task::Poll;
+        if self.is_used {
+            Poll::Ready(None)
+        } else {
+            Poll::Ready(Some(self.item.clone()))
+        }
+    }
+}
 
 use futures::{self, stream::StreamExt as _, StreamExt};
 use juniper_codegen::graphql_subscription_internal;

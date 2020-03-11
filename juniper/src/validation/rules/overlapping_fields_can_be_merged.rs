@@ -742,7 +742,7 @@ mod tests {
         schema::meta::MetaType,
         types::{
             base::GraphQLType,
-            scalars::{EmptyMutation, ID},
+            scalars::{EmptyMutation, EmptySubscription, ID},
         },
     };
 
@@ -1694,9 +1694,10 @@ mod tests {
 
     #[test]
     fn compatible_return_shapes_on_different_return_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, EmptySubscription<()>, _, _, DefaultScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
+            EmptySubscription::new(),
             factory,
             r#"
           {
@@ -1992,9 +1993,10 @@ mod tests {
 
     #[test]
     fn allows_non_conflicting_overlapping_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, EmptySubscription<()>, _, _, DefaultScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
+            EmptySubscription::new(),
             factory,
             r#"
             {
@@ -2013,9 +2015,10 @@ mod tests {
 
     #[test]
     fn same_wrapped_scalar_return_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, EmptySubscription<()>, _, _, DefaultScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
+            EmptySubscription::new(),
             factory,
             r#"
             {
@@ -2034,9 +2037,10 @@ mod tests {
 
     #[test]
     fn allows_inline_typeless_fragments() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, EmptySubscription<()>, _, _, DefaultScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
+            EmptySubscription::new(),
             factory,
             r#"
             {
@@ -2104,9 +2108,10 @@ mod tests {
 
     #[test]
     fn ignores_unknown_types() {
-        expect_passes_rule_with_schema::<_, EmptyMutation<()>, _, _, DefaultScalarValue>(
+        expect_passes_rule_with_schema::<_, EmptyMutation<()>, EmptySubscription<()>, _, _, DefaultScalarValue>(
             QueryRoot,
             EmptyMutation::new(),
+            EmptySubscription::new(),
             factory,
             r#"
             {

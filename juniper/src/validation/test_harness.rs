@@ -713,18 +713,25 @@ where
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    expect_passes_rule_with_schema(QueryRoot, MutationRoot, factory, q);
+    expect_passes_rule_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, factory, q);
 }
 
-pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
+pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    factory: F,
+    q: &'a str
+)
 where
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
+    Sub: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m, s, q, factory);
 
     if !errs.is_empty() {
         print_errors(&errs);
