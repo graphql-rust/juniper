@@ -73,12 +73,7 @@ where
         let rn = &self.root_node;
 
         Box::pin(async move {
-            let (stream, errors)
-            = juniper::http::resolve_into_stream(
-                req,
-                rn,
-                context
-            ).await?;
+            let (stream, errors) = juniper::http::resolve_into_stream(req, rn, context).await?;
 
             Ok(Connection::from_stream(stream, errors))
         })

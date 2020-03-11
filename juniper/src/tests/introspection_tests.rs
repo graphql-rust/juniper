@@ -24,7 +24,7 @@ async fn test_introspection_query_type_name() {
         Query,
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
-        );
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,

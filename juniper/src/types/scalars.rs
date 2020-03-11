@@ -376,7 +376,6 @@ where
     }
 }
 
-
 impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
 where
     S: ScalarValue + Send + Sync + 'static,

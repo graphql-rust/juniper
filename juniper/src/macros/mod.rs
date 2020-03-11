@@ -9,7 +9,6 @@ mod interface;
 #[macro_use]
 mod scalar;
 
-
 pub mod subscription_helpers;
 
 #[cfg(test)]

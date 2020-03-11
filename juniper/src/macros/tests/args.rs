@@ -73,17 +73,17 @@ impl Root {
         0
     }
 
-// TODO: enable once [parameter attributes are supported by proc macros]
-//       (https://github.com/graphql-rust/juniper/pull/441)
-//fn attr_arg_descr(
-//   #[graphql(description = "The arg")]
-//   arg: i32) -> i32
-//{ 0 }
-//fn attr_arg_descr_collapse(
-//   #[graphql(description = "The first arg")]
-//   #[graphql(description = "and more details")]
-//    arg: i32,
-//) -> i32 { 0 }
+    // TODO: enable once [parameter attributes are supported by proc macros]
+    //       (https://github.com/graphql-rust/juniper/pull/441)
+    //fn attr_arg_descr(
+    //   #[graphql(description = "The arg")]
+    //   arg: i32) -> i32
+    //{ 0 }
+    //fn attr_arg_descr_collapse(
+    //   #[graphql(description = "The first arg")]
+    //   #[graphql(description = "and more details")]
+    //    arg: i32,
+    //) -> i32 { 0 }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {

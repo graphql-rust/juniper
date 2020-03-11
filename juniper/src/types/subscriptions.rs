@@ -160,7 +160,6 @@ where
     ))
 }
 
-
 /// Selection set default resolver logic.
 /// Returns `Value::Null` if cannot keep resolving. Otherwise pushes
 /// errors to `Executor`.

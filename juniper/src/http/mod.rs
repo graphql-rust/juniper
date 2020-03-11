@@ -16,7 +16,6 @@ use crate::{
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
 };
 
-
 use crate::{executor::ValuesStream, GraphQLSubscriptionType, GraphQLTypeAsync};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -107,25 +106,19 @@ where
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
-        where
-            S: ScalarValue + Send + Sync,
-            QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-            QueryT::TypeInfo: Send + Sync,
-            MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-            MutationT::TypeInfo: Send + Sync,
-            SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
-            SubscriptionT::TypeInfo: Send + Sync,
-            CtxT: Send + Sync,
+    where
+        S: ScalarValue + Send + Sync,
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::GraphQLType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
     {
         let op = self.operation_name();
         let vars = &self.variables();
-        let res = crate::execute(
-            &self.query,
-            op,
-            root_node,
-            vars,
-            context
-        ).await;
+        let res = crate::execute(&self.query, op, root_node, vars, context).await;
         GraphQLResponse(res)
     }
 }

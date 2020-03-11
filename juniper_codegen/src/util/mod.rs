@@ -1002,7 +1002,6 @@ impl GraphQLTypeDefiniton {
         output
     }
 
-
     pub fn into_subscription_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 

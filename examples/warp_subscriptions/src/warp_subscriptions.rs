@@ -4,23 +4,22 @@
 //!
 //! [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 
-
 use std::{
     collections::HashMap,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
 };
-use std::sync::Arc;
 
-use futures::{channel::mpsc, stream::StreamExt as _, Future};
-use futures::future::FutureExt as _;
+use futures::{channel::mpsc, future::FutureExt as _, stream::StreamExt as _, Future};
 use serde::Deserialize;
 
 use serde::Serialize;
 
 use warp::ws::Message;
 
-use juniper::http::GraphQLRequest;
-use juniper::{InputValue, ScalarValue};
+use juniper::{http::GraphQLRequest, InputValue, ScalarValue};
 use juniper_subscriptions::Coordinator;
 
 /// Listen to `websocket`'s messages and do one of the following:
@@ -32,15 +31,15 @@ pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
     coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
     context: Context,
 ) -> impl Future<Output = ()> + Send
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        Context: Clone + Send + Sync + 'static,
-        Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-        Subscription::TypeInfo: Send + Sync,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Context: Clone + Send + Sync + 'static,
+    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation::TypeInfo: Send + Sync,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription::TypeInfo: Send + Sync,
 {
     let (sink_tx, sink_rx) = websocket.split();
     let (ws_tx, ws_rx) = mpsc::unbounded();
@@ -97,32 +96,31 @@ pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
 
                     use juniper::SubscriptionCoordinator as _;
 
-                    let response_stream = match coordinator
-                        .subscribe(&graphql_request, &context)
-                        .await {
-                        Ok(s) => s,
-                        Err(err) => {
-                            let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                                request_id,
-                                serde_json::ser::to_string(&err).unwrap()
-                            )))));
+                    let response_stream =
+                        match coordinator.subscribe(&graphql_request, &context).await {
+                            Ok(s) => s,
+                            Err(err) => {
+                                let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+                                    r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                                    request_id,
+                                    serde_json::ser::to_string(&err).unwrap()
+                                )))));
 
-                            let close_text = format!(
-                                r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                request_id
-                            );
+                                let close_text = format!(
+                                    r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                    request_id
+                                );
 
-                            // send message that we are closing channel
-                            let _ =
-                                ws_tx.unbounded_send(Some(Ok(Message::text(close_text.clone()))));
+                                // send message that we are closing channel
+                                let _ = ws_tx
+                                    .unbounded_send(Some(Ok(Message::text(close_text.clone()))));
 
-                            // close channel
-                            let _ = ws_tx.unbounded_send(None);
+                                // close channel
+                                let _ = ws_tx.unbounded_send(None);
 
-                            return;
-                        }
-                    };
+                                return;
+                            }
+                        };
 
                     response_stream
                         .take_while(move |response| {
@@ -165,12 +163,11 @@ pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
     })
 }
 
-
 #[derive(Deserialize)]
 #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
 struct WsPayload<S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
+where
+    S: ScalarValue + Send + Sync + 'static,
 {
     id: Option<String>,
     #[serde(rename(deserialize = "type"))]
@@ -178,12 +175,11 @@ struct WsPayload<S>
     payload: Option<GraphQLPayload<S>>,
 }
 
-
 #[derive(Debug, Deserialize)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 struct GraphQLPayload<S>
-    where
-        S: ScalarValue + Send + Sync + 'static,
+where
+    S: ScalarValue + Send + Sync + 'static,
 {
     variables: Option<InputValue<S>>,
     extensions: Option<HashMap<String, String>>,
@@ -191,7 +187,6 @@ struct GraphQLPayload<S>
     operaton_name: Option<String>,
     query: Option<String>,
 }
-
 
 #[derive(Serialize)]
 struct Output {

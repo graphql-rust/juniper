@@ -58,14 +58,11 @@ mod field_execution {
 
     #[tokio::test]
     async fn test() {
-        let schema =
-            RootNode
-                ::<_, _, _, crate::DefaultScalarValue>
-                ::new(
-                    DataType,
-                    EmptyMutation::<()>::new(),
-                    EmptySubscription::<()>::new(),
-                );
+        let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
+            DataType,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
         let doc = r"
           query Example($size: Int) {
             a,

@@ -1,8 +1,11 @@
 use crate::{
-    ast::InputValue, executor::Variables, schema::model::RootNode,
+    ast::InputValue,
+    executor::Variables,
+    schema::model::RootNode,
     tests::{model::Database, schema::Query},
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::Value};
+    value::Value,
+};
 
 #[tokio::test]
 async fn test_hero_name() {

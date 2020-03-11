@@ -5,7 +5,6 @@ use crate::{
     value::{Object, ScalarValue, Value},
 };
 
-
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
@@ -210,7 +209,6 @@ enum AsyncValue<S> {
     Field(AsyncField<S>),
     Nested(Value<S>),
 }
-
 
 async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,

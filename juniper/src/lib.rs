@@ -115,10 +115,9 @@ extern crate bson;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 
-pub use juniper_codegen::graphql_subscription;
 pub use juniper_codegen::{
-    graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-    GraphQLScalarValue,
+    graphql_object, graphql_subscription, graphql_union, GraphQLEnum, GraphQLInputObject,
+    GraphQLObject, GraphQLScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
@@ -189,9 +188,9 @@ pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T
 pub use crate::{
     executor::ValuesStream,
     macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
-    types::async_await::GraphQLTypeAsync,
-    types::subscriptions::{
-        GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator,
+    types::{
+        async_await::GraphQLTypeAsync,
+        subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },
 };
 
