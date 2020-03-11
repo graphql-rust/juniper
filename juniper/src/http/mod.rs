@@ -77,7 +77,7 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
@@ -88,7 +88,7 @@ where
         MutationT: GraphQLType<S, Context = CtxT>,
         SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
-        GraphQLResponse(crate::execute(
+        GraphQLResponse(crate::execute_sync(
             &self.query,
             self.operation_name(),
             root_node,
@@ -120,7 +120,7 @@ where
     {
         let op = self.operation_name();
         let vars = &self.variables();
-        let res = crate::execute_async(&self.query, op, root_node, vars, context).await;
+        let res = crate::execute(&self.query, op, root_node, vars, context).await;
         GraphQLResponse(res)
     }
 }

@@ -86,7 +86,7 @@ async fn async_simple() {
     "#;
 
     let vars = Default::default();
-    let (res, errs) = crate::execute_async(doc, None, &schema, &vars, &())
+    let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
         .await
         .unwrap();
 

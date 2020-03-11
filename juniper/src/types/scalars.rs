@@ -1,3 +1,4 @@
+use futures;
 use serde_derive::{Deserialize, Serialize};
 use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
@@ -194,7 +195,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
 where
     S: ScalarValue + Send + Sync,
@@ -327,7 +327,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
 where
     S: ScalarValue + Send + Sync,

@@ -100,7 +100,7 @@ impl Root {
     }
 }
 
-fn run_type_info_query<F>(doc: &str, f: F)
+async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
@@ -110,8 +110,9 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -134,8 +135,8 @@ where
     f(type_info, fields);
 }
 
-#[test]
-fn default_name_introspection() {
+#[tokio::test]
+async fn default_name_introspection() {
     let doc = r#"
     {
         __type(name: "DefaultName") {
@@ -216,7 +217,8 @@ fn default_name_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
 #[test]
@@ -240,8 +242,8 @@ fn default_name_input_value() {
     assert_eq!(dv.field_two, "number two");
 }
 
-#[test]
-fn no_trailing_comma_introspection() {
+#[tokio::test]
+async fn no_trailing_comma_introspection() {
     let doc = r#"
     {
         __type(name: "NoTrailingComma") {
@@ -322,11 +324,12 @@ fn no_trailing_comma_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn derive_introspection() {
+#[tokio::test]
+async fn derive_introspection() {
     let doc = r#"
     {
         __type(name: "Derive") {
@@ -382,7 +385,8 @@ fn derive_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
 #[test]
@@ -398,8 +402,8 @@ fn derive_derived() {
     );
 }
 
-#[test]
-fn named_introspection() {
+#[tokio::test]
+async fn named_introspection() {
     let doc = r#"
     {
         __type(name: "ANamedInputObject") {
@@ -455,11 +459,12 @@ fn named_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn description_introspection() {
+#[tokio::test]
+async fn description_introspection() {
     let doc = r#"
     {
         __type(name: "Description") {
@@ -515,11 +520,12 @@ fn description_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn field_description_introspection() {
+#[tokio::test]
+async fn field_description_introspection() {
     let doc = r#"
     {
         __type(name: "FieldDescription") {
@@ -600,11 +606,12 @@ fn field_description_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn field_with_defaults_introspection() {
+#[tokio::test]
+async fn field_with_defaults_introspection() {
     let doc = r#"
     {
         __type(name: "FieldWithDefaults") {
@@ -653,5 +660,6 @@ fn field_with_defaults_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }

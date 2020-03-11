@@ -106,7 +106,7 @@ impl<'a> Root {
     }
 }
 
-fn run_type_info_query<F>(type_name: &str, f: F)
+async fn run_type_info_query<F>(type_name: &str, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
@@ -130,7 +130,9 @@ where
         .into_iter()
         .collect();
 
-    let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -153,8 +155,8 @@ where
     f(type_info, possible_types);
 }
 
-#[test]
-fn introspect_custom_name() {
+#[tokio::test]
+async fn introspect_custom_name() {
     run_type_info_query("ACustomNamedUnion", |union, possible_types| {
         assert_eq!(
             union.get_field_value("name"),
@@ -167,11 +169,12 @@ fn introspect_custom_name() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_with_lifetime() {
+#[tokio::test]
+async fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |union, possible_types| {
         assert_eq!(
             union.get_field_value("name"),
@@ -184,11 +187,12 @@ fn introspect_with_lifetime() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_with_generics() {
+#[tokio::test]
+async fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |union, possible_types| {
         assert_eq!(
             union.get_field_value("name"),
@@ -201,11 +205,12 @@ fn introspect_with_generics() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_description_first() {
+#[tokio::test]
+async fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |union, possible_types| {
         assert_eq!(
             union.get_field_value("name"),
@@ -221,5 +226,6 @@ fn introspect_description_first() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }

@@ -85,7 +85,7 @@ fn test_node() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &()),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
                 vec![

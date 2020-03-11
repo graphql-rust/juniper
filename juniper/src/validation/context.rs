@@ -1,4 +1,7 @@
-use std::{collections::HashSet, fmt::Debug};
+use std::{
+    collections::HashSet,
+    fmt::{self, Debug},
+};
 
 use crate::ast::{Definition, Document, Type};
 
@@ -47,6 +50,21 @@ impl RuleError {
         &self.locations
     }
 }
+
+impl fmt::Display for RuleError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // this is fine since all `RuleError`s should have at least one source position
+        let locations = self
+            .locations
+            .iter()
+            .map(|location| format!("{}", location))
+            .collect::<Vec<_>>()
+            .join(", ");
+        write!(f, "{}. At {}", self.message, locations)
+    }
+}
+
+impl std::error::Error for RuleError {}
 
 impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]

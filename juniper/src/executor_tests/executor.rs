@@ -56,13 +56,16 @@ mod field_execution {
         }
     }
 
-    #[test]
-    fn test() {
-        let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
-            DataType,
-            EmptyMutation::<()>::new(),
-            EmptySubscription::<()>::new(),
-        );
+    #[tokio::test]
+    async fn test() {
+        let schema =
+            RootNode
+                ::<_, _, _, crate::DefaultScalarValue>
+                ::new(
+                    DataType,
+                    EmptyMutation::<()>::new(),
+                    EmptySubscription::<()>::new(),
+                );
         let doc = r"
           query Example($size: Int) {
             a,
@@ -93,8 +96,9 @@ mod field_execution {
             .into_iter()
             .collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -185,8 +189,8 @@ mod merge_parallel_fragments {
         }
     }
 
-    #[test]
-    fn test() {
+    #[tokio::test]
+    async fn test() {
         let schema = RootNode::new(
             Type,
             EmptyMutation::<()>::new(),
@@ -205,8 +209,9 @@ mod merge_parallel_fragments {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -295,8 +300,8 @@ mod merge_parallel_inline_fragments {
         }
     }
 
-    #[test]
-    fn test() {
+    #[tokio::test]
+    async fn test() {
         let schema = RootNode::new(
             Type,
             EmptyMutation::<()>::new(),
@@ -329,8 +334,9 @@ mod merge_parallel_inline_fragments {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -422,8 +428,8 @@ mod threads_context_correctly {
         }
     }
 
-    #[test]
-    fn test() {
+    #[tokio::test]
+    async fn test() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<TestContext>::new(),
@@ -442,6 +448,7 @@ mod threads_context_correctly {
                 value: "Context value".to_owned(),
             },
         )
+        .await
         .expect("Execution failed");
 
         assert_eq!(errs, []);
@@ -523,8 +530,8 @@ mod dynamic_context_switching {
         }
     }
 
-    #[test]
-    fn test_opt() {
+    #[tokio::test]
+    async fn test_opt() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<OuterContext>::new(),
@@ -553,8 +560,9 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx)
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -580,8 +588,8 @@ mod dynamic_context_switching {
         );
     }
 
-    #[test]
-    fn test_res_success() {
+    #[tokio::test]
+    async fn test_res_success() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<OuterContext>::new(),
@@ -614,8 +622,9 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx)
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, vec![]);
 
@@ -638,8 +647,8 @@ mod dynamic_context_switching {
         );
     }
 
-    #[test]
-    fn test_res_fail() {
+    #[tokio::test]
+    async fn test_res_fail() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<OuterContext>::new(),
@@ -672,8 +681,9 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx)
+            .await
+            .expect("Execution failed");
 
         assert_eq!(
             errs,
@@ -689,8 +699,8 @@ mod dynamic_context_switching {
         assert_eq!(result, Value::null());
     }
 
-    #[test]
-    fn test_res_opt() {
+    #[tokio::test]
+    async fn test_res_opt() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<OuterContext>::new(),
@@ -725,8 +735,9 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx)
+            .await
+            .expect("Execution failed");
 
         assert_eq!(
             errs,
@@ -760,8 +771,8 @@ mod dynamic_context_switching {
         );
     }
 
-    #[test]
-    fn test_always() {
+    #[tokio::test]
+    async fn test_always() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<OuterContext>::new(),
@@ -790,8 +801,9 @@ mod dynamic_context_switching {
             .collect(),
         };
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &ctx).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &ctx)
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -879,8 +891,8 @@ mod propagates_errors_to_nullable_fields {
         }
     }
 
-    #[test]
-    fn nullable_first_level() {
+    #[tokio::test]
+    async fn nullable_first_level() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -890,8 +902,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -910,8 +923,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn non_nullable_first_level() {
+    #[tokio::test]
+    async fn non_nullable_first_level() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -921,8 +934,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -938,8 +952,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn custom_error_first_level() {
+    #[tokio::test]
+    async fn custom_error_first_level() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -949,8 +963,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -966,8 +981,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn nullable_nested_level() {
+    #[tokio::test]
+    async fn nullable_nested_level() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -977,8 +992,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -997,8 +1013,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn non_nullable_nested_level() {
+    #[tokio::test]
+    async fn non_nullable_nested_level() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1008,8 +1024,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -1025,8 +1042,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn nullable_innermost() {
+    #[tokio::test]
+    async fn nullable_innermost() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1036,8 +1053,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -1056,8 +1074,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn non_null_list() {
+    #[tokio::test]
+    async fn non_null_list() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1067,8 +1085,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -1084,8 +1103,8 @@ mod propagates_errors_to_nullable_fields {
         );
     }
 
-    #[test]
-    fn non_null_list_of_nullable() {
+    #[tokio::test]
+    async fn non_null_list_of_nullable() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1095,8 +1114,9 @@ mod propagates_errors_to_nullable_fields {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         println!("Result: {:#?}", result);
 
@@ -1155,8 +1175,8 @@ mod named_operations {
         }
     }
 
-    #[test]
-    fn uses_inline_operation_if_no_name_provided() {
+    #[tokio::test]
+    async fn uses_inline_operation_if_no_name_provided() {
         let schema = RootNode::<_, _, _, crate::DefaultScalarValue>::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1166,8 +1186,9 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -1177,8 +1198,8 @@ mod named_operations {
         );
     }
 
-    #[test]
-    fn uses_only_named_operation() {
+    #[tokio::test]
+    async fn uses_only_named_operation() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1188,8 +1209,9 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -1199,8 +1221,8 @@ mod named_operations {
         );
     }
 
-    #[test]
-    fn uses_named_operation_if_name_provided() {
+    #[tokio::test]
+    async fn uses_named_operation_if_name_provided() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1212,6 +1234,7 @@ mod named_operations {
         let vars = vec![].into_iter().collect();
 
         let (result, errs) = crate::execute(doc, Some("OtherExample"), &schema, &vars, &())
+            .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
@@ -1222,8 +1245,8 @@ mod named_operations {
         );
     }
 
-    #[test]
-    fn error_if_multiple_operations_provided_but_no_name() {
+    #[tokio::test]
+    async fn error_if_multiple_operations_provided_but_no_name() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1233,13 +1256,15 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = crate::execute(doc, None, &schema, &vars, &()).unwrap_err();
+        let err = crate::execute(doc, None, &schema, &vars, &())
+            .await
+            .unwrap_err();
 
         assert_eq!(err, GraphQLError::MultipleOperationsProvided);
     }
 
-    #[test]
-    fn error_if_unknown_operation_name_provided() {
+    #[tokio::test]
+    async fn error_if_unknown_operation_name_provided() {
         let schema = RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),
@@ -1249,7 +1274,9 @@ mod named_operations {
 
         let vars = vec![].into_iter().collect();
 
-        let err = crate::execute(doc, Some("UnknownExample"), &schema, &vars, &()).unwrap_err();
+        let err = crate::execute(doc, Some("UnknownExample"), &schema, &vars, &())
+            .await
+            .unwrap_err();
 
         assert_eq!(err, GraphQLError::UnknownOperationName);
     }

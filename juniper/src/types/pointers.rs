@@ -129,7 +129,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'e, S, T> crate::GraphQLTypeAsync<S> for &'e T
 where
     S: ScalarValue + Send + Sync,
@@ -216,7 +215,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
 where
     S: ScalarValue + Send + Sync,

@@ -105,16 +105,16 @@ pub fn new_schema() -> juniper::RootNode<'static, Query, Mutation, Subscription>
     juniper::RootNode::new(Query, Mutation, Subscription)
 }
 
-pub fn execute(query: &str, vars: Variables) -> QueryResult {
+pub fn execute_sync(query: &str, vars: Variables) -> QueryResult {
     let root = new_schema();
     let ctx = Context::new();
-    juniper::execute(query, None, &root, &vars, &ctx).map_err(|e| format!("{:?}", e))
+    juniper::execute_sync(query, None, &root, &vars, &ctx).map_err(|e| format!("{:?}", e))
 }
 
-pub async fn execute_async(query: &str, vars: Variables) -> QueryResult {
+pub async fn execute(query: &str, vars: Variables) -> QueryResult {
     let root = new_schema();
     let ctx = Context::new();
-    juniper::execute_async(query, None, &root, &vars, &ctx)
+    juniper::execute(query, None, &root, &vars, &ctx)
         .await
         .map_err(|e| format!("{:?}", e))
 }

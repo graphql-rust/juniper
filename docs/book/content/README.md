@@ -41,6 +41,7 @@ your Schemas automatically.
 - [uuid][uuid]
 - [url][url]
 - [chrono][chrono]
+- [bson][bson]
 
 ### Web Frameworks
 
@@ -72,3 +73,4 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [uuid]: https://crates.io/crates/uuid
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
+[bson]: https://crates.io/crates/bson

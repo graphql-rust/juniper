@@ -1,3 +1,5 @@
+use futures;
+
 // Trait.
 
 #[derive(juniper::GraphQLObject)]

@@ -177,7 +177,7 @@ where
         .collect();
 
     let (result, errs) =
-        crate::execute(doc, None, &schema, &vars, &InnerContext).expect("Execution failed");
+        crate::execute_sync(doc, None, &schema, &vars, &InnerContext).expect("Execution failed");
 
     assert_eq!(errs, []);
 

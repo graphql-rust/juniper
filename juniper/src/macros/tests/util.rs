@@ -1,11 +1,11 @@
-use crate::{DefaultScalarValue, GraphQLType, RootNode, Value, Variables};
+use crate::{DefaultScalarValue, GraphQLTypeAsync, RootNode, Value, Variables};
 use std::default::Default;
 
-pub fn run_query<Query, Mutation, Subscription, Context>(query: &str) -> Value
+pub async fn run_query<Query, Mutation, Subscription, Context>(query: &str) -> Value
 where
-    Query: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Mutation: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Subscription: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Subscription: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
     Context: Default + Send + Sync,
 {
     let schema = RootNode::new(
@@ -15,17 +15,18 @@ where
     );
     let (result, errs) =
         crate::execute(query, None, &schema, &Variables::new(), &Context::default())
+            .await
             .expect("Execution failed");
 
     assert_eq!(errs, []);
     result
 }
 
-pub fn run_info_query<Query, Mutation, Subscription, Context>(type_name: &str) -> Value
+pub async fn run_info_query<Query, Mutation, Subscription, Context>(type_name: &str) -> Value
 where
-    Query: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Mutation: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Subscription: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Subscription: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
     Context: Default + Send + Sync,
 {
     let query = format!(
@@ -50,7 +51,7 @@ where
     "#,
         type_name
     );
-    let result = run_query::<Query, Mutation, Subscription, Context>(&query);
+    let result = run_query::<Query, Mutation, Subscription, Context>(&query).await;
     result
         .as_object_value()
         .expect("Result is not an object")

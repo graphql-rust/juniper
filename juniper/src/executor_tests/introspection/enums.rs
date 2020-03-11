@@ -88,7 +88,7 @@ impl Root {
     }
 }
 
-fn run_type_info_query<F>(doc: &str, f: F)
+async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn((&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>)) -> (),
 {
@@ -98,8 +98,9 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -122,8 +123,8 @@ where
     f((type_info, values));
 }
 
-#[test]
-fn default_name_introspection() {
+#[tokio::test]
+async fn default_name_introspection() {
     let doc = r#"
     {
         __type(name: "DefaultName") {
@@ -172,11 +173,12 @@ fn default_name_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn named_introspection() {
+#[tokio::test]
+async fn named_introspection() {
     let doc = r#"
     {
         __type(name: "ANamedEnum") {
@@ -225,11 +227,12 @@ fn named_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn no_trailing_comma_introspection() {
+#[tokio::test]
+async fn no_trailing_comma_introspection() {
     let doc = r#"
     {
         __type(name: "NoTrailingComma") {
@@ -278,11 +281,12 @@ fn no_trailing_comma_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn enum_description_introspection() {
+#[tokio::test]
+async fn enum_description_introspection() {
     let doc = r#"
     {
         __type(name: "EnumDescription") {
@@ -331,11 +335,12 @@ fn enum_description_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn enum_value_description_introspection() {
+#[tokio::test]
+async fn enum_value_description_introspection() {
     let doc = r#"
     {
         __type(name: "EnumValueDescription") {
@@ -384,11 +389,12 @@ fn enum_value_description_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn enum_deprecation_introspection() {
+#[tokio::test]
+async fn enum_deprecation_introspection() {
     let doc = r#"
     {
         __type(name: "EnumDeprecation") {
@@ -443,11 +449,12 @@ fn enum_deprecation_introspection() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn enum_deprecation_no_values_introspection() {
+#[tokio::test]
+async fn enum_deprecation_no_values_introspection() {
     let doc = r#"
     {
         __type(name: "EnumDeprecation") {
@@ -474,5 +481,6 @@ fn enum_deprecation_no_values_introspection() {
         );
 
         assert_eq!(values.len(), 0);
-    });
+    })
+    .await;
 }

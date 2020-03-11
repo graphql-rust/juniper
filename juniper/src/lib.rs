@@ -59,6 +59,7 @@ your Schemas automatically.
 * [uuid][uuid]
 * [url][url]
 * [chrono][chrono]
+* [bson][bson]
 
 ### Web Frameworks
 
@@ -86,6 +87,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [uuid]: https://crates.io/crates/uuid
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
+[bson]: https://crates.io/crates/bson
 
 */
 #![doc(html_root_url = "https://docs.rs/juniper/0.14.2")]
@@ -105,6 +107,9 @@ extern crate url;
 
 #[cfg(any(test, feature = "uuid"))]
 extern crate uuid;
+
+#[cfg(any(test, feature = "bson"))]
+extern crate bson;
 
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
@@ -159,6 +164,7 @@ use crate::{
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
 };
+use std::fmt;
 
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
@@ -180,7 +186,6 @@ pub use crate::{
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
-#[cfg(feature = "async")]
 pub use crate::{
     executor::ValuesStream,
     macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
@@ -203,8 +208,28 @@ pub enum GraphQLError<'a> {
     NotSubscription,
 }
 
+impl<'a> fmt::Display for GraphQLError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GraphQLError::ParseError(error) => write!(f, "{}", error),
+            GraphQLError::ValidationError(errors) => {
+                for error in errors {
+                    writeln!(f, "{}", error)?;
+                }
+                Ok(())
+            }
+            GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
+            GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
+            GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
+            GraphQLError::IsSubscription => write!(f, "Subscription are not currently supported"),
+        }
+    }
+}
+
+impl<'a> std::error::Error for GraphQLError<'a> {}
+
 /// Execute a query in a provided schema
-pub fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+pub fn execute_sync<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
@@ -243,8 +268,7 @@ where
 }
 
 /// Execute a query asynchronously in a provided schema
-#[cfg(feature = "async")]
-pub async fn execute_async<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+pub async fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
     root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
@@ -262,6 +286,16 @@ where
     CtxT: Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
+
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
+
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
 
     let operation = get_operation(&document, operation_name)?;
 
@@ -325,7 +359,7 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
-    execute(
+    execute_sync(
         match format {
             IntrospectionFormat::All => INTROSPECTION_QUERY,
             IntrospectionFormat::WithoutDescriptions => INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS,

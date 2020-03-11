@@ -4,6 +4,8 @@ use fnv::FnvHashMap;
 #[cfg(test)]
 use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
+use futures;
+
 #[derive(juniper::GraphQLEnum, Debug, PartialEq)]
 #[graphql(name = "Some", description = "enum descr")]
 enum SomeEnum {

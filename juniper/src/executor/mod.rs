@@ -2,8 +2,9 @@ use std::{
     borrow::Cow,
     cmp::Ordering,
     collections::HashMap,
-    fmt::Display,
-    sync::{Arc, RwLock},
+    fmt::{self, Debug, Display},
+    sync::{Arc, RwLock,
+},
 };
 
 use fnv::FnvHashMap;
@@ -422,7 +423,6 @@ where
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
-    #[cfg(feature = "async")]
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -436,7 +436,6 @@ where
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
-    #[cfg(feature = "async")]
     pub async fn resolve_with_ctx_async<NewCtxT, T>(
         &self,
         info: &T::TypeInfo,
@@ -471,7 +470,6 @@ where
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    #[cfg(feature = "async")]
     pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
         T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

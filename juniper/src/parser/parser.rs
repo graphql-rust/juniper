@@ -203,3 +203,5 @@ impl<'a> fmt::Display for ParseError<'a> {
         }
     }
 }
+
+impl<'a> std::error::Error for ParseError<'a> {}

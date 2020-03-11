@@ -209,8 +209,8 @@ mod integration_test {
         value::Value,
     };
 
-    #[test]
-    fn test_serialization() {
+    #[tokio::test]
+    async fn test_serialization() {
         struct Root;
 
         #[crate::graphql_object_internal]
@@ -244,8 +244,9 @@ mod integration_test {
             EmptySubscription::<()>::new(),
         );
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 

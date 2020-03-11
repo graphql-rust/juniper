@@ -77,7 +77,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where

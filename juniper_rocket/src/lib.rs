@@ -39,10 +39,7 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
 
-use std::{
-    error::Error,
-    io::{Cursor, Read},
-};
+use std::io::{Cursor, Read};
 
 use rocket::{
     data::{FromDataSimple, Outcome as FromDataOutcome},
@@ -85,7 +82,7 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, S>,
         context: &CtxT,
@@ -96,12 +93,12 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
+                    .map(|request| request.execute_sync(root_node, context))
                     .collect(),
             ),
         }
@@ -161,7 +158,7 @@ where
     S: ScalarValue,
 {
     /// Execute an incoming GraphQL query
-    pub fn execute<CtxT, QueryT, MutationT>(
+    pub fn execute_sync<CtxT, QueryT, MutationT>(
         &self,
         root_node: &RootNode<QueryT, MutationT, S>,
         context: &CtxT,
@@ -170,7 +167,7 @@ where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
     {
-        let response = self.0.execute(root_node, context);
+        let response = self.0.execute_sync(root_node, context);
         let status = if response.is_ok() {
             Status::Ok
         } else {
@@ -219,12 +216,12 @@ impl GraphQLResponse {
     ///     request: Form<juniper_rocket::GraphQLRequest>,
     ///     schema: State<Schema>,
     /// ) -> juniper_rocket::GraphQLResponse {
-    ///     if cookies.get_private("user_id").is_none() {
+    ///     if cookies.get("user_id").is_none() {
     ///         let err = FieldError::new("User is not logged in", Value::null());
     ///         return juniper_rocket::GraphQLResponse::error(err);
     ///     }
     ///
-    ///     request.execute(&schema, &context)
+    ///     request.execute_sync(&schema, &context)
     /// }
     /// ```
     pub fn error(error: FieldError) -> Self {
@@ -237,7 +234,7 @@ impl GraphQLResponse {
     ///
     /// This is intended for highly customized integrations and should only
     /// be used as a last resort. For normal juniper use, use the response
-    /// from GraphQLRequest::execute(..).
+    /// from GraphQLRequest::execute_sync(..).
     pub fn custom(status: Status, response: serde_json::Value) -> Self {
         let json = serde_json::to_string(&response).unwrap();
         GraphQLResponse(status, json)
@@ -266,7 +263,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => query = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -278,7 +275,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => operation_name = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -289,11 +286,11 @@ where
                         let decoded;
                         match value.url_decode() {
                             Ok(v) => decoded = v,
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                         variables = Some(
                             serde_json::from_str::<InputValue<_>>(&decoded)
-                                .map_err(|err| err.description().to_owned())?,
+                                .map_err(|err| err.to_string())?,
                         );
                     }
                 }
@@ -425,7 +422,11 @@ mod fromform_tests {
 
     #[test]
     fn test_variables_invalid_json() {
-        check_error("query=test&variables=NOT_JSON", "JSON error", false);
+        check_error(
+            "query=test&variables=NOT_JSON",
+            "expected value at line 1 column 1",
+            false,
+        );
     }
 
     #[test]
@@ -499,7 +500,7 @@ mod tests {
         request: Form<super::GraphQLRequest>,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute(&schema, &context)
+        request.execute_sync(&schema, &context)
     }
 
     #[post("/", data = "<request>")]
@@ -508,7 +509,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute(&schema, &context)
+        request.execute_sync(&schema, &context)
     }
 
     struct TestRocketIntegration {
@@ -545,7 +546,7 @@ mod tests {
             schema: State<Schema>,
         ) -> super::GraphQLResponse {
             assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute(&schema, &context)
+            request.execute_sync(&schema, &context)
         }
 
         let rocket = make_rocket_without_routes()

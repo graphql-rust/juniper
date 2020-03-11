@@ -829,7 +829,6 @@ impl GraphQLTypeDefiniton {
         };
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        #[cfg(feature = "async")]
         let resolve_field_async = {
             let resolve_matches_async = self.fields.iter().map(|field| {
                 let name = &field.name;
@@ -944,9 +943,6 @@ impl GraphQLTypeDefiniton {
                 }
             )
         };
-
-        #[cfg(not(feature = "async"))]
-        let resolve_field_async = quote!();
 
         let output = quote!(
         impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
@@ -1278,7 +1274,7 @@ impl GraphQLTypeDefiniton {
 #[cfg(test)]
 mod test {
     use super::*;
-    use quote::__rt::*;
+    use quote::__private::*;
     use syn::{Ident, LitStr};
 
     fn strs_to_strings(source: Vec<&str>) -> Vec<String> {
