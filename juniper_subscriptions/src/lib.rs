@@ -7,7 +7,7 @@
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.14.2")]
 
-use std::{iter::FromIterator, pin::Pin};
+use std::{iter::FromIterator, pin::Pin, borrow::BorrowMut as _};
 
 use juniper::{
     http::{GraphQLRequest, GraphQLResponse}, BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType,
@@ -156,9 +156,8 @@ fn whole_responses_stream<'a, S>(
             }
             Box::pin(stream::select_all(streams))
         }
-        Value::Object(obj) => {
-            let obj_len = obj.field_count();
-            let mut key_values = obj.into_key_value_list();
+        Value::Object(mut object) => {
+            let obj_len = object.field_count();
             if obj_len == 0 {
                 return Box::pin(stream::once(async move {
                     GraphQLResponse::from_result(Ok((Value::Null, vec![])))
@@ -166,55 +165,73 @@ fn whole_responses_stream<'a, S>(
             }
 
             let mut filled_count = 0;
-            let mut ready_vector = Vec::with_capacity(obj_len);
+            let mut ready_vec = Vec::with_capacity(obj_len);
             for _ in 0..obj_len {
-                ready_vector.push(None);
+                ready_vec.push(None);
             }
 
             let stream = futures::stream::poll_fn(
                 move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
-                    for i in 0..ready_vector.len() {
-                        let val = &mut ready_vector[i];
-                        if val.is_none() {
-                            let (field_name, ref mut stream_val) = &mut key_values[i];
+                    let mut obj_iterator = object.iter_mut();
 
-                            match stream_val {
-                                Value::Scalar(stream) => {
-                                    match Pin::new(stream).poll_next(&mut ctx) {
-                                        Poll::Ready(None) => {
-                                            return Poll::Ready(None);
-                                        }
-                                        Poll::Ready(Some(value)) => {
-                                            *val = Some((field_name.clone(), value));
-                                            filled_count += 1;
-                                        }
-                                        Poll::Pending => { /* check back later */ }
+                    // Due to having to modify `ready_vec` contents (by-move pattern)
+                    // and only being able to iterate over `object`'s mutable references (by-ref pattern)
+                    // `ready_vec` and `object` cannot be iterated simultaneously.
+                    // TODO: iterate over i and (ref field_name, ref val) once
+                    //       [this RFC](https://github.com/rust-lang/rust/issues/68354)
+                    //       is implemented
+                    for i in 0..obj_len {
+                        let (field_name, val) = match obj_iterator.next() {
+                            Some(v) => v,
+                            None => break,
+                        };
+                        let ready = ready_vec[i].borrow_mut();
+
+                        if ready.is_some() {
+                            continue;
+                        }
+
+                        match val {
+                            Value::Scalar(stream) => {
+                                match Pin::new(stream).poll_next(&mut ctx) {
+                                    Poll::Ready(None) => return Poll::Ready(None),
+                                    Poll::Ready(Some(value)) => {
+                                        *ready = Some((field_name.clone(), value));
+                                        filled_count += 1;
                                     }
+                                    Poll::Pending => { /* check back later */ }
                                 }
-                                _ => {
-                                    *val = Some((field_name.clone(), Ok(Value::Null)));
-                                    filled_count += 1;
-                                }
+                            }
+                            _ => {
+                                // For now only `Object<Value::Scalar>` is supported
+                                *ready = Some((field_name.clone(), Ok(Value::Null)));
+                                filled_count += 1;
                             }
                         }
                     }
-                    if filled_count == obj_len {
+
+                    if filled_count == obj_len
+                    {
                         filled_count = 0;
                         let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
-                        let ready_vec = std::mem::replace(&mut ready_vector, new_vec);
-                        let ready_vec_iterator = ready_vec.into_iter().map(|el| {
-                            let (name, val) = el.unwrap();
-                            if let Ok(value) = val {
-                                (name, value)
-                            } else {
-                                (name, Value::Null)
-                            }
-                        });
+                        let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
+                        let ready_vec_iterator = ready_vec
+                            .into_iter()
+                            .map(|el| {
+                                let (name, val) = el.unwrap();
+                                if let Ok(value) = val {
+                                    (name, value)
+                                } else {
+                                    (name, Value::Null)
+                                }
+                            });
                         let obj = Object::from_iter(ready_vec_iterator);
-                        return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
-                            Value::Object(obj),
-                            vec![],
-                        )))));
+                        return Poll::Ready(Some(
+                            GraphQLResponse::from_result(Ok((
+                                Value::Object(obj),
+                                vec![],
+                            ))
+                        )));
                     } else {
                         return Poll::Pending;
                     }

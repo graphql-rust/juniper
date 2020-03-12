@@ -88,12 +88,6 @@ impl<S> Object<S> {
         }
     }
 
-    // todo: remove this
-    /// Converts Object value into a Vec of underlying fields
-    pub fn into_key_value_list(self) -> Vec<(String, Value<S>)> {
-        self.key_value_list
-    }
-
     /// Creates Object out of iterator over `(K, Option<Value<S>>)`.
     /// If any of returned values are `None`, then `None` is returned instead
     /// of an Object.
