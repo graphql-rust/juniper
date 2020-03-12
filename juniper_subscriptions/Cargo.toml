@@ -13,8 +13,6 @@ edition = "2018"
 juniper = { version = "0.14.2", path = "../juniper", default-features = false }
 futures = { version = "=0.3.1", features = ["compat"] }
 
-#[dev-dependencies]
-#juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema", "serde_json"] }
-#env_logger = "0.5.11"
-#log = "0.4.3"
-
+[dev-dependencies]
+tokio = { version = "0.2", features = ["rt-core", "macros"] }
+serde_json = "1.0"
