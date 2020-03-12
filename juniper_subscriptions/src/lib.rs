@@ -7,12 +7,12 @@
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.14.2")]
 
-use std::{iter::FromIterator, pin::Pin, borrow::BorrowMut as _};
+use std::{borrow::BorrowMut as _, iter::FromIterator, pin::Pin};
 
 use juniper::{
-    http::{GraphQLRequest, GraphQLResponse}, BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType,
-    GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value,
-    ValuesStream,
+    http::{GraphQLRequest, GraphQLResponse},
+    BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
+    ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream,
 };
 
 use futures::{task::Poll, Stream};
@@ -130,8 +130,8 @@ fn whole_responses_stream<'a, S>(
     stream: Value<ValuesStream<'a, S>>,
     errors: Vec<ExecutionError<S>>,
 ) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
-    where
-        S: ScalarValue + Send + Sync + 'a,
+where
+    S: ScalarValue + Send + Sync + 'a,
 {
     use futures::stream::{self, StreamExt as _};
 
@@ -210,28 +210,23 @@ fn whole_responses_stream<'a, S>(
                         }
                     }
 
-                    if filled_count == obj_len
-                    {
+                    if filled_count == obj_len {
                         filled_count = 0;
                         let new_vec = (0..obj_len).map(|_| None).collect::<Vec<_>>();
                         let ready_vec = std::mem::replace(&mut ready_vec, new_vec);
-                        let ready_vec_iterator = ready_vec
-                            .into_iter()
-                            .map(|el| {
-                                let (name, val) = el.unwrap();
-                                if let Ok(value) = val {
-                                    (name, value)
-                                } else {
-                                    (name, Value::Null)
-                                }
-                            });
+                        let ready_vec_iterator = ready_vec.into_iter().map(|el| {
+                            let (name, val) = el.unwrap();
+                            if let Ok(value) = val {
+                                (name, value)
+                            } else {
+                                (name, Value::Null)
+                            }
+                        });
                         let obj = Object::from_iter(ready_vec_iterator);
-                        return Poll::Ready(Some(
-                            GraphQLResponse::from_result(Ok((
-                                Value::Object(obj),
-                                vec![],
-                            ))
-                        )));
+                        return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                            Value::Object(obj),
+                            vec![],
+                        )))));
                     } else {
                         return Poll::Pending;
                     }
@@ -244,24 +239,20 @@ fn whole_responses_stream<'a, S>(
 }
 
 #[cfg(test)]
-mod whole_responses_stream
-{
+mod whole_responses_stream {
     use super::*;
-    use futures::{StreamExt as _, stream};
+    use futures::{stream, StreamExt as _};
     use juniper::DefaultScalarValue;
-
 
     #[tokio::test]
     async fn value_null() {
-        let expected = vec![
-                GraphQLResponse::<DefaultScalarValue>::from_result(Ok((Value::Null, vec![])))
-            ];
+        let expected = vec![GraphQLResponse::<DefaultScalarValue>::from_result(Ok((
+            Value::Null,
+            vec![],
+        )))];
         let expected = serde_json::to_string(&expected).unwrap();
 
-        let result = whole_responses_stream::<DefaultScalarValue>(
-            Value::Null,
-            vec![]
-        )
+        let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![])
             .collect::<Vec<_>>()
             .await;
         let result = serde_json::to_string(&result).unwrap();
@@ -274,74 +265,80 @@ mod whole_responses_stream
     #[tokio::test]
     async fn value_scalar() {
         let expected = vec![
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(1i32)), vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(2i32)), vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(3i32)), vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(4i32)), vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(5i32)), vec![]))
-            ),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(1i32)),
+                vec![],
+            ))),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(2i32)),
+                vec![],
+            ))),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(3i32)),
+                vec![],
+            ))),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(4i32)),
+                vec![],
+            ))),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(5i32)),
+                vec![],
+            ))),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let mut counter = 0;
         let stream = stream::poll_fn(move |_| -> Poll<Option<PollResult>> {
-            if counter == 5 { return Poll::Ready(None); }
+            if counter == 5 {
+                return Poll::Ready(None);
+            }
             counter += 1;
-            Poll::Ready(Some(Ok(
-                Value::Scalar(DefaultScalarValue::Int(counter))
-            )))
+            Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
         });
 
-        let result = whole_responses_stream::<DefaultScalarValue>(
-            Value::Scalar(Box::pin(stream)),
-            vec![]
-        )
-            .collect::<Vec<_>>()
-            .await;
+        let result =
+            whole_responses_stream::<DefaultScalarValue>(Value::Scalar(Box::pin(stream)), vec![])
+                .collect::<Vec<_>>()
+                .await;
         let result = serde_json::to_string(&result).unwrap();
 
         assert_eq!(result, expected);
     }
 
-
     #[tokio::test]
     async fn value_list() {
         let expected = vec![
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(1i32)), vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(2i32)), vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Null, vec![]))
-            ),
-            GraphQLResponse::from_result(
-                Ok((Value::Scalar(DefaultScalarValue::Int(4i32)), vec![]))
-            ),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(1i32)),
+                vec![],
+            ))),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(2i32)),
+                vec![],
+            ))),
+            GraphQLResponse::from_result(Ok((Value::Null, vec![]))),
+            GraphQLResponse::from_result(Ok((
+                Value::Scalar(DefaultScalarValue::Int(4i32)),
+                vec![],
+            ))),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let streams: Vec<Value<ValuesStream>> = vec![
-            Value::Scalar(Box::pin(stream::once(async { PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(1i32))) }))),
-            Value::Scalar(Box::pin(stream::once(async { PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(2i32))) }))),
+            Value::Scalar(Box::pin(stream::once(async {
+                PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(1i32)))
+            }))),
+            Value::Scalar(Box::pin(stream::once(async {
+                PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(2i32)))
+            }))),
             Value::Null,
-            Value::Scalar(Box::pin(stream::once(async { PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(4i32))) }))),
+            Value::Scalar(Box::pin(stream::once(async {
+                PollResult::Ok(Value::Scalar(DefaultScalarValue::Int(4i32)))
+            }))),
         ];
 
-        let result = whole_responses_stream::<DefaultScalarValue>(
-            Value::List(streams),
-            vec![]
-        )
+        let result = whole_responses_stream::<DefaultScalarValue>(Value::List(streams), vec![])
             .collect::<Vec<_>>()
             .await;
         let result = serde_json::to_string(&result).unwrap();
@@ -352,44 +349,45 @@ mod whole_responses_stream
     #[tokio::test]
     async fn value_object() {
         let expected = vec![
-            GraphQLResponse::from_result(
-                Ok((Value::Object(Object::from_iter(
+            GraphQLResponse::from_result(Ok((
+                Value::Object(Object::from_iter(
                     vec![
                         ("one", Value::Scalar(DefaultScalarValue::Int(1i32))),
                         ("two", Value::Scalar(DefaultScalarValue::Int(1i32))),
-                    ].into_iter()
+                    ]
+                    .into_iter(),
                 )),
-                 vec![]
+                vec![],
             ))),
-
-            GraphQLResponse::from_result(
-                Ok((Value::Object(Object::from_iter(
+            GraphQLResponse::from_result(Ok((
+                Value::Object(Object::from_iter(
                     vec![
                         ("one", Value::Scalar(DefaultScalarValue::Int(2i32))),
                         ("two", Value::Scalar(DefaultScalarValue::Int(2i32))),
-                    ].into_iter()
+                    ]
+                    .into_iter(),
                 )),
-                 vec![]
+                vec![],
             ))),
         ];
         let expected = serde_json::to_string(&expected).unwrap();
 
         let mut counter = 0;
         let big_stream = stream::poll_fn(move |_| -> Poll<Option<PollResult>> {
-            if counter == 2 { return Poll::Ready(None); }
+            if counter == 2 {
+                return Poll::Ready(None);
+            }
             counter += 1;
-            Poll::Ready(Some(Ok(
-                Value::Scalar(DefaultScalarValue::Int(counter))
-            )))
+            Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
         });
 
         let mut counter = 0;
         let small_stream = stream::poll_fn(move |_| -> Poll<Option<PollResult>> {
-            if counter == 2 { return Poll::Ready(None); }
+            if counter == 2 {
+                return Poll::Ready(None);
+            }
             counter += 1;
-            Poll::Ready(Some(Ok(
-                Value::Scalar(DefaultScalarValue::Int(counter))
-            )))
+            Poll::Ready(Some(Ok(Value::Scalar(DefaultScalarValue::Int(counter)))))
         });
 
         let vals: Vec<(&str, Value<ValuesStream>)> = vec![
@@ -399,10 +397,10 @@ mod whole_responses_stream
 
         let result = whole_responses_stream::<DefaultScalarValue>(
             Value::Object(Object::from_iter(vals.into_iter())),
-            vec![]
+            vec![],
         )
-            .collect::<Vec<_>>()
-            .await;
+        .collect::<Vec<_>>()
+        .await;
         let result = serde_json::to_string(&result).unwrap();
 
         assert_eq!(result, expected);

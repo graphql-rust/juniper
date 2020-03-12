@@ -721,9 +721,8 @@ pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
     m: M,
     s: Sub,
     factory: F,
-    q: &'a str
-)
-where
+    q: &'a str,
+) where
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
