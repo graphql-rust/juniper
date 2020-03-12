@@ -58,6 +58,8 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
+///
+/// Can be converted to `OwnedExecutor` at any time.
 pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
@@ -356,10 +358,9 @@ impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
 where
     S: ScalarValue,
 {
-    /// Resolve a single arbitrary value into a stream of [`Value`]s
-    ///
-    /// If the field fails to resolve, `null` will be returned.
-
+    /// Resolve a single arbitrary value into a stream of [`Value`]s.
+    /// If a field fails to resolve, pushes error to `Executor`
+    /// and returns `Value::Null`.
     pub async fn resolve_into_stream<'i, 'v, 'res, T>(
         &'r self,
         info: &'i T::TypeInfo,
@@ -383,8 +384,8 @@ where
         }
     }
 
-    /// Resolve a single arbitrary value into a stream of [`Value`]s
-    /// Calls `resolve_into_stream` on `T`
+    /// Resolve a single arbitrary value into a stream of [`Value`]s.
+    /// Calls `resolve_into_stream` on `T`.
     pub async fn subscribe<'s, 't, 'res, T>(
         &'r self,
         info: &'t T::TypeInfo,
@@ -558,6 +559,7 @@ where
         }
     }
 
+    /// `Executor`'s current selection set
     pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
         self.current_selection_set
     }
@@ -614,7 +616,7 @@ where
         });
     }
 
-    /// Returns new [`ExecutionError`] at current position
+    /// Returns new [`ExecutionError`] at current location
     pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
@@ -682,13 +684,13 @@ where
             .unwrap_or_default()
     }
 
-    /// Create new `OwnedExecutor` and clone all
-    /// current data (except for errors) there
+    /// Create new `OwnedExecutor` and clone all current data
+    /// (except for errors) there
     ///
     /// New empty vector is created for `errors` because
     /// existing errors won't be needed to be accessed by user
     /// in OwnedExecutor as existing errors will be returned in
-    /// `execute_query`/`execute_mutation`/`subscribe`
+    /// `execute_query`/`execute_mutation`/`resolve_into_stream`/etc.
     pub fn as_owned_executor(&self) -> OwnedExecutor<'a, CtxT, S> {
         OwnedExecutor {
             fragments: self.fragments.clone(),
@@ -748,8 +750,8 @@ impl<S> ExecutionError<S> {
     }
 }
 
-/// Create new `Executor` and start query/mutation execution
-/// Returns `IsSubscription` error if subscription is passed
+/// Create new `Executor` and start query/mutation execution.
+/// Returns `IsSubscription` error if subscription is passed.
 pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: &'b Document<S>,
     operation: &'b Spanning<Operation<S>>,
@@ -843,8 +845,8 @@ where
     Ok((value, errors))
 }
 
-/// Create new `Executor` and start asynchronous query execution
-/// Returns `IsSubscription` error if subscription is passed
+/// Create new `Executor` and start asynchronous query execution.
+/// Returns `IsSubscription` error if subscription is passed.
 pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: &'b Document<'a, S>,
     operation: &'b Spanning<Operation<'_, S>>,
@@ -948,7 +950,7 @@ where
     Ok((value, errors))
 }
 
-pub fn get_operation<'d, 'b, 'e, S>(
+pub fn get_operation<'b, 'd, 'e, S>(
     document: &'b Document<'d, S>,
     operation_name: Option<&str>,
 ) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError<'e>>
@@ -980,9 +982,9 @@ where
     Ok(op)
 }
 
-/// Initialize new `Executor` and start resolving subscription into stream asynchronously.
+/// Initialize new `Executor` and start resolving subscription into stream
+/// asynchronously.
 /// Returns `NotSubscription` error if query or mutation is passed
-
 pub async fn resolve_validated_subscription<
     'r,
     'exec_ref,

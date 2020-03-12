@@ -6,11 +6,8 @@ use crate::{
     Selection, Value, ValuesStream,
 };
 
-/// Global subscription coordinator. Should contain the schema and create new
-/// [`SubscriptionConnection`] for every subscription.
-/// Depending on implementation, it can keep track of opened subscription connections
-/// and have max subscription limits / concurrency limits/subscription de-duplication,
-/// reconnection on connection loss / buffering / re-synchronisation, etc.
+/// Global subscription coordinator. Should be able to spawn
+/// [`SubscriptionConnection`]s for every subscription request.
 pub trait SubscriptionCoordinator<'a, CtxT, S>
 where
     S: ScalarValue,
@@ -26,16 +23,15 @@ where
     ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>>;
 }
 
-/// Connection yielding [`GraphQLResponse`]s which can be sent over the wire.
+/// Connection yielding [`GraphQLResponse`]s.
 pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
 
 /**
+ This trait replaces GraphQLType`'s resolver logic with asynchronous
+ subscriptions execution logic. It should be used with `GraphQLType` in order to
+ implement subscription GraphQL objects.
 
- This trait replaces GraphQLType`'s resolver logic with asynchronous subscription
- execution logic. It should be used with `GraphQLType` in order to implement
- subscription GraphQL objects.
-
- Asynchronous subscription related convenience macros expand into an
+ Asynchronous subscription-related convenience macros expand into an
  implementation of this trait and `GraphQLType` for the given type.
 
  See trait methods for more detailed explanation on how this trait works.
@@ -46,6 +42,10 @@ where
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
 {
+    /// Resolve into `Value<ValuesStream>`
+    ///
+    /// ## Default implementation
+    ///
     /// In order to resolve selection set on object types, default
     /// implementation calls `resolve_field_into_stream` every time a field
     /// needs to be resolved and `resolve_into_type_stream` every time a
@@ -137,8 +137,17 @@ where
 // Wrapper function around `resolve_selection_set_into_stream_recursive`.
 // This wrapper is necessary because async fns can not be recursive.
 // Panics if executor's current selection set is None
-
-fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
+pub(crate) fn resolve_selection_set_into_stream<
+    'i,
+    'inf,
+    'ref_e,
+    'e,
+    'res,
+    'fut,
+    T,
+    CtxT,
+    S
+>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,

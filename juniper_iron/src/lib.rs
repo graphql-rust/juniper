@@ -339,7 +339,7 @@ impl PlaygroundHandler {
 impl<'a, CtxFactory, Query, Mutation, CtxT, S> Handler
     for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
 where
-    S: ScalarValue + Sync + Send + 'static,
+    S: ScalarValue + Send + Sync + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,

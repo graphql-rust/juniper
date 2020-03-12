@@ -3,8 +3,9 @@
 //! Used in `#[graphql_subscription]` macros to convert result type aliases on
 //! subscription handlers to a concrete return type.
 
-use crate::{FieldError, GraphQLType, ScalarValue};
 use futures::Stream;
+
+use crate::{FieldError, GraphQLType, ScalarValue};
 
 /// Trait for converting  `T` to `Ok(T)` if T is not Result.
 /// This is useful in subscription macros when user can provide type alias for

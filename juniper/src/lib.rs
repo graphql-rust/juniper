@@ -114,7 +114,6 @@ extern crate bson;
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
-
 pub use juniper_codegen::{
     graphql_object, graphql_subscription, graphql_union, GraphQLEnum, GraphQLInputObject,
     GraphQLObject, GraphQLScalarValue,
@@ -171,28 +170,24 @@ pub use crate::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
         LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, Variables,
+        ValuesStream,
     },
     introspection::IntrospectionFormat,
     schema::{meta, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, TypeKind},
         scalars::{EmptyMutation, EmptySubscription, ID},
+        async_await::GraphQLTypeAsync,
+        subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+
+    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
 };
 
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
-
-pub use crate::{
-    executor::ValuesStream,
-    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
-    types::{
-        async_await::GraphQLTypeAsync,
-        subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
-    },
-};
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -228,7 +223,7 @@ impl<'a> fmt::Display for GraphQLError<'a> {
 
 impl<'a> std::error::Error for GraphQLError<'a> {}
 
-/// Execute a query in a provided schema
+/// Execute a query synchronously in a provided schema
 pub fn execute_sync<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -267,7 +262,7 @@ where
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 
-/// Execute a query asynchronously in a provided schema
+/// Execute a query in a provided schema
 pub async fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -311,8 +306,7 @@ where
         .await
 }
 
-/// Parse `document_source` and make sure it does not contain any errors
-
+/// Resolve subscription into `ValuesStream`
 pub async fn resolve_into_stream<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,

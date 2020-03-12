@@ -161,7 +161,7 @@ async fn main() {
 
     let coordinator = Arc::new(juniper_subscriptions::Coordinator::new(schema()));
 
-    log::info!("Listening on 127.0.0.1:8000");
+    log::info!("Listening on 127.0.0.1:8080");
 
     let routes = (warp::path("subscriptions")
         .and(warp::ws())
@@ -186,5 +186,5 @@ async fn main() {
     .or(homepage)
     .with(log);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 8000)).await;
+    warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
 }

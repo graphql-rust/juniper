@@ -1,4 +1,4 @@
-//! `juniper_warp` subscriptions implementation.
+//! `juniper_warp` subscriptions handler implementation.
 //! Cannot be merged to `juniper_warp` yet as GraphQL over WS [1]
 //! is not fully supported in current implementation.
 //!
@@ -13,19 +13,14 @@ use std::{
 };
 
 use futures::{channel::mpsc, future::FutureExt as _, stream::StreamExt as _, Future};
-use serde::Deserialize;
-
-use serde::Serialize;
-
+use serde::{Deserialize, Serialize};
 use warp::ws::Message;
-
-use juniper::{http::GraphQLRequest, InputValue, ScalarValue};
+use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
 use juniper_subscriptions::Coordinator;
 
-/// Listen to `websocket`'s messages and do one of the following:
+/// Listen to `websocket` messages and do one of the following:
 ///  - execute subscription and return values from stream
 ///  - stop stream and close ws connection
-
 pub fn graphql_subscriptions_async<Query, Mutation, Subscription, Context, S>(
     websocket: warp::ws::WebSocket,
     coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
@@ -93,8 +88,6 @@ where
 
                     let graphql_request =
                         GraphQLRequest::<S>::new(payload.query.unwrap(), None, payload.variables);
-
-                    use juniper::SubscriptionCoordinator as _;
 
                     let response_stream =
                         match coordinator.subscribe(&graphql_request, &context).await {

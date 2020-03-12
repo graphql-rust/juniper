@@ -14,9 +14,8 @@ use crate::{
     executor::ExecutionError,
     value::{DefaultScalarValue, ScalarValue},
     FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
+    executor::ValuesStream, GraphQLSubscriptionType, GraphQLTypeAsync,
 };
-
-use crate::{executor::ValuesStream, GraphQLSubscriptionType, GraphQLTypeAsync};
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
 ///
@@ -72,9 +71,9 @@ where
         }
     }
 
-    /// Execute a GraphQL request using the specified schema and context
+    /// Execute a GraphQL request synchronously using the specified schema and context
     ///
-    /// This is a simple wrapper around the `execute` function exposed at the
+    /// This is a simple wrapper around the `execute_sync` function exposed at the
     /// top level of this crate.
     pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -96,11 +95,10 @@ where
         ))
     }
 
-    /// Execute a GraphQL request asynchronously using the specified schema
-    /// and context
+    /// Execute a GraphQL request using the specified schema and context.
     ///
-    /// This is a simple wrapper around the `execute_async` function exposed at the
-    /// top level of this crate.
+    /// This is a wrapper around `execute` function exposed at the top level of
+    /// this crate.
     pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
@@ -123,9 +121,21 @@ where
     }
 }
 
-/// Resolve a GraphQL subscription into `Value<ValuesStream<S>`
-/// using the specified schema and context
-pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
+/// Resolve a GraphQL subscription into `Value<ValuesStream<S>` using the
+/// specified schema and context.
+/// This is a wrapper around `resolve_into_stream` function exposed at the top
+/// level of this crate.
+pub async fn resolve_into_stream<
+    'req,
+    'rn,
+    'ctx,
+    'a,
+    CtxT,
+    QueryT,
+    MutationT,
+    SubscriptionT,
+    S
+>(
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     context: &'ctx CtxT,
@@ -163,7 +173,10 @@ where
     S: ScalarValue,
 {
     /// Constructs new `GraphQLResponse` using the given result
-    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
+    pub fn from_result(
+        r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>)
+    -> Self
+    {
         Self(r)
     }
 

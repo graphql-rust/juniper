@@ -340,7 +340,7 @@ where
 /// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the subscription,
-/// no subscription will be generated for the schema.
+/// no subscriptions will be generated for the schema.
 pub struct EmptySubscription<T> {
     phantom: PhantomData<T>,
 }

@@ -14,94 +14,6 @@ This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
 
 Convenience macros related to asynchronous queries/mutations expand into an
 implementation of this trait and `GraphQLType` for the given type.
-
-This trait's execution logic is similar to `GraphQLType`.
-
-## Manual implementation example
-
-```rust
-use juniper::{
-    meta::MetaType, DefaultScalarValue, FieldError,
-    GraphQLType, GraphQLTypeAsync, Registry, Value,
-};
-
-#[derive(Debug)]
-struct User {
-    id: String,
-    name: String,
-    friend_ids: Vec<String>,
-}
-
-#[juniper::graphql_object]
-impl User {}
-
-struct Query;
-
-// GraphQLType should be implemented in order to add `Query`
-// to `juniper::RootNode`. In this example it is implemented manually
-// to show that only `name` and `meta` methods are used, not the ones
-// containing execution logic.
-impl GraphQLType for Query {
-    type Context = ();
-    type TypeInfo = ();
-
-    fn name(_: &Self::TypeInfo) -> Option<&str> {
-        Some("Query")
-    }
-
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r>) -> MetaType<'r>
-    where
-        juniper::DefaultScalarValue: 'r,
-    {
-        let fields = vec![registry.field_convert::<User, _, Self::Context>("users", info)];
-        let meta = registry.build_object_type::<Query>(info, &fields);
-        meta.into_meta()
-    }
-}
-
-// async_trait[1] is used in this example for convenience, though this trait
-// can be implemented without async_trait (subscription macros do not
-// use async_trait, for example)
-// [1](https://github.com/dtolnay/async-trait)
-impl GraphQLTypeAsync<DefaultScalarValue> for Query {
-    // This function is called every time a field is found
-    fn resolve_field_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        field_name: &'a str,
-        arguments: &'a juniper::Arguments<DefaultScalarValue>,
-        executor: &'a juniper::Executor<Self::Context, DefaultScalarValue>,
-    ) -> juniper::BoxFuture<'a, juniper::ExecutionResult<DefaultScalarValue>> {
-        Box::pin(async move {
-            match field_name {
-                "users" => {
-                    let user = User {
-                        id: "1".to_string(),
-                        name: "user".to_string(),
-                        friend_ids: vec!["2".to_string(), "3".to_string(), "4".to_string()],
-                    };
-                    // Pass returned object as context and keep resolving query to
-                    // filter out unnecessary fields.
-                    let res: Result<Option<(&<Self as GraphQLType>::Context, _)>, _> =
-                        juniper::IntoResolvable::into(user, executor.context());
-                    match res {
-                        Ok(Some((ctx, r))) => {
-                            let sub = executor.replaced_context(ctx);
-                            sub.resolve_with_ctx_async::<<Self as GraphQLType>::Context, _>(&(), &r)
-                                .await
-                        }
-                        Ok(None) => Ok(juniper::Value::null()),
-                        Err(e) => Err(e),
-                    }
-                },
-                // panicking here because juniper should return field does not exist
-                // error while parsing subscription query
-                _ => panic!("Field {:?} not found on type Query"),
-            }
-        })
-    }
-}
-```
 */
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
@@ -142,7 +54,7 @@ where
     }
 
     /// This method is similar to `GraphQLType::resolve_field`, but it returns
-    /// future that resolves into value instead of value.
+    /// a future that resolves into value instead of value.
     ///
     /// The default implementation panics.
     fn resolve_field_async<'a>(
@@ -209,7 +121,7 @@ enum AsyncValue<S> {
     Nested(Value<S>),
 }
 
-async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
+pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],

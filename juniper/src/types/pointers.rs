@@ -219,8 +219,8 @@ impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
 where
     S: ScalarValue + Send + Sync,
     T: crate::GraphQLTypeAsync<S>,
-    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Sync + Send,
-    <T as crate::types::base::GraphQLType<S>>::Context: Sync + Send,
+    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Send + Sync,
+    <T as crate::types::base::GraphQLType<S>>::Context: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,

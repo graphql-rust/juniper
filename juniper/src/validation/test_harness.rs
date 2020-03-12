@@ -11,7 +11,6 @@ use crate::{
     types::{base::GraphQLType, scalars::ID},
     validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
-    EmptySubscription,
 };
 
 struct Being;
@@ -760,7 +759,7 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, EmptySubscription::<S>::new(), q, factory);
+    let errs = validate(r, m, crate::EmptySubscription::<S>::new(), q, factory);
 
     if errs.is_empty() {
         panic!("Expected rule to fail, but no errors were found");

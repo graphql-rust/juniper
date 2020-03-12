@@ -470,9 +470,8 @@ mod dynamic_context_switching {
         executor::{Context, ExecutionError, FieldError, FieldResult},
         parser::SourcePosition,
         schema::model::RootNode,
-        types::scalars::EmptyMutation,
+        types::scalars::{EmptyMutation, EmptySubscription},
         value::Value,
-        EmptySubscription,
     };
 
     struct Schema;

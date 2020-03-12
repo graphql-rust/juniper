@@ -125,7 +125,7 @@ where
 /// [`Value::List`] - resolves each stream from the list using current logic and returns
 ///                   values in the order received
 /// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
-/// `Value::Object<Value::Object<_>>` - returns error if [`Value::Object`] consists of sub-objects
+/// `Value::Object<Value::Object<_>>` - returns [`Value::Null`] if [`Value::Object`] consists of sub-objects
 fn whole_responses_stream<'a, S>(
     stream: Value<ValuesStream<'a, S>>,
     errors: Vec<ExecutionError<S>>,
@@ -240,9 +240,32 @@ where
 
 #[cfg(test)]
 mod whole_responses_stream {
-    use super::*;
     use futures::{stream, StreamExt as _};
-    use juniper::DefaultScalarValue;
+    use juniper::{DefaultScalarValue, FieldError, ExecutionError};
+    use super::*;
+
+    #[tokio::test]
+    async fn with_error() {
+        let expected = vec![
+            GraphQLResponse::<DefaultScalarValue>::error(FieldError::new(
+                "field error",
+                Value::Null,
+            ))
+        ];
+        let expected = serde_json::to_string(&expected).unwrap();
+
+        let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![
+            ExecutionError::at_origin(FieldError::new(
+                "field error",
+                Value::Null,
+            ))
+        ])
+            .collect::<Vec<_>>()
+            .await;
+        let result = serde_json::to_string(&result).unwrap();
+
+        assert_eq!(result, expected);
+    }
 
     #[tokio::test]
     async fn value_null() {
