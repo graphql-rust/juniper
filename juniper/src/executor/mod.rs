@@ -58,8 +58,6 @@ pub enum FieldPath<'a> {
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-///
-/// Can be converted to `OwnedExecutor` at any time.
 pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,

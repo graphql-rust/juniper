@@ -40,19 +40,9 @@ where
     let (ws_tx, ws_rx) = mpsc::unbounded();
     tokio::task::spawn(
         ws_rx
-            .take_while(|x: &Option<_>| {
-                // keep this stream until `None` is received
-                let keep_going = x.is_some();
-                futures::future::ready(keep_going)
-            })
+            .take_while(|v: &Option<_>| { futures::future::ready(v.is_some()) })
             .map(|x| x.unwrap())
             .forward(sink_tx)
-            .map(|result| {
-                if let Err(e) = result {
-                    // Warp errors are not handled for now
-                    panic!("Websocket send error: {}", e);
-                }
-            }),
     );
 
 
@@ -154,7 +144,7 @@ where
                 // close channel
                 let _ = ws_tx.unbounded_send(None);
             }
-            _ => panic!("unknown type"),
+            _ => {}
         }
 
         futures::future::ready(())

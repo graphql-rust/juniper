@@ -63,7 +63,6 @@ pub fn derive_object_internal(input: TokenStream) -> TokenStream {
     let gen = derive_object::build_derive_object(ast, true);
     gen.into()
 }
-
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
 /// derive.
 ///
@@ -380,11 +379,49 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-/// A proc macro for defining a GraphQL object.
+/** Same as [`graphql_object`], but for generating GraphQL subscription resolvers
+
+## Example
+
+```
+use std::pin::Pin;
+
+#[derive(juniper::GraphQLObject)]
+struct User {
+  id: i32,
+}
+
+type UsersStream = Pin<Box<dyn futures::Stream<Item = Result<User, juniper::FieldError>> + Send>>;
+
+struct Subscription;
+
+#[juniper::graphql_subscription]
+impl Subscription {
+    async fn users() -> UsersStream {
+        todo!("Stream resolver code goes here")
+    }
+}
+```
+*/
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let gen = impl_object::build_object(args, input, true);
+    gen.into()
+}
+
+/// A proc macro for defining a GraphQL subscription.
+#[proc_macro_attribute]
+pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_subscription(args, input, false);
+    gen.into()
+}
+
+/// A proc macro for defining a GraphQL subscription.
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_subscription(args, input, true);
     gen.into()
 }
 
@@ -407,18 +444,4 @@ pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStr
         Err(err) => proc_macro_error::abort!(err),
     };
     output
-}
-
-/// A proc macro for defining a GraphQL subscription.
-#[proc_macro_attribute]
-pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_subscription(args, input, false);
-    gen.into()
-}
-
-/// A proc macro for defining GraphQL subscription inside `juniper` crate.
-#[proc_macro_attribute]
-pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_subscription(args, input, true);
-    gen.into()
 }

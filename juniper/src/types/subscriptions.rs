@@ -2,34 +2,39 @@ use crate::{
     http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLError, GraphQLType, Object, ScalarValue,
+    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue,
     Selection, Value, ValuesStream,
 };
 
-/// Global subscription coordinator. Should be able to spawn
+/// Global subscription coordinator. Keeps track of opened connections and spawns
 /// [`SubscriptionConnection`]s for every subscription request.
+///
+/// `'a` is how long spawned connections live for
 pub trait SubscriptionCoordinator<'a, CtxT, S>
 where
     S: ScalarValue,
 {
     /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`] returns
-    type Connection;
+    type Connection: SubscriptionConnection<'a, S>;
+
+    /// Type of error while trying to spawn [`SubscriptionConnection`]
+    type Error;
 
     /// Return [`SubscriptionConnection`] based on given [`GraphQLRequest`]
     fn subscribe(
         &'a self,
         _: &'a GraphQLRequest<S>,
         _: &'a CtxT,
-    ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>>;
+    ) -> BoxFuture<'a, Result<Self::Connection, Self::Error>>;
 }
 
-/// Connection yielding [`GraphQLResponse`]s.
+/// Subscription connection. Can be used as a [`futures::Stream`] yielding [`GraphQLResponse`]s.
 pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
 
 /**
- This trait replaces GraphQLType`'s resolver logic with asynchronous
- subscriptions execution logic. It should be used with `GraphQLType` in order to
- implement subscription GraphQL objects.
+ This trait replaces GraphQLType`'s resolver logic with asynchronous subscription execution logic.
+ It should be used with `GraphQLType` in order to implement subscription resolvers on GraphQL
+ objects.
 
  Asynchronous subscription-related convenience macros expand into an
  implementation of this trait and `GraphQLType` for the given type.

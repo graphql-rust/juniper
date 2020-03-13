@@ -10,6 +10,5 @@ pub mod schema;
 mod schema_introspection;
 #[cfg(test)]
 mod type_info_tests;
-
-#[cfg(all(test, feature = "async"))]
+#[cfg(test)]
 mod subscriptions;

@@ -1,6 +1,16 @@
 use juniper_codegen::GraphQLObjectInternal;
 
 use crate::{Context, ExecutionError, FieldError, FieldResult, SubscriptionCoordinator, SubscriptionConnection, ExecutionResult};
+use futures::{self, stream::StreamExt as _, StreamExt};
+use juniper_codegen::graphql_subscription_internal;
+
+use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
+
+use super::*;
+use std::pin::Pin;
+use crate::http::GraphQLResponse;
+use std::iter::FromIterator as _;
+use std::iter;
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -19,103 +29,6 @@ struct MyQuery;
 
 #[crate::graphql_object_internal(context = MyContext)]
 impl MyQuery {}
-
-struct Coordinator {
-    root_node: AsyncSchema,
-}
-
-impl Coordinator {
-    pub fn new(root_node: AsyncSchema) -> Self {
-        Self { root_node }
-    }
-}
-
-impl<'a> SubscriptionCoordinator<'a, MyContext, DefaultScalarValue> for Coordinator {
-    type Connection = Connection<'a>;
-
-    fn subscribe(
-        &'a self,
-        req: &'a GraphQLRequest<DefaultScalarValue>,
-        ctx: &'a MyContext,
-    ) -> Pin<
-        Box<
-            dyn futures::Future<Output = Result<Self::Connection, crate::GraphQLError<'a>>>
-                + Send
-                + 'a,
-        >,
-    > {
-        use futures::stream::Stream as _;
-        use std::iter::FromIterator as _;
-
-        let rn = &self.root_node;
-
-        Box::pin(async move {
-            let req = req;
-
-            let (mut val, _) = crate::http::resolve_into_stream(req, rn, ctx).await?;
-
-            let obj = if let Value::Object(mut obj) = val {
-                let mut values = Vec::new();
-                for (name, stream) in obj.iter_mut() {
-                    if let Value::Scalar(strm) = stream {
-                        values.push((
-                            name.to_owned(),
-                            match strm.take(1).collect::<Vec<_>>().await[0] {
-                                Ok(v) => v,
-                                Err(_) => panic!("Error collecting object's field"),
-                            },
-                        ))
-                    } else {
-                        panic!("Items other than Value::Object<Value::Scalar> are not supported in tests")
-                    }
-                }
-
-                crate::Object::from_iter(values.into_iter())
-            } else {
-                panic!("Items other than Value::Object are not supported in tests")
-            };
-
-            Ok(Connection {
-                item: GraphQLResponse::from_result(Ok((Value::Object(obj), vec![]))),
-                is_used: false,
-            })
-        })
-    }
-}
-
-struct Connection<'a> {
-    item: GraphQLResponse<'a>,
-    is_used: bool,
-}
-
-impl<'a> SubscriptionConnection<'a, DefaultScalarValue> for Connection<'a> {}
-
-impl<'a> futures::Stream for Connection<'a> {
-    type Item = GraphQLResponse<'a>;
-
-    fn poll_next(
-        self: Pin<&mut Self>,
-        cx: &mut futures::task::Context<'_>,
-    ) -> futures::task::Poll<Option<Self::Item>> {
-        use futures::task::Poll;
-        if self.is_used {
-            Poll::Ready(None)
-        } else {
-            Poll::Ready(Some(self.item.clone()))
-        }
-    }
-}
-
-use futures::{self, stream::StreamExt as _, StreamExt};
-use juniper_codegen::graphql_subscription_internal;
-
-use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
-
-use super::*;
-use std::pin::Pin;
-use crate::http::GraphQLResponse;
-use std::iter::FromIterator as _;
-use std::iter;
 
 type AsyncSchema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
@@ -218,13 +131,13 @@ fn create_and_execute(
 
     let response_returned_object = response_value_object.unwrap();
 
-    let fields_iterator = response_returned_object.into_key_value_list();
+    let fields = response_returned_object.into_iter();
 
     let mut names = vec![];
     let mut collected_values = vec![];
 
-    for (name, stream_val) in fields_iterator {
-        names.push(name);
+    for (name, stream_val) in fields {
+        names.push(name.clone());
 
         // since macro returns Value::Scalar(iterator) every time,
         // other variants may be skipped

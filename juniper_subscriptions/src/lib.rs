@@ -64,11 +64,13 @@ where
 {
     type Connection = Connection<'a, S>;
 
+    type Error = GraphQLError<'a>;
+
     fn subscribe(
         &'a self,
         req: &'a GraphQLRequest<S>,
         context: &'a CtxT,
-    ) -> BoxFuture<'a, Result<Self::Connection, GraphQLError<'a>>> {
+    ) -> BoxFuture<'a, Result<Self::Connection, Self::Error>> {
         let rn = &self.root_node;
 
         Box::pin(async move {
