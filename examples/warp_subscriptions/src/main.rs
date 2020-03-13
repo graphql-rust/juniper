@@ -3,11 +3,10 @@
 use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::{Future, FutureExt as _, Stream};
-use warp::{http::Response, Filter};
-
 use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
 use juniper_subscriptions::Coordinator;
 use juniper_warp::playground_filter;
+use warp::{http::Response, Filter};
 use warp_subscriptions::*;
 
 mod warp_subscriptions;
@@ -17,21 +16,20 @@ struct Context {}
 
 impl juniper::Context for Context {}
 
-/// Kind of a User
-#[derive(juniper::GraphQLEnum, Clone, Copy)]
+#[derive(Clone, Copy, juniper::GraphQLEnum)]
 enum UserKind {
     Admin,
     User,
     Guest,
 }
 
-/// User representation
 struct User {
     id: i32,
     kind: UserKind,
     name: String,
 }
 
+// Field resolvers implementation
 #[juniper::graphql_object(Context = Context)]
 impl User {
     fn id(&self) -> i32 {
@@ -98,18 +96,18 @@ impl Query {
         vec![User {
             id,
             kind: UserKind::Admin,
-            name: "user1".into(),
+            name: "User Name".into(),
         }]
     }
 }
 
-type TypeAlias = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
+type UsersStream = Pin<Box<dyn Stream<Item = Result<User, FieldError>> + Send>>;
 
 struct Subscription;
 
 #[juniper::graphql_subscription(Context = Context)]
 impl Subscription {
-    async fn users() -> TypeAlias {
+    async fn users() -> UsersStream {
         let mut counter = 0;
         let stream = tokio::time::interval(Duration::from_secs(5)).map(move |_| {
             counter += 1;
@@ -128,6 +126,7 @@ impl Subscription {
                 })
             }
         });
+
         Box::pin(stream)
     }
 }
@@ -153,26 +152,27 @@ async fn main() {
             ))
     });
 
-    let state = warp::any().map(move || Context {});
     let qm_schema = schema();
+    let qm_state = warp::any().map(move || Context {});
+    let qm_graphql_filter = juniper_warp::make_graphql_filter_async(
+        qm_schema,
+        qm_state.boxed()
+    );
 
-    let state2 = warp::any().map(move || Context {});
-    let qm_graphql_filter = juniper_warp::make_graphql_filter_async(qm_schema, state.boxed());
-
+    let sub_state = warp::any().map(move || Context {});
     let coordinator = Arc::new(juniper_subscriptions::Coordinator::new(schema()));
 
     log::info!("Listening on 127.0.0.1:8080");
 
     let routes = (warp::path("subscriptions")
         .and(warp::ws())
-        .and(state2.clone())
+        .and(sub_state.clone())
         .and(warp::any().map(move || Arc::clone(&coordinator)))
         .map(
             |ws: warp::ws::Ws,
              ctx: Context,
              coordinator: Arc<Coordinator<'static, _, _, _, _, _>>| {
                 ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                    log::info!("ws connected");
                     graphql_subscriptions_async(websocket, coordinator, ctx).boxed()
                 })
             },
