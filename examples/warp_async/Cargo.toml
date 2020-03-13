@@ -7,11 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = "0.4.8"
 env_logger = "0.6.2"
-warp = "0.1.19"
 futures = { version = "0.3.1", features = ["compat"] }
+log = "0.4.8"
 reqwest = "0.9.19"
+tokio = { version = "0.2", features = ["rt-core", "macros"] }
+warp = "0.2.1"
 
 juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
 juniper = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }

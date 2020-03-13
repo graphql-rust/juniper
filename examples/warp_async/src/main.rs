@@ -79,7 +79,8 @@ fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::<Context>::new(), EmptySubscription::<Context>::new())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     ::std::env::set_var("RUST_LOG", "warp_async");
     env_logger::init();
 
@@ -99,12 +100,13 @@ fn main() {
     let graphql_filter = juniper_warp::make_graphql_filter_async(schema(), state.boxed());
 
     warp::serve(
-        warp::get2()
+        warp::get()
             .and(warp::path("graphiql"))
             .and(juniper_warp::graphiql_filter("/graphql"))
             .or(homepage)
             .or(warp::path("graphql").and(graphql_filter))
             .with(log),
     )
-    .run(([127, 0, 0, 1], 8080));
+    .run(([127, 0, 0, 1], 8080))
+    .await
 }

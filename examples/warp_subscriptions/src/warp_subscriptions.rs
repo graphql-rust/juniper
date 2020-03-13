@@ -12,7 +12,7 @@ use std::{
     },
 };
 
-use futures::{channel::mpsc, future::FutureExt as _, stream::StreamExt as _, Future};
+use futures::{channel::mpsc, stream::StreamExt as _, Future};
 use serde::{Deserialize, Serialize};
 use warp::ws::Message;
 use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};

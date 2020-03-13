@@ -398,7 +398,8 @@ struct Subscription;
 #[juniper::graphql_subscription]
 impl Subscription {
     async fn users() -> UsersStream {
-        todo!("Stream resolver code goes here")
+        // Stream resolver code goes here
+        unimplemented!()
     }
 }
 ```
