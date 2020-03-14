@@ -1,3 +1,5 @@
+#![allow(clippy::needless_lifetimes)]
+
 use uuid::Uuid;
 
 use crate::{
@@ -18,7 +20,8 @@ graphql_scalar!(Uuid where Scalar = <S> {
          .and_then(|s| Uuid::parse_str(s).ok())
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+
+    from_str<'a>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {

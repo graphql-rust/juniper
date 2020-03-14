@@ -36,10 +36,7 @@ where
     ) {
         match self.names.entry(var_name.item) {
             Entry::Occupied(e) => {
-                ctx.report_error(
-                    &error_message(var_name.item),
-                    &[e.get().clone(), var_name.start],
-                );
+                ctx.report_error(&error_message(var_name.item), &[*e.get(), var_name.start]);
             }
             Entry::Vacant(e) => {
                 e.insert(var_name.start);

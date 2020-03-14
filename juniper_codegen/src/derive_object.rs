@@ -24,7 +24,7 @@ pub fn build_derive_object(ast: syn::DeriveInput, is_internal: bool) -> TokenStr
             panic!("Invalid #[graphql(...)] attribute: {}", e);
         }
     };
-    if attrs.interfaces.len() > 0 {
+    if !attrs.interfaces.is_empty() {
         panic!("Invalid #[graphql(...)] attribute 'interfaces': #[derive(GraphQLObject) does not support 'interfaces'");
     }
     let ident = &ast.ident;

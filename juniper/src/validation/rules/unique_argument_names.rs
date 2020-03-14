@@ -36,10 +36,7 @@ where
     ) {
         match self.known_names.entry(arg_name.item) {
             Entry::Occupied(e) => {
-                ctx.report_error(
-                    &error_message(arg_name.item),
-                    &[e.get().clone(), arg_name.start],
-                );
+                ctx.report_error(&error_message(arg_name.item), &[*e.get(), arg_name.start]);
             }
             Entry::Vacant(e) => {
                 e.insert(arg_name.start);

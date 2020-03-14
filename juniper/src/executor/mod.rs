@@ -670,9 +670,8 @@ where
 {
     let mut fragments = vec![];
     for def in document.iter() {
-        match def {
-            Definition::Fragment(f) => fragments.push(f),
-            _ => (),
+        if let Definition::Fragment(f) = def {
+            fragments.push(f)
         };
     }
 
@@ -761,9 +760,8 @@ where
 {
     let mut fragments = vec![];
     for def in document.iter() {
-        match def {
-            Definition::Fragment(f) => fragments.push(f),
-            _ => (),
+        if let Definition::Fragment(f) = def {
+            fragments.push(f)
         };
     }
 
@@ -850,20 +848,17 @@ where
 {
     let mut operation = None;
     for def in document {
-        match def {
-            Definition::Operation(op) => {
-                if operation_name.is_none() && operation.is_some() {
-                    return Err(GraphQLError::MultipleOperationsProvided);
-                }
-
-                let move_op = operation_name.is_none()
-                    || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-                if move_op {
-                    operation = Some(op);
-                }
+        if let Definition::Operation(op) = def {
+            if operation_name.is_none() && operation.is_some() {
+                return Err(GraphQLError::MultipleOperationsProvided);
             }
-            _ => (),
+
+            let move_op =
+                operation_name.is_none() || op.item.name.as_ref().map(|s| s.item) == operation_name;
+
+            if move_op {
+                operation = Some(op);
+            }
         };
     }
     let op = match operation {
@@ -966,10 +961,9 @@ where
     }
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
-        if !self.types.contains_key(&name) {
-            self.types
-                .insert(name, MetaType::Placeholder(PlaceholderMeta { of_type }));
-        }
+        self.types
+            .entry(name)
+            .or_insert(MetaType::Placeholder(PlaceholderMeta { of_type }));
     }
 
     /// Create a scalar meta type

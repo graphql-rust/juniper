@@ -194,7 +194,7 @@ where
                     &meta_field.arguments,
                 );
 
-                let pos = start_pos.clone();
+                let pos = *start_pos;
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();

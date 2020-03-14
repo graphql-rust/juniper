@@ -41,13 +41,10 @@ where
             InputValue::Null => LookAheadValue::Null,
             InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
             InputValue::Enum(ref e) => LookAheadValue::Enum(e),
-            InputValue::Variable(ref name) => {
-                let value = vars
-                    .get(name)
-                    .map(|v| Self::from_input_value(v, vars))
-                    .unwrap_or(LookAheadValue::Null);
-                value
-            }
+            InputValue::Variable(ref name) => vars
+                .get(name)
+                .map(|v| Self::from_input_value(v, vars))
+                .unwrap_or(LookAheadValue::Null),
             InputValue::List(ref l) => LookAheadValue::List(
                 l.iter()
                     .map(|i| LookAheadValue::from_input_value(&i.item, vars))

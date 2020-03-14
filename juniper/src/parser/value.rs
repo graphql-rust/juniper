@@ -58,7 +58,7 @@ where
                 item: Token::Scalar(scalar),
                 start,
                 end,
-            } = parser.next()?
+            } = parser.next_token()?
             {
                 (s.parse_fn)(scalar)
                     .map(|s| Spanning::start_end(&start, &end, InputValue::Scalar(s)))
@@ -78,7 +78,7 @@ where
                 item: Token::Scalar(token),
                 start,
                 end,
-            } = parser.next()?
+            } = parser.next_token()?
             {
                 parse_scalar_literal_by_infered_type(token, &start, &end, schema)
             } else {
@@ -91,21 +91,21 @@ where
                 ..
             },
             _,
-        ) => Ok(parser.next()?.map(|_| InputValue::scalar(true))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::scalar(true))),
         (
             &Spanning {
                 item: Token::Name("false"),
                 ..
             },
             _,
-        ) => Ok(parser.next()?.map(|_| InputValue::scalar(false))),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::scalar(false))),
         (
             &Spanning {
                 item: Token::Name("null"),
                 ..
             },
             _,
-        ) => Ok(parser.next()?.map(|_| InputValue::null())),
+        ) => Ok(parser.next_token()?.map(|_| InputValue::null())),
         (
             &Spanning {
                 item: Token::Name(name),
@@ -113,9 +113,9 @@ where
             },
             _,
         ) => Ok(parser
-            .next()?
+            .next_token()?
             .map(|_| InputValue::enum_value(name.to_owned()))),
-        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
     }
 }
 

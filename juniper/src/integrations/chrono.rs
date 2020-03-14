@@ -22,7 +22,7 @@ use crate::{
 };
 
 #[doc(hidden)]
-pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
+pub static RFC3339_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.f%:z";
 
 graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S>{
     description: "DateTime"

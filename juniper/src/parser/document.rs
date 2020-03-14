@@ -65,7 +65,7 @@ where
         Token::Name("fragment") => Ok(Definition::Fragment(parse_fragment_definition(
             parser, schema,
         )?)),
-        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
     }
 }
 
@@ -93,7 +93,7 @@ where
             },
         ))
     } else {
-        let start_pos = parser.peek().start.clone();
+        let start_pos = parser.peek().start;
         let operation_type = parse_operation_type(parser)?;
         let op = match operation_type.item {
             OperationType::Query => Some(schema.concrete_query_type()),
@@ -228,7 +228,7 @@ where
 
     match parser.peek().item {
         Token::Name("on") => {
-            parser.next()?;
+            parser.next_token()?;
             let name = parser.expect_name()?;
 
             let fields = schema
@@ -291,7 +291,7 @@ where
                 },
             )))
         }
-        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
+        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
     }
 }
 
@@ -396,10 +396,12 @@ where
 
 fn parse_operation_type<'a>(parser: &mut Parser<'a>) -> ParseResult<'a, OperationType> {
     match parser.peek().item {
-        Token::Name("query") => Ok(parser.next()?.map(|_| OperationType::Query)),
-        Token::Name("mutation") => Ok(parser.next()?.map(|_| OperationType::Mutation)),
-        Token::Name("subscription") => Ok(parser.next()?.map(|_| OperationType::Subscription)),
-        _ => Err(parser.next()?.map(ParseError::UnexpectedToken)),
+        Token::Name("query") => Ok(parser.next_token()?.map(|_| OperationType::Query)),
+        Token::Name("mutation") => Ok(parser.next_token()?.map(|_| OperationType::Mutation)),
+        Token::Name("subscription") => {
+            Ok(parser.next_token()?.map(|_| OperationType::Subscription))
+        }
+        _ => Err(parser.next_token()?.map(ParseError::UnexpectedToken)),
     }
 }
 

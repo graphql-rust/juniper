@@ -20,7 +20,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         description: _impl.description,
         fields: Vec::new(),
         generics: _impl.generics.clone(),
-        interfaces: if _impl.attrs.interfaces.len() > 0 {
+        interfaces: if !_impl.attrs.interfaces.is_empty() {
             Some(_impl.attrs.interfaces)
         } else {
             None
