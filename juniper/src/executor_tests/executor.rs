@@ -1085,7 +1085,7 @@ mod named_operations {
     #[crate::graphql_object_internal]
     impl Schema {
         fn a(p: Option<String>) -> &str {
-            dbg!(p);
+            let _ = p;
             "b"
         }
     }
