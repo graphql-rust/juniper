@@ -121,9 +121,9 @@ where
     fn is_ok(&self) -> bool {
         match *self {
             GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            GraphQLBatchResponse::Batch(ref responses) => responses
-                .iter()
-                .all( |response| response.is_ok()),
+            GraphQLBatchResponse::Batch(ref responses) => {
+                responses.iter().all(|response| response.is_ok())
+            }
         }
     }
 }
