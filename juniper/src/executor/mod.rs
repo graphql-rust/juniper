@@ -2,7 +2,7 @@ use std::{
     borrow::Cow,
     cmp::Ordering,
     collections::HashMap,
-    fmt::{self, Debug, Display},
+    fmt::{Debug, Display},
     sync::RwLock,
 };
 
