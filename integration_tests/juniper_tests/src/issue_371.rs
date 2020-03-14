@@ -14,13 +14,13 @@ pub struct Query;
 )]
 impl Query {
     fn users(exec: &Executor) -> Vec<User> {
-        let lh = executor.look_ahead();
+        let lh = exec.look_ahead();
         assert_eq!(lh.field_name(), "users");
         vec![User]
     }
 
     fn countries(exec: &Executor) -> Vec<Country> {
-        let lh = executor.look_ahead();
+        let lh = exec.look_ahead();
         assert_eq!(lh.field_name(), "countries");
         vec![Country]
     }

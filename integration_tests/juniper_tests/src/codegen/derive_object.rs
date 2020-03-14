@@ -125,8 +125,8 @@ impl Query {
     }
 }
 
-#[test]
-fn test_doc_comment_simple() {
+#[tokio::test]
+async fn test_doc_comment_simple() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
@@ -136,11 +136,12 @@ fn test_doc_comment_simple() {
         &Value::scalar("Object comment."),
         "regularField",
         &Value::scalar("Field comment."),
-    );
+    )
+    .await;
 }
 
-#[test]
-fn test_multi_doc_comment() {
+#[tokio::test]
+async fn test_multi_doc_comment() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
@@ -153,11 +154,12 @@ fn test_multi_doc_comment() {
         &Value::scalar("Doc 1. Doc 2.\n\nDoc 4."),
         "regularField",
         &Value::scalar("Field 1.\nField 2."),
-    );
+    )
+    .await;
 }
 
-#[test]
-fn test_doc_comment_override() {
+#[tokio::test]
+async fn test_doc_comment_override() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"obj override".to_string()));
@@ -167,7 +169,8 @@ fn test_doc_comment_override() {
         &Value::scalar("obj override"),
         "regularField",
         &Value::scalar("field override"),
-    );
+    )
+    .await;
 }
 
 #[tokio::test]
@@ -291,7 +294,7 @@ async fn test_derived_object_nested() {
 }
 
 #[cfg(test)]
-fn check_descriptions(
+async fn check_descriptions(
     object_name: &str,
     object_description: &Value,
     field_name: &str,
@@ -329,7 +332,8 @@ fn check_descriptions(
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
 #[cfg(test)]

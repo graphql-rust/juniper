@@ -1,12 +1,6 @@
 #[cfg(test)]
-use fnv::FnvHashMap;
-#[cfg(test)]
-use juniper::Object;
-
-#[cfg(test)]
 use juniper::{
-    self, execute, graphql_value, DefaultScalarValue, EmptyMutation, GraphQLInputObject,
-    GraphQLType, RootNode, Value, Variables,
+    self, execute, graphql_value, EmptyMutation, GraphQLInputObject, RootNode, Value, Variables,
 };
 
 use futures;
