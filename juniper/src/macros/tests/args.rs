@@ -134,8 +134,8 @@ impl Root {
         ),
     )]
     fn args_with_complex_default(arg1: String, arg2: Point) -> i32 {
-        dbg!(arg1);
-        dbg!(arg2);
+        let _ = arg1;
+        let _ = arg2;
         0
     }
 }

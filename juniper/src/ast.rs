@@ -343,12 +343,12 @@ where
     }
 
     /// View the underlying int value, if present.
-    pub fn as_int_value<'a>(&'a self) -> Option<i32> {
+    pub fn as_int_value(&self) -> Option<i32> {
         self.as_scalar_value().and_then(|s| s.as_int())
     }
 
     /// View the underlying float value, if present.
-    pub fn as_float_value<'a>(&'a self) -> Option<f64> {
+    pub fn as_float_value(&self) -> Option<f64> {
         self.as_scalar_value().and_then(|s| s.as_float())
     }
 
