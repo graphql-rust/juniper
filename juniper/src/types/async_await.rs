@@ -19,16 +19,36 @@ where
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
 {
+    /// Resolve the value of a single field on this type.
+    ///
+    /// The arguments object contain all specified arguments, with default
+    /// values substituted for the ones not provided by the query.
+    ///
+    /// The executor can be used to drive selections into sub-objects.
+    ///
+    /// The default implementation panics.
     fn resolve_field_async<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        field_name: &'a str,
-        arguments: &'a Arguments<S>,
-        executor: &'a Executor<Self::Context, S>,
+        _info: &'a Self::TypeInfo,
+        _field_name: &'a str,
+        _arguments: &'a Arguments<S>,
+        _executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
+    /// Resolve the provided selection set against the current object.
+    ///
+    /// For non-object types, the selection set will be `None` and the value
+    /// of the object should simply be returned.
+    ///
+    /// For objects, all fields in the selection set should be resolved.
+    /// The default implementation uses `resolve_field` to resolve all fields,
+    /// including those through fragment expansion.
+    ///
+    /// Since the GraphQL spec specificies that errors during field processing
+    /// should result in a null-value, this might return Ok(Null) in case of
+    /// failure. Errors are recorded internally.
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -46,6 +66,12 @@ where
         }
     }
 
+    /// Resolve this interface or union into a concrete type
+    ///
+    /// Try to resolve the current type into the type name provided. If the
+    /// type matches, pass the instance along to `executor.resolve`.
+    ///
+    /// The default implementation panics.
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
