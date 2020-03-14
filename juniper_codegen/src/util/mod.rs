@@ -20,7 +20,7 @@ pub fn name_of_type(ty: &syn::Type) -> Option<syn::Ident> {
         syn::Type::Reference(ref reference) => match &*reference.elem {
             syn::Type::Path(ref type_path) => Some(&type_path.path),
             syn::Type::TraitObject(ref trait_obj) => {
-                match trait_obj.bounds.iter().nth(0).unwrap() {
+                match trait_obj.bounds.iter().next().unwrap() {
                     syn::TypeParamBound::Trait(ref trait_bound) => Some(&trait_bound.path),
                     _ => None,
                 }
@@ -106,25 +106,22 @@ pub fn get_deprecated(attrs: &[Attribute]) -> Option<DeprecationAttr> {
 
 fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
     for meta in &list.nested {
-        match meta {
-            &NestedMeta::Meta(Meta::NameValue(ref nv)) => {
-                if nv.path.is_ident("note") {
-                    match &nv.lit {
-                        &Lit::Str(ref strlit) => {
-                            return DeprecationAttr {
-                                reason: Some(strlit.value()),
-                            };
-                        }
-                        _ => panic!("deprecated attribute note value only has string literal"),
+        if let NestedMeta::Meta(Meta::NameValue(ref nv)) = *meta {
+            if nv.path.is_ident("note") {
+                match nv.lit {
+                    Lit::Str(ref strlit) => {
+                        return DeprecationAttr {
+                            reason: Some(strlit.value()),
+                        };
                     }
-                } else {
-                    panic!(
-                        "Unrecognized setting on #[deprecated(..)] attribute: {:?}",
-                        nv.path,
-                    );
+                    _ => panic!("deprecated attribute note value only has string literal"),
                 }
+            } else {
+                panic!(
+                    "Unrecognized setting on #[deprecated(..)] attribute: {:?}",
+                    nv.path,
+                );
             }
-            _ => {}
         }
     }
     DeprecationAttr { reason: None }
@@ -141,10 +138,10 @@ pub fn get_doc_comment(attrs: &[Attribute]) -> Option<String> {
 }
 
 // Concatenates doc strings into one string.
-fn join_doc_strings(docs: &Vec<String>) -> String {
+fn join_doc_strings(docs: &[String]) -> String {
     // Note: this is guaranteed since this function is only called
     // from get_doc_strings().
-    debug_assert!(docs.len() > 0);
+    debug_assert!(!docs.is_empty());
 
     let last_index = docs.len() - 1;
     docs.iter()
@@ -209,7 +206,7 @@ pub fn get_graphql_attr(attrs: &[Attribute]) -> Option<Vec<NestedMeta>> {
     for attr in attrs {
         match attr.parse_meta() {
             Ok(Meta::List(ref list)) if list.path.is_ident("graphql") => {
-                return Some(list.nested.iter().map(|x| x.clone()).collect());
+                return Some(list.nested.iter().cloned().collect());
             }
             _ => {}
         }
@@ -222,17 +219,17 @@ pub fn keyed_item_value(
     name: &str,
     validation: AttributeValidation,
 ) -> Option<AttributeValue> {
-    match item {
+    match *item {
         // Attributes in the form of `#[graphql(name = "value")]`.
-        &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.path.is_ident(name) => {
-            match &nameval.lit {
+        NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.path.is_ident(name) => {
+            match nameval.lit {
                 // We have a string attribute value.
-                &Lit::Str(ref strlit) => Some(AttributeValue::String(strlit.value())),
+                Lit::Str(ref strlit) => Some(AttributeValue::String(strlit.value())),
                 _ => None,
             }
         }
         // Attributes in the form of `#[graphql(name)]`.
-        &NestedMeta::Meta(Meta::Path(ref path)) if path.is_ident(name) => match validation {
+        NestedMeta::Meta(Meta::Path(ref path)) if path.is_ident(name) => match validation {
             AttributeValidation::String => {
                 panic!(format!(
                     "Invalid format for attribute \"{:?}\": expected a string value",

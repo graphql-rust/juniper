@@ -100,6 +100,7 @@ impl Droid for DroidData {
     }
 }
 
+#[derive(Default)]
 pub struct Database {
     humans: HashMap<String, HumanData>,
     droids: HashMap<String, DroidData>,
@@ -122,7 +123,7 @@ impl HumanData {
                 .into_iter()
                 .map(|f| f.to_owned())
                 .collect(),
-            appears_in: appears_in.iter().cloned().collect(),
+            appears_in: appears_in.to_vec(),
             secret_backstory: secret_backstory.map(|b| b.to_owned()),
             home_planet: home_planet.map(|p| p.to_owned()),
         }
@@ -146,7 +147,7 @@ impl DroidData {
                 .into_iter()
                 .map(|f| f.to_owned())
                 .collect(),
-            appears_in: appears_in.iter().cloned().collect(),
+            appears_in: appears_in.to_vec(),
             secret_backstory: secret_backstory.map(|b| b.to_owned()),
             primary_function: primary_function.map(|p| p.to_owned()),
         }
