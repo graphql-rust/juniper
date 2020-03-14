@@ -296,7 +296,7 @@ where
                 }
                 _ => {
                     if strict {
-                        return Err(format!("Prohibited extra field '{}'", key).to_owned());
+                        return Err(format!("Prohibited extra field '{}'", key));
                     }
                 }
             }

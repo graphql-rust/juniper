@@ -401,14 +401,6 @@ impl fmt::Display for GraphQLIronError {
 }
 
 impl Error for GraphQLIronError {
-    fn description(&self) -> &str {
-        match *self {
-            GraphQLIronError::Serde(ref err) => err.description(),
-            GraphQLIronError::Url(ref err) => err.description(),
-            GraphQLIronError::InvalidData(err) => err,
-        }
-    }
-
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             GraphQLIronError::Serde(ref err) => Some(err),

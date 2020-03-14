@@ -4,7 +4,7 @@ use std::borrow::Cow;
 ///
 /// Note: needs to be public because several macros use it.
 #[doc(hidden)]
-pub fn to_camel_case<'a>(s: &'a str) -> Cow<'a, str> {
+pub fn to_camel_case<'a>(s: &'a str) -> Cow<'_, str> {
     let mut dest = Cow::Borrowed(s);
 
     for (i, part) in s.split('_').enumerate() {
