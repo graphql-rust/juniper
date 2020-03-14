@@ -1,4 +1,3 @@
-#[cfg(feature = "async")]
 use futures;
 
 // Trait.

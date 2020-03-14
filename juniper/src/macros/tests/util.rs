@@ -1,26 +1,27 @@
-use crate::{DefaultScalarValue, GraphQLType, RootNode, Value, Variables};
+use crate::{DefaultScalarValue, GraphQLTypeAsync, RootNode, Value, Variables};
 use std::default::Default;
 
-pub fn run_query<Query, Mutation, Context>(query: &str) -> Value
+pub async fn run_query<Query, Mutation, Context>(query: &str) -> Value
 where
-    Query: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Mutation: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Context: Default,
+    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Context: Default + Sync + Send,
 {
     let schema = RootNode::new(Query::default(), Mutation::default());
     let (result, errs) =
         crate::execute(query, None, &schema, &Variables::new(), &Context::default())
+            .await
             .expect("Execution failed");
 
     assert_eq!(errs, []);
     result
 }
 
-pub fn run_info_query<Query, Mutation, Context>(type_name: &str) -> Value
+pub async fn run_info_query<Query, Mutation, Context>(type_name: &str) -> Value
 where
-    Query: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Mutation: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Context: Default,
+    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Context: Default + Sync + Send,
 {
     let query = format!(
         r#"
@@ -44,7 +45,7 @@ where
     "#,
         type_name
     );
-    let result = run_query::<Query, Mutation, Context>(&query);
+    let result = run_query::<Query, Mutation, Context>(&query).await;
     result
         .as_object_value()
         .expect("Result is not an object")

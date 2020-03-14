@@ -1,7 +1,6 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
 use juniper::*;
 
-#[cfg(feature = "async")]
 use futures;
 
 pub struct Context;
@@ -51,8 +50,8 @@ impl Country {
 
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>>;
 
-#[test]
-fn users() {
+#[tokio::test]
+async fn users() {
     let ctx = Context;
 
     let query = r#"{ users { id } }"#;
@@ -64,13 +63,14 @@ fn users() {
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
-fn countries() {
+#[tokio::test]
+async fn countries() {
     let ctx = Context;
 
     let query = r#"{ countries { id } }"#;
@@ -82,13 +82,14 @@ fn countries() {
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
-fn both() {
+#[tokio::test]
+async fn both() {
     let ctx = Context;
 
     let query = r#"
@@ -105,13 +106,14 @@ fn both() {
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);
 }
 
-#[test]
-fn both_in_different_order() {
+#[tokio::test]
+async fn both_in_different_order() {
     let ctx = Context;
 
     let query = r#"
@@ -128,6 +130,7 @@ fn both_in_different_order() {
         &juniper::Variables::new(),
         &ctx,
     )
+    .await
     .unwrap();
 
     assert_eq!(errors.len(), 0);

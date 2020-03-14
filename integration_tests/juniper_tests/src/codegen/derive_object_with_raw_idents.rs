@@ -9,7 +9,6 @@ use juniper::{
     GraphQLType, RootNode, Value, Variables,
 };
 
-#[cfg(feature = "async")]
 use futures;
 
 pub struct Query;
@@ -26,8 +25,8 @@ struct MyInputType {
     r#trait: String,
 }
 
-#[test]
-fn supports_raw_idents_in_types_and_args() {
+#[tokio::test]
+async fn supports_raw_idents_in_types_and_args() {
     let doc = r#"
     {
         __type(name: "Query") {
@@ -41,7 +40,7 @@ fn supports_raw_idents_in_types_and_args() {
     }
     "#;
 
-    let value = run_type_info_query(&doc);
+    let value = run_type_info_query(&doc).await;
 
     assert_eq!(
         value,
@@ -64,8 +63,8 @@ fn supports_raw_idents_in_types_and_args() {
     );
 }
 
-#[test]
-fn supports_raw_idents_in_fields_of_input_types() {
+#[tokio::test]
+async fn supports_raw_idents_in_fields_of_input_types() {
     let doc = r#"
     {
         __type(name: "MyInputType") {
@@ -76,7 +75,7 @@ fn supports_raw_idents_in_fields_of_input_types() {
     }
     "#;
 
-    let value = run_type_info_query(&doc);
+    let value = run_type_info_query(&doc).await;
 
     assert_eq!(
         value,
@@ -95,11 +94,12 @@ fn supports_raw_idents_in_fields_of_input_types() {
 }
 
 #[cfg(test)]
-fn run_type_info_query(doc: &str) -> Value {
+async fn run_type_info_query(doc: &str) -> Value {
     let schema = RootNode::new(Query, EmptyMutation::<()>::new());
 
-    let (result, errs) =
-        execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 

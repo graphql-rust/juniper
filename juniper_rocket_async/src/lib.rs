@@ -52,16 +52,10 @@ use rocket::{
 };
 
 use juniper::{http, InputValue};
-
 use juniper::{
-    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, 
-    ScalarValue,
+    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
 };
-
-#[cfg(feature = "async")]
 use juniper::GraphQLTypeAsync;
-
-#[cfg(feature = "async")]
 use futures::future::{FutureExt, TryFutureExt};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
@@ -100,19 +94,18 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
             &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
+                    .map(|request| request.execute_sync(root_node, context))
                     .collect(),
             ),
         }
     }
 
-    #[cfg(feature = "async")]
-    pub async fn execute_async<'a, CtxT, QueryT, MutationT>(
+    pub async fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<'_, QueryT, MutationT, S>,
         context: &'a CtxT,
@@ -126,12 +119,12 @@ where
     {
         match self {
             &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_async(root_node, context).await)
+                GraphQLBatchResponse::Single(request.execute(root_node, context).await)
             }
             &GraphQLBatchRequest::Batch(ref requests) => {
                 let futures = requests
                     .iter()
-                    .map(|request| request.execute_async(root_node, context))
+                    .map(|request| request.execute(root_node, context))
                     .collect::<Vec<_>>();
 
                 GraphQLBatchResponse::Batch(futures::future::join_all(futures).await)
@@ -202,7 +195,7 @@ where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
     {
-        let response = self.0.execute(root_node, context);
+        let response = self.0.execute_sync(root_node, context);
         let status = if response.is_ok() {
             Status::Ok
         } else {
@@ -214,8 +207,7 @@ where
     }
 
     /// Asynchronously execute an incoming GraphQL query
-    #[cfg(feature = "async")]
-    pub async fn execute_async<CtxT, QueryT, MutationT>(
+    pub async fn execute<CtxT, QueryT, MutationT>(
         &self,
         root_node: &RootNode<'_, QueryT, MutationT, S>,
         context: &CtxT,
@@ -227,7 +219,7 @@ where
         MutationT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
-        let response = self.0.execute_async(root_node, context).await;
+        let response = self.0.execute(root_node, context).await;
         let status = if response.is_ok() {
             Status::Ok
         } else {
@@ -281,7 +273,7 @@ impl GraphQLResponse {
     ///         return juniper_rocket::GraphQLResponse::error(err);
     ///     }
     ///
-    ///     request.execute(&schema, &context)
+    ///     request.execute_sync(&schema, &context)
     /// }
     /// ```
     pub fn error(error: FieldError) -> Self {
@@ -294,7 +286,7 @@ impl GraphQLResponse {
     ///
     /// This is intended for highly customized integrations and should only
     /// be used as a last resort. For normal juniper use, use the response
-    /// from GraphQLRequest::execute(..).
+    /// from GraphQLRequest::execute_sync(..).
     pub fn custom(status: Status, response: serde_json::Value) -> Self {
         let json = serde_json::to_string(&response).unwrap();
         GraphQLResponse(status, json)
@@ -565,7 +557,7 @@ mod tests {
         request: Form<super::GraphQLRequest>,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute(&schema, &context)
+        request.execute_sync(&schema, &context)
     }
 
     #[post("/", data = "<request>")]
@@ -574,7 +566,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute(&schema, &context)
+        request.execute_sync(&schema, &context)
     }
 
     struct TestRocketIntegration {
@@ -611,7 +603,7 @@ mod tests {
             schema: State<Schema>,
         ) -> super::GraphQLResponse {
             assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute(&schema, &context)
+            request.execute_sync(&schema, &context)
         }
 
         let rocket = make_rocket_without_routes()

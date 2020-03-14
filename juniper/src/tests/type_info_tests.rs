@@ -77,7 +77,7 @@ fn test_node() {
     let schema: RootNode<_, _> = RootNode::new_with_info(node, EmptyMutation::new(), node_info, ());
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &()),
+        crate::execute_sync(doc, None, &schema, &Variables::new(), &()),
         Ok((
             Value::object(
                 vec![

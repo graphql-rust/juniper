@@ -143,7 +143,7 @@ graphql_interface!(Interface: () |&self| {
     }
 });
 
-fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
+async fn run_field_info_query<F>(type_name: &str, field_name: &str, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
@@ -164,7 +164,9 @@ where
         .into_iter()
         .collect();
 
-    let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -205,8 +207,8 @@ where
     f(field);
 }
 
-#[test]
-fn introspect_object_field_simple() {
+#[tokio::test]
+async fn introspect_object_field_simple() {
     run_field_info_query("Root", "simple", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -221,11 +223,12 @@ fn introspect_object_field_simple() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_simple() {
+#[tokio::test]
+async fn introspect_interface_field_simple() {
     run_field_info_query("Interface", "simple", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -240,11 +243,12 @@ fn introspect_interface_field_simple() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_description() {
+#[tokio::test]
+async fn introspect_object_field_description() {
     run_field_info_query("Root", "description", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -262,11 +266,12 @@ fn introspect_object_field_description() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_description() {
+#[tokio::test]
+async fn introspect_interface_field_description() {
     run_field_info_query("Interface", "description", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -284,11 +289,12 @@ fn introspect_interface_field_description() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_deprecated_outer() {
+#[tokio::test]
+async fn introspect_object_field_deprecated_outer() {
     run_field_info_query("Root", "deprecatedOuter", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -303,11 +309,12 @@ fn introspect_object_field_deprecated_outer() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null()),
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_deprecated_outer_with_reason() {
+#[tokio::test]
+async fn introspect_object_field_deprecated_outer_with_reason() {
     run_field_info_query("Root", "deprecatedOuterWithReason", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -322,11 +329,12 @@ fn introspect_object_field_deprecated_outer_with_reason() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation Reason")),
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_deprecated() {
+#[tokio::test]
+async fn introspect_object_field_deprecated() {
     run_field_info_query("Root", "deprecated", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -341,11 +349,12 @@ fn introspect_object_field_deprecated() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_deprecated() {
+#[tokio::test]
+async fn introspect_interface_field_deprecated() {
     run_field_info_query("Interface", "deprecated", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -360,11 +369,12 @@ fn introspect_interface_field_deprecated() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_deprecated_descr() {
+#[tokio::test]
+async fn introspect_object_field_deprecated_descr() {
     run_field_info_query("Root", "deprecatedDescr", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -382,11 +392,12 @@ fn introspect_object_field_deprecated_descr() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_deprecated_descr() {
+#[tokio::test]
+async fn introspect_interface_field_deprecated_descr() {
     run_field_info_query("Interface", "deprecatedDescr", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -404,11 +415,12 @@ fn introspect_interface_field_deprecated_descr() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_attr_description() {
+#[tokio::test]
+async fn introspect_object_field_attr_description() {
     run_field_info_query("Root", "attrDescription", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -426,11 +438,12 @@ fn introspect_object_field_attr_description() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_attr_description() {
+#[tokio::test]
+async fn introspect_interface_field_attr_description() {
     run_field_info_query("Interface", "attrDescription", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -448,11 +461,12 @@ fn introspect_interface_field_attr_description() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_attr_description_long() {
+#[tokio::test]
+async fn introspect_object_field_attr_description_long() {
     run_field_info_query("Root", "attrDescriptionLong", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -470,11 +484,11 @@ fn introspect_object_field_attr_description_long() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    }).await;
 }
 
-#[test]
-fn introspect_interface_field_attr_description_long() {
+#[tokio::test]
+async fn introspect_interface_field_attr_description_long() {
     run_field_info_query("Interface", "attrDescriptionLong", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -492,11 +506,11 @@ fn introspect_interface_field_attr_description_long() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    }).await;
 }
 
-#[test]
-fn introspect_object_field_attr_description_collapse() {
+#[tokio::test]
+async fn introspect_object_field_attr_description_collapse() {
     run_field_info_query("Root", "attrDescriptionCollapse", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -516,11 +530,12 @@ fn introspect_object_field_attr_description_collapse() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_attr_description_collapse() {
+#[tokio::test]
+async fn introspect_interface_field_attr_description_collapse() {
     run_field_info_query("Interface", "attrDescriptionCollapse", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -540,11 +555,12 @@ fn introspect_interface_field_attr_description_collapse() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_attr_deprecated() {
+#[tokio::test]
+async fn introspect_object_field_attr_deprecated() {
     run_field_info_query("Root", "attrDeprecated", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -559,11 +575,12 @@ fn introspect_object_field_attr_deprecated() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_attr_deprecated() {
+#[tokio::test]
+async fn introspect_interface_field_attr_deprecated() {
     run_field_info_query("Interface", "attrDeprecated", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -578,11 +595,12 @@ fn introspect_interface_field_attr_deprecated() {
             field.get_field_value("deprecationReason"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_attr_deprecated_reason() {
+#[tokio::test]
+async fn introspect_object_field_attr_deprecated_reason() {
     run_field_info_query("Root", "attrDeprecatedReason", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -597,11 +615,12 @@ fn introspect_object_field_attr_deprecated_reason() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_attr_deprecated_reason() {
+#[tokio::test]
+async fn introspect_interface_field_attr_deprecated_reason() {
     run_field_info_query("Interface", "attrDeprecatedReason", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -616,11 +635,12 @@ fn introspect_interface_field_attr_deprecated_reason() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_object_field_attr_deprecated_descr() {
+#[tokio::test]
+async fn introspect_object_field_attr_deprecated_descr() {
     run_field_info_query("Root", "attrDeprecatedDescr", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -638,11 +658,12 @@ fn introspect_object_field_attr_deprecated_descr() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interface_field_attr_deprecated_descr() {
+#[tokio::test]
+async fn introspect_interface_field_attr_deprecated_descr() {
     run_field_info_query("Interface", "attrDeprecatedDescr", |field| {
         assert_eq!(
             field.get_field_value("name"),
@@ -660,5 +681,6 @@ fn introspect_interface_field_attr_deprecated_descr() {
             field.get_field_value("deprecationReason"),
             Some(&Value::scalar("Deprecation reason"))
         );
-    });
+    })
+    .await;
 }

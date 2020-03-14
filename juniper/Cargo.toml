@@ -24,9 +24,9 @@ harness = false
 path = "benches/bench.rs"
 
 [features]
-async = ["juniper_codegen/async", "futures"]
 expose-test-schema = ["serde_json"]
 default = [
+    "bson",
     "chrono",
     "url",
     "uuid",
@@ -35,9 +35,10 @@ default = [
 [dependencies]
 juniper_codegen = { version = "0.14.2", path = "../juniper_codegen"  }
 
+bson = { version = "0.14.0", optional = true }
 chrono = { version = "0.4.0", optional = true }
 fnv = "1.0.3"
-futures = { version = "0.3.1", optional = true }
+futures = "0.3.1"
 indexmap = { version = "1.0.0", features = ["serde-1"] }
 serde = { version = "1.0.8" }
 serde_derive = { version = "1.0.2" }

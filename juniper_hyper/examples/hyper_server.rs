@@ -1,13 +1,5 @@
-extern crate futures;
-extern crate hyper;
-extern crate juniper;
-extern crate juniper_hyper;
-extern crate pretty_env_logger;
-
-use futures::future;
 use hyper::{
-    rt::{self, Future},
-    service::service_fn,
+    service::{make_service_fn, service_fn},
     Body, Method, Response, Server, StatusCode,
 };
 use juniper::{
@@ -16,7 +8,8 @@ use juniper::{
 };
 use std::sync::Arc;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
 
     let addr = ([127, 0, 0, 1], 3000).into();
@@ -24,30 +17,35 @@ fn main() {
     let db = Arc::new(Database::new());
     let root_node = Arc::new(RootNode::new(Query, EmptyMutation::<Database>::new()));
 
-    let new_service = move || {
+    let new_service = make_service_fn(move |_| {
         let root_node = root_node.clone();
         let ctx = db.clone();
-        service_fn(move |req| -> Box<dyn Future<Item = _, Error = _> + Send> {
-            let root_node = root_node.clone();
-            let ctx = ctx.clone();
-            match (req.method(), req.uri().path()) {
-                (&Method::GET, "/") => Box::new(juniper_hyper::graphiql("/graphql")),
-                (&Method::GET, "/graphql") => Box::new(juniper_hyper::graphql(root_node, ctx, req)),
-                (&Method::POST, "/graphql") => {
-                    Box::new(juniper_hyper::graphql(root_node, ctx, req))
+
+        async move {
+            Ok::<_, hyper::Error>(service_fn(move |req| {
+                let root_node = root_node.clone();
+                let ctx = ctx.clone();
+                async move {
+                    match (req.method(), req.uri().path()) {
+                        (&Method::GET, "/") => juniper_hyper::graphiql("/graphql").await,
+                        (&Method::GET, "/graphql") | (&Method::POST, "/graphql") => {
+                            juniper_hyper::graphql(root_node, ctx, req).await
+                        }
+                        _ => {
+                            let mut response = Response::new(Body::empty());
+                            *response.status_mut() = StatusCode::NOT_FOUND;
+                            Ok(response)
+                        }
+                    }
                 }
-                _ => {
-                    let mut response = Response::new(Body::empty());
-                    *response.status_mut() = StatusCode::NOT_FOUND;
-                    Box::new(future::ok(response))
-                }
-            }
-        })
-    };
-    let server = Server::bind(&addr)
-        .serve(new_service)
-        .map_err(|e| eprintln!("server error: {}", e));
+            }))
+        }
+    });
+
+    let server = Server::bind(&addr).serve(new_service);
     println!("Listening on http://{}", addr);
 
-    rt::run(server);
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e)
+    }
 }

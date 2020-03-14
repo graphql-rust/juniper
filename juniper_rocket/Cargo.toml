@@ -11,17 +11,13 @@ documentation = "https://docs.rs/juniper_rocket"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
-[features]
-# Fake feature to help CI.
-async = []
-
 [dependencies]
 serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
 serde_derive = { version = "1.0.2" }
 juniper = { version = "0.14.2", default-features = false, path = "../juniper"}
 
-rocket = { version = "0.4.0" }
+rocket = { version = "0.4.2", default-features = false }
 
 [dev-dependencies.juniper]
 version = "0.14.2"

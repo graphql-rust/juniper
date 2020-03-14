@@ -7,7 +7,6 @@ To actually get a server up and running, there are multiple official and
 third-party integration crates that will get you there.
 
 - [Official Server Integrations](official.md)
-    - [Hyper](hyper.md)
     - [Warp](warp.md)
     - [Rocket](rocket.md)
     - [Iron](iron.md)

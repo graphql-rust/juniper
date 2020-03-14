@@ -13,3 +13,7 @@ pub mod url;
 #[cfg(feature = "uuid")]
 /// GraphQL support for [uuid](https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html) types.
 pub mod uuid;
+
+#[cfg(feature = "bson")]
+/// GraphQL support for [bson](https://github.com/mongodb/bson-rust) types.
+pub mod objectid;

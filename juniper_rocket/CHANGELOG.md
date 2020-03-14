@@ -1,6 +1,7 @@
 # master
 
 - Compatibility with the latest `juniper`.
+- Rocket integration does not require default features.
 
 # [[0.5.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_rocket-0.5.2)
 

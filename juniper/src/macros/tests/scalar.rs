@@ -96,14 +96,15 @@ impl Root {
     }
 }
 
-fn run_type_info_query<F>(doc: &str, f: F)
+async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
     let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -139,8 +140,8 @@ fn path_in_resolve_return_type() {
     });
 }
 
-#[test]
-fn default_name_introspection() {
+#[tokio::test]
+async fn default_name_introspection() {
     let doc = r#"
     {
         __type(name: "DefaultName") {
@@ -159,11 +160,12 @@ fn default_name_introspection() {
             type_info.get_field_value("description"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn other_order_introspection() {
+#[tokio::test]
+async fn other_order_introspection() {
     let doc = r#"
     {
         __type(name: "OtherOrder") {
@@ -182,11 +184,12 @@ fn other_order_introspection() {
             type_info.get_field_value("description"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn named_introspection() {
+#[tokio::test]
+async fn named_introspection() {
     let doc = r#"
     {
         __type(name: "ANamedScalar") {
@@ -205,11 +208,12 @@ fn named_introspection() {
             type_info.get_field_value("description"),
             Some(&Value::null())
         );
-    });
+    })
+    .await;
 }
 
-#[test]
-fn scalar_description_introspection() {
+#[tokio::test]
+async fn scalar_description_introspection() {
     let doc = r#"
     {
         __type(name: "ScalarDescription") {
@@ -228,5 +232,6 @@ fn scalar_description_introspection() {
             type_info.get_field_value("description"),
             Some(&Value::scalar("A sample scalar, represented as an integer"))
         );
-    });
+    })
+    .await;
 }

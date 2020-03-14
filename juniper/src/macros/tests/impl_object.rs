@@ -122,9 +122,9 @@ impl Mutation {
     }
 }
 
-#[test]
-fn object_introspect() {
-    let res = util::run_info_query::<Query, Mutation, Context>("Query");
+#[tokio::test]
+async fn object_introspect() {
+    let res = util::run_info_query::<Query, Mutation, Context>("Query").await;
     assert_eq!(
         res,
         crate::graphql_value!({
@@ -243,8 +243,8 @@ fn object_introspect() {
     );
 }
 
-#[test]
-fn object_query() {
+#[tokio::test]
+async fn object_query() {
     let doc = r#"
     query {
         withSelf
@@ -270,6 +270,7 @@ fn object_query() {
     let vars = std::collections::HashMap::new();
 
     let (result, errs) = crate::execute(doc, None, &schema, &vars, &Context { flag1: true })
+        .await
         .expect("Execution failed");
     assert_eq!(errs, []);
     assert_eq!(
