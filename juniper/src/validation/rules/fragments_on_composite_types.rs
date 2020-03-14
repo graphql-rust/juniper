@@ -50,7 +50,7 @@ where
                     .next();
 
                 if let Some(name) = invalid_type_name {
-                    context.report_error(&error_message(None, name), &[type_cond.start.clone()]);
+                    context.report_error(&error_message(None, name), &[type_cond.start]);
                 }
             }
         }

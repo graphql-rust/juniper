@@ -695,7 +695,7 @@ where
     fn enter_selection_set(
         &mut self,
         ctx: &mut ValidatorContext<'a, S>,
-        selection_set: &'a Vec<Selection<S>>,
+        selection_set: &'a [Selection<S>],
     ) {
         for Conflict(ConflictReason(reason_name, reason_msg), mut p1, mut p2) in
             self.find_conflicts_within_selection_set(ctx.parent_type(), selection_set, ctx)

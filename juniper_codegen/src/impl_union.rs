@@ -90,7 +90,7 @@ pub fn impl_union(
         .iter()
         .find(|&m| _impl.parse_resolve_method(&m).is_ok());
 
-    if _impl.methods.is_empty() || !method.is_some() {
+    if _impl.methods.is_empty() || method.is_none() {
         return Err(MacroError::new(
             _impl.target_type.span(),
             "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"

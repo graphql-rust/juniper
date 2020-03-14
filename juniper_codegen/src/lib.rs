@@ -369,16 +369,14 @@ impl User {
 */
 #[proc_macro_attribute]
 pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_object(args, input, false);
-    gen.into()
+    impl_object::build_object(args, input, false)
 }
 
 /// A proc macro for defining a GraphQL object.
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_object(args, input, true);
-    gen.into()
+    impl_object::build_object(args, input, true)
 }
 
 #[proc_macro_attribute]

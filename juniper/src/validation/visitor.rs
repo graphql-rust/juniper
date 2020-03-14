@@ -25,11 +25,8 @@ pub fn visit<'a, A, B, S>(
     v.exit_document(ctx, d);
 }
 
-fn visit_definitions<'a, S, V>(
-    v: &mut V,
-    ctx: &mut ValidatorContext<'a, S>,
-    d: &'a Vec<Definition<S>>,
-) where
+fn visit_definitions<'a, S, V>(v: &mut V, ctx: &mut ValidatorContext<'a, S>, d: &'a [Definition<S>])
+where
     S: ScalarValue,
     V: Visitor<'a, S>,
 {
@@ -166,7 +163,7 @@ fn visit_directives<'a, S, V>(
                 .map(|d| &d.arguments);
 
             v.enter_directive(ctx, directive);
-            visit_arguments(v, ctx, &directive_arguments, &directive.item.arguments);
+            visit_arguments(v, ctx, directive_arguments, &directive.item.arguments);
             v.exit_directive(ctx, directive);
         }
     }
@@ -175,7 +172,7 @@ fn visit_directives<'a, S, V>(
 fn visit_arguments<'a, S, V>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a, S>,
-    meta_args: &Option<&Vec<Argument<'a, S>>>,
+    meta_args: Option<&Vec<Argument<'a, S>>>,
     arguments: &'a Option<Spanning<Arguments<S>>>,
 ) where
     S: ScalarValue,
@@ -201,7 +198,7 @@ fn visit_arguments<'a, S, V>(
 fn visit_selection_set<'a, S, V>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a, S>,
-    selection_set: &'a Vec<Selection<S>>,
+    selection_set: &'a [Selection<S>],
 ) where
     S: ScalarValue,
     V: Visitor<'a, S>,
@@ -250,7 +247,7 @@ fn visit_field<'a, S, V>(
     ctx.with_pushed_type(field_type, |ctx| {
         v.enter_field(ctx, field);
 
-        visit_arguments(v, ctx, &field_args, &field.item.arguments);
+        visit_arguments(v, ctx, field_args, &field.item.arguments);
         visit_directives(v, ctx, &field.item.directives);
 
         if let Some(ref selection_set) = field.item.selection_set {

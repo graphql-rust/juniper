@@ -112,10 +112,8 @@ impl<'a> CycleDetector<'a> {
                     node
                 };
 
-                self.errors.push(RuleError::new(
-                    &error_message(name),
-                    &[err_pos.start.clone()],
-                ));
+                self.errors
+                    .push(RuleError::new(&error_message(name), &[err_pos.start]));
             } else if !self.visited.contains(name) {
                 path.push(node);
                 self.detect_from(name, path);

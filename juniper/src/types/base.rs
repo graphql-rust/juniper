@@ -547,13 +547,12 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
                     dest_list
                         .iter_mut()
                         .zip(src_list.into_iter())
-                        .for_each(|(d, s)| match d {
-                            &mut Value::Object(ref mut d_obj) => {
+                        .for_each(|(d, s)| {
+                            if let Value::Object(ref mut d_obj) = *d {
                                 if let Value::Object(s_obj) = s {
                                     merge_maps(d_obj, s_obj);
                                 }
                             }
-                            _ => {}
                         });
                 }
             }
