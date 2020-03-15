@@ -1,4 +1,5 @@
 //! Parse impl blocks.
+#![allow(clippy::or_fun_call)]
 
 use proc_macro::TokenStream;
 use quote::quote;
