@@ -6,7 +6,7 @@ where
     Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Subscription:
-        GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
+        crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
     Context: Default + Send + Sync,
 {
     let schema = RootNode::new(
@@ -28,7 +28,7 @@ where
     Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Subscription:
-        GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
+        crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
     Context: Default + Send + Sync,
 {
     let query = format!(

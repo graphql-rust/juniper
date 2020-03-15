@@ -5,8 +5,8 @@ use futures;
 use juniper::{
     execute,
     parser::{ParseError, ScalarToken, Spanning, Token},
-    serde::de,
-    EmptyMutation, InputValue, Object, ParseScalarResult, RootNode, ScalarValue, Value, Variables,
+    serde::de, EmptyMutation, EmptySubscription, InputValue, Object, ParseScalarResult,
+    RootNode, ScalarValue, Value, Variables,
 };
 use std::fmt;
 
@@ -176,7 +176,11 @@ async fn run_variable_query<F>(query: &str, vars: Variables<MyScalarValue>, f: F
 where
     F: Fn(&Object<MyScalarValue>) -> (),
 {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = execute(query, None, &schema, &vars, &())
         .await

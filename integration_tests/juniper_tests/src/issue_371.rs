@@ -48,7 +48,7 @@ impl Country {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>>;
+type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 #[tokio::test]
 async fn users() {
@@ -59,7 +59,11 @@ async fn users() {
     let (_, errors) = juniper::execute(
         query,
         None,
-        &Schema::new(Query, EmptyMutation::<Context>::new()),
+        &Schema::new(
+            Query,
+            EmptyMutation::<Context>::new(),
+            EmptySubscription::<Context>::new(),
+        ),
         &juniper::Variables::new(),
         &ctx,
     )
@@ -78,7 +82,11 @@ async fn countries() {
     let (_, errors) = juniper::execute(
         query,
         None,
-        &Schema::new(Query, EmptyMutation::new()),
+        &Schema::new(
+            Query,
+            EmptyMutation::new(),
+            EmptySubscription::new(),
+        ),
         &juniper::Variables::new(),
         &ctx,
     )
@@ -102,7 +110,11 @@ async fn both() {
     let (_, errors) = juniper::execute(
         query,
         None,
-        &Schema::new(Query, EmptyMutation::<Context>::new()),
+        &Schema::new(
+            Query,
+            EmptyMutation::<Context>::new(),
+            EmptySubscription::<Context>::new(),
+        ),
         &juniper::Variables::new(),
         &ctx,
     )
@@ -126,7 +138,11 @@ async fn both_in_different_order() {
     let (_, errors) = juniper::execute(
         query,
         None,
-        &Schema::new(Query, EmptyMutation::<Context>::new()),
+        &Schema::new(
+            Query,
+            EmptyMutation::<Context>::new(),
+            EmptySubscription::<Context>::new(),
+        ),
         &juniper::Variables::new(),
         &ctx,
     )

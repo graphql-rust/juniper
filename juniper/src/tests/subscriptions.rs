@@ -201,6 +201,8 @@ fn returns_error() {
             Value::Scalar(DefaultScalarValue::String("more details".to_string())),
         ),
     );
+
+    assert_eq!(returned_errors, vec![expected_error]);
 }
 
 #[test]

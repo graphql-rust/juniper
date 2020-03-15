@@ -5,7 +5,9 @@ use juniper::Object;
 use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
-use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
+use juniper::{
+    self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables
+};
 
 use futures;
 
@@ -195,7 +197,11 @@ async fn test_derived_object() {
             }
         }"#;
 
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()).await,
@@ -229,7 +235,11 @@ async fn test_cannot_query_skipped_field() {
                 skippedField
             }
         }"#;
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
     execute(doc, None, &schema, &Variables::new(), &())
         .await
         .unwrap();
@@ -243,7 +253,11 @@ async fn test_skipped_field_siblings_unaffected() {
                 regularField
             }
         }"#;
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
     execute(doc, None, &schema, &Variables::new(), &())
         .await
         .unwrap();
@@ -261,7 +275,11 @@ async fn test_derived_object_nested() {
             }
         }"#;
 
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     assert_eq!(
         execute(doc, None, &schema, &Variables::new(), &()).await,
@@ -341,7 +359,11 @@ async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),
 {
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
         .await

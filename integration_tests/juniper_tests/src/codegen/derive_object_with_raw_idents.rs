@@ -1,6 +1,7 @@
 #[cfg(test)]
 use juniper::{
-    self, execute, graphql_value, EmptyMutation, GraphQLInputObject, RootNode, Value, Variables,
+    self, execute, graphql_value, EmptyMutation, EmptySubscription, GraphQLInputObject, RootNode,
+    Value, Variables,
 };
 
 use futures;
@@ -90,7 +91,11 @@ async fn supports_raw_idents_in_fields_of_input_types() {
 
 #[cfg(test)]
 async fn run_type_info_query(doc: &str) -> Value {
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
         .await

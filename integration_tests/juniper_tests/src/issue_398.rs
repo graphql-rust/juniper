@@ -42,7 +42,7 @@ impl Country {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>>;
+type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
 
 #[tokio::test]
 async fn test_lookahead_from_fragment_with_nested_type() {
@@ -61,7 +61,11 @@ async fn test_lookahead_from_fragment_with_nested_type() {
             }
         "#,
         None,
-        &Schema::new(Query, EmptyMutation::new()),
+        &Schema::new(
+            Query,
+            EmptyMutation::new(),
+            EmptySubscription::new(),
+        ),
         &Variables::new(),
         &(),
     )
