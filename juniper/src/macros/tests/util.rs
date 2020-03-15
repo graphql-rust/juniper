@@ -5,8 +5,10 @@ pub async fn run_query<Query, Mutation, Subscription, Context>(query: &str) -> V
 where
     Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Subscription:
-        crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
+    Subscription: crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context>
+        + Default
+        + Sync
+        + Send,
     Context: Default + Send + Sync,
 {
     let schema = RootNode::new(
@@ -27,8 +29,10 @@ pub async fn run_info_query<Query, Mutation, Subscription, Context>(type_name: &
 where
     Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Subscription:
-        crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default + Sync + Send,
+    Subscription: crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context>
+        + Default
+        + Sync
+        + Send,
     Context: Default + Send + Sync,
 {
     let query = format!(

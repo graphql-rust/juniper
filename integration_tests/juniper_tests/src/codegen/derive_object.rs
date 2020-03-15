@@ -6,7 +6,7 @@ use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
 use juniper::{
-    self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables
+    self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables,
 };
 
 use futures;

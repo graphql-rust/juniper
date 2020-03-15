@@ -198,8 +198,15 @@ where
 /// this endpoint containing the field `"query"` and optionally `"variables"`.
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
-pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S = DefaultScalarValue>
-where
+pub struct GraphQLHandler<
+    'a,
+    CtxFactory,
+    Query,
+    Mutation,
+    Subscription,
+    CtxT,
+    S = DefaultScalarValue,
+> where
     S: ScalarValue,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,

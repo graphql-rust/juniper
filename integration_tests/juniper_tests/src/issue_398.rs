@@ -61,11 +61,7 @@ async fn test_lookahead_from_fragment_with_nested_type() {
             }
         "#,
         None,
-        &Schema::new(
-            Query,
-            EmptyMutation::new(),
-            EmptySubscription::new(),
-        ),
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &Variables::new(),
         &(),
     )

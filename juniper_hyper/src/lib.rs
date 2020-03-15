@@ -124,7 +124,7 @@ pub async fn playground(graphql_endpoint: &str) -> Result<Response<Body>, hyper:
     let mut resp = new_html_response(StatusCode::OK);
     *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
         graphql_endpoint,
-        None
+        None,
     ));
     Ok(resp)
 }

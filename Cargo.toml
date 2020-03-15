@@ -11,16 +11,13 @@ members = [
   "juniper_rocket",
   "juniper_subscriptions",
   "juniper_warp",
-
-  "examples/warp_subscriptions",
 ]
 exclude = [
   "docs/book/tests",
   # TODO enable warp
   "juniper_warp",
   "examples/warp_async",
-#  todo: exclude
-#   "examples/warp_subscriptions",
+   "examples/warp_subscriptions",
   # TODO enable async tests
   "juniper_rocket_async",
 ]

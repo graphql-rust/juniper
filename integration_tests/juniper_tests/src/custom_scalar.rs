@@ -5,8 +5,9 @@ use futures;
 use juniper::{
     execute,
     parser::{ParseError, ScalarToken, Spanning, Token},
-    serde::de, EmptyMutation, EmptySubscription, InputValue, Object, ParseScalarResult,
-    RootNode, ScalarValue, Value, Variables,
+    serde::de,
+    EmptyMutation, EmptySubscription, InputValue, Object, ParseScalarResult, RootNode, ScalarValue,
+    Value, Variables,
 };
 use std::fmt;
 

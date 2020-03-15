@@ -570,13 +570,11 @@ mod tests {
     }
 
     fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite()
-            .manage(Database::new())
-            .manage(Schema::new(
-                Query,
-                EmptyMutation::<Database>::new(),
-                EmptySubscription::<Database>::new()
-            ))
+        rocket::ignite().manage(Database::new()).manage(Schema::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ))
     }
 
     fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {

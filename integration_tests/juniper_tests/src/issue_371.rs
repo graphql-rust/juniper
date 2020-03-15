@@ -82,11 +82,7 @@ async fn countries() {
     let (_, errors) = juniper::execute(
         query,
         None,
-        &Schema::new(
-            Query,
-            EmptyMutation::new(),
-            EmptySubscription::new(),
-        ),
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &juniper::Variables::new(),
         &ctx,
     )

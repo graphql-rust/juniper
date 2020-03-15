@@ -128,7 +128,6 @@ impl Subscription {
         Box::pin(futures::stream::once(async { WithContext }))
     }
 
-    //todo: with explicit lifetime
     async fn with_implicit_lifetime_child(&self) -> Stream<WithLifetime<'_>> {
         Box::pin(futures::stream::once(async {
             WithLifetime { value: "blub" }

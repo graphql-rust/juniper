@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, graphql_subscription, DefaultScalarValue,
-    ExecutionError, FieldError, GraphQLEnum, Value, Variables,
+    graphql_object, graphql_subscription, DefaultScalarValue, ExecutionError, FieldError,
+    GraphQLEnum, Value, Variables,
 };
 
 pub type QueryResult = Result<
