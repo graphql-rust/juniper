@@ -148,10 +148,13 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
 }
 
 /// Generate an HTML page containing GraphQL Playground
-pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
+pub fn playground_source(
+    graphql_endpoint_url: &str,
+    subscriptions_endpoint: Option<&str>,
+) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
-        None,
+        subscriptions_endpoint,
     ))
 }
 
