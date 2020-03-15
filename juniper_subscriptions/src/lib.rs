@@ -242,28 +242,26 @@ where
 
 #[cfg(test)]
 mod whole_responses_stream {
-    use futures::{stream, StreamExt as _};
-    use juniper::{DefaultScalarValue, FieldError, ExecutionError};
     use super::*;
+    use futures::{stream, StreamExt as _};
+    use juniper::{DefaultScalarValue, ExecutionError, FieldError};
 
     #[tokio::test]
     async fn with_error() {
-        let expected = vec![
-            GraphQLResponse::<DefaultScalarValue>::error(FieldError::new(
-                "field error",
-                Value::Null,
-            ))
-        ];
+        let expected = vec![GraphQLResponse::<DefaultScalarValue>::error(
+            FieldError::new("field error", Value::Null),
+        )];
         let expected = serde_json::to_string(&expected).unwrap();
 
-        let result = whole_responses_stream::<DefaultScalarValue>(Value::Null, vec![
-            ExecutionError::at_origin(FieldError::new(
+        let result = whole_responses_stream::<DefaultScalarValue>(
+            Value::Null,
+            vec![ExecutionError::at_origin(FieldError::new(
                 "field error",
                 Value::Null,
-            ))
-        ])
-            .collect::<Vec<_>>()
-            .await;
+            ))],
+        )
+        .collect::<Vec<_>>()
+        .await;
         let result = serde_json::to_string(&result).unwrap();
 
         assert_eq!(result, expected);

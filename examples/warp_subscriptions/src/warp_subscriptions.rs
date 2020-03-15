@@ -13,10 +13,10 @@ use std::{
 };
 
 use futures::{channel::mpsc, stream::StreamExt as _, Future};
-use serde::{Deserialize, Serialize};
-use warp::ws::Message;
 use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
 use juniper_subscriptions::Coordinator;
+use serde::{Deserialize, Serialize};
+use warp::ws::Message;
 
 /// Listen to incoming messages and do one of the following:
 ///  - execute subscription and return values from stream
@@ -40,11 +40,10 @@ where
     let (ws_tx, ws_rx) = mpsc::unbounded();
     tokio::task::spawn(
         ws_rx
-            .take_while(|v: &Option<_>| { futures::future::ready(v.is_some()) })
+            .take_while(|v: &Option<_>| futures::future::ready(v.is_some()))
             .map(|x| x.unwrap())
-            .forward(sink_tx)
+            .forward(sink_tx),
     );
-
 
     let context = Arc::new(context);
     let got_close_signal = Arc::new(AtomicBool::new(false));
@@ -79,12 +78,11 @@ where
                     let payload = request.payload.expect("Could not deserialize payload");
                     let request_id = request.id.unwrap_or("1".to_owned());
 
-                    let graphql_request =
-                        GraphQLRequest::<S>::new(
-                            payload.query.expect("Could not deserialize query"),
-                            None,
-                            payload.variables
-                        );
+                    let graphql_request = GraphQLRequest::<S>::new(
+                        payload.query.expect("Could not deserialize query"),
+                        None,
+                        payload.variables,
+                    );
 
                     let values_stream =
                         match coordinator.subscribe(&graphql_request, &context).await {
@@ -101,8 +99,8 @@ where
                                     r#"{{"type":"complete","id":"{}","payload":null}}"#,
                                     request_id
                                 );
-                                let _ = ws_tx
-                                    .unbounded_send(Some(Ok(Message::text(close_message))));
+                                let _ =
+                                    ws_tx.unbounded_send(Some(Ok(Message::text(close_message))));
                                 // close channel
                                 let _ = ws_tx.unbounded_send(None);
                                 return;

@@ -115,14 +115,14 @@ extern crate bson;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_object, graphql_subscription, graphql_union, GraphQLEnum, GraphQLInputObject,
-    GraphQLObject, GraphQLScalarValue,
+    graphql_object, graphql_subscription, graphql_union, GraphQLEnum,
+    GraphQLInputObject, GraphQLObject, GraphQLScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    graphql_object_internal, graphql_union_internal, GraphQLEnumInternal,
+    graphql_object_internal, graphql_subscription_internal, graphql_union_internal, GraphQLEnumInternal,
     GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
 
@@ -169,21 +169,19 @@ pub use crate::{
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, Variables,
-        ValuesStream,
+        LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
+    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
     schema::{meta, model::RootNode},
     types::{
+        async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
         scalars::{EmptyMutation, EmptySubscription, ID},
-        async_await::GraphQLTypeAsync,
         subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
-
-    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
 };
 
 /// A pinned, boxed future that can be polled.

@@ -11,10 +11,10 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     ast::InputValue,
-    executor::ExecutionError,
+    executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
-    executor::ValuesStream, GraphQLSubscriptionType, GraphQLTypeAsync,
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType,
+    GraphQLTypeAsync, RootNode, Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -125,17 +125,7 @@ where
 /// specified schema and context.
 /// This is a wrapper around `resolve_into_stream` function exposed at the top
 /// level of this crate.
-pub async fn resolve_into_stream<
-    'req,
-    'rn,
-    'ctx,
-    'a,
-    CtxT,
-    QueryT,
-    MutationT,
-    SubscriptionT,
-    S
->(
+pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,
     root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     context: &'ctx CtxT,
@@ -173,10 +163,7 @@ where
     S: ScalarValue,
 {
     /// Constructs new `GraphQLResponse` using the given result
-    pub fn from_result(
-        r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>)
-    -> Self
-    {
+    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
         Self(r)
     }
 

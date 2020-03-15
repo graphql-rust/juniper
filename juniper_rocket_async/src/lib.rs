@@ -63,7 +63,7 @@ use futures::future::{FutureExt, TryFutureExt};
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 enum GraphQLBatchRequest<S = DefaultScalarValue>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Sync + Send,
 {
     Single(http::GraphQLRequest<S>),
     Batch(Vec<http::GraphQLRequest<S>>),
@@ -73,7 +73,7 @@ where
 #[serde(untagged)]
 enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Sync + Send,
 {
     Single(http::GraphQLResponse<'a, S>),
     Batch(Vec<http::GraphQLResponse<'a, S>>),
@@ -183,7 +183,7 @@ pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue + Sync + Send,
 {
     /// Execute an incoming GraphQL query
     pub fn execute<CtxT, QueryT, MutationT>(

@@ -11,8 +11,8 @@ use crate::{
     ExecutionError, Executor, Selection, Variables,
 };
 
-/// [`Executor`] owning all its variables.
-/// To be used after [`Executor`] was destroyed.
+/// [`Executor`] owning all its variables. Can be used after [`Executor`] was
+/// destroyed.
 pub struct OwnedExecutor<'a, CtxT, S> {
     pub(super) fragments: HashMap<&'a str, Fragment<'a, S>>,
     pub(super) variables: Variables<S>,

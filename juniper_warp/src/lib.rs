@@ -41,15 +41,12 @@ Check the LICENSE file for details.
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
 use std::{pin::Pin, sync::Arc};
-
-// TODO#433: update this once juniper subscriptions' implementation is finished
-
 use futures::future::poll_fn;
-
-use futures03::{future::FutureExt as _, Future};
 use serde::Deserialize;
 
 use warp::{filters::BoxedFilter, Filter};
+
+use futures03::future::{FutureExt as _, Future};
 
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 
@@ -66,7 +63,7 @@ where
 
 impl<S> GraphQLBatchRequest<S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue,
 {
     pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
@@ -168,7 +165,6 @@ where
 /// # use juniper::{EmptyMutation, RootNode};
 /// # use juniper_warp::make_graphql_filter;
 /// #
-/// # fn main() {
 /// type UserId = String;
 /// # #[derive(Debug)]
 /// struct AppState(Vec<i64>);
@@ -176,7 +172,7 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[juniper::object(
+/// #[juniper::graphql_object(
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {
@@ -208,7 +204,6 @@ where
 /// let graphql_endpoint = warp::path("graphql")
 ///     .and(warp::post())
 ///     .and(graphql_filter);
-/// # }
 /// ```
 pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
@@ -216,13 +211,12 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
-    Context: Send + 'static,
+    Context: Send + Sync + 'static,
     Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Context: Send + Sync,
 {
-    use futures::future::Future;
+    use futures::future::Future as _;
 
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
@@ -291,8 +285,7 @@ where
     get_filter.or(post_filter).unify().boxed()
 }
 
-/// Make a filter for asynchronous graphql endpoint.
-/// Accepts GET and POST requests.
+/// Make a filter for asynchronous graphql queries/mutations.
 pub fn make_graphql_filter_async<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
     context_extractor: BoxedFilter<(Context,)>,
@@ -417,9 +410,7 @@ type Response = Pin<
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #
-/// # fn main() {
 /// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql"));
-/// # }
 /// ```
 pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,
@@ -432,7 +423,7 @@ pub fn graphiql_filter(
 fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response<Vec<u8>> {
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
-        .body(juniper::http::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
+        .body(juniper::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
         .expect("response is valid")
 }
 
@@ -464,9 +455,8 @@ fn playground_response(
 
 #[cfg(test)]
 mod tests {
-    use warp::{http, test::request};
-
     use super::*;
+    use warp::{http, test::request};
 
     #[test]
     fn graphiql_response_does_not_panic() {
@@ -549,7 +539,7 @@ mod tests {
     fn graphql_handler_works_json_post() {
         use juniper::{
             tests::{model::Database, schema::Query},
-            EmptyMutation, RootNode,
+            EmptyMutation, EmptySubscription, RootNode,
         };
 
         type Schema =
@@ -633,15 +623,13 @@ mod tests {
 
 #[cfg(test)]
 mod tests_http_harness {
-    use warp::{self, Filter};
-
+    use super::*;
     use juniper::{
         http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
         tests::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
-
-    use super::*;
+    use warp::{self, Filter};
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;

@@ -87,23 +87,6 @@ impl<S> Object<S> {
             }
         }
     }
-
-    /// Creates Object out of iterator over `(K, Option<Value<S>>)`.
-    /// If any of returned values are `None`, then `None` is returned instead
-    /// of an Object.
-    pub fn try_from_iter<I, K>(iter: I) -> Option<Self>
-    where
-        I: IntoIterator<Item = (K, Option<Value<S>>)>,
-        K: Into<String>,
-    {
-        Some(Self {
-            key_value_list: iter
-                .into_iter()
-                .map(|(k, v)| v.map(|v| (k.into(), v)))
-                .take_while(|x| x.is_some())
-                .collect::<Option<Vec<_>>>()?,
-        })
-    }
 }
 
 impl<S> IntoIterator for Object<S> {

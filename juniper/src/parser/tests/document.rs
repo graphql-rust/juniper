@@ -15,8 +15,7 @@ where
 {
     parse_document_source(
         s,
-        &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>
-            (&(), &(), &()),
+        &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
     )
     .expect(&format!("Parse error on input {:#?}", s))
 }
@@ -27,8 +26,7 @@ where
 {
     match parse_document_source::<S>(
         s,
-        &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>
-            (&(), &(), &()),
+        &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
     ) {
         Ok(doc) => panic!("*No* parse error on input {:#?} =>\n{:#?}", s, doc),
         Err(err) => err,
