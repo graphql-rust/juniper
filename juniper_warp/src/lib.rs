@@ -501,7 +501,7 @@ mod tests {
     fn playground_endpoint_matches() {
         let filter = warp::get()
             .and(warp::path("playground"))
-            .and(playground_filter("/graphql"));
+            .and(playground_filter("/graphql", None));
         let result = request()
             .method("GET")
             .path("/playground")
@@ -516,7 +516,7 @@ mod tests {
         let filter = warp::get()
             .and(warp::path("dogs-api"))
             .and(warp::path("playground"))
-            .and(playground_filter("/dogs-api/graphql"));
+            .and(playground_filter("/dogs-api/graphql", None));
         let response = request()
             .method("GET")
             .path("/dogs-api/playground")

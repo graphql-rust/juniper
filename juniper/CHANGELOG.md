@@ -33,6 +33,10 @@ See [#419](https://github.com/graphql-rust/juniper/pull/419).
   
 - Add subscription type to `RootNode`
 
+- Add subscription endpoint to `playground_source()`
+
+ 
+
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 
 - Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
