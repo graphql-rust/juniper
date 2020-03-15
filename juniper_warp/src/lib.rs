@@ -40,13 +40,13 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-use std::{pin::Pin, sync::Arc};
 use futures::future::poll_fn;
 use serde::Deserialize;
+use std::{pin::Pin, sync::Arc};
 
 use warp::{filters::BoxedFilter, Filter};
 
-use futures03::future::{FutureExt as _, Future};
+use futures03::future::{Future, FutureExt as _};
 
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 

@@ -1,13 +1,11 @@
 use std::{iter, iter::FromIterator as _, pin::Pin};
 
-use juniper_codegen::GraphQLObjectInternal;
 use futures::{self, StreamExt as _};
+use juniper_codegen::GraphQLObjectInternal;
 
 use crate::{
-    Context, ExecutionError, FieldError,
-    DefaultScalarValue, EmptyMutation, Object, RootNode, Value,
-    http::GraphQLRequest,
-
+    http::GraphQLRequest, Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError,
+    Object, RootNode, Value,
 };
 
 #[derive(Debug, Clone)]

@@ -90,8 +90,8 @@ where
     /// The default implementation panics.
     fn resolve_field_into_stream<'s, 'i, 'ft, 'args, 'e, 'ref_e, 'res, 'f>(
         &'s self,
-        _: &'i Self::TypeInfo,     // this subscription's type info
-        _: &'ft str,                // field's type name
+        _: &'i Self::TypeInfo,  // this subscription's type info
+        _: &'ft str,            // field's type name
         _: Arguments<'args, S>, // field's arguments
         _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
                                                            // with current field's selection set)

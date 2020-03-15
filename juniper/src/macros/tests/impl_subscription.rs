@@ -55,7 +55,6 @@ impl Mutation {
     }
 }
 
-
 type Stream<I> = Pin<Box<dyn futures::Stream<Item = I> + Send>>;
 
 #[derive(Default)]
@@ -73,95 +72,67 @@ impl Subscription {
     #[graphql(description = "With Self Description")]
     async fn with_self(&self) -> Stream<bool> {
         let b = self.b;
-        Box::pin(futures::stream::once(
-            async move { b }
-        ))
+        Box::pin(futures::stream::once(async move { b }))
     }
 
     async fn independent() -> Stream<i32> {
-        Box::pin(futures::stream::once(
-            async { 100 }
-        ))
+        Box::pin(futures::stream::once(async { 100 }))
     }
 
     async fn with_executor(_exec: &Executor<Context>) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
+        Box::pin(futures::stream::once(async { true }))
     }
 
     async fn with_executor_and_self(&self, _exec: &Executor<Context>) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
+        Box::pin(futures::stream::once(async { true }))
     }
 
     async fn with_context(_context: &Context) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
+        Box::pin(futures::stream::once(async { true }))
     }
 
     async fn with_context_and_self(&self, _context: &Context) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
+        Box::pin(futures::stream::once(async { true }))
     }
 
     #[graphql(name = "renamed")]
     async fn has_custom_name() -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
-
+        Box::pin(futures::stream::once(async { true }))
     }
 
     #[graphql(description = "attr")]
     async fn has_description_attr() -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
+        Box::pin(futures::stream::once(async { true }))
     }
 
     /// Doc description
     async fn has_description_doc_comment() -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async { true }
-        ))
+        Box::pin(futures::stream::once(async { true }))
     }
 
     async fn has_argument(arg1: bool) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async move { arg1 }
-        ))
-
+        Box::pin(futures::stream::once(async move { arg1 }))
     }
 
     #[graphql(arguments(default_arg(default = true)))]
     async fn default_argument(default_arg: bool) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async move { default_arg }
-        ))
+        Box::pin(futures::stream::once(async move { default_arg }))
     }
 
     #[graphql(arguments(arg(description = "my argument description")))]
     async fn arg_with_description(arg: bool) -> Stream<bool> {
-        Box::pin(futures::stream::once(
-            async move { arg }
-        ))
+        Box::pin(futures::stream::once(async move { arg }))
     }
 
     async fn with_context_child(&self) -> Stream<WithContext> {
-        Box::pin(futures::stream::once(
-            async { WithContext }
-        ))
+        Box::pin(futures::stream::once(async { WithContext }))
     }
 
     //todo: with explicit lifetime
     async fn with_implicit_lifetime_child(&self) -> Stream<WithLifetime<'_>> {
-        Box::pin(futures::stream::once(
-            async { WithLifetime { value: "blub" } }
-        ))
+        Box::pin(futures::stream::once(async {
+            WithLifetime { value: "blub" }
+        }))
     }
 
     async fn with_mut_arg(mut arg: bool) -> Stream<bool> {
@@ -169,26 +140,17 @@ impl Subscription {
             arg = !arg;
         }
 
-        Box::pin(futures::stream::once(
-            async move { arg }
-        ))
+        Box::pin(futures::stream::once(async move { arg }))
     }
 
     async fn without_type_alias() -> Pin<Box<dyn futures::Stream<Item = &str> + Send>> {
-        Box::pin(futures::stream::once(
-            async { "abc" }
-        ))
+        Box::pin(futures::stream::once(async { "abc" }))
     }
 }
 
 #[tokio::test]
 async fn object_introspect() {
-    let res = util::run_info_query::<
-        Query,
-        Mutation,
-        Subscription,
-        Context
-    >("Subscription").await;
+    let res = util::run_info_query::<Query, Mutation, Subscription, Context>("Subscription").await;
     assert_eq!(
         res,
         crate::graphql_value!({
@@ -343,16 +305,10 @@ async fn object_query() {
     );
     let vars = std::collections::HashMap::new();
 
-    let (stream_val, errs) = crate::resolve_into_stream(
-        doc,
-        None,
-        &schema,
-        &vars,
-        &Context {
-            flag1: true
-        })
-        .await
-        .expect("Execution failed");
+    let (stream_val, errs) =
+        crate::resolve_into_stream(doc, None, &schema, &vars, &Context { flag1: true })
+            .await
+            .expect("Execution failed");
 
     let result = if let Value::Object(obj) = stream_val {
         let mut result = Vec::new();
@@ -363,8 +319,7 @@ async fn object_query() {
             }
         }
         result
-    }
-    else {
+    } else {
         panic!("Expected to get Value::Object ")
     };
 
@@ -382,8 +337,14 @@ async fn object_query() {
             ("hasArgument".to_string(), graphql_value!(true)),
             ("defaultArgument".to_string(), graphql_value!(true)),
             ("argWithDescription".to_string(), graphql_value!(true)),
-            ("withContextChild".to_string(), graphql_value!({"ctx": true})),
-            ("withImplicitLifetimeChild".to_string(), graphql_value!({ "value": "blub" })),
+            (
+                "withContextChild".to_string(),
+                graphql_value!({"ctx": true})
+            ),
+            (
+                "withImplicitLifetimeChild".to_string(),
+                graphql_value!({ "value": "blub" })
+            ),
             ("withMutArg".to_string(), graphql_value!(false)),
             ("withoutTypeAlias".to_string(), graphql_value!("abc")),
         ]

@@ -13,8 +13,8 @@ use crate::{
     ast::InputValue,
     executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType,
-    GraphQLTypeAsync, RootNode, Value, Variables,
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
+    Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -99,7 +99,7 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub async fn execute<'a, CtxT, QueryT, MutationT>(
+    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
