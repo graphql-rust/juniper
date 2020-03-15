@@ -2,8 +2,8 @@ use crate::{
     http::{GraphQLRequest, GraphQLResponse},
     parser::Spanning,
     types::base::{is_excluded, merge_key_into},
-    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue,
-    Selection, Value, ValuesStream,
+    Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value,
+    ValuesStream,
 };
 
 /// Global subscription coordinator. Keeps track of opened connections and spawns
@@ -88,19 +88,22 @@ where
     /// `Value<ValuesStream<S>>`.
     ///
     /// The default implementation panics.
-    fn resolve_field_into_stream<'args, 'e, 'ref_e, 'res, 'f>(
-        &self,
-        _: &Self::TypeInfo,     // this subscription's type info
-        _: &str,                // field's type name
+    fn resolve_field_into_stream<'s, 'i, 'ft, 'args, 'e, 'ref_e, 'res, 'f>(
+        &'s self,
+        _: &'i Self::TypeInfo,     // this subscription's type info
+        _: &'ft str,                // field's type name
         _: Arguments<'args, S>, // field's arguments
         _: &'ref_e Executor<'ref_e, 'e, Self::Context, S>, // field's executor (subscription's sub-executor
                                                            // with current field's selection set)
     ) -> BoxFuture<'f, Result<Value<ValuesStream<'res, S>>, FieldError<S>>>
     where
-        'e: 'res,
+        's: 'f,
+        'i: 'res,
+        'ft: 'f,
         'args: 'f,
         'ref_e: 'f,
         'res: 'f,
+        'e: 'res,
     {
         panic!("resolve_field_into_stream must be implemented");
     }
@@ -142,17 +145,7 @@ where
 // Wrapper function around `resolve_selection_set_into_stream_recursive`.
 // This wrapper is necessary because async fns can not be recursive.
 // Panics if executor's current selection set is None
-pub(crate) fn resolve_selection_set_into_stream<
-    'i,
-    'inf,
-    'ref_e,
-    'e,
-    'res,
-    'fut,
-    T,
-    CtxT,
-    S
->(
+pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,

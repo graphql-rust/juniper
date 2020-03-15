@@ -1,16 +1,14 @@
+use std::{iter, iter::FromIterator as _, pin::Pin};
+
 use juniper_codegen::GraphQLObjectInternal;
+use futures::{self, StreamExt as _};
 
-use crate::{Context, ExecutionError, FieldError, FieldResult, SubscriptionCoordinator, SubscriptionConnection, ExecutionResult};
-use futures::{self, stream::StreamExt as _, StreamExt};
-use juniper_codegen::graphql_subscription_internal;
+use crate::{
+    Context, ExecutionError, FieldError,
+    DefaultScalarValue, EmptyMutation, Object, RootNode, Value,
+    http::GraphQLRequest,
 
-use crate::{http::GraphQLRequest, DefaultScalarValue, EmptyMutation, Object, RootNode, Value};
-
-use super::*;
-use std::pin::Pin;
-use crate::http::GraphQLResponse;
-use std::iter::FromIterator as _;
-use std::iter;
+};
 
 #[derive(Debug, Clone)]
 pub struct MyContext(i32);
@@ -43,7 +41,7 @@ type HumanStream = Pin<Box<dyn futures::Stream<Item = Human> + Send>>;
 
 struct MySubscription;
 
-#[graphql_subscription_internal(context = MyContext)]
+#[crate::graphql_subscription_internal(context = MyContext)]
 impl MySubscription {
     async fn async_human() -> HumanStream {
         Box::pin(futures::stream::once(async {
@@ -98,19 +96,13 @@ fn create_and_execute(
 > {
     let request = GraphQLRequest::new(query, None, None);
 
-    let root_node = AsyncSchema::new(
-        MyQuery,
-        EmptyMutation::new(),
-        MySubscription
-    );
+    let root_node = AsyncSchema::new(MyQuery, EmptyMutation::new(), MySubscription);
 
-    let mut context = MyContext(2);
+    let context = MyContext(2);
 
     let response = run(crate::http::resolve_into_stream(
-            &request,
-            &root_node,
-            &context
-        ));
+        &request, &root_node, &context,
+    ));
 
     assert!(response.is_ok());
 
@@ -166,25 +158,22 @@ fn returns_requested_object() {
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
     let mut iterator_count = 0;
-    let expected_values = vec![vec![Ok(
-        Value::Object(Object::from_iter(std::iter::from_fn(
-
-            move || {
-                iterator_count += 1;
-                match iterator_count {
-                    1 => Some((
-                        "id",
-                        Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                    )),
-                    2 => Some((
-                        "name",
-                        Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
-                    )),
-                    _ => None,
-                }
-            },
-        ))
-    ))]];
+    let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(
+        std::iter::from_fn(move || {
+            iterator_count += 1;
+            match iterator_count {
+                1 => Some((
+                    "id",
+                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
+                )),
+                2 => Some((
+                    "name",
+                    Value::Scalar(DefaultScalarValue::String("stream name".to_string())),
+                )),
+                _ => None,
+            }
+        }),
+    )))]];
 
     assert_eq!(names, vec!["asyncHuman"]);
     assert_eq!(collected_values, expected_values);
@@ -290,20 +279,18 @@ fn resolves_nontyped_inline_fragments() {
     let (names, collected_values) = create_and_execute(query).expect("Got error from stream");
 
     let mut iterator_count = 0;
-    let expected_values = vec![vec![
-        Ok(Value::Object(Object::from_iter(iter::from_fn(
-            move || {
-                iterator_count += 1;
-                match iterator_count {
-                    1 => Some((
-                        "id",
-                        Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
-                    )),
-                    _ => None,
-                }
-            },
-        ))))
-    ]];
+    let expected_values = vec![vec![Ok(Value::Object(Object::from_iter(iter::from_fn(
+        move || {
+            iterator_count += 1;
+            match iterator_count {
+                1 => Some((
+                    "id",
+                    Value::Scalar(DefaultScalarValue::String("stream id".to_string())),
+                )),
+                _ => None,
+            }
+        },
+    ))))]];
 
     assert_eq!(names, vec!["asyncHuman"]);
     assert_eq!(collected_values, expected_values);

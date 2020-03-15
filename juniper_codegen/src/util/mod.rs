@@ -1222,17 +1222,17 @@ impl GraphQLTypeDefiniton {
             }
         );
 
-        let async_subscription_implementation = quote!(
+        let subscription_implementation = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics_tokens
             #where_clause
             {
                 #[allow(unused_variables)]
                 fn resolve_field_into_stream<
-                    'args, 'e, 'ref_e, 'res, 'f,
+                    's, 'i, 'fi, 'args, 'e, 'ref_e, 'res, 'f,
                 >(
-                    &self,
-                    info: &Self::TypeInfo,
-                    field_name: &str,
+                    &'s self,
+                    info: &'i Self::TypeInfo,
+                    field_name: &'fi str,
                     args: #juniper_crate_name::Arguments<'args, #scalar>,
                     executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
@@ -1244,6 +1244,9 @@ impl GraphQLTypeDefiniton {
                         > + Send + 'f
                     >>
                     where
+                        's: 'f,
+                        'i: 'res,
+                        'fi: 'f,
                         'e: 'res,
                         'args: 'f,
                         'ref_e: 'f,
@@ -1264,7 +1267,7 @@ impl GraphQLTypeDefiniton {
 
         quote!(
             #graphql_implementation
-            #async_subscription_implementation
+            #subscription_implementation
         )
     }
 }
