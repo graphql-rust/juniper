@@ -18,8 +18,8 @@ failure = "0.1.2"
 # TODO: rebase juniper_warp to futures 3 once warp supports it
 futures = "0.1.29"
 serde = "1.0.75"
-tokio-threadpool = "0.1.16"
 tokio = { version = "0.2", features = ["blocking", "fs", "stream", "sync", "time"] }
+tokio-threadpool = "0.1.16"
 
 futures03 = { version = "0.3.1", package = "futures", features = ["compat"] }
 

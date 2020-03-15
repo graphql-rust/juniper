@@ -1,6 +1,5 @@
 // Wrapper macros which allows built-in macros to be recognized as "crate-local"
-// and helper traits for #[juniper::graphql_subscription] macro not to recompile
-// them in every impl.
+// and helper traits for #[juniper::graphql_subscription] macro.
 
 #[macro_use]
 mod common;
@@ -8,7 +7,8 @@ mod common;
 mod interface;
 #[macro_use]
 mod scalar;
-pub mod subscription_helpers;
 
 #[cfg(test)]
 mod tests;
+
+pub mod subscription_helpers;

@@ -1,7 +1,11 @@
-//! This crate supplies [`SubscriptionCoordinator`] and [`SubscriptionConnection`] implementations
-//! for the [juniper](https://github.com/graphql-rust/juniper) crate.
+//! This crate supplies [`SubscriptionCoordinator`] and
+//! [`SubscriptionConnection`] implementations for the
+//! [juniper](https://github.com/graphql-rust/juniper) crate.
 //!
 //! You need both this and `juniper` crate.
+//!
+//! [`SubscriptionCoordinator`]: juniper::SubscriptionCoordinator
+//! [`SubscriptionConnection`]: juniper::SubscriptionConnection
 
 #![deny(missing_docs)]
 #![deny(warnings)]
@@ -9,15 +13,16 @@
 
 use std::{borrow::BorrowMut as _, iter::FromIterator, pin::Pin};
 
+use futures::{task::Poll, Stream};
 use juniper::{
     http::{GraphQLRequest, GraphQLResponse},
     BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
     ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream,
 };
 
-use futures::{task::Poll, Stream};
-
-/// [`SubscriptionCoordinator`] implementation
+/// Simple [`SubscriptionCoordinator`] implementation:
+/// - contains the schema
+/// - handles subscription start
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -81,7 +86,17 @@ where
     }
 }
 
-/// Connection implementing [`SubscriptionConnection`].
+/// Simple [`SubscriptionConnection`] implementation.
+///
+/// Resolves `Value<ValuesStream>` into `Stream<Item = GraphQLResponse>` using the following
+/// logic:
+///
+/// [`Value::Null`] - returns [`Value::Null`] once
+/// [`Value::Scalar`] - returns `Ok` value or [`Value::Null`] and errors vector
+/// [`Value::List`] - resolves each stream from the list using current logic and returns
+///                   values in the order received
+/// [`Value::Object`] - waits while each field of the [`Object`] is returned, then yields the whole object
+/// `Value::Object<Value::Object<_>>` - returns [`Value::Null`] if [`Value::Object`] consists of sub-objects
 pub struct Connection<'a, S> {
     stream: Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>,
 }

@@ -6,15 +6,31 @@ use crate::{
     ValuesStream,
 };
 
-/// Global subscription coordinator. Keeps track of opened connections and spawns
-/// [`SubscriptionConnection`]s for every subscription request.
+/// Global subscription coordinator trait.
 ///
-/// `'a` is how long spawned connections live for
+/// With regular queries we could get away with not having some in-between
+/// layer, but for subscriptions it is needed, otherwise the integration crates
+/// can become really messy and cumbersome to maintain. Subscriptions are also
+/// quite a bit more stability sensitive than regular queries, they provide a
+/// great vector for DOS attacks and can bring down a server easily if not
+/// handled right.
+///
+/// This trait implementation might include the following features:
+///  - contains the schema
+///  - keeps track of subscription connections
+///  - handles subscription start, maintains a global subscription id
+///  - max subscription limits / concurrency limits
+///  - subscription de-duplication
+///  - reconnection on connection loss / buffering / re-synchronisation
+///
+///
+/// `'a` is how long spawned connections live for.
 pub trait SubscriptionCoordinator<'a, CtxT, S>
 where
     S: ScalarValue,
 {
-    /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`] returns
+    /// Type of [`SubscriptionConnection`]s this [`SubscriptionCoordinator`]
+    /// returns
     type Connection: SubscriptionConnection<'a, S>;
 
     /// Type of error while trying to spawn [`SubscriptionConnection`]
@@ -28,16 +44,27 @@ where
     ) -> BoxFuture<'a, Result<Self::Connection, Self::Error>>;
 }
 
-/// Subscription connection. Can be used as a [`futures::Stream`] yielding [`GraphQLResponse`]s.
+/// Single subscription connection.
+///
+/// This trait implementation might:
+/// - hold schema + context
+/// - process subscribe, unsubscribe
+/// - unregister from coordinator upon close/shutdown
+/// - connection-local + global de-duplication, talk to coordinator
+/// - concurrency limits
+/// - machinery with coordinator to allow reconnection
+///
+/// It can be treated as [`futures::Stream`] yielding [`GraphQLResponse`]s in
+/// server integration crates.
 pub trait SubscriptionConnection<'a, S>: futures::Stream<Item = GraphQLResponse<'a, S>> {}
 
 /**
- This trait replaces GraphQLType`'s resolver logic with asynchronous subscription execution logic.
- It should be used with `GraphQLType` in order to implement subscription resolvers on GraphQL
- objects.
+ This trait adds resolver logic with asynchronous subscription execution logic
+ on GraphQL types. It should be used with `GraphQLType` in order to implement
+ subscription resolvers on GraphQL objects.
 
- Asynchronous subscription-related convenience macros expand into an
- implementation of this trait and `GraphQLType` for the given type.
+ Subscription-related convenience macros expand into an implementation of this
+ trait and `GraphQLType` for the given type.
 
  See trait methods for more detailed explanation on how this trait works.
 */
@@ -56,8 +83,8 @@ where
     /// needs to be resolved and `resolve_into_type_stream` every time a
     /// fragment needs to be resolved.
     ///
-    /// For non-object types, the selection set will be `None`
-    /// and default implementation will panic.
+    /// For non-object types, the selection set will be `None` and default
+    /// implementation will panic.
     fn resolve_into_stream<'s, 'i, 'ref_e, 'e, 'res, 'f>(
         &'s self,
         info: &'i Self::TypeInfo,
@@ -108,8 +135,8 @@ where
         panic!("resolve_field_into_stream must be implemented");
     }
 
-    /// It is called by Self's `resolve_into_stream` default implementation
-    /// every time any fragment is found in selection set.
+    /// This method is called by Self's `resolve_into_stream` default
+    /// implementation every time any fragment is found in selection set.
     ///
     /// It replaces `GraphQLType::resolve_into_type`.
     /// Unlike `resolve_into_type`, which resolves each fragment
@@ -142,9 +169,9 @@ where
     }
 }
 
-// Wrapper function around `resolve_selection_set_into_stream_recursive`.
-// This wrapper is necessary because async fns can not be recursive.
-// Panics if executor's current selection set is None
+/// Wrapper function around `resolve_selection_set_into_stream_recursive`.
+/// This wrapper is necessary because async fns can not be recursive.
+/// Panics if executor's current selection set is None.
 pub(crate) fn resolve_selection_set_into_stream<'i, 'inf, 'ref_e, 'e, 'res, 'fut, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
@@ -168,8 +195,8 @@ where
 }
 
 /// Selection set default resolver logic.
-/// Returns `Value::Null` if cannot keep resolving. Otherwise pushes
-/// errors to `Executor`.
+/// Returns `Value::Null` if cannot keep resolving. Otherwise pushes errors to
+/// `Executor`.
 async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res, T, CtxT, S>(
     instance: &'i T,
     info: &'inf T::TypeInfo,
