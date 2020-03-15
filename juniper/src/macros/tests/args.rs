@@ -23,7 +23,7 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObject, Debug)]
 struct Point {
     x: i32,
 }
@@ -33,28 +33,28 @@ impl Root {
     fn simple() -> i32 {
         0
     }
-    fn exec_arg(executor: &Executor) -> i32 {
+    fn exec_arg(_executor: &Executor) -> i32 {
         0
     }
-    fn exec_arg_and_more(executor: &Executor, arg: i32) -> i32 {
-        0
+    fn exec_arg_and_more(_executor: &Executor, arg: i32) -> i32 {
+        arg
     }
 
     fn single_arg(arg: i32) -> i32 {
-        0
+        arg
     }
 
     fn multi_args(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     fn multi_args_trailing_comma(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(arg(description = "The arg")))]
     fn single_arg_descr(arg: i32) -> i32 {
-        0
+        arg
     }
 
     #[graphql(arguments(
@@ -62,7 +62,7 @@ impl Root {
         arg2(description = "The second arg")
     ))]
     fn multi_args_descr(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(
@@ -70,7 +70,7 @@ impl Root {
         arg2(description = "The second arg")
     ))]
     fn multi_args_descr_trailing_comma(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     // TODO: enable once [parameter attributes are supported by proc macros]
@@ -87,22 +87,22 @@ impl Root {
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
-        0
+        arg
     }
 
     #[graphql(arguments(arg1(default = 123,), arg2(default = 456,)))]
     fn multi_args_with_default(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(arg1(default = 123,), arg2(default = 456,),))]
     fn multi_args_with_default_trailing_comma(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(arg(default = 123, description = "The arg")))]
     fn arg_with_default_descr(arg: i32) -> i32 {
-        0
+        arg
     }
 
     #[graphql(arguments(
@@ -110,7 +110,7 @@ impl Root {
         arg2(default = 456, description = "The second arg")
     ))]
     fn multi_args_with_default_descr(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(
@@ -118,7 +118,7 @@ impl Root {
         arg2(default = 456, description = "The second arg",)
     ))]
     fn multi_args_with_default_trailing_comma_descr(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(
@@ -134,6 +134,8 @@ impl Root {
         ),
     )]
     fn args_with_complex_default(arg1: String, arg2: Point) -> i32 {
+        let _ = arg1;
+        let _ = arg2;
         0
     }
 }

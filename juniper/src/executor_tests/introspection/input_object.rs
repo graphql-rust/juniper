@@ -1,3 +1,5 @@
+#![deny(unused_variables)]
+
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
 use crate::{
@@ -10,13 +12,13 @@ use crate::{
 
 struct Root;
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObject, Debug)]
 struct DefaultName {
     field_one: String,
     field_two: String,
 }
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObject, Debug)]
 struct NoTrailingComma {
     field_one: String,
     field_two: String,
@@ -96,6 +98,17 @@ impl Root {
         a10: NamedPublic,
         a11: FieldWithDefaults,
     ) -> i32 {
+        let _ = a1;
+        let _ = a2;
+        let _ = a3;
+        let _ = a4;
+        let _ = a5;
+        let _ = a6;
+        let _ = a7;
+        let _ = a8;
+        let _ = a9;
+        let _ = a10;
+        let _ = a11;
         0
     }
 }

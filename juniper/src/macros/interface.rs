@@ -190,7 +190,7 @@ macro_rules! graphql_interface {
                 ) -> $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)+)> {
                     $(
                         if field == &$crate::to_camel_case(stringify!($fn_name)) {
-                            let result: $return_ty = (|| {
+                            let f = (|| {
                                 $(
                                     let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(stringify!($arg_name)))
                                         .expect(concat!(
@@ -203,7 +203,8 @@ macro_rules! graphql_interface {
                                     let $executor = &executor;
                                 )*
                                 $body
-                            })();
+                            });
+                            let result: $return_ty = f();
 
                             return $crate::IntoResolvable::into(result, executor.context())
                                 .and_then(|res| {

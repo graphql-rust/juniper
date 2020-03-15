@@ -4,7 +4,7 @@ use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
 use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
-    executor::{ExecutionResult, Executor, Registry, Variables},
+    executor::Variables,
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
@@ -126,7 +126,7 @@ where
 /**
 Primary trait used to expose Rust types in a GraphQL schema
 
-Synchronous query/mutation related convenience macros ultimately expand into an implementation of
+All of the convenience macros ultimately expand into an implementation of
 this trait for the given type. The macros remove duplicated definitions of
 fields and arguments, and add type checks on all resolve functions
 automatically. This can all be done manually.
@@ -550,13 +550,12 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
                     dest_list
                         .iter_mut()
                         .zip(src_list.into_iter())
-                        .for_each(|(d, s)| match *d {
-                            Value::Object(ref mut d_obj) => {
+                        .for_each(|(d, s)| {
+                            if let Value::Object(ref mut d_obj) = *d {
                                 if let Value::Object(s_obj) = s {
                                     merge_maps(d_obj, s_obj);
                                 }
                             }
-                            _ => {}
                         });
                 }
             }

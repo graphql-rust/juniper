@@ -1,12 +1,6 @@
 #[cfg(test)]
-use fnv::FnvHashMap;
-#[cfg(test)]
-use juniper::Object;
-
-#[cfg(test)]
 use juniper::{
-    self, execute, graphql_value, DefaultScalarValue, EmptyMutation, GraphQLInputObject,
-    GraphQLType, RootNode, Value, Variables,
+    self, execute, graphql_value, EmptyMutation, GraphQLInputObject, RootNode, Value, Variables,
 };
 
 use futures;
@@ -16,6 +10,7 @@ pub struct Query;
 #[juniper::graphql_object]
 impl Query {
     fn r#type(r#fn: MyInputType) -> Vec<String> {
+        let _ = r#fn;
         unimplemented!()
     }
 }

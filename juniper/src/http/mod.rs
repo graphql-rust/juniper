@@ -95,11 +95,11 @@ where
         ))
     }
 
-    /// Execute a GraphQL request using the specified schema and context.
+    /// Execute a GraphQL request using the specified schema and context
     ///
-    /// This is a wrapper around `execute` function exposed at the top level of
-    /// this crate.
-    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+    /// This is a simple wrapper around the `execute` function exposed at the
+    /// top level of this crate.
+    pub async fn execute<'a, CtxT, QueryT, MutationT>(
         &'a self,
         root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,

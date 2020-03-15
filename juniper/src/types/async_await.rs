@@ -21,21 +21,36 @@ where
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
 {
+    /// Resolve the value of a single field on this type.
+    ///
+    /// The arguments object contain all specified arguments, with default
+    /// values substituted for the ones not provided by the query.
+    ///
+    /// The executor can be used to drive selections into sub-objects.
+    ///
+    /// The default implementation panics.
+    fn resolve_field_async<'a>(
+        &'a self,
+        _info: &'a Self::TypeInfo,
+        _field_name: &'a str,
+        _arguments: &'a Arguments<S>,
+        _executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        panic!("resolve_field must be implemented by object types");
+    }
+
     /// Resolve the provided selection set against the current object.
-    /// This method is called by executor and should call other methods on this
-    /// trait (if needed).
     ///
-    /// It is similar to `GraphQLType::resolve` except that it
-    /// returns a future which resolves into a single value.
+    /// For non-object types, the selection set will be `None` and the value
+    /// of the object should simply be returned.
     ///
-    ///  ## Default implementation
+    /// For objects, all fields in the selection set should be resolved.
+    /// The default implementation uses `resolve_field` to resolve all fields,
+    /// including those through fragment expansion.
     ///
-    /// For object types, the default implementation calls `resolve_field_async`
-    /// on each field and `resolve_into_type_async` for each fragment in
-    /// provided selection set.
-    ///
-    /// For non-object types, the selection set will be `None` and default
-    /// implementation will panic.
+    /// Since the GraphQL spec specificies that errors during field processing
+    /// should result in a null-value, this might return Ok(Null) in case of
+    /// failure. Errors are recorded internally.
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -53,26 +68,12 @@ where
         }
     }
 
-    /// This method is similar to `GraphQLType::resolve_field`, but it returns
-    /// a future that resolves into value instead of value.
+    /// Resolve this interface or union into a concrete type
+    ///
+    /// Try to resolve the current type into the type name provided. If the
+    /// type matches, pass the instance along to `executor.resolve`.
     ///
     /// The default implementation panics.
-    fn resolve_field_async<'a>(
-        &'a self,
-        _: &'a Self::TypeInfo,   // this query's type info
-        _: &'a str,              // field's type name
-        _: &'a Arguments<'a, S>, // field's arguments
-        _: &'a Executor<'a, 'a, Self::Context, S>, // field's executor (query's sub-executor
-                                 // with current field's selection set)
-    ) -> BoxFuture<'a, ExecutionResult<S>> {
-        panic!("resolve_field must be implemented by object types");
-    }
-
-    /// This method is similar to `GraphQLType::resolve_into_type`, but it
-    /// returns future that resolves into value instead of value.
-    ///
-    /// Default implementation resolves fragments with the same type as `Self`
-    /// and panics otherwise.
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -195,7 +196,7 @@ where
                     &meta_field.arguments,
                 );
 
-                let pos = start_pos.clone();
+                let pos = *start_pos;
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();

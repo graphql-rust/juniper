@@ -102,14 +102,11 @@ impl ObjFieldAttrs {
                     continue;
                 }
 
-                match item {
-                    NestedMeta::Meta(Meta::Path(ref path)) => {
-                        if path.is_ident("default") {
-                            res.default = true;
-                            continue;
-                        }
+                if let NestedMeta::Meta(Meta::Path(ref path)) = item {
+                    if path.is_ident("default") {
+                        res.default = true;
+                        continue;
                     }
-                    _ => {}
                 }
                 panic!(format!(
                     "Unknown attribute for #[derive(GraphQLInputObject)]: {:?}",
@@ -209,11 +206,13 @@ pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStre
                                 e.to_tokens(&mut tokens);
                                 Some(tokens)
                             }
-                            Err(_) => {
+                            Err(e) => {
+                                let _ = e;
                                 panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
                             }
                         },
-                        Err(_) => {
+                        Err(e) => {
+                            let _ = e;
                             panic!("#graphql(default = ?) must be a valid Rust expression inside a string");
                         }
                     },

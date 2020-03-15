@@ -20,7 +20,7 @@ pub fn name_of_type(ty: &syn::Type) -> Option<syn::Ident> {
         syn::Type::Reference(ref reference) => match &*reference.elem {
             syn::Type::Path(ref type_path) => Some(&type_path.path),
             syn::Type::TraitObject(ref trait_obj) => {
-                match trait_obj.bounds.iter().nth(0).unwrap() {
+                match trait_obj.bounds.iter().next().unwrap() {
                     syn::TypeParamBound::Trait(ref trait_bound) => Some(&trait_bound.path),
                     _ => None,
                 }
@@ -83,13 +83,13 @@ pub struct DeprecationAttr {
     pub reason: Option<String>,
 }
 
-pub fn find_graphql_attr(attrs: &Vec<Attribute>) -> Option<&Attribute> {
+pub fn find_graphql_attr(attrs: &[Attribute]) -> Option<&Attribute> {
     attrs
         .iter()
         .find(|attr| path_eq_single(&attr.path, "graphql"))
 }
 
-pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
+pub fn get_deprecated(attrs: &[Attribute]) -> Option<DeprecationAttr> {
     for attr in attrs {
         match attr.parse_meta() {
             Ok(Meta::List(ref list)) if list.path.is_ident("deprecated") => {
@@ -106,32 +106,29 @@ pub fn get_deprecated(attrs: &Vec<Attribute>) -> Option<DeprecationAttr> {
 
 fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
     for meta in &list.nested {
-        match meta {
-            &NestedMeta::Meta(Meta::NameValue(ref nv)) => {
-                if nv.path.is_ident("note") {
-                    match &nv.lit {
-                        &Lit::Str(ref strlit) => {
-                            return DeprecationAttr {
-                                reason: Some(strlit.value()),
-                            };
-                        }
-                        _ => panic!("deprecated attribute note value only has string literal"),
+        if let NestedMeta::Meta(Meta::NameValue(ref nv)) = *meta {
+            if nv.path.is_ident("note") {
+                match nv.lit {
+                    Lit::Str(ref strlit) => {
+                        return DeprecationAttr {
+                            reason: Some(strlit.value()),
+                        };
                     }
-                } else {
-                    panic!(
-                        "Unrecognized setting on #[deprecated(..)] attribute: {:?}",
-                        nv.path,
-                    );
+                    _ => panic!("deprecated attribute note value only has string literal"),
                 }
+            } else {
+                panic!(
+                    "Unrecognized setting on #[deprecated(..)] attribute: {:?}",
+                    nv.path,
+                );
             }
-            _ => {}
         }
     }
     DeprecationAttr { reason: None }
 }
 
 // Gets doc comment.
-pub fn get_doc_comment(attrs: &Vec<Attribute>) -> Option<String> {
+pub fn get_doc_comment(attrs: &[Attribute]) -> Option<String> {
     if let Some(items) = get_doc_attr(attrs) {
         if let Some(doc_strings) = get_doc_strings(&items) {
             return Some(join_doc_strings(&doc_strings));
@@ -141,22 +138,16 @@ pub fn get_doc_comment(attrs: &Vec<Attribute>) -> Option<String> {
 }
 
 // Concatenates doc strings into one string.
-fn join_doc_strings(docs: &Vec<String>) -> String {
+fn join_doc_strings(docs: &[String]) -> String {
     // Note: this is guaranteed since this function is only called
     // from get_doc_strings().
-    debug_assert!(docs.len() > 0);
+    debug_assert!(!docs.is_empty());
 
     let last_index = docs.len() - 1;
     docs.iter()
         .map(|s| s.as_str().trim_end())
         // Trim leading space.
-        .map(|s| {
-            if s.chars().next() == Some(' ') {
-                &s[1..]
-            } else {
-                s
-            }
-        })
+        .map(|s| if s.starts_with(' ') { &s[1..] } else { s })
         // Add newline, exept when string ends in a continuation backslash or is the last line.
         .enumerate()
         .fold(String::new(), |mut buffer, (index, s)| {
@@ -174,13 +165,13 @@ fn join_doc_strings(docs: &Vec<String>) -> String {
 }
 
 // Gets doc strings from doc comment attributes.
-fn get_doc_strings(items: &Vec<MetaNameValue>) -> Option<Vec<String>> {
+fn get_doc_strings(items: &[MetaNameValue]) -> Option<Vec<String>> {
     let comments = items
         .iter()
         .filter_map(|item| {
             if item.path.is_ident("doc") {
                 match item.lit {
-                    Lit::Str(ref strlit) => Some(strlit.value().to_string()),
+                    Lit::Str(ref strlit) => Some(strlit.value()),
                     _ => panic!("doc attributes only have string literal"),
                 }
             } else {
@@ -188,15 +179,15 @@ fn get_doc_strings(items: &Vec<MetaNameValue>) -> Option<Vec<String>> {
             }
         })
         .collect::<Vec<_>>();
-    if comments.len() > 0 {
-        Some(comments)
-    } else {
+    if comments.is_empty() {
         None
+    } else {
+        Some(comments)
     }
 }
 
 // Gets doc comment attributes.
-fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
+fn get_doc_attr(attrs: &[Attribute]) -> Option<Vec<MetaNameValue>> {
     let mut docs = Vec::new();
     for attr in attrs {
         match attr.parse_meta() {
@@ -211,11 +202,11 @@ fn get_doc_attr(attrs: &Vec<Attribute>) -> Option<Vec<MetaNameValue>> {
 }
 
 // Get the nested items of a a #[graphql(...)] attribute.
-pub fn get_graphql_attr(attrs: &Vec<Attribute>) -> Option<Vec<NestedMeta>> {
+pub fn get_graphql_attr(attrs: &[Attribute]) -> Option<Vec<NestedMeta>> {
     for attr in attrs {
         match attr.parse_meta() {
             Ok(Meta::List(ref list)) if list.path.is_ident("graphql") => {
-                return Some(list.nested.iter().map(|x| x.clone()).collect());
+                return Some(list.nested.iter().cloned().collect());
             }
             _ => {}
         }
@@ -228,25 +219,17 @@ pub fn keyed_item_value(
     name: &str,
     validation: AttributeValidation,
 ) -> Option<AttributeValue> {
-    match item {
+    match *item {
         // Attributes in the form of `#[graphql(name = "value")]`.
-        &NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.path.is_ident(name) => {
-            match &nameval.lit {
+        NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.path.is_ident(name) => {
+            match nameval.lit {
                 // We have a string attribute value.
-                &Lit::Str(ref strlit) => match validation {
-                    // AttributeValidation::Bare => {
-                    //     panic!(format!(
-                    //         "Invalid format for attribute \"{:?}\": expected a bare attribute without a value",
-                    //         item
-                    //     ));
-                    // }
-                    _ => Some(AttributeValue::String(strlit.value())),
-                },
+                Lit::Str(ref strlit) => Some(AttributeValue::String(strlit.value())),
                 _ => None,
             }
         }
         // Attributes in the form of `#[graphql(name)]`.
-        &NestedMeta::Meta(Meta::Path(ref path)) if path.is_ident(name) => match validation {
+        NestedMeta::Meta(Meta::Path(ref path)) if path.is_ident(name) => match validation {
             AttributeValidation::String => {
                 panic!(format!(
                     "Invalid format for attribute \"{:?}\": expected a string value",
@@ -402,7 +385,7 @@ impl syn::parse::Parse for ObjectAttributes {
 }
 
 impl ObjectAttributes {
-    pub fn from_attrs(attrs: &Vec<syn::Attribute>) -> syn::parse::Result<Self> {
+    pub fn from_attrs(attrs: &[syn::Attribute]) -> syn::parse::Result<Self> {
         let attr_opt = find_graphql_attr(attrs);
         if let Some(attr) = attr_opt {
             // Need to unwrap  outer (), which are not present for proc macro attributes,
@@ -692,7 +675,8 @@ impl GraphQLTypeDefiniton {
                     None => quote!(),
                 };
 
-                let code = match arg.default.as_ref() {
+                // Code.
+                match arg.default.as_ref() {
                     Some(value) => quote!(
                         .argument(
                             registry.arg_with_default::<#arg_type>(#arg_name, &#value, info)
@@ -705,8 +689,7 @@ impl GraphQLTypeDefiniton {
                                 #description
                         )
                     ),
-                };
-                code
+                }
             });
 
             let description = match field.description.as_ref() {

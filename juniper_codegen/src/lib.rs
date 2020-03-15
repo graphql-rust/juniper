@@ -375,8 +375,7 @@ impl User {
 */
 #[proc_macro_attribute]
 pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_object(args, input, false);
-    gen.into()
+    impl_object::build_object(args, input, false)
 }
 
 /** Same as [`graphql_object`], but for generating GraphQL subscription resolvers
@@ -407,8 +406,7 @@ impl Subscription {
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_object(args, input, true);
-    gen.into()
+    impl_object::build_object(args, input, true)
 }
 
 /// A proc macro for defining a GraphQL subscription.
@@ -429,20 +427,18 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
 #[proc_macro_attribute]
 #[proc_macro_error::proc_macro_error]
 pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    let output = match impl_union::impl_union(false, attrs, body) {
+    match impl_union::impl_union(false, attrs, body) {
         Ok(toks) => toks,
         Err(err) => proc_macro_error::abort!(err),
-    };
-    output
+    }
 }
 
 #[doc(hidden)]
 #[proc_macro_attribute]
 #[proc_macro_error::proc_macro_error]
 pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    let output = match impl_union::impl_union(true, attrs, body) {
+    match impl_union::impl_union(true, attrs, body) {
         Ok(toks) => toks,
         Err(err) => proc_macro_error::abort!(err),
-    };
-    output
+    }
 }

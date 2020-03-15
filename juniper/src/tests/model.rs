@@ -100,6 +100,7 @@ impl Droid for DroidData {
     }
 }
 
+#[derive(Default)]
 pub struct Database {
     humans: HashMap<String, HumanData>,
     droids: HashMap<String, DroidData>,

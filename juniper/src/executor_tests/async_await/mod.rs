@@ -8,13 +8,17 @@ enum UserKind {
 }
 
 struct User {
-    id: u64,
+    id: i32,
     name: String,
     kind: UserKind,
 }
 
 #[crate::graphql_object_internal]
 impl User {
+    async fn id(&self) -> i32 {
+        self.id
+    }
+
     async fn name(&self) -> &str {
         &self.name
     }

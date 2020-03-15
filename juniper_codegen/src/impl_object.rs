@@ -35,7 +35,7 @@ fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
         description: _impl.description,
         fields: Vec::new(),
         generics: _impl.generics.clone(),
-        interfaces: if _impl.attrs.interfaces.len() > 0 {
+        interfaces: if !_impl.attrs.interfaces.is_empty() {
             Some(_impl.attrs.interfaces)
         } else {
             None

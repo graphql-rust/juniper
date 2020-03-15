@@ -1,3 +1,4 @@
+#[cfg(test)]
 use juniper::{graphql_value, GraphQLError, RootNode, Value};
 
 #[derive(juniper::GraphQLEnum)]
@@ -8,13 +9,17 @@ enum UserKind {
 }
 
 struct User {
-    id: u64,
+    id: i32,
     name: String,
     kind: UserKind,
 }
 
 #[juniper::graphql_object]
 impl User {
+    async fn id(&self) -> i32 {
+        self.id
+    }
+
     async fn name(&self) -> &str {
         &self.name
     }

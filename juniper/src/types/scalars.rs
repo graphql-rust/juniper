@@ -1,4 +1,3 @@
-use futures;
 use serde_derive::{Deserialize, Serialize};
 use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
@@ -291,7 +290,7 @@ graphql_scalar!(f64 as "Float" where Scalar = <S>{
 ///
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct EmptyMutation<T> {
     phantom: PhantomData<T>,
 }

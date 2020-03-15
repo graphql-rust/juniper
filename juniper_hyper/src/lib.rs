@@ -3,7 +3,6 @@
 #[cfg(test)]
 extern crate reqwest;
 
-use futures;
 use hyper::{
     header::{self, HeaderValue},
     Body, Method, Request, Response, StatusCode,
@@ -29,8 +28,8 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
 {
-    match request.method() {
-        &Method::GET => {
+    match *request.method() {
+        Method::GET => {
             let gql_req = parse_get_req(request);
 
             match gql_req {
@@ -38,7 +37,7 @@ where
                 Err(err) => Ok(render_error(err)),
             }
         }
-        &Method::POST => {
+        Method::POST => {
             let gql_req = parse_post_req(request.into_body()).await;
 
             match gql_req {
@@ -63,8 +62,8 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
 {
-    match request.method() {
-        &Method::GET => {
+    match *request.method() {
+        Method::GET => {
             let gql_req = parse_get_req(request);
 
             match gql_req {
@@ -72,7 +71,7 @@ where
                 Err(err) => Ok(render_error(err)),
             }
         }
-        &Method::POST => {
+        Method::POST => {
             let gql_req = parse_post_req(request.into_body()).await;
 
             match gql_req {
@@ -102,7 +101,7 @@ async fn parse_post_req<S: ScalarValue>(
 ) -> Result<GraphQLRequest<S>, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
         .await
-        .map_err(|err| GraphQLRequestError::BodyHyper(err))?;
+        .map_err(GraphQLRequestError::BodyHyper)?;
 
     let input = String::from_utf8(chunk.iter().cloned().collect())
         .map_err(GraphQLRequestError::BodyUtf8)?;
