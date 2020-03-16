@@ -1,18 +1,20 @@
-# juniper_warp
+# juniper_subscriptions
 
-This repository contains the [warp][warp] web server integration for
-[Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
+This repository contains [SubscriptionCoordinator][SubscriptionCoordinator] and 
+[SubscriptionConnection][SubscriptionConnection] implementations for 
+[Juniper][Juniper], a [GraphQL][GraphQL] library for Rust.
 
 ## Documentation
 
-For documentation, including guides and examples, check out [Juniper][Juniper].
+For this crate's documentation, check out [API documentation][documentation].
 
-A basic usage example can also be found in the [API documentation][documentation].
+For `SubscriptionCoordinator` and `SubscriptionConnection` documentation, check 
+out [Juniper][Juniper]. 
 
 ## Examples
 
-Check [examples/warp_server][example] for example code of a working warp
-server with GraphQL handlers.
+Check [examples/warp_subscriptions][example] for example code of a working 
+[warp][warp] server with GraphQL subscription handlers.
 
 ## Links
 
@@ -28,6 +30,8 @@ Check the LICENSE file for details.
 
 [warp]: https://github.com/seanmonstar/warp
 [Juniper]: https://github.com/graphql-rust/juniper
+[SubscriptionCoordinator]: https://docs.rs/juniper/latest/juniper/trait.SubscriptionCoordinator.html
+[SubscriptionConnection]: https://docs.rs/juniper/latest/juniper/trait.SubscriptionConnection.html
 [GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_warp
-[example]: https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/warp_server.rs
+[documentation]: https://docs.rs/juniper_subscriptions
+[example]: https://github.com/graphql-rust/juniper/blob/master/examples/warp_subscriptions/src/main.rs

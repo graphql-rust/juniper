@@ -25,7 +25,6 @@ pub fn parse_document_source<'a, 'b, S>(
 where
     S: ScalarValue,
 {
-    // TODO: not panic on nonexisting fields inside GraphQL objects
     let mut lexer = Lexer::new(s);
     let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(ParseError::LexerError))?;
     parse_document(&mut parser, schema)

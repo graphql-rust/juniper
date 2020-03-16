@@ -305,7 +305,13 @@ async fn object_query() {
     let vars = std::collections::HashMap::new();
 
     let (stream_val, errs) =
-        crate::resolve_into_stream(doc, None, &schema, &vars, &Context { flag1: true })
+        crate::resolve_into_stream(
+            doc,
+            None,
+            &schema,
+            &vars,
+            &Context { flag1: true }
+        )
             .await
             .expect("Execution failed");
 
@@ -313,7 +319,11 @@ async fn object_query() {
         let mut result = Vec::new();
         for (name, mut val) in obj {
             if let Value::Scalar(ref mut stream) = val {
-                let first = stream.next().await.unwrap().unwrap();
+                let first = stream
+                    .next()
+                    .await
+                    .expect("Stream does not have the first element")
+                    .expect(&format!("Error resolving {} field", name));
                 result.push((name, first))
             }
         }

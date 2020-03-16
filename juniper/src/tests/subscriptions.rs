@@ -26,7 +26,7 @@ struct MyQuery;
 #[crate::graphql_object_internal(context = MyContext)]
 impl MyQuery {}
 
-type AsyncSchema =
+type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
 fn run<O>(f: impl std::future::Future<Output = O>) -> O {
@@ -94,7 +94,7 @@ fn create_and_execute(
 > {
     let request = GraphQLRequest::new(query, None, None);
 
-    let root_node = AsyncSchema::new(MyQuery, EmptyMutation::new(), MySubscription);
+    let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
 
     let context = MyContext(2);
 
