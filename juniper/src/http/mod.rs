@@ -123,7 +123,7 @@ where
 
 /// Resolve a GraphQL subscription into `Value<ValuesStream<S>` using the
 /// specified schema and context.
-/// This is a wrapper around `resolve_into_stream` function exposed at the top
+/// This is a wrapper around the `resolve_into_stream` function exposed at the top
 /// level of this crate.
 pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,

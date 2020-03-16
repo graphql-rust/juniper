@@ -91,7 +91,7 @@ where
     MutationT: GraphQLType<S, TypeInfo = ()>,
     SubscriptionT: GraphQLType<S, TypeInfo = ()>,
 {
-    /// Construct a new root node from query and mutation nodes
+    /// Construct a new root node from query, mutation, and subscription nodes
     ///
     /// If the schema should not support mutations, use the
     /// `new` constructor instead.
