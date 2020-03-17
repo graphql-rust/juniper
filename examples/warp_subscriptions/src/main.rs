@@ -154,7 +154,7 @@ async fn main() {
 
     let qm_schema = schema();
     let qm_state = warp::any().map(move || Context {});
-    let qm_graphql_filter = juniper_warp::make_graphql_filter_async(qm_schema, qm_state.boxed());
+    let qm_graphql_filter = juniper_warp::make_graphql_filter(qm_schema, qm_state.boxed());
 
     let sub_state = warp::any().map(move || Context {});
     let coordinator = Arc::new(juniper_subscriptions::Coordinator::new(schema()));

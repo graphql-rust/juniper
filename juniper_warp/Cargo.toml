@@ -14,13 +14,9 @@ juniper = { version = "0.14.2", path = "../juniper", default-features = false  }
 serde_json = "1.0.24"
 serde_derive = "1.0.75"
 failure = "0.1.7"
-# TODO: rebase juniper_warp to futures 3 once warp supports it
-futures = "0.1.29"
 serde = "1.0.75"
-tokio = { version = "0.2", features = ["blocking", "fs", "stream", "sync", "time"] }
-tokio-threadpool = "0.1.16"
 
-futures03 = { version = "0.3.1", package = "futures", features = ["compat"] }
+futures = "0.3.1"
 
 [dev-dependencies]
 juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-schema", "serde_json"] }
