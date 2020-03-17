@@ -17,4 +17,4 @@ warp = "0.2.1"
 # TODO#433: get crates from GitHub
 juniper = { path = "../../juniper" }
 juniper_subscriptions = { path = "../../juniper_subscriptions"}
-juniper_warp = { path = "../../juniper_warp" }
+juniper_warp = { path = "../../juniper_warp", features = ["subscriptions"] }

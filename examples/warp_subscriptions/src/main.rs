@@ -5,11 +5,8 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use futures::{Future, FutureExt as _, Stream};
 use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
 use juniper_subscriptions::Coordinator;
-use juniper_warp::playground_filter;
+use juniper_warp::{playground_filter, subscriptions::graphql_subscriptions};
 use warp::{http::Response, Filter};
-use warp_subscriptions::*;
-
-mod warp_subscriptions;
 
 #[derive(Clone)]
 struct Context {}
@@ -170,7 +167,7 @@ async fn main() {
              ctx: Context,
              coordinator: Arc<Coordinator<'static, _, _, _, _, _>>| {
                 ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                    graphql_subscriptions_async(websocket, coordinator, ctx).boxed()
+                    graphql_subscriptions(websocket, coordinator, ctx).boxed()
                 })
             },
         ))
