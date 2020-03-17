@@ -119,7 +119,7 @@ impl Mutation {
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
-type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription>;
+type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 
 # fn main() {
 #   let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
