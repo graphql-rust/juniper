@@ -14,7 +14,7 @@ fn schema() -> Schema {
     Schema::new(
         Query,
         EmptyMutation::<Database>::new(),
-        EmptySubscription::<Database>::new()
+        EmptySubscription::<Database>::new(),
     )
 }
 

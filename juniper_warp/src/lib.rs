@@ -42,8 +42,8 @@ Check the LICENSE file for details.
 
 use std::{pin::Pin, sync::Arc};
 
-use futures01::future::poll_fn;
 use futures::{Future, FutureExt as _};
+use futures01::future::poll_fn;
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 use serde::Deserialize;
 use warp::{filters::BoxedFilter, Filter};
@@ -207,15 +207,15 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
     context_extractor: BoxedFilter<(Context,)>,
 ) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
-    where
-        S: ScalarValue + Send + Sync + 'static,
-        Context: Send + Sync + 'static,
-        Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-        Subscription::TypeInfo: Send + Sync,
+where
+    S: ScalarValue + Send + Sync + 'static,
+    Context: Send + Sync + 'static,
+    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation::TypeInfo: Send + Sync,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription::TypeInfo: Send + Sync,
 {
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
@@ -229,9 +229,8 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
             Ok::<_, warp::Rejection>(build_response(
                 serde_json::to_vec(&res)
                     .map(|json| (json, res.is_ok()))
-                    .map_err(Into::into)
+                    .map_err(Into::into),
             ))
-
         })
     };
 
@@ -241,8 +240,7 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
         .and_then(handle_post_request);
 
     let handle_get_request =
-        move |context: Context, mut request: std::collections::HashMap<String, String>|
-        {
+        move |context: Context, mut request: std::collections::HashMap<String, String>| {
             let schema = schema.clone();
 
             async move {
@@ -263,7 +261,7 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
 
                 Ok((serde_json::to_vec(&response)?, response.is_ok()))
             }
-                .then(|result| async move { Ok::<_, warp::Rejection>(build_response(result)) })
+            .then(|result| async move { Ok::<_, warp::Rejection>(build_response(result)) })
         };
 
     let get_filter = warp::get()
@@ -291,24 +289,23 @@ where
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
 
-    let handle_post_request =
-        move |context: Context, request: GraphQLBatchRequest<S>| -> Response {
-            let schema = post_schema.clone();
+    let handle_post_request = move |context: Context,
+                                    request: GraphQLBatchRequest<S>|
+          -> Response {
+        let schema = post_schema.clone();
 
-            futures::compat::Compat01As03::new(
-                poll_fn(move || {
-                    tokio_threadpool::blocking(|| {
-                        let response = request.execute_sync(&schema, &context);
-                        Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                    })
+        futures::compat::Compat01As03::new(
+            poll_fn(move || {
+                tokio_threadpool::blocking(|| {
+                    let response = request.execute_sync(&schema, &context);
+                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
                 })
-                    .and_then(|result| ::futures01::future::done(Ok(build_response(result))))
-                    .map_err(|e: tokio_threadpool::BlockingError| {
-                        warp::reject::custom(BlockingError(e))
-                    })
-            )
-                .boxed()
-        };
+            })
+            .and_then(|result| ::futures01::future::done(Ok(build_response(result))))
+            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(BlockingError(e))),
+        )
+        .boxed()
+    };
 
     let post_filter = warp::post()
         .and(context_extractor.clone())
@@ -317,36 +314,33 @@ where
 
     let handle_get_request = move |context: Context,
                                    mut request: std::collections::HashMap<String, String>|
-          -> Response
-        {
-          let schema = schema.clone();
+          -> Response {
+        let schema = schema.clone();
 
-            futures::compat::Compat01As03::new(
-                poll_fn(move || {
-                    tokio_threadpool::blocking(|| {
-                        let variables = match request.remove("variables") {
-                            None => None,
-                            Some(vs) => serde_json::from_str(&vs)?,
-                        };
+        futures::compat::Compat01As03::new(
+            poll_fn(move || {
+                tokio_threadpool::blocking(|| {
+                    let variables = match request.remove("variables") {
+                        None => None,
+                        Some(vs) => serde_json::from_str(&vs)?,
+                    };
 
-                        let graphql_request = juniper::http::GraphQLRequest::new(
-                            request.remove("query").ok_or_else(|| {
-                                failure::format_err!("Missing GraphQL query string in query parameters")
-                            })?,
-                            request.get("operation_name").map(|s| s.to_owned()),
-                            variables,
-                        );
+                    let graphql_request = juniper::http::GraphQLRequest::new(
+                        request.remove("query").ok_or_else(|| {
+                            failure::format_err!("Missing GraphQL query string in query parameters")
+                        })?,
+                        request.get("operation_name").map(|s| s.to_owned()),
+                        variables,
+                    );
 
-                        let response = graphql_request.execute_sync(&schema, &context);
-                        Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                    })
+                    let response = graphql_request.execute_sync(&schema, &context);
+                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
                 })
-                    .and_then(|result| ::futures01::future::done(Ok(build_response(result))))
-                    .map_err(|e: tokio_threadpool::BlockingError| {
-                        warp::reject::custom(BlockingError(e))
-                    }),
-            )
-                .boxed()
+            })
+            .and_then(|result| ::futures01::future::done(Ok(build_response(result))))
+            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(BlockingError(e))),
+        )
+        .boxed()
     };
 
     let get_filter = warp::get()
@@ -497,9 +491,7 @@ mod tests {
     async fn playground_endpoint_matches() {
         let filter = warp::get()
             .and(warp::path("playground"))
-            .and(playground_filter(
-                "/graphql",
-                Some("/subscripitons")));
+            .and(playground_filter("/graphql", Some("/subscripitons")));
 
         let result = request()
             .method("GET")
@@ -518,7 +510,7 @@ mod tests {
             .and(warp::path("playground"))
             .and(playground_filter(
                 "/dogs-api/graphql",
-                Some("/dogs-api/subscriptions")
+                Some("/dogs-api/subscriptions"),
             ));
         let response = request()
             .method("GET")
@@ -586,7 +578,11 @@ mod tests {
         type Schema =
             juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
-        let schema: Schema = RootNode::new(Query, EmptyMutation::<Database>::new(), EmptySubscription::<Database>::new());
+        let schema: Schema = RootNode::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        );
 
         let state = warp::any().map(move || Database::new());
         let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));

@@ -305,13 +305,7 @@ async fn object_query() {
     let vars = std::collections::HashMap::new();
 
     let (stream_val, errs) =
-        crate::resolve_into_stream(
-            doc,
-            None,
-            &schema,
-            &vars,
-            &Context { flag1: true }
-        )
+        crate::resolve_into_stream(doc, None, &schema, &vars, &Context { flag1: true })
             .await
             .expect("Execution failed");
 
