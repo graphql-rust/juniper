@@ -167,7 +167,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<InnerContext>::new(),EmptySubscription::<()>::new(),);
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<InnerContext>::new(),
+        EmptySubscription::<()>::new(),
+    );
     let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();
