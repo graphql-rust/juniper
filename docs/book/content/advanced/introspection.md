@@ -66,7 +66,7 @@ fn main() {
 
     // Run the built-in introspection query.
     let (res, _errors) = juniper::introspect(
-        &Schema::new(Query, EmptyMutation::new()),
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &ctx,
         IntrospectionFormat::default(),
     ).unwrap();

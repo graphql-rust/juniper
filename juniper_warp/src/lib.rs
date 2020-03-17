@@ -469,15 +469,16 @@ pub mod subscriptions {
         coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
         context: Context,
     ) -> impl Future<Output = ()> + Send
-        where
-            S: ScalarValue + Send + Sync + 'static,
-            Context: Clone + Send + Sync + 'static,
-            Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-            Query::TypeInfo: Send + Sync,
-            Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-            Mutation::TypeInfo: Send + Sync,
-            Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-            Subscription::TypeInfo: Send + Sync,
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        Context: Clone + Send + Sync + 'static,
+        Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription:
+            juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+        Subscription::TypeInfo: Send + Sync,
     {
         let (sink_tx, sink_rx) = websocket.split();
         let (ws_tx, ws_rx) = mpsc::unbounded();
@@ -534,16 +535,17 @@ pub mod subscriptions {
                                     let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
                                         r#"{{"type":"error","id":"{}","payload":{}}}"#,
                                         request_id,
-                                        serde_json::ser::to_string(&err)
-                                            .unwrap_or("Error deserializing GraphQLError".to_owned())
+                                        serde_json::ser::to_string(&err).unwrap_or(
+                                            "Error deserializing GraphQLError".to_owned()
+                                        )
                                     )))));
 
                                     let close_message = format!(
                                         r#"{{"type":"complete","id":"{}","payload":null}}"#,
                                         request_id
                                     );
-                                    let _ =
-                                        ws_tx.unbounded_send(Some(Ok(Message::text(close_message))));
+                                    let _ = ws_tx
+                                        .unbounded_send(Some(Ok(Message::text(close_message))));
                                     // close channel
                                     let _ = ws_tx.unbounded_send(None);
                                     return;
@@ -563,8 +565,8 @@ pub mod subscriptions {
                                         request_id, response_text
                                     );
 
-                                    let _ =
-                                        ws_tx.unbounded_send(Some(Ok(Message::text(response_text))));
+                                    let _ = ws_tx
+                                        .unbounded_send(Some(Ok(Message::text(response_text))));
                                 }
                                 async move { !closed }
                             })
@@ -595,8 +597,8 @@ pub mod subscriptions {
     #[derive(Deserialize)]
     #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
     struct WsPayload<S>
-        where
-            S: ScalarValue + Send + Sync + 'static,
+    where
+        S: ScalarValue + Send + Sync + 'static,
     {
         id: Option<String>,
         #[serde(rename(deserialize = "type"))]
@@ -607,8 +609,8 @@ pub mod subscriptions {
     #[derive(Debug, Deserialize)]
     #[serde(bound = "InputValue<S>: Deserialize<'de>")]
     struct GraphQLPayload<S>
-        where
-            S: ScalarValue + Send + Sync + 'static,
+    where
+        S: ScalarValue + Send + Sync + 'static,
     {
         variables: Option<InputValue<S>>,
         extensions: Option<HashMap<String, String>>,
@@ -622,7 +624,6 @@ pub mod subscriptions {
         data: String,
         variables: String,
     }
-
 }
 
 #[cfg(test)]
