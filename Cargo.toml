@@ -14,10 +14,8 @@ members = [
 ]
 exclude = [
   "docs/book/tests",
-  # TODO enable warp
-  "juniper_warp",
   "examples/warp_async",
-   "examples/warp_subscriptions",
+  "examples/warp_subscriptions",
   # TODO enable async tests
   "juniper_rocket_async",
 ]
