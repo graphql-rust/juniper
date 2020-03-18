@@ -287,23 +287,23 @@ where
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
 
-    let handle_post_request = move |context: Context,
-                                    request: GraphQLBatchRequest<S>|
-          -> Response {
-        let schema = post_schema.clone();
+    let handle_post_request =
+        move |context: Context, request: GraphQLBatchRequest<S>| -> Response {
+            let schema = post_schema.clone();
 
-        Box::pin(async move {
-            let result = task::spawn_blocking(move || {
-                let response = request.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&response)?, response.is_ok()))
-            })
-            .await?;
+            Box::pin(
+                async move {
+                    let result = task::spawn_blocking(move || {
+                        let response = request.execute_sync(&schema, &context);
+                        Ok((serde_json::to_vec(&response)?, response.is_ok()))
+                    })
+                    .await?;
 
-            Ok(build_response(result))
-        }
-            .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
-        )
-    };
+                    Ok(build_response(result))
+                }
+                .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e))),
+            )
+        };
 
     let post_filter = warp::post()
         .and(context_extractor.clone())
@@ -315,31 +315,31 @@ where
           -> Response {
         let schema = schema.clone();
 
-        Box::pin(async move {
-            let result = task::spawn_blocking(move || {
-                let variables = match request.remove("variables") {
-                    None => None,
-                    Some(vs) => serde_json::from_str(&vs)?,
-                };
+        Box::pin(
+            async move {
+                let result = task::spawn_blocking(move || {
+                    let variables = match request.remove("variables") {
+                        None => None,
+                        Some(vs) => serde_json::from_str(&vs)?,
+                    };
 
-                let graphql_request = juniper::http::GraphQLRequest::new(
-                    request.remove("query").ok_or_else(|| {
-                        failure::format_err!("Missing GraphQL query string in query parameters")
-                    })?,
-                    request.get("operation_name").map(|s| s.to_owned()),
-                    variables,
-                );
+                    let graphql_request = juniper::http::GraphQLRequest::new(
+                        request.remove("query").ok_or_else(|| {
+                            failure::format_err!("Missing GraphQL query string in query parameters")
+                        })?,
+                        request.get("operation_name").map(|s| s.to_owned()),
+                        variables,
+                    );
 
-                let response = graphql_request.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&response)?, response.is_ok()))
-            })
+                    let response = graphql_request.execute_sync(&schema, &context);
+                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
+                })
                 .await?;
 
-            Ok(build_response(result))
-        }
-            .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
+                Ok(build_response(result))
+            }
+            .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e))),
         )
-
     };
 
     let get_filter = warp::get()
