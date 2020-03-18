@@ -16,7 +16,7 @@ warp = "0.2"
 futures = { version = "0.3.1", features = ["compat"] }
 juniper = { version = "0.14.2", path = "../juniper", default-features = false  }
 juniper_subscriptions = { path = "../juniper_subscriptions", optional = true}
-tokio = { version = "0.2", features = ["rt-core", "macros", "blocking"] }
+tokio = { version = "0.2", features = ["rt-core", "blocking"] }
 serde_json = "1.0.24"
 serde_derive = "1.0.75"
 failure = "0.1.7"
@@ -27,3 +27,4 @@ juniper = { version = "0.14.2", path = "../juniper", features = ["expose-test-sc
 env_logger = "0.5.11"
 log = "0.4.3"
 percent-encoding = "1.0"
+tokio = { version = "0.2", features = ["rt-core", "macros", "blocking"] }
