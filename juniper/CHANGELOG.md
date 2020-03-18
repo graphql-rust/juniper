@@ -12,6 +12,11 @@
 
 See [#419](https://github.com/graphql-rust/juniper/pull/419).
 
+- Declare SchemaType as public
+  - Useful for when using context.getSchema() inside of your graphql objects
+
+See [#569](https://github.com/graphql-rust/juniper/pull/569).
+
 ## Breaking Changes
 
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
