@@ -42,10 +42,10 @@ Check the LICENSE file for details.
 
 use std::{pin::Pin, sync::Arc};
 
-use futures::{Future, FutureExt as _};
-use futures01::future::poll_fn;
+use futures::{Future, FutureExt as _, TryFutureExt};
 use juniper::{DefaultScalarValue, InputValue, ScalarValue};
 use serde::Deserialize;
+use tokio::task;
 use warp::{filters::BoxedFilter, Filter};
 
 #[derive(Debug, serde_derive::Deserialize, PartialEq)]
@@ -284,8 +284,6 @@ where
     Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
     Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
-    use futures01::future::Future as _;
-
     let schema = Arc::new(schema);
     let post_schema = schema.clone();
 
@@ -294,17 +292,17 @@ where
           -> Response {
         let schema = post_schema.clone();
 
-        futures::compat::Compat01As03::new(
-            poll_fn(move || {
-                tokio_threadpool::blocking(|| {
-                    let response = request.execute_sync(&schema, &context);
-                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                })
+        Box::pin(async move {
+            let result = task::spawn_blocking(move || {
+                let response = request.execute_sync(&schema, &context);
+                Ok((serde_json::to_vec(&response)?, response.is_ok()))
             })
-            .and_then(|result| ::futures01::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(BlockingError(e))),
+            .await?;
+
+            Ok(build_response(result))
+        }
+            .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
         )
-        .boxed()
     };
 
     let post_filter = warp::post()
@@ -317,30 +315,31 @@ where
           -> Response {
         let schema = schema.clone();
 
-        futures::compat::Compat01As03::new(
-            poll_fn(move || {
-                tokio_threadpool::blocking(|| {
-                    let variables = match request.remove("variables") {
-                        None => None,
-                        Some(vs) => serde_json::from_str(&vs)?,
-                    };
+        Box::pin(async move {
+            let result = task::spawn_blocking(move || {
+                let variables = match request.remove("variables") {
+                    None => None,
+                    Some(vs) => serde_json::from_str(&vs)?,
+                };
 
-                    let graphql_request = juniper::http::GraphQLRequest::new(
-                        request.remove("query").ok_or_else(|| {
-                            failure::format_err!("Missing GraphQL query string in query parameters")
-                        })?,
-                        request.get("operation_name").map(|s| s.to_owned()),
-                        variables,
-                    );
+                let graphql_request = juniper::http::GraphQLRequest::new(
+                    request.remove("query").ok_or_else(|| {
+                        failure::format_err!("Missing GraphQL query string in query parameters")
+                    })?,
+                    request.get("operation_name").map(|s| s.to_owned()),
+                    variables,
+                );
 
-                    let response = graphql_request.execute_sync(&schema, &context);
-                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                })
+                let response = graphql_request.execute_sync(&schema, &context);
+                Ok((serde_json::to_vec(&response)?, response.is_ok()))
             })
-            .and_then(|result| ::futures01::future::done(Ok(build_response(result))))
-            .map_err(|e: tokio_threadpool::BlockingError| warp::reject::custom(BlockingError(e))),
+                .await?;
+
+            Ok(build_response(result))
+        }
+            .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
         )
-        .boxed()
+
     };
 
     let get_filter = warp::get()
@@ -355,13 +354,13 @@ where
 /// has been shutdown
 ///
 /// Wrapper type is needed as inner type does not implement `warp::reject::Reject`
-pub struct BlockingError(tokio_threadpool::BlockingError);
+pub struct JoinError(task::JoinError);
 
-impl warp::reject::Reject for BlockingError {}
+impl warp::reject::Reject for JoinError {}
 
-impl std::fmt::Debug for BlockingError {
+impl std::fmt::Debug for JoinError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BlockingError::TokioBlockingError")
+        write!(f, "JoinError({:?})", self.0)
     }
 }
 
