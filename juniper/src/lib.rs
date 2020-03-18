@@ -173,7 +173,10 @@ pub use crate::{
     },
     introspection::IntrospectionFormat,
     macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
-    schema::{meta, model::RootNode},
+    schema::{
+        meta,
+        model::{RootNode, SchemaType},
+    },
     types::{
         async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},

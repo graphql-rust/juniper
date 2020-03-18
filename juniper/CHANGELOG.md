@@ -15,6 +15,11 @@
 
 See [#419](https://github.com/graphql-rust/juniper/pull/419).
 
+- `SchemaType` is now public
+  - This is helpful when using `context.getSchema()` inside of your field resolvers
+
+See [#569](https://github.com/graphql-rust/juniper/pull/569).
+
 ## Breaking Changes
 
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
