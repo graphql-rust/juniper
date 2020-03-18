@@ -172,7 +172,10 @@ pub use crate::{
         LookAheadSelection, LookAheadValue, Registry, Variables,
     },
     introspection::IntrospectionFormat,
-    schema::{meta, model::RootNode},
+    schema::{
+        meta,
+        model::{RootNode, SchemaType},
+    },
     types::{
         base::{Arguments, GraphQLType, TypeKind},
         scalars::{EmptyMutation, ID},
