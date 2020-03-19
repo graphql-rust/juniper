@@ -159,7 +159,7 @@ produced by issuing a specially crafted introspection query.</p>
 <p>Juniper provides a convenience function to introspect the entire schema. The
 result can then be converted to JSON for use with tools and libraries such as
 <a href="https://github.com/graphql-rust/graphql-client">graphql-client</a>:</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
+<pre><pre class="playpen"><code class="language-rust">use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};
 
 // Define our schema.
 
@@ -182,7 +182,12 @@ impl Query {
    }
 }
 
-type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Context&gt;&gt;;
+type Schema = juniper::RootNode&lt;
+    'static, 
+    Query, 
+    EmptyMutation&lt;Context&gt;, 
+    EmptySubscription&lt;Context&gt;
+&gt;;
 
 fn main() {
     // Create a context object.
@@ -190,7 +195,7 @@ fn main() {
 
     // Run the built-in introspection query.
     let (res, _errors) = juniper::introspect(
-        &amp;Schema::new(Query, EmptyMutation::new()),
+        &amp;Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &amp;ctx,
         IntrospectionFormat::default(),
     ).unwrap();

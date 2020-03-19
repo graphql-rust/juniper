@@ -152,7 +152,7 @@ naturally map to GraphQL features, such as <code>Option&lt;T&gt;</code>, <code>V
 types to a GraphQL schema. The most important one is the
 [object][jp_object] procedural macro that is used for declaring an object with
 resolvers, which you will use for the <code>Query</code> and <code>Mutation</code> roots.</p>
-<pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult};
+<pre><pre class="playpen"><code class="language-rust">use juniper::{FieldResult, EmptySubscription};
 
 # struct DatabasePool;
 # impl DatabasePool {
@@ -247,10 +247,10 @@ impl Mutation {
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
-type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
+type Schema = juniper::RootNode&lt;'static, Query, Mutation, EmptySubscription&lt;Context&gt;&gt;;
 
 # fn main() {
-#   let _ = Schema::new(Query, Mutation{});
+#   let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
 # }
 </code></pre></pre>
 <p>We now have a very simple but functional schema for a GraphQL server!</p>
@@ -260,7 +260,7 @@ type Schema = juniper::RootNode&lt;'static, Query, Mutation&gt;;
 <p>You can invoke <code>juniper::execute</code> directly to run a GraphQL query:</p>
 <pre><pre class="playpen"><code class="language-rust"># // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
-use juniper::{FieldResult, Variables, EmptyMutation};
+use juniper::{FieldResult, Variables, EmptyMutation, EmptySubscription};
 
 
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
@@ -289,7 +289,7 @@ impl Query {
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
-type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Ctx&gt;&gt;;
+type Schema = juniper::RootNode&lt;'static, Query, EmptyMutation&lt;Ctx&gt;, EmptySubscription&lt;Ctx&gt;&gt;;
 
 fn main() {
     // Create a context object.
@@ -299,7 +299,7 @@ fn main() {
     let (res, _errors) = juniper::execute_sync(
         &quot;query { favoriteEpisode }&quot;,
         None,
-        &amp;Schema::new(Query, EmptyMutation::new()),
+        &amp;Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &amp;Variables::new(),
         &amp;ctx,
     ).unwrap();
