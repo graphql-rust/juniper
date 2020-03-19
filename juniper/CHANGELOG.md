@@ -9,6 +9,9 @@
   - `LexerError`
   - `ParseError`
   - `RuleError`
+  
+- Support subscriptions (see 
+  [#433](https://github.com/graphql-rust/juniper/pull/433) for more details)
 
 See [#419](https://github.com/graphql-rust/juniper/pull/419).
 
@@ -25,13 +28,17 @@ See [#569](https://github.com/graphql-rust/juniper/pull/569).
 
 - `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro
 
-- ScalarRefValue trait  removed
+- ScalarRefValue trait removed
   Trait was not required.
 
 - Changed return type of GraphQLType::resolve to `ExecutionResult`
   This was done to unify the return type of all resolver methods
   The previous `Value` return type was just an internal artifact of 
   error handling.
+  
+- Subscription-related: 
+  add subscription type to `RootNode`,
+  add subscription endpoint to `playground_source()`
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 

@@ -82,14 +82,15 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
@@ -150,6 +151,7 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
 pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
+        None,
     ))
 }
 
@@ -158,14 +160,15 @@ where
     S: ScalarValue,
 {
     /// Execute an incoming GraphQL query
-    pub fn execute_sync<CtxT, QueryT, MutationT>(
+    pub fn execute_sync<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         let response = self.0.execute_sync(root_node, context);
         let status = if response.is_ok() {
@@ -205,9 +208,9 @@ impl GraphQLResponse {
     /// #
     /// # use juniper::tests::schema::Query;
     /// # use juniper::tests::model::Database;
-    /// # use juniper::{EmptyMutation, FieldError, RootNode, Value};
+    /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
-    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
@@ -489,10 +492,10 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
+        EmptyMutation, EmptySubscription, RootNode,
     };
 
-    type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+    type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     #[get("/?<request..>")]
     fn get_graphql_handler(
@@ -567,9 +570,11 @@ mod tests {
     }
 
     fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite()
-            .manage(Database::new())
-            .manage(Schema::new(Query, EmptyMutation::<Database>::new()))
+        rocket::ignite().manage(Database::new()).manage(Schema::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ))
     }
 
     fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {

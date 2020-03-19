@@ -2,6 +2,12 @@
 
 - Compatibility with the latest `juniper`.
 
+## Breaking Changes
+
+- Update `playground_filter` to support subscription endpoint URLs
+- Update `warp` to 0.2
+- Rename synchronous `execute` to `execute_sync`, add asynchronous `execute`
+
 # [[0.5.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.5.2)
 
 - Compatibility with the latest `juniper`.

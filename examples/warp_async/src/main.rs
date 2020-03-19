@@ -2,7 +2,7 @@
 //! This example demonstrates async/await usage with warp.
 //! NOTE: this uses tokio 0.1 , not the alpha tokio 0.2.
 
-use juniper::{EmptyMutation, RootNode, FieldError};
+use juniper::{EmptyMutation, EmptySubscription, RootNode, FieldError};
 use warp::{http::Response, Filter};
 
 #[derive(Clone)]
@@ -73,13 +73,14 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation::<Context>::new())
+    Schema::new(Query, EmptyMutation::<Context>::new(), EmptySubscription::<Context>::new())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     ::std::env::set_var("RUST_LOG", "warp_async");
     env_logger::init();
 
@@ -96,15 +97,16 @@ fn main() {
     log::info!("Listening on 127.0.0.1:8080");
 
     let state = warp::any().map(move || Context{} );
-    let graphql_filter = juniper_warp::make_graphql_filter_async(schema(), state.boxed());
+    let graphql_filter = juniper_warp::make_graphql_filter(schema(), state.boxed());
 
     warp::serve(
-        warp::get2()
+        warp::get()
             .and(warp::path("graphiql"))
             .and(juniper_warp::graphiql_filter("/graphql"))
             .or(homepage)
             .or(warp::path("graphql").and(graphql_filter))
             .with(log),
     )
-    .run(([127, 0, 0, 1], 8080));
+    .run(([127, 0, 0, 1], 8080))
+    .await
 }

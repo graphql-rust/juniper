@@ -1,7 +1,7 @@
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
 };
 
@@ -100,7 +100,11 @@ async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await

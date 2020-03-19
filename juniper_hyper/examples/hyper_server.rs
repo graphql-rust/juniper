@@ -4,7 +4,7 @@ use hyper::{
 };
 use juniper::{
     tests::{model::Database, schema::Query},
-    EmptyMutation, RootNode,
+    EmptyMutation, EmptySubscription, RootNode,
 };
 use std::sync::Arc;
 
@@ -15,7 +15,11 @@ async fn main() {
     let addr = ([127, 0, 0, 1], 3000).into();
 
     let db = Arc::new(Database::new());
-    let root_node = Arc::new(RootNode::new(Query, EmptyMutation::<Database>::new()));
+    let root_node = Arc::new(RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    ));
 
     let new_service = make_service_fn(move |_| {
         let root_node = root_node.clone();

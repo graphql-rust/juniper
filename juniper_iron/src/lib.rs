@@ -29,7 +29,7 @@ extern crate iron;
 
 use iron::prelude::*;
 use juniper_iron::GraphQLHandler;
-use juniper::{Context, EmptyMutation};
+use juniper::{Context, EmptyMutation, EmptySubscription};
 
 # use juniper::FieldResult;
 #
@@ -84,7 +84,11 @@ fn main() {
     // and the mutation object. If we don't have any mutations to expose, we
     // can use the empty tuple () to indicate absence.
     let graphql_endpoint = GraphQLHandler::new(
-        context_factory, QueryRoot, EmptyMutation::<Database>::new());
+        context_factory,
+        QueryRoot,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     // Start serving the schema at the root on port 8080.
     Iron::new(graphql_endpoint).http("localhost:8080").unwrap();
@@ -146,14 +150,15 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, Subscription>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, Subscription, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        Subscription: GraphQLType<S, Context = CtxT>,
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
@@ -193,16 +198,24 @@ where
 /// this endpoint containing the field `"query"` and optionally `"variables"`.
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
-pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S = DefaultScalarValue>
-where
+pub struct GraphQLHandler<
+    'a,
+    CtxFactory,
+    Query,
+    Mutation,
+    Subscription,
+    CtxT,
+    S = DefaultScalarValue,
+> where
     S: ScalarValue,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Subscription: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
 {
     context_factory: CtxFactory,
-    root_node: RootNode<'a, Query, Mutation, S>,
+    root_node: RootNode<'a, Query, Mutation, Subscription, S>,
 }
 
 /// Handler that renders `GraphiQL` - a graphical query editor interface
@@ -246,14 +259,15 @@ where
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, CtxT, S>
-    GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
+impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
+    GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
     S: ScalarValue + 'a,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
@@ -261,10 +275,15 @@ where
     /// expected to construct a context object for the given schema. This can
     /// be used to construct e.g. database connections or similar data that
     /// the schema needs to execute the query.
-    pub fn new(context_factory: CtxFactory, query: Query, mutation: Mutation) -> Self {
+    pub fn new(
+        context_factory: CtxFactory,
+        query: Query,
+        mutation: Mutation,
+        subscription: Subscription,
+    ) -> Self {
         GraphQLHandler {
             context_factory,
-            root_node: RootNode::new(query, mutation),
+            root_node: RootNode::new(query, mutation, subscription),
         }
     }
 
@@ -336,14 +355,15 @@ impl PlaygroundHandler {
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, CtxT, S> Handler
-    for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
+impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
+    for GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
     S: ScalarValue + Sync + Send + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
@@ -378,7 +398,7 @@ impl Handler for PlaygroundHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            juniper::http::playground::playground_source(&self.graphql_url),
+            juniper::http::playground::playground_source(&self.graphql_url, None),
         )))
     }
 }
@@ -427,7 +447,7 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation,
+        EmptyMutation, EmptySubscription,
     };
 
     use super::GraphQLHandler;
@@ -520,6 +540,7 @@ mod tests {
             context_factory,
             Query,
             EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
         ))
     }
 }

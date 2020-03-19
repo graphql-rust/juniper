@@ -77,7 +77,7 @@ impl Mutation {}
 
 #[tokio::test]
 async fn async_simple() {
-    let schema = RootNode::new(Query, Mutation);
+    let schema = RootNode::new(Query, Mutation, crate::EmptySubscription::new());
     let doc = r#"
         query { 
             fieldSync

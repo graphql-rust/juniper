@@ -3,7 +3,7 @@ use std::{
     cmp::Ordering,
     collections::HashMap,
     fmt::{Debug, Display},
-    sync::RwLock,
+    sync::{Arc, RwLock},
 };
 
 use fnv::FnvHashMap;
@@ -13,31 +13,30 @@ use crate::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
     },
-    parser::SourcePosition,
-    value::Value,
+    parser::{SourcePosition, Spanning},
+    schema::{
+        meta::{
+            Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
+            InterfaceMeta, ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta,
+            ScalarMeta, UnionMeta,
+        },
+        model::{RootNode, SchemaType, TypeType},
+    },
+    types::{base::GraphQLType, name::Name},
+    value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
     GraphQLError,
 };
 
-use crate::schema::{
-    meta::{
-        Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta, InterfaceMeta,
-        ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta, ScalarMeta, UnionMeta,
+pub use self::{
+    look_ahead::{
+        Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
+        LookAheadSelection, LookAheadValue,
     },
-    model::{RootNode, SchemaType, TypeType},
-};
-
-use crate::{
-    types::{base::GraphQLType, name::Name},
-    value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
+    owned_executor::OwnedExecutor,
 };
 
 mod look_ahead;
-
-pub use self::look_ahead::{
-    Applies, ChildSelection, ConcreteLookAheadSelection, LookAheadArgument, LookAheadMethods,
-    LookAheadSelection, LookAheadValue,
-};
-use crate::parser::Spanning;
+mod owned_executor;
 
 /// A type registry used to build schemas
 ///
@@ -52,27 +51,27 @@ pub struct Registry<'r, S = DefaultScalarValue> {
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
-    Field(&'a str, SourcePosition, &'a FieldPath<'a>),
+    Field(&'a str, SourcePosition, Arc<FieldPath<'a>>),
 }
 
 /// Query execution engine
 ///
 /// The executor helps drive the query execution in a schema. It keeps track
 /// of the current field stack, context, variables, and errors.
-pub struct Executor<'a, CtxT, S = DefaultScalarValue>
+pub struct Executor<'r, 'a, CtxT, S = DefaultScalarValue>
 where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
-    variables: &'a Variables<S>,
-    current_selection_set: Option<&'a [Selection<'a, S>]>,
-    parent_selection_set: Option<&'a [Selection<'a, S>]>,
+    fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
+    variables: &'r Variables<S>,
+    current_selection_set: Option<&'r [Selection<'a, S>]>,
+    parent_selection_set: Option<&'r [Selection<'a, S>]>,
     current_type: TypeType<'a, S>,
     schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
-    errors: &'a RwLock<Vec<ExecutionError<S>>>,
-    field_path: FieldPath<'a>,
+    errors: &'r RwLock<Vec<ExecutionError<S>>>,
+    field_path: Arc<FieldPath<'a>>,
 }
 
 /// Error type for errors that occur during query execution
@@ -220,6 +219,10 @@ pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 /// The result of resolving an unspecified field
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
+/// Boxed `futures::Stream` yielding `Result<Value<S>, ExecutionError<S>>`
+pub type ValuesStream<'a, S = DefaultScalarValue> =
+    std::pin::Pin<Box<dyn futures::Stream<Item = Result<Value<S>, ExecutionError<S>>> + Send + 'a>>;
+
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 
@@ -349,10 +352,54 @@ where
     }
 }
 
-impl<'a, CtxT, S> Executor<'a, CtxT, S>
+impl<'r, 'a, CtxT, S> Executor<'r, 'a, CtxT, S>
 where
     S: ScalarValue,
 {
+    /// Resolve a single arbitrary value into a stream of [`Value`]s.
+    /// If a field fails to resolve, pushes error to `Executor`
+    /// and returns `Value::Null`.
+    pub async fn resolve_into_stream<'i, 'v, 'res, T>(
+        &'r self,
+        info: &'i T::TypeInfo,
+        value: &'v T,
+    ) -> Value<ValuesStream<'res, S>>
+    where
+        'i: 'res,
+        'v: 'res,
+        'a: 'res,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        match self.subscribe(info, value).await {
+            Ok(v) => v,
+            Err(e) => {
+                self.push_error(e);
+                Value::Null
+            }
+        }
+    }
+
+    /// Resolve a single arbitrary value into a stream of [`Value`]s.
+    /// Calls `resolve_into_stream` on `T`.
+    pub async fn subscribe<'s, 't, 'res, T>(
+        &'r self,
+        info: &'t T::TypeInfo,
+        value: &'t T,
+    ) -> Result<Value<ValuesStream<'res, S>>, FieldError<S>>
+    where
+        't: 'res,
+        'a: 'res,
+        T: crate::GraphQLSubscriptionType<S, Context = CtxT>,
+        T::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        value.resolve_into_stream(info, self).await
+    }
+
     /// Resolve a single arbitrary value, mapping the context to a new type
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
@@ -439,7 +486,10 @@ where
     ///
     /// This can be used to connect different types, e.g. from different Rust
     /// libraries, that require different context types.
-    pub fn replaced_context<'b, NewCtxT>(&'b self, ctx: &'b NewCtxT) -> Executor<'b, NewCtxT, S> {
+    pub fn replaced_context<'b, NewCtxT>(
+        &'b self,
+        ctx: &'b NewCtxT,
+    ) -> Executor<'b, 'b, NewCtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -454,13 +504,13 @@ where
     }
 
     #[doc(hidden)]
-    pub fn field_sub_executor(
-        &self,
+    pub fn field_sub_executor<'s>(
+        &'s self,
         field_alias: &'a str,
-        field_name: &'a str,
+        field_name: &'s str,
         location: SourcePosition,
-        selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<CtxT, S> {
+        selection_set: Option<&'s [Selection<'a, S>]>,
+    ) -> Executor<'s, 'a, CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -477,16 +527,20 @@ where
             schema: self.schema,
             context: self.context,
             errors: self.errors,
-            field_path: FieldPath::Field(field_alias, location, &self.field_path),
+            field_path: Arc::new(FieldPath::Field(
+                field_alias,
+                location,
+                Arc::clone(&self.field_path),
+            )),
         }
     }
 
     #[doc(hidden)]
-    pub fn type_sub_executor(
-        &self,
-        type_name: Option<&'a str>,
-        selection_set: Option<&'a [Selection<S>]>,
-    ) -> Executor<CtxT, S> {
+    pub fn type_sub_executor<'s>(
+        &'s self,
+        type_name: Option<&'s str>,
+        selection_set: Option<&'s [Selection<'a, S>]>,
+    ) -> Executor<'s, 'a, CtxT, S> {
         Executor {
             fragments: self.fragments,
             variables: self.variables,
@@ -503,11 +557,16 @@ where
         }
     }
 
+    /// `Executor`'s current selection set
+    pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
+        self.current_selection_set
+    }
+
     /// Access the current context
     ///
     /// You usually provide the context when calling the top-level `execute`
     /// function, or using the context factory in the Iron integration.
-    pub fn context(&self) -> &'a CtxT {
+    pub fn context(&self) -> &'r CtxT {
         self.context
     }
 
@@ -522,13 +581,13 @@ where
     }
 
     #[doc(hidden)]
-    pub fn variables(&self) -> &'a Variables<S> {
+    pub fn variables(&self) -> &'r Variables<S> {
         self.variables
     }
 
     #[doc(hidden)]
-    pub fn fragment_by_name(&'a self, name: &str) -> Option<&'a Fragment<'a, S>> {
-        self.fragments.get(name).cloned()
+    pub fn fragment_by_name<'s>(&'s self, name: &str) -> Option<&'s Fragment<'a, S>> {
+        self.fragments.get(name)
     }
 
     /// The current location of the executor
@@ -555,12 +614,24 @@ where
         });
     }
 
+    /// Returns new [`ExecutionError`] at current location
+    pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        ExecutionError {
+            location: self.location().clone(),
+            path,
+            error,
+        }
+    }
+
     /// Construct a lookahead selection for the current selection.
     ///
     /// This allows seeing the whole selection and perform operations
     /// affecting the children.
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a, S> {
-        let field_name = match self.field_path {
+        let field_name = match *self.field_path {
             FieldPath::Field(x, ..) => x,
             FieldPath::Root(_) => unreachable!(),
         };
@@ -596,7 +667,7 @@ where
                             s.iter()
                                 .map(|s| ChildSelection {
                                     inner: LookAheadSelection::build_from_selection(
-                                        s,
+                                        &s,
                                         self.variables,
                                         self.fragments,
                                     )
@@ -610,15 +681,36 @@ where
             })
             .unwrap_or_default()
     }
+
+    /// Create new `OwnedExecutor` and clone all current data
+    /// (except for errors) there
+    ///
+    /// New empty vector is created for `errors` because
+    /// existing errors won't be needed to be accessed by user
+    /// in OwnedExecutor as existing errors will be returned in
+    /// `execute_query`/`execute_mutation`/`resolve_into_stream`/etc.
+    pub fn as_owned_executor(&self) -> OwnedExecutor<'a, CtxT, S> {
+        OwnedExecutor {
+            fragments: self.fragments.clone(),
+            variables: self.variables.clone(),
+            current_selection_set: self.current_selection_set.map(|x| x.to_vec()),
+            parent_selection_set: self.parent_selection_set.map(|x| x.to_vec()),
+            current_type: self.current_type.clone(),
+            schema: self.schema,
+            context: self.context,
+            errors: RwLock::new(vec![]),
+            field_path: Arc::clone(&self.field_path),
+        }
+    }
 }
 
 impl<'a> FieldPath<'a> {
     fn construct_path(&self, acc: &mut Vec<String>) {
-        match *self {
+        match self {
             FieldPath::Root(_) => (),
             FieldPath::Field(name, _, parent) => {
                 parent.construct_path(acc);
-                acc.push(name.to_owned());
+                acc.push((*name).to_owned());
             }
         }
     }
@@ -656,10 +748,12 @@ impl<S> ExecutionError<S> {
     }
 }
 
-pub fn execute_validated_query<'a, 'b, QueryT, MutationT, CtxT, S>(
+/// Create new `Executor` and start query/mutation execution.
+/// Returns `IsSubscription` error if subscription is passed.
+pub fn execute_validated_query<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: &'b Document<S>,
     operation: &'b Spanning<Operation<S>>,
-    root_node: &RootNode<QueryT, MutationT, S>,
+    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -667,7 +761,12 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
+    if operation.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+
     let mut fragments = vec![];
     for def in document.iter() {
         if let Definition::Fragment(f) = def {
@@ -716,7 +815,7 @@ where
         let executor = Executor {
             fragments: &fragments
                 .iter()
-                .map(|f| (f.item.name.item, &f.item))
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&operation.item.selection_set[..]),
@@ -725,7 +824,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: FieldPath::Root(operation.start),
+            field_path: Arc::new(FieldPath::Root(operation.start)),
         };
 
         value = match operation.item.operation_type {
@@ -743,10 +842,12 @@ where
     Ok((value, errors))
 }
 
-pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, CtxT, S>(
+/// Create new `Executor` and start asynchronous query execution.
+/// Returns `IsSubscription` error if subscription is passed.
+pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, CtxT, S>(
     document: &'b Document<'a, S>,
     operation: &'b Spanning<Operation<'_, S>>,
-    root_node: &RootNode<'a, QueryT, MutationT, S>,
+    root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -756,8 +857,14 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
+    if operation.item.operation_type == OperationType::Subscription {
+        return Err(GraphQLError::IsSubscription);
+    }
+
     let mut fragments = vec![];
     for def in document.iter() {
         if let Definition::Fragment(f) = def {
@@ -806,7 +913,7 @@ where
         let executor = Executor {
             fragments: &fragments
                 .iter()
-                .map(|f| (f.item.name.item, &f.item))
+                .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
             variables: final_vars,
             current_selection_set: Some(&operation.item.selection_set[..]),
@@ -815,7 +922,7 @@ where
             schema: &root_node.schema,
             context,
             errors: &errors,
-            field_path: FieldPath::Root(operation.start),
+            field_path: Arc::new(FieldPath::Root(operation.start)),
         };
 
         value = match operation.item.operation_type {
@@ -839,10 +946,10 @@ where
     Ok((value, errors))
 }
 
-pub fn get_operation<'a, 'b, S>(
-    document: &'b Document<'b, S>,
+pub fn get_operation<'b, 'd, 'e, S>(
+    document: &'b Document<'d, S>,
     operation_name: Option<&str>,
-) -> Result<&'b Spanning<Operation<'b, S>>, GraphQLError<'a>>
+) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError<'e>>
 where
     S: ScalarValue,
 {
@@ -865,10 +972,120 @@ where
         Some(op) => op,
         None => return Err(GraphQLError::UnknownOperationName),
     };
-    if op.item.operation_type == OperationType::Subscription {
-        return Err(GraphQLError::IsSubscription);
-    }
     Ok(op)
+}
+
+/// Initialize new `Executor` and start resolving subscription into stream
+/// asynchronously.
+/// Returns `NotSubscription` error if query or mutation is passed
+pub async fn resolve_validated_subscription<
+    'r,
+    'exec_ref,
+    'd,
+    'op,
+    QueryT,
+    MutationT,
+    SubscriptionT,
+    CtxT,
+    S,
+>(
+    document: &Document<'d, S>,
+    operation: &Spanning<Operation<'op, S>>,
+    root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &'r CtxT,
+) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError<'r>>
+where
+    'r: 'exec_ref,
+    'd: 'r,
+    'op: 'd,
+    S: ScalarValue + Send + Sync,
+    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'r,
+{
+    if operation.item.operation_type != OperationType::Subscription {
+        return Err(GraphQLError::NotSubscription);
+    }
+
+    let mut fragments = vec![];
+    for def in document.iter() {
+        match def {
+            Definition::Fragment(f) => fragments.push(f),
+            _ => (),
+        };
+    }
+
+    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+        defs.item
+            .items
+            .iter()
+            .filter_map(|&(ref name, ref def)| {
+                def.default_value
+                    .as_ref()
+                    .map(|i| (name.item.to_owned(), i.item.clone()))
+            })
+            .collect::<HashMap<String, InputValue<S>>>()
+    });
+
+    let errors = RwLock::new(Vec::new());
+    let value;
+
+    {
+        let mut all_vars;
+        let mut final_vars = variables;
+
+        if let Some(defaults) = default_variable_values {
+            all_vars = variables.clone();
+
+            for (name, value) in defaults {
+                all_vars.entry(name).or_insert(value);
+            }
+
+            final_vars = &all_vars;
+        }
+
+        let root_type = match operation.item.operation_type {
+            OperationType::Subscription => root_node
+                .schema
+                .subscription_type()
+                .expect("No subscription type found"),
+            _ => unreachable!(),
+        };
+
+        let executor: Executor<'_, 'r, _, _> = Executor {
+            fragments: &fragments
+                .iter()
+                .map(|f| (f.item.name.item, f.item.clone()))
+                .collect(),
+            variables: final_vars,
+            current_selection_set: Some(&operation.item.selection_set[..]),
+            parent_selection_set: None,
+            current_type: root_type,
+            schema: &root_node.schema,
+            context,
+            errors: &errors,
+            field_path: Arc::new(FieldPath::Root(operation.start)),
+        };
+
+        value = match operation.item.operation_type {
+            OperationType::Subscription => {
+                executor
+                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
+                    .await
+            }
+            _ => unreachable!(),
+        };
+    }
+
+    let mut errors = errors.into_inner().unwrap();
+    errors.sort();
+
+    Ok((value, errors))
 }
 
 impl<'r, S> Registry<'r, S>

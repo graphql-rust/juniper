@@ -3,7 +3,7 @@ use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Value},
 };
 
@@ -75,15 +75,15 @@ impl Root {
 
     // TODO: enable once [parameter attributes are supported by proc macros]
     //       (https://github.com/graphql-rust/juniper/pull/441)
-    //     fn attr_arg_descr(
-    //        #[graphql(description = "The arg")]
-    //        arg: i32) -> i32
-    //     { 0 }
-    //    fn attr_arg_descr_collapse(
-    //        #[graphql(description = "The first arg")]
-    //        #[graphql(description = "and more details")]
-    //         arg: i32,
-    //     ) -> i32 { 0 }
+    //fn attr_arg_descr(
+    //   #[graphql(description = "The arg")]
+    //   arg: i32) -> i32
+    //{ 0 }
+    //fn attr_arg_descr_collapse(
+    //   #[graphql(description = "The first arg")]
+    //   #[graphql(description = "and more details")]
+    //    arg: i32,
+    //) -> i32 { 0 }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
@@ -164,7 +164,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await

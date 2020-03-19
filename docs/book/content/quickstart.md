@@ -24,7 +24,7 @@ types to a GraphQL schema. The most important one is the
 resolvers, which you will use for the `Query` and `Mutation` roots.
 
 ```rust
-use juniper::{FieldResult};
+use juniper::{FieldResult, EmptySubscription};
 
 # struct DatabasePool;
 # impl DatabasePool {
@@ -119,10 +119,10 @@ impl Mutation {
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
-type Schema = juniper::RootNode<'static, Query, Mutation>;
+type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 
 # fn main() {
-#   let _ = Schema::new(Query, Mutation{});
+#   let _ = Schema::new(Query, Mutation{}, EmptySubscription::new());
 # }
 ```
 
@@ -139,7 +139,7 @@ You can invoke `juniper::execute` directly to run a GraphQL query:
 ```rust
 # // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
-use juniper::{FieldResult, Variables, EmptyMutation};
+use juniper::{FieldResult, Variables, EmptyMutation, EmptySubscription};
 
 
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
@@ -168,7 +168,7 @@ impl Query {
 
 // A root schema consists of a query and a mutation.
 // Request queries can be executed against a RootNode.
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<Ctx>>;
+type Schema = juniper::RootNode<'static, Query, EmptyMutation<Ctx>, EmptySubscription<Ctx>>;
 
 fn main() {
     // Create a context object.
@@ -178,7 +178,7 @@ fn main() {
     let (res, _errors) = juniper::execute_sync(
         "query { favoriteEpisode }",
         None,
-        &Schema::new(Query, EmptyMutation::new()),
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &Variables::new(),
         &ctx,
     ).unwrap();

@@ -211,7 +211,7 @@ where
 }
 
 async fn resolve_into_list_async<'a, S, T, I>(
-    executor: &'a Executor<'a, T::Context, S>,
+    executor: &'a Executor<'a, 'a, T::Context, S>,
     info: &'a T::TypeInfo,
     items: I,
 ) -> ExecutionResult<S>
@@ -222,7 +222,7 @@ where
     T::TypeInfo: Send + Sync,
     T::Context: Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::{FuturesOrdered, StreamExt as _};
     use std::iter::FromIterator;
 
     let stop_on_null = executor

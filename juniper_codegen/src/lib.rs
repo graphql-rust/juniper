@@ -57,6 +57,12 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
+#[proc_macro_derive(GraphQLObjectInternal, attributes(graphql))]
+pub fn derive_object_internal(input: TokenStream) -> TokenStream {
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
+    let gen = derive_object::build_derive_object(ast, true);
+    gen.into()
+}
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
 /// derive.
 ///
@@ -377,6 +383,20 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     impl_object::build_object(args, input, true)
+}
+
+/// A proc macro for defining a GraphQL subscription.
+#[proc_macro_attribute]
+pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_subscription(args, input, false);
+    gen.into()
+}
+
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gen = impl_object::build_subscription(args, input, true);
+    gen.into()
 }
 
 #[proc_macro_attribute]

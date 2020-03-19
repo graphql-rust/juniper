@@ -5,7 +5,7 @@ use crate::{
     executor::Variables,
     parser::SourcePosition,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
     GraphQLError::ValidationError,
@@ -130,7 +130,11 @@ async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>,
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -285,7 +289,11 @@ async fn variable_runs_from_input_value_on_scalar() {
 
 #[tokio::test]
 async fn variable_error_on_nested_non_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -318,7 +326,11 @@ async fn variable_error_on_nested_non_null() {
 
 #[tokio::test]
 async fn variable_error_on_incorrect_type() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![("input".to_owned(), InputValue::scalar("foo bar"))]
@@ -340,7 +352,11 @@ async fn variable_error_on_incorrect_type() {
 
 #[tokio::test]
 async fn variable_error_on_omit_non_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -372,7 +388,11 @@ async fn variable_error_on_omit_non_null() {
 
 #[tokio::test]
 async fn variable_multiple_errors_with_nesting() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query =
         r#"query q($input: TestNestedInputObject) { fieldWithNestedObjectInput(input: $input) }"#;
@@ -411,7 +431,11 @@ async fn variable_multiple_errors_with_nesting() {
 
 #[tokio::test]
 async fn variable_error_on_additional_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: TestInputObject) { fieldWithObjectInput(input: $input) }"#;
     let vars = vec![(
@@ -535,7 +559,11 @@ async fn allow_nullable_inputs_to_be_set_to_value_directly() {
 
 #[tokio::test]
 async fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![].into_iter().collect();
@@ -555,7 +583,11 @@ async fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
 
 #[tokio::test]
 async fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($value: String!) { fieldWithNonNullableStringInput(input: $value) }"#;
     let vars = vec![("value".to_owned(), InputValue::null())]
@@ -669,7 +701,11 @@ async fn allow_lists_to_contain_null() {
 
 #[tokio::test]
 async fn does_not_allow_non_null_lists_to_be_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: [String]!) { nnList(input: $input) }"#;
     let vars = vec![("input".to_owned(), InputValue::null())]
@@ -771,7 +807,11 @@ async fn allow_lists_of_non_null_to_contain_values() {
 
 #[tokio::test]
 async fn does_not_allow_lists_of_non_null_to_contain_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: [String!]) { listNn(input: $input) }"#;
     let vars = vec![(
@@ -800,7 +840,11 @@ async fn does_not_allow_lists_of_non_null_to_contain_null() {
 
 #[tokio::test]
 async fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![(
@@ -829,7 +873,11 @@ async fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
 
 #[tokio::test]
 async fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($input: [String!]!) { nnListNn(input: $input) }"#;
     let vars = vec![("value".to_owned(), InputValue::null())]
@@ -975,7 +1023,11 @@ async fn nullable_input_object_arguments_successful_with_variables() {
 
 #[tokio::test]
 async fn does_not_allow_missing_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"{ exampleInput(arg: {a: "abc"}) }"#;
     let vars = vec![].into_iter().collect();
@@ -995,7 +1047,11 @@ async fn does_not_allow_missing_required_field() {
 
 #[tokio::test]
 async fn does_not_allow_null_in_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"{ exampleInput(arg: {a: "abc", b: null}) }"#;
     let vars = vec![].into_iter().collect();
@@ -1015,7 +1071,11 @@ async fn does_not_allow_null_in_required_field() {
 
 #[tokio::test]
 async fn does_not_allow_missing_variable_for_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![].into_iter().collect();
@@ -1035,7 +1095,11 @@ async fn does_not_allow_missing_variable_for_required_field() {
 
 #[tokio::test]
 async fn does_not_allow_null_variable_for_required_field() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($var: Int!) { exampleInput(arg: {b: $var}) }"#;
     let vars = vec![("var".to_owned(), InputValue::null())]
@@ -1142,7 +1206,11 @@ mod integers {
 
     #[tokio::test]
     async fn does_not_coerce_from_float() {
-        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema = RootNode::new(
+            TestType,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::scalar(10.0))]
@@ -1164,7 +1232,11 @@ mod integers {
 
     #[tokio::test]
     async fn does_not_coerce_from_string() {
-        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema = RootNode::new(
+            TestType,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
 
         let query = r#"query q($var: Int!) { integerInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::scalar("10"))]
@@ -1224,7 +1296,11 @@ mod floats {
 
     #[tokio::test]
     async fn does_not_coerce_from_string() {
-        let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+        let schema = RootNode::new(
+            TestType,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
 
         let query = r#"query q($var: Float!) { floatInput(value: $var) }"#;
         let vars = vec![("var".to_owned(), InputValue::scalar("10"))]

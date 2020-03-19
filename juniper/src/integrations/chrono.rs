@@ -203,7 +203,10 @@ mod integration_test {
     use chrono::{prelude::*, Utc};
 
     use crate::{
-        executor::Variables, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+        executor::Variables,
+        schema::model::RootNode,
+        types::scalars::{EmptyMutation, EmptySubscription},
+        value::Value,
     };
 
     #[tokio::test]
@@ -235,7 +238,11 @@ mod integration_test {
         }
         "#;
 
-        let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+        let schema = RootNode::new(
+            Root,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
 
         let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
             .await

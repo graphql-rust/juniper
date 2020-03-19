@@ -1,5 +1,5 @@
 // TODO: make sure proc macro tests cover all
-// variants of the below
+//       variants of the below
 
 /*
 use std::marker::PhantomData;
@@ -8,7 +8,7 @@ use crate::{
     ast::InputValue,
     executor::{Context, FieldResult},
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
 };
 
@@ -167,7 +167,11 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<InnerContext>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<InnerContext>::new(),
+        EmptySubscription::<()>::new(),
+    );
     let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();

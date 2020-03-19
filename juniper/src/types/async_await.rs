@@ -1,18 +1,20 @@
 use crate::{
     ast::Selection,
-    value::{Object, ScalarValue, Value},
-};
-
-use crate::{
     executor::{ExecutionResult, Executor},
     parser::Spanning,
+    value::{Object, ScalarValue, Value},
 };
 
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
-/// TODO: docs.
+/**
+This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
+
+Convenience macros related to asynchronous queries/mutations expand into an
+implementation of this trait and `GraphQLType` for the given type.
+*/
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
@@ -77,7 +79,7 @@ where
         info: &'a Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         if Self::name(info).unwrap() == type_name {
             self.resolve_async(info, selection_set, executor)
@@ -89,11 +91,11 @@ where
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
-pub(crate) fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
+fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
-    executor: &'e Executor<'e, CtxT, S>,
+    executor: &'e Executor<'e, 'e, CtxT, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
@@ -124,7 +126,7 @@ pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: &'a Executor<'a, 'a, CtxT, S>,
 ) -> Value<S>
 where
     T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -132,7 +134,7 @@ where
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::{FuturesOrdered, StreamExt as _};
 
     let mut object = Object::with_capacity(selection_set.len());
 
@@ -231,8 +233,6 @@ where
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
-
-                println!("WHATEVR");
 
                 // TODO: prevent duplicate boxing.
                 let f = async move {

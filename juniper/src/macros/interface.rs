@@ -75,7 +75,7 @@ impl Droid {
 }
 
 // You can introduce lifetimes or generic parameters by < > before the name.
-juniper::graphql_interface!(<'a> &'a Character: Database as "Character" |&self| {
+juniper::graphql_interface!(<'a> &'a dyn Character: Database as "Character" |&self| {
     field id() -> &str { self.id() }
 
     instance_resolvers: |&context| {

@@ -5,7 +5,7 @@ use crate::{
     executor::Variables,
     parser::SourcePosition,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object, Value},
     GraphQLError::ValidationError,
@@ -34,7 +34,11 @@ async fn run_variable_query<F>(query: &str, vars: Variables<DefaultScalarValue>,
 where
     F: Fn(&Object<DefaultScalarValue>) -> (),
 {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -80,7 +84,11 @@ async fn serializes_as_output() {
 
 #[tokio::test]
 async fn does_not_accept_string_literals() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"{ toString(color: "RED") }"#;
     let vars = vec![].into_iter().collect();
@@ -117,7 +125,11 @@ async fn accepts_strings_in_variables() {
 
 #[tokio::test]
 async fn does_not_accept_incorrect_enum_name_in_variables() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![("color".to_owned(), InputValue::scalar("BLURPLE"))]
@@ -139,7 +151,11 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
 
 #[tokio::test]
 async fn does_not_accept_incorrect_type_in_variables() {
-    let schema = RootNode::new(TestType, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
     let vars = vec![("color".to_owned(), InputValue::scalar(123))]

@@ -30,7 +30,7 @@ result can then be converted to JSON for use with tools and libraries such as
 [graphql-client](https://github.com/graphql-rust/graphql-client):
 
 ```rust
-use juniper::{EmptyMutation, FieldResult, IntrospectionFormat};
+use juniper::{EmptyMutation, EmptySubscription, FieldResult, IntrospectionFormat};
 
 // Define our schema.
 
@@ -53,7 +53,12 @@ impl Query {
    }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>>;
+type Schema = juniper::RootNode<
+    'static, 
+    Query, 
+    EmptyMutation<Context>, 
+    EmptySubscription<Context>
+>;
 
 fn main() {
     // Create a context object.
@@ -61,7 +66,7 @@ fn main() {
 
     // Run the built-in introspection query.
     let (res, _errors) = juniper::introspect(
-        &Schema::new(Query, EmptyMutation::new()),
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &ctx,
         IntrospectionFormat::default(),
     ).unwrap();

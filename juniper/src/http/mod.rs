@@ -11,9 +11,10 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     ast::InputValue,
-    executor::ExecutionError,
+    executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLType, RootNode, Value, Variables,
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
+    Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -70,19 +71,20 @@ where
         }
     }
 
-    /// Execute a GraphQL request using the specified schema and context
+    /// Execute a GraphQL request synchronously using the specified schema and context
     ///
-    /// This is a simple wrapper around the `execute` function exposed at the
+    /// This is a simple wrapper around the `execute_sync` function exposed at the
     /// top level of this crate.
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse<'a, S>
     where
         S: ScalarValue,
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         GraphQLResponse(crate::execute_sync(
             &self.query,
@@ -97,9 +99,9 @@ where
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
     /// top level of this crate.
-    pub async fn execute<'a, CtxT, QueryT, MutationT>(
+    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
@@ -108,6 +110,8 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
         let op = self.operation_name();
@@ -115,6 +119,34 @@ where
         let res = crate::execute(&self.query, op, root_node, vars, context).await;
         GraphQLResponse(res)
     }
+}
+
+/// Resolve a GraphQL subscription into `Value<ValuesStream<S>` using the
+/// specified schema and context.
+/// This is a wrapper around the `resolve_into_stream` function exposed at the top
+/// level of this crate.
+pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, CtxT, QueryT, MutationT, SubscriptionT, S>(
+    req: &'req GraphQLRequest<S>,
+    root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    context: &'ctx CtxT,
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    'req: 'a,
+    'rn: 'a,
+    'ctx: 'a,
+    S: ScalarValue + Send + Sync + 'static,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+{
+    let op = req.operation_name();
+    let vars = req.variables();
+
+    crate::resolve_into_stream(&req.query, op, root_node, &vars, context).await
 }
 
 /// Simple wrapper around the result from executing a GraphQL query
@@ -130,6 +162,11 @@ impl<'a, S> GraphQLResponse<'a, S>
 where
     S: ScalarValue,
 {
+    /// Constructs new `GraphQLResponse` using the given result
+    pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>) -> Self {
+        Self(r)
+    }
+
     /// Constructs an error response outside of the normal execution flow
     pub fn error(error: FieldError<S>) -> Self {
         GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))

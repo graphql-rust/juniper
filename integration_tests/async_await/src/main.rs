@@ -75,9 +75,14 @@ struct Mutation;
 #[juniper::graphql_object]
 impl Mutation {}
 
+struct Subscription;
+
+#[juniper::graphql_subscription]
+impl Subscription {}
+
 #[tokio::test]
 async fn async_simple() {
-    let schema = RootNode::new(Query, Mutation);
+    let schema = RootNode::new(Query, Mutation, Subscription);
     let doc = r#"
         query { 
             fieldSync
@@ -119,7 +124,7 @@ async fn async_simple() {
 
 #[tokio::test]
 async fn async_field_validation_error() {
-    let schema = RootNode::new(Query, Mutation);
+    let schema = RootNode::new(Query, Mutation, Subscription);
     let doc = r#"
         query {
             nonExistentField

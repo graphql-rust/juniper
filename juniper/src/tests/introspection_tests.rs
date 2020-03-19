@@ -6,7 +6,7 @@ use crate::{
     introspection::IntrospectionFormat,
     schema::model::RootNode,
     tests::{model::Database, schema::Query},
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
 };
 
 #[tokio::test]
@@ -20,7 +20,11 @@ async fn test_introspection_query_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,
@@ -47,7 +51,11 @@ async fn test_introspection_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,
@@ -73,7 +81,11 @@ async fn test_introspection_specific_object_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,
@@ -100,7 +112,11 @@ async fn test_introspection_specific_interface_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,
@@ -127,7 +143,11 @@ async fn test_introspection_documentation() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
         crate::execute(doc, None, &schema, &Variables::new(), &database).await,
@@ -157,7 +177,11 @@ async fn test_introspection_directives() {
     "#;
 
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let mut result = crate::execute(q, None, &schema, &Variables::new(), &database)
         .await
@@ -203,7 +227,11 @@ async fn test_introspection_possible_types() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let result = crate::execute(doc, None, &schema, &Variables::new(), &database).await;
 
@@ -239,7 +267,11 @@ async fn test_introspection_possible_types() {
 #[tokio::test]
 async fn test_builtin_introspection_query() {
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
     let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
     sort_schema_value(&mut result.0);
     let expected = schema_introspection_result();
@@ -249,7 +281,11 @@ async fn test_builtin_introspection_query() {
 #[tokio::test]
 async fn test_builtin_introspection_query_without_descriptions() {
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let mut result =
         crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();

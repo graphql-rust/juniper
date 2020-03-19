@@ -10,7 +10,7 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{ParseScalarResult, ParseScalarValue, Value},
 };
 
@@ -83,7 +83,11 @@ async fn test_execution() {
         second: sampleScalar(first: 10 second: 20)
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await
@@ -128,7 +132,11 @@ async fn enum_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await
@@ -238,7 +246,11 @@ async fn interface_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await
@@ -386,7 +398,11 @@ async fn object_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await
@@ -594,7 +610,11 @@ async fn scalar_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
         .await
