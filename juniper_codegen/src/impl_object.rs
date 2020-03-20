@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;

@@ -106,6 +106,29 @@ pub struct Database {
     droids: HashMap<String, DroidData>,
 }
 
+use crate::{
+    executor::Registry, schema::meta::MetaType, types::base::GraphQLType, value::ScalarValue,
+};
+
+impl<S> GraphQLType<S> for Database
+where
+    S: ScalarValue,
+{
+    type Context = Self;
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("_Database")
+    }
+
+    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_object_type::<Self>(&(), &[]).into_meta()
+    }
+}
+
 impl HumanData {
     pub fn new(
         id: &str,

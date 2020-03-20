@@ -1,7 +1,5 @@
 extern crate serde_json;
 
-use futures;
-
 use juniper::{
     execute,
     parser::{ParseError, ScalarToken, Spanning, Token},

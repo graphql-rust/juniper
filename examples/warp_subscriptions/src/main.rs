@@ -144,9 +144,7 @@ async fn main() {
     let homepage = warp::path::end().map(|| {
         Response::builder()
             .header("content-type", "text/html")
-            .body(format!(
-                "<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>"
-            ))
+            .body("<html><h1>juniper_subscriptions demo</h1><div>visit <a href=\"/playground\">graphql playground</a></html>".to_string())
     });
 
     let qm_schema = schema();

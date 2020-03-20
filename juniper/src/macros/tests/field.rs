@@ -96,11 +96,11 @@ impl Root {
     }
 
     fn with_return() -> i32 {
-        return 0;
+        0
     }
 
     fn with_return_field_result() -> FieldResult<i32> {
-        return Ok(0);
+        Ok(0)
     }
 }
 

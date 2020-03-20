@@ -226,6 +226,7 @@ pub struct GraphiQLHandler {
 /// Handler that renders `GraphQL Playground` - a graphical query editor interface
 pub struct PlaygroundHandler {
     graphql_url: String,
+    subscription_url: Option<String>,
 }
 
 fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
@@ -262,9 +263,9 @@ where
 impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
     GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
-    CtxT: 'static,
+    CtxT: Send + Sync + 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
@@ -348,9 +349,10 @@ impl PlaygroundHandler {
     ///
     /// The provided URL should point to the URL of the attached `GraphQLHandler`. It can be
     /// relative, so a common value could be `"/graphql"`.
-    pub fn new(graphql_url: &str) -> PlaygroundHandler {
+    pub fn new(graphql_url: &str, subscription_url: Option<&str>) -> PlaygroundHandler {
         PlaygroundHandler {
             graphql_url: graphql_url.to_owned(),
+            subscription_url: subscription_url.map(|s| s.to_owned()),
         }
     }
 }
@@ -360,7 +362,7 @@ impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
 where
     S: ScalarValue + Sync + Send + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
-    CtxT: 'static,
+    CtxT: Send + Sync + 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
@@ -398,7 +400,10 @@ impl Handler for PlaygroundHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            juniper::http::playground::playground_source(&self.graphql_url, None),
+            juniper::http::playground::playground_source(
+                &self.graphql_url,
+                self.subscription_url.as_deref(),
+            ),
         )))
     }
 }
@@ -462,7 +467,7 @@ mod tests {
         let path: String = url
             .path()
             .iter()
-            .map(|x| x.to_string())
+            .map(|x| (*x).to_string())
             .collect::<Vec<String>>()
             .join("/");
         format!(

@@ -15,8 +15,8 @@ use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
 
-pub async fn graphql<CtxT, QueryT, MutationT, SubscrtipionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscrtipionT, S>>,
+pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
@@ -25,10 +25,10 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    SubscrtipionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
-    SubscrtipionT::TypeInfo: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
 {
     match *request.method() {
         Method::GET => {
@@ -61,7 +61,7 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -120,11 +120,14 @@ pub async fn graphiql(graphql_endpoint: &str) -> Result<Response<Body>, hyper::E
     Ok(resp)
 }
 
-pub async fn playground(graphql_endpoint: &str) -> Result<Response<Body>, hyper::Error> {
+pub async fn playground(
+    graphql_endpoint: &str,
+    subscriptions_endpoint: Option<&str>,
+) -> Result<Response<Body>, hyper::Error> {
     let mut resp = new_html_response(StatusCode::OK);
     *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
         graphql_endpoint,
-        None,
+        subscriptions_endpoint,
     ));
     Ok(resp)
 }
@@ -176,7 +179,7 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -322,7 +325,7 @@ where
         S: Send + Sync,
         QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT::TypeInfo: Send + Sync,
         SubscriptionT::TypeInfo: Send + Sync,
@@ -330,7 +333,7 @@ where
     {
         match self {
             GraphQLRequest::Single(request) => {
-                let res = request.execute(&root_node, &context).await;
+                let res = request.execute(&*root_node, &context).await;
                 let is_ok = res.is_ok();
                 let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
                 (is_ok, body)
@@ -338,7 +341,7 @@ where
             GraphQLRequest::Batch(requests) => {
                 let futures = requests
                     .iter()
-                    .map(|request| request.execute(&root_node, &context))
+                    .map(|request| request.execute(&*root_node, &context))
                     .collect::<Vec<_>>();
                 let results = futures::future::join_all(futures).await;
 
@@ -389,7 +392,6 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
-    use futures;
     use hyper::{
         service::{make_service_fn, service_fn},
         Body, Method, Response, Server, StatusCode,

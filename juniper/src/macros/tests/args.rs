@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
 use crate::{

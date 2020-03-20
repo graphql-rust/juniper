@@ -1,3 +1,5 @@
+#![allow(clippy::single_match)]
+
 pub mod parse_impl;
 
 use quote::quote;
@@ -1264,7 +1266,7 @@ mod test {
     fn strs_to_strings(source: Vec<&str>) -> Vec<String> {
         source
             .iter()
-            .map(|x| x.to_string())
+            .map(|x| (*x).to_string())
             .collect::<Vec<String>>()
     }
 
@@ -1281,7 +1283,7 @@ mod test {
 
         #[test]
         fn test_single() {
-            let result = get_doc_strings(&vec![MetaNameValue {
+            let result = get_doc_strings(&[MetaNameValue {
                 path: ident("doc").into(),
                 eq_token: Default::default(),
                 lit: litstr("foo"),
@@ -1294,7 +1296,7 @@ mod test {
 
         #[test]
         fn test_many() {
-            let result = get_doc_strings(&vec![
+            let result = get_doc_strings(&[
                 MetaNameValue {
                     path: ident("doc").into(),
                     eq_token: Default::default(),
@@ -1319,7 +1321,7 @@ mod test {
 
         #[test]
         fn test_not_doc() {
-            let result = get_doc_strings(&vec![MetaNameValue {
+            let result = get_doc_strings(&[MetaNameValue {
                 path: ident("blah").into(),
                 eq_token: Default::default(),
                 lit: litstr("foo"),
