@@ -1,8 +1,8 @@
 extern crate juniper_benchmarks;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, ParameterizedBenchmark};
+use criterion::{criterion_group, criterion_main, Criterion, ParameterizedBenchmark};
 
-use juniper::{graphql_value, InputValue, ToInputValue, Value};
+use juniper::InputValue;
 use juniper_benchmarks as j;
 
 fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {

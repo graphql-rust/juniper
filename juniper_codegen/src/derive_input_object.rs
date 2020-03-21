@@ -1,3 +1,4 @@
+#![allow(clippy::match_wild_err_arm)]
 use std::str::FromStr;
 
 use proc_macro2::{Span, TokenStream};

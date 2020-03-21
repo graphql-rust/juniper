@@ -1,8 +1,6 @@
 // Original author of this test is <https://github.com/davidpdrsn>.
 use juniper::*;
 
-use futures;
-
 struct Query;
 
 #[juniper::graphql_object]

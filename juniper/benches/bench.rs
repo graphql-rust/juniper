@@ -4,11 +4,23 @@ extern crate juniper;
 
 use bencher::Bencher;
 
-use juniper::{execute_sync, tests::model::Database, EmptyMutation, RootNode, Variables};
+use juniper::{
+    execute_sync, tests::model::Database, DefaultScalarValue, EmptyMutation, EmptySubscription,
+    RootNode, Variables,
+};
 
 fn query_type_name(b: &mut Bencher) {
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<
+        &Database,
+        EmptyMutation<Database>,
+        EmptySubscription<Database>,
+        DefaultScalarValue,
+    > = RootNode::new(
+        &database,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let doc = r#"
         query IntrospectionQueryTypeQuery {
@@ -24,7 +36,16 @@ fn query_type_name(b: &mut Bencher) {
 
 fn introspection_query(b: &mut Bencher) {
     let database = Database::new();
-    let schema = RootNode::new(&database, EmptyMutation::<Database>::new());
+    let schema: RootNode<
+        &Database,
+        EmptyMutation<Database>,
+        EmptySubscription<Database>,
+        DefaultScalarValue,
+    > = RootNode::new(
+        &database,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let doc = r#"
   query IntrospectionQuery {

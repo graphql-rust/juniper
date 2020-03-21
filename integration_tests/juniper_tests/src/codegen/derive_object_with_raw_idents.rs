@@ -4,8 +4,6 @@ use juniper::{
     Value, Variables,
 };
 
-use futures;
-
 pub struct Query;
 
 #[juniper::graphql_object]

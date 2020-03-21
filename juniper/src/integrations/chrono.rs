@@ -13,6 +13,7 @@
 |                         |                        | resolution.                               |
 
 */
+#![allow(clippy::needless_lifetimes)]
 use chrono::prelude::*;
 
 use crate::{
@@ -255,7 +256,7 @@ mod integration_test {
             Value::object(
                 vec![
                     ("exampleNaiveDate", Value::scalar("2015-03-14")),
-                    ("exampleNaiveDateTime", Value::scalar(1467969011.0)),
+                    ("exampleNaiveDateTime", Value::scalar(1_467_969_011.0)),
                     (
                         "exampleDateTimeFixedOffset",
                         Value::scalar("1996-12-19T16:39:57-08:00"),
