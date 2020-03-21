@@ -8,6 +8,7 @@ enum UserKind {
 }
 
 struct User {
+    #[allow(dead_code)]
     id: i32,
     name: String,
     kind: UserKind,
@@ -24,14 +25,13 @@ impl User {
     }
 
     async fn friends(&self) -> Vec<User> {
-        let friends = (0..10)
+        (0..10)
             .map(|index| User {
                 id: index,
                 name: format!("user{}", index),
                 kind: UserKind::User,
             })
-            .collect();
-        friends
+            .collect()
     }
 
     async fn kind(&self) -> &UserKind {

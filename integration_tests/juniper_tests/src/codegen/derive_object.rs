@@ -9,8 +9,6 @@ use juniper::{
     self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables,
 };
 
-use futures;
-
 #[derive(GraphQLObject, Debug, PartialEq)]
 #[graphql(
     name = "MyObj",
@@ -333,7 +331,7 @@ async fn check_descriptions(
     "#,
         object_name
     );
-    run_type_info_query(&doc, |(type_info, values)| {
+    let _result = run_type_info_query(&doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
             Some(&Value::scalar(object_name))

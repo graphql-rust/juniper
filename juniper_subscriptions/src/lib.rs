@@ -240,12 +240,12 @@ where
                             }
                         });
                         let obj = Object::from_iter(ready_vec_iterator);
-                        return Poll::Ready(Some(GraphQLResponse::from_result(Ok((
+                        Poll::Ready(Some(GraphQLResponse::from_result(Ok((
                             Value::Object(obj),
                             vec![],
-                        )))));
+                        )))))
                     } else {
-                        return Poll::Pending;
+                        Poll::Pending
                     }
                 },
             );

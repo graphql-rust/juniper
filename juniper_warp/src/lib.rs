@@ -75,11 +75,11 @@ where
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
                 GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
                     .map(|request| request.execute_sync(root_node, context))
@@ -103,12 +103,12 @@ where
         CtxT: Send + Sync,
         S: Send + Sync,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
                 let res = request.execute(root_node, context).await;
                 GraphQLBatchResponse::Single(res)
             }
-            &GraphQLBatchRequest::Batch(ref requests) => {
+            GraphQLBatchRequest::Batch(ref requests) => {
                 let futures = requests
                     .iter()
                     .map(|request| request.execute(root_node, context))
@@ -265,7 +265,7 @@ where
         };
 
     let get_filter = warp::get()
-        .and(context_extractor.clone())
+        .and(context_extractor)
         .and(warp::filters::query::query())
         .and_then(handle_get_request);
 
@@ -731,7 +731,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        let state = warp::any().map(move || Database::new());
+        let state = warp::any().map(Database::new);
         let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
 
         let response = request()
@@ -770,7 +770,7 @@ mod tests {
             EmptySubscription::<Database>::new(),
         );
 
-        let state = warp::any().map(move || Database::new());
+        let state = warp::any().map(Database::new);
         let filter = warp::path("graphql2").and(make_graphql_filter(schema, state.boxed()));
 
         let response = request()

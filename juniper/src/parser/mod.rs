@@ -1,4 +1,5 @@
 //! Query parser and language utilities
+#![allow(clippy::module_inception)]
 
 mod document;
 mod lexer;
