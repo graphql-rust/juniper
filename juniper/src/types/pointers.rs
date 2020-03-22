@@ -215,6 +215,23 @@ where
     }
 }
 
+impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Box<T>
+where
+    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    CtxT: Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        (**self).resolve_async(info, selection_set, executor)
+    }
+}
+
 impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
 where
     S: ScalarValue + Send + Sync,
