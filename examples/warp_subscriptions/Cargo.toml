@@ -14,7 +14,6 @@ serde_json = "1.0"
 tokio = { version = "0.2", features = ["rt-core", "macros"] }
 warp = "0.2.1"
 
-# TODO#433: get crates from GitHub
-juniper = { path = "../../juniper" }
-juniper_subscriptions = { path = "../../juniper_subscriptions"}
-juniper_warp = { path = "../../juniper_warp", features = ["subscriptions"] }
+juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper_subscriptions = { git = "https://github.com/graphql-rust/juniper" }
+juniper_warp = { git = "https://github.com/graphql-rust/juniper", features = ["subscriptions"] }
