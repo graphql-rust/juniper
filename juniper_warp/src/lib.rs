@@ -438,12 +438,12 @@ fn playground_response(
         .expect("response is valid")
 }
 
-/// `juniper_warp` subscriptions handler implementation.
+/// `juniper_warp` actix_subscriptions handler implementation.
 /// Cannot be merged to `juniper_warp` yet as GraphQL over WS[1]
 /// is not fully supported in current implementation.
 ///
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
-#[cfg(feature = "subscriptions")]
+#[cfg(feature = "actix_subscriptions")]
 pub mod subscriptions {
     use std::{
         collections::HashMap,
@@ -696,7 +696,7 @@ mod tests {
             .and(warp::path("playground"))
             .and(playground_filter(
                 "/dogs-api/graphql",
-                Some("/dogs-api/subscriptions"),
+                Some("/dogs-api/actix_subscriptions"),
             ));
         let response = request()
             .method("GET")
@@ -712,7 +712,7 @@ mod tests {
         );
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-        assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
+        assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/actix_subscriptions' })"));
     }
 
     #[tokio::test]
