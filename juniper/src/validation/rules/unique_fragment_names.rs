@@ -30,7 +30,7 @@ where
             Entry::Occupied(e) => {
                 context.report_error(
                     &duplicate_message(f.item.name.item),
-                    &[e.get().clone(), f.item.name.start],
+                    &[*e.get(), f.item.name.start],
                 );
             }
             Entry::Vacant(e) => {

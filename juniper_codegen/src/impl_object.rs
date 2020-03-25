@@ -1,9 +1,26 @@
+#![allow(clippy::collapsible_if)]
+
 use crate::util;
 use proc_macro::TokenStream;
 use quote::quote;
 
 /// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
+    let definition = create(args, body);
+    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
+    definition.into_tokens(juniper_crate_name).into()
+}
+
+/// Generate code for the juniper::graphql_subscription macro.
+pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
+    let definition = create(args, body);
+    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
+    definition
+        .into_subscription_tokens(juniper_crate_name)
+        .into()
+}
+
+fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
     let _impl = util::parse_impl::ImplBlock::parse(args, body);
 
     let name = _impl
@@ -20,7 +37,7 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
         description: _impl.description,
         fields: Vec::new(),
         generics: _impl.generics.clone(),
-        interfaces: if _impl.attrs.interfaces.len() > 0 {
+        interfaces: if !_impl.attrs.interfaces.is_empty() {
             Some(_impl.attrs.interfaces)
         } else {
             None
@@ -160,6 +177,5 @@ pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> 
             is_async,
         });
     }
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_tokens(juniper_crate_name).into()
+    definition
 }

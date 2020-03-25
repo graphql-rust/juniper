@@ -1,4 +1,5 @@
 //! Parse impl blocks.
+#![allow(clippy::or_fun_call)]
 
 use proc_macro::TokenStream;
 use quote::quote;
@@ -47,10 +48,7 @@ pub struct ImplBlock {
 impl ImplBlock {
     /// Check if the block has the special `resolve()` method.
     pub fn has_resolve_method(&self) -> bool {
-        self.methods
-            .iter()
-            .position(|m| m.sig.ident == "resolve")
-            .is_some()
+        self.methods.iter().any(|m| m.sig.ident == "resolve")
     }
 
     /// Parse a 'fn resolve()' method declaration found in union or interface
@@ -64,7 +62,7 @@ impl ImplBlock {
             return Err("Expect a method named 'fn resolve(...)".into());
         }
 
-        let _type = match &method.sig.output {
+        match &method.sig.output {
             syn::ReturnType::Type(_, _) => {
                 return Err("resolve() method must not have a declared return type".into());
             }
@@ -162,7 +160,7 @@ impl ImplBlock {
             }
         };
 
-        let target_trait = match _impl.trait_ {
+        let target_trait = match _impl.clone().trait_ {
             Some((_, path, _)) => {
                 let name = path
                     .segments
@@ -181,12 +179,12 @@ impl ImplBlock {
             panic!("Could not determine a name for the impl type");
         };
 
-        let target_type = _impl.self_ty;
+        let target_type = _impl.self_ty.clone();
 
         let description = attrs
             .description
             .clone()
-            .or(util::get_doc_comment(&_impl.attrs));
+            .or_else(|| util::get_doc_comment(&_impl.attrs.clone()));
 
         let mut methods = Vec::new();
 

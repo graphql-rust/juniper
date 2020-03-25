@@ -3,7 +3,6 @@
 #[cfg(test)]
 extern crate reqwest;
 
-use futures;
 use hyper::{
     header::{self, HeaderValue},
     Body, Method, Request, Response, StatusCode,
@@ -16,8 +15,8 @@ use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
 
-pub async fn graphql<CtxT, QueryT, MutationT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
+pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
@@ -26,11 +25,13 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
 {
-    match request.method() {
-        &Method::GET => {
+    match *request.method() {
+        Method::GET => {
             let gql_req = parse_get_req(request);
 
             match gql_req {
@@ -38,7 +39,7 @@ where
                 Err(err) => Ok(render_error(err)),
             }
         }
-        &Method::POST => {
+        Method::POST => {
             let gql_req = parse_post_req(request.into_body()).await;
 
             match gql_req {
@@ -50,8 +51,8 @@ where
     }
 }
 
-pub async fn graphql_async<CtxT, QueryT, MutationT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
+pub async fn graphql_async<CtxT, QueryT, MutationT, SubscriptionT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
@@ -60,11 +61,13 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
 {
-    match request.method() {
-        &Method::GET => {
+    match *request.method() {
+        Method::GET => {
             let gql_req = parse_get_req(request);
 
             match gql_req {
@@ -72,7 +75,7 @@ where
                 Err(err) => Ok(render_error(err)),
             }
         }
-        &Method::POST => {
+        Method::POST => {
             let gql_req = parse_post_req(request.into_body()).await;
 
             match gql_req {
@@ -102,7 +105,7 @@ async fn parse_post_req<S: ScalarValue>(
 ) -> Result<GraphQLRequest<S>, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
         .await
-        .map_err(|err| GraphQLRequestError::BodyHyper(err))?;
+        .map_err(GraphQLRequestError::BodyHyper)?;
 
     let input = String::from_utf8(chunk.iter().cloned().collect())
         .map_err(GraphQLRequestError::BodyUtf8)?;
@@ -117,10 +120,14 @@ pub async fn graphiql(graphql_endpoint: &str) -> Result<Response<Body>, hyper::E
     Ok(resp)
 }
 
-pub async fn playground(graphql_endpoint: &str) -> Result<Response<Body>, hyper::Error> {
+pub async fn playground(
+    graphql_endpoint: &str,
+    subscriptions_endpoint: Option<&str>,
+) -> Result<Response<Body>, hyper::Error> {
     let mut resp = new_html_response(StatusCode::OK);
     *resp.body_mut() = Body::from(juniper::http::playground::playground_source(
         graphql_endpoint,
+        subscriptions_endpoint,
     ));
     Ok(resp)
 }
@@ -132,8 +139,8 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-async fn execute_request<CtxT, QueryT, MutationT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
+async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLRequest<S>,
 ) -> Response<Body>
@@ -142,10 +149,12 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
 {
-    let (is_ok, body) = request.execute(root_node, context);
+    let (is_ok, body) = request.execute_sync(root_node, context);
     let code = if is_ok {
         StatusCode::OK
     } else {
@@ -160,8 +169,8 @@ where
     resp
 }
 
-async fn execute_request_async<CtxT, QueryT, MutationT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, S>>,
+async fn execute_request_async<CtxT, QueryT, MutationT, SubscriptionT, S>(
+    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLRequest<S>,
 ) -> Response<Body>
@@ -170,10 +179,12 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
 {
-    let (is_ok, body) = request.execute_async(root_node, context).await;
+    let (is_ok, body) = request.execute(root_node, context).await;
     let code = if is_ok {
         StatusCode::OK
     } else {
@@ -267,19 +278,20 @@ impl<S> GraphQLRequest<S>
 where
     S: ScalarValue,
 {
-    fn execute<'a, CtxT: 'a, QueryT, MutationT>(
+    fn execute_sync<'a, CtxT: 'a, QueryT, MutationT, SubscriptionT>(
         self,
-        root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
+        root_node: Arc<RootNode<'a, QueryT, MutationT, SubscriptionT, S>>,
         context: Arc<CtxT>,
     ) -> (bool, hyper::Body)
     where
         S: 'a + Send + Sync,
         QueryT: GraphQLType<S, Context = CtxT> + 'a,
         MutationT: GraphQLType<S, Context = CtxT> + 'a,
+        SubscriptionT: GraphQLType<S, Context = CtxT> + 'a,
     {
         match self {
             GraphQLRequest::Single(request) => {
-                let res = request.execute(&root_node, &context);
+                let res = request.execute_sync(&root_node, &context);
                 let is_ok = res.is_ok();
                 let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
                 (is_ok, body)
@@ -289,7 +301,7 @@ where
                     .into_iter()
                     .map(move |request| {
                         let root_node = root_node.clone();
-                        let res = request.execute(&root_node, &context);
+                        let res = request.execute_sync(&root_node, &context);
                         let is_ok = res.is_ok();
                         let body = serde_json::to_string_pretty(&res).unwrap();
                         (is_ok, body)
@@ -304,22 +316,24 @@ where
         }
     }
 
-    async fn execute_async<'a, CtxT: 'a, QueryT, MutationT>(
+    async fn execute<'a, CtxT: 'a, QueryT, MutationT, SubscriptionT>(
         self,
-        root_node: Arc<RootNode<'a, QueryT, MutationT, S>>,
+        root_node: Arc<RootNode<'a, QueryT, MutationT, SubscriptionT, S>>,
         context: Arc<CtxT>,
     ) -> (bool, hyper::Body)
     where
         S: Send + Sync,
         QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         QueryT::TypeInfo: Send + Sync,
         MutationT::TypeInfo: Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
         match self {
             GraphQLRequest::Single(request) => {
-                let res = request.execute_async(&root_node, &context).await;
+                let res = request.execute(&*root_node, &context).await;
                 let is_ok = res.is_ok();
                 let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
                 (is_ok, body)
@@ -327,7 +341,7 @@ where
             GraphQLRequest::Batch(requests) => {
                 let futures = requests
                     .iter()
-                    .map(|request| request.execute_async(&root_node, &context))
+                    .map(|request| request.execute(&*root_node, &context))
                     .collect::<Vec<_>>();
                 let results = futures::future::join_all(futures).await;
 
@@ -378,7 +392,6 @@ impl Error for GraphQLRequestError {
 
 #[cfg(test)]
 mod tests {
-    use futures;
     use hyper::{
         service::{make_service_fn, service_fn},
         Body, Method, Response, Server, StatusCode,
@@ -386,7 +399,7 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
+        EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::{self, Response as ReqwestResponse};
     use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
@@ -433,7 +446,11 @@ mod tests {
         let addr: SocketAddr = ([127, 0, 0, 1], 3001).into();
 
         let db = Arc::new(Database::new());
-        let root_node = Arc::new(RootNode::new(Query, EmptyMutation::<Database>::new()));
+        let root_node = Arc::new(RootNode::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ));
 
         let new_service = make_service_fn(move |_| {
             let root_node = root_node.clone();

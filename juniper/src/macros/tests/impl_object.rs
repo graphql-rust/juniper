@@ -1,5 +1,5 @@
 use super::util;
-use crate::{graphql_value, EmptyMutation, RootNode};
+use crate::{graphql_value, EmptyMutation, EmptySubscription, RootNode};
 
 #[derive(Default)]
 struct Context {
@@ -122,9 +122,19 @@ impl Mutation {
     }
 }
 
-#[test]
-fn object_introspect() {
-    let res = util::run_info_query::<Query, Mutation, Context>("Query");
+#[derive(Default)]
+struct Subscription;
+
+#[crate::graphql_object_internal(context = Context)]
+impl Subscription {
+    fn empty() -> bool {
+        true
+    }
+}
+
+#[tokio::test]
+async fn object_introspect() {
+    let res = util::run_info_query::<Query, Mutation, Subscription, Context>("Query").await;
     assert_eq!(
         res,
         crate::graphql_value!({
@@ -243,8 +253,8 @@ fn object_introspect() {
     );
 }
 
-#[test]
-fn object_query() {
+#[tokio::test]
+async fn object_query() {
     let doc = r#"
     query {
         withSelf
@@ -266,10 +276,15 @@ fn object_query() {
         withMutArg(arg: true)
     }
     "#;
-    let schema = RootNode::new(Query { b: true }, EmptyMutation::<Context>::new());
+    let schema = RootNode::new(
+        Query { b: true },
+        EmptyMutation::<Context>::new(),
+        EmptySubscription::<Context>::new(),
+    );
     let vars = std::collections::HashMap::new();
 
     let (result, errs) = crate::execute(doc, None, &schema, &vars, &Context { flag1: true })
+        .await
         .expect("Execution failed");
     assert_eq!(errs, []);
     assert_eq!(

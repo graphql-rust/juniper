@@ -16,4 +16,4 @@ pub mod uuid;
 
 #[cfg(feature = "bson")]
 /// GraphQL support for [bson](https://github.com/mongodb/bson-rust) types.
-pub mod objectid;
+pub mod bson;

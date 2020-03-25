@@ -1,9 +1,11 @@
+#![allow(unused)]
+
 use juniper_codegen::GraphQLInputObjectInternal as GraphQLInputObject;
 
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Value},
 };
 
@@ -23,7 +25,7 @@ Syntax to validate:
 
 */
 
-#[derive(GraphQLInputObject)]
+#[derive(GraphQLInputObject, Debug)]
 struct Point {
     x: i32,
 }
@@ -33,28 +35,28 @@ impl Root {
     fn simple() -> i32 {
         0
     }
-    fn exec_arg(executor: &Executor) -> i32 {
+    fn exec_arg(_executor: &Executor) -> i32 {
         0
     }
-    fn exec_arg_and_more(executor: &Executor, arg: i32) -> i32 {
-        0
+    fn exec_arg_and_more(_executor: &Executor, arg: i32) -> i32 {
+        arg
     }
 
     fn single_arg(arg: i32) -> i32 {
-        0
+        arg
     }
 
     fn multi_args(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     fn multi_args_trailing_comma(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(arg(description = "The arg")))]
     fn single_arg_descr(arg: i32) -> i32 {
-        0
+        arg
     }
 
     #[graphql(arguments(
@@ -62,7 +64,7 @@ impl Root {
         arg2(description = "The second arg")
     ))]
     fn multi_args_descr(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(
@@ -70,39 +72,39 @@ impl Root {
         arg2(description = "The second arg")
     ))]
     fn multi_args_descr_trailing_comma(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     // TODO: enable once [parameter attributes are supported by proc macros]
     //       (https://github.com/graphql-rust/juniper/pull/441)
-    //     fn attr_arg_descr(
-    //        #[graphql(description = "The arg")]
-    //        arg: i32) -> i32
-    //     { 0 }
-    //    fn attr_arg_descr_collapse(
-    //        #[graphql(description = "The first arg")]
-    //        #[graphql(description = "and more details")]
-    //         arg: i32,
-    //     ) -> i32 { 0 }
+    //fn attr_arg_descr(
+    //   #[graphql(description = "The arg")]
+    //   arg: i32) -> i32
+    //{ 0 }
+    //fn attr_arg_descr_collapse(
+    //   #[graphql(description = "The first arg")]
+    //   #[graphql(description = "and more details")]
+    //    arg: i32,
+    //) -> i32 { 0 }
 
     #[graphql(arguments(arg(default = 123,),))]
     fn arg_with_default(arg: i32) -> i32 {
-        0
+        arg
     }
 
     #[graphql(arguments(arg1(default = 123,), arg2(default = 456,)))]
     fn multi_args_with_default(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(arg1(default = 123,), arg2(default = 456,),))]
     fn multi_args_with_default_trailing_comma(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(arg(default = 123, description = "The arg")))]
     fn arg_with_default_descr(arg: i32) -> i32 {
-        0
+        arg
     }
 
     #[graphql(arguments(
@@ -110,7 +112,7 @@ impl Root {
         arg2(default = 456, description = "The second arg")
     ))]
     fn multi_args_with_default_descr(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(arguments(
@@ -118,7 +120,7 @@ impl Root {
         arg2(default = 456, description = "The second arg",)
     ))]
     fn multi_args_with_default_trailing_comma_descr(arg1: i32, arg2: i32) -> i32 {
-        0
+        arg1 + arg2
     }
 
     #[graphql(
@@ -134,11 +136,13 @@ impl Root {
         ),
     )]
     fn args_with_complex_default(arg1: String, arg2: Point) -> i32 {
+        let _ = arg1;
+        let _ = arg2;
         0
     }
 }
 
-fn run_args_info_query<F>(field_name: &str, f: F)
+async fn run_args_info_query<F>(field_name: &str, f: F)
 where
     F: Fn(&Vec<Value<DefaultScalarValue>>) -> (),
 {
@@ -162,10 +166,15 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -214,22 +223,24 @@ where
     f(args);
 }
 
-#[test]
-fn introspect_field_simple() {
+#[tokio::test]
+async fn introspect_field_simple() {
     run_args_info_query("simple", |args| {
         assert_eq!(args.len(), 0);
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_exec_arg() {
+#[tokio::test]
+async fn introspect_field_exec_arg() {
     run_args_info_query("execArg", |args| {
         assert_eq!(args.len(), 0);
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_exec_arg_and_more() {
+#[tokio::test]
+async fn introspect_field_exec_arg_and_more() {
     run_args_info_query("execArgAndMore", |args| {
         assert_eq!(args.len(), 1);
 
@@ -258,11 +269,12 @@ fn introspect_field_exec_arg_and_more() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_single_arg() {
+#[tokio::test]
+async fn introspect_field_single_arg() {
     run_args_info_query("singleArg", |args| {
         assert_eq!(args.len(), 1);
 
@@ -291,11 +303,12 @@ fn introspect_field_single_arg() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args() {
+#[tokio::test]
+async fn introspect_field_multi_args() {
     run_args_info_query("multiArgs", |args| {
         assert_eq!(args.len(), 2);
 
@@ -350,11 +363,12 @@ fn introspect_field_multi_args() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_trailing_comma() {
+#[tokio::test]
+async fn introspect_field_multi_args_trailing_comma() {
     run_args_info_query("multiArgsTrailingComma", |args| {
         assert_eq!(args.len(), 2);
 
@@ -409,11 +423,12 @@ fn introspect_field_multi_args_trailing_comma() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_single_arg_descr() {
+#[tokio::test]
+async fn introspect_field_single_arg_descr() {
     run_args_info_query("singleArgDescr", |args| {
         assert_eq!(args.len(), 1);
 
@@ -442,11 +457,12 @@ fn introspect_field_single_arg_descr() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_descr() {
+#[tokio::test]
+async fn introspect_field_multi_args_descr() {
     run_args_info_query("multiArgsDescr", |args| {
         assert_eq!(args.len(), 2);
 
@@ -501,11 +517,12 @@ fn introspect_field_multi_args_descr() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_descr_trailing_comma() {
+#[tokio::test]
+async fn introspect_field_multi_args_descr_trailing_comma() {
     run_args_info_query("multiArgsDescrTrailingComma", |args| {
         assert_eq!(args.len(), 2);
 
@@ -560,12 +577,13 @@ fn introspect_field_multi_args_descr_trailing_comma() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
 // TODO: enable once [parameter attributes are supported by proc macros]
 //       (https://github.com/graphql-rust/juniper/pull/441)
-// #[test]
+// #[tokio::test]
 // fn introspect_field_attr_arg_descr() {
 //     run_args_info_query("attrArgDescr", |args| {
 //         assert_eq!(args.len(), 1);
@@ -600,7 +618,7 @@ fn introspect_field_multi_args_descr_trailing_comma() {
 
 // TODO: enable once [parameter attributes are supported by proc macros]
 //       (https://github.com/graphql-rust/juniper/pull/441)
-// #[test]
+// #[tokio::test]
 // fn introspect_field_attr_arg_descr_collapse() {
 //     run_args_info_query("attrArgDescrCollapse", |args| {
 //         assert_eq!(args.len(), 1);
@@ -633,8 +651,8 @@ fn introspect_field_multi_args_descr_trailing_comma() {
 //     });
 // }
 
-#[test]
-fn introspect_field_arg_with_default() {
+#[tokio::test]
+async fn introspect_field_arg_with_default() {
     run_args_info_query("argWithDefault", |args| {
         assert_eq!(args.len(), 1);
 
@@ -655,11 +673,12 @@ fn introspect_field_arg_with_default() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_with_default() {
+#[tokio::test]
+async fn introspect_field_multi_args_with_default() {
     run_args_info_query("multiArgsWithDefault", |args| {
         assert_eq!(args.len(), 2);
 
@@ -698,11 +717,12 @@ fn introspect_field_multi_args_with_default() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_with_default_trailing_comma() {
+#[tokio::test]
+async fn introspect_field_multi_args_with_default_trailing_comma() {
     run_args_info_query("multiArgsWithDefaultTrailingComma", |args| {
         assert_eq!(args.len(), 2);
 
@@ -741,11 +761,12 @@ fn introspect_field_multi_args_with_default_trailing_comma() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_arg_with_default_descr() {
+#[tokio::test]
+async fn introspect_field_arg_with_default_descr() {
     run_args_info_query("argWithDefaultDescr", |args| {
         assert_eq!(args.len(), 1);
 
@@ -766,11 +787,12 @@ fn introspect_field_arg_with_default_descr() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_with_default_descr() {
+#[tokio::test]
+async fn introspect_field_multi_args_with_default_descr() {
     run_args_info_query("multiArgsWithDefaultDescr", |args| {
         assert_eq!(args.len(), 2);
 
@@ -809,11 +831,12 @@ fn introspect_field_multi_args_with_default_descr() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_multi_args_with_default_trailing_comma_descr() {
+#[tokio::test]
+async fn introspect_field_multi_args_with_default_trailing_comma_descr() {
     run_args_info_query("multiArgsWithDefaultTrailingCommaDescr", |args| {
         assert_eq!(args.len(), 2);
 
@@ -852,11 +875,12 @@ fn introspect_field_multi_args_with_default_trailing_comma_descr() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_field_args_with_complex_default() {
+#[tokio::test]
+async fn introspect_field_args_with_complex_default() {
     run_args_info_query("argsWithComplexDefault", |args| {
         assert_eq!(args.len(), 2);
 
@@ -898,5 +922,6 @@ fn introspect_field_args_with_complex_default() {
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }

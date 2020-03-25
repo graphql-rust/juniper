@@ -1,3 +1,4 @@
+#[cfg(test)]
 use juniper::{graphql_value, GraphQLError, RootNode, Value};
 
 #[derive(juniper::GraphQLEnum)]
@@ -8,13 +9,18 @@ enum UserKind {
 }
 
 struct User {
-    id: u64,
+    #[allow(dead_code)]
+    id: i32,
     name: String,
     kind: UserKind,
 }
 
 #[juniper::graphql_object]
 impl User {
+    async fn id(&self) -> i32 {
+        self.id
+    }
+
     async fn name(&self) -> &str {
         &self.name
     }
@@ -70,9 +76,14 @@ struct Mutation;
 #[juniper::graphql_object]
 impl Mutation {}
 
+struct Subscription;
+
+#[juniper::graphql_subscription]
+impl Subscription {}
+
 #[tokio::test]
 async fn async_simple() {
-    let schema = RootNode::new(Query, Mutation);
+    let schema = RootNode::new(Query, Mutation, Subscription);
     let doc = r#"
         query { 
             fieldSync
@@ -87,7 +98,7 @@ async fn async_simple() {
     "#;
 
     let vars = Default::default();
-    let (res, errs) = juniper::execute_async(doc, None, &schema, &vars, &())
+    let (res, errs) = juniper::execute(doc, None, &schema, &vars, &())
         .await
         .unwrap();
 
@@ -114,7 +125,7 @@ async fn async_simple() {
 
 #[tokio::test]
 async fn async_field_validation_error() {
-    let schema = RootNode::new(Query, Mutation);
+    let schema = RootNode::new(Query, Mutation, Subscription);
     let doc = r#"
         query {
             nonExistentField
@@ -130,7 +141,7 @@ async fn async_field_validation_error() {
     "#;
 
     let vars = Default::default();
-    let result = juniper::execute_async(doc, None, &schema, &vars, &()).await;
+    let result = juniper::execute(doc, None, &schema, &vars, &()).await;
     assert!(result.is_err());
 
     let error = result.err().unwrap();

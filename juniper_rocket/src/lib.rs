@@ -82,23 +82,24 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
+                    .map(|request| request.execute_sync(root_node, context))
                     .collect(),
             ),
         }
@@ -119,11 +120,11 @@ where
     S: ScalarValue,
 {
     fn is_ok(&self) -> bool {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses
-                .iter()
-                .fold(true, |ok, response| ok && response.is_ok()),
+        match *self {
+            GraphQLBatchResponse::Single(ref response) => response.is_ok(),
+            GraphQLBatchResponse::Batch(ref responses) => {
+                responses.iter().all(|response| response.is_ok())
+            }
         }
     }
 }
@@ -147,9 +148,13 @@ pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
 }
 
 /// Generate an HTML page containing GraphQL Playground
-pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
+pub fn playground_source(
+    graphql_endpoint_url: &str,
+    subscriptions_endpoint: Option<&str>,
+) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
+        subscriptions_endpoint,
     ))
 }
 
@@ -158,16 +163,17 @@ where
     S: ScalarValue,
 {
     /// Execute an incoming GraphQL query
-    pub fn execute<CtxT, QueryT, MutationT>(
+    pub fn execute_sync<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
-        let response = self.0.execute(root_node, context);
+        let response = self.0.execute_sync(root_node, context);
         let status = if response.is_ok() {
             Status::Ok
         } else {
@@ -205,9 +211,9 @@ impl GraphQLResponse {
     /// #
     /// # use juniper::tests::schema::Query;
     /// # use juniper::tests::model::Database;
-    /// # use juniper::{EmptyMutation, FieldError, RootNode, Value};
+    /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
-    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
@@ -221,7 +227,7 @@ impl GraphQLResponse {
     ///         return juniper_rocket::GraphQLResponse::error(err);
     ///     }
     ///
-    ///     request.execute(&schema, &context)
+    ///     request.execute_sync(&schema, &context)
     /// }
     /// ```
     pub fn error(error: FieldError) -> Self {
@@ -234,7 +240,7 @@ impl GraphQLResponse {
     ///
     /// This is intended for highly customized integrations and should only
     /// be used as a last resort. For normal juniper use, use the response
-    /// from GraphQLRequest::execute(..).
+    /// from GraphQLRequest::execute_sync(..).
     pub fn custom(status: Status, response: serde_json::Value) -> Self {
         let json = serde_json::to_string(&response).unwrap();
         GraphQLResponse(status, json)
@@ -296,7 +302,7 @@ where
                 }
                 _ => {
                     if strict {
-                        return Err(format!("Prohibited extra field '{}'", key).to_owned());
+                        return Err(format!("Prohibited extra field '{}'", key));
                     }
                 }
             }
@@ -343,7 +349,7 @@ where
 
         match serde_json::from_str(&body) {
             Ok(value) => Success(GraphQLRequest(value)),
-            Err(failure) => return Failure((Status::BadRequest, format!("{}", failure))),
+            Err(failure) => Failure((Status::BadRequest, format!("{}", failure))),
         }
     }
 }
@@ -489,10 +495,10 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
+        EmptyMutation, EmptySubscription, RootNode,
     };
 
-    type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+    type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     #[get("/?<request..>")]
     fn get_graphql_handler(
@@ -500,7 +506,7 @@ mod tests {
         request: Form<super::GraphQLRequest>,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute(&schema, &context)
+        request.execute_sync(&schema, &context)
     }
 
     #[post("/", data = "<request>")]
@@ -509,7 +515,7 @@ mod tests {
         request: super::GraphQLRequest,
         schema: State<Schema>,
     ) -> super::GraphQLResponse {
-        request.execute(&schema, &context)
+        request.execute_sync(&schema, &context)
     }
 
     struct TestRocketIntegration {
@@ -546,7 +552,7 @@ mod tests {
             schema: State<Schema>,
         ) -> super::GraphQLResponse {
             assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-            request.execute(&schema, &context)
+            request.execute_sync(&schema, &context)
         }
 
         let rocket = make_rocket_without_routes()
@@ -567,9 +573,11 @@ mod tests {
     }
 
     fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite()
-            .manage(Database::new())
-            .manage(Schema::new(Query, EmptyMutation::<Database>::new()))
+        rocket::ignite().manage(Database::new()).manage(Schema::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ))
     }
 
     fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {

@@ -13,6 +13,7 @@
 |                         |                        | resolution.                               |
 
 */
+#![allow(clippy::needless_lifetimes)]
 use chrono::prelude::*;
 
 use crate::{
@@ -22,7 +23,7 @@ use crate::{
 };
 
 #[doc(hidden)]
-pub static RFC3339_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S%.f%:z";
+pub static RFC3339_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.f%:z";
 
 graphql_scalar!(DateTime<FixedOffset> as "DateTimeFixedOffset" where Scalar = <S>{
     description: "DateTime"
@@ -203,11 +204,14 @@ mod integration_test {
     use chrono::{prelude::*, Utc};
 
     use crate::{
-        executor::Variables, schema::model::RootNode, types::scalars::EmptyMutation, value::Value,
+        executor::Variables,
+        schema::model::RootNode,
+        types::scalars::{EmptyMutation, EmptySubscription},
+        value::Value,
     };
 
-    #[test]
-    fn test_serialization() {
+    #[tokio::test]
+    async fn test_serialization() {
         struct Root;
 
         #[crate::graphql_object_internal]
@@ -235,10 +239,15 @@ mod integration_test {
         }
         "#;
 
-        let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+        let schema = RootNode::new(
+            Root,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
 
-        let (result, errs) =
-            crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+        let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+            .await
+            .expect("Execution failed");
 
         assert_eq!(errs, []);
 
@@ -247,7 +256,7 @@ mod integration_test {
             Value::object(
                 vec![
                     ("exampleNaiveDate", Value::scalar("2015-03-14")),
-                    ("exampleNaiveDateTime", Value::scalar(1467969011.0)),
+                    ("exampleNaiveDateTime", Value::scalar(1_467_969_011.0)),
                     (
                         "exampleDateTimeFixedOffset",
                         Value::scalar("1996-12-19T16:39:57-08:00"),

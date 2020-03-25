@@ -1,34 +1,56 @@
 use crate::{
     ast::Selection,
-    value::{Object, ScalarValue, Value},
-};
-
-use crate::{
     executor::{ExecutionResult, Executor},
     parser::Spanning,
+    value::{Object, ScalarValue, Value},
 };
 
 use crate::BoxFuture;
 
 use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
 
-// TODO: docs.
+/**
+This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
+
+Convenience macros related to asynchronous queries/mutations expand into an
+implementation of this trait and `GraphQLType` for the given type.
+*/
 pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
 {
+    /// Resolve the value of a single field on this type.
+    ///
+    /// The arguments object contain all specified arguments, with default
+    /// values substituted for the ones not provided by the query.
+    ///
+    /// The executor can be used to drive selections into sub-objects.
+    ///
+    /// The default implementation panics.
     fn resolve_field_async<'a>(
         &'a self,
-        info: &'a Self::TypeInfo,
-        field_name: &'a str,
-        arguments: &'a Arguments<S>,
-        executor: &'a Executor<Self::Context, S>,
+        _info: &'a Self::TypeInfo,
+        _field_name: &'a str,
+        _arguments: &'a Arguments<S>,
+        _executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         panic!("resolve_field must be implemented by object types");
     }
 
+    /// Resolve the provided selection set against the current object.
+    ///
+    /// For non-object types, the selection set will be `None` and the value
+    /// of the object should simply be returned.
+    ///
+    /// For objects, all fields in the selection set should be resolved.
+    /// The default implementation uses `resolve_field` to resolve all fields,
+    /// including those through fragment expansion.
+    ///
+    /// Since the GraphQL spec specificies that errors during field processing
+    /// should result in a null-value, this might return Ok(Null) in case of
+    /// failure. Errors are recorded internally.
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -46,12 +68,18 @@ where
         }
     }
 
+    /// Resolve this interface or union into a concrete type
+    ///
+    /// Try to resolve the current type into the type name provided. If the
+    /// type matches, pass the instance along to `executor.resolve`.
+    ///
+    /// The default implementation panics.
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         type_name: &str,
         selection_set: Option<&'a [Selection<'a, S>]>,
-        executor: &'a Executor<'a, Self::Context, S>,
+        executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
         if Self::name(info).unwrap() == type_name {
             self.resolve_async(info, selection_set, executor)
@@ -63,11 +91,11 @@ where
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
-pub(crate) fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
+fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'e [Selection<'e, S>],
-    executor: &'e Executor<'e, CtxT, S>,
+    executor: &'e Executor<'e, 'e, CtxT, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
     T: GraphQLTypeAsync<S, Context = CtxT>,
@@ -98,7 +126,7 @@ pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     instance: &'a T,
     info: &'a T::TypeInfo,
     selection_set: &'a [Selection<'a, S>],
-    executor: &'a Executor<'a, CtxT, S>,
+    executor: &'a Executor<'a, 'a, CtxT, S>,
 ) -> Value<S>
 where
     T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -106,7 +134,7 @@ where
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt};
+    use futures::stream::{FuturesOrdered, StreamExt as _};
 
     let mut object = Object::with_capacity(selection_set.len());
 
@@ -168,7 +196,7 @@ where
                     &meta_field.arguments,
                 );
 
-                let pos = start_pos.clone();
+                let pos = *start_pos;
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
@@ -248,7 +276,14 @@ where
 
                     if let Ok(Value::Object(obj)) = sub_result {
                         for (k, v) in obj {
-                            merge_key_into(&mut object, &k, v);
+                            // TODO: prevent duplicate boxing.
+                            let f = async move {
+                                AsyncValue::Field(AsyncField {
+                                    name: k,
+                                    value: Some(v),
+                                })
+                            };
+                            async_values.push(Box::pin(f));
                         }
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
@@ -274,7 +309,7 @@ where
         match item {
             AsyncValue::Field(AsyncField { name, value }) => {
                 if let Some(value) = value {
-                    object.add_field(&name, value);
+                    merge_key_into(&mut object, &name, value);
                 } else {
                     return Value::null();
                 }

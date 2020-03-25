@@ -3,12 +3,12 @@ use crate::{
     executor::Variables,
     schema::model::RootNode,
     tests::{model::Database, schema::Query},
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::Value,
 };
 
-#[test]
-fn test_hero_name() {
+#[tokio::test]
+async fn test_hero_name() {
     let doc = r#"
         {
             hero {
@@ -16,10 +16,14 @@ fn test_hero_name() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -34,10 +38,14 @@ fn test_hero_name() {
     );
 }
 
-#[test]
-fn test_hero_field_order() {
+#[tokio::test]
+async fn test_hero_field_order() {
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let doc = r#"
         {
@@ -47,7 +55,7 @@ fn test_hero_field_order() {
             }
         }"#;
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -76,7 +84,7 @@ fn test_hero_field_order() {
             }
         }"#;
     assert_eq!(
-        crate::execute(doc_reversed, None, &schema, &Variables::new(), &database),
+        crate::execute(doc_reversed, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -98,8 +106,8 @@ fn test_hero_field_order() {
     );
 }
 
-#[test]
-fn test_hero_name_and_friends() {
+#[tokio::test]
+async fn test_hero_name_and_friends() {
     let doc = r#"
         {
             hero {
@@ -111,10 +119,14 @@ fn test_hero_name_and_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -156,8 +168,8 @@ fn test_hero_name_and_friends() {
     );
 }
 
-#[test]
-fn test_hero_name_and_friends_and_friends_of_friends() {
+#[tokio::test]
+async fn test_hero_name_and_friends_and_friends_of_friends() {
     let doc = r#"
         {
             hero {
@@ -173,10 +185,14 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -330,14 +346,18 @@ fn test_hero_name_and_friends_and_friends_of_friends() {
     );
 }
 
-#[test]
-fn test_query_name() {
+#[tokio::test]
+async fn test_query_name() {
     let doc = r#"{ human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -356,14 +376,18 @@ fn test_query_name() {
     );
 }
 
-#[test]
-fn test_query_alias_single() {
+#[tokio::test]
+async fn test_query_alias_single() {
     let doc = r#"{ luke: human(id: "1000") { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -382,18 +406,22 @@ fn test_query_alias_single() {
     );
 }
 
-#[test]
-fn test_query_alias_multiple() {
+#[tokio::test]
+async fn test_query_alias_multiple() {
     let doc = r#"
         {
             luke: human(id: "1000") { name }
             leia: human(id: "1003") { name }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![
@@ -422,8 +450,8 @@ fn test_query_alias_multiple() {
     );
 }
 
-#[test]
-fn test_query_alias_multiple_with_fragment() {
+#[tokio::test]
+async fn test_query_alias_multiple_with_fragment() {
     let doc = r#"
         query UseFragment {
             luke: human(id: "1000") { ...HumanFragment }
@@ -435,10 +463,14 @@ fn test_query_alias_multiple_with_fragment() {
             homePlanet
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![
@@ -473,18 +505,22 @@ fn test_query_alias_multiple_with_fragment() {
     );
 }
 
-#[test]
-fn test_query_name_variable() {
+#[tokio::test]
+async fn test_query_name_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let vars = vec![("someId".to_owned(), InputValue::scalar("1000"))]
         .into_iter()
         .collect();
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &vars, &database),
+        crate::execute(doc, None, &schema, &vars, &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -503,18 +539,22 @@ fn test_query_name_variable() {
     );
 }
 
-#[test]
-fn test_query_name_invalid_variable() {
+#[tokio::test]
+async fn test_query_name_invalid_variable() {
     let doc = r#"query FetchSomeIDQuery($someId: String!) { human(id: $someId) { name } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let vars = vec![("someId".to_owned(), InputValue::scalar("some invalid id"))]
         .into_iter()
         .collect();
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &vars, &database),
+        crate::execute(doc, None, &schema, &vars, &database).await,
         Ok((
             Value::object(vec![("human", Value::null())].into_iter().collect()),
             vec![]
@@ -522,14 +562,18 @@ fn test_query_name_invalid_variable() {
     );
 }
 
-#[test]
-fn test_query_friends_names() {
+#[tokio::test]
+async fn test_query_friends_names() {
     let doc = r#"{ human(id: "1000") { friends { name } } }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -568,8 +612,8 @@ fn test_query_friends_names() {
     );
 }
 
-#[test]
-fn test_query_inline_fragments_droid() {
+#[tokio::test]
+async fn test_query_inline_fragments_droid() {
     let doc = r#"
         query InlineFragments {
             hero {
@@ -583,10 +627,14 @@ fn test_query_inline_fragments_droid() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -609,8 +657,8 @@ fn test_query_inline_fragments_droid() {
     );
 }
 
-#[test]
-fn test_query_inline_fragments_human() {
+#[tokio::test]
+async fn test_query_inline_fragments_human() {
     let doc = r#"
         query InlineFragments {
             hero(episode: EMPIRE) {
@@ -620,10 +668,14 @@ fn test_query_inline_fragments_human() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(
@@ -645,8 +697,8 @@ fn test_query_inline_fragments_human() {
     );
 }
 
-#[test]
-fn test_object_typename() {
+#[tokio::test]
+async fn test_object_typename() {
     let doc = r#"
         {
             human(id: "1000") {
@@ -654,10 +706,14 @@ fn test_object_typename() {
             }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             Value::object(
                 vec![(

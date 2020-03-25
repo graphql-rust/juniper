@@ -4,14 +4,10 @@ use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
 use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
-    executor::Variables,
-    value::{DefaultScalarValue, Object, ScalarValue, Value},
-};
-
-use crate::{
-    executor::{ExecutionResult, Executor, Registry},
+    executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
+    value::{DefaultScalarValue, Object, ScalarValue, Value},
 };
 
 /// GraphQL type kind
@@ -345,6 +341,12 @@ where
     }
 }
 
+/// Resolver logic for queries'/mutations' selection set.
+/// Calls appropriate resolver method for each field or fragment found
+/// and then merges returned values into `result` or pushes errors to
+/// field's/fragment's sub executor.
+///
+/// Returns false if any errors occured and true otherwise.
 pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     instance: &T,
     info: &T::TypeInfo,
@@ -531,6 +533,7 @@ where
     false
 }
 
+/// Merges `response_name`/`value` pair into `result`
 pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
     if let Some(&mut (_, ref mut e)) = result
         .iter_mut()
@@ -547,13 +550,12 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
                     dest_list
                         .iter_mut()
                         .zip(src_list.into_iter())
-                        .for_each(|(d, s)| match d {
-                            &mut Value::Object(ref mut d_obj) => {
+                        .for_each(|(d, s)| {
+                            if let Value::Object(ref mut d_obj) = *d {
                                 if let Value::Object(s_obj) = s {
                                     merge_maps(d_obj, s_obj);
                                 }
                             }
-                            _ => {}
                         });
                 }
             }
@@ -564,6 +566,7 @@ pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, val
     result.add_field(response_name, value);
 }
 
+/// Merges `src` object's fields into `dest`
 fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
     for (key, value) in src {
         if dest.contains_field(&key) {

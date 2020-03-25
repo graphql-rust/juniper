@@ -24,7 +24,7 @@ harness = false
 path = "benches/bench.rs"
 
 [features]
-expose-test-schema = []
+expose-test-schema = ["serde_json"]
 default = [
     "bson",
     "chrono",

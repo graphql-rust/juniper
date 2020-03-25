@@ -47,7 +47,7 @@ where
                 Entry::Occupied(e) => {
                     ctx.report_error(
                         &error_message(&field_name.item),
-                        &[e.get().clone(), field_name.start],
+                        &[*e.get(), field_name.start],
                     );
                 }
                 Entry::Vacant(e) => {

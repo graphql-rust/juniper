@@ -225,7 +225,7 @@ where
         // TODO: avoid this bad duplicate as_str() call. (value system refactor)
         InputValue::Scalar(ref scalar) if scalar.as_str().is_some() => {
             if let Some(ref name) = scalar.as_str() {
-                if !meta.values.iter().any(|ev| &ev.name == *name) {
+                if !meta.values.iter().any(|ev| ev.name == *name) {
                     errors.push(unification_error(
                         var_name,
                         var_pos,
@@ -337,7 +337,7 @@ fn unification_error<'a>(
             r#"Variable "${}" got invalid value. {}{}."#,
             var_name, path, message,
         ),
-        &[var_pos.clone()],
+        &[*var_pos],
     )
 }
 

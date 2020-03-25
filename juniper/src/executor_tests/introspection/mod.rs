@@ -10,7 +10,7 @@ use self::input_object::{NamedPublic, NamedPublicWithDescription};
 use crate::{
     executor::Variables,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{ParseScalarResult, ParseScalarValue, Value},
 };
 
@@ -74,8 +74,8 @@ impl Root {
     }
 }
 
-#[test]
-fn test_execution() {
+#[tokio::test]
+async fn test_execution() {
     let doc = r#"
     {
         sampleEnum
@@ -83,10 +83,15 @@ fn test_execution() {
         second: sampleScalar(first: 10 second: 20)
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -106,8 +111,8 @@ fn test_execution() {
     );
 }
 
-#[test]
-fn enum_introspection() {
+#[tokio::test]
+async fn enum_introspection() {
     let doc = r#"
     {
         __type(name: "SampleEnum") {
@@ -127,10 +132,15 @@ fn enum_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -201,8 +211,8 @@ fn enum_introspection() {
     )));
 }
 
-#[test]
-fn interface_introspection() {
+#[tokio::test]
+async fn interface_introspection() {
     let doc = r#"
     {
         __type(name: "SampleInterface") {
@@ -236,10 +246,15 @@ fn interface_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -337,8 +352,8 @@ fn interface_introspection() {
     )));
 }
 
-#[test]
-fn object_introspection() {
+#[tokio::test]
+async fn object_introspection() {
     let doc = r#"
     {
         __type(name: "Root") {
@@ -383,10 +398,15 @@ fn object_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -573,8 +593,8 @@ fn object_introspection() {
     )));
 }
 
-#[test]
-fn scalar_introspection() {
+#[tokio::test]
+async fn scalar_introspection() {
     let doc = r#"
     {
         __type(name: "SampleScalar") {
@@ -590,10 +610,15 @@ fn scalar_introspection() {
         }
     }
     "#;
-    let schema = RootNode::new(Root, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        crate::execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 

@@ -29,7 +29,7 @@ extern crate iron;
 
 use iron::prelude::*;
 use juniper_iron::GraphQLHandler;
-use juniper::{Context, EmptyMutation};
+use juniper::{Context, EmptyMutation, EmptySubscription};
 
 # use juniper::FieldResult;
 #
@@ -84,7 +84,11 @@ fn main() {
     // and the mutation object. If we don't have any mutations to expose, we
     // can use the empty tuple () to indicate absence.
     let graphql_endpoint = GraphQLHandler::new(
-        context_factory, QueryRoot, EmptyMutation::<Database>::new());
+        context_factory,
+        QueryRoot,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     // Start serving the schema at the root on port 8080.
     Iron::new(graphql_endpoint).http("localhost:8080").unwrap();
@@ -146,23 +150,24 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, Subscription>(
         &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, Subscription, S>,
         context: &CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        Subscription: GraphQLType<S, Context = CtxT>,
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context))
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
             }
             GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
                 requests
                     .iter()
-                    .map(|request| request.execute(root_node, context))
+                    .map(|request| request.execute_sync(root_node, context))
                     .collect(),
             ),
         }
@@ -193,16 +198,24 @@ where
 /// this endpoint containing the field `"query"` and optionally `"variables"`.
 /// The variables should be a JSON object containing the variable to value
 /// mapping.
-pub struct GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S = DefaultScalarValue>
-where
+pub struct GraphQLHandler<
+    'a,
+    CtxFactory,
+    Query,
+    Mutation,
+    Subscription,
+    CtxT,
+    S = DefaultScalarValue,
+> where
     S: ScalarValue,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: 'static,
     Query: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Subscription: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
 {
     context_factory: CtxFactory,
-    root_node: RootNode<'a, Query, Mutation, S>,
+    root_node: RootNode<'a, Query, Mutation, Subscription, S>,
 }
 
 /// Handler that renders `GraphiQL` - a graphical query editor interface
@@ -213,6 +226,7 @@ pub struct GraphiQLHandler {
 /// Handler that renders `GraphQL Playground` - a graphical query editor interface
 pub struct PlaygroundHandler {
     graphql_url: String,
+    subscription_url: Option<String>,
 }
 
 fn get_single_value<T>(mut values: Vec<T>) -> IronResult<T> {
@@ -246,14 +260,15 @@ where
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, CtxT, S>
-    GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
+impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
+    GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue + Send + Sync + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
-    CtxT: 'static,
+    CtxT: Send + Sync + 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
 {
     /// Build a new GraphQL handler
     ///
@@ -261,10 +276,15 @@ where
     /// expected to construct a context object for the given schema. This can
     /// be used to construct e.g. database connections or similar data that
     /// the schema needs to execute the query.
-    pub fn new(context_factory: CtxFactory, query: Query, mutation: Mutation) -> Self {
+    pub fn new(
+        context_factory: CtxFactory,
+        query: Query,
+        mutation: Mutation,
+        subscription: Subscription,
+    ) -> Self {
         GraphQLHandler {
             context_factory,
-            root_node: RootNode::new(query, mutation),
+            root_node: RootNode::new(query, mutation, subscription),
         }
     }
 
@@ -295,8 +315,12 @@ where
         )
     }
 
-    fn execute(&self, context: &CtxT, request: GraphQLBatchRequest<S>) -> IronResult<Response> {
-        let response = request.execute(&self.root_node, context);
+    fn execute_sync(
+        &self,
+        context: &CtxT,
+        request: GraphQLBatchRequest<S>,
+    ) -> IronResult<Response> {
+        let response = request.execute_sync(&self.root_node, context);
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();
         let status = if response.is_ok() {
@@ -325,21 +349,23 @@ impl PlaygroundHandler {
     ///
     /// The provided URL should point to the URL of the attached `GraphQLHandler`. It can be
     /// relative, so a common value could be `"/graphql"`.
-    pub fn new(graphql_url: &str) -> PlaygroundHandler {
+    pub fn new(graphql_url: &str, subscription_url: Option<&str>) -> PlaygroundHandler {
         PlaygroundHandler {
             graphql_url: graphql_url.to_owned(),
+            subscription_url: subscription_url.map(|s| s.to_owned()),
         }
     }
 }
 
-impl<'a, CtxFactory, Query, Mutation, CtxT, S> Handler
-    for GraphQLHandler<'a, CtxFactory, Query, Mutation, CtxT, S>
+impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
+    for GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
     S: ScalarValue + Sync + Send + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
-    CtxT: 'static,
+    CtxT: Send + Sync + 'static,
     Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
     'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
@@ -351,7 +377,7 @@ where
             _ => return Ok(Response::with(status::MethodNotAllowed)),
         };
 
-        self.execute(&context, graphql_request)
+        self.execute_sync(&context, graphql_request)
     }
 }
 
@@ -374,7 +400,10 @@ impl Handler for PlaygroundHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            juniper::http::playground::playground_source(&self.graphql_url),
+            juniper::http::playground::playground_source(
+                &self.graphql_url,
+                self.subscription_url.as_deref(),
+            ),
         )))
     }
 }
@@ -397,14 +426,6 @@ impl fmt::Display for GraphQLIronError {
 }
 
 impl Error for GraphQLIronError {
-    fn description(&self) -> &str {
-        match *self {
-            GraphQLIronError::Serde(ref err) => err.description(),
-            GraphQLIronError::Url(ref err) => err.description(),
-            GraphQLIronError::InvalidData(err) => err,
-        }
-    }
-
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             GraphQLIronError::Serde(ref err) => Some(err),
@@ -431,7 +452,7 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation,
+        EmptyMutation, EmptySubscription,
     };
 
     use super::GraphQLHandler;
@@ -446,7 +467,7 @@ mod tests {
         let path: String = url
             .path()
             .iter()
-            .map(|x| x.to_string())
+            .map(|x| (*x).to_string())
             .collect::<Vec<String>>()
             .join("/");
         format!(
@@ -524,6 +545,7 @@ mod tests {
             context_factory,
             Query,
             EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
         ))
     }
 }

@@ -74,6 +74,10 @@ impl<'a> ser::Serialize for GraphQLError<'a> {
                 message: "Expected query, got subscription",
             }]
             .serialize(serializer),
+            GraphQLError::NotSubscription => [SerializeHelper {
+                message: "Expected subscription, got query",
+            }]
+            .serialize(serializer),
         }
     }
 }
@@ -430,7 +434,7 @@ mod tests {
         // large value without a decimal part is also float
         assert_eq!(
             from_str::<InputValue<DefaultScalarValue>>("123567890123").unwrap(),
-            InputValue::scalar(123567890123.0)
+            InputValue::scalar(123_567_890_123.0)
         );
     }
 

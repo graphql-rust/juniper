@@ -4,10 +4,10 @@ use rocket::{response::content, State};
 
 use juniper::{
     tests::{model::Database, schema::Query},
-    EmptyMutation, RootNode,
+    EmptyMutation, EmptySubscription, RootNode,
 };
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
 #[rocket::get("/")]
 fn graphiql() -> content::Html<String> {
@@ -20,7 +20,7 @@ fn get_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &context)
+    request.execute_sync(&schema, &context)
 }
 
 #[rocket::post("/graphql", data = "<request>")]
@@ -29,13 +29,17 @@ fn post_graphql_handler(
     request: juniper_rocket::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket::GraphQLResponse {
-    request.execute(&schema, &context)
+    request.execute_sync(&schema, &context)
 }
 
 fn main() {
     rocket::ignite()
         .manage(Database::new())
-        .manage(Schema::new(Query, EmptyMutation::<Database>::new()))
+        .manage(Schema::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ))
         .mount(
             "/",
             rocket::routes![graphiql, get_graphql_handler, post_graphql_handler],

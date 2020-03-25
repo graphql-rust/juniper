@@ -123,7 +123,7 @@ where
                 {
                     ctx.report_error(
                         &misplaced_error_message(directive_name, current_location),
-                        &[directive.start.clone()],
+                        &[directive.start],
                     );
                 }
             }

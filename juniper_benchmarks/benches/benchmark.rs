@@ -1,8 +1,8 @@
 extern crate juniper_benchmarks;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, ParameterizedBenchmark};
+use criterion::{criterion_group, criterion_main, Criterion, ParameterizedBenchmark};
 
-use juniper::{graphql_value, InputValue, ToInputValue, Value};
+use juniper::InputValue;
 use juniper_benchmarks as j;
 
 fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
@@ -38,7 +38,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
                     .collect::<Vec<_>>();
                 let ids = InputValue::list(ids);
                 b.iter(|| {
-                    j::execute(
+                    j::execute_sync(
                         SYNC_QUERY,
                         vec![("ids".to_string(), ids.clone())].into_iter().collect(),
                     )
@@ -58,7 +58,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
             let ids = InputValue::list(ids);
 
             b.iter(|| {
-                let f = j::execute_async(
+                let f = j::execute(
                     ASYNC_QUERY,
                     vec![("ids".to_string(), ids.clone())].into_iter().collect(),
                 );
@@ -77,7 +77,7 @@ fn bench_sync_vs_async_users_flat_instant(c: &mut Criterion) {
             let ids = InputValue::list(ids);
 
             b.iter(|| {
-                let f = j::execute_async(
+                let f = j::execute(
                     ASYNC_QUERY,
                     vec![("ids".to_string(), ids.clone())].into_iter().collect(),
                 );

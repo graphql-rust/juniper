@@ -41,13 +41,10 @@ where
             InputValue::Null => LookAheadValue::Null,
             InputValue::Scalar(ref s) => LookAheadValue::Scalar(s),
             InputValue::Enum(ref e) => LookAheadValue::Enum(e),
-            InputValue::Variable(ref name) => {
-                let value = vars
-                    .get(name)
-                    .map(|v| Self::from_input_value(v, vars))
-                    .unwrap_or(LookAheadValue::Null);
-                value
-            }
+            InputValue::Variable(ref name) => vars
+                .get(name)
+                .map(|v| Self::from_input_value(v, vars))
+                .unwrap_or(LookAheadValue::Null),
             InputValue::List(ref l) => LookAheadValue::List(
                 l.iter()
                     .map(|i| LookAheadValue::from_input_value(&i.item, vars))
@@ -188,7 +185,7 @@ where
     pub(super) fn build_from_selection(
         s: &'a Selection<'a, S>,
         vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     ) -> Option<LookAheadSelection<'a, S>> {
         Self::build_from_selection_with_parent(s, None, vars, fragments)
     }
@@ -197,7 +194,7 @@ where
         s: &'a Selection<'a, S>,
         parent: Option<&mut Self>,
         vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, &'a Fragment<'a, S>>,
+        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
     ) -> Option<LookAheadSelection<'a, S>> {
         let empty: &[Selection<S>] = &[];
         match *s {
@@ -432,7 +429,7 @@ mod tests {
         ast::Document,
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
-        validation::test_harness::{MutationRoot, QueryRoot},
+        validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
         value::{DefaultScalarValue, ScalarValue},
     };
     use std::collections::HashMap;
@@ -441,14 +438,20 @@ mod tests {
     where
         S: ScalarValue,
     {
-        crate::parse_document_source(q, &SchemaType::new::<QueryRoot, MutationRoot>(&(), &()))
+        crate::parse_document_source(
+            q,
+            &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
+        )
     }
 
-    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, &'a Fragment<'a, S>> {
+    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, Fragment<'a, S>>
+    where
+        S: Clone,
+    {
         let mut fragments = HashMap::new();
         for d in doc {
             if let crate::ast::Definition::Fragment(ref f) = *d {
-                let f = &f.item;
+                let f = f.item.clone();
                 fragments.insert(f.name.item, f);
             }
         }

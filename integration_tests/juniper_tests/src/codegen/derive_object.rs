@@ -5,9 +5,9 @@ use juniper::Object;
 use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
-use juniper::{self, execute, EmptyMutation, GraphQLType, RootNode, Value, Variables};
-
-use futures;
+use juniper::{
+    self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables,
+};
 
 #[derive(GraphQLObject, Debug, PartialEq)]
 #[graphql(
@@ -125,8 +125,8 @@ impl Query {
     }
 }
 
-#[test]
-fn test_doc_comment_simple() {
+#[tokio::test]
+async fn test_doc_comment_simple() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = DocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"Object comment.".to_string()));
@@ -136,11 +136,12 @@ fn test_doc_comment_simple() {
         &Value::scalar("Object comment."),
         "regularField",
         &Value::scalar("Field comment."),
-    );
+    )
+    .await;
 }
 
-#[test]
-fn test_multi_doc_comment() {
+#[tokio::test]
+async fn test_multi_doc_comment() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = MultiDocComment::meta(&(), &mut registry);
     assert_eq!(
@@ -153,11 +154,12 @@ fn test_multi_doc_comment() {
         &Value::scalar("Doc 1. Doc 2.\n\nDoc 4."),
         "regularField",
         &Value::scalar("Field 1.\nField 2."),
-    );
+    )
+    .await;
 }
 
-#[test]
-fn test_doc_comment_override() {
+#[tokio::test]
+async fn test_doc_comment_override() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = OverrideDocComment::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"obj override".to_string()));
@@ -167,11 +169,12 @@ fn test_doc_comment_override() {
         &Value::scalar("obj override"),
         "regularField",
         &Value::scalar("field override"),
-    );
+    )
+    .await;
 }
 
-#[test]
-fn test_derived_object() {
+#[tokio::test]
+async fn test_derived_object() {
     assert_eq!(
         <Obj as GraphQLType<DefaultScalarValue>>::name(&()),
         Some("MyObj")
@@ -192,10 +195,14 @@ fn test_derived_object() {
             }
         }"#;
 
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     assert_eq!(
-        execute(doc, None, &schema, &Variables::new(), &()),
+        execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
             Value::object(
                 vec![(
@@ -217,33 +224,45 @@ fn test_derived_object() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[should_panic]
-fn test_cannot_query_skipped_field() {
+async fn test_cannot_query_skipped_field() {
     let doc = r#"
         {
             skippedFieldObj {
                 skippedField
             }
         }"#;
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
-    execute(doc, None, &schema, &Variables::new(), &()).unwrap();
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+    execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 }
 
-#[test]
-fn test_skipped_field_siblings_unaffected() {
+#[tokio::test]
+async fn test_skipped_field_siblings_unaffected() {
     let doc = r#"
         {
             skippedFieldObj {
                 regularField
             }
         }"#;
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
-    execute(doc, None, &schema, &Variables::new(), &()).unwrap();
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+    execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .unwrap();
 }
 
-#[test]
-fn test_derived_object_nested() {
+#[tokio::test]
+async fn test_derived_object_nested() {
     let doc = r#"
         {
             nested {
@@ -254,10 +273,14 @@ fn test_derived_object_nested() {
             }
         }"#;
 
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
     assert_eq!(
-        execute(doc, None, &schema, &Variables::new(), &()),
+        execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
             Value::object(
                 vec![(
@@ -287,7 +310,7 @@ fn test_derived_object_nested() {
 }
 
 #[cfg(test)]
-fn check_descriptions(
+async fn check_descriptions(
     object_name: &str,
     object_description: &Value,
     field_name: &str,
@@ -308,7 +331,7 @@ fn check_descriptions(
     "#,
         object_name
     );
-    run_type_info_query(&doc, |(type_info, values)| {
+    let _result = run_type_info_query(&doc, |(type_info, values)| {
         assert_eq!(
             type_info.get_field_value("name"),
             Some(&Value::scalar(object_name))
@@ -325,18 +348,24 @@ fn check_descriptions(
             .into_iter()
             .collect(),
         )));
-    });
+    })
+    .await;
 }
 
 #[cfg(test)]
-fn run_type_info_query<F>(doc: &str, f: F)
+async fn run_type_info_query<F>(doc: &str, f: F)
 where
     F: Fn((&Object<DefaultScalarValue>, &Vec<Value>)) -> (),
 {
-    let schema = RootNode::new(Query, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
 
-    let (result, errs) =
-        execute(doc, None, &schema, &Variables::new(), &()).expect("Execution failed");
+    let (result, errs) = execute(doc, None, &schema, &Variables::new(), &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 

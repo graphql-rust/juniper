@@ -1,5 +1,4 @@
 use fnv::FnvHashMap;
-use futures;
 use juniper::{DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
 #[derive(juniper::GraphQLScalarValue, PartialEq, Eq, Debug)]

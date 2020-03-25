@@ -115,15 +115,15 @@ extern crate bson;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_object, graphql_union, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-    GraphQLScalarValue,
+    graphql_object, graphql_subscription, graphql_union, GraphQLEnum, GraphQLInputObject,
+    GraphQLObject, GraphQLScalarValue,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    graphql_object_internal, graphql_union_internal, GraphQLEnumInternal,
-    GraphQLInputObjectInternal, GraphQLScalarValueInternal,
+    graphql_object_internal, graphql_subscription_internal, graphql_union_internal,
+    GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
 };
 
 #[macro_use]
@@ -169,13 +169,19 @@ pub use crate::{
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadMethods,
-        LookAheadSelection, LookAheadValue, Registry, Variables,
+        LookAheadSelection, LookAheadValue, OwnedExecutor, Registry, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
-    schema::{meta, model::RootNode},
+    macros::subscription_helpers::{ExtractTypeFromStream, IntoFieldResult},
+    schema::{
+        meta,
+        model::{RootNode, SchemaType},
+    },
     types::{
+        async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
-        scalars::{EmptyMutation, ID},
+        scalars::{EmptyMutation, EmptySubscription, ID},
+        subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
@@ -183,8 +189,6 @@ pub use crate::{
 
 /// A pinned, boxed future that can be polled.
 pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
-
-pub use crate::types::async_await::GraphQLTypeAsync;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]
@@ -196,6 +200,7 @@ pub enum GraphQLError<'a> {
     MultipleOperationsProvided,
     UnknownOperationName,
     IsSubscription,
+    NotSubscription,
 }
 
 impl<'a> fmt::Display for GraphQLError<'a> {
@@ -211,18 +216,19 @@ impl<'a> fmt::Display for GraphQLError<'a> {
             GraphQLError::NoOperationProvided => write!(f, "No operation provided"),
             GraphQLError::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
             GraphQLError::UnknownOperationName => write!(f, "Unknown operation name"),
-            GraphQLError::IsSubscription => write!(f, "Subscription are not currently supported"),
+            GraphQLError::IsSubscription => write!(f, "Operation is a subscription"),
+            GraphQLError::NotSubscription => write!(f, "Operation is not a subscription"),
         }
     }
 }
 
 impl<'a> std::error::Error for GraphQLError<'a> {}
 
-/// Execute a query in a provided schema
-pub fn execute<'a, S, CtxT, QueryT, MutationT>(
+/// Execute a query synchronously in a provided schema
+pub fn execute_sync<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -230,6 +236,7 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
 
@@ -257,10 +264,10 @@ where
 }
 
 /// Execute a query in a provided schema
-pub async fn execute_async<'a, S, CtxT, QueryT, MutationT>(
+pub async fn execute<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, S>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &CtxT,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -270,6 +277,8 @@ where
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
     let document = parse_document_source(document_source, &root_node.schema)?;
@@ -298,9 +307,44 @@ where
         .await
 }
 
+/// Resolve subscription into `ValuesStream`
+pub async fn resolve_into_stream<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &'a CtxT,
+) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError<'a>>
+where
+    S: ScalarValue + Send + Sync,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    QueryT::TypeInfo: Send + Sync,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT::TypeInfo: Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT::TypeInfo: Send + Sync,
+    CtxT: Send + Sync,
+{
+    let document: crate::ast::Document<'a, S> =
+        parse_document_source(document_source, &root_node.schema)?;
+
+    let operation = get_operation(&document, operation_name)?;
+
+    {
+        let errors = validate_input_values(&variables, operation, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
+    executor::resolve_validated_subscription(&document, operation, root_node, variables, context)
+        .await
+}
+
 /// Execute the reference introspection query in the provided schema
-pub fn introspect<'a, S, CtxT, QueryT, MutationT>(
-    root_node: &'a RootNode<QueryT, MutationT, S>,
+pub fn introspect<'a, S, CtxT, QueryT, MutationT, SubscriptionT>(
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     context: &CtxT,
     format: IntrospectionFormat,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>
@@ -308,8 +352,9 @@ where
     S: ScalarValue,
     QueryT: GraphQLType<S, Context = CtxT>,
     MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
-    execute(
+    execute_sync(
         match format {
             IntrospectionFormat::All => INTROSPECTION_QUERY,
             IntrospectionFormat::WithoutDescriptions => INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS,

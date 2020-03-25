@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::{
     ast::InputValue,
     schema::model::RootNode,
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
 };
 
@@ -151,7 +151,7 @@ impl<'a> Root {
     }
 }
 
-fn run_type_info_query<F>(type_name: &str, f: F)
+async fn run_type_info_query<F>(type_name: &str, f: F)
 where
     F: Fn(&Object<DefaultScalarValue>, &Vec<Value<DefaultScalarValue>>) -> (),
 {
@@ -166,12 +166,18 @@ where
         }
     }
     "#;
-    let schema = RootNode::new(Root {}, EmptyMutation::<()>::new());
+    let schema = RootNode::new(
+        Root {},
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
     let vars = vec![("typeName".to_owned(), InputValue::scalar(type_name))]
         .into_iter()
         .collect();
 
-    let (result, errs) = crate::execute(doc, None, &schema, &vars, &()).expect("Execution failed");
+    let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
+        .await
+        .expect("Execution failed");
 
     assert_eq!(errs, []);
 
@@ -194,8 +200,8 @@ where
     f(type_info, fields);
 }
 
-#[test]
-fn introspect_custom_name() {
+#[tokio::test]
+async fn introspect_custom_name() {
     run_type_info_query("ACustomNamedInterface", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -208,11 +214,12 @@ fn introspect_custom_name() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_with_lifetime() {
+#[tokio::test]
+async fn introspect_with_lifetime() {
     run_type_info_query("WithLifetime", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -225,11 +232,12 @@ fn introspect_with_lifetime() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_with_generics() {
+#[tokio::test]
+async fn introspect_with_generics() {
     run_type_info_query("WithGenerics", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -242,11 +250,12 @@ fn introspect_with_generics() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_description_first() {
+#[tokio::test]
+async fn introspect_description_first() {
     run_type_info_query("DescriptionFirst", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -262,11 +271,12 @@ fn introspect_description_first() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_fields_first() {
+#[tokio::test]
+async fn introspect_fields_first() {
     run_type_info_query("FieldsFirst", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -282,11 +292,12 @@ fn introspect_fields_first() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_interfaces_first() {
+#[tokio::test]
+async fn introspect_interfaces_first() {
     run_type_info_query("InterfacesFirst", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -302,11 +313,12 @@ fn introspect_interfaces_first() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_commas_with_trailing() {
+#[tokio::test]
+async fn introspect_commas_with_trailing() {
     run_type_info_query("CommasWithTrailing", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -322,11 +334,12 @@ fn introspect_commas_with_trailing() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_commas_on_meta() {
+#[tokio::test]
+async fn introspect_commas_on_meta() {
     run_type_info_query("CommasOnMeta", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -342,11 +355,12 @@ fn introspect_commas_on_meta() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }
 
-#[test]
-fn introspect_resolvers_with_trailing_comma() {
+#[tokio::test]
+async fn introspect_resolvers_with_trailing_comma() {
     run_type_info_query("ResolversWithTrailingComma", |object, fields| {
         assert_eq!(
             object.get_field_value("name"),
@@ -362,5 +376,6 @@ fn introspect_resolvers_with_trailing_comma() {
                 .into_iter()
                 .collect(),
         )));
-    });
+    })
+    .await;
 }

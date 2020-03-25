@@ -6,11 +6,11 @@ use crate::{
     introspection::IntrospectionFormat,
     schema::model::RootNode,
     tests::{model::Database, schema::Query},
-    types::scalars::EmptyMutation,
+    types::scalars::{EmptyMutation, EmptySubscription},
 };
 
-#[test]
-fn test_introspection_query_type_name() {
+#[tokio::test]
+async fn test_introspection_query_type_name() {
     let doc = r#"
         query IntrospectionQueryTypeQuery {
           __schema {
@@ -20,10 +20,14 @@ fn test_introspection_query_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             graphql_value!({
                 "__schema": {
@@ -38,8 +42,8 @@ fn test_introspection_query_type_name() {
     );
 }
 
-#[test]
-fn test_introspection_type_name() {
+#[tokio::test]
+async fn test_introspection_type_name() {
     let doc = r#"
         query IntrospectionQueryTypeQuery {
           __type(name: "Droid") {
@@ -47,10 +51,14 @@ fn test_introspection_type_name() {
           }
         }"#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -62,8 +70,8 @@ fn test_introspection_type_name() {
     );
 }
 
-#[test]
-fn test_introspection_specific_object_type_name_and_kind() {
+#[tokio::test]
+async fn test_introspection_specific_object_type_name_and_kind() {
     let doc = r#"
         query IntrospectionDroidKindQuery {
           __type(name: "Droid") {
@@ -73,10 +81,14 @@ fn test_introspection_specific_object_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -89,8 +101,8 @@ fn test_introspection_specific_object_type_name_and_kind() {
     );
 }
 
-#[test]
-fn test_introspection_specific_interface_type_name_and_kind() {
+#[tokio::test]
+async fn test_introspection_specific_interface_type_name_and_kind() {
     let doc = r#"
         query IntrospectionDroidKindQuery {
           __type(name: "Character") {
@@ -100,10 +112,14 @@ fn test_introspection_specific_interface_type_name_and_kind() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -116,8 +132,8 @@ fn test_introspection_specific_interface_type_name_and_kind() {
     );
 }
 
-#[test]
-fn test_introspection_documentation() {
+#[tokio::test]
+async fn test_introspection_documentation() {
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
           __type(name: "Droid") {
@@ -127,10 +143,14 @@ fn test_introspection_documentation() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &Variables::new(), &database),
+        crate::execute(doc, None, &schema, &Variables::new(), &database).await,
         Ok((
             graphql_value!({
                 "__type": {
@@ -143,8 +163,8 @@ fn test_introspection_documentation() {
     );
 }
 
-#[test]
-fn test_introspection_directives() {
+#[tokio::test]
+async fn test_introspection_directives() {
     let q = r#"
         query IntrospectionQuery {
           __schema {
@@ -157,9 +177,15 @@ fn test_introspection_directives() {
     "#;
 
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
-    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database).unwrap();
+    let mut result = crate::execute(q, None, &schema, &Variables::new(), &database)
+        .await
+        .unwrap();
     sort_schema_value(&mut result.0);
 
     let mut expected = graphql_value!({
@@ -189,8 +215,8 @@ fn test_introspection_directives() {
     assert_eq!(result, (expected, vec![]));
 }
 
-#[test]
-fn test_introspection_possible_types() {
+#[tokio::test]
+async fn test_introspection_possible_types() {
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
           __type(name: "Character") {
@@ -201,9 +227,13 @@ fn test_introspection_possible_types() {
         }
         "#;
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
-    let result = crate::execute(doc, None, &schema, &Variables::new(), &database);
+    let result = crate::execute(doc, None, &schema, &Variables::new(), &database).await;
 
     let (result, errors) = result.ok().expect("Query returned error");
 
@@ -234,20 +264,28 @@ fn test_introspection_possible_types() {
     assert_eq!(possible_types, vec!["Human", "Droid"].into_iter().collect());
 }
 
-#[test]
-fn test_builtin_introspection_query() {
+#[tokio::test]
+async fn test_builtin_introspection_query() {
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
     let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
     sort_schema_value(&mut result.0);
     let expected = schema_introspection_result();
     assert_eq!(result, (expected, vec![]));
 }
 
-#[test]
-fn test_builtin_introspection_query_without_descriptions() {
+#[tokio::test]
+async fn test_builtin_introspection_query_without_descriptions() {
     let database = Database::new();
-    let schema = RootNode::new(Query, EmptyMutation::<Database>::new());
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
 
     let mut result =
         crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();

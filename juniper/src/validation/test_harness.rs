@@ -40,6 +40,8 @@ struct TestInput {
 
 pub(crate) struct MutationRoot;
 
+pub(crate) struct SubscriptionRoot;
+
 #[derive(Debug)]
 enum DogCommand {
     Sit,
@@ -625,15 +627,43 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, V, F, S>(r: Q, m: M, q: &'a str, factory: F) -> Vec<RuleError>
+impl<S> GraphQLType<S> for SubscriptionRoot
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn name(_: &()) -> Option<&str> {
+        Some("SubscriptionRoot")
+    }
+
+    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        let fields = [];
+
+        registry.build_object_type::<Self>(i, &fields).into_meta()
+    }
+}
+
+pub fn validate<'a, Q, M, Sub, V, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    q: &'a str,
+    factory: F,
+) -> Vec<RuleError>
 where
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
+    Sub: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let mut root = RootNode::new(r, m);
+    let mut root = RootNode::new(r, m, s);
 
     root.schema.add_directive(DirectiveType::new(
         "onQuery",
@@ -682,18 +712,24 @@ where
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    expect_passes_rule_with_schema(QueryRoot, MutationRoot, factory, q);
+    expect_passes_rule_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, factory, q);
 }
 
-pub fn expect_passes_rule_with_schema<'a, Q, M, V, F, S>(r: Q, m: M, factory: F, q: &'a str)
-where
+pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    factory: F,
+    q: &'a str,
+) where
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
     M: GraphQLType<S, TypeInfo = ()>,
+    Sub: GraphQLType<S, TypeInfo = ()>,
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m, s, q, factory);
 
     if !errs.is_empty() {
         print_errors(&errs);
@@ -723,7 +759,7 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     V: Visitor<'a, S> + 'a,
     F: Fn() -> V,
 {
-    let errs = validate(r, m, q, factory);
+    let errs = validate(r, m, crate::EmptySubscription::<S>::new(), q, factory);
 
     if errs.is_empty() {
         panic!("Expected rule to fail, but no errors were found");
