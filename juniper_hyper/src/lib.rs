@@ -322,7 +322,7 @@ mod tests {
         tests::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
-    use reqwest::{self, Response as ReqwestResponse};
+    use reqwest::{self, blocking::Response as ReqwestResponse};
     use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
 
     struct TestHyperIntegration {
@@ -332,12 +332,12 @@ mod tests {
     impl http_tests::HttpIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            make_test_response(reqwest::get(&url).expect(&format!("failed GET {}", url)))
+            make_test_response(reqwest::blocking::get(&url).expect(&format!("failed GET {}", url)))
         }
 
         fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
             let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            let client = reqwest::Client::new();
+            let client = reqwest::blocking::Client::new();
             let res = client
                 .post(&url)
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -349,7 +349,7 @@ mod tests {
 
         fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
             let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            let client = reqwest::Client::new();
+            let client = reqwest::blocking::Client::new();
             let res = client
                 .post(&url)
                 .header(reqwest::header::CONTENT_TYPE, "application/graphql")
@@ -360,15 +360,15 @@ mod tests {
         }
     }
 
-    fn make_test_response(mut response: ReqwestResponse) -> http_tests::TestResponse {
+    fn make_test_response(response: ReqwestResponse) -> http_tests::TestResponse {
         let status_code = response.status().as_u16() as i32;
-        let body = response.text().unwrap();
         let content_type_header = response.headers().get(reqwest::header::CONTENT_TYPE);
         let content_type = if let Some(ct) = content_type_header {
             format!("{}", ct.to_str().unwrap())
         } else {
             String::default()
         };
+        let body = response.text().unwrap();
 
         http_tests::TestResponse {
             status_code,

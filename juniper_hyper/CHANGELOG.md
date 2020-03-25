@@ -1,6 +1,7 @@
 # master
 
 - Compatibility with the latest `juniper`.
+- Use `reqwest` with TLS provided via `rustls`.
 
 ## Breaking Changes
 
