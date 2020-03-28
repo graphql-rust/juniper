@@ -492,7 +492,12 @@ pub mod subscriptions {
         let got_close_signal = Arc::new(AtomicBool::new(false));
 
         sink_rx.for_each(move |msg| {
-            let msg = msg.unwrap_or_else(|e| panic!("Websocket receive error: {}", e));
+            let msg = match msg {
+                Ok(v) => v,
+                Err(e) => {
+                    return futures::future::ready(());
+                }
+            };
 
             if msg.is_close() {
                 return futures::future::ready(());
