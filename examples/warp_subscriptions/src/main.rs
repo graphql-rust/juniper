@@ -169,6 +169,10 @@ async fn main() {
                 })
             },
         ))
+        .map(|reply| {
+            // TODO#584: remove this workaround
+            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+        })
     .or(warp::post()
         .and(warp::path("graphql"))
         .and(qm_graphql_filter))
