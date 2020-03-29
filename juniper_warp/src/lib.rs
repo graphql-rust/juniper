@@ -442,6 +442,8 @@ fn playground_response(
 /// Cannot be merged to `juniper_warp` yet as GraphQL over WS[1]
 /// is not fully supported in current implementation.
 ///
+/// *Note: this implementation is in alpha state.*
+///
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
@@ -500,7 +502,13 @@ pub mod subscriptions {
             let ws_tx = ws_tx.clone();
 
             async move {
-                let msg = msg.map_err(|e| failure::format_err!("Websocket error: {}", e))?;
+                let msg = match msg {
+                    Ok(m) => m,
+                    Err(e) => {
+                        got_close_signal.store(true, Ordering::Relaxed);
+                        return Err(failure::format_err!("Websocket error: {}", e));
+                    }
+                };
 
                 if msg.is_close() {
                     return Ok(());
@@ -584,6 +592,7 @@ pub mod subscriptions {
                                             let _ = ws_tx
                                                 .unbounded_send(Some(Ok(Message::text(response_text))));
                                         }
+
                                         async move { !closed }
                                     })
                                     .for_each(|_| async {})
