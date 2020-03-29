@@ -231,9 +231,10 @@ pub async fn playground_handler(
         .body(html))
 }
 
+/// Subscriptions Module
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use actix::{Actor, ActorContext, AsyncContext, StreamHandler, WrapFuture};
+    use actix::{Actor, ActorContext, AsyncContext, StreamHandler, WrapFuture, ActorFuture};
     use actix_web::error::PayloadError;
     use actix_web::web::Bytes;
     use actix_web::{web, Error, HttpRequest, HttpResponse};
@@ -241,25 +242,16 @@ pub mod subscriptions {
     use actix_web_actors::ws::{handshake_with_protocols, WebsocketContext};
     use futures::{Stream, StreamExt};
     use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator};
-    use juniper_subscriptions::Coordinator;
+    use juniper_subscriptions::{Coordinator, messages::*};
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
     use std::sync::atomic::{AtomicBool, Ordering};
-    use std::sync::Arc;
-
-    pub const GQL_CONNECTION_INIT: &str = "connection_init";
-    pub const GQL_CONNECTION_ACK: &str = "connection_ack";
-    pub const GQL_CONNECTION_ERROR: &str = "connection_error";
-    pub const GQL_CONNECTION_KEEP_ALIVE: &str = "ka";
-    pub const GQL_CONNECTION_TERMINATE: &str = "connection_terminate";
-    pub const GQL_START: &str = "start";
-    pub const GQL_DATA: &str = "data";
-    pub const GQL_ERROR: &str = "error";
-    pub const GQL_COMPLETE: &str = "complete";
-    pub const GQL_STOP: &str = "stop";
+    use std::sync::{Arc};
+    use tokio::time::{Duration};
+    use std::error::Error as StdError;
 
     fn start<Query, Mutation, Subscription, Context, S, FunStart, T>(
-        actor: GraphQLWebSocketActor<Query, Mutation, Subscription, Context, S, FunStart>,
+        actor: GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>,
         req: &HttpRequest,
         stream: T,
     ) -> Result<HttpResponse, Error>
@@ -300,10 +292,11 @@ pub mod subscriptions {
         FunStart: std::marker::Unpin + FnMut(&mut Context, String) -> Result<(), String> + 'static,
     {
         start(
-            GraphQLWebSocketActor {
+            GraphQLWSSession {
                 coordinator: coordinator.into_inner(),
                 graphql_context: context,
                 is_closed: Arc::new(AtomicBool::new(false)),
+                has_started: Arc::new(AtomicBool::new(false)),
                 on_start,
             },
             &req,
@@ -311,7 +304,7 @@ pub mod subscriptions {
         )
     }
 
-    struct GraphQLWebSocketActor<Query, Mutation, Subscription, Context, S, FunStart>
+    struct GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>
     where
         S: ScalarValue + Send + Sync + 'static,
         Context: Clone + Send + Sync + 'static + std::marker::Unpin,
@@ -325,13 +318,14 @@ pub mod subscriptions {
         FunStart: std::marker::Unpin + FnMut(&mut Context, String) -> Result<(), String> + 'static,
     {
         pub is_closed: Arc<AtomicBool>,
+        pub has_started: Arc<AtomicBool>,
         pub graphql_context: Context,
         pub coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
         pub on_start: FunStart,
     }
 
     impl<Query, Mutation, Subscription, Context, S, FunStart> Actor
-        for GraphQLWebSocketActor<Query, Mutation, Subscription, Context, S, FunStart>
+        for GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>
     where
         S: ScalarValue + Send + Sync + 'static,
         Context: Clone + Send + Sync + 'static + std::marker::Unpin,
@@ -345,13 +339,145 @@ pub mod subscriptions {
         FunStart: std::marker::Unpin + FnMut(&mut Context, String) -> Result<(), String> + 'static,
     {
         type Context = ws::WebsocketContext<
-            GraphQLWebSocketActor<Query, Mutation, Subscription, Context, S, FunStart>,
+            GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>,
         >;
+    }
+
+
+    #[allow(dead_code)]
+    impl<Query, Mutation, Subscription, Context, S, FunStart>
+    GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>
+        where
+            S: ScalarValue + Send + Sync + 'static,
+            Context: Clone + Send + Sync + 'static + std::marker::Unpin,
+            Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+            Query::TypeInfo: Send + Sync,
+            Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+            Mutation::TypeInfo: Send + Sync,
+            Subscription:
+            juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+            Subscription::TypeInfo: Send + Sync,
+            FunStart: std::marker::Unpin + FnMut(&mut Context, String) -> Result<(), String> + 'static,
+    {
+
+       fn gql_connection_ack() -> String {
+           format!(
+               r#"{{"type":"{}", "payload": null }}"#,
+               GQL_CONNECTION_ACK
+           )
+       }
+
+        fn gql_connection_ka() -> String {
+            format!(
+                r#"{{"type":"{}", "payload": null }}"#,
+                GQL_CONNECTION_KEEP_ALIVE
+            )
+        }
+
+        fn gql_connection_error() -> String {
+            format!(
+                r#"{{"type":"{}", "payload": null }}"#,
+                GQL_CONNECTION_ERROR
+            )
+        }
+        fn gql_error<T: StdError + Serialize>(request_id: &String, err: T) -> String {
+            format!(
+                r#"{{"type":"{}","id":"{}","payload":{}}}"#,
+                GQL_ERROR,
+                request_id,
+                serde_json::ser::to_string(&err).unwrap_or(
+                    "Error deserializing GraphQLError"
+                        .to_owned()
+                )
+            )
+        }
+
+        fn gql_data(request_id: &String, response_text: String) -> String {
+            format!(
+                r#"{{"type":"{}","id":"{}","payload":{} }}"#,
+                GQL_DATA, request_id, response_text
+            )
+        }
+
+        fn gql_complete(request_id: &String) -> String {
+            format!(
+                r#"{{"type":"{}","id":"{}","payload":null}}"#,
+                GQL_COMPLETE, request_id
+            )
+        }
+
+        fn starting_handle(
+            result: (
+                GraphQLRequest<S>,
+                String,
+                Context,
+                Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
+                Arc<AtomicBool>),
+            actor: &mut Self,
+            ctx: &mut ws::WebsocketContext<Self>
+        )
+            -> actix::fut::FutureWrap<impl futures::Future<Output=()>, Self>
+        {
+            let ctx: *mut ws::WebsocketContext<Self>= ctx;
+            let (
+                req,
+                req_id,
+                gql_context,
+                coord,
+                close_signal) = result;
+            Self::handle_subscription(
+                req,
+                gql_context,
+                req_id,
+                coord,
+                ctx,
+                close_signal
+            ).into_actor(actor)
+        }
+
+        async fn handle_subscription(
+            req: GraphQLRequest<S>,
+            graphql_context: Context,
+            request_id: String,
+            coord: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
+            ctx: *mut ws::WebsocketContext<Self>,
+            got_close_signal: Arc<AtomicBool>
+        )
+        {
+            let ctx = unsafe { ctx.as_mut().unwrap() };
+            let mut values_stream = {
+                let subscribe_result =
+                    coord.subscribe(&req, &graphql_context).await;
+                match subscribe_result {
+                    Ok(s) => s,
+                    Err(err) => {
+                        ctx.text(Self::gql_error(&request_id, err));
+                        ctx.text(Self::gql_complete(&request_id));
+                        ctx.stop();
+                        return;
+                    }
+                }
+            };
+            while let Some(response) = values_stream.next().await {
+                let request_id = request_id.clone();
+                let closed = got_close_signal.load(Ordering::Relaxed);
+                if !closed {
+                    let response_text = serde_json::to_string(
+                        &response,
+                    )
+                        .unwrap_or("Error deserializing respone".to_owned());
+                    ctx.text(Self::gql_data(&request_id, response_text));
+                } else {
+                    ctx.stop();
+                    break;
+                }
+            };
+        }
     }
 
     impl<Query, Mutation, Subscription, Context, S, FunStart>
         StreamHandler<Result<ws::Message, ws::ProtocolError>>
-        for GraphQLWebSocketActor<Query, Mutation, Subscription, Context, S, FunStart>
+        for GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>
     where
         S: ScalarValue + Send + Sync + 'static,
         Context: Clone + Send + Sync + 'static + std::marker::Unpin,
@@ -375,6 +501,8 @@ pub mod subscriptions {
             let coordinator = self.coordinator.clone();
             let context = self.graphql_context.clone();
             let got_close_signal = self.is_closed.clone();
+            let has_started = self.has_started.clone();
+            let has_started_value = has_started.load(Ordering::Relaxed);
             match msg {
                 ws::Message::Text(text) => {
                     let m = text.trim();
@@ -383,87 +511,34 @@ pub mod subscriptions {
                         GQL_CONNECTION_INIT => {
                             match (self.on_start)(&mut self.graphql_context, String::from(m)) {
                                 Ok(_) => {
-                                    ctx.text(format!(
-                                        r#"{{"type":"{}", "payload": null }}"#,
-                                        GQL_CONNECTION_ACK
-                                    ));
-                                    ctx.text(format!(
-                                        r#"{{"type":"{}", "payload": null }}"#,
-                                        GQL_CONNECTION_KEEP_ALIVE
-                                    ));
+                                    ctx.text(Self::gql_connection_ack());
+                                    ctx.text(Self::gql_connection_ka());
+                                    has_started.store(true, Ordering::Relaxed);
                                 }
-                                Err(_err) => ctx.text(format!(
-                                    r#"{{"type":"{}", "payload": null }}"#,
-                                    GQL_CONNECTION_ERROR
-                                )),
+                                Err(_err) => ctx.text(Self::gql_connection_error()),
                             }
                         }
-                        GQL_START => {
+                        GQL_START if has_started_value => {
                             let payload = request.payload.expect("Could not deserialize payload");
                             let request_id = request.id.unwrap_or("1".to_owned());
-
                             let graphql_request = GraphQLRequest::<_>::new(
                                 payload.query.expect("Could not deserialize query"),
                                 None,
                                 payload.variables,
                             );
                             {
-                                let ctx_ref: *mut Self::Context = ctx;
-                                let actor_future = async move {
-                                    // I didnt found another way to handle the insertion of ctx into this block
-                                    // So for now i will consider this as unsafe
-                                    let ctx_ref = unsafe { ctx_ref.as_mut().unwrap() };
-                                    let values_stream = {
-                                        let subscribe_result =
-                                            coordinator.subscribe(&graphql_request, &context).await;
-                                        match subscribe_result {
-                                            Ok(s) => s,
-                                            Err(err) => {
-                                                ctx_ref.text(format!(
-                                                    r#"{{"type":"{}","id":"{}","payload":{}}}"#,
-                                                    GQL_ERROR,
-                                                    request_id,
-                                                    serde_json::ser::to_string(&err).unwrap_or(
-                                                        "Error deserializing GraphQLError"
-                                                            .to_owned()
-                                                    )
-                                                ));
-                                                let close_message = format!(
-                                                    r#"{{"type":"{}","id":"{}","payload":null}}"#,
-                                                    GQL_COMPLETE, request_id
-                                                );
-                                                ctx_ref.text(close_message);
-                                                ctx_ref.stop();
-                                                return;
-                                            }
-                                        }
-                                    };
-                                    let mut futures_stream = values_stream.into_future();
-                                    while let (Some(response), stream) = futures_stream.await {
-                                        futures_stream = stream.into_future();
-                                        let request_id = request_id.clone();
-                                        let closed = got_close_signal.load(Ordering::Relaxed);
-                                        if !closed {
-                                            let mut response_text = serde_json::to_string(
-                                                &response,
-                                            )
-                                            .unwrap_or("Error deserializing respone".to_owned());
-                                            response_text = format!(
-                                                r#"{{"type":"{}","id":"{}","payload":{} }}"#,
-                                                GQL_DATA, request_id, response_text
-                                            );
-                                            ctx_ref.text(response_text);
-                                        } else {
-                                            ctx_ref.stop();
-                                            break;
-                                        }
+                                let future = async move {
+                                    (graphql_request, request_id, context, coordinator, got_close_signal)
+                                }.into_actor(self).then(Self::starting_handle);
+                                ctx.spawn(future);
+                                ctx.run_interval(Duration::from_secs(5), |actor, ctx| {
+                                    if !actor.is_closed.load(Ordering::Relaxed) {
+                                        ctx.text(Self::gql_connection_ka());
                                     }
-                                }
-                                .into_actor(self);
-                                ctx.spawn(actor_future);
+                                });
                             }
                         }
-                        GQL_STOP => {
+                        GQL_STOP if has_started_value => {
                             let request_id = request.id.unwrap_or("1".to_owned());
                             let close_message = format!(
                                 r#"{{"type":"{}","id":"{}","payload":null}}"#,
@@ -472,7 +547,13 @@ pub mod subscriptions {
                             ctx.text(close_message);
                             got_close_signal.store(true, Ordering::Relaxed);
                             ctx.stop();
+                        },
+                        GQL_CONNECTION_TERMINATE if has_started_value => {
+                            ctx.stop();
                         }
+                        _ if !has_started_value => {
+                            ctx.stop();
+                        },
                         _ => {}
                     }
                 }

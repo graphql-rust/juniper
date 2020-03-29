@@ -443,3 +443,38 @@ mod whole_responses_stream {
         assert_eq!(result, expected);
     }
 }
+
+/// Subscriptions Protocol Messages
+/// to know more access https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+pub mod messages {
+    /// Client -> Server
+    /// Client sends this message after plain websocket connection to start the communication with the server
+    pub const GQL_CONNECTION_INIT: &str = "connection_init";
+    /// Server -> Client
+    /// The server may responses with this message to the GQL_CONNECTION_INIT from client, indicates the server accepted the connection.
+    pub const GQL_CONNECTION_ACK: &str = "connection_ack";
+    /// Server -> Client
+    /// The server may responses with this message to the GQL_CONNECTION_INIT from client, indicates the server rejected the connection.
+    pub const GQL_CONNECTION_ERROR: &str = "connection_error";
+    /// Server -> Client
+    /// Server message that should be sent right after each GQL_CONNECTION_ACK processed and then periodically to keep the client connection alive.
+    pub const GQL_CONNECTION_KEEP_ALIVE: &str = "ka";
+    /// Client -> Server
+    /// Client sends this message to terminate the connection.
+    pub const GQL_CONNECTION_TERMINATE: &str = "connection_terminate";
+    /// Client -> Server
+    /// Client sends this message to execute GraphQL operation
+    pub const GQL_START: &str = "start";
+    /// Server -> Client
+    /// The server sends this message to transfter the GraphQL execution result from the server to the client, this message is a response for GQL_START message.
+    pub const GQL_DATA: &str = "data";
+    /// Server -> Client
+    /// Server sends this message upon a failing operation, before the GraphQL execution, usually due to GraphQL validation errors (resolver errors are part of GQL_DATA message, and will be added as errors array)
+    pub const GQL_ERROR: &str = "error";
+    /// Server -> Client
+    /// Server sends this message to indicate that a GraphQL operation is done, and no more data will arrive for the specific operation.
+    pub const GQL_COMPLETE: &str = "complete";
+    /// Server -> Client
+    /// Client sends this message in order to stop a running GraphQL operation execution (for example: unsubscribe)
+    pub const GQL_STOP: &str = "stop";
+}
