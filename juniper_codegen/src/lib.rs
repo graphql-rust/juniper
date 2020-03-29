@@ -15,6 +15,7 @@ mod derive_enum;
 mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
+mod gql;
 mod impl_object;
 mod impl_union;
 
@@ -414,4 +415,10 @@ pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStr
         Ok(toks) => toks,
         Err(err) => proc_macro_error::abort!(err),
     }
+}
+
+#[proc_macro]
+pub fn gql(input: TokenStream) -> TokenStream {
+    let block: gql::GqlBlock = syn::parse_macro_input!(input);
+    block.into_tokens().into()
 }
