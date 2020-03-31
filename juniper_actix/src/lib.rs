@@ -549,9 +549,11 @@ pub mod subscriptions {
                             ctx.stop();
                         },
                         GQL_CONNECTION_TERMINATE if has_started_value => {
+                            got_close_signal.store(true, Ordering::Relaxed);
                             ctx.stop();
                         }
                         _ if !has_started_value => {
+                            got_close_signal.store(true, Ordering::Relaxed);
                             ctx.stop();
                         },
                         _ => {}
@@ -613,6 +615,7 @@ mod tests {
         tests::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
+    use actix_web::http::header::CONTENT_TYPE;
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -666,6 +669,28 @@ mod tests {
     }
 
     #[actix_rt::test]
+    async fn graphiql_endpoint_returns_graphiql_source() {
+        async fn graphql_handler() -> Result<HttpResponse, Error> {
+            graphiql_handler("/dogs-api/graphql").await
+        }
+        let mut app =
+            test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
+        let req = test::TestRequest::get()
+            .uri("/")
+            .header("accept", "text/html")
+            .to_request();
+
+        let mut resp = test::call_service(&mut app, req).await;
+        let body = take_response_body_string(&mut resp).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
+            "text/html; charset=utf-8"
+        );
+        assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"))
+    }
+
+    #[actix_rt::test]
     async fn playground_endpoint_matches() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/abcd", None).await
@@ -679,6 +704,28 @@ mod tests {
 
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[actix_rt::test]
+    async fn playground_endpoint_returns_playground_source() {
+        async fn graphql_handler() -> Result<HttpResponse, Error> {
+            playground_handler("/dogs-api/graphql",Some("/dogs-api/subscriptions"),).await
+        }
+        let mut app =
+            test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
+        let req = test::TestRequest::get()
+            .uri("/")
+            .header("accept", "text/html")
+            .to_request();
+
+        let mut resp = test::call_service(&mut app, req).await;
+        let body = take_response_body_string(&mut resp).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
+            "text/html; charset=utf-8"
+        );
+        assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
     }
 
     #[actix_rt::test]
