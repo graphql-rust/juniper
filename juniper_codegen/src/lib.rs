@@ -388,15 +388,13 @@ pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenSt
 /// A proc macro for defining a GraphQL subscription.
 #[proc_macro_attribute]
 pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_subscription(args, input, false);
-    gen.into()
+    impl_object::build_subscription(args, input, false)
 }
 
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gen = impl_object::build_subscription(args, input, true);
-    gen.into()
+    impl_object::build_subscription(args, input, true)
 }
 
 #[proc_macro_attribute]

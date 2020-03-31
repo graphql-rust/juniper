@@ -139,6 +139,7 @@ where
 }
 
 impl<'a, S> SchemaType<'a, S> {
+    /// Create a new schema.
     pub fn new<QueryT, MutationT, SubscriptionT>(
         query_info: &QueryT::TypeInfo,
         mutation_info: &MutationT::TypeInfo,
@@ -218,14 +219,17 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// Add a directive like `skip` or `include`.
     pub fn add_directive(&mut self, directive: DirectiveType<'a, S>) {
         self.directives.insert(directive.name.clone(), directive);
     }
 
+    /// Get a type by name.
     pub fn type_by_name(&self, name: &str) -> Option<TypeType<S>> {
         self.types.get(name).map(|t| TypeType::Concrete(t))
     }
 
+    /// Get a concrete type by name.
     pub fn concrete_type_by_name(&self, name: &str) -> Option<&MetaType<S>> {
         self.types.get(name)
     }
@@ -239,6 +243,7 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// Get the query type from the schema.
     pub fn query_type(&self) -> TypeType<S> {
         TypeType::Concrete(
             self.types
@@ -247,12 +252,14 @@ impl<'a, S> SchemaType<'a, S> {
         )
     }
 
+    /// Get the concrete query type from the schema.
     pub fn concrete_query_type(&self) -> &MetaType<S> {
         self.types
             .get(&self.query_type_name)
             .expect("Query type does not exist in schema")
     }
 
+    /// Get the mutation type from the schema.
     pub fn mutation_type(&self) -> Option<TypeType<S>> {
         if let Some(ref mutation_type_name) = self.mutation_type_name {
             Some(
@@ -264,6 +271,7 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// Get the concrete mutation type from the schema.
     pub fn concrete_mutation_type(&self) -> Option<&MetaType<S>> {
         self.mutation_type_name.as_ref().map(|name| {
             self.concrete_type_by_name(name)
@@ -271,6 +279,7 @@ impl<'a, S> SchemaType<'a, S> {
         })
     }
 
+    /// Get the subscription type.
     pub fn subscription_type(&self) -> Option<TypeType<S>> {
         if let Some(ref subscription_type_name) = self.subscription_type_name {
             Some(
@@ -282,6 +291,7 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// Get the concrete subscription type.
     pub fn concrete_subscription_type(&self) -> Option<&MetaType<S>> {
         self.subscription_type_name.as_ref().map(|name| {
             self.concrete_type_by_name(name)
@@ -289,14 +299,17 @@ impl<'a, S> SchemaType<'a, S> {
         })
     }
 
+    /// Get a list of types.
     pub fn type_list(&self) -> Vec<TypeType<S>> {
         self.types.values().map(|t| TypeType::Concrete(t)).collect()
     }
 
+    /// Get a list of concrete types.
     pub fn concrete_type_list(&self) -> Vec<&MetaType<S>> {
         self.types.values().collect()
     }
 
+    /// Make a type.
     pub fn make_type(&self, t: &Type) -> TypeType<S> {
         match *t {
             Type::NonNullNamed(ref n) => TypeType::NonNull(Box::new(
@@ -310,14 +323,17 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// Get a list of directives.
     pub fn directive_list(&self) -> Vec<&DirectiveType<S>> {
         self.directives.values().collect()
     }
 
+    /// Get directive by name.
     pub fn directive_by_name(&self, name: &str) -> Option<&DirectiveType<S>> {
         self.directives.get(name)
     }
 
+    /// Determine if there is an overlap between types.
     pub fn type_overlap(&self, t1: &MetaType<S>, t2: &MetaType<S>) -> bool {
         if (t1 as *const MetaType<S>) == (t2 as *const MetaType<S>) {
             return true;
@@ -334,6 +350,7 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// A list of possible typeees for a given type.
     pub fn possible_types(&self, t: &MetaType<S>) -> Vec<&MetaType<S>> {
         match *t {
             MetaType::Union(UnionMeta {
@@ -357,6 +374,7 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// If the abstract type is possible.
     pub fn is_possible_type(
         &self,
         abstract_type: &MetaType<S>,
@@ -367,6 +385,7 @@ impl<'a, S> SchemaType<'a, S> {
             .any(|t| (t as *const MetaType<S>) == (possible_type as *const MetaType<S>))
     }
 
+    /// If the type is a subtype of another type.
     pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
         use crate::ast::Type::*;
 
@@ -389,6 +408,7 @@ impl<'a, S> SchemaType<'a, S> {
         }
     }
 
+    /// If the type is a named subtype.
     pub fn is_named_subtype(&self, sub_type_name: &str, super_type_name: &str) -> bool {
         if sub_type_name == super_type_name {
             true

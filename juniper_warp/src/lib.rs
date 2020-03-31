@@ -343,7 +343,7 @@ where
     };
 
     let get_filter = warp::get()
-        .and(context_extractor.clone())
+        .and(context_extractor)
         .and(warp::filters::query::query())
         .and_then(handle_get_request);
 

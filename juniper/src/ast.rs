@@ -353,7 +353,7 @@ where
     }
 
     /// View the underlying string value, if present.
-    pub fn as_string_value<'a>(&'a self) -> Option<&'a str> {
+    pub fn as_string_value(&self) -> Option<&str> {
         self.as_scalar_value().and_then(|s| s.as_str())
     }
 

@@ -340,6 +340,7 @@ where
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
+#[derive(Default)]
 pub struct EmptySubscription<T> {
     phantom: PhantomData<T>,
 }
