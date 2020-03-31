@@ -4,14 +4,12 @@ use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use futures::Stream;
 use juniper::{DefaultScalarValue, FieldError, RootNode};
-use juniper_actix::subscriptions::graphql_subscriptions as sub_handler;
 use juniper_actix::{
     get_graphql_handler, graphiql_handler as gqli_handler, playground_handler as play_handler,
-    post_graphql_handler, GraphQLBatchRequest,
+    post_graphql_handler, subscriptions::graphql_subscriptions as sub_handler, GraphQLBatchRequest,
 };
 use juniper_subscriptions::Coordinator;
-use std::pin::Pin;
-use std::time::Duration;
+use std::{pin::Pin, time::Duration};
 
 struct Query;
 #[juniper::graphql_object(Context=Database)]

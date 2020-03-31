@@ -42,9 +42,10 @@ Check the LICENSE file for details.
 
 // use futures::{FutureExt as _};
 use actix_web::{web, Error, HttpResponse};
-use juniper::graphiql::graphiql_source;
-use juniper::http::playground::playground_source;
-use juniper::{DefaultScalarValue, InputValue, ScalarValue};
+use juniper::{
+    graphiql::graphiql_source, http::playground::playground_source, DefaultScalarValue, InputValue,
+    ScalarValue,
+};
 use serde::Deserialize;
 
 /// Enum for handling batch requests
@@ -234,21 +235,25 @@ pub async fn playground_handler(
 /// Subscriptions Module
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
-    use actix::{Actor, ActorContext, AsyncContext, StreamHandler, WrapFuture, ActorFuture};
-    use actix_web::error::PayloadError;
-    use actix_web::web::Bytes;
-    use actix_web::{web, Error, HttpRequest, HttpResponse};
-    use actix_web_actors::ws;
-    use actix_web_actors::ws::{handshake_with_protocols, WebsocketContext};
+    use actix::{Actor, ActorContext, ActorFuture, AsyncContext, StreamHandler, WrapFuture};
+    use actix_web::{error::PayloadError, web, web::Bytes, Error, HttpRequest, HttpResponse};
+    use actix_web_actors::{
+        ws,
+        ws::{handshake_with_protocols, WebsocketContext},
+    };
     use futures::{Stream, StreamExt};
     use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator};
-    use juniper_subscriptions::{Coordinator, messages::*};
+    use juniper_subscriptions::{messages::*, Coordinator};
     use serde::{Deserialize, Serialize};
-    use std::collections::HashMap;
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::sync::{Arc};
-    use tokio::time::{Duration};
-    use std::error::Error as StdError;
+    use std::{
+        collections::HashMap,
+        error::Error as StdError,
+        sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        },
+    };
+    use tokio::time::Duration;
 
     fn start<Query, Mutation, Subscription, Context, S, FunStart, T>(
         actor: GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>,
@@ -343,29 +348,24 @@ pub mod subscriptions {
         >;
     }
 
-
     #[allow(dead_code)]
     impl<Query, Mutation, Subscription, Context, S, FunStart>
-    GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>
-        where
-            S: ScalarValue + Send + Sync + 'static,
-            Context: Clone + Send + Sync + 'static + std::marker::Unpin,
-            Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-            Query::TypeInfo: Send + Sync,
-            Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
-            Mutation::TypeInfo: Send + Sync,
-            Subscription:
+        GraphQLWSSession<Query, Mutation, Subscription, Context, S, FunStart>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+        Context: Clone + Send + Sync + 'static + std::marker::Unpin,
+        Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription:
             juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
-            Subscription::TypeInfo: Send + Sync,
-            FunStart: std::marker::Unpin + FnMut(&mut Context, String) -> Result<(), String> + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        FunStart: std::marker::Unpin + FnMut(&mut Context, String) -> Result<(), String> + 'static,
     {
-
-       fn gql_connection_ack() -> String {
-           format!(
-               r#"{{"type":"{}", "payload": null }}"#,
-               GQL_CONNECTION_ACK
-           )
-       }
+        fn gql_connection_ack() -> String {
+            format!(r#"{{"type":"{}", "payload": null }}"#, GQL_CONNECTION_ACK)
+        }
 
         fn gql_connection_ka() -> String {
             format!(
@@ -375,20 +375,15 @@ pub mod subscriptions {
         }
 
         fn gql_connection_error() -> String {
-            format!(
-                r#"{{"type":"{}", "payload": null }}"#,
-                GQL_CONNECTION_ERROR
-            )
+            format!(r#"{{"type":"{}", "payload": null }}"#, GQL_CONNECTION_ERROR)
         }
         fn gql_error<T: StdError + Serialize>(request_id: &String, err: T) -> String {
             format!(
                 r#"{{"type":"{}","id":"{}","payload":{}}}"#,
                 GQL_ERROR,
                 request_id,
-                serde_json::ser::to_string(&err).unwrap_or(
-                    "Error deserializing GraphQLError"
-                        .to_owned()
-                )
+                serde_json::ser::to_string(&err)
+                    .unwrap_or("Error deserializing GraphQLError".to_owned())
             )
         }
 
@@ -412,27 +407,15 @@ pub mod subscriptions {
                 String,
                 Context,
                 Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
-                Arc<AtomicBool>),
+                Arc<AtomicBool>,
+            ),
             actor: &mut Self,
-            ctx: &mut ws::WebsocketContext<Self>
-        )
-            -> actix::fut::FutureWrap<impl futures::Future<Output=()>, Self>
-        {
-            let ctx: *mut ws::WebsocketContext<Self>= ctx;
-            let (
-                req,
-                req_id,
-                gql_context,
-                coord,
-                close_signal) = result;
-            Self::handle_subscription(
-                req,
-                gql_context,
-                req_id,
-                coord,
-                ctx,
-                close_signal
-            ).into_actor(actor)
+            ctx: &mut ws::WebsocketContext<Self>,
+        ) -> actix::fut::FutureWrap<impl futures::Future<Output = ()>, Self> {
+            let ctx: *mut ws::WebsocketContext<Self> = ctx;
+            let (req, req_id, gql_context, coord, close_signal) = result;
+            Self::handle_subscription(req, gql_context, req_id, coord, ctx, close_signal)
+                .into_actor(actor)
         }
 
         async fn handle_subscription(
@@ -441,13 +424,11 @@ pub mod subscriptions {
             request_id: String,
             coord: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
             ctx: *mut ws::WebsocketContext<Self>,
-            got_close_signal: Arc<AtomicBool>
-        )
-        {
+            got_close_signal: Arc<AtomicBool>,
+        ) {
             let ctx = unsafe { ctx.as_mut().unwrap() };
             let mut values_stream = {
-                let subscribe_result =
-                    coord.subscribe(&req, &graphql_context).await;
+                let subscribe_result = coord.subscribe(&req, &graphql_context).await;
                 match subscribe_result {
                     Ok(s) => s,
                     Err(err) => {
@@ -462,16 +443,14 @@ pub mod subscriptions {
                 let request_id = request_id.clone();
                 let closed = got_close_signal.load(Ordering::Relaxed);
                 if !closed {
-                    let response_text = serde_json::to_string(
-                        &response,
-                    )
+                    let response_text = serde_json::to_string(&response)
                         .unwrap_or("Error deserializing respone".to_owned());
                     ctx.text(Self::gql_data(&request_id, response_text));
                 } else {
                     ctx.stop();
                     break;
                 }
-            };
+            }
         }
     }
 
@@ -528,8 +507,16 @@ pub mod subscriptions {
                             );
                             {
                                 let future = async move {
-                                    (graphql_request, request_id, context, coordinator, got_close_signal)
-                                }.into_actor(self).then(Self::starting_handle);
+                                    (
+                                        graphql_request,
+                                        request_id,
+                                        context,
+                                        coordinator,
+                                        got_close_signal,
+                                    )
+                                }
+                                .into_actor(self)
+                                .then(Self::starting_handle);
                                 ctx.spawn(future);
                                 ctx.run_interval(Duration::from_secs(5), |actor, ctx| {
                                     if !actor.is_closed.load(Ordering::Relaxed) {
@@ -547,7 +534,7 @@ pub mod subscriptions {
                             ctx.text(close_message);
                             got_close_signal.store(true, Ordering::Relaxed);
                             ctx.stop();
-                        },
+                        }
                         GQL_CONNECTION_TERMINATE if has_started_value => {
                             got_close_signal.store(true, Ordering::Relaxed);
                             ctx.stop();
@@ -555,7 +542,7 @@ pub mod subscriptions {
                         _ if !has_started_value => {
                             got_close_signal.store(true, Ordering::Relaxed);
                             ctx.stop();
-                        },
+                        }
                         _ => {}
                     }
                 }
@@ -608,14 +595,12 @@ pub mod subscriptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::dev::ServiceResponse;
-    use actix_web::{http, test, App};
+    use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
     use futures::StreamExt;
     use juniper::{
         tests::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
-    use actix_web::http::header::CONTENT_TYPE;
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -709,7 +694,7 @@ mod tests {
     #[actix_rt::test]
     async fn playground_endpoint_returns_playground_source() {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
-            playground_handler("/dogs-api/graphql",Some("/dogs-api/subscriptions"),).await
+            playground_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
         }
         let mut app =
             test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
