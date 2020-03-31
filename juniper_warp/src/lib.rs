@@ -587,7 +587,7 @@ pub mod subscriptions {
                                     let closed = got_close_signal.load(Ordering::Relaxed);
                                     if !closed {
                                         let mut response_text = serde_json::to_string(&response)
-                                            .unwrap_or("Error deserializing respone".to_owned());
+                                            .unwrap_or("Error deserializing response".to_owned());
 
                                         response_text = format!(
                                             r#"{{"type":"data","id":"{}","payload":{} }}"#,
