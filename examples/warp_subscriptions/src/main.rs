@@ -165,14 +165,20 @@ async fn main() {
              ctx: Context,
              coordinator: Arc<Coordinator<'static, _, _, _, _, _>>| {
                 ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                    graphql_subscriptions(websocket, coordinator, ctx).boxed()
+                    graphql_subscriptions(websocket, coordinator, ctx)
+                        .map(|r| {
+                            if let Err(e) = r {
+                                println!("Websocket error: {}", e);
+                            }
+                        })
+                        .boxed()
                 })
             },
         ))
-        .map(|reply| {
-            // TODO#584: remove this workaround
-            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-        })
+    .map(|reply| {
+        // TODO#584: remove this workaround
+        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+    })
     .or(warp::post()
         .and(warp::path("graphql"))
         .and(qm_graphql_filter))

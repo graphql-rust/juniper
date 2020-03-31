@@ -442,6 +442,8 @@ fn playground_response(
 /// Cannot be merged to `juniper_warp` yet as GraphQL over WS[1]
 /// is not fully supported in current implementation.
 ///
+/// *Note: this implementation is in an alpha state.*
+///
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions {
@@ -453,7 +455,7 @@ pub mod subscriptions {
         },
     };
 
-    use futures::{channel::mpsc, stream::StreamExt as _, Future};
+    use futures::{channel::mpsc, Future, StreamExt as _};
     use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
     use juniper_subscriptions::Coordinator;
     use serde::{Deserialize, Serialize};
@@ -467,7 +469,7 @@ pub mod subscriptions {
         websocket: warp::ws::WebSocket,
         coordinator: Arc<Coordinator<'static, Query, Mutation, Subscription, Context, S>>,
         context: Context,
-    ) -> impl Future<Output = ()> + Send
+    ) -> impl Future<Output = Result<(), failure::Error>> + Send
     where
         S: ScalarValue + Send + Sync + 'static,
         Context: Clone + Send + Sync + 'static,
@@ -489,107 +491,137 @@ pub mod subscriptions {
         );
 
         let context = Arc::new(context);
+        let running = Arc::new(AtomicBool::new(false));
         let got_close_signal = Arc::new(AtomicBool::new(false));
 
-        sink_rx.for_each(move |msg| {
-            let msg = msg.unwrap_or_else(|e| panic!("Websocket receive error: {}", e));
-
-            if msg.is_close() {
-                return futures::future::ready(());
-            }
-
+        sink_rx.fold(Ok(()), move |_, msg| {
             let coordinator = coordinator.clone();
             let context = context.clone();
+            let running = running.clone();
             let got_close_signal = got_close_signal.clone();
+            let ws_tx = ws_tx.clone();
 
-            let msg = msg.to_str().expect("Non-text messages are not accepted");
-            let request: WsPayload<S> = serde_json::from_str(msg).expect("Invalid WsPayload");
-
-            match request.type_name.as_str() {
-                "connection_init" => {}
-                "start" => {
-                    {
-                        let closed = got_close_signal.load(Ordering::Relaxed);
-                        if closed {
-                            return futures::future::ready(());
-                        }
+            async move {
+                let msg = match msg {
+                    Ok(m) => m,
+                    Err(e) => {
+                        got_close_signal.store(true, Ordering::Relaxed);
+                        return Err(failure::format_err!("Websocket error: {}", e));
                     }
+                };
 
-                    let ws_tx = ws_tx.clone();
+                if msg.is_close() {
+                    return Ok(());
+                }
 
-                    tokio::task::spawn(async move {
-                        let payload = request.payload.expect("Could not deserialize payload");
+                let msg = msg
+                    .to_str()
+                    .map_err(|_| failure::format_err!("Non-text messages are not accepted"))?;
+                let request: WsPayload<S> = serde_json::from_str(msg)
+                    .map_err(|e| failure::format_err!("Invalid WsPayload: {}", e))?;
+
+                match request.type_name.as_str() {
+                    "connection_init" => {}
+                    "start" => {
+                        {
+                            let closed = got_close_signal.load(Ordering::Relaxed);
+                            if closed {
+                                return Ok(());
+                            }
+
+                            if running.load(Ordering::Relaxed) {
+                                return Ok(());
+                            }
+                            running.store(true, Ordering::Relaxed);
+                        }
+
+                        let ws_tx = ws_tx.clone();
+
+                        if let Some(ref payload) = request.payload {
+                            if payload.query.is_none() {
+                                return Err(failure::format_err!("Query not found"));
+                            }
+                        } else {
+                            return Err(failure::format_err!("Payload not found"));
+                        }
+
+                        tokio::task::spawn(async move {
+                            let payload = request.payload.unwrap();
+
+                            let request_id = request.id.unwrap_or("1".to_owned());
+
+                            let graphql_request = GraphQLRequest::<S>::new(
+                                payload.query.unwrap(),
+                                None,
+                                payload.variables,
+                            );
+
+                            let values_stream =
+                                match coordinator.subscribe(&graphql_request, &context).await {
+                                    Ok(s) => s,
+                                    Err(err) => {
+                                        let _ =
+                                            ws_tx.unbounded_send(Some(Ok(Message::text(format!(
+                                                r#"{{"type":"error","id":"{}","payload":{}}}"#,
+                                                request_id,
+                                                serde_json::ser::to_string(&err).unwrap_or(
+                                                    "Error deserializing GraphQLError".to_owned()
+                                                )
+                                            )))));
+
+                                        let close_message = format!(
+                                            r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                                            request_id
+                                        );
+                                        let _ = ws_tx
+                                            .unbounded_send(Some(Ok(Message::text(close_message))));
+                                        // close channel
+                                        let _ = ws_tx.unbounded_send(None);
+                                        return;
+                                    }
+                                };
+
+                            values_stream
+                                .take_while(move |response| {
+                                    let request_id = request_id.clone();
+                                    let closed = got_close_signal.load(Ordering::Relaxed);
+                                    if !closed {
+                                        let mut response_text = serde_json::to_string(&response)
+                                            .unwrap_or("Error deserializing response".to_owned());
+
+                                        response_text = format!(
+                                            r#"{{"type":"data","id":"{}","payload":{} }}"#,
+                                            request_id, response_text
+                                        );
+
+                                        let _ = ws_tx
+                                            .unbounded_send(Some(Ok(Message::text(response_text))));
+                                    }
+
+                                    async move { !closed }
+                                })
+                                .for_each(|_| async {})
+                                .await;
+                        });
+                    }
+                    "stop" => {
+                        got_close_signal.store(true, Ordering::Relaxed);
+
                         let request_id = request.id.unwrap_or("1".to_owned());
-
-                        let graphql_request = GraphQLRequest::<S>::new(
-                            payload.query.expect("Could not deserialize query"),
-                            None,
-                            payload.variables,
+                        let close_message = format!(
+                            r#"{{"type":"complete","id":"{}","payload":null}}"#,
+                            request_id
                         );
+                        let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_message))));
 
-                        let values_stream =
-                            match coordinator.subscribe(&graphql_request, &context).await {
-                                Ok(s) => s,
-                                Err(err) => {
-                                    let _ = ws_tx.unbounded_send(Some(Ok(Message::text(format!(
-                                        r#"{{"type":"error","id":"{}","payload":{}}}"#,
-                                        request_id,
-                                        serde_json::ser::to_string(&err).unwrap_or(
-                                            "Error deserializing GraphQLError".to_owned()
-                                        )
-                                    )))));
-
-                                    let close_message = format!(
-                                        r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                                        request_id
-                                    );
-                                    let _ = ws_tx
-                                        .unbounded_send(Some(Ok(Message::text(close_message))));
-                                    // close channel
-                                    let _ = ws_tx.unbounded_send(None);
-                                    return;
-                                }
-                            };
-
-                        values_stream
-                            .take_while(move |response| {
-                                let request_id = request_id.clone();
-                                let closed = got_close_signal.load(Ordering::Relaxed);
-                                if !closed {
-                                    let mut response_text = serde_json::to_string(&response)
-                                        .unwrap_or("Error deserializing respone".to_owned());
-
-                                    response_text = format!(
-                                        r#"{{"type":"data","id":"{}","payload":{} }}"#,
-                                        request_id, response_text
-                                    );
-
-                                    let _ = ws_tx
-                                        .unbounded_send(Some(Ok(Message::text(response_text))));
-                                }
-                                async move { !closed }
-                            })
-                            .for_each(|_| async {})
-                            .await;
-                    });
+                        // close channel
+                        let _ = ws_tx.unbounded_send(None);
+                    }
+                    _ => {}
                 }
-                "stop" => {
-                    got_close_signal.store(true, Ordering::Relaxed);
 
-                    let request_id = request.id.unwrap_or("1".to_owned());
-                    let close_message = format!(
-                        r#"{{"type":"complete","id":"{}","payload":null}}"#,
-                        request_id
-                    );
-                    let _ = ws_tx.unbounded_send(Some(Ok(Message::text(close_message))));
-
-                    // close channel
-                    let _ = ws_tx.unbounded_send(None);
-                }
-                _ => {}
+                Ok(())
             }
-
-            futures::future::ready(())
         })
     }
 
