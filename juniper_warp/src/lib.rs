@@ -442,7 +442,7 @@ fn playground_response(
 /// Cannot be merged to `juniper_warp` yet as GraphQL over WS[1]
 /// is not fully supported in current implementation.
 ///
-/// *Note: this implementation is in alpha state.*
+/// *Note: this implementation is in an alpha state.*
 ///
 /// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
 #[cfg(feature = "subscriptions")]
