@@ -444,9 +444,9 @@ mod whole_responses_stream {
     }
 }
 
-/// Subscriptions Protocol Messages
+/// Subscriptions Protocol Message Types
 /// to know more access https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
-pub mod messages {
+pub mod message_types {
     /// Client -> Server
     /// Client sends this message after plain websocket connection to start the communication with the server
     pub const GQL_CONNECTION_INIT: &str = "connection_init";
