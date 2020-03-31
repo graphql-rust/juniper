@@ -54,20 +54,9 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Install cargo-make (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
-
-      - name: Install cargo-make (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          _build/cargo-make.sh "0.20.0" "x86_64-apple-darwin"
-
-      - name: Install cargo-make (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          _build\cargo-make.ps1 -version "0.20.0" -target "x86_64-pc-windows-msvc"
+      - uses: davidB/rust-cargo-make@v1
+        with:
+          version: '0.20.0'
 
       - name: Build and run tests
         env:
@@ -127,9 +116,9 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Install cargo-make
-        run: |
-          _build/cargo-make.sh "0.20.0" "x86_64-unknown-linux-musl"
+      - uses: davidB/rust-cargo-make@v1
+        with:
+          version: '0.20.0'
 
       - name: Install cargo-release
         uses: actions-rs/cargo@v1
