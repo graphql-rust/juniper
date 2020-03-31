@@ -37,7 +37,7 @@ impl<'a, S: Debug> VariableInAllowedPosition<'a, S> {
     fn collect_incorrect_usages(
         &self,
         from: &Scope<'a>,
-        var_defs: &Vec<&'a (Spanning<&'a str>, VariableDefinition<S>)>,
+        var_defs: &[&'a (Spanning<&'a str>, VariableDefinition<S>)],
         ctx: &mut ValidatorContext<'a, S>,
         visited: &mut HashSet<Scope<'a>>,
     ) {

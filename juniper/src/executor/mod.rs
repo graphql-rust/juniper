@@ -620,7 +620,7 @@ where
         self.field_path.construct_path(&mut path);
 
         ExecutionError {
-            location: self.location().clone(),
+            location: *self.location(),
             path,
             error,
         }

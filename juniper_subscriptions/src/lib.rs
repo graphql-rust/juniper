@@ -11,7 +11,7 @@
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_subscriptions/0.14.2")]
 
-use std::{borrow::BorrowMut as _, iter::FromIterator, pin::Pin};
+use std::{iter::FromIterator, pin::Pin};
 
 use futures::{task::Poll, Stream};
 use juniper::{
@@ -197,12 +197,11 @@ where
                     // TODO: iterate over i and (ref field_name, ref val) once
                     //       [this RFC](https://github.com/rust-lang/rust/issues/68354)
                     //       is implemented
-                    for i in 0..obj_len {
+                    for ready in ready_vec.iter_mut().take(obj_len) {
                         let (field_name, val) = match obj_iterator.next() {
                             Some(v) => v,
                             None => break,
                         };
-                        let ready = ready_vec[i].borrow_mut();
 
                         if ready.is_some() {
                             continue;

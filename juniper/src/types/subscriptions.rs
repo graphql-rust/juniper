@@ -364,22 +364,20 @@ where
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, start_pos.clone());
                     }
-                } else {
-                    if let Some(type_name) = meta_type.name() {
-                        let sub_result = instance
-                            .resolve_into_type_stream(info, type_name, &sub_exec)
-                            .await;
+                } else if let Some(type_name) = meta_type.name() {
+                    let sub_result = instance
+                        .resolve_into_type_stream(info, type_name, &sub_exec)
+                        .await;
 
-                        if let Ok(Value::Object(obj)) = sub_result {
-                            for (k, v) in obj {
-                                merge_key_into(&mut object, &k, v);
-                            }
-                        } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, start_pos.clone());
+                    if let Ok(Value::Object(obj)) = sub_result {
+                        for (k, v) in obj {
+                            merge_key_into(&mut object, &k, v);
                         }
-                    } else {
-                        return Value::Null;
+                    } else if let Err(e) = sub_result {
+                        sub_exec.push_error_at(e, start_pos.clone());
                     }
+                } else {
+                    return Value::Null;
                 }
             }
         }
