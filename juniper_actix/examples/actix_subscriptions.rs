@@ -3,7 +3,7 @@
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use futures::Stream;
-use juniper::{DefaultScalarValue, FieldError, RootNode};
+use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
 use juniper_actix::{
     get_graphql_handler, graphiql_handler as gqli_handler, playground_handler as play_handler,
     post_graphql_handler, subscriptions::graphql_subscriptions as sub_handler, GraphQLBatchRequest,
@@ -11,24 +11,23 @@ use juniper_actix::{
 use juniper_subscriptions::Coordinator;
 use std::{pin::Pin, time::Duration};
 
-struct Query;
-#[juniper::graphql_object(Context=Database)]
-impl Query {
-    fn empty() -> &str {
-        ""
-    }
-}
-struct Mutation;
-#[juniper::graphql_object(Context=Database)]
-impl Mutation {
-    fn empty() -> &str {
-        ""
-    }
-}
+pub struct Query;
 
-type Schema = RootNode<'static, Query, Mutation, Subscription>;
-type MyCoordinator =
-    Coordinator<'static, Query, Mutation, Subscription, Database, DefaultScalarValue>;
+#[juniper::graphql_object(Context = Database)]
+impl Query {
+    fn hello_world() -> &str {
+        "Hello World!"
+    }
+}
+type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+type MyCoordinator = Coordinator<
+    'static,
+    Query,
+    EmptyMutation<Database>,
+    Subscription,
+    Database,
+    DefaultScalarValue,
+>;
 
 type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 
@@ -37,11 +36,14 @@ struct Subscription;
 #[derive(Clone)]
 pub struct Database;
 
+impl juniper::Context for Database {}
+
 impl Database {
     fn new() -> Self {
         Self {}
     }
 }
+
 #[juniper::graphql_subscription(Context = Database)]
 impl Subscription {
     async fn hello_world() -> StringStream {
@@ -51,7 +53,7 @@ impl Subscription {
             if counter % 2 == 0 {
                 Ok(String::from("World!"))
             } else {
-                Ok(String::from("Hello!"))
+                Ok(String::from("Hello"))
             }
         });
 
@@ -60,7 +62,7 @@ impl Subscription {
 }
 
 fn schema() -> Schema {
-    Schema::new(Query {}, Mutation {}, Subscription {})
+    Schema::new(Query {}, EmptyMutation::new(), Subscription {})
 }
 
 async fn graphiql_handler() -> Result<HttpResponse, Error> {
