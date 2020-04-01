@@ -165,7 +165,7 @@ async fn main() {
              ctx: Context,
              coordinator: Arc<Coordinator<'static, _, _, _, _, _>>| {
                 ws.on_upgrade(|websocket| -> Pin<Box<dyn Future<Output = ()> + Send>> {
-                    graphql_subscriptions(websocket, coordinator, ctx)
+                    graphql_subscriptions(websocket, coordinator, ctx, None)
                         .map(|r| {
                             if let Err(e) = r {
                                 println!("Websocket error: {}", e);
