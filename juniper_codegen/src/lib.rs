@@ -16,6 +16,7 @@ mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
 mod impl_object;
+mod impl_scalar;
 mod impl_union;
 
 use proc_macro::TokenStream;
@@ -383,6 +384,12 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     impl_object::build_object(args, input, true)
+}
+
+/// A proc macro for defining a custom scalar value.
+#[proc_macro_attribute]
+pub fn graphql_scalar2(args: TokenStream, input: TokenStream) -> TokenStream {
+    impl_scalar::build_scalar(args, input, false)
 }
 
 /// A proc macro for defining a GraphQL subscription.
