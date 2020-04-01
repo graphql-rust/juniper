@@ -147,6 +147,7 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
     let mut resolves = TokenStream::new();
     let mut from_inputs = TokenStream::new();
     let mut to_inputs = TokenStream::new();
+    let mut to_strings = TokenStream::new();
 
     for variant in variants {
         match variant.fields {
@@ -204,6 +205,11 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
             &#ident::#var_ident =>
                 #juniper_path::InputValue::scalar(#name.to_string()),
         });
+
+        // Build to_strings clause.
+        to_strings.extend(quote! {
+            &#ident::#var_ident => #name.to_string(),
+        })
     }
 
     let _async = quote!(
@@ -277,6 +283,14 @@ pub fn impl_enum(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
             fn to_input_value(&self) -> #juniper_path::InputValue<__S> {
                 match self {
                     #to_inputs
+                }
+            }
+        }
+
+        impl From<#ident> for String {
+            fn from(&self) -> String {
+                match self {
+                    #to_strings
                 }
             }
         }
