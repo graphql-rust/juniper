@@ -80,6 +80,11 @@ your Schemas automatically.
 
 - [Juniper + actix-web example](https://github.com/actix/examples/tree/master/juniper)
 
+## Testing clients/IDEs
+ - [Firecamp](https://firecamp.io/graphql)
+ - [GraphiQL](https://github.com/graphql/graphiql)
+ - [GraphQL Playground][playground]
+
 ## API Stability
 
 Juniper has not reached 1.0 yet, thus some API instability should be expected.
