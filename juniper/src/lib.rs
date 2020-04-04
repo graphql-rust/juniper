@@ -328,6 +328,16 @@ where
     let document: crate::ast::Document<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;
 
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
+
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(GraphQLError::ValidationError(errors));
+        }
+    }
+
     let operation = get_operation(&document, operation_name)?;
 
     {
