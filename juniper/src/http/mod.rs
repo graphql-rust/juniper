@@ -154,6 +154,7 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. Use the `is_ok` method to determine
 /// whether to send a 200 or 400 HTTP status code.
+#[derive(Debug)]
 pub struct GraphQLResponse<'a, S = DefaultScalarValue>(
     Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError<'a>>,
 );
