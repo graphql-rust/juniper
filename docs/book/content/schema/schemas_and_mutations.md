@@ -1,12 +1,13 @@
 # Schemas
 
-A schema consists of two types: a query object and a mutation object (Juniper
-does not support subscriptions yet). These two define the root query fields
-and mutations of the schema, respectively.
+A schema consists of three types: a query object, a mutation object and a subscription object
+( The usage of subscriptions is a little different from the mutation and query objects, so there is a
+specific [section][section] to handle this topic). 
+These three define the root query fields, mutations and subscriptions of the schema, respectively.
 
 Both query and mutation objects are regular GraphQL objects, defined like any
-other object in Juniper. The mutation object, however, is optional since schemas
-can be read-only.
+other object in Juniper. The mutation and subscription object, however, is optional since schemas
+can be read-only and without subscriptions as well.
 
 In Juniper, the `RootNode` type represents a schema. You usually don't have to
 create this object yourself: see the framework integrations for [Iron](../servers/iron.md)
@@ -58,3 +59,5 @@ impl Mutations {
 
 # fn main() { }
 ```
+
+[section]: ../advanced/subscriptions.md

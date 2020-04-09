@@ -1,0 +1,16 @@
+[package]
+name = "basic_subscriptions"
+version = "0.1.0"
+edition = "2018"
+authors = ["Jordao Rosario <jordao.rosario01@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "0.2", features = ["rt-core", "macros", "stream"] }
+
+juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper_subscriptions = { git = "https://github.com/graphql-rust/juniper" }
