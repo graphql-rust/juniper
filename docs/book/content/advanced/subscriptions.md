@@ -35,7 +35,7 @@ sequentially:
 #    fn new() -> Self {
 #        Self {}
 #    }
-#}
+# }
 # pub struct Query;
 # #[juniper::graphql_object(Context = Database)]
 # impl Query {
