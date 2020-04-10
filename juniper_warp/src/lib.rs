@@ -420,7 +420,7 @@ pub mod subscriptions {
         },
     };
 
-    use futures::{channel::mpsc, Future, StreamExt as _};
+    use futures::{channel::mpsc, Future, StreamExt as _, TryStreamExt as _};
     use juniper::{http::GraphQLRequest, InputValue, ScalarValue, SubscriptionCoordinator as _};
     use juniper_subscriptions::Coordinator;
     use serde::{Deserialize, Serialize};
@@ -458,8 +458,12 @@ pub mod subscriptions {
         let context = Arc::new(context);
         let running = Arc::new(AtomicBool::new(false));
         let got_close_signal = Arc::new(AtomicBool::new(false));
+        let got_close_signal2 = got_close_signal.clone();
 
-        sink_rx.fold(Ok(()), move |_, msg| {
+        sink_rx.map_err(move |e| {
+            got_close_signal2.store(true, Ordering::Relaxed);
+            failure::format_err!("Websocket error: {}", e)
+        }).try_fold((), move |_, msg| {
             let coordinator = coordinator.clone();
             let context = context.clone();
             let running = running.clone();
@@ -467,14 +471,6 @@ pub mod subscriptions {
             let ws_tx = ws_tx.clone();
 
             async move {
-                let msg = match msg {
-                    Ok(m) => m,
-                    Err(e) => {
-                        got_close_signal.store(true, Ordering::Relaxed);
-                        return Err(failure::format_err!("Websocket error: {}", e));
-                    }
-                };
-
                 if msg.is_close() {
                     return Ok(());
                 }
