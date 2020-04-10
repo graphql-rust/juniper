@@ -22,6 +22,8 @@ See [#569](https://github.com/graphql-rust/juniper/pull/569).
 
 ## Breaking Changes
 
+- `juniper::graphiql` has moved to `juniper::http::graphiql`
+
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
 
 - Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)

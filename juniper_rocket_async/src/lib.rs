@@ -72,7 +72,9 @@ pub struct GraphQLResponse(pub Status, pub String);
 
 /// Generate an HTML page containing GraphiQL
 pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
-    content::Html(juniper::graphiql::graphiql_source(graphql_endpoint_url))
+    content::Html(juniper::http::graphiql::graphiql_source(
+        graphql_endpoint_url,
+    ))
 }
 
 /// Generate an HTML page containing GraphQL Playground

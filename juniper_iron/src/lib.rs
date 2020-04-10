@@ -326,7 +326,7 @@ impl Handler for GraphiQLHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            juniper::graphiql::graphiql_source(&self.graphql_url),
+            juniper::http::graphiql::graphiql_source(&self.graphql_url),
         )))
     }
 }
