@@ -247,8 +247,6 @@ where
         QueryT: crate::GraphQLType<S, Context = CtxT>,
         MutationT: crate::GraphQLType<S, Context = CtxT>,
         SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
@@ -295,6 +293,16 @@ where
                 let responses = futures::future::join_all(futures).await;
 
                 GraphQLBatchResponse::Batch(responses)
+            }
+        }
+    }
+
+    /// The operation names of the request.
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        match self {
+            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
+            GraphQLBatchRequest::Batch(reqs) => {
+                reqs.iter().map(|req| req.operation_name()).collect()
             }
         }
     }

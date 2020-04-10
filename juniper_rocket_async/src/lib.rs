@@ -1,6 +1,6 @@
 /*!
 
-# juniper_rocket
+# juniper_rocket_async
 
 This repository contains the [Rocket][Rocket] web server integration for
 [Juniper][Juniper], a [GraphQL][GraphQL] implementation for Rust.
@@ -31,130 +31,31 @@ Check the LICENSE file for details.
 [Rocket]: https://rocket.rs
 [Juniper]: https://github.com/graphql-rust/juniper
 [GraphQL]: http://graphql.org
-[documentation]: https://docs.rs/juniper_rocket
-[example]: https://github.com/graphql-rust/juniper_rocket/blob/master/examples/rocket_server.rs
+[documentation]: https://docs.rs/juniper_rocket_async
+[example]: https://github.com/graphql-rust/juniper_rocket_async/blob/master/examples/rocket_server.rs
 
 */
 
-#![doc(html_root_url = "https://docs.rs/juniper_rocket/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/juniper_rocket_async/0.2.0")]
 #![feature(decl_macro, proc_macro_hygiene)]
 
-use std::{error::Error, io::Cursor};
+use std::io::Cursor;
 
 use rocket::{
     data::{FromDataFuture, FromDataSimple},
     http::{ContentType, RawStr, Status},
     request::{FormItems, FromForm, FromFormValue},
-    response::{content, Responder, Response, ResultFuture},
+    response::{self, content, Responder, Response},
     Data,
     Outcome::{Failure, Forward, Success},
     Request,
 };
 
-use juniper::{http, InputValue};
 use juniper::{
-    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
+    http::{self, GraphQLBatchRequest},
+    DefaultScalarValue, FieldError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync,
+    InputValue, RootNode, ScalarValue,
 };
-use juniper::GraphQLTypeAsync;
-use futures::future::{FutureExt, TryFutureExt};
-
-#[derive(Debug, serde_derive::Deserialize, PartialEq)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue + Sync + Send,
-{
-    Single(http::GraphQLRequest<S>),
-    Batch(Vec<http::GraphQLRequest<S>>),
-}
-
-#[derive(serde_derive::Serialize)]
-#[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
-where
-    S: ScalarValue + Sync + Send,
-{
-    Single(http::GraphQLResponse<'a, S>),
-    Batch(Vec<http::GraphQLResponse<'a, S>>),
-}
-
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue + Send + Sync,
-{
-    pub fn execute<'a, CtxT, QueryT, MutationT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-    {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
-            }
-            &GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute_sync(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-
-    pub async fn execute<'a, CtxT, QueryT, MutationT>(
-        &'a self,
-        root_node: &'a RootNode<'_, QueryT, MutationT, S>,
-        context: &'a CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-    {
-        match self {
-            &GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute(root_node, context).await)
-            }
-            &GraphQLBatchRequest::Batch(ref requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect::<Vec<_>>();
-
-                GraphQLBatchResponse::Batch(futures::future::join_all(futures).await)
-            }
-        }
-    }
-
-    pub fn operation_names(&self) -> Vec<Option<&str>> {
-        match self {
-            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
-            GraphQLBatchRequest::Batch(reqs) => {
-                reqs.iter().map(|req| req.operation_name()).collect()
-            }
-        }
-    }
-}
-
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue + Send + Sync,
-{
-    fn is_ok(&self) -> bool {
-        match self {
-            &GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            &GraphQLBatchResponse::Batch(ref responses) => responses
-                .iter()
-                .fold(true, |ok, response| ok && response.is_ok()),
-        }
-    }
-}
 
 /// Simple wrapper around an incoming GraphQL request
 ///
@@ -164,36 +65,40 @@ where
 #[derive(Debug, PartialEq)]
 pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
 where
-    S: ScalarValue + Send + Sync;
+    S: ScalarValue;
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);
 
 /// Generate an HTML page containing GraphiQL
 pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
-    content::Html(juniper::graphiql::graphiql_source(graphql_endpoint_url))
+    content::Html(juniper::http::graphiql::graphiql_source(
+        graphql_endpoint_url,
+    ))
 }
 
 /// Generate an HTML page containing GraphQL Playground
 pub fn playground_source(graphql_endpoint_url: &str) -> content::Html<String> {
     content::Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
+        None,
     ))
 }
 
 impl<S> GraphQLRequest<S>
 where
-    S: ScalarValue + Sync + Send,
+    S: ScalarValue,
 {
-    /// Execute an incoming GraphQL query
-    pub fn execute<CtxT, QueryT, MutationT>(
+    /// Synchronously execute an incoming GraphQL query.
+    pub fn execute_sync<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<QueryT, MutationT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
     {
         let response = self.0.execute_sync(root_node, context);
         let status = if response.is_ok() {
@@ -206,10 +111,10 @@ where
         GraphQLResponse(status, json)
     }
 
-    /// Asynchronously execute an incoming GraphQL query
-    pub async fn execute<CtxT, QueryT, MutationT>(
+    /// Asynchronously execute an incoming GraphQL query.
+    pub async fn execute<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<'_, QueryT, MutationT, S>,
+        root_node: &RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
@@ -217,7 +122,10 @@ where
         QueryT::TypeInfo: Send + Sync,
         MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
         MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
+        S: Send + Sync,
     {
         let response = self.0.execute(root_node, context).await;
         let status = if response.is_ok() {
@@ -247,7 +155,7 @@ impl GraphQLResponse {
     /// # #![feature(decl_macro, proc_macro_hygiene)]
     /// #
     /// # extern crate juniper;
-    /// # extern crate juniper_rocket;
+    /// # extern crate juniper_rocket_async;
     /// # extern crate rocket;
     /// #
     /// # use rocket::http::Cookies;
@@ -257,20 +165,20 @@ impl GraphQLResponse {
     /// #
     /// # use juniper::tests::schema::Query;
     /// # use juniper::tests::model::Database;
-    /// # use juniper::{EmptyMutation, FieldError, RootNode, Value};
+    /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
-    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(
     ///     mut cookies: Cookies,
     ///     context: State<Database>,
-    ///     request: Form<juniper_rocket::GraphQLRequest>,
+    ///     request: Form<juniper_rocket_async::GraphQLRequest>,
     ///     schema: State<Schema>,
-    /// ) -> juniper_rocket::GraphQLResponse {
-    ///     if cookies.get_private("user_id").is_none() {
+    /// ) -> juniper_rocket_async::GraphQLResponse {
+    ///     if cookies.get("user_id").is_none() {
     ///         let err = FieldError::new("User is not logged in", Value::null());
-    ///         return juniper_rocket::GraphQLResponse::error(err);
+    ///         return juniper_rocket_async::GraphQLResponse::error(err);
     ///     }
     ///
     ///     request.execute_sync(&schema, &context)
@@ -315,7 +223,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => query = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -327,7 +235,7 @@ where
                     } else {
                         match value.url_decode() {
                             Ok(v) => operation_name = Some(v),
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                     }
                 }
@@ -338,11 +246,11 @@ where
                         let decoded;
                         match value.url_decode() {
                             Ok(v) => decoded = v,
-                            Err(e) => return Err(e.description().to_string()),
+                            Err(e) => return Err(e.to_string()),
                         }
                         variables = Some(
                             serde_json::from_str::<InputValue<_>>(&decoded)
-                                .map_err(|err| err.description().to_owned())?,
+                                .map_err(|err| err.to_string())?,
                         );
                     }
                 }
@@ -407,8 +315,15 @@ where
     }
 }
 
+use rocket::futures::future::BoxFuture;
+
 impl<'r> Responder<'r> for GraphQLResponse {
-    fn respond_to(self, _: &Request) -> ResultFuture<'r> {
+    fn respond_to<'a, 'x>(self, _req: &'r Request<'a>) -> BoxFuture<'x, response::Result<'r>>
+    where
+        'a: 'x,
+        'r: 'x,
+        Self: 'x,
+    {
         let GraphQLResponse(status, body) = self;
 
         Box::pin(async move {
@@ -416,6 +331,7 @@ impl<'r> Responder<'r> for GraphQLResponse {
                 .header(ContentType::new("application", "json"))
                 .status(status)
                 .sized_body(Cursor::new(body))
+                .await
                 .finalize())
         })
     }
@@ -483,7 +399,11 @@ mod fromform_tests {
 
     #[test]
     fn test_variables_invalid_json() {
-        check_error("query=test&variables=NOT_JSON", "JSON error", false);
+        check_error(
+            "query=test&variables=NOT_JSON",
+            "expected value at line 1 column 1",
+            false,
+        );
     }
 
     #[test]
@@ -534,22 +454,23 @@ mod fromform_tests {
 #[cfg(test)]
 mod tests {
 
+    use futures;
+
+    use juniper::{
+        http::tests as http_tests,
+        tests::{model::Database, schema::Query},
+        EmptyMutation, EmptySubscription, RootNode,
+    };
     use rocket::{
         self, get,
         http::ContentType,
-        local::{Client, LocalRequest},
+        local::{Client, LocalResponse},
         post,
         request::Form,
         routes, Rocket, State,
     };
 
-    use juniper::{
-        http::tests as http_tests,
-        tests::{model::Database, schema::Query},
-        EmptyMutation, RootNode,
-    };
-
-    type Schema = RootNode<'static, Query, EmptyMutation<Database>>;
+    type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     #[get("/?<request..>")]
     fn get_graphql_handler(
@@ -575,13 +496,15 @@ mod tests {
 
     impl http_tests::HTTPIntegration for TestRocketIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            let req = &self.client.get(url);
-            make_test_response(req)
+            let req = self.client.get(url);
+            let req = futures::executor::block_on(req.dispatch());
+            futures::executor::block_on(make_test_response(req))
         }
 
         fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let req = &self.client.post(url).header(ContentType::JSON).body(body);
-            make_test_response(req)
+            let req = self.client.post(url).header(ContentType::JSON).body(body);
+            let req = futures::executor::block_on(req.dispatch());
+            futures::executor::block_on(make_test_response(req))
         }
     }
 
@@ -594,8 +517,8 @@ mod tests {
         http_tests::run_http_test_suite(&integration);
     }
 
-    #[test]
-    fn test_operation_names() {
+    #[tokio::test]
+    async fn test_operation_names() {
         #[post("/", data = "<request>")]
         fn post_graphql_assert_operation_name_handler(
             context: State<Database>,
@@ -610,13 +533,15 @@ mod tests {
             .mount("/", routes![post_graphql_assert_operation_name_handler]);
         let client = Client::new(rocket).expect("valid rocket");
 
-        let req = client
+        let resp = client
             .post("/")
             .header(ContentType::JSON)
-            .body(r#"{"query": "query TestQuery {hero{name}}", "operationName": "TestQuery"}"#);
-        let resp = make_test_response(&req);
+            .body(r#"{"query": "query TestQuery {hero{name}}", "operationName": "TestQuery"}"#)
+            .dispatch()
+            .await;
+        let resp = make_test_response(resp);
 
-        assert_eq!(resp.status_code, 200);
+        assert_eq!(resp.await.status_code, 200);
     }
 
     fn make_rocket() -> Rocket {
@@ -624,13 +549,14 @@ mod tests {
     }
 
     fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite()
-            .manage(Database::new())
-            .manage(Schema::new(Query, EmptyMutation::<Database>::new()))
+        rocket::ignite().manage(Database::new()).manage(Schema::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ))
     }
 
-    fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {
-        let mut response = request.clone().dispatch();
+    async fn make_test_response(mut response: LocalResponse<'_>) -> http_tests::TestResponse {
         let status_code = response.status().code as i32;
         let content_type = response
             .content_type()
@@ -639,7 +565,8 @@ mod tests {
         let body = response
             .body()
             .expect("No body returned from GraphQL handler")
-            .into_string();
+            .into_string()
+            .await;
 
         http_tests::TestResponse {
             status_code,
