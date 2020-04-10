@@ -142,8 +142,6 @@ mod validation;
 // https://github.com/rust-lang/cargo/issues/1520
 pub mod http;
 pub mod integrations;
-// TODO: remove this alias export in 0.10. (breaking change)
-pub use crate::http::graphiql;
 
 #[cfg(all(test, not(feature = "expose-test-schema")))]
 mod tests;

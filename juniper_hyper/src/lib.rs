@@ -117,7 +117,7 @@ async fn parse_post_req<S: ScalarValue>(
 pub async fn graphiql(graphql_endpoint: &str) -> Result<Response<Body>, hyper::Error> {
     let mut resp = new_html_response(StatusCode::OK);
     // XXX: is the call to graphiql_source blocking?
-    *resp.body_mut() = Body::from(juniper::graphiql::graphiql_source(graphql_endpoint));
+    *resp.body_mut() = Body::from(juniper::http::graphiql::graphiql_source(graphql_endpoint));
     Ok(resp)
 }
 

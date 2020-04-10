@@ -312,7 +312,7 @@ pub fn graphiql_filter(
 fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response<Vec<u8>> {
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
-        .body(juniper::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
+        .body(juniper::http::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
         .expect("response is valid")
 }
 
