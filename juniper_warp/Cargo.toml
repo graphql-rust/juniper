@@ -13,7 +13,7 @@ subscriptions = ["juniper_subscriptions"]
 
 [dependencies]
 warp = "0.2"
-futures = { version = "0.3.1", features = ["compat"] }
+futures = "0.3.1"
 juniper = { version = "0.14.2", path = "../juniper", default-features = false  }
 juniper_subscriptions = { path = "../juniper_subscriptions", optional = true}
 tokio = { version = "0.2", features = ["rt-core", "blocking"] }

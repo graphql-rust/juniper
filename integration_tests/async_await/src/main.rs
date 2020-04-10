@@ -152,4 +152,24 @@ async fn async_field_validation_error() {
     assert!(is_validation_error);
 }
 
+#[tokio::test]
+async fn resolve_into_stream_validation_error() {
+    let schema = RootNode::new(Query, Mutation, Subscription);
+    let doc = r#"
+        subscription {
+            nonExistent
+        }
+    "#;
+    let vars = Default::default();
+    let result = juniper::resolve_into_stream(doc, None, &schema, &vars, &()).await;
+    assert!(result.is_err());
+
+    let error = result.err().unwrap();
+    let is_validation_error = match error {
+        GraphQLError::ValidationError(_) => true,
+        _ => false,
+    };
+    assert!(is_validation_error);
+}
+
 fn main() {}
