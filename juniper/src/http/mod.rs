@@ -298,6 +298,16 @@ where
             }
         }
     }
+
+    /// The operation names of the request.
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        match self {
+            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
+            GraphQLBatchRequest::Batch(reqs) => {
+                reqs.iter().map(|req| req.operation_name()).collect()
+            }
+        }
+    }
 }
 
 /// Simple wrapper around the result (GraphQLResponse) from executing a GraphQLBatchRequest
