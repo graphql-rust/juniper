@@ -247,8 +247,6 @@ where
         QueryT: crate::GraphQLType<S, Context = CtxT>,
         MutationT: crate::GraphQLType<S, Context = CtxT>,
         SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
     {
         match *self {
             GraphQLBatchRequest::Single(ref request) => {
