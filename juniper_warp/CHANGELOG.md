@@ -1,6 +1,8 @@
 # master
 
 - Compatibility with the latest `juniper`.
+- Changed the implementation place of GraphQLBatchRequest and GraphQLBatchResponse in `juniper_warp`
+to `juniper` to be reused in other http integrations, since this implementation was private.
 
 ## Breaking Changes
 
