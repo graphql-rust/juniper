@@ -8,27 +8,27 @@ use crate::{
     Value,
 };
 
-graphql_scalar!(Uuid where Scalar = <S> {
-    description: "Uuid"
-
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(description = "Uuid")]
+impl<S> GraphQLScalar for Uuid
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(self.to_string())
     }
 
-    from_input_value(v: &InputValue) -> Option<Uuid> {
-        v.as_string_value()
-         .and_then(|s| Uuid::parse_str(s).ok())
+    fn from_input_value(v: &InputValue) -> Option<Uuid> {
+        v.as_string_value().and_then(|s| Uuid::parse_str(s).ok())
     }
 
-
-    from_str<'a>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
     }
-});
+}
 
 #[cfg(test)]
 mod test {

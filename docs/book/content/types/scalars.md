@@ -12,7 +12,7 @@ There are two ways to define custom scalars.
 * For simple scalars that just wrap a primitive type, you can use the newtype pattern with
 a custom derive. 
 * For more advanced use cases with custom validation, you can use
-the `graphql_scalar!` macro.
+the `graphql_scalar` proc macro.
 
 
 ## Built-in scalars
@@ -79,7 +79,7 @@ pub struct UserId(i32);
 ## Custom scalars
 
 For more complex situations where you also need custom parsing or validation, 
-you can use the `graphql_scalar!` macro.
+you can use the `graphql_scalar` proc macro.
 
 Typically, you represent your custom scalars as strings.
 
@@ -112,26 +112,28 @@ The example below is used just for illustration.
 use juniper::{Value, ParseScalarResult, ParseScalarValue};
 use date::Date;
 
-juniper::graphql_scalar!(Date where Scalar = <S> {
-    description: "Date"
-
+#[juniper::graphql_scalar(description = "Date")]
+impl<S> GraphQLScalar for Date 
+where
+    S: ScalarValue
+{
     // Define how to convert your custom scalar into a primitive type.
-    resolve(&self) -> Value {
+    fn resolve(&self) -> Value {
         Value::scalar(self.to_string())
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    from_input_value(v: &InputValue) -> Option<Date> {
+    fn from_input_value(v: &InputValue) -> Option<Date> {
         v.as_scalar_value()
         .and_then(|v| v.as_str())
         .and_then(|s| s.parse().ok())
     }
 
     // Define how to parse a string value.
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
-});
+}
 
 # fn main() {}
 ```

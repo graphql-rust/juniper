@@ -5,22 +5,23 @@ use crate::{
     Value,
 };
 
-graphql_scalar!(Url where Scalar = <S>{
-    description: "Url"
-
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(description = "Url")]
+impl<S> GraphQLScalar for Url
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(self.as_str().to_owned())
     }
 
-    from_input_value(v: &InputValue) -> Option<Url> {
-        v.as_string_value()
-         .and_then(|s| Url::parse(s).ok())
+    fn from_input_value(v: &InputValue) -> Option<Url> {
+        v.as_string_value().and_then(|s| Url::parse(s).ok())
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
-});
+}
 
 #[cfg(test)]
 mod test {

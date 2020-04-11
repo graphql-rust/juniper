@@ -37,67 +37,93 @@ impl Deref for ID {
     }
 }
 
-graphql_scalar!(ID as "ID" where Scalar = <S>{
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(name = "ID")]
+impl<S> GraphQLScalar for ID
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(self.0.clone())
     }
 
-    from_input_value(v: &InputValue) -> Option<ID> {
+    fn from_input_value(v: &InputValue) -> Option<ID> {
         match *v {
-            InputValue::Scalar(ref s) => {
-                s.as_string().or_else(|| s.as_int().map(|i| i.to_string()))
-                    .map(ID)
-            }
-            _ => None
+            InputValue::Scalar(ref s) => s
+                .as_string()
+                .or_else(|| s.as_int().map(|i| i.to_string()))
+                .map(ID),
+            _ => None,
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         match value {
-            ScalarToken::String(value) | ScalarToken::Int(value) => {
-                Ok(S::from(value.to_owned()))
-            }
+            ScalarToken::String(value) | ScalarToken::Int(value) => Ok(S::from(value.to_owned())),
             _ => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
         }
     }
-});
+}
 
-graphql_scalar!(String as "String" where Scalar = <S>{
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(name = "String")]
+impl<S> GraphQLScalar for String
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(self.clone())
     }
 
-    from_input_value(v: &InputValue) -> Option<String> {
+    fn from_input_value(v: &InputValue) -> Option<String> {
         match *v {
             InputValue::Scalar(ref s) => s.as_string(),
             _ => None,
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
             while let Some(ch) = char_iter.next() {
                 match ch {
-                    '\\' => {
-                        match char_iter.next() {
-                            Some('"') => {ret.push('"');}
-                            Some('/') => {ret.push('/');}
-                            Some('n') => {ret.push('\n');}
-                            Some('r') => {ret.push('\r');}
-                            Some('t') => {ret.push('\t');}
-                            Some('\\') => {ret.push('\\');}
-                            Some('f') => {ret.push('\u{000c}');}
-                            Some('b') => {ret.push('\u{0008}');}
-                            Some('u') => {
-                                ret.push(parse_unicode_codepoint(&mut char_iter)?);
-                            }
-                            Some(s) => return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\{}", s)))),
-                            None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
+                    '\\' => match char_iter.next() {
+                        Some('"') => {
+                            ret.push('"');
                         }
+                        Some('/') => {
+                            ret.push('/');
+                        }
+                        Some('n') => {
+                            ret.push('\n');
+                        }
+                        Some('r') => {
+                            ret.push('\r');
+                        }
+                        Some('t') => {
+                            ret.push('\t');
+                        }
+                        Some('\\') => {
+                            ret.push('\\');
+                        }
+                        Some('f') => {
+                            ret.push('\u{000c}');
+                        }
+                        Some('b') => {
+                            ret.push('\u{0008}');
+                        }
+                        Some('u') => {
+                            ret.push(parse_unicode_codepoint(&mut char_iter)?);
+                        }
+                        Some(s) => {
+                            return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
+                                format!("\\{}", s),
+                            )))
+                        }
+                        None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
                     },
-                    ch => {ret.push(ch);}
+                    ch => {
+                        ret.push(ch);
+                    }
                 }
             }
             Ok(ret.into())
@@ -105,7 +131,7 @@ graphql_scalar!(String as "String" where Scalar = <S>{
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
     }
-});
+}
 
 fn parse_unicode_codepoint<'a, I>(char_iter: &mut I) -> Result<char, ParseError<'a>>
 where
@@ -218,73 +244,81 @@ where
     }
 }
 
-graphql_scalar!(bool as "Boolean" where Scalar = <S>{
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(name = "Boolean")]
+impl<S> GraphQLScalar for bool
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
 
-    from_input_value(v: &InputValue) -> Option<bool> {
+    fn from_input_value(v: &InputValue) -> Option<bool> {
         match *v {
             InputValue::Scalar(ref b) => b.as_boolean(),
             _ => None,
         }
     }
 
-
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S > {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         // Bools are parsed on it's own. This should not hit this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
-});
+}
 
-graphql_scalar!(i32 as "Int" where Scalar = <S>{
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(name = "Int")]
+impl<S> GraphQLScalar for i32
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
 
-    from_input_value(v: &InputValue) -> Option<i32> {
+    fn from_input_value(v: &InputValue) -> Option<i32> {
         match *v {
             InputValue::Scalar(ref i) => i.as_int(),
             _ => None,
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::Int(v) = value {
             v.parse()
-             .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-             .map(|s: i32| s.into())
+                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map(|s: i32| s.into())
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
     }
-});
+}
 
-graphql_scalar!(f64 as "Float" where Scalar = <S>{
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(name = "Float")]
+impl<S> GraphQLScalar for f64
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
 
-    from_input_value(v: &InputValue) -> Option<f64> {
+    fn from_input_value(v: &InputValue) -> Option<f64> {
         match *v {
             InputValue::Scalar(ref s) => s.as_float(),
             _ => None,
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         match value {
-            ScalarToken::Int(v) | ScalarToken::Float(v) => {
-                v.parse()
-                 .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-                 .map(|s: f64| s.into())
-            }
-            ScalarToken::String(_) => {
-                Err(ParseError::UnexpectedToken(Token::Scalar(value)))
-            }
+            ScalarToken::Int(v) | ScalarToken::Float(v) => v
+                .parse()
+                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map(|s: f64| s.into()),
+            ScalarToken::String(_) => Err(ParseError::UnexpectedToken(Token::Scalar(value))),
         }
     }
-});
+}
 
 /// Utillity type to define read-only schemas
 ///
