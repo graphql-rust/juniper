@@ -7,7 +7,7 @@ These three define the root query fields, mutations and subscriptions of the sch
 
 Both query and mutation objects are regular GraphQL objects, defined like any
 other object in Juniper. The mutation and subscription object, however, is optional since schemas
-can be read-only and without subscriptions as well.
+can be read-only and without subscriptions as well. If mutations/subscriptions functionality is not needed, consider using [EmptyMutation][EmptyMutation]/[EmptySubscription][EmptySubscription].
 
 In Juniper, the `RootNode` type represents a schema. You usually don't have to
 create this object yourself: see the framework integrations for [Iron](../servers/iron.md)
@@ -61,3 +61,6 @@ impl Mutations {
 ```
 
 [section]: ../advanced/subscriptions.md
+[EmptyMutation]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptyMutation.html
+<!--TODO: Fix This URL when the EmptySubscription become available in the Documentation  -->
+[EmptySubscription]: https://docs.rs/juniper/0.14.2/juniper/struct.EmptySubscription.html

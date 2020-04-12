@@ -6,7 +6,11 @@ from the server. Subscriptions are similar to queries in that they specify a set
 but instead of immediately returning a single answer, a result is sent every time a particular event happens on the 
 server. 
 
-For the usage of subscriptions you need to add [juniper_subscriptions][juniper_subscriptions] into your cargo.toml:
+In order to execute subscriptions you need a coordinator (that spawns connections) 
+and a GraphQL object that can be resolved into a stream, elements of which will then 
+be returned to the end user. [juniper_subscriptions][juniper_subscriptions] crate 
+provides a default connection implementation, and you'll need to add it into 
+your cargo.toml:
 ```toml
 [dependencies]
 juniper = { git = "https://github.com/graphql-rust/juniper", branch = "master" }
@@ -63,6 +67,15 @@ impl Subscription {
 
 
 ### Coordinator
+
+Subscriptions require a bit more resources than regular queries, since they can provide a great vector 
+for DOS attacks and can bring down a server easily if not handled right. [SubscriptionCoordinator][SubscriptionCoordinator] trait provides the coordination logic. 
+It contains the schema and can keep track of opened connections, handle subscription 
+start and maintains a global subscription id. Once connection is established, subscription 
+coordinator spawns a [SubscriptionConnection][SubscriptionConnection], which handles a 
+single connection, provides resolver logic for a client stream and can provide re-connection 
+and shutdown logic.
+
 
 The [Coordinator][Coordinator] struct is a simple implementation of the trait [SubscriptionCoordinator][SubscriptionCoordinator]
 that is responsible for handling the execution of subscription operation into your schema. The execution of the `subscribe` 
