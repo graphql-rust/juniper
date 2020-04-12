@@ -41,7 +41,7 @@ async fn main() {
     warp::serve(
         warp::get()
             .and(warp::path("graphiql"))
-            .and(juniper_warp::graphiql_filter("/graphql"))
+            .and(juniper_warp::graphiql_filter("/graphql", None))
             .or(homepage)
             .or(warp::path("graphql").and(graphql_filter))
             .with(log),

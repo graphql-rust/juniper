@@ -31,7 +31,7 @@ async fn main() {
                 let ctx = ctx.clone();
                 async move {
                     match (req.method(), req.uri().path()) {
-                        (&Method::GET, "/") => juniper_hyper::graphiql("/graphql").await,
+                        (&Method::GET, "/") => juniper_hyper::graphiql("/graphql", None).await,
                         (&Method::GET, "/graphql") | (&Method::POST, "/graphql") => {
                             juniper_hyper::graphql(root_node, ctx, req).await
                         }
