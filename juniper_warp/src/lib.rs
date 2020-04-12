@@ -631,6 +631,22 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn graphiql_endpoint_with_subscription_matches() {
+        let filter = warp::get().and(warp::path("graphiql")).and(graphiql_filter(
+            "/graphql",
+            Some("ws:://localhost:8080/subscriptions"),
+        ));
+        let result = request()
+            .method("GET")
+            .path("/graphiql")
+            .header("accept", "text/html")
+            .filter(&filter)
+            .await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn playground_endpoint_matches() {
         let filter = warp::get()
             .and(warp::path("playground"))
