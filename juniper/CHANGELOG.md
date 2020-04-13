@@ -25,7 +25,7 @@ See [#569](https://github.com/graphql-rust/juniper/pull/569).
 - GraphQLUnion derive support ("#[derive(GraphqQLUnion)]")
   - implements GraphQLAsyncType
 
-See [#](https://github.com/graphql-rust/juniper/pull/).
+See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 ## Breaking Changes
 
