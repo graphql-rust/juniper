@@ -8,7 +8,7 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
         _ => {
-            panic!("#[derive(GraphlQLUnion)] can only be applied to enums");
+            panic!("#[derive(GraphQLUnion)] can only be applied to enums");
         }
     };
 
@@ -21,7 +21,7 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
     };
 
     if !attrs.interfaces.is_empty() {
-        panic!("#[derive(GraphlQLUnion)] does not support interfaces");
+        panic!("#[derive(GraphQLUnion)] does not support interfaces");
     }
 
     let ident = &ast.ident;
@@ -59,12 +59,12 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                     };
 
                     if iter.next().is_some() {
-                        panic!("#[derive(GraphlQLUnion)] all members must be unnamed with a single element e.g. Some(T)");
+                        panic!("#[derive(GraphQLUnion)] all members must be unnamed with a single element e.g. Some(T)");
                     }
 
                     first.ty.clone()
                 }
-                _ => panic!("#[derive(GraphlQLObject)] all fields of the enum must be unnamed"),
+                _ => panic!("#[derive(GraphQLUnion)] all fields of the enum must be unnamed"),
             };
 
             if field_attrs.description.is_some() {
