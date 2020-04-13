@@ -67,11 +67,15 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                 _ => panic!("#[derive(GraphlQLObject)] all fields of the enum must be unnamed"),
             };
 
+            if field_attrs.description.is_some() {
+                panic!("#[derive(GraphQLUnion)] does not allow documentation of fields");
+            }
+
             Some(util::GraphQLTypeDefinitionField {
                 name,
                 _type,
                 args: Vec::new(),
-                description: field_attrs.description,
+                description: None,
                 deprecation: field_attrs.deprecation,
                 resolver_code,
                 is_type_inferred: true,
