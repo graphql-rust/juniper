@@ -18,11 +18,14 @@ See [#419](https://github.com/graphql-rust/juniper/pull/419).
 - `SchemaType` is now public
   - This is helpful when using `context.getSchema()` inside of your field resolvers
 
+- Support subscriptions in GraphiQL
+
 See [#569](https://github.com/graphql-rust/juniper/pull/569).
 
 ## Breaking Changes
 
 - `juniper::graphiql` has moved to `juniper::http::graphiql`
+  - `juniper::http::graphiql::graphiql_source` now requies a second parameter for subscriptions
 
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
 

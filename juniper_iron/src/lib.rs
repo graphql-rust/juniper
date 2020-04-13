@@ -159,6 +159,7 @@ pub struct GraphQLHandler<
 /// Handler that renders `GraphiQL` - a graphical query editor interface
 pub struct GraphiQLHandler {
     graphql_url: String,
+    subscription_url: Option<String>,
 }
 
 /// Handler that renders `GraphQL Playground` - a graphical query editor interface
@@ -275,9 +276,10 @@ impl GraphiQLHandler {
     ///
     /// The provided URL should point to the URL of the attached `GraphQLHandler`. It can be
     /// relative, so a common value could be `"/graphql"`.
-    pub fn new(graphql_url: &str) -> GraphiQLHandler {
+    pub fn new(graphql_url: &str, subscription_url: Option<&str>) -> GraphiQLHandler {
         GraphiQLHandler {
             graphql_url: graphql_url.to_owned(),
+            subscription_url: subscription_url.map(|s| s.to_owned()),
         }
     }
 }
@@ -326,7 +328,10 @@ impl Handler for GraphiQLHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            juniper::http::graphiql::graphiql_source(&self.graphql_url),
+            juniper::http::graphiql::graphiql_source(
+                &self.graphql_url,
+                self.subscription_url.as_deref(),
+            ),
         )))
     }
 }

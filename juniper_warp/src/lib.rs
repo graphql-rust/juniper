@@ -299,20 +299,41 @@ type Response = Pin<
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #
-/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql"));
+/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql",
+/// None));
+/// ```
+///
+/// Or with subscriptions support, provide the subscriptions endpoint URL:
+///
+/// ```
+/// # extern crate warp;
+/// # extern crate juniper_warp;
+/// #
+/// # use warp::Filter;
+/// # use juniper_warp::graphiql_filter;
+/// #
+/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql",
+/// Some("ws://localhost:8080/subscriptions")));
 /// ```
 pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,
+    subscriptions_endpoint: Option<&'static str>,
 ) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
     warp::any()
-        .map(move || graphiql_response(graphql_endpoint_url))
+        .map(move || graphiql_response(graphql_endpoint_url, subscriptions_endpoint))
         .boxed()
 }
 
-fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response<Vec<u8>> {
+fn graphiql_response(
+    graphql_endpoint_url: &'static str,
+    subscriptions_endpoint: Option<&'static str>,
+) -> warp::http::Response<Vec<u8>> {
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
-        .body(juniper::http::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
+        .body(
+            juniper::http::graphiql::graphiql_source(graphql_endpoint_url, subscriptions_endpoint)
+                .into_bytes(),
+        )
         .expect("response is valid")
 }
 
@@ -568,14 +589,14 @@ mod tests {
 
     #[test]
     fn graphiql_response_does_not_panic() {
-        graphiql_response("/abcd");
+        graphiql_response("/abcd", None);
     }
 
     #[tokio::test]
     async fn graphiql_endpoint_matches() {
         let filter = warp::get()
             .and(warp::path("graphiql"))
-            .and(graphiql_filter("/graphql"));
+            .and(graphiql_filter("/graphql", None));
         let result = request()
             .method("GET")
             .path("/graphiql")
@@ -591,7 +612,7 @@ mod tests {
         let filter = warp::get()
             .and(warp::path("dogs-api"))
             .and(warp::path("graphiql"))
-            .and(graphiql_filter("/dogs-api/graphql"));
+            .and(graphiql_filter("/dogs-api/graphql", None));
         let response = request()
             .method("GET")
             .path("/dogs-api/graphiql")
@@ -607,6 +628,22 @@ mod tests {
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
         assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
+    }
+
+    #[tokio::test]
+    async fn graphiql_endpoint_with_subscription_matches() {
+        let filter = warp::get().and(warp::path("graphiql")).and(graphiql_filter(
+            "/graphql",
+            Some("ws:://localhost:8080/subscriptions"),
+        ));
+        let result = request()
+            .method("GET")
+            .path("/graphiql")
+            .header("accept", "text/html")
+            .filter(&filter)
+            .await;
+
+        assert!(result.is_ok());
     }
 
     #[tokio::test]
