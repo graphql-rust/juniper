@@ -74,6 +74,7 @@ pub struct GraphQLResponse(pub Status, pub String);
 pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
     content::Html(juniper::http::graphiql::graphiql_source(
         graphql_endpoint_url,
+        None,
     ))
 }
 

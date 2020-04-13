@@ -9,6 +9,7 @@ to `juniper` to be reused in other http integrations, since this implementation 
 - Update `playground_filter` to support subscription endpoint URLs
 - Update `warp` to 0.2
 - Rename synchronous `execute` to `execute_sync`, add asynchronous `execute`
+- `juniper_warp::graphiql_filter` now requires a second parameter for subscriptions
 
 # [[0.5.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.5.2)
 
