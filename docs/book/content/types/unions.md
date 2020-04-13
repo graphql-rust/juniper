@@ -211,7 +211,7 @@ struct Droid {
     primary_function: String,
 }
 
-#[derive(GraphQLUnion)]
+#[derive(juniper::GraphQLUnion)]
 enum Character {
     Human(Human),
     Droid(Droid),
