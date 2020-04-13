@@ -38,7 +38,7 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
 
 
         if field_attrs.skip {
-            None
+            panic!("#[derive(GraphQLUnion)] does not support #[graphql(skip)] on fields");
         } else {
             let field_name = field.ident;
             let name = field_attrs
