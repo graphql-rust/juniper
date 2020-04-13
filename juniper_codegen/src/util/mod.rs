@@ -1294,13 +1294,6 @@ impl GraphQLTypeDefiniton {
             }
         });
 
-        let all_variants_different = {
-            let mut all_types: Vec<_> = self.fields.iter().map(|field| &field._type).collect();
-            let before = all_types.len();
-            all_types.dedup();
-            before == all_types.len()
-        };
-
         let matcher_variants = self
             .fields
             .iter()
@@ -1398,7 +1391,21 @@ impl GraphQLTypeDefiniton {
             }
         );
 
+        let convesion_impls = self.fields.iter().map(|field| {
+            let variant_ty = &field._type;
+            let variant_ident = quote::format_ident!("{}", field.name);
+            quote!(
+                impl std::convert::From<#variant_ty> for #ty {
+                    fn from(val: #variant_ty) -> Self {
+                        Self::#variant_ident(val)
+                    }
+                }
+            )
+        });
+
         let mut type_impl = quote! {
+            #( #convesion_impls )*
+
             impl #impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #where_clause
             {
                 type Context = #context;
@@ -1445,22 +1452,6 @@ impl GraphQLTypeDefiniton {
                 }
             }
         };
-
-        if all_variants_different {
-            let iter = self.fields.iter().map(|field| {
-                let variant_ty = &field._type;
-                let variant_ident = quote::format_ident!("{}", field.name);
-                quote!(
-                    impl std::convert::From<#variant_ty> for #ty {
-                        fn from(val: #variant_ty) -> Self {
-                            Self::#variant_ident(val)
-                        }
-                    }
-                )
-            });
-
-            type_impl.extend(iter)
-        }
 
         if !self.no_async {
             type_impl.extend(async_type_impl)

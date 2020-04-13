@@ -84,13 +84,32 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
         }
     });
 
+    let fields = fields.collect::<Vec<_>>();
+
+    // NOTICE: This is not an optimal implementation. It is possible
+    // to bypass this check by using a full qualified path instead
+    // (crate::Test vs Test). Since this requirement is mandatory, the
+    // `std::convert::Into<T>` implementation is used to enforce this
+    // requirement. However, due to the bad error message this
+    // implementation should stay and provide guidance.
+    let all_variants_different = {
+        let mut all_types: Vec<_> = fields.iter().map(|field| &field._type).collect();
+        let before = all_types.len();
+        all_types.dedup();
+        before == all_types.len()
+    };
+
+    if !all_variants_different {
+        panic!("#[derive(GraphQLUnion)] each variant must have a different type");
+    }
+
     let definition = util::GraphQLTypeDefiniton {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context,
         scalar: attrs.scalar,
         description: attrs.description,
-        fields: fields.collect(),
+        fields,
         generics: ast.generics,
         interfaces: None,
         include_type_generics: true,
