@@ -1298,11 +1298,11 @@ impl GraphQLTypeDefiniton {
             .fields
             .iter()
             .map(|field| {
-                let variant_ident = quote::format_ident!("{}", field.name);
                 let var_ty = &field._type;
+                let resolver_code = &field.resolver_code;
 
                 quote!(
-                    Self::#variant_ident(ref x) => <#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string(),
+                    #resolver_code(ref x) => <#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string(),
                 )
             });
 
@@ -1316,10 +1316,10 @@ impl GraphQLTypeDefiniton {
             .fields
             .iter()
             .map(|field| {
-                let variant_ident = quote::format_ident!("{}", field.name);
+                let resolver_code = &field.resolver_code;
 
                 quote!(
-                    match self { Self::#variant_ident(ref val) => Some(val), _ => None, }
+                    match self { #resolver_code(ref val) => Some(val), _ => None, }
                 )
             })
             .collect();
@@ -1393,11 +1393,12 @@ impl GraphQLTypeDefiniton {
 
         let convesion_impls = self.fields.iter().map(|field| {
             let variant_ty = &field._type;
-            let variant_ident = quote::format_ident!("{}", field.name);
+            let resolver_code = &field.resolver_code;
+
             quote!(
                 impl std::convert::From<#variant_ty> for #ty {
                     fn from(val: #variant_ty) -> Self {
-                        Self::#variant_ident(val)
+                        #resolver_code(val)
                     }
                 }
             )

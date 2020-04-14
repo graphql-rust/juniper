@@ -40,14 +40,14 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
         if field_attrs.skip {
             panic!("#[derive(GraphQLUnion)] does not support #[graphql(skip)] on fields");
         } else {
-            let field_name = field.ident;
+            let variant_name = field.ident;
             let name = field_attrs
                 .name
                 .clone()
-                .unwrap_or_else(|| util::to_camel_case(&field_name.to_string()));
+                .unwrap_or_else(|| util::to_camel_case(&variant_name.to_string()));
 
             let resolver_code = quote!(
-                #ident . #field_name
+                #ident :: #variant_name
             );
 
             let _type = match field.fields {
