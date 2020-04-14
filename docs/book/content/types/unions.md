@@ -194,9 +194,7 @@ impl Character {
 This example is similar to `Enums (Impl)`. To successfully use the
 derive macro, ensure that each variant of the enum has a different
 type. Since each variant is different, the device macro provides
-`std::convert::Into<T>` converter for each _used_ variant. Fields
-which are skipped by using `#[graphql(skip)]` do not have a
-`std::convert::Into<T>` converter.
+`std::convert::Into<T>` converter for each variant.
 
 ```rust
 #[derive(juniper::GraphQLObject)]
