@@ -15,6 +15,7 @@ mod derive_enum;
 mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
+mod derive_union;
 mod impl_object;
 mod impl_union;
 
@@ -61,6 +62,13 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 pub fn derive_object_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_object::build_derive_object(ast, true);
+    gen.into()
+}
+
+#[proc_macro_derive(GraphQLUnion, attributes(graphql))]
+pub fn derive_union(input: TokenStream) -> TokenStream {
+    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
+    let gen = derive_union::build_derive_union(ast, false);
     gen.into()
 }
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
