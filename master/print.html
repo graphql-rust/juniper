@@ -1323,10 +1323,11 @@ juniper::graphql_scalar!(Date where Scalar = &lt;S&gt; {
 <a class="header" href="#unions" id="unions"><h1>Unions</h1></a>
 <p>From a server's point of view, GraphQL unions are similar to interfaces: the
 only exception is that they don't contain fields on their own.</p>
-<p>In Juniper, the <code>graphql_union!</code> has identical syntax to the <a href="interfaces.html">interface
-macro</a>, but does not support defining fields. Therefore, the same
-considerations about using traits, placeholder types, or enums still apply to
-unions.</p>
+<p>In Juniper, the <code>graphql_union!</code> has identical syntax to the
+<a href="interfaces.html">interface macro</a>, but does not support defining
+fields. Therefore, the same considerations about using traits,
+placeholder types, or enums still apply to unions. For simple
+situations, Juniper provides <code>#[derive(GraphQLUnion)]</code> for enums.</p>
 <p>If we look at the same examples as in the interfaces chapter, we see the
 similarities and the tradeoffs:</p>
 <a class="header" href="#traits-1" id="traits-1"><h2>Traits</h2></a>
@@ -1461,7 +1462,7 @@ impl GraphQLUnion for Character {
 
 # fn main() {}
 </code></pre></pre>
-<a class="header" href="#enums-2" id="enums-2"><h2>Enums</h2></a>
+<a class="header" href="#enums-impl" id="enums-impl"><h2>Enums (Impl)</h2></a>
 <pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
 struct Human {
     id: String,
@@ -1488,6 +1489,31 @@ impl Character {
             Droid =&gt; { match *self { Character::Droid(ref d) =&gt; Some(d), _ =&gt; None } },
         }
     }
+}
+
+# fn main() {}
+</code></pre></pre>
+<a class="header" href="#enums-derive" id="enums-derive"><h2>Enums (Derive)</h2></a>
+<p>This example is similar to <code>Enums (Impl)</code>. To successfully use the
+derive macro, ensure that each variant of the enum has a different
+type. Since each variant is different, the device macro provides
+<code>std::convert::Into&lt;T&gt;</code> converter for each variant.</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+#[derive(juniper::GraphQLUnion)]
+enum Character {
+    Human(Human),
+    Droid(Droid),
 }
 
 # fn main() {}
