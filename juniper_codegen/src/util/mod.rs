@@ -1329,7 +1329,21 @@ impl GraphQLTypeDefiniton {
 
             quote! {
                 if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
-                    return executor.resolve(&(), &{ #expr });
+                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                        { #expr },
+                        executor.context()
+                    );
+
+                    let res = match inner_res {
+                        Ok(Some((ctx, r))) => {
+                            let subexec = executor.replaced_context(ctx);
+                            subexec.resolve_with_ctx(&(), &r)
+                        },
+                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                        Err(e) => Err(e),
+                    };
+
+                    return res;
                 }
             }
         });
@@ -1339,8 +1353,20 @@ impl GraphQLTypeDefiniton {
 
             quote! {
                 if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
+                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                        { #expr },
+                        executor.context()
+                    );
+
                     let f = async move {
-                        executor.resolve_async(&(), &{ #expr }).await
+                        match inner_res {
+                            Ok(Some((ctx, r))) => {
+                                let subexec = executor.replaced_context(ctx);
+                                subexec.resolve_with_ctx_async(&(), &r).await
+                            },
+                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                            Err(e) => Err(e),
+                        }
                     };
                     use futures::future;
                     return future::FutureExt::boxed(f);
@@ -1460,7 +1486,6 @@ impl GraphQLTypeDefiniton {
 
         type_impl
     }
-
 
     pub fn into_enum_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
