@@ -49,20 +49,6 @@ enum ContextEnum {
     A,
 }
 
-/// This is not used as the description.
-#[derive(juniper::GraphQLObject)]
-#[graphql(context = CustomContext)]
-struct MyObject {
-    custom: String,
-}
-
-#[derive(juniper::GraphQLUnion)]
-#[graphql(context = CustomContext)]
-enum Item {
-    Object(MyObject),
-    Enum(DocEnum),
-}
-
 #[test]
 fn test_derived_enum() {
     // Ensure that rename works.
