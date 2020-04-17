@@ -8,8 +8,9 @@ build = "build.rs"
 [dependencies]
 juniper = { path = "../../../juniper" }
 juniper_iron = { path = "../../../juniper_iron" }
-futures = "0.3.1"
-
+juniper_subscriptions = { path = "../../../juniper_subscriptions" }
+futures = "0.3"
+tokio = { version = "0.2", features = ["rt-core", "blocking", "stream", "rt-util"] }
 iron = "0.5.0"
 mount = "0.4.0"
 
