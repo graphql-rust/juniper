@@ -44,7 +44,7 @@ enum OverrideDocEnum {
 }
 
 #[derive(juniper::GraphQLEnum)]
-#[graphql(context = CustomContext)]
+#[graphql(context = CustomContext, noasync)]
 enum ContextEnum {
     A,
 }
