@@ -597,7 +597,10 @@ mod test {
     #[cfg(feature = "schema-language")]
     mod schema_language {
         use crate as juniper;
-        use crate::{EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLObject, GraphQLInputObject};
+        use crate::{
+            EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+            GraphQLUnion,
+        };
 
         #[test]
         fn schema_language() {
@@ -620,6 +623,11 @@ mod test {
                         &IceCream => match *self { Sweet::IceCream(ref x) => Some(x), _ => None },
                     }
             });
+            #[derive(GraphQLUnion)]
+            enum GlutenFree {
+                Cake(Cake),
+                IceCream(IceCream),
+            }
             #[derive(GraphQLEnum)]
             enum Fruit {
                 Apple,
@@ -653,6 +661,13 @@ mod test {
                 fn fruit() -> Fruit {
                     Fruit::Apple
                 }
+                fn gluten_free(flavor: String) -> GlutenFree {
+                    if flavor == "savory" {
+                        GlutenFree::Cake(Cake::default())
+                    } else {
+                        GlutenFree::IceCream(IceCream::default())
+                    }
+                }
                 #[deprecated]
                 fn old() -> i32 {
                     42
@@ -670,6 +685,7 @@ mod test {
             );
             let ast = graphql_parser::parse_schema::<&str>(
                 r#"
+                union GlutenFree = Cake | IceCream
                 enum Fruit {
                     APPLE
                     ORANGE
@@ -690,6 +706,7 @@ mod test {
                   fizz(buzz: String!): Sweet
                   arr(stuff: [Coordinate!]!): String
                   fruit: Fruit!
+                  glutenFree(flavor: String!): GlutenFree!
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
