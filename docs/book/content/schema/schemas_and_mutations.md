@@ -1,6 +1,6 @@
 # Schemas
 
-A schema consists of three types: a query object, a mutation object and a subscription object
+A schema consists of three types: a query object, a mutation object, and a subscription object.
 ( The usage of subscriptions is a little different from the mutation and query objects, so there is a
 specific [section][section] to handle this topic). 
 These three define the root query fields, mutations and subscriptions of the schema, respectively.
