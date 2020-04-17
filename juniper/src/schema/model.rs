@@ -597,10 +597,15 @@ mod test {
     #[cfg(feature = "schema-language")]
     mod schema_language {
         use crate as juniper;
-        use crate::{EmptyMutation, EmptySubscription};
+        use crate::{EmptyMutation, EmptySubscription, GraphQLEnum};
 
         #[test]
         fn schema_language() {
+            #[derive(GraphQLEnum)]
+            enum Fruit {
+                Apple,
+                Orange,
+            }
             struct Query;
             #[juniper::graphql_object]
             impl Query {
@@ -616,6 +621,9 @@ mod test {
                 }
                 fn arr(stuff: Vec<String>) -> Option<&str> {
                     None
+                }
+                fn fruit() -> Fruit {
+                    Fruit::Apple
                 }
                 #[deprecated]
                 fn old() -> i32 {
@@ -634,12 +642,18 @@ mod test {
             );
             let ast = graphql_parser::parse_schema::<&str>(
                 r#"
+                enum Fruit {
+                    APPLE
+                    ORANGE
+                }
+
                 type Query {
                   blah: Boolean!
                   "This is whatever's description."
                   whatever: String!
                   fizz(buzz: String!): String
                   arr(stuff: [String!]!): String
+                  fruit: Fruit!
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
