@@ -152,7 +152,7 @@ async fn run_subscription() {
 
 ### Web Integration and Examples
 
-In the moment there is a example of subscriptions with [warp][warp], but it still in a Alpha state
+Currently there is an example of subscriptions with [warp][warp], but it still in an alpha state.
 since the GraphQL over [WS][WS] is not fully supported yet in this implementation and in the moment is 
 the only integration that supports it.
 
