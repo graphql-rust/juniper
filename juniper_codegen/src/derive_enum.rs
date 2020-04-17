@@ -34,6 +34,8 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
     let ident = &ast.ident;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
+    let mut mapping = std::collections::HashMap::new();
+
     let fields = variants
         .into_iter()
         .filter_map(|field| {
@@ -53,6 +55,15 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                     .name
                     .clone()
                     .unwrap_or_else(|| util::to_upper_snake_case(&field_name.to_string()));
+
+                match mapping.get(&name) {
+                    Some(other_field_name) =>
+                        panic!(format!("#[derive(GraphQLEnum)] all variants needs to be unique. Another field name `{}` has the same identifier `{}`, thus `{}` can not be named `{}`. One of the fields is manually renamed!", other_field_name, name, field_name, name)),
+                    None => {
+                        mapping.insert(name.clone(), field_name.clone());
+                    }
+                }
+
                 let resolver_code = quote!( #ident::#field_name );
 
                 let _type = match field.fields {
