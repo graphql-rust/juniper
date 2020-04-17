@@ -154,7 +154,6 @@ async fn run_subscription() {
 
 Currently there is an example of subscriptions with [warp][warp], but it still in an alpha state.
 GraphQL over [WS][WS] is not fully supported yet and is non-standard.
-the only integration that supports it.
 
 - [Warp Subscription Example](https://github.com/graphql-rust/juniper/tree/master/examples/warp_subscriptions)
 - [Small Example](https://github.com/graphql-rust/juniper/tree/master/examples/basic_subscriptions)
