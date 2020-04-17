@@ -597,14 +597,37 @@ mod test {
     #[cfg(feature = "schema-language")]
     mod schema_language {
         use crate as juniper;
-        use crate::{EmptyMutation, EmptySubscription, GraphQLEnum};
+        use crate::{EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLObject, GraphQLInputObject};
 
         #[test]
         fn schema_language() {
+            #[derive(GraphQLObject, Default)]
+            struct Cake {
+                fresh: bool,
+            };
+            #[derive(GraphQLObject, Default)]
+            struct IceCream{
+                cold: bool,
+            };
+            enum Sweet {
+                Cake(Cake),
+                IceCream(IceCream),
+            }
+            juniper::graphql_interface!(Sweet: () where Scalar = <S> |&self| {
+                instance_resolvers: |_| {
+                        &Cake => match *self { Sweet::Cake(ref x) => Some(x), _ => None },
+                        &IceCream => match *self { Sweet::IceCream(ref x) => Some(x), _ => None },
+                    }
+            });
             #[derive(GraphQLEnum)]
             enum Fruit {
                 Apple,
                 Orange,
+            }
+            #[derive(GraphQLInputObject)]
+            struct Coordinate {
+                latitude: f64,
+                longitude: f64
             }
             struct Query;
             #[juniper::graphql_object]
@@ -616,10 +639,14 @@ mod test {
                 fn whatever() -> String {
                     "foo".to_string()
                 }
-                fn fizz(buzz: String) -> Option<&str> {
-                    None
+                fn fizz(buzz: String) -> Option<Sweet> {
+                    if buzz == "whatever" {
+                        Some(Sweet::Cake(Cake::default()))
+                    } else {
+                        Some(Sweet::IceCream(IceCream::default()))
+                    }
                 }
-                fn arr(stuff: Vec<String>) -> Option<&str> {
+                fn arr(stuff: Vec<Coordinate>) -> Option<&str> {
                     None
                 }
                 fn fruit() -> Fruit {
@@ -646,18 +673,27 @@ mod test {
                     APPLE
                     ORANGE
                 }
-
+                interface Sweet
+                type Cake {
+                    fresh: Boolean!
+                }
+                type IceCream {
+                    cold: Boolean!
+                }
                 type Query {
                   blah: Boolean!
                   "This is whatever's description."
                   whatever: String!
-                  fizz(buzz: String!): String
-                  arr(stuff: [String!]!): String
+                  fizz(buzz: String!): Sweet
+                  arr(stuff: [Coordinate!]!): String
                   fruit: Fruit!
                   old: Int! @deprecated
                   reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
                 }
-
+                input Coordinate {
+                    latitude: Float!
+                    longitude: Float!
+                }
                 schema {
                   query: Query
                 }
