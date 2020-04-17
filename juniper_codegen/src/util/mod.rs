@@ -1329,21 +1329,16 @@ impl GraphQLTypeDefiniton {
 
             quote! {
                 if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
-                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                    return #juniper_crate_name::IntoResolvable::into(
                         { #expr },
                         executor.context()
-                    );
-
-                    let res = match inner_res {
-                        Ok(Some((ctx, r))) => {
-                            let subexec = executor.replaced_context(ctx);
-                            subexec.resolve_with_ctx(&(), &r)
-                        },
-                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                        Err(e) => Err(e),
-                    };
-
-                    return res;
+                    )
+                    .and_then(|res| {
+                        match res {
+                            Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                            None => Ok(#juniper_crate_name::Value::null()),
+                        }
+                    });
                 }
             }
         });
