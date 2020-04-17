@@ -22,6 +22,9 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
     if !attrs.interfaces.is_empty() {
         panic!("Invalid #[graphql(...)] attribute 'interfaces': #[derive(GraphQLEnum) does not support 'interfaces'");
     }
+    if attrs.scalar.is_some() {
+        panic!("Invalid #[graphql(...)] attribute 'scalar': #[derive(GraphQLEnum) does not support explicit scalars");
+    }
 
     // Parse attributes.
     let ident = &ast.ident;
@@ -71,7 +74,7 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context,
-        scalar: attrs.scalar,
+        scalar: None,
         description: attrs.description,
         fields,
         generics: ast.generics,
