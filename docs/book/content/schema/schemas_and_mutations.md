@@ -1,9 +1,9 @@
 # Schemas
 
 A schema consists of three types: a query object, a mutation object, and a subscription object.
-( The usage of subscriptions is a little different from the mutation and query objects, so there is a
-specific [section][section] to handle this topic). 
 These three define the root query fields, mutations and subscriptions of the schema, respectively.
+
+The usage of subscriptions is a little different from the mutation and query objects, so there is a specific [section][section] that discusses them.
 
 Both query and mutation objects are regular GraphQL objects, defined like any
 other object in Juniper. The mutation and subscription object, however, is optional since schemas
