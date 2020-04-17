@@ -10,7 +10,6 @@ In order to execute subscriptions you need a coordinator (that spawns connection
 and a GraphQL object that can be resolved into a stream--elements of which will then 
 be returned to the end user. The [juniper_subscriptions][juniper_subscriptions] crate 
 provides a default connection implementation. Currently subscriptions are only supported on the `master` branch. Add the following to your `Cargo.toml`:
-your cargo.toml:
 ```toml
 [dependencies]
 juniper = { git = "https://github.com/graphql-rust/juniper", branch = "master" }
