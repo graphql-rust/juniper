@@ -7,7 +7,7 @@ but instead of immediately returning a single answer, a result is sent every tim
 server. 
 
 In order to execute subscriptions you need a coordinator (that spawns connections) 
-and a GraphQL object that can be resolved into a stream, elements of which will then 
+and a GraphQL object that can be resolved into a stream--elements of which will then 
 be returned to the end user. [juniper_subscriptions][juniper_subscriptions] crate 
 provides a default connection implementation, and you'll need to add it into 
 your cargo.toml:
