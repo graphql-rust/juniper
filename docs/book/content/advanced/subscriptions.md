@@ -1,7 +1,7 @@
 # Subscriptions
 ### How to achieve realtime data with GraphQL subscriptions
 
-GraphQL Subscriptions are a way to push data from the server to the clients that choose to listen to real time messages 
+GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages 
 from the server. Subscriptions are similar to queries in that they specify a set of fields to be delivered to the client,
 but instead of immediately returning a single answer, a result is sent every time a particular event happens on the 
 server. 
