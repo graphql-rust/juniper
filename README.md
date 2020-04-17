@@ -48,8 +48,7 @@ see the [actix][actix_examples], [hyper][hyper_examples], [rocket][rocket_exampl
 
 Juniper supports the full GraphQL query language according to the
 [specification][graphql_spec], including interfaces, unions, schema
-introspection, and validations.
-It does not, however, support the schema language. Consider using [juniper-from-schema][] for generating code from a schema file.
+introspection, and validations. It can also output the schema in the [GraphQL Schema Language][schema_language].
 
 As an exception to other GraphQL libraries for other languages, Juniper builds
 non-null types by default. A field of type `Vec<Episode>` will be converted into
@@ -91,6 +90,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [playground]: https://github.com/prisma/graphql-playground
 [iron]: http://ironframework.io
 [graphql_spec]: http://facebook.github.io/graphql
+[schema_language]: https://graphql.org/learn/schema/#type-language
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [actix_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_actix/examples
