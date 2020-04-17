@@ -83,7 +83,11 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                 })
             }
         })
-        .collect();
+        .collect::<Vec<_>>();
+
+    if fields.len() == 0 {
+        panic!("#[derive(GraphQLEnum)] requires at least one variants");
+    }
 
     let definition = util::GraphQLTypeDefiniton {
         name,
