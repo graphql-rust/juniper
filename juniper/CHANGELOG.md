@@ -27,7 +27,7 @@ See [#569](https://github.com/graphql-rust/juniper/pull/569).
 
 See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
-- Derive macro `GraphQLEnum` supports custom context and scalar (see [#621](https://github.com/graphql-rust/juniper/pull/621))
+- Derive macro `GraphQLEnum` supports custom context (see [#621](https://github.com/graphql-rust/juniper/pull/621))
 
 ## Breaking Changes
 
