@@ -5,6 +5,10 @@ use quote::quote;
 use syn::{self, Data, Fields};
 
 pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
+    if !ast.generics.params.is_empty() {
+        panic!("#[derive(GraphQLEnum) does not support generics or lifetimes");
+    }
+
     let variants = match ast.data {
         Data::Enum(enum_data) => enum_data.variants,
         _ => {
@@ -77,7 +81,8 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
         scalar: None,
         description: attrs.description,
         fields,
-        generics: ast.generics,
+        // NOTICE: only unit variants allow -> no generics possible
+        generics: syn::Generics::default(),
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
