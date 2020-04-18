@@ -963,6 +963,18 @@ enum StarWarsEpisode {
 
 # fn main() {}
 </code></pre></pre>
+<a class="header" href="#supported-macro-attributes-derive" id="supported-macro-attributes-derive"><h2>Supported Macro Attributes (Derive)</h2></a>
+<table><thead><tr><th> Name of Attribute </th><th align="center"> Container Support </th><th align="center"> Field Support    </th></tr></thead><tbody>
+<tr><td> context           </td><td align="center"> ✔                 </td><td align="center"> ?                </td></tr>
+<tr><td> deprecated        </td><td align="center"> ✔                 </td><td align="center"> ✔                </td></tr>
+<tr><td> description       </td><td align="center"> ✔                 </td><td align="center"> ✔                </td></tr>
+<tr><td> interfaces        </td><td align="center"> ?                 </td><td align="center"> ✘                </td></tr>
+<tr><td> name              </td><td align="center"> ✔                 </td><td align="center"> ✔                </td></tr>
+<tr><td> noasync           </td><td align="center"> ✔                 </td><td align="center"> ?                </td></tr>
+<tr><td> scalar            </td><td align="center"> ✘                 </td><td align="center"> ?                </td></tr>
+<tr><td> skip              </td><td align="center"> ?                 </td><td align="center"> ✘                </td></tr>
+<tr><td> ✔: supported      </td><td align="center"> ✘: not supported  </td><td align="center"> ?: not available </td></tr>
+</tbody></table>
 <a class="header" href="#interfaces" id="interfaces"><h1>Interfaces</h1></a>
 <p>GraphQL interfaces map well to interfaces known from common object-oriented
 languages such as Java or C#, but Rust has unfortunately not a concept that maps
