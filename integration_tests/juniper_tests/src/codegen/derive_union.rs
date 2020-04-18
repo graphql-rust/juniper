@@ -91,6 +91,13 @@ impl DroidCompat {
     }
 }
 
+#[derive(juniper::GraphQLUnion)]
+#[graphql(Context = CustomContext)]
+pub enum DifferentContext {
+    A(DroidContext),
+    B(Droid),
+}
+
 // NOTICE: this can not compile due to generic implementation of GraphQLType<__S>
 // #[derive(juniper::GraphQLUnion)]
 // pub enum CharacterCompatFail {

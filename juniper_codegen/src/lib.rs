@@ -24,7 +24,7 @@ use proc_macro::TokenStream;
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(&ast, false);
+    let gen = derive_enum::impl_enum(ast, false);
     gen.into()
 }
 
@@ -32,7 +32,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_enum::impl_enum(&ast, true);
+    let gen = derive_enum::impl_enum(ast, true);
     gen.into()
 }
 
