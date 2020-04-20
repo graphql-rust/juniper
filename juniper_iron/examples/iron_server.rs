@@ -29,7 +29,7 @@ fn main() {
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );
-    let graphiql_endpoint = GraphiQLHandler::new("/graphql");
+    let graphiql_endpoint = GraphiQLHandler::new("/graphql", None);
 
     mount.mount("/", graphiql_endpoint);
     mount.mount("/graphql", graphql_endpoint);

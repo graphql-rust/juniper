@@ -122,71 +122,9 @@ use std::{error::Error, fmt, io::Read};
 use serde_json::error::Error as SerdeError;
 
 use juniper::{
-    http, serde::Deserialize, DefaultScalarValue, GraphQLType, InputValue, RootNode, ScalarValue,
+    http, http::GraphQLBatchRequest, DefaultScalarValue, GraphQLType, InputValue, RootNode,
+    ScalarValue,
 };
-
-#[derive(serde_derive::Deserialize)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(http::GraphQLRequest<S>),
-    Batch(Vec<http::GraphQLRequest<S>>),
-}
-
-#[derive(serde_derive::Serialize)]
-#[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(http::GraphQLResponse<'a, S>),
-    Batch(Vec<http::GraphQLResponse<'a, S>>),
-}
-
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue,
-{
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, Subscription>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, Subscription, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        Subscription: GraphQLType<S, Context = CtxT>,
-    {
-        match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
-            }
-            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute_sync(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-}
-
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue,
-{
-    fn is_ok(&self) -> bool {
-        match *self {
-            GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            GraphQLBatchResponse::Batch(ref responses) => {
-                responses.iter().all(|response| response.is_ok())
-            }
-        }
-    }
-}
 
 /// Handler that executes `GraphQL` queries in the given schema
 ///
@@ -221,6 +159,7 @@ pub struct GraphQLHandler<
 /// Handler that renders `GraphiQL` - a graphical query editor interface
 pub struct GraphiQLHandler {
     graphql_url: String,
+    subscription_url: Option<String>,
 }
 
 /// Handler that renders `GraphQL Playground` - a graphical query editor interface
@@ -337,9 +276,10 @@ impl GraphiQLHandler {
     ///
     /// The provided URL should point to the URL of the attached `GraphQLHandler`. It can be
     /// relative, so a common value could be `"/graphql"`.
-    pub fn new(graphql_url: &str) -> GraphiQLHandler {
+    pub fn new(graphql_url: &str, subscription_url: Option<&str>) -> GraphiQLHandler {
         GraphiQLHandler {
             graphql_url: graphql_url.to_owned(),
+            subscription_url: subscription_url.map(|s| s.to_owned()),
         }
     }
 }
@@ -388,7 +328,10 @@ impl Handler for GraphiQLHandler {
         Ok(Response::with((
             content_type,
             status::Ok,
-            juniper::graphiql::graphiql_source(&self.graphql_url),
+            juniper::http::graphiql::graphiql_source(
+                &self.graphql_url,
+                self.subscription_url.as_deref(),
+            ),
         )))
     }
 }
