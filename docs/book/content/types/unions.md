@@ -3,10 +3,11 @@
 From a server's point of view, GraphQL unions are similar to interfaces: the
 only exception is that they don't contain fields on their own.
 
-In Juniper, the `graphql_union!` has identical syntax to the [interface
-macro](interfaces.md), but does not support defining fields. Therefore, the same
-considerations about using traits, placeholder types, or enums still apply to
-unions.
+In Juniper, the `graphql_union!` has identical syntax to the
+[interface macro](interfaces.md), but does not support defining
+fields. Therefore, the same considerations about using traits,
+placeholder types, or enums still apply to unions. For simple
+situations, Juniper provides `#[derive(GraphQLUnion)]` for enums.
 
 If we look at the same examples as in the interfaces chapter, we see the
 similarities and the tradeoffs:
@@ -154,7 +155,7 @@ impl GraphQLUnion for Character {
 # fn main() {}
 ```
 
-## Enums
+## Enums (Impl)
 
 ```rust
 #[derive(juniper::GraphQLObject)]
@@ -183,6 +184,35 @@ impl Character {
             Droid => { match *self { Character::Droid(ref d) => Some(d), _ => None } },
         }
     }
+}
+
+# fn main() {}
+```
+
+## Enums (Derive)
+
+This example is similar to `Enums (Impl)`. To successfully use the
+derive macro, ensure that each variant of the enum has a different
+type. Since each variant is different, the device macro provides
+`std::convert::Into<T>` converter for each variant.
+
+```rust
+#[derive(juniper::GraphQLObject)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+#[derive(juniper::GraphQLUnion)]
+enum Character {
+    Human(Human),
+    Droid(Droid),
 }
 
 # fn main() {}

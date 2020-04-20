@@ -1255,6 +1255,427 @@ impl GraphQLTypeDefiniton {
             #subscription_implementation
         )
     }
+
+    pub fn into_union_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+
+        let name = &self.name;
+        let ty = &self._type;
+        let context = self
+            .context
+            .as_ref()
+            .map(|ctx| quote!( #ctx ))
+            .unwrap_or_else(|| quote!(()));
+
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
+        let description = self
+            .description
+            .as_ref()
+            .map(|description| quote!( .description(#description) ));
+
+        let meta_types = self.fields.iter().map(|field| {
+            let var_ty = &field._type;
+
+            quote! {
+                registry.get_type::<&#var_ty>(&(())),
+            }
+        });
+
+        let matcher_variants = self
+            .fields
+            .iter()
+            .map(|field| {
+                let var_ty = &field._type;
+                let resolver_code = &field.resolver_code;
+
+                quote!(
+                    #resolver_code(ref x) => <#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string(),
+                )
+            });
+
+        let concrete_type_resolver = quote!(
+            match self {
+                #( #matcher_variants )*
+            }
+        );
+
+        let matcher_expr: Vec<_> = self
+            .fields
+            .iter()
+            .map(|field| {
+                let resolver_code = &field.resolver_code;
+
+                quote!(
+                    match self { #resolver_code(ref val) => Some(val), _ => None, }
+                )
+            })
+            .collect();
+
+        let resolve_into_type = self.fields.iter().zip(matcher_expr.iter()).map(|(field, expr)| {
+            let var_ty = &field._type;
+
+            quote! {
+                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
+                    return #juniper_crate_name::IntoResolvable::into(
+                        { #expr },
+                        executor.context()
+                    )
+                    .and_then(|res| {
+                        match res {
+                            Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                            None => Ok(#juniper_crate_name::Value::null()),
+                        }
+                    });
+                }
+            }
+        });
+
+        let resolve_into_type_async = self.fields.iter().zip(matcher_expr.iter()).map(|(field, expr)| {
+            let var_ty = &field._type;
+
+            quote! {
+                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
+                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                        { #expr },
+                        executor.context()
+                    );
+
+                    let f = async move {
+                        match inner_res {
+                            Ok(Some((ctx, r))) => {
+                                let subexec = executor.replaced_context(ctx);
+                                subexec.resolve_with_ctx_async(&(), &r).await
+                            },
+                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                            Err(e) => Err(e),
+                        }
+                    };
+                    use futures::future;
+                    return future::FutureExt::boxed(f);
+                }
+            }
+        });
+
+        let mut generics = self.generics.clone();
+
+        if self.scalar.is_none() && self.generic_scalar {
+            // No custom scalar specified, but always generic specified.
+            // Therefore we inject the generic scalar.
+
+            generics.params.push(parse_quote!(__S));
+
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            // Insert ScalarValue constraint.
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
+        }
+
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+        where_async
+            .predicates
+            .push(parse_quote!( #scalar: Send + Sync ));
+        where_async.predicates.push(parse_quote!(Self: Send + Sync));
+
+        let async_type_impl = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty
+                #where_async
+            {
+                fn resolve_into_type_async<'b>(
+                    &'b self,
+                    _info: &'b Self::TypeInfo,
+                    type_name: &str,
+                    _: Option<&'b [#juniper_crate_name::Selection<'b, #scalar>]>,
+                    executor: &'b #juniper_crate_name::Executor<'b, 'b, Self::Context, #scalar>
+                ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>> {
+                    let context = &executor.context();
+
+                    #( #resolve_into_type_async )*
+
+                    panic!("Concrete type not handled by instance resolvers on {}", #name);
+                }
+            }
+        );
+
+        let convesion_impls = self.fields.iter().map(|field| {
+            let variant_ty = &field._type;
+            let resolver_code = &field.resolver_code;
+
+            quote!(
+                impl std::convert::From<#variant_ty> for #ty {
+                    fn from(val: #variant_ty) -> Self {
+                        #resolver_code(val)
+                    }
+                }
+            )
+        });
+
+        let mut type_impl = quote! {
+            #( #convesion_impls )*
+
+            impl #impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+
+                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                    Some(#name)
+                }
+
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut #juniper_crate_name::Registry<'r, #scalar>
+                ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
+                    where
+                        #scalar: 'r,
+                {
+                    let types = &[
+                        #( #meta_types )*
+                    ];
+                    registry.build_union_type::<#ty>(
+                        info, types
+                    )
+                    #description
+                    .into_meta()
+                }
+
+                #[allow(unused_variables)]
+                fn concrete_type_name(&self, context: &Self::Context, _info: &Self::TypeInfo) -> String {
+                    #concrete_type_resolver
+                }
+
+                fn resolve_into_type(
+                    &self,
+                    _info: &Self::TypeInfo,
+                    type_name: &str,
+                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
+                    executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
+                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                    let context = &executor.context();
+
+                    #( #resolve_into_type )*
+
+                    panic!("Concrete type not handled by instance resolvers on {}", #name);
+                }
+            }
+        };
+
+        if !self.no_async {
+            type_impl.extend(async_type_impl)
+        }
+
+        type_impl
+    }
+
+    pub fn into_enum_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+
+        let name = &self.name;
+        let ty = &self._type;
+        let context = self
+            .context
+            .as_ref()
+            .map(|ctx| quote!( #ctx ))
+            .unwrap_or_else(|| quote!(()));
+
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
+        let description = self
+            .description
+            .as_ref()
+            .map(|description| quote!( .description(#description) ));
+
+        let values = self.fields.iter().map(|variant| {
+            let variant_name = &variant.name;
+
+            let descr = variant
+                .description
+                .as_ref()
+                .map(|description| quote!(Some(#description.to_string())))
+                .unwrap_or_else(|| quote!(None));
+
+            let depr = variant
+                .deprecation
+                .as_ref()
+                .map(|deprecation| match deprecation.reason.as_ref() {
+                    Some(reason) => quote!( #juniper_crate_name::meta::DeprecationStatus::Deprecated(Some(#reason.to_string())) ),
+                    None => quote!( #juniper_crate_name::meta::DeprecationStatus::Deprecated(None) ),
+                })
+                .unwrap_or_else(|| quote!(#juniper_crate_name::meta::DeprecationStatus::Current));
+
+            quote!(
+                #juniper_crate_name::meta::EnumValue {
+                    name: #variant_name.to_string(),
+                    description: #descr,
+                    deprecation_status: #depr,
+                },
+            )
+        });
+
+        let resolves = self.fields.iter().map(|variant| {
+            let variant_name = &variant.name;
+            let resolver_code = &variant.resolver_code;
+
+            quote!(
+                &#resolver_code => #juniper_crate_name::Value::scalar(String::from(#variant_name)),
+            )
+        });
+
+        let from_inputs = self.fields.iter().map(|variant| {
+            let variant_name = &variant.name;
+            let resolver_code = &variant.resolver_code;
+
+            quote!(
+                Some(#variant_name) => Some(#resolver_code),
+            )
+        });
+
+        let to_inputs = self.fields.iter().map(|variant| {
+            let variant_name = &variant.name;
+            let resolver_code = &variant.resolver_code;
+
+            quote!(
+                &#resolver_code =>
+                    #juniper_crate_name::InputValue::scalar(#variant_name.to_string()),
+            )
+        });
+
+        let mut generics = self.generics.clone();
+
+        if self.scalar.is_none() && self.generic_scalar {
+            // No custom scalar specified, but always generic specified.
+            // Therefore we inject the generic scalar.
+
+            generics.params.push(parse_quote!(__S));
+
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            // Insert ScalarValue constraint.
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
+        }
+
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+        where_async
+            .predicates
+            .push(parse_quote!( #scalar: Send + Sync ));
+        where_async.predicates.push(parse_quote!(Self: Send + Sync));
+
+        let _async = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty
+                #where_async
+            {
+                fn resolve_async<'a>(
+                    &'a self,
+                    info: &'a Self::TypeInfo,
+                    selection_set: Option<&'a [#juniper_crate_name::Selection<#scalar>]>,
+                    executor: &'a #juniper_crate_name::Executor<Self::Context, #scalar>,
+                ) -> #juniper_crate_name::BoxFuture<'a, #juniper_crate_name::ExecutionResult<#scalar>> {
+                    use #juniper_crate_name::GraphQLType;
+                    use futures::future;
+                    let v = self.resolve(info, selection_set, executor);
+                    future::FutureExt::boxed(future::ready(v))
+                }
+            }
+        );
+
+        let mut body = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty
+                #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+
+                fn name(_: &()) -> Option<&'static str> {
+                    Some(#name)
+                }
+
+                fn meta<'r>(
+                    _: &(),
+                    registry: &mut #juniper_crate_name::Registry<'r, #scalar>
+                ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
+                    where #scalar: 'r,
+                {
+                    registry.build_enum_type::<#ty>(&(), &[
+                        #( #values )*
+                    ])
+                    #description
+                    .into_meta()
+                }
+
+                fn resolve(
+                    &self,
+                    _: &(),
+                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
+                    _: &#juniper_crate_name::Executor<Self::Context, #scalar>
+                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                    let v = match self {
+                        #( #resolves )*
+                    };
+                    Ok(v)
+                }
+            }
+
+            impl#impl_generics #juniper_crate_name::FromInputValue<#scalar> for #ty
+                #where_clause
+            {
+                fn from_input_value(v: &#juniper_crate_name::InputValue<#scalar>) -> Option<#ty>
+                {
+                    match v.as_enum_value().or_else(|| {
+                        v.as_string_value()
+                    }) {
+                        #( #from_inputs )*
+                        _ => None,
+                    }
+                }
+            }
+
+            impl#impl_generics #juniper_crate_name::ToInputValue<#scalar> for #ty
+                #where_clause
+            {
+                fn to_input_value(&self) -> #juniper_crate_name::InputValue<#scalar> {
+                    match self {
+                        #( #to_inputs )*
+                    }
+                }
+            }
+        );
+
+        if !self.no_async {
+            body.extend(_async)
+        }
+
+        body
+    }
 }
 
 #[cfg(test)]
