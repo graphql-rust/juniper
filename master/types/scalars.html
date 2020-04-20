@@ -148,7 +148,7 @@ also limited in the data types you can use.</p>
 <li>For simple scalars that just wrap a primitive type, you can use the newtype pattern with
 a custom derive.</li>
 <li>For more advanced use cases with custom validation, you can use
-the <code>graphql_scalar!</code> macro.</li>
+the <code>graphql_scalar</code> proc macro.</li>
 </ul>
 <a class="header" href="#built-in-scalars" id="built-in-scalars"><h2>Built-in scalars</h2></a>
 <p>Juniper has built-in support for:</p>
@@ -202,7 +202,7 @@ pub struct UserId(i32);
 </code></pre></pre>
 <a class="header" href="#custom-scalars" id="custom-scalars"><h2>Custom scalars</h2></a>
 <p>For more complex situations where you also need custom parsing or validation,
-you can use the <code>graphql_scalar!</code> macro.</p>
+you can use the <code>graphql_scalar</code> proc macro.</p>
 <p>Typically, you represent your custom scalars as strings.</p>
 <p>The example below implements a custom scalar for a custom <code>Date</code> type.</p>
 <p>Note: juniper already has built-in support for the <code>chrono::DateTime</code> type
@@ -227,26 +227,28 @@ purpose.</p>
 use juniper::{Value, ParseScalarResult, ParseScalarValue};
 use date::Date;
 
-juniper::graphql_scalar!(Date where Scalar = &lt;S&gt; {
-    description: &quot;Date&quot;
-
+#[juniper::graphql_scalar(description = &quot;Date&quot;)]
+impl&lt;S&gt; GraphQLScalar for Date 
+where
+    S: ScalarValue
+{
     // Define how to convert your custom scalar into a primitive type.
-    resolve(&amp;self) -&gt; Value {
+    fn resolve(&amp;self) -&gt; Value {
         Value::scalar(self.to_string())
     }
 
     // Define how to parse a primitive type into your custom scalar.
-    from_input_value(v: &amp;InputValue) -&gt; Option&lt;Date&gt; {
+    fn from_input_value(v: &amp;InputValue) -&gt; Option&lt;Date&gt; {
         v.as_scalar_value()
         .and_then(|v| v.as_str())
         .and_then(|s| s.parse().ok())
     }
 
     // Define how to parse a string value.
-    from_str&lt;'a&gt;(value: ScalarToken&lt;'a&gt;) -&gt; ParseScalarResult&lt;'a, S&gt; {
+    fn from_str&lt;'a&gt;(value: ScalarToken&lt;'a&gt;) -&gt; ParseScalarResult&lt;'a, S&gt; {
         &lt;String as ParseScalarValue&lt;S&gt;&gt;::from_str(value)
     }
-});
+}
 
 # fn main() {}
 </code></pre></pre>
