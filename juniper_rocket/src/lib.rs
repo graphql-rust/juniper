@@ -54,80 +54,8 @@ use rocket::{
 use juniper::{http, InputValue};
 
 use juniper::{
-    serde::Deserialize, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
+    http::GraphQLBatchRequest, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
 };
-
-#[derive(Debug, serde_derive::Deserialize, PartialEq)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(http::GraphQLRequest<S>),
-    Batch(Vec<http::GraphQLRequest<S>>),
-}
-
-#[derive(serde_derive::Serialize)]
-#[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(http::GraphQLResponse<'a, S>),
-    Batch(Vec<http::GraphQLResponse<'a, S>>),
-}
-
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue,
-{
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
-    {
-        match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
-            }
-            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute_sync(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-
-    pub fn operation_names(&self) -> Vec<Option<&str>> {
-        match self {
-            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
-            GraphQLBatchRequest::Batch(reqs) => {
-                reqs.iter().map(|req| req.operation_name()).collect()
-            }
-        }
-    }
-}
-
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue,
-{
-    fn is_ok(&self) -> bool {
-        match *self {
-            GraphQLBatchResponse::Single(ref response) => response.is_ok(),
-            GraphQLBatchResponse::Batch(ref responses) => {
-                responses.iter().all(|response| response.is_ok())
-            }
-        }
-    }
-}
 
 /// Simple wrapper around an incoming GraphQL request
 ///
@@ -143,8 +71,14 @@ where
 pub struct GraphQLResponse(pub Status, pub String);
 
 /// Generate an HTML page containing GraphiQL
-pub fn graphiql_source(graphql_endpoint_url: &str) -> content::Html<String> {
-    content::Html(juniper::graphiql::graphiql_source(graphql_endpoint_url))
+pub fn graphiql_source(
+    graphql_endpoint_url: &str,
+    subscriptions_endpoint: Option<&str>,
+) -> content::Html<String> {
+    content::Html(juniper::http::graphiql::graphiql_source(
+        graphql_endpoint_url,
+        subscriptions_endpoint,
+    ))
 }
 
 /// Generate an HTML page containing GraphQL Playground

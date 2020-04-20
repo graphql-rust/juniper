@@ -8,8 +8,8 @@ use hyper::{
     Body, Method, Request, Response, StatusCode,
 };
 use juniper::{
-    http::GraphQLRequest as JuniperGraphQLRequest, serde::Deserialize, DefaultScalarValue,
-    GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest},
+    GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
@@ -61,7 +61,7 @@ where
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -89,10 +89,10 @@ where
 
 fn parse_get_req<S: ScalarValue>(
     req: Request<Body>,
-) -> Result<GraphQLRequest<S>, GraphQLRequestError> {
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
     req.uri()
         .query()
-        .map(|q| gql_request_from_get(q).map(GraphQLRequest::Single))
+        .map(|q| gql_request_from_get(q).map(GraphQLBatchRequest::Single))
         .unwrap_or_else(|| {
             Err(GraphQLRequestError::Invalid(
                 "'query' parameter is missing".to_string(),
@@ -102,7 +102,7 @@ fn parse_get_req<S: ScalarValue>(
 
 async fn parse_post_req<S: ScalarValue>(
     body: Body,
-) -> Result<GraphQLRequest<S>, GraphQLRequestError> {
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
@@ -110,13 +110,20 @@ async fn parse_post_req<S: ScalarValue>(
     let input = String::from_utf8(chunk.iter().cloned().collect())
         .map_err(GraphQLRequestError::BodyUtf8)?;
 
-    serde_json::from_str::<GraphQLRequest<S>>(&input).map_err(GraphQLRequestError::BodyJSONError)
+    serde_json::from_str::<GraphQLBatchRequest<S>>(&input)
+        .map_err(GraphQLRequestError::BodyJSONError)
 }
 
-pub async fn graphiql(graphql_endpoint: &str) -> Result<Response<Body>, hyper::Error> {
+pub async fn graphiql(
+    graphql_endpoint: &str,
+    subscriptions_endpoint: Option<&str>,
+) -> Result<Response<Body>, hyper::Error> {
     let mut resp = new_html_response(StatusCode::OK);
     // XXX: is the call to graphiql_source blocking?
-    *resp.body_mut() = Body::from(juniper::graphiql::graphiql_source(graphql_endpoint));
+    *resp.body_mut() = Body::from(juniper::http::graphiql::graphiql_source(
+        graphql_endpoint,
+        subscriptions_endpoint,
+    ));
     Ok(resp)
 }
 
@@ -142,7 +149,7 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
 async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    request: GraphQLRequest<S>,
+    request: GraphQLBatchRequest<S>,
 ) -> Response<Body>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -154,8 +161,9 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
 {
-    let (is_ok, body) = request.execute_sync(root_node, context);
-    let code = if is_ok {
+    let res = request.execute_sync(&*root_node, &context);
+    let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
+    let code = if res.is_ok() {
         StatusCode::OK
     } else {
         StatusCode::BAD_REQUEST
@@ -172,20 +180,21 @@ where
 async fn execute_request_async<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    request: GraphQLRequest<S>,
+    request: GraphQLBatchRequest<S>,
 ) -> Response<Body>
 where
     S: ScalarValue + Send + Sync + 'static,
     CtxT: Send + Sync + 'static,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
 {
-    let (is_ok, body) = request.execute(root_node, context).await;
-    let code = if is_ok {
+    let res = request.execute(&*root_node, &context).await;
+    let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
+    let code = if res.is_ok() {
         StatusCode::OK
     } else {
         StatusCode::BAD_REQUEST
@@ -261,100 +270,6 @@ fn new_html_response(code: StatusCode) -> Response<Body> {
         HeaderValue::from_static("text/html; charset=utf-8"),
     );
     resp
-}
-
-#[derive(serde_derive::Deserialize)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(JuniperGraphQLRequest<S>),
-    Batch(Vec<JuniperGraphQLRequest<S>>),
-}
-
-impl<S> GraphQLRequest<S>
-where
-    S: ScalarValue,
-{
-    fn execute_sync<'a, CtxT: 'a, QueryT, MutationT, SubscriptionT>(
-        self,
-        root_node: Arc<RootNode<'a, QueryT, MutationT, SubscriptionT, S>>,
-        context: Arc<CtxT>,
-    ) -> (bool, hyper::Body)
-    where
-        S: 'a + Send + Sync,
-        QueryT: GraphQLType<S, Context = CtxT> + 'a,
-        MutationT: GraphQLType<S, Context = CtxT> + 'a,
-        SubscriptionT: GraphQLType<S, Context = CtxT> + 'a,
-    {
-        match self {
-            GraphQLRequest::Single(request) => {
-                let res = request.execute_sync(&root_node, &context);
-                let is_ok = res.is_ok();
-                let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
-                (is_ok, body)
-            }
-            GraphQLRequest::Batch(requests) => {
-                let results: Vec<_> = requests
-                    .into_iter()
-                    .map(move |request| {
-                        let root_node = root_node.clone();
-                        let res = request.execute_sync(&root_node, &context);
-                        let is_ok = res.is_ok();
-                        let body = serde_json::to_string_pretty(&res).unwrap();
-                        (is_ok, body)
-                    })
-                    .collect();
-
-                let is_ok = !results.iter().any(|&(is_ok, _)| !is_ok);
-                let bodies: Vec<_> = results.into_iter().map(|(_, body)| body).collect();
-                let body = hyper::Body::from(format!("[{}]", bodies.join(",")));
-                (is_ok, body)
-            }
-        }
-    }
-
-    async fn execute<'a, CtxT: 'a, QueryT, MutationT, SubscriptionT>(
-        self,
-        root_node: Arc<RootNode<'a, QueryT, MutationT, SubscriptionT, S>>,
-        context: Arc<CtxT>,
-    ) -> (bool, hyper::Body)
-    where
-        S: Send + Sync,
-        QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        SubscriptionT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-    {
-        match self {
-            GraphQLRequest::Single(request) => {
-                let res = request.execute(&*root_node, &context).await;
-                let is_ok = res.is_ok();
-                let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
-                (is_ok, body)
-            }
-            GraphQLRequest::Batch(requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute(&*root_node, &context))
-                    .collect::<Vec<_>>();
-                let results = futures::future::join_all(futures).await;
-
-                let is_ok = results.iter().all(|res| res.is_ok());
-                let bodies: Vec<_> = results
-                    .into_iter()
-                    .map(|res| serde_json::to_string_pretty(&res).unwrap())
-                    .collect();
-                let body = hyper::Body::from(format!("[{}]", bodies.join(",")));
-                (is_ok, body)
-            }
-        }
-    }
 }
 
 #[derive(Debug)]

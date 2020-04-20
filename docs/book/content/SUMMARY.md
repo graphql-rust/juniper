@@ -32,6 +32,7 @@
   - [Objects and generics](advanced/objects_and_generics.md)
   - [Multiple operations per request](advanced/multiple_ops_per_request.md)
   - [Dataloaders](advanced/dataloaders.md)
+  - [Subscriptions](advanced/subscriptions.md)
 
     # - [Context switching]
 

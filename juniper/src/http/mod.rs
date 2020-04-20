@@ -217,6 +217,128 @@ where
     }
 }
 
+/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests
+#[derive(Debug, serde_derive::Deserialize, PartialEq)]
+#[serde(untagged)]
+#[serde(bound = "InputValue<S>: Deserialize<'de>")]
+pub enum GraphQLBatchRequest<S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
+    /// A single operation request.
+    Single(GraphQLRequest<S>),
+    /// A batch operation request.
+    Batch(Vec<GraphQLRequest<S>>),
+}
+
+impl<S> GraphQLBatchRequest<S>
+where
+    S: ScalarValue,
+{
+    /// Execute a GraphQL batch request synchronously using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
+    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a crate::RootNode<QueryT, MutationT, SubscriptionT, S>,
+        context: &CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: crate::GraphQLType<S, Context = CtxT>,
+        MutationT: crate::GraphQLType<S, Context = CtxT>,
+        SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
+    {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
+                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
+            }
+            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
+                requests
+                    .iter()
+                    .map(|request| request.execute_sync(root_node, context))
+                    .collect(),
+            ),
+        }
+    }
+
+    /// Executes a GraphQL request using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute` function exposed in
+    /// GraphQLRequest
+    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a crate::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        context: &'a CtxT,
+    ) -> GraphQLBatchResponse<'a, S>
+    where
+        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT::TypeInfo: Send + Sync,
+        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT::TypeInfo: Send + Sync,
+        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT::TypeInfo: Send + Sync,
+        CtxT: Send + Sync,
+        S: Send + Sync,
+    {
+        match *self {
+            GraphQLBatchRequest::Single(ref request) => {
+                let res = request.execute(root_node, context).await;
+                GraphQLBatchResponse::Single(res)
+            }
+            GraphQLBatchRequest::Batch(ref requests) => {
+                let futures = requests
+                    .iter()
+                    .map(|request| request.execute(root_node, context))
+                    .collect::<Vec<_>>();
+                let responses = futures::future::join_all(futures).await;
+
+                GraphQLBatchResponse::Batch(responses)
+            }
+        }
+    }
+
+    /// The operation names of the request.
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        match self {
+            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
+            GraphQLBatchRequest::Batch(reqs) => {
+                reqs.iter().map(|req| req.operation_name()).collect()
+            }
+        }
+    }
+}
+
+/// Simple wrapper around the result (GraphQLResponse) from executing a GraphQLBatchRequest
+///
+/// This struct implements Serialize, so you can simply serialize this
+/// to JSON and send it over the wire. use the `is_ok` to determine
+/// wheter to send a 200 or 400 HTTP status code.
+#[derive(serde_derive::Serialize)]
+#[serde(untagged)]
+pub enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
+where
+    S: ScalarValue,
+{
+    /// Result of a single operation in a GraphQL request.
+    Single(GraphQLResponse<'a, S>),
+    /// Result of a batch operation in a GraphQL request.
+    Batch(Vec<GraphQLResponse<'a, S>>),
+}
+
+impl<'a, S> GraphQLBatchResponse<'a, S>
+where
+    S: ScalarValue,
+{
+    /// Returns if all the GraphQLResponse in this operation are ok,
+    /// you can use it to determine wheter to send a 200 or 400 HTTP status code.
+    pub fn is_ok(&self) -> bool {
+        match self {
+            GraphQLBatchResponse::Single(res) => res.is_ok(),
+            GraphQLBatchResponse::Batch(reses) => reses.iter().all(|res| res.is_ok()),
+        }
+    }
+}
+
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {

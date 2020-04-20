@@ -43,105 +43,9 @@ Check the LICENSE file for details.
 use std::{pin::Pin, sync::Arc};
 
 use futures::{Future, FutureExt as _, TryFutureExt};
-use juniper::{DefaultScalarValue, InputValue, ScalarValue};
-use serde::Deserialize;
+use juniper::{http::GraphQLBatchRequest, ScalarValue};
 use tokio::task;
 use warp::{filters::BoxedFilter, Filter};
-
-#[derive(Debug, serde_derive::Deserialize, PartialEq)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(juniper::http::GraphQLRequest<S>),
-    Batch(Vec<juniper::http::GraphQLRequest<S>>),
-}
-
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue,
-{
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a juniper::RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: juniper::GraphQLType<S, Context = CtxT>,
-        MutationT: juniper::GraphQLType<S, Context = CtxT>,
-        SubscriptionT: juniper::GraphQLType<S, Context = CtxT>,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-    {
-        match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
-            }
-            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute_sync(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-
-    pub async fn execute<'a, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
-        context: &'a CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        QueryT::TypeInfo: Send + Sync,
-        MutationT: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
-        MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
-        SubscriptionT::TypeInfo: Send + Sync,
-        CtxT: Send + Sync,
-        S: Send + Sync,
-    {
-        match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                let res = request.execute(root_node, context).await;
-                GraphQLBatchResponse::Single(res)
-            }
-            GraphQLBatchRequest::Batch(ref requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect::<Vec<_>>();
-                let responses = futures::future::join_all(futures).await;
-
-                GraphQLBatchResponse::Batch(responses)
-            }
-        }
-    }
-}
-
-#[derive(serde_derive::Serialize)]
-#[serde(untagged)]
-enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    Single(juniper::http::GraphQLResponse<'a, S>),
-    Batch(Vec<juniper::http::GraphQLResponse<'a, S>>),
-}
-
-impl<'a, S> GraphQLBatchResponse<'a, S>
-where
-    S: ScalarValue,
-{
-    fn is_ok(&self) -> bool {
-        match self {
-            GraphQLBatchResponse::Single(res) => res.is_ok(),
-            GraphQLBatchResponse::Batch(reses) => reses.iter().all(|res| res.is_ok()),
-        }
-    }
-}
 
 /// Make a filter for graphql queries/mutations.
 ///
@@ -395,20 +299,41 @@ type Response = Pin<
 /// # use warp::Filter;
 /// # use juniper_warp::graphiql_filter;
 /// #
-/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql"));
+/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql",
+/// None));
+/// ```
+///
+/// Or with subscriptions support, provide the subscriptions endpoint URL:
+///
+/// ```
+/// # extern crate warp;
+/// # extern crate juniper_warp;
+/// #
+/// # use warp::Filter;
+/// # use juniper_warp::graphiql_filter;
+/// #
+/// let graphiql_route = warp::path("graphiql").and(graphiql_filter("/graphql",
+/// Some("ws://localhost:8080/subscriptions")));
 /// ```
 pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,
+    subscriptions_endpoint: Option<&'static str>,
 ) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
     warp::any()
-        .map(move || graphiql_response(graphql_endpoint_url))
+        .map(move || graphiql_response(graphql_endpoint_url, subscriptions_endpoint))
         .boxed()
 }
 
-fn graphiql_response(graphql_endpoint_url: &'static str) -> warp::http::Response<Vec<u8>> {
+fn graphiql_response(
+    graphql_endpoint_url: &'static str,
+    subscriptions_endpoint: Option<&'static str>,
+) -> warp::http::Response<Vec<u8>> {
     warp::http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
-        .body(juniper::graphiql::graphiql_source(graphql_endpoint_url).into_bytes())
+        .body(
+            juniper::http::graphiql::graphiql_source(graphql_endpoint_url, subscriptions_endpoint)
+                .into_bytes(),
+        )
         .expect("response is valid")
 }
 
@@ -664,14 +589,14 @@ mod tests {
 
     #[test]
     fn graphiql_response_does_not_panic() {
-        graphiql_response("/abcd");
+        graphiql_response("/abcd", None);
     }
 
     #[tokio::test]
     async fn graphiql_endpoint_matches() {
         let filter = warp::get()
             .and(warp::path("graphiql"))
-            .and(graphiql_filter("/graphql"));
+            .and(graphiql_filter("/graphql", None));
         let result = request()
             .method("GET")
             .path("/graphiql")
@@ -687,7 +612,7 @@ mod tests {
         let filter = warp::get()
             .and(warp::path("dogs-api"))
             .and(warp::path("graphiql"))
-            .and(graphiql_filter("/dogs-api/graphql"));
+            .and(graphiql_filter("/dogs-api/graphql", None));
         let response = request()
             .method("GET")
             .path("/dogs-api/graphiql")
@@ -703,6 +628,22 @@ mod tests {
         let body = String::from_utf8(response.body().to_vec()).unwrap();
 
         assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
+    }
+
+    #[tokio::test]
+    async fn graphiql_endpoint_with_subscription_matches() {
+        let filter = warp::get().and(warp::path("graphiql")).and(graphiql_filter(
+            "/graphql",
+            Some("ws:://localhost:8080/subscriptions"),
+        ));
+        let result = request()
+            .method("GET")
+            .path("/graphiql")
+            .header("accept", "text/html")
+            .filter(&filter)
+            .await;
+
+        assert!(result.is_ok());
     }
 
     #[tokio::test]

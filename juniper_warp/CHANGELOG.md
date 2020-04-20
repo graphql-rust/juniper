@@ -1,12 +1,15 @@
 # master
 
 - Compatibility with the latest `juniper`.
+- Changed the implementation place of GraphQLBatchRequest and GraphQLBatchResponse in `juniper_warp`
+to `juniper` to be reused in other http integrations, since this implementation was private.
 
 ## Breaking Changes
 
 - Update `playground_filter` to support subscription endpoint URLs
 - Update `warp` to 0.2
 - Rename synchronous `execute` to `execute_sync`, add asynchronous `execute`
+- `juniper_warp::graphiql_filter` now requires a second parameter for subscriptions
 
 # [[0.5.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_warp-0.5.2)
 

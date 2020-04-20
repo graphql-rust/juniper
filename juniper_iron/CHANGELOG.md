@@ -2,6 +2,10 @@
 
 - Compatibility with the latest `juniper`.
 
+## Breaking Changes
+
+- `juniper_iron::GraphiQLHandler::new` now requires a second parameter for subscriptions
+
 # [[0.6.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_iron-0.6.2)
 
 - Compatibility with the latest `juniper`.
