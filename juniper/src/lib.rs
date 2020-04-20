@@ -115,15 +115,16 @@ extern crate bson;
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_object, graphql_subscription, graphql_union, GraphQLEnum, GraphQLInputObject,
-    GraphQLObject, GraphQLScalarValue, GraphQLUnion,
+    graphql_object, graphql_scalar, graphql_subscription, graphql_union, GraphQLEnum,
+    GraphQLInputObject, GraphQLObject, GraphQLScalarValue, GraphQLUnion,
 };
 // Internal macros are not exported,
 // but declared at the root to make them easier to use.
 #[allow(unused_imports)]
 use juniper_codegen::{
-    graphql_object_internal, graphql_subscription_internal, graphql_union_internal,
-    GraphQLEnumInternal, GraphQLInputObjectInternal, GraphQLScalarValueInternal,
+    graphql_object_internal, graphql_scalar_internal, graphql_subscription_internal,
+    graphql_union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
+    GraphQLScalarValueInternal,
 };
 
 #[macro_use]

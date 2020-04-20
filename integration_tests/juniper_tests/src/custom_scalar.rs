@@ -133,28 +133,29 @@ impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
     }
 }
 
-juniper::graphql_scalar!(i64 as "Long" where Scalar = MyScalarValue {
-    resolve(&self) -> Value {
+#[juniper::graphql_scalar(name = "Long")]
+impl GraphQLScalar for i64 {
+    fn resolve(&self) -> Value {
         Value::scalar(*self)
     }
 
-    from_input_value(v: &InputValue) -> Option<i64> {
+    fn from_input_value(v: &InputValue) -> Option<i64> {
         match *v {
             InputValue::Scalar(MyScalarValue::Long(i)) => Some(i),
             _ => None,
         }
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, MyScalarValue> {
         if let ScalarToken::Int(v) = value {
-                v.parse()
-                    .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
-                    .map(|s: i64| s.into())
+            v.parse()
+                .map_err(|_| ParseError::UnexpectedToken(Token::Scalar(value)))
+                .map(|s: i64| s.into())
         } else {
-                Err(ParseError::UnexpectedToken(Token::Scalar(value)))
+            Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
     }
-});
+}
 
 struct TestType;
 

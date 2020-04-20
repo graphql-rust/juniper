@@ -36,6 +36,8 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
 
+- remove old `graphql_scalar!` macro, rename `scalar` proc macro to `graphql_scalar`
+
 - Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
 
 - `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro

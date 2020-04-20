@@ -17,6 +17,7 @@ mod derive_object;
 mod derive_scalar_value;
 mod derive_union;
 mod impl_object;
+mod impl_scalar;
 mod impl_union;
 
 use proc_macro::TokenStream;
@@ -391,6 +392,67 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     impl_object::build_object(args, input, true)
+}
+
+/// Expose GraphQL scalars
+///
+/// The GraphQL language defines a number of built-in scalars: strings, numbers, and
+/// booleans. This macro can be used either to define new types of scalars (e.g.
+/// timestamps), or expose other types as one of the built-in scalars (e.g. bigints
+/// as numbers or strings).
+///
+/// Since the preferred transport protocol for GraphQL responses is JSON, most
+/// custom scalars will be transferred as strings. You therefore need to ensure that
+/// the client library you are sending data to can parse the custom value into a
+/// datatype appropriate for that platform.
+///
+/// By default the trait is implemented in terms of the default scalar value
+/// representation provided by juniper. If that does not fit your needs it is
+/// possible to specify a custom representation.
+///
+/// ```rust
+/// // The data type
+/// struct UserID(String);
+///
+/// #[juniper::graphql_scalar(
+///     // You can rename the type for GraphQL by specifying the name here.    
+///     name = "MyName",
+///     // You can also specify a description here.
+///     // If present, doc comments will be ignored.
+///     description = "An opaque identifier, represented as a string")]
+/// impl<S> GraphQLScalar for UserID
+/// where
+///     S: juniper::ScalarValue
+///  {
+///     fn resolve(&self) -> juniper::Value {
+///         juniper::Value::scalar(self.0.to_owned())
+///     }
+///
+///     fn from_input_value(value: &juniper::InputValue) -> Option<UserID> {
+///         value.as_string_value().map(|s| UserID(s.to_owned()))
+///     }
+///
+///     fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {
+///         <String as juniper::ParseScalarValue<S>>::from_str(value)
+///     }
+/// }
+///
+/// # fn main() { }
+/// ```
+///
+/// In addition to implementing `GraphQLType` for the type in question,
+/// `FromInputValue` and `ToInputValue` is also implemented. This makes the type
+/// usable as arguments and default values.
+#[proc_macro_attribute]
+pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
+    impl_scalar::build_scalar(args, input, false)
+}
+
+/// A proc macro for defining a GraphQL scalar.
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn graphql_scalar_internal(args: TokenStream, input: TokenStream) -> TokenStream {
+    impl_scalar::build_scalar(args, input, true)
 }
 
 /// A proc macro for defining a GraphQL subscription.

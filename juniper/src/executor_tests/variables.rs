@@ -16,12 +16,13 @@ struct TestComplexScalar;
 
 struct TestType;
 
-graphql_scalar!(TestComplexScalar {
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal]
+impl GraphQLScalar for TestComplexScalar {
+    fn resolve(&self) -> Value {
         Value::scalar(String::from("SerializedValue"))
     }
 
-    from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
+    fn from_input_value(v: &InputValue) -> Option<TestComplexScalar> {
         if let Some(s) = v.as_scalar_value::<String>() {
             if *s == "SerializedValue" {
                 return Some(TestComplexScalar);
@@ -31,10 +32,10 @@ graphql_scalar!(TestComplexScalar {
         None
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
-        <String as ParseScalarValue<_>>::from_str(value)
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+        <String as ParseScalarValue>::from_str(value)
     }
-});
+}
 
 #[derive(GraphQLInputObject, Debug)]
 #[graphql(scalar = "DefaultScalarValue")]

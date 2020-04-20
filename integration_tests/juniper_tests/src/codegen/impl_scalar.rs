@@ -1,8 +1,6 @@
-use crate::{
-    executor::Variables,
-    schema::model::RootNode,
-    types::scalars::{EmptyMutation, EmptySubscription},
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, Value},
+use juniper::{
+    DefaultScalarValue, EmptyMutation, EmptySubscription, Object, ParseScalarResult,
+    ParseScalarValue, RootNode, Value, Variables,
 };
 
 struct DefaultName(i32);
@@ -21,66 +19,72 @@ Syntax to validate:
 
 */
 
-graphql_scalar!(DefaultName where Scalar = <S> {
-    resolve(&self) -> Value {
+#[juniper::graphql_scalar]
+impl<S> GraphQLScalar for DefaultName
+where
+    S: juniper::ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    from_input_value(v: &InputValue) -> Option<DefaultName> {
-        v.as_scalar_value().and_then(|s| s.as_int()).map(|i| DefaultName(i))
+    fn from_input_value(v: &juniper::InputValue) -> Option<DefaultName> {
+        v.as_scalar_value()
+            .and_then(|s| s.as_int())
+            .map(|i| DefaultName(i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         <i32 as ParseScalarValue<S>>::from_str(value)
     }
-});
+}
 
-graphql_scalar!(OtherOrder {
-    resolve(&self) -> Value {
+#[juniper::graphql_scalar]
+impl GraphQLScalar for OtherOrder {
+    fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    from_input_value(v: &InputValue) -> Option<OtherOrder> {
+    fn from_input_value(v: &juniper::InputValue) -> Option<OtherOrder> {
         v.as_scalar_value::<i32>().map(|i| OtherOrder(*i))
     }
 
-
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
         <i32 as ParseScalarValue>::from_str(value)
     }
-});
+}
 
-graphql_scalar!(Named as "ANamedScalar" where Scalar = DefaultScalarValue {
-    resolve(&self) -> Value {
+#[juniper::graphql_scalar(name = "ANamedScalar")]
+impl GraphQLScalar for Named {
+    fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    from_input_value(v: &InputValue) -> Option<Named> {
+    fn from_input_value(v: &juniper::InputValue) -> Option<Named> {
         v.as_scalar_value::<i32>().map(|i| Named(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
         <i32 as ParseScalarValue>::from_str(value)
     }
-});
+}
 
-graphql_scalar!(ScalarDescription  {
-    description: "A sample scalar, represented as an integer"
-
-    resolve(&self) -> Value {
+#[juniper::graphql_scalar(description = "A sample scalar, represented as an integer")]
+impl GraphQLScalar for ScalarDescription {
+    fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    from_input_value(v: &InputValue) -> Option<ScalarDescription> {
+    fn from_input_value(v: &juniper::InputValue) -> Option<ScalarDescription> {
         v.as_scalar_value::<i32>().map(|i| ScalarDescription(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
         <i32 as ParseScalarValue>::from_str(value)
     }
-});
+}
 
-#[crate::graphql_object_internal]
+#[juniper::graphql_object]
 impl Root {
     fn default_name() -> DefaultName {
         DefaultName(0)
@@ -106,7 +110,7 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &Variables::new(), &())
+    let (result, errs) = juniper::execute(doc, None, &schema, &Variables::new(), &())
         .await
         .expect("Execution failed");
 
@@ -129,19 +133,22 @@ where
 fn path_in_resolve_return_type() {
     struct ResolvePath(i32);
 
-    graphql_scalar!(ResolvePath {
-        resolve(&self) -> self::Value {
+    #[juniper::graphql_scalar]
+    impl GraphQLScalar for ResolvePath {
+        fn resolve(&self) -> self::Value {
             Value::scalar(self.0)
         }
 
-        from_input_value(v: &InputValue) -> Option<ResolvePath> {
+        fn from_input_value(v: &juniper::InputValue) -> Option<ResolvePath> {
             v.as_scalar_value::<i32>().map(|i| ResolvePath(*i))
         }
 
-        from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+        fn from_str<'a>(
+            value: juniper::ScalarToken<'a>,
+        ) -> ParseScalarResult<'a, DefaultScalarValue> {
             <i32 as ParseScalarValue>::from_str(value)
         }
-    });
+    }
 }
 
 #[tokio::test]
