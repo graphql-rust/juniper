@@ -18,7 +18,7 @@ GraphQL schemas as convenient as Rust will allow.
 
 Juniper does not include a web server - instead it provides building blocks to
 make integration with existing servers straightforward. It optionally provides a
-pre-built integration for the [Hyper][hyper], [Iron][iron], [Rocket], and [Warp][warp] frameworks, including
+pre-built integration for the [Actix][actix], [Hyper][hyper], [Iron][iron], [Rocket], and [Warp][warp] frameworks, including
 embedded [Graphiql][graphiql] and [GraphQL Playground][playground] for easy debugging.
 
 - [Cargo crate](https://crates.io/crates/juniper)
@@ -42,7 +42,7 @@ For specific information about macros, types and the Juniper api, the
 You can also check out [src/tests/schema.rs][test_schema_rs] to see a complex
 schema including polymorphism with traits and interfaces.
 For an example of web framework integration,
-see the [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
+see the [actix][actix_examples], [hyper][hyper_examples], [rocket][rocket_examples], [iron][iron_examples], and [warp][warp_examples] examples folders.
 
 ## Features
 
@@ -71,6 +71,7 @@ your Schemas automatically.
 
 ### Web Frameworks
 
+- [actix][actix]
 - [hyper][hyper]
 - [rocket][rocket]
 - [iron][iron]
@@ -84,6 +85,7 @@ your Schemas automatically.
 
 Juniper has not reached 1.0 yet, thus some API instability should be expected.
 
+[actix]: https://actix.rs/
 [graphql]: http://graphql.org
 [graphiql]: https://github.com/graphql/graphiql
 [playground]: https://github.com/prisma/graphql-playground
@@ -91,6 +93,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [graphql_spec]: http://facebook.github.io/graphql
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
+[actix_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_actix/examples
 [hyper_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_hyper/examples
 [rocket_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_rocket/examples
 [iron_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_iron/examples
