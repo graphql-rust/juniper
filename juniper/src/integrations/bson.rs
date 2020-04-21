@@ -7,48 +7,52 @@ use crate::{
     Value,
 };
 
-graphql_scalar!(ObjectId where Scalar = <S> {
-    description: "ObjectId"
-
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(description = "ObjectId")]
+impl<S> GraphQLScalar for ObjectId
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(self.to_hex())
     }
 
-    from_input_value(v: &InputValue) -> Option<ObjectId> {
+    fn from_input_value(v: &InputValue) -> Option<ObjectId> {
         v.as_string_value()
-         .and_then(|s| ObjectId::with_string(s).ok())
+            .and_then(|s| ObjectId::with_string(s).ok())
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
     }
-});
+}
 
-graphql_scalar!(UtcDateTime where Scalar = <S> {
-    description: "UtcDateTime"
-
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(description = "UtcDateTime")]
+impl<S> GraphQLScalar for UtcDateTime
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar((*self).to_rfc3339())
     }
 
-    from_input_value(v: &InputValue) -> Option<UtcDateTime> {
+    fn from_input_value(v: &InputValue) -> Option<UtcDateTime> {
         v.as_string_value()
-         .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
-         .map(|d| UtcDateTime(d))
+            .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
+            .map(|d| UtcDateTime(d))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         if let ScalarToken::String(value) = value {
             Ok(S::from(value.to_owned()))
         } else {
             Err(ParseError::UnexpectedToken(Token::Scalar(value)))
         }
     }
-});
+}
 
 #[cfg(test)]
 mod test {
