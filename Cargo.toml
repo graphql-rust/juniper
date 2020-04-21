@@ -12,6 +12,7 @@ members = [
   "juniper_rocket_async",
   "juniper_subscriptions",
   "juniper_warp",
+  "juniper_actix",
 ]
 exclude = [
   "docs/book/tests",
