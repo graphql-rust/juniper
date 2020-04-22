@@ -80,6 +80,7 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                     resolver_code,
                     is_type_inferred: true,
                     is_async: false,
+                    is_crossedge: false,
                 })
             }
         })
