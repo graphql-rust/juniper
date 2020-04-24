@@ -1,0 +1,18 @@
+#[derive(juniper::GraphQLInputObject)]
+#[graphql(scalar = juniper::DefaultScalarValue)]
+struct Obj {
+    field: String,
+}
+
+struct Object {}
+
+#[juniper::graphql_object]
+impl Object {
+    fn test(&self) -> Obj {
+        Obj {
+            field: String::new(),
+        }
+    }
+}
+
+fn main() {}

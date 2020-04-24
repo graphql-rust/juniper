@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> $DIR/derive_no_fields.rs:1:10
+  |
+1 | #[derive(juniper::GraphQLEnum)]
+  |          ^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: message: #[derive(GraphQLEnum)] requires at least one variants
