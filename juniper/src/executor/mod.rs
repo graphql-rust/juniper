@@ -14,7 +14,7 @@ use crate::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
     },
-    parser::{SourcePosition, Spanning},
+    parser::{ParseError, ScalarToken, SourcePosition, Spanning},
     schema::{
         meta::{
             Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
@@ -1191,6 +1191,20 @@ where
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
+    /// Create a scalar meta type with custom parse functions
+    pub fn build_scalar_type_with_parse_function<T>(
+        &mut self,
+        info: &T::TypeInfo,
+        try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+        parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
+    ) -> ScalarMeta<'r, S>
+    where
+        T: GraphQLType<S> + 'r,
+    {
+        let name = T::name(info).expect("Scalar types must be named. Implement name()");
+        ScalarMeta::new_with_parse_function(Cow::Owned(name.to_string()), try_parse_fn, parse_fn)
+    }
+
     /// Create a list meta type
     pub fn build_list_type<T: GraphQLType<S> + ?Sized>(
         &mut self,
@@ -1242,6 +1256,20 @@ where
         EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
     }
 
+    /// Create an enum meta type with a custom parse function
+    pub fn build_enum_type_with_parse_function<T>(
+        &mut self,
+        info: &T::TypeInfo,
+        values: &[EnumValue],
+        try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    ) -> EnumMeta<'r, S>
+    where
+        T: GraphQLType<S>,
+    {
+        let name = T::name(info).expect("Enum types must be named. Implement name()");
+        EnumMeta::new_with_parse_function(Cow::Owned(name.to_string()), values, try_parse_fn)
+    }
+
     /// Create an interface meta type,
     /// by providing a type info object.
     pub fn build_interface_type<T>(
@@ -1281,5 +1309,20 @@ where
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
         InputObjectMeta::new::<T>(Cow::Owned(name.to_string()), args)
+    }
+
+    /// Create an input object meta type with a custom parse function
+    pub fn build_input_object_type_with_parse_function<T>(
+        &mut self,
+        info: &T::TypeInfo,
+        args: &[Argument<'r, S>],
+        try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    ) -> InputObjectMeta<'r, S>
+    where
+        T: FromInputValue<S> + GraphQLType<S>,
+    {
+        let name = T::name(info).expect("Input object types must be named. Implement name()");
+
+        InputObjectMeta::new_with_parse_function(Cow::Owned(name.to_string()), args, try_parse_fn)
     }
 }

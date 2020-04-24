@@ -436,6 +436,21 @@ where
         }
     }
 
+    /// Build a new scalar type metadata with the specified name, `try_parse_fn`, and `parse_fn`.
+    /// This is useful for dynamically generated types
+    pub fn new_with_parse_function(
+        name: Cow<'a, str>,
+        try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+        parse_fn: for<'b> fn(ScalarToken<'b>) -> Result<S, ParseError<'b>>,
+    ) -> Self {
+        ScalarMeta {
+            name,
+            description: None,
+            try_parse_fn,
+            parse_fn,
+        }
+    }
+
     /// Set the description for the given scalar type
     ///
     /// If a description already was set prior to calling this method, it will be overwritten.
@@ -531,6 +546,21 @@ where
         }
     }
 
+    /// Build a new enum type metadata with the specified name, possible values, and `try_parse_fn`
+    /// This is useful for dynamically generated types
+    pub fn new_with_parse_function(
+        name: Cow<'a, str>,
+        values: &[EnumValue],
+        try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    ) -> Self {
+        EnumMeta {
+            name,
+            description: None,
+            values: values.to_vec(),
+            try_parse_fn,
+        }
+    }
+
     /// Set the description of the type
     ///
     /// If a description was provided prior to calling this method, it will be overwritten
@@ -613,6 +643,21 @@ where
             description: None,
             input_fields: input_fields.to_vec(),
             try_parse_fn: try_parse_fn::<S, T>,
+        }
+    }
+
+    /// Build a new enum type metadata with the specified name, input fields, and `try_parse_fn`
+    /// This is useful for dynamically generated types
+    pub fn new_with_parse_function(
+        name: Cow<'a, str>,
+        input_fields: &[Argument<'a, S>],
+        try_parse_fn: for<'b> fn(&'b InputValue<S>) -> bool,
+    ) -> Self {
+        InputObjectMeta {
+            name,
+            description: None,
+            input_fields: input_fields.to_vec(),
+            try_parse_fn,
         }
     }
 
