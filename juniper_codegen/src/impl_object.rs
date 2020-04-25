@@ -1,27 +1,36 @@
 #![allow(clippy::collapsible_if)]
 
 use crate::util;
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned;
 
 /// Generate code for the juniper::graphql_object macro.
 pub fn build_object(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
-    let definition = create(args, body);
+    let definition = match create(args, body) {
+        Ok(definition) => definition,
+        Err(err) => return err.to_compile_error(),
+    };
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
+
     definition.into_tokens(juniper_crate_name).into()
 }
 
 /// Generate code for the juniper::graphql_subscription macro.
 pub fn build_subscription(args: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
-    let definition = create(args, body);
+    let definition = match create(args, body) {
+        Ok(definition) => definition,
+        Err(err) => return err.to_compile_error(),
+    };
+
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
     definition
         .into_subscription_tokens(juniper_crate_name)
         .into()
 }
 
-fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
-    let _impl = util::parse_impl::ImplBlock::parse(args, body);
+fn create(args: TokenStream, body: TokenStream) -> syn::Result<util::GraphQLTypeDefiniton> {
+    let _impl = util::parse_impl::ImplBlock::parse(args, body)?;
 
     let name = _impl
         .attrs
@@ -48,6 +57,7 @@ fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
     };
 
     for method in _impl.methods {
+        let span = method.span();
         let _type = match &method.sig.output {
             syn::ReturnType::Type(_, ref t) => (**t).clone(),
             syn::ReturnType::Default => {
@@ -61,7 +71,7 @@ fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
         let is_async = method.sig.asyncness.is_some();
 
         let attrs = match util::FieldAttributes::from_attrs(
-            method.attrs,
+            &method.attrs,
             util::FieldAttributeParseMode::Impl,
         ) {
             Ok(attrs) => attrs,
@@ -175,7 +185,9 @@ fn create(args: TokenStream, body: TokenStream) -> util::GraphQLTypeDefiniton {
             resolver_code,
             is_type_inferred: false,
             is_async,
+            span,
         });
     }
-    definition
+
+    Ok(definition)
 }

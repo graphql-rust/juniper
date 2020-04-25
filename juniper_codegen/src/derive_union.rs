@@ -1,15 +1,19 @@
+use crate::result::{Generator, UnsupportedAttribute};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, Data, Fields};
+use syn::{self, spanned::Spanned, Data, Fields};
 
 use crate::util;
 
-pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
+pub fn build_derive_union(
+    ast: syn::DeriveInput,
+    is_internal: bool,
+    error: Generator,
+) -> TokenStream {
+    let span = ast.span();
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => {
-            panic!("#[derive(GraphQLUnion)] can only be applied to enums");
-        }
+        _ => return error.custom(ast.ident.span(), "only enums are supported"),
     };
 
     // Parse attributes.
@@ -21,24 +25,30 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
     };
 
     if !attrs.interfaces.is_empty() {
-        panic!("#[derive(GraphQLUnion)] does not support interfaces");
+        return attrs
+            .interfaces
+            .iter()
+            .map(|elm| error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface))
+            .collect();
     }
 
     let ident = &ast.ident;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
     let fields = enum_fields.into_iter().filter_map(|field| {
+        let span = field.span();
         let field_attrs = match util::FieldAttributes::from_attrs(
-            field.attrs,
+            &field.attrs,
             util::FieldAttributeParseMode::Object,
         ) {
             Ok(attrs) => attrs,
-            Err(e) => panic!("Invalid #[graphql] attribute for field: \n{}", e),
+            Err(e) => return Some(Err(e.to_compile_error())),
         };
 
-
-        if field_attrs.skip {
-            panic!("#[derive(GraphQLUnion)] does not support #[graphql(skip)] on fields");
+        if let Some(ident) = field_attrs.skip {
+            return Some(Err(
+                error.unsupported_attribute(ident.span(), UnsupportedAttribute::Skip)
+            ));
         } else {
             let variant_name = field.ident;
             let name = field_attrs
@@ -59,19 +69,28 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                     };
 
                     if iter.next().is_some() {
-                        panic!("#[derive(GraphQLUnion)] all members must be unnamed with a single element e.g. Some(T)");
+                        return Some(Err(error.custom(
+                            inner.span(),
+                            "all members must be unnamed with a single element e.g. Some(T)",
+                        )));
                     }
 
                     first.ty.clone()
                 }
-                _ => panic!("#[derive(GraphQLUnion)] all fields of the enum must be unnamed"),
+                _ => {
+                    return Some(Err(
+                        error.custom(variant_name.span(), "only unnamed fields are allowed")
+                    ))
+                }
             };
 
             if field_attrs.description.is_some() {
-                panic!("#[derive(GraphQLUnion)] does not allow documentation of fields");
+                // return Some(Err(
+                //     context.unsupported_attribute(, UnsupportedAttribute::Interface)
+                // ));
             }
 
-            Some(util::GraphQLTypeDefinitionField {
+            Some(Ok(util::GraphQLTypeDefinitionField {
                 name,
                 _type,
                 args: Vec::new(),
@@ -80,11 +99,19 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,
-            })
+                span,
+            }))
         }
     });
 
-    let fields = fields.collect::<Vec<_>>();
+    let fields: Vec<_> = match fields.collect() {
+        Ok(fields) => fields,
+        Err(tokens) => return tokens,
+    };
+
+    if fields.is_empty() {
+        return error.not_empty(span);
+    }
 
     // NOTICE: This is not an optimal implementation. It is possible
     // to bypass this check by using a full qualified path instead
@@ -100,7 +127,7 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
     };
 
     if !all_variants_different {
-        panic!("#[derive(GraphQLUnion)] each variant must have a different type");
+        return error.custom(ident.span(), "each variant must have a different type");
     }
 
     let definition = util::GraphQLTypeDefiniton {

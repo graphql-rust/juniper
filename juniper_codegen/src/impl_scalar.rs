@@ -1,7 +1,7 @@
 #![allow(clippy::collapsible_if)]
 
 use crate::util;
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use quote::quote;
 
 #[derive(Debug)]
@@ -170,14 +170,15 @@ impl syn::parse::Parse for ScalarCodegenInput {
 
 /// Generate code for the juniper::graphql_scalar proc macro.
 pub fn build_scalar(attributes: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
-    let attrs = match syn::parse::<util::FieldAttributes>(attributes) {
+    let attrs = match syn::parse2::<util::FieldAttributes>(attributes) {
         Ok(attrs) => attrs,
-        Err(e) => {
-            panic!("Invalid attributes:\n{}", e);
-        }
+        Err(err) => return err.to_compile_error(),
     };
 
-    let input = syn::parse_macro_input!(body as ScalarCodegenInput);
+    let input = match syn::parse2::<ScalarCodegenInput>(body) {
+        Ok(input) => input,
+        Err(err) => return err.to_compile_error(),
+    };
 
     let impl_for_type = input
         .impl_for_type

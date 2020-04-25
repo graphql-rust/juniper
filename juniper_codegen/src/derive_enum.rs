@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 
 use crate::util;
 use quote::quote;
-use syn::{self, Data, Fields};
+use syn::{self, spanned::Spanned, Data, Fields};
 
 pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
     if !ast.generics.params.is_empty() {
@@ -39,15 +39,16 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
     let fields = variants
         .into_iter()
         .filter_map(|field| {
+            let span = field.span();
             let field_attrs = match util::FieldAttributes::from_attrs(
-                field.attrs,
+                &field.attrs,
                 util::FieldAttributeParseMode::Object,
             ) {
                 Ok(attrs) => attrs,
                 Err(e) => panic!("Invalid #[graphql] attribute for field: \n{}", e),
             };
 
-            if field_attrs.skip {
+            if field_attrs.skip.is_some() {
                 panic!("#[derive(GraphQLEnum)] does not support #[graphql(skip)] on fields");
             } else {
                 let field_name = field.ident;
@@ -80,6 +81,7 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                     resolver_code,
                     is_type_inferred: true,
                     is_async: false,
+                    span,
                 })
             }
         })

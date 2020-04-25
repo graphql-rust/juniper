@@ -1,13 +1,27 @@
 #![allow(clippy::single_match)]
 
+pub mod duplicate;
 pub mod parse_impl;
 
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use std::collections::HashMap;
 use syn::{
     parse, parse_quote, punctuated::Punctuated, Attribute, Lit, Meta, MetaList, MetaNameValue,
     NestedMeta, Token,
 };
+
+// pub struct SpanContainer<T> {
+//     span_expr: Span,
+//     span_definition: Option<Span>,
+//     val: T,
+// }
+
+// impl<T> AsRef<T> for SpanContainer<T> {
+//     fn as_ref(&self) -> &T {
+//         &self.val
+//     }
+// }
 
 pub fn juniper_path(is_internal: bool) -> syn::Path {
     let name = if is_internal { "crate" } else { "juniper" };
@@ -373,8 +387,8 @@ impl syn::parse::Parse for ObjectAttributes {
                 "noasync" => {
                     output.no_async = true;
                 }
-                other => {
-                    return Err(input.error(format!("Unknown attribute: {}", other)));
+                _ => {
+                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
             }
             if input.lookahead1().peek(syn::Token![,]) {
@@ -436,9 +450,7 @@ impl parse::Parse for FieldAttributeArgument {
                 "default" => {
                     arg.default = Some(content.parse()?);
                 }
-                other => {
-                    return Err(content.error(format!("Invalid attribute argument key {}", other)));
-                }
+                _ => return Err(syn::Error::new(name.span(), "unknown attribute")),
             }
 
             // Discard trailing comma.
@@ -473,12 +485,7 @@ impl parse::Parse for FieldAttribute {
                 let lit = input.parse::<syn::LitStr>()?;
                 let raw = lit.value();
                 if !is_valid_name(&raw) {
-                    Err(input.error(format!(
-                        "Invalid #[graphql(name = ...)] attribute: \n\
-                         '{}' is not a valid field name\nNames must \
-                         match /^[_a-zA-Z][_a-zA-Z0-9]*$/",
-                        raw,
-                    )))
+                    Err(syn::Error::new(lit.span(), "name consists of not allowed characters. (must match /^[_a-zA-Z][_a-zA-Z0-9]*$/)"))
                 } else {
                     Ok(FieldAttribute::Name(lit))
                 }
@@ -509,7 +516,7 @@ impl parse::Parse for FieldAttribute {
                     .collect();
                 Ok(FieldAttribute::Arguments(map))
             }
-            other => Err(input.error(format!("Unknown attribute: {}", other))),
+            _ => Err(syn::Error::new(ident.span(), "unknown attribute")),
         }
     }
 }
@@ -520,7 +527,7 @@ pub struct FieldAttributes {
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
     // Only relevant for GraphQLObject derive.
-    pub skip: bool,
+    pub skip: Option<syn::Ident>,
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
 }
@@ -533,7 +540,7 @@ impl parse::Parse for FieldAttributes {
             name: None,
             description: None,
             deprecation: None,
-            skip: false,
+            skip: None,
             arguments: Default::default(),
         };
 
@@ -548,8 +555,8 @@ impl parse::Parse for FieldAttributes {
                 FieldAttribute::Deprecation(attr) => {
                     output.deprecation = Some(attr);
                 }
-                FieldAttribute::Skip(_) => {
-                    output.skip = true;
+                FieldAttribute::Skip(ident) => {
+                    output.skip = Some(ident);
                 }
                 FieldAttribute::Arguments(args) => {
                     output.arguments = args;
@@ -567,7 +574,7 @@ impl parse::Parse for FieldAttributes {
 
 impl FieldAttributes {
     pub fn from_attrs(
-        attrs: Vec<syn::Attribute>,
+        attrs: &[syn::Attribute],
         _mode: FieldAttributeParseMode,
     ) -> syn::parse::Result<Self> {
         let doc_comment = get_doc_comment(&attrs);
@@ -611,9 +618,22 @@ pub struct GraphQLTypeDefinitionField {
     pub description: Option<String>,
     pub deprecation: Option<DeprecationAttr>,
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
-    pub resolver_code: proc_macro2::TokenStream,
+    pub resolver_code: TokenStream,
     pub is_type_inferred: bool,
     pub is_async: bool,
+    pub span: Span,
+}
+
+impl syn::spanned::Spanned for GraphQLTypeDefinitionField {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl<'a> syn::spanned::Spanned for &'a GraphQLTypeDefinitionField {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 pub fn unraw(s: &str) -> String {
@@ -656,7 +676,7 @@ impl GraphQLTypeDefiniton {
         self.fields.iter().any(|field| field.is_async)
     }
 
-    pub fn into_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+    pub fn into_tokens(self, juniper_crate_name: &str) -> TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
         let name = &self.name;
@@ -987,7 +1007,7 @@ impl GraphQLTypeDefiniton {
         output
     }
 
-    pub fn into_subscription_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+    pub fn into_subscription_tokens(self, juniper_crate_name: &str) -> TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
         let name = &self.name;
@@ -1256,7 +1276,7 @@ impl GraphQLTypeDefiniton {
         )
     }
 
-    pub fn into_union_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+    pub fn into_union_tokens(self, juniper_crate_name: &str) -> TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
         let name = &self.name;
@@ -1482,7 +1502,7 @@ impl GraphQLTypeDefiniton {
         type_impl
     }
 
-    pub fn into_enum_tokens(self, juniper_crate_name: &str) -> proc_macro2::TokenStream {
+    pub fn into_enum_tokens(self, juniper_crate_name: &str) -> TokenStream {
         let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
 
         let name = &self.name;

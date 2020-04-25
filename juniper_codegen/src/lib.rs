@@ -9,6 +9,7 @@
 
 extern crate proc_macro;
 
+mod result;
 mod util;
 
 mod derive_enum;
@@ -21,6 +22,7 @@ mod impl_scalar;
 mod impl_union;
 
 use proc_macro::TokenStream;
+use result::Generator;
 
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
@@ -55,21 +57,21 @@ pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(GraphQLObject, attributes(graphql))]
 pub fn derive_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, false);
+    let gen = derive_object::build_derive_object(ast, false, Generator::DeriveObject);
     gen.into()
 }
 
 #[proc_macro_derive(GraphQLObjectInternal, attributes(graphql))]
 pub fn derive_object_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_object::build_derive_object(ast, true);
+    let gen = derive_object::build_derive_object(ast, true, Generator::DeriveObject);
     gen.into()
 }
 
 #[proc_macro_derive(GraphQLUnion, attributes(graphql))]
 pub fn derive_union(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_union::build_derive_union(ast, false);
+    let gen = derive_union::build_derive_union(ast, false, Generator::DeriveUnion);
     gen.into()
 }
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
@@ -384,14 +386,18 @@ impl User {
 */
 #[proc_macro_attribute]
 pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
-    impl_object::build_object(args, input, false)
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    TokenStream::from(impl_object::build_object(args, input, false))
 }
 
 /// A proc macro for defining a GraphQL object.
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    impl_object::build_object(args, input, true)
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    TokenStream::from(impl_object::build_object(args, input, true))
 }
 
 /// Expose GraphQL scalars
@@ -445,43 +451,47 @@ pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenSt
 /// usable as arguments and default values.
 #[proc_macro_attribute]
 pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
-    impl_scalar::build_scalar(args, input, false)
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    TokenStream::from(impl_scalar::build_scalar(args, input, false))
 }
 
 /// A proc macro for defining a GraphQL scalar.
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_scalar_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    impl_scalar::build_scalar(args, input, true)
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    TokenStream::from(impl_scalar::build_scalar(args, input, true))
 }
 
 /// A proc macro for defining a GraphQL subscription.
 #[proc_macro_attribute]
 pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStream {
-    impl_object::build_subscription(args, input, false)
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    TokenStream::from(impl_object::build_subscription(args, input, false))
 }
 
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
-    impl_object::build_subscription(args, input, true)
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    TokenStream::from(impl_object::build_subscription(args, input, true))
 }
 
 #[proc_macro_attribute]
-#[proc_macro_error::proc_macro_error]
 pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    match impl_union::impl_union(false, attrs, body) {
-        Ok(toks) => toks,
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    let attrs = proc_macro2::TokenStream::from(attrs);
+    let body = proc_macro2::TokenStream::from(body);
+    TokenStream::from(impl_union::impl_union(false, attrs, body))
 }
 
 #[doc(hidden)]
 #[proc_macro_attribute]
-#[proc_macro_error::proc_macro_error]
 pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    match impl_union::impl_union(true, attrs, body) {
-        Ok(toks) => toks,
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    let attrs = proc_macro2::TokenStream::from(attrs);
+    let body = proc_macro2::TokenStream::from(body);
+    TokenStream::from(impl_union::impl_union(true, attrs, body))
 }

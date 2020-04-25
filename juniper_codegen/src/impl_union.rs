@@ -1,6 +1,5 @@
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 
-use proc_macro_error::MacroError;
 use quote::quote;
 use syn::spanned::Spanned;
 
@@ -43,20 +42,20 @@ impl syn::parse::Parse for ResolveBody {
     }
 }
 
-pub fn impl_union(
-    is_internal: bool,
-    attrs: TokenStream,
-    body: TokenStream,
-) -> Result<TokenStream, MacroError> {
-    let _impl = util::parse_impl::ImplBlock::parse(attrs, body);
+pub fn impl_union(is_internal: bool, attrs: TokenStream, body: TokenStream) -> TokenStream {
+    let _impl = match util::parse_impl::ImplBlock::parse(attrs, body) {
+        Ok(_impl) => _impl,
+        Err(err) => return err.to_compile_error(),
+    };
 
     // Validate trait target name, if present.
     if let Some((name, path)) = &_impl.target_trait {
         if !(name == "GraphQLUnion" || name == "juniper.GraphQLUnion") {
-            return Err(MacroError::new(
+            return syn::Error::new(
                 path.span(),
-                "Invalid impl target trait: expected 'GraphQLUnion'".to_string(),
-            ));
+                "Invalid impl target trait: expected 'GraphQLUnion'",
+            )
+            .to_compile_error();
         }
     }
 
@@ -78,11 +77,11 @@ pub fn impl_union(
         });
 
     if !_impl.has_resolve_method() {
-        return Err(MacroError::new(
+        return syn::Error::new(
             _impl.target_type.span(),
-            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
-                .to_string(),
-        ));
+            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }",
+        )
+        .to_compile_error();
     }
 
     let method = _impl
@@ -91,11 +90,11 @@ pub fn impl_union(
         .find(|&m| _impl.parse_resolve_method(&m).is_ok());
 
     if _impl.methods.is_empty() || method.is_none() {
-        return Err(MacroError::new(
+        return syn::Error::new(
             _impl.target_type.span(),
-            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
-                .to_string(),
-        ));
+            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }",
+        )
+        .to_compile_error();
     }
 
     let method = method.expect("checked above");
@@ -105,7 +104,10 @@ pub fn impl_union(
 
     let stmts = &method.block.stmts;
     let body_raw = quote!( #( #stmts )* );
-    let body = syn::parse::<ResolveBody>(body_raw.into())?;
+    let body = match syn::parse::<ResolveBody>(body_raw.into()) {
+        Ok(body) => body,
+        Err(err) => return err.to_compile_error(),
+    };
 
     let meta_types = body.variants.iter().map(|var| {
         let var_ty = &var.ty;
@@ -204,5 +206,6 @@ pub fn impl_union(
 
 
     };
-    Ok(output.into())
+
+    output.into()
 }

@@ -1,7 +1,7 @@
 //! Parse impl blocks.
 #![allow(clippy::or_fun_call)]
 
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use quote::quote;
 use std::{convert::From, fmt};
 
@@ -145,20 +145,9 @@ impl ImplBlock {
         Ok(resolve_parts)
     }
 
-    pub fn parse(attr_tokens: TokenStream, body: TokenStream) -> ImplBlock {
-        let attrs = match syn::parse::<util::ObjectAttributes>(attr_tokens) {
-            Ok(attrs) => attrs,
-            Err(e) => {
-                panic!("Invalid attributes:\n{}", e);
-            }
-        };
-
-        let mut _impl = match syn::parse::<syn::ItemImpl>(body) {
-            Ok(item) => item,
-            Err(err) => {
-                panic!("Parsing error:\n{}", err);
-            }
-        };
+    pub fn parse(attr_tokens: TokenStream, body: TokenStream) -> syn::Result<ImplBlock> {
+        let attrs = syn::parse2::<util::ObjectAttributes>(attr_tokens)?;
+        let mut _impl = syn::parse2::<syn::ItemImpl>(body)?;
 
         let target_trait = match _impl.clone().trait_ {
             Some((_, path, _)) => {
@@ -199,7 +188,7 @@ impl ImplBlock {
             }
         }
 
-        Self {
+        Ok(Self {
             attrs,
             type_ident,
             target_trait,
@@ -207,6 +196,6 @@ impl ImplBlock {
             generics: _impl.generics,
             description,
             methods,
-        }
+        })
     }
 }
