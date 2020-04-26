@@ -1,7 +1,7 @@
 # Avoiding the N+1 Problem With Dataloaders
 
 A common issue with graphql servers is how the resolvers query their datasource.
-his issue results in a large number of unneccessary database queries or http requests.
+This issue results in a large number of unneccessary database queries or http requests.
 Say you were wanting to list a bunch of cults people were in
 
 ```graphql
@@ -129,7 +129,7 @@ impl Cult {
 
 Once created, a dataloader has the functions `.load()` and `.load_many()`.
 When called these return a Future.
-In the above example `cult_loader.load(id: i32)` returns `Future<Cult>`. If  we had used `cult_loader.load_may(Vec<i32>)` it would have returned `Future<Vec<Cult>>`.
+In the above example `cult_loader.load(id: i32)` returns `Future<Cult>`. If  we had used `cult_loader.load_many(Vec<i32>)` it would have returned `Future<Vec<Cult>>`.
 
 
 ### Where do I create my dataloaders?
