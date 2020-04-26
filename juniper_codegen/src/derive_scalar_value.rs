@@ -1,9 +1,10 @@
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
-
 use quote::quote;
 use syn::{self, Data, Fields, Ident, Variant};
-
-use crate::util;
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
@@ -55,7 +56,8 @@ impl TransparentAttributes {
             Some(attr) => {
                 let mut parsed: TransparentAttributes = attr.parse_args()?;
                 if parsed.description.is_none() {
-                    parsed.description = util::get_doc_comment(attrs);
+                    parsed.description =
+                        util::get_doc_comment(attrs).map(SpanContainer::into_inner);
                 }
                 Ok(parsed)
             }
@@ -64,12 +66,16 @@ impl TransparentAttributes {
     }
 }
 
-pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
+pub fn impl_scalar_value(
+    ast: &syn::DeriveInput,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> TokenStream {
     let ident = &ast.ident;
 
     match ast.data {
-        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal),
-        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal),
+        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal, error),
+        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal, error),
         Data::Union(_) => {
             panic!("#[derive(GraphQLScalarValue)] may not be applied to unions");
         }
@@ -80,6 +86,7 @@ fn impl_scalar_struct(
     ast: &syn::DeriveInput,
     data: &syn::DataStruct,
     is_internal: bool,
+    error: GraphQLScope,
 ) -> TokenStream {
     let field = match data.fields {
         syn::Fields::Unnamed(ref fields) if fields.unnamed.len() == 1 => {
@@ -201,7 +208,12 @@ fn impl_scalar_struct(
     )
 }
 
-fn impl_scalar_enum(ident: &syn::Ident, data: &syn::DataEnum, is_internal: bool) -> TokenStream {
+fn impl_scalar_enum(
+    ident: &syn::Ident,
+    data: &syn::DataEnum,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> TokenStream {
     let froms = data
         .variants
         .iter()

@@ -1,39 +1,38 @@
-use crate::result::Generator;
+use crate::{
+    result::{GraphQLScope, UnsupportedAttribute},
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, spanned::Spanned, Data, Fields};
 
-use crate::util;
-
 pub fn build_derive_object(
     ast: syn::DeriveInput,
     is_internal: bool,
-    error: Generator,
-) -> TokenStream {
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
+    let ast_span = ast.span();
     let struct_fields = match ast.data {
         Data::Struct(data) => match data.fields {
             Fields::Named(fields) => fields.named,
-            _ => {
-                panic!("#[derive(GraphQLObject)] may only be used on regular structs with fields");
-            }
+            _ => return Err(syn::Error::new(ast_span, "only named fields are allowed")),
         },
         _ => {
-            panic!("#[derive(GraphlQLObject)] may only be applied to structs, not to enums");
+            return Err(syn::Error::new(
+                ast.span(),
+                "can only be applied to structs",
+            ))
         }
     };
 
     // Parse attributes.
-    let attrs = match util::ObjectAttributes::from_attrs(&ast.attrs) {
-        Ok(a) => a,
-        Err(e) => {
-            panic!("Invalid #[graphql(...)] attribute: {}", e);
-        }
-    };
-    if !attrs.interfaces.is_empty() {
-        panic!("Invalid #[graphql(...)] attribute 'interfaces': #[derive(GraphQLObject) does not support 'interfaces'");
-    }
+    let attrs = util::ObjectAttributes::from_attrs(&ast.attrs)?;
+
     let ident = &ast.ident;
-    let name = attrs.name.unwrap_or_else(|| ident.to_string());
+    let name = attrs
+        .name
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| ident.to_string());
 
     let fields = struct_fields
         .into_iter()
@@ -44,7 +43,10 @@ pub fn build_derive_object(
                 util::FieldAttributeParseMode::Object,
             ) {
                 Ok(attrs) => attrs,
-                Err(e) => panic!("Invalid #[graphql] attribute: \n{}", e),
+                Err(e) => {
+                    proc_macro_error::emit_error!(e);
+                    return None;
+                }
             };
 
             if field_attrs.skip.is_some() {
@@ -54,6 +56,7 @@ pub fn build_derive_object(
                 let name = field_attrs
                     .name
                     .clone()
+                    .map(SpanContainer::into_inner)
                     .unwrap_or_else(|| util::to_camel_case(&field_name.to_string()));
 
                 let resolver_code = quote!(
@@ -64,8 +67,8 @@ pub fn build_derive_object(
                     name,
                     _type: field.ty,
                     args: Vec::new(),
-                    description: field_attrs.description,
-                    deprecation: field_attrs.deprecation,
+                    description: field_attrs.description.map(SpanContainer::into_inner),
+                    deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
                     resolver_code,
                     is_type_inferred: true,
                     is_async: false,
@@ -75,26 +78,38 @@ pub fn build_derive_object(
         })
         .collect::<Vec<_>>();
 
+    // Early abort after checking all fields
+    proc_macro_error::abort_if_dirty();
+
+    if !attrs.interfaces.is_empty() {
+        attrs.interfaces.iter().for_each(|elm| {
+            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
+        });
+    }
+
     if let Some(duplicates) =
         crate::util::duplicate::Duplicate::find_by_key(&fields, |field| field.name.as_str())
     {
-        return error.duplicate(duplicates.iter());
+        error.duplicate(duplicates.iter());
     }
+
+    // Early abort after GraphQL properties
+    proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
-        context: attrs.context,
-        scalar: attrs.scalar,
-        description: attrs.description,
+        context: attrs.context.map(SpanContainer::into_inner),
+        scalar: attrs.scalar.map(SpanContainer::into_inner),
+        description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
-        no_async: attrs.no_async,
+        no_async: attrs.no_async.is_some(),
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_tokens(juniper_crate_name)
+    Ok(definition.into_tokens(juniper_crate_name))
 }

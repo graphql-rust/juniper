@@ -1,11 +1,10 @@
 //! Parse impl blocks.
 #![allow(clippy::or_fun_call)]
 
+use crate::util::{self, span_container::SpanContainer};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::{convert::From, fmt};
-
-use crate::util;
 
 #[derive(Debug)]
 pub struct ResolveFnError(String);
@@ -128,7 +127,7 @@ impl ImplBlock {
                     //  without a reference. (&Context)
                     else if context_type
                         .clone()
-                        .map(|ctx| ctx == &*captured.ty)
+                        .map(|ctx| ctx.inner() == &*captured.ty)
                         .unwrap_or(false)
                     {
                         return Err(format!(
@@ -194,7 +193,7 @@ impl ImplBlock {
             target_trait,
             target_type,
             generics: _impl.generics,
-            description,
+            description: description.map(SpanContainer::into_inner),
             methods,
         })
     }

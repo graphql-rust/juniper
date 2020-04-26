@@ -1,116 +1,123 @@
-use crate::result::{Generator, UnsupportedAttribute};
+use crate::{
+    result::{GraphQLScope, UnsupportedAttribute},
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, spanned::Spanned, Data, Fields};
 
-use crate::util;
-
 pub fn build_derive_union(
     ast: syn::DeriveInput,
     is_internal: bool,
-    error: Generator,
-) -> TokenStream {
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
     let span = ast.span();
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => return error.custom(ast.ident.span(), "only enums are supported"),
+        _ => return Err(syn::Error::new(ast.span(), "can only be applied to enums")),
     };
 
     // Parse attributes.
-    let attrs = match util::ObjectAttributes::from_attrs(&ast.attrs) {
-        Ok(a) => a,
-        Err(e) => {
-            panic!("Invalid #[graphql(...)] attribute for enum: {}", e);
-        }
-    };
-
-    if !attrs.interfaces.is_empty() {
-        return attrs
-            .interfaces
-            .iter()
-            .map(|elm| error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface))
-            .collect();
-    }
+    let attrs = util::ObjectAttributes::from_attrs(&ast.attrs)?;
 
     let ident = &ast.ident;
-    let name = attrs.name.unwrap_or_else(|| ident.to_string());
+    let name = attrs
+        .name
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| ident.to_string());
 
-    let fields = enum_fields.into_iter().filter_map(|field| {
-        let span = field.span();
-        let field_attrs = match util::FieldAttributes::from_attrs(
-            &field.attrs,
-            util::FieldAttributeParseMode::Object,
-        ) {
-            Ok(attrs) => attrs,
-            Err(e) => return Some(Err(e.to_compile_error())),
-        };
-
-        if let Some(ident) = field_attrs.skip {
-            return Some(Err(
-                error.unsupported_attribute(ident.span(), UnsupportedAttribute::Skip)
-            ));
-        } else {
-            let variant_name = field.ident;
-            let name = field_attrs
-                .name
-                .clone()
-                .unwrap_or_else(|| util::to_camel_case(&variant_name.to_string()));
-
-            let resolver_code = quote!(
-                #ident :: #variant_name
-            );
-
-            let _type = match field.fields {
-                Fields::Unnamed(inner) => {
-                    let mut iter = inner.unnamed.iter();
-                    let first = match iter.next() {
-                        Some(val) => val,
-                        None => unreachable!(),
-                    };
-
-                    if iter.next().is_some() {
-                        return Some(Err(error.custom(
-                            inner.span(),
-                            "all members must be unnamed with a single element e.g. Some(T)",
-                        )));
-                    }
-
-                    first.ty.clone()
-                }
-                _ => {
-                    return Some(Err(
-                        error.custom(variant_name.span(), "only unnamed fields are allowed")
-                    ))
+    let fields = enum_fields
+        .into_iter()
+        .filter_map(|field| {
+            let span = field.span();
+            let field_attrs = match util::FieldAttributes::from_attrs(
+                &field.attrs,
+                util::FieldAttributeParseMode::Object,
+            ) {
+                Ok(attrs) => attrs,
+                Err(e) => {
+                    proc_macro_error::emit_error!(e);
+                    return None;
                 }
             };
 
-            if field_attrs.description.is_some() {
-                // return Some(Err(
-                //     context.unsupported_attribute(, UnsupportedAttribute::Interface)
-                // ));
+            if let Some(ident) = field_attrs.skip {
+                error.unsupported_attribute_within(ident.span(), UnsupportedAttribute::Skip);
+                None
+            } else {
+                let variant_name = field.ident;
+                let name = field_attrs
+                    .name
+                    .clone()
+                    .map(SpanContainer::into_inner)
+                    .unwrap_or_else(|| util::to_camel_case(&variant_name.to_string()));
+
+                let resolver_code = quote!(
+                    #ident :: #variant_name
+                );
+
+                let _type = match field.fields {
+                    Fields::Unnamed(inner) => {
+                        let mut iter = inner.unnamed.iter();
+                        let first = match iter.next() {
+                            Some(val) => val,
+                            None => unreachable!(),
+                        };
+
+                        if iter.next().is_some() {
+                            error.custom(
+                                inner.span(),
+                                "all members must be unnamed with a single element e.g. Some(T)",
+                            );
+                            return None;
+                        }
+
+                        first.ty.clone()
+                    }
+                    _ => {
+                        error.custom(
+                            variant_name.span(),
+                            "only unnamed fields are allowed, e.g., Some(T)",
+                        );
+
+                        return None;
+                    }
+                };
+
+                if let Some(description) = field_attrs.description {
+                    error.unsupported_attribute_within(
+                        description.span_ident(),
+                        UnsupportedAttribute::Description,
+                    );
+                    return None;
+                }
+
+                Some(util::GraphQLTypeDefinitionField {
+                    name,
+                    _type,
+                    args: Vec::new(),
+                    description: None,
+                    deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
+                    resolver_code,
+                    is_type_inferred: true,
+                    is_async: false,
+                    span,
+                })
             }
+        })
+        .collect::<Vec<_>>();
 
-            Some(Ok(util::GraphQLTypeDefinitionField {
-                name,
-                _type,
-                args: Vec::new(),
-                description: None,
-                deprecation: field_attrs.deprecation,
-                resolver_code,
-                is_type_inferred: true,
-                is_async: false,
-                span,
-            }))
-        }
-    });
+    // Early abort after checking all fields
+    proc_macro_error::abort_if_dirty();
 
-    let fields: Vec<_> = match fields.collect() {
-        Ok(fields) => fields,
-        Err(tokens) => return tokens,
-    };
+    if !attrs.interfaces.is_empty() {
+        attrs.interfaces.iter().for_each(|elm| {
+            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
+        });
+    }
 
     if fields.is_empty() {
-        return error.not_empty(span);
+        error.not_empty(span);
     }
 
     // NOTICE: This is not an optimal implementation. It is possible
@@ -127,23 +134,26 @@ pub fn build_derive_union(
     };
 
     if !all_variants_different {
-        return error.custom(ident.span(), "each variant must have a different type");
+        error.custom(ident.span(), "each variant must have a different type");
     }
+
+    // Early abort after GraphQL properties
+    proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
-        context: attrs.context,
-        scalar: attrs.scalar,
-        description: attrs.description,
+        context: attrs.context.map(SpanContainer::into_inner),
+        scalar: attrs.scalar.map(SpanContainer::into_inner),
+        description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
-        no_async: attrs.no_async,
+        no_async: attrs.no_async.is_some(),
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_union_tokens(juniper_crate_name)
+    Ok(definition.into_union_tokens(juniper_crate_name))
 }

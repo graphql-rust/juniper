@@ -1,11 +1,9 @@
 #![allow(clippy::match_wild_err_arm)]
-use std::str::FromStr;
-
+use crate::{result::GraphQLScope, util::span_container::SpanContainer, util::*};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
+use std::str::FromStr;
 use syn::{self, parse_quote, Data, DeriveInput, Field, Fields, Ident, Meta, NestedMeta};
-
-use crate::util::*;
 
 #[derive(Default, Debug)]
 struct ObjAttrs {
@@ -19,7 +17,7 @@ impl ObjAttrs {
         let mut res = ObjAttrs::default();
 
         // Check doc comments for description.
-        res.description = get_doc_comment(&input.attrs);
+        res.description = get_doc_comment(&input.attrs).map(SpanContainer::into_inner);
 
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&input.attrs) {
@@ -72,7 +70,7 @@ impl ObjFieldAttrs {
         let mut res = ObjFieldAttrs::default();
 
         // Check doc comments for description.
-        res.description = get_doc_comment(&variant.attrs);
+        res.description = get_doc_comment(&variant.attrs).map(SpanContainer::into_inner);
 
         // Check attributes for name and description.
         if let Some(items) = get_graphql_attr(&variant.attrs) {
@@ -119,7 +117,11 @@ impl ObjFieldAttrs {
     }
 }
 
-pub fn impl_input_object(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
+pub fn impl_input_object(
+    ast: &syn::DeriveInput,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> TokenStream {
     let juniper_path = if is_internal {
         quote!(crate)
     } else {

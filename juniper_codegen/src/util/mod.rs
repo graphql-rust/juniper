@@ -2,26 +2,16 @@
 
 pub mod duplicate;
 pub mod parse_impl;
+pub mod span_container;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use span_container::SpanContainer;
 use std::collections::HashMap;
 use syn::{
-    parse, parse_quote, punctuated::Punctuated, Attribute, Lit, Meta, MetaList, MetaNameValue,
-    NestedMeta, Token,
+    parse, parse_quote, punctuated::Punctuated, spanned::Spanned, Attribute, Lit, Meta, MetaList,
+    MetaNameValue, NestedMeta, Token,
 };
-
-// pub struct SpanContainer<T> {
-//     span_expr: Span,
-//     span_definition: Option<Span>,
-//     val: T,
-// }
-
-// impl<T> AsRef<T> for SpanContainer<T> {
-//     fn as_ref(&self) -> &T {
-//         &self.val
-//     }
-// }
 
 pub fn juniper_path(is_internal: bool) -> syn::Path {
     let name = if is_internal { "crate" } else { "juniper" };
@@ -105,19 +95,21 @@ pub fn find_graphql_attr(attrs: &[Attribute]) -> Option<&Attribute> {
         .find(|attr| path_eq_single(&attr.path, "graphql"))
 }
 
-pub fn get_deprecated(attrs: &[Attribute]) -> Option<DeprecationAttr> {
-    for attr in attrs {
-        match attr.parse_meta() {
-            Ok(Meta::List(ref list)) if list.path.is_ident("deprecated") => {
-                return Some(get_deprecated_meta_list(list));
-            }
-            Ok(Meta::Path(ref path)) if path.is_ident("deprecated") => {
-                return Some(DeprecationAttr { reason: None });
-            }
-            _ => {}
-        }
-    }
-    None
+pub fn get_deprecated(attrs: &[Attribute]) -> Option<SpanContainer<DeprecationAttr>> {
+    attrs
+        .iter()
+        .filter_map(|attr| match attr.parse_meta() {
+            Ok(Meta::List(ref list)) if list.path.is_ident("deprecated") => Some(
+                SpanContainer::new(list.path.span(), None, get_deprecated_meta_list(list)),
+            ),
+            Ok(Meta::Path(ref path)) if path.is_ident("deprecated") => Some(SpanContainer::new(
+                path.span(),
+                None,
+                DeprecationAttr { reason: None },
+            )),
+            _ => None,
+        })
+        .next()
 }
 
 fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
@@ -144,10 +136,10 @@ fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
 }
 
 // Gets doc comment.
-pub fn get_doc_comment(attrs: &[Attribute]) -> Option<String> {
+pub fn get_doc_comment(attrs: &[Attribute]) -> Option<SpanContainer<String>> {
     if let Some(items) = get_doc_attr(attrs) {
         if let Some(doc_strings) = get_doc_strings(&items) {
-            return Some(join_doc_strings(&doc_strings));
+            return Some(doc_strings.map(|strings| join_doc_strings(&strings)));
         }
     }
     None
@@ -181,13 +173,19 @@ fn join_doc_strings(docs: &[String]) -> String {
 }
 
 // Gets doc strings from doc comment attributes.
-fn get_doc_strings(items: &[MetaNameValue]) -> Option<Vec<String>> {
+fn get_doc_strings(items: &[MetaNameValue]) -> Option<SpanContainer<Vec<String>>> {
+    let mut span = None;
     let comments = items
         .iter()
         .filter_map(|item| {
             if item.path.is_ident("doc") {
                 match item.lit {
-                    Lit::Str(ref strlit) => Some(strlit.value()),
+                    Lit::Str(ref strlit) => {
+                        if span.is_none() {
+                            span = Some(strlit.span());
+                        }
+                        Some(strlit.value())
+                    }
                     _ => panic!("doc attributes only have string literal"),
                 }
             } else {
@@ -195,11 +193,7 @@ fn get_doc_strings(items: &[MetaNameValue]) -> Option<Vec<String>> {
             }
         })
         .collect::<Vec<_>>();
-    if comments.is_empty() {
-        None
-    } else {
-        Some(comments)
-    }
+    span.map(|span| SpanContainer::new(span, None, comments))
 }
 
 // Gets doc comment attributes.
@@ -323,12 +317,12 @@ pub fn is_valid_name(field_name: &str) -> bool {
 
 #[derive(Default, Debug)]
 pub struct ObjectAttributes {
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub context: Option<syn::Type>,
-    pub scalar: Option<syn::Type>,
-    pub interfaces: Vec<syn::Type>,
-    pub no_async: bool,
+    pub name: Option<SpanContainer<String>>,
+    pub description: Option<SpanContainer<String>>,
+    pub context: Option<SpanContainer<syn::Type>>,
+    pub scalar: Option<SpanContainer<syn::Type>>,
+    pub interfaces: Vec<SpanContainer<syn::Type>>,
+    pub no_async: Option<SpanContainer<()>>,
 }
 
 impl syn::parse::Parse for ObjectAttributes {
@@ -339,7 +333,7 @@ impl syn::parse::Parse for ObjectAttributes {
             context: None,
             scalar: None,
             interfaces: Vec::new(),
-            no_async: false,
+            no_async: None,
         };
 
         while !input.is_empty() {
@@ -348,12 +342,20 @@ impl syn::parse::Parse for ObjectAttributes {
                 "name" => {
                     input.parse::<syn::Token![=]>()?;
                     let val = input.parse::<syn::LitStr>()?;
-                    output.name = Some(val.value());
+                    output.name = Some(SpanContainer::new(
+                        ident.span(),
+                        Some(val.span()),
+                        val.value(),
+                    ));
                 }
                 "description" => {
                     input.parse::<syn::Token![=]>()?;
                     let val = input.parse::<syn::LitStr>()?;
-                    output.description = Some(val.value());
+                    output.description = Some(SpanContainer::new(
+                        ident.span(),
+                        Some(val.span()),
+                        val.value(),
+                    ));
                 }
                 "context" | "Context" => {
                     input.parse::<syn::Token![=]>()?;
@@ -365,12 +367,12 @@ impl syn::parse::Parse for ObjectAttributes {
                     } else {
                         input.parse::<syn::Type>()?
                     };
-                    output.context = Some(ctx);
+                    output.context = Some(SpanContainer::new(ident.span(), Some(ctx.span()), ctx));
                 }
                 "scalar" | "Scalar" => {
                     input.parse::<syn::Token![=]>()?;
                     let val = input.parse::<syn::Type>()?;
-                    output.scalar = Some(val);
+                    output.scalar = Some(SpanContainer::new(ident.span(), Some(val.span()), val));
                 }
                 "interfaces" => {
                     input.parse::<syn::Token![=]>()?;
@@ -381,11 +383,14 @@ impl syn::parse::Parse for ObjectAttributes {
                             &content,
                         )?
                         .into_iter()
+                        .map(|interface| {
+                            SpanContainer::new(ident.span(), Some(interface.span()), interface)
+                        })
                         .collect();
                 }
                 // FIXME: make this unneccessary.
                 "noasync" => {
-                    output.no_async = true;
+                    output.no_async = Some(SpanContainer::new(ident.span(), None, ()));
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
@@ -468,10 +473,10 @@ pub enum FieldAttributeParseMode {
 }
 
 enum FieldAttribute {
-    Name(syn::LitStr),
-    Description(syn::LitStr),
-    Deprecation(DeprecationAttr),
-    Skip(syn::Ident),
+    Name(SpanContainer<syn::LitStr>),
+    Description(SpanContainer<syn::LitStr>),
+    Deprecation(SpanContainer<DeprecationAttr>),
+    Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
 }
 
@@ -487,23 +492,42 @@ impl parse::Parse for FieldAttribute {
                 if !is_valid_name(&raw) {
                     Err(syn::Error::new(lit.span(), "name consists of not allowed characters. (must match /^[_a-zA-Z][_a-zA-Z0-9]*$/)"))
                 } else {
-                    Ok(FieldAttribute::Name(lit))
+                    Ok(FieldAttribute::Name(SpanContainer::new(
+                        ident.span(),
+                        Some(lit.span()),
+                        lit,
+                    )))
                 }
             }
             "description" => {
                 input.parse::<Token![=]>()?;
-                Ok(FieldAttribute::Description(input.parse()?))
+                let lit = input.parse::<syn::LitStr>()?;
+                Ok(FieldAttribute::Description(SpanContainer::new(
+                    ident.span(),
+                    Some(lit.span()),
+                    lit,
+                )))
             }
             "deprecated" | "deprecation" => {
                 let reason = if input.peek(Token![=]) {
                     input.parse::<Token![=]>()?;
-                    Some(input.parse::<syn::LitStr>()?.value())
+                    Some(input.parse::<syn::LitStr>()?)
                 } else {
                     None
                 };
-                Ok(FieldAttribute::Deprecation(DeprecationAttr { reason }))
+                Ok(FieldAttribute::Deprecation(SpanContainer::new(
+                    ident.span(),
+                    reason.as_ref().map(|val| val.span()),
+                    DeprecationAttr {
+                        reason: reason.map(|val| val.value()),
+                    },
+                )))
             }
-            "skip" => Ok(FieldAttribute::Skip(ident)),
+            "skip" => Ok(FieldAttribute::Skip(SpanContainer::new(
+                ident.span(),
+                None,
+                ident,
+            ))),
             "arguments" => {
                 let arg_content;
                 syn::parenthesized!(arg_content in input);
@@ -523,11 +547,11 @@ impl parse::Parse for FieldAttribute {
 
 #[derive(Default)]
 pub struct FieldAttributes {
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub deprecation: Option<DeprecationAttr>,
+    pub name: Option<SpanContainer<String>>,
+    pub description: Option<SpanContainer<String>>,
+    pub deprecation: Option<SpanContainer<DeprecationAttr>>,
     // Only relevant for GraphQLObject derive.
-    pub skip: Option<syn::Ident>,
+    pub skip: Option<SpanContainer<syn::Ident>>,
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
 }
@@ -547,10 +571,10 @@ impl parse::Parse for FieldAttributes {
         for item in items {
             match item {
                 FieldAttribute::Name(name) => {
-                    output.name = Some(name.value());
+                    output.name = Some(name.map(|val| val.value()));
                 }
                 FieldAttribute::Description(name) => {
-                    output.description = Some(name.value());
+                    output.description = Some(name.map(|val| val.value()));
                 }
                 FieldAttribute::Deprecation(attr) => {
                     output.deprecation = Some(attr);

@@ -1,10 +1,12 @@
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
-
-use crate::util;
 use quote::quote;
 use syn::{self, spanned::Spanned, Data, Fields};
 
-pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
+pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool, error: GraphQLScope) -> TokenStream {
     if !ast.generics.params.is_empty() {
         panic!("#[derive(GraphQLEnum) does not support generics or lifetimes");
     }
@@ -32,9 +34,10 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
 
     // Parse attributes.
     let ident = &ast.ident;
-    let name = attrs.name.unwrap_or_else(|| ident.to_string());
-
-    let mut mapping = std::collections::HashMap::new();
+    let name = attrs
+        .name
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| ident.to_string());
 
     let fields = variants
         .into_iter()
@@ -55,15 +58,8 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                 let name = field_attrs
                     .name
                     .clone()
+                    .map(SpanContainer::into_inner)
                     .unwrap_or_else(|| util::to_upper_snake_case(&field_name.to_string()));
-
-                match mapping.get(&name) {
-                    Some(other_field_name) =>
-                        panic!(format!("#[derive(GraphQLEnum)] all variants needs to be unique. Another field name `{}` has the same identifier `{}`, thus `{}` can not be named `{}`. One of the fields is manually renamed!", other_field_name, name, field_name, name)),
-                    None => {
-                        mapping.insert(name.clone(), field_name.clone());
-                    }
-                }
 
                 let resolver_code = quote!( #ident::#field_name );
 
@@ -76,8 +72,8 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                     name,
                     _type,
                     args: Vec::new(),
-                    description: field_attrs.description,
-                    deprecation: field_attrs.deprecation,
+                    description: field_attrs.description.map(SpanContainer::into_inner),
+                    deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
                     resolver_code,
                     is_type_inferred: true,
                     is_async: false,
@@ -94,16 +90,16 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
     let definition = util::GraphQLTypeDefiniton {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
-        context: attrs.context,
+        context: attrs.context.map(SpanContainer::into_inner),
         scalar: None,
-        description: attrs.description,
+        description: attrs.description.map(SpanContainer::into_inner),
         fields,
         // NOTICE: only unit variants allow -> no generics possible
         generics: syn::Generics::default(),
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
-        no_async: attrs.no_async,
+        no_async: attrs.no_async.is_some(),
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };

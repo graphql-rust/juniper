@@ -1,6 +1,9 @@
 #![allow(clippy::collapsible_if)]
 
-use crate::util;
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -169,7 +172,12 @@ impl syn::parse::Parse for ScalarCodegenInput {
 }
 
 /// Generate code for the juniper::graphql_scalar proc macro.
-pub fn build_scalar(attributes: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
+pub fn build_scalar(
+    attributes: TokenStream,
+    body: TokenStream,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> TokenStream {
     let attrs = match syn::parse2::<util::FieldAttributes>(attributes) {
         Ok(attrs) => attrs,
         Err(err) => return err.to_compile_error(),
@@ -210,6 +218,7 @@ pub fn build_scalar(attributes: TokenStream, body: TokenStream, is_internal: boo
 
     let name = attrs
         .name
+        .map(SpanContainer::into_inner)
         .unwrap_or_else(|| impl_for_type.ident.to_string());
     let crate_name = match is_internal {
         true => quote!(crate),

@@ -1,9 +1,10 @@
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
-
 use quote::quote;
 use syn::spanned::Spanned;
-
-use crate::util;
 
 struct ResolverVariant {
     pub ty: syn::Type,
@@ -42,7 +43,12 @@ impl syn::parse::Parse for ResolveBody {
     }
 }
 
-pub fn impl_union(is_internal: bool, attrs: TokenStream, body: TokenStream) -> TokenStream {
+pub fn impl_union(
+    is_internal: bool,
+    attrs: TokenStream,
+    body: TokenStream,
+    error: GraphQLScope,
+) -> TokenStream {
     let _impl = match util::parse_impl::ImplBlock::parse(attrs, body) {
         Ok(_impl) => _impl,
         Err(err) => return err.to_compile_error(),
@@ -64,6 +70,7 @@ pub fn impl_union(is_internal: bool, attrs: TokenStream, body: TokenStream) -> T
         .attrs
         .name
         .clone()
+        .map(SpanContainer::into_inner)
         .unwrap_or_else(|| type_ident.to_string());
     let crate_name = util::juniper_path(is_internal);
 
