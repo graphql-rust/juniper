@@ -138,7 +138,7 @@
                     <main>
                         <a class="header" href="#avoiding-the-n1-problem-with-dataloaders" id="avoiding-the-n1-problem-with-dataloaders"><h1>Avoiding the N+1 Problem With Dataloaders</h1></a>
 <p>A common issue with graphql servers is how the resolvers query their datasource.
-his issue results in a large number of unneccessary database queries or http requests.
+This issue results in a large number of unneccessary database queries or http requests.
 Say you were wanting to list a bunch of cults people were in</p>
 <pre><code class="language-graphql">query {
   persons {
@@ -250,7 +250,7 @@ impl Cult {
 <a class="header" href="#how-do-i-call-them" id="how-do-i-call-them"><h3>How do I call them?</h3></a>
 <p>Once created, a dataloader has the functions <code>.load()</code> and <code>.load_many()</code>.
 When called these return a Future.
-In the above example <code>cult_loader.load(id: i32)</code> returns <code>Future&lt;Cult&gt;</code>. If  we had used <code>cult_loader.load_may(Vec&lt;i32&gt;)</code> it would have returned <code>Future&lt;Vec&lt;Cult&gt;&gt;</code>.</p>
+In the above example <code>cult_loader.load(id: i32)</code> returns <code>Future&lt;Cult&gt;</code>. If  we had used <code>cult_loader.load_many(Vec&lt;i32&gt;)</code> it would have returned <code>Future&lt;Vec&lt;Cult&gt;&gt;</code>.</p>
 <a class="header" href="#where-do-i-create-my-dataloaders" id="where-do-i-create-my-dataloaders"><h3>Where do I create my dataloaders?</h3></a>
 <p><strong>Dataloaders</strong> should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user/ outside of its authenticated scope.
 Creating dataloaders within individual resolvers will prevent batching from occurring and will nullify the benefits of the dataloader.</p>
