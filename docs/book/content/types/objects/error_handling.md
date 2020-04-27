@@ -201,8 +201,10 @@ to have a similar error model with unions (see Unions).
 ### Example Input Validation (simple)
 
 In this example, a basic input validation is implemented with GraphQL
-types. Strings are used to identify the problematic field name and the
-error message is also a string.
+types. Strings are used to identify the problematic field name. Errors
+for a particular field are also returned as a string. In this example,
+the string contains a localized error message. However, it is also
+possible to return a unique string identifier.
 
 ```rust
 #[derive(juniper::GraphQLObject)]
@@ -233,16 +235,36 @@ pub struct Mutation;
 #[juniper::graphql_object]
 impl Mutation {
     fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
-        ...
+        let mut errors = Vec::new();
+
+        if !(10 <= name.len() && name.len() <= 100) {
+            errors.push(ValidationError {
+                field: "name".to_string(),
+                message: "between 10 and 100".to_string()
+            });
+        }
+
+        if !(1 <= quantity && quantity <= 10) {
+            errors.push(ValidationError {
+                field: "quantity".to_string(),
+                message: "between 1 and 10".to_string()
+            });
+        }
+
+        if errors.is_empty() {
+            GraphQLResult::Ok(Item { name, quantity })
+        } else {
+            GraphQLResult::Err(errors)
+        }
     }
 }
 
 ```
 
-Each function may have a different return type. Depending on the
-input parameters a new result type is required. For example, adding a
-user would require a result type which contains `Ok(User)` instead of
-`Ok(Item)`.
+Each function may have a different return type. Depending on the input
+parameters a new result type is required. For example, adding a user
+require a new result type which contains the variant `Ok(User)`
+instead of `Ok(Item)`.
 
 Finally it is possible to send a mutation request and handle the
 result. The following example query shows how to handle the result.
@@ -266,19 +288,19 @@ result. The following example query shows how to handle the result.
 ```
 
 A useful side effect of this approach is to have partially successful
-paths. Having another path inside the mutation which is successful
-will not discard the result.
+paths. Therefore, a if one of multiple paths fails, the result of the
+successful paths are not discarded.
 
 ### Example Input Validation (complex)
 
-This approach provides better error handling compared to the previous
-one. Instead of using strings to identify problematic fields, object
-fields are used to describe the error. Each input argument has a field
-in the result object. Notice that some kind of code generation reduces
-the unnecessary work. The amount of types which are required is
-significant larger than before. Each functions has their custom
-`ValidationResult` which contains only fields provided by the
-function.
+Instead of using strings do propagated error, it is possible to use
+GraphQL's type system to describe the errors more precisely. For each
+failable input variable a field in a GraphQL object is created. The
+field is set if the validation for that particular field fails. Notice
+that some kind of code generation reduces the unnecessary work. The
+amount of types which are required is significant larger than
+before. Each functions has their custom `ValidationResult` which
+contains only fields provided by the function.
 
 ```rust
 #[derive(juniper::GraphQLObject)]
@@ -304,7 +326,24 @@ pub struct Mutation;
 #[juniper::graphql_object]
 impl Mutation {
     fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
-        ...
+        let mut error = ValidationErrorItem {
+            name: None,
+            quantity: None,
+        };
+
+        if !(10 <= name.len() && name.len() <= 100) {
+            error.name(Some("between 10 and 100".to_string()));
+        }
+
+        if !(1 <= quantity && quantity <= 10) {
+            error.quantity(Some("between 1 and 10".to_string()));
+        }
+
+        if error.name.is_none() && error.field.is_none() {
+            GraphQLResult::Ok(Item { name, quantity })
+        } else {
+            GraphQLResult::Err(errors)
+        }
     }
 }
 
@@ -328,6 +367,78 @@ impl Mutation {
 
 Expected errors are handled directly inside the query. Even more, all
 non-critical errors are known in advance.
+
+### Example Input Validation (complex with critical error)
+
+So far only non-critical errors occurred in the examples. Providing
+errors inside the GraphQL schema still allows to return critical
+errors. In the following example, a theoretical database could fail
+and would generate errors. Since it is not common for the database to
+fail, the corresponding error is returned as a critical error.
+
+```rust
+#[derive(juniper::GraphQLObject)]
+pub struct Item {
+    name: String,
+    quantity: i32,
+}
+
+#[derive(juniper::GraphQLObject)]
+pub struct ValidationErrorItem {
+    name: Option<String>,
+    quantity: Option<String>,
+}
+
+#[derive(juniper::GraphQLUnion)]
+pub enum GraphQLResult {
+    Ok(Item),
+    Err(ValidationErrorItem),
+}
+
+pub enum ApiError {
+    Database,
+}
+
+impl juniper::IntoFieldError for ApiError {
+    fn into_field_error(self) -> juniper::FieldError {
+        match self {
+            ApiError::Database => juniper::FieldError::new(
+                "Internal database error",
+                graphql_value!({
+                    "type": "DATABASE"
+                }),
+            ),
+        }
+    }
+}
+
+pub struct Mutation;
+
+#[juniper::graphql_object]
+impl Mutation {
+    fn addItem(&self, name: String, quantity: i32) -> Result<GraphQLResult, ApiError> {
+        let mut error = ValidationErrorItem {
+            name: None,
+            quantity: None,
+        };
+
+        if !(10 <= name.len() && name.len() <= 100) {
+            error.name(Some("between 10 and 100".to_string()));
+        }
+
+        if !(1 <= quantity && quantity <= 10) {
+            error.quantity(Some("between 1 and 10".to_string()));
+        }
+
+        if error.name.is_none() && error.field.is_none() {
+            Ok(GraphQLResult::Ok(Item { name, quantity }))
+        } else {
+            Ok(GraphQLResult::Err(errors))
+        }
+    }
+}
+
+```
 
 ## Additional Material
 
