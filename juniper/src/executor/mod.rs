@@ -1209,7 +1209,7 @@ where
         NullableMeta::new(of_type)
     }
 
-    /// Create an object meta type builder
+    /// Create an object meta type
     ///
     /// To prevent infinite recursion by enforcing ordering, this returns a
     /// function that needs to be called with the list of fields on the object.
@@ -1242,7 +1242,7 @@ where
         EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
     }
 
-    /// Create an interface meta type builder,
+    /// Create an interface meta type,
     /// by providing a type info object.
     pub fn build_interface_type<T>(
         &mut self,
@@ -1259,7 +1259,7 @@ where
         InterfaceMeta::new(Cow::Owned(name.to_string()), &v)
     }
 
-    /// Create a union meta type builder
+    /// Create a union meta type
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
         T: GraphQLType<S>,
@@ -1269,7 +1269,7 @@ where
         UnionMeta::new(Cow::Owned(name.to_string()), types)
     }
 
-    /// Create an input object meta type builder
+    /// Create an input object meta type
     pub fn build_input_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
