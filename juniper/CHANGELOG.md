@@ -27,12 +27,16 @@ See [#569](https://github.com/graphql-rust/juniper/pull/569).
 
 See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
+- Derive macro `GraphQLEnum` supports custom context (see [#621](https://github.com/graphql-rust/juniper/pull/621))
+
 ## Breaking Changes
 
 - `juniper::graphiql` has moved to `juniper::http::graphiql`
   - `juniper::http::graphiql::graphiql_source` now requies a second parameter for subscriptions
 
 - remove old `graphql_object!` macro, rename `object` proc macro to `graphql_object`
+
+- remove old `graphql_scalar!` macro, rename `scalar` proc macro to `graphql_scalar`
 
 - Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
 

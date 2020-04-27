@@ -147,7 +147,7 @@ pub type Document<'a, S> = Vec<Definition<'a, S>>;
 /// Parse an unstructured input value into a Rust data type.
 ///
 /// The conversion _can_ fail, and must in that case return None. Implemented
-/// automatically by the convenience macro `graphql_scalar!` or by deriving GraphQLEnum.
+/// automatically by the convenience proc macro `graphql_scalar` or by deriving GraphQLEnum.
 ///
 /// Must be implemented manually when manually exposing new enums or scalars.
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {

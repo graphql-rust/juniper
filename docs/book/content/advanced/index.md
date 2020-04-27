@@ -7,3 +7,4 @@ The chapters below cover some more advanced scenarios.
 - [Objects and generics](objects_and_generics.md)
 - [Multiple operations per request](multiple_ops_per_request.md)
 - [Dataloaders](dataloaders.md)
+- [Subscriptions](subscriptions.md)
