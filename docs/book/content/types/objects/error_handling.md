@@ -4,7 +4,7 @@ Error handling in GraphQL can be done in multiple ways. In the
 following two different error handling models are discussed: field
 results and GraphQL schema backed errors. Each approach has its
 advantages. Choosing the right error handling method depends on the
-requirements of the application. Investigating in both approaches is
+requirements of the application--investigating both approaches is
 beneficial.
 
 ## Field Results
@@ -182,29 +182,26 @@ The specified structured error information is included in the [`extensions`](htt
 ## Errors Backed by GraphQL's Schema
 
 Rust's model of errors can be adapted for GraphQL. Rust's panic is
-similar to a `FieldError`. The whole query is aborted and nothing can
-be extracted (except for error related information). Not all errors
-require this strict handling. Recoverable or partial errors can be put
-into the GraphQL scheme. This way the client knows what can usually
-happen. To implement this approach all errors must be partitioned into
-the two error classes. The difference to the model in Rust is that
-critical means, e.g., database error. On the other hand, recoverable
-errors can be fixed by the user itself. If the user changes the input,
-then the error might get away. The prime example for recoverable
-errors is input validation.
+similar to a `FieldError`--the whole query is aborted and nothing can
+be extracted (except for error related information).
 
-The error class specifies where the error is seen. Critical errors are
-returned as `FieldErrors` (from the previous section). Non-critical
-errors are part of the GraphQL scheme. Similar to Rust, GraphQL allows
-to have a similar error model with unions (see Unions).
+Not all errors require this strict handling. Recoverable or partial errors can be put
+into the GraphQL schema so the client can intelligently handle them.
+
+To implement this approach, all errors must be partitioned into two error classes:
+
+* Critical errors that cannot be fixed by the user (e.g. a database error).
+* Recoverable errors that can be fixed by the user (e.g. invalid input data).
+
+Critical errors are returned from resolvers as `FieldErrors` (from the previous section). Non-critical errors are part of the GraphQL schema and can be handled gracefully by clients. Similar to Rust, GraphQL allows similar error models with unions (see Unions).
 
 ### Example Input Validation (simple)
 
-In this example, a basic input validation is implemented with GraphQL
+In this example, basic input validation is implemented with GraphQL
 types. Strings are used to identify the problematic field name. Errors
-for a particular field are also returned as a string. In this example,
-the string contains a localized error message. However, it is also
-possible to return a unique string identifier.
+for a particular field are also returned as a string. In this example
+the string contains a server-side localized error message. However, it is also
+possible to return a unique string identifier and have the client present a localized string to the user.
 
 ```rust
 #[derive(juniper::GraphQLObject)]
@@ -261,13 +258,13 @@ impl Mutation {
 
 ```
 
-Each function may have a different return type. Depending on the input
+Each function may have a different return type and depending on the input
 parameters a new result type is required. For example, adding a user
-require a new result type which contains the variant `Ok(User)`
+requires a new result type which contains the variant `Ok(User)`
 instead of `Ok(Item)`.
 
-Finally it is possible to send a mutation request and handle the
-result. The following example query shows how to handle the result.
+The client can send a mutation request and handle the
+resulting errors as shown in the following example:
 
 ```graphql
 {
@@ -288,18 +285,17 @@ result. The following example query shows how to handle the result.
 ```
 
 A useful side effect of this approach is to have partially successful
-paths. Therefore, a if one of multiple paths fails, the result of the
-successful paths are not discarded.
+queries or mutations. If one resolver fails, the results of the
+successful resolvers are not discarded.
 
 ### Example Input Validation (complex)
 
-Instead of using strings do propagated error, it is possible to use
-GraphQL's type system to describe the errors more precisely. For each
-failable input variable a field in a GraphQL object is created. The
-field is set if the validation for that particular field fails. Notice
-that some kind of code generation reduces the unnecessary work. The
-amount of types which are required is significant larger than
-before. Each functions has their custom `ValidationResult` which
+Instead of using strings to propagate errors, it is possible to use
+GraphQL's type system to describe the errors more precisely.
+
+For each fallible input variable a field in a GraphQL object is created. The
+field is set if the validation for that particular field fails. You will likely want some kind of code generation to reduce repetition as the number of types required is significantly larger than
+before. Each resolver function has a custom `ValidationResult` which
 contains only fields provided by the function.
 
 ```rust
@@ -365,16 +361,18 @@ impl Mutation {
 }
 ```
 
-Expected errors are handled directly inside the query. Even more, all
-non-critical errors are known in advance.
+Expected errors are handled directly inside the query. Additionally, all
+non-critical errors are known in advance by both the server and the client.
 
 ### Example Input Validation (complex with critical error)
 
-So far only non-critical errors occurred in the examples. Providing
-errors inside the GraphQL schema still allows to return critical
-errors. In the following example, a theoretical database could fail
+Our examples so far have only included non-critical errors. Providing
+errors inside the GraphQL schema still allows you to return unexpected critical
+errors when they occur.
+
+In the following example, a theoretical database could fail
 and would generate errors. Since it is not common for the database to
-fail, the corresponding error is returned as a critical error.
+fail, the corresponding error is returned as a critical error:
 
 ```rust
 #[derive(juniper::GraphQLObject)]
@@ -448,23 +446,6 @@ explore this approach in a real world application.
 
 # Comparison
 
-The first discussed approach is easier to implement. However, the
-errors must be matched with strings on the frontend. The frontend does
-not know which errors can occur. Testing this can be difficult. It is
-very likely to get something wrong. Therefore, extensive testing
-between the front and backend is required.
+The first approach discussed above--where every error is a critical error defined by `FieldResult` --is easier to implement. However, the client does not know what errors may occur and must instead infer what happened from the error string. This is brittle and could change over time due to either the client or server changing. Therefore, extensive integration testing between the client and server is required to maintain the implicit contract between the two.
 
-Instead a GraphQL's type is expose specifying what kind of errors are
-likely occurring. Allowing the frontend to handle these error
-correctly. However, encoding these information into the GraphQL schema
-requires additional work.
-
-If your not convinced yet, then consider the following example. An
-application is available in different spoken languages. Localization
-should be handled on the frontend exclusively. The frontend requires
-detailed information about the error. For example, instead of return
-"string to short" in different language, the expected limits of that
-string (min length, max length) is returned. The frontend uses these
-information to build an appropriate message. Enforcing this requires
-are large amount of types, but hopefully increase the quality of the
-software.
+Encoding non-critical errors in the GraphQL schema makes the contract between the client and the server explicit. This allows the client to understand and handle these errors correctly and the server to know when changes are potentially breaking clients. However, encoding this error information into the GraphQL schema requires additional code and up-front definition of non-critical errors.
