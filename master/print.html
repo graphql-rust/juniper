@@ -764,6 +764,13 @@ change to the execution, you'll need to use <a href="https://doc.rust-lang.org/b
 mutability</a>
 using e.g. <code>RwLock</code> or <code>RefCell</code>.</p>
 <a class="header" href="#error-handling" id="error-handling"><h1>Error handling</h1></a>
+<p>Error handling in GraphQL can be done in multiple ways. In the
+following two different error handling models are discussed: field
+results and GraphQL schema backed errors. Each approach has its
+advantages. Choosing the right error handling method depends on the
+requirements of the application--investigating both approaches is
+beneficial.</p>
+<a class="header" href="#field-results" id="field-results"><h2>Field Results</h2></a>
 <p>Rust
 <a href="https://doc.rust-lang.org/book/second-edition/ch09-00-error-handling.html">provides</a>
 two ways of dealing with errors: <code>Result&lt;T, E&gt;</code> for recoverable errors and
@@ -859,7 +866,7 @@ following would be returned:</p>
   ]
 }
 </code></pre>
-<a class="header" href="#structured-errors" id="structured-errors"><h2>Structured errors</h2></a>
+<a class="header" href="#structured-errors" id="structured-errors"><h3>Structured errors</h3></a>
 <p>Sometimes it is desirable to return additional structured error information
 to clients. This can be accomplished by implementing <a href="https://docs.rs/juniper/latest/juniper/trait.IntoFieldError.html"><code>IntoFieldError</code></a>:</p>
 <pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
@@ -907,6 +914,251 @@ impl Example {
   ]
 }
 </code></pre>
+<a class="header" href="#errors-backed-by-graphqls-schema" id="errors-backed-by-graphqls-schema"><h2>Errors Backed by GraphQL's Schema</h2></a>
+<p>Rust's model of errors can be adapted for GraphQL. Rust's panic is
+similar to a <code>FieldError</code>--the whole query is aborted and nothing can
+be extracted (except for error related information).</p>
+<p>Not all errors require this strict handling. Recoverable or partial errors can be put
+into the GraphQL schema so the client can intelligently handle them.</p>
+<p>To implement this approach, all errors must be partitioned into two error classes:</p>
+<ul>
+<li>Critical errors that cannot be fixed by the user (e.g. a database error).</li>
+<li>Recoverable errors that can be fixed by the user (e.g. invalid input data).</li>
+</ul>
+<p>Critical errors are returned from resolvers as <code>FieldErrors</code> (from the previous section). Non-critical errors are part of the GraphQL schema and can be handled gracefully by clients. Similar to Rust, GraphQL allows similar error models with unions (see Unions).</p>
+<a class="header" href="#example-input-validation-simple" id="example-input-validation-simple"><h3>Example Input Validation (simple)</h3></a>
+<p>In this example, basic input validation is implemented with GraphQL
+types. Strings are used to identify the problematic field name. Errors
+for a particular field are also returned as a string. In this example
+the string contains a server-side localized error message. However, it is also
+possible to return a unique string identifier and have the client present a localized string to the user.</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+pub struct Item {
+    name: String,
+    quantity: i32,
+}
+
+#[derive(juniper::GraphQLObject)]
+pub struct ValidationError {
+    field: String,
+    message: String,
+}
+
+#[derive(juniper::GraphQLObject)]
+pub struct ValidationErrors {
+    errors: Vec&lt;ValidationError&gt;,
+}
+
+#[derive(juniper::GraphQLUnion)]
+pub enum GraphQLResult {
+    Ok(Item),
+    Err(ValidationErrors),
+}
+
+pub struct Mutation;
+
+#[juniper::graphql_object]
+impl Mutation {
+    fn addItem(&amp;self, name: String, quantity: i32) -&gt; GraphQLResult {
+        let mut errors = Vec::new();
+
+        if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
+            errors.push(ValidationError {
+                field: &quot;name&quot;.to_string(),
+                message: &quot;between 10 and 100&quot;.to_string()
+            });
+        }
+
+        if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
+            errors.push(ValidationError {
+                field: &quot;quantity&quot;.to_string(),
+                message: &quot;between 1 and 10&quot;.to_string()
+            });
+        }
+
+        if errors.is_empty() {
+            GraphQLResult::Ok(Item { name, quantity })
+        } else {
+            GraphQLResult::Err(ValidationErrors { errors })
+        }
+    }
+}
+
+# fn main() {}
+</code></pre></pre>
+<p>Each function may have a different return type and depending on the input
+parameters a new result type is required. For example, adding a user
+requires a new result type which contains the variant <code>Ok(User)</code>
+instead of <code>Ok(Item)</code>.</p>
+<p>The client can send a mutation request and handle the
+resulting errors as shown in the following example:</p>
+<pre><code class="language-graphql">{
+  mutation {
+    addItem(name: &quot;&quot;, quantity: 0) {
+      ... on Item {
+        name
+      }
+      ... on ValidationErrors {
+        errors {
+          field
+          message
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<p>A useful side effect of this approach is to have partially successful
+queries or mutations. If one resolver fails, the results of the
+successful resolvers are not discarded.</p>
+<a class="header" href="#example-input-validation-complex" id="example-input-validation-complex"><h3>Example Input Validation (complex)</h3></a>
+<p>Instead of using strings to propagate errors, it is possible to use
+GraphQL's type system to describe the errors more precisely.</p>
+<p>For each fallible input variable a field in a GraphQL object is created. The
+field is set if the validation for that particular field fails. You will likely want some kind of code generation to reduce repetition as the number of types required is significantly larger than
+before. Each resolver function has a custom <code>ValidationResult</code> which
+contains only fields provided by the function.</p>
+<pre><pre class="playpen"><code class="language-rust">#[derive(juniper::GraphQLObject)]
+pub struct Item {
+    name: String,
+    quantity: i32,
+}
+
+#[derive(juniper::GraphQLObject)]
+pub struct ValidationError {
+    name: Option&lt;String&gt;,
+    quantity: Option&lt;String&gt;,
+}
+
+#[derive(juniper::GraphQLUnion)]
+pub enum GraphQLResult {
+    Ok(Item),
+    Err(ValidationError),
+}
+
+pub struct Mutation;
+
+#[juniper::graphql_object]
+impl Mutation {
+    fn addItem(&amp;self, name: String, quantity: i32) -&gt; GraphQLResult {
+        let mut error = ValidationError {
+            name: None,
+            quantity: None,
+        };
+
+        if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
+            error.name = Some(&quot;between 10 and 100&quot;.to_string());
+        }
+
+        if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
+            error.quantity = Some(&quot;between 1 and 10&quot;.to_string());
+        }
+
+        if error.name.is_none() &amp;&amp; error.quantity.is_none() {
+            GraphQLResult::Ok(Item { name, quantity })
+        } else {
+            GraphQLResult::Err(error)
+        }
+    }
+}
+
+# fn main() {}
+</code></pre></pre>
+<pre><code class="language-graphql">{
+  mutation {
+    addItem {
+      ... on Item {
+        name
+      }
+      ... on ValidationErrorsItem {
+        name
+        quantity
+      }
+    }
+  }
+}
+</code></pre>
+<p>Expected errors are handled directly inside the query. Additionally, all
+non-critical errors are known in advance by both the server and the client.</p>
+<a class="header" href="#example-input-validation-complex-with-critical-error" id="example-input-validation-complex-with-critical-error"><h3>Example Input Validation (complex with critical error)</h3></a>
+<p>Our examples so far have only included non-critical errors. Providing
+errors inside the GraphQL schema still allows you to return unexpected critical
+errors when they occur.</p>
+<p>In the following example, a theoretical database could fail
+and would generate errors. Since it is not common for the database to
+fail, the corresponding error is returned as a critical error:</p>
+<pre><pre class="playpen"><code class="language-rust"># #[macro_use] extern crate juniper;
+
+#[derive(juniper::GraphQLObject)]
+pub struct Item {
+    name: String,
+    quantity: i32,
+}
+
+#[derive(juniper::GraphQLObject)]
+pub struct ValidationErrorItem {
+    name: Option&lt;String&gt;,
+    quantity: Option&lt;String&gt;,
+}
+
+#[derive(juniper::GraphQLUnion)]
+pub enum GraphQLResult {
+    Ok(Item),
+    Err(ValidationErrorItem),
+}
+
+pub enum ApiError {
+    Database,
+}
+
+impl juniper::IntoFieldError for ApiError {
+    fn into_field_error(self) -&gt; juniper::FieldError {
+        match self {
+            ApiError::Database =&gt; juniper::FieldError::new(
+                &quot;Internal database error&quot;,
+                graphql_value!({
+                    &quot;type&quot;: &quot;DATABASE&quot;
+                }),
+            ),
+        }
+    }
+}
+
+pub struct Mutation;
+
+#[juniper::graphql_object]
+impl Mutation {
+    fn addItem(&amp;self, name: String, quantity: i32) -&gt; Result&lt;GraphQLResult, ApiError&gt; {
+        let mut error = ValidationErrorItem {
+            name: None,
+            quantity: None,
+        };
+
+        if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
+            error.name = Some(&quot;between 10 and 100&quot;.to_string());
+        }
+
+        if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
+            error.quantity = Some(&quot;between 1 and 10&quot;.to_string());
+        }
+
+        if error.name.is_none() &amp;&amp; error.quantity.is_none() {
+            Ok(GraphQLResult::Ok(Item { name, quantity }))
+        } else {
+            Ok(GraphQLResult::Err(error))
+        }
+    }
+}
+
+# fn main() {}
+</code></pre></pre>
+<a class="header" href="#additional-material" id="additional-material"><h2>Additional Material</h2></a>
+<p>The <a href="https://shopify.dev/docs/admin-api/graphql/reference">Shopify API</a>
+implements a similar approach. Their API is a good reference to
+explore this approach in a real world application.</p>
+<a class="header" href="#comparison" id="comparison"><h1>Comparison</h1></a>
+<p>The first approach discussed above--where every error is a critical error defined by <code>FieldResult</code> --is easier to implement. However, the client does not know what errors may occur and must instead infer what happened from the error string. This is brittle and could change over time due to either the client or server changing. Therefore, extensive integration testing between the client and server is required to maintain the implicit contract between the two.</p>
+<p>Encoding non-critical errors in the GraphQL schema makes the contract between the client and the server explicit. This allows the client to understand and handle these errors correctly and the server to know when changes are potentially breaking clients. However, encoding this error information into the GraphQL schema requires additional code and up-front definition of non-critical errors.</p>
 <a class="header" href="#other-types" id="other-types"><h1>Other Types</h1></a>
 <p>The GraphQL type system provides several types in additon to objects.</p>
 <p>Find out more about each type below:</p>
