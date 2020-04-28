@@ -55,8 +55,8 @@ use juniper::{
 };
 use serde::Deserialize;
 
-#[serde(deny_unknown_fields)]
 #[derive(Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 struct GetGraphQLRequest {
     query: String,
     #[serde(rename = "operationName")]

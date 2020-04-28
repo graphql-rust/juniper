@@ -12,15 +12,13 @@ repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
 [dependencies]
-serde = { version = "1.0.2" }
 serde_json = { version = "1.0.2" }
-serde_derive = { version = "1.0.2" }
 juniper = { version = "0.14.2", default-features = false, path = "../juniper" }
 futures = { version = "0.3.1", features = ["compat"] }
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async", default-features = false }
 tokio = { version = "0.2", features = ["rt-core", "macros"] }
 
 [dev-dependencies.juniper]
-version = "0.14.1"
+version = "0.14.2"
 features = ["expose-test-schema", "serde_json"]
 path = "../juniper"

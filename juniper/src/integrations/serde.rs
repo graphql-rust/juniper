@@ -2,8 +2,8 @@ use indexmap::IndexMap;
 use serde::{
     de,
     ser::{self, SerializeMap},
+    Serialize,
 };
-use serde_derive::Serialize;
 
 use std::fmt;
 
