@@ -251,11 +251,12 @@ impl Mutation {
         if errors.is_empty() {
             GraphQLResult::Ok(Item { name, quantity })
         } else {
-            GraphQLResult::Err(errors)
+            GraphQLResult::Err(ValidationErrors { errors })
         }
     }
 }
 
+# fn main() {}
 ```
 
 Each function may have a different return type and depending on the input
@@ -306,7 +307,7 @@ pub struct Item {
 }
 
 #[derive(juniper::GraphQLObject)]
-pub struct ValidationErrorItem {
+pub struct ValidationError {
     name: Option<String>,
     quantity: Option<String>,
 }
@@ -314,7 +315,7 @@ pub struct ValidationErrorItem {
 #[derive(juniper::GraphQLUnion)]
 pub enum GraphQLResult {
     Ok(Item),
-    Err(ValidationErrorItem),
+    Err(ValidationError),
 }
 
 pub struct Mutation;
@@ -322,27 +323,28 @@ pub struct Mutation;
 #[juniper::graphql_object]
 impl Mutation {
     fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
-        let mut error = ValidationErrorItem {
+        let mut error = ValidationError {
             name: None,
             quantity: None,
         };
 
         if !(10 <= name.len() && name.len() <= 100) {
-            error.name(Some("between 10 and 100".to_string()));
+            error.name = Some("between 10 and 100".to_string());
         }
 
         if !(1 <= quantity && quantity <= 10) {
-            error.quantity(Some("between 1 and 10".to_string()));
+            error.quantity = Some("between 1 and 10".to_string());
         }
 
-        if error.name.is_none() && error.field.is_none() {
+        if error.name.is_none() && error.quantity.is_none() {
             GraphQLResult::Ok(Item { name, quantity })
         } else {
-            GraphQLResult::Err(errors)
+            GraphQLResult::Err(error)
         }
     }
 }
 
+# fn main() {}
 ```
 
 ```graphql
@@ -375,6 +377,8 @@ and would generate errors. Since it is not common for the database to
 fail, the corresponding error is returned as a critical error:
 
 ```rust
+# #[macro_use] extern crate juniper;
+
 #[derive(juniper::GraphQLObject)]
 pub struct Item {
     name: String,
@@ -421,21 +425,22 @@ impl Mutation {
         };
 
         if !(10 <= name.len() && name.len() <= 100) {
-            error.name(Some("between 10 and 100".to_string()));
+            error.name = Some("between 10 and 100".to_string());
         }
 
         if !(1 <= quantity && quantity <= 10) {
-            error.quantity(Some("between 1 and 10".to_string()));
+            error.quantity = Some("between 1 and 10".to_string());
         }
 
-        if error.name.is_none() && error.field.is_none() {
+        if error.name.is_none() && error.quantity.is_none() {
             Ok(GraphQLResult::Ok(Item { name, quantity }))
         } else {
-            Ok(GraphQLResult::Err(errors))
+            Ok(GraphQLResult::Err(error))
         }
     }
 }
 
+# fn main() {}
 ```
 
 ## Additional Material
