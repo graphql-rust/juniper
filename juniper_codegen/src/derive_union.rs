@@ -81,6 +81,7 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                 is_type_inferred: true,
                 is_async: false,
                 is_crossedge: false,
+                features: field_attrs.features,
             })
         }
     });

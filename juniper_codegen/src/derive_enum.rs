@@ -81,6 +81,7 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
                     is_type_inferred: true,
                     is_async: false,
                     is_crossedge: false,
+                    features: field_attrs.features,
                 })
             }
         })

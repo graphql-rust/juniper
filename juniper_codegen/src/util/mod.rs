@@ -462,6 +462,7 @@ enum FieldAttribute {
     Skip(syn::Ident),
     Arguments(HashMap<String, FieldAttributeArgument>),
     CrossEdge,
+    Features(Vec<String>),
 }
 
 impl parse::Parse for FieldAttribute {
@@ -511,6 +512,23 @@ impl parse::Parse for FieldAttribute {
                 Ok(FieldAttribute::Arguments(map))
             }
             "crossedge" => Ok(FieldAttribute::CrossEdge),
+            "feature" => {
+                let features = if input.peek(Token![=]) {
+                    input.parse::<Token![=]>()?;
+                    input
+                        .parse::<syn::LitStr>()?
+                        .value()
+                        .to_string()
+                        .split(',')
+                        .into_iter()
+                        .map(|s| s.to_string())
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+
+                Ok(FieldAttribute::Features(features))
+            }
             other => Err(input.error(format!("Unknown attribute: {}", other))),
         }
     }
@@ -526,6 +544,7 @@ pub struct FieldAttributes {
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
     pub is_crossedge: bool,
+    pub features: Vec<String>,
 }
 
 impl parse::Parse for FieldAttributes {
@@ -539,6 +558,7 @@ impl parse::Parse for FieldAttributes {
             skip: false,
             arguments: Default::default(),
             is_crossedge: false,
+            features: Vec::new(),
         };
 
         for item in items {
@@ -560,6 +580,9 @@ impl parse::Parse for FieldAttributes {
                 }
                 FieldAttribute::CrossEdge => {
                     output.is_crossedge = true;
+                }
+                FieldAttribute::Features(features) => {
+                    output.features = features.into_iter().map(|f| f.to_string()).collect();
                 }
             }
         }
@@ -622,6 +645,7 @@ pub struct GraphQLTypeDefinitionField {
     pub is_type_inferred: bool,
     pub is_async: bool,
     pub is_crossedge: bool,
+    pub features: Vec<String>,
 }
 
 pub fn unraw(s: &str) -> String {
@@ -770,21 +794,53 @@ impl GraphQLTypeDefiniton {
                     let _type = &field._type;
                     quote!(: #_type)
                 };
-                quote!(
-                    #name => {
-                        let res #_type = (|| { #code })();
-                        #juniper_crate_name::IntoResolvable::into(
-                            res,
-                            executor.context()
-                        )
-                            .and_then(|res| {
-                                match res {
-                                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                                    None => Ok(#juniper_crate_name::Value::null()),
+                if field.features.is_empty() {
+                    quote!(
+                        #name => {
+                            let res #_type = (|| { #code })();
+                            #juniper_crate_name::IntoResolvable::into(
+                                res,
+                                executor.context()
+                            )
+                                .and_then(|res| {
+                                    match res {
+                                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                                        None => Ok(#juniper_crate_name::Value::null()),
+                                    }
+                                })
+                        },
+                    )
+                } else {
+                    let features = &field.features;
+                    let error_message = format!("`{}` is only available if the features `{}` are enabled", name, features.join(","));
+
+                    quote!(
+                        #name => {
+                            let res #_type = (|| {
+                                #[cfg(not(all(#(feature = #features),*)))]
+                                {
+                                    return Err(anyhow!(
+                                    #error_message
+                                    )).map_err(std::convert::Into::into);
                                 }
-                            })
-                    },
-                )
+                                #[cfg(all(#(feature = #features),*))]
+                                {
+                                    #code
+                                }
+                             })();
+                            #juniper_crate_name::IntoResolvable::into(
+                                res,
+                                executor.context()
+                            )
+                                .and_then(|res| {
+                                    match res {
+                                        Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
+                                        None => Ok(#juniper_crate_name::Value::null()),
+                                    }
+                                })
+                        },
+                    )
+                }
             }
         });
 
@@ -840,30 +896,71 @@ impl GraphQLTypeDefiniton {
                 };
 
                 if field.is_async {
-                    quote!(
-                        #name => {
-                            let f = async move {
-                                let res #_type = async move { #code }.await;
+                    if field.features.is_empty() {
+                        quote!(
+                            #name => {
+                                let f = async move {
+                                    let res #_type = async move { #code }.await;
 
-                                let inner_res = #juniper_crate_name::IntoResolvable::into(
-                                    res,
-                                    executor.context()
-                                );
-                                match inner_res {
-                                    Ok(Some((ctx, r))) => {
-                                        let subexec = executor
-                                            .replaced_context(ctx);
-                                        subexec.resolve_with_ctx_async(&(), &r)
-                                            .await
-                                    },
-                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                    Err(e) => Err(e),
-                                }
-                            };
-                            use futures::future;
-                            future::FutureExt::boxed(f)
-                        },
-                    )
+                                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                                        res,
+                                        executor.context()
+                                    );
+                                    match inner_res {
+                                        Ok(Some((ctx, r))) => {
+                                            let subexec = executor
+                                                .replaced_context(ctx);
+                                            subexec.resolve_with_ctx_async(&(), &r)
+                                                .await
+                                        },
+                                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                        Err(e) => Err(e),
+                                    }
+                                };
+                                use futures::future;
+                                future::FutureExt::boxed(f)
+                            },
+                        )
+                    } else {
+                        let features = &field.features;
+                        let error_message = format!("`{}` is only available if the features `{}` are enabled", name, features.join(","));
+
+                        quote!(
+                            #name => {
+                                let f = async move {
+                                    let res #_type = async move {
+                                        #[cfg(not(all(#(feature = #features),*)))]
+                                        {
+                                            return Err(anyhow!(
+                                            #error_message
+                                            )).map_err(std::convert::Into::into);
+                                        }
+                                        #[cfg(all(#(feature = #features),*))]
+                                        {
+                                            #code
+                                        }
+                                    }.await;
+
+                                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                                        res,
+                                        executor.context()
+                                    );
+                                    match inner_res {
+                                        Ok(Some((ctx, r))) => {
+                                            let subexec = executor
+                                                .replaced_context(ctx);
+                                            subexec.resolve_with_ctx_async(&(), &r)
+                                                .await
+                                        },
+                                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                                        Err(e) => Err(e),
+                                    }
+                                };
+                                use futures::future;
+                                future::FutureExt::boxed(f)
+                            },
+                        )
+                    }
                 } else {
                     let inner = if !self.no_async {
                         quote!(
@@ -891,17 +988,43 @@ impl GraphQLTypeDefiniton {
                             future::FutureExt::boxed(future::ready(v))
                         )
                     };
+                    if field.features.is_empty() {
+                        quote!(
+                            #name => {
+                                let res #_type = (||{ #code })();
+                                let res2 = #juniper_crate_name::IntoResolvable::into(
+                                    res,
+                                    executor.context()
+                                );
+                                #inner
+                            },
+                        )
+                    } else {
+                        let features = &field.features;
+                        let error_message = format!("`{}` is only available if the features `{}` are enabled", name, &field.features.join(","));
 
-                    quote!(
-                        #name => {
-                            let res #_type = (||{ #code })();
-                            let res2 = #juniper_crate_name::IntoResolvable::into(
-                                res,
-                                executor.context()
-                            );
-                            #inner
-                        },
-                    )
+                        quote!(
+                            #name => {
+                                let res #_type = (||{
+                                    #[cfg(not(all(#(feature = #features),*)))]
+                                    {
+                                        return Err(anyhow!(
+                                        #error_message
+                                        )).map_err(std::convert::Into::into);
+                                    }
+                                    #[cfg(all(#(feature = #features),*))]
+                                    {
+                                        #code
+                                    }
+                                })();
+                                let res2 = #juniper_crate_name::IntoResolvable::into(
+                                    res,
+                                    executor.context()
+                                );
+                                #inner
+                            },
+                        )
+                    }
                 }
             });
 
