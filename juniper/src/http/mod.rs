@@ -249,13 +249,12 @@ where
         SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
     {
         match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
+            Self::Single(ref req) => {
+                GraphQLBatchResponse::Single(req.execute_sync(root_node, context))
             }
-            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute_sync(root_node, context))
+            Self::Batch(ref reqs) => GraphQLBatchResponse::Batch(
+                reqs.iter()
+                    .map(|req| req.execute_sync(root_node, context))
                     .collect(),
             ),
         }
@@ -281,18 +280,16 @@ where
         S: Send + Sync,
     {
         match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                let res = request.execute(root_node, context).await;
-                GraphQLBatchResponse::Single(res)
+            Self::Single(ref req) => {
+                let resp = req.execute(root_node, context).await;
+                GraphQLBatchResponse::Single(resp)
             }
-            GraphQLBatchRequest::Batch(ref requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect::<Vec<_>>();
-                let responses = futures::future::join_all(futures).await;
-
-                GraphQLBatchResponse::Batch(responses)
+            Self::Batch(ref reqs) => {
+                let resps = futures::future::join_all(
+                    reqs.iter().map(|req| req.execute(root_node, context)),
+                )
+                .await;
+                GraphQLBatchResponse::Batch(resps)
             }
         }
     }
@@ -300,10 +297,8 @@ where
     /// The operation names of the request.
     pub fn operation_names(&self) -> Vec<Option<&str>> {
         match self {
-            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
-            GraphQLBatchRequest::Batch(reqs) => {
-                reqs.iter().map(|req| req.operation_name()).collect()
-            }
+            Self::Single(req) => vec![req.operation_name()],
+            Self::Batch(reqs) => reqs.iter().map(|req| req.operation_name()).collect(),
         }
     }
 }
@@ -333,8 +328,8 @@ where
     /// you can use it to determine wheter to send a 200 or 400 HTTP status code.
     pub fn is_ok(&self) -> bool {
         match self {
-            GraphQLBatchResponse::Single(res) => res.is_ok(),
-            GraphQLBatchResponse::Batch(reses) => reses.iter().all(|res| res.is_ok()),
+            Self::Single(resp) => resp.is_ok(),
+            Self::Batch(resps) => resps.iter().all(GraphQLResponse::is_ok),
         }
     }
 }
