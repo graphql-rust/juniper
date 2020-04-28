@@ -4,10 +4,9 @@ pub mod graphiql;
 pub mod playground;
 
 use serde::{
-    de::Deserialize,
-    ser::{self, Serialize, SerializeMap},
+    ser::{self, SerializeMap},
+    Deserialize, Serialize,
 };
-use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     ast::InputValue,
@@ -218,7 +217,7 @@ where
 }
 
 /// Simple wrapper around GraphQLRequest to allow the handling of Batch requests
-#[derive(Debug, serde_derive::Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 pub enum GraphQLBatchRequest<S = DefaultScalarValue>
@@ -308,7 +307,7 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. use the `is_ok` to determine
 /// wheter to send a 200 or 400 HTTP status code.
-#[derive(serde_derive::Serialize)]
+#[derive(Serialize)]
 #[serde(untagged)]
 pub enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where

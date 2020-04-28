@@ -3,7 +3,6 @@ extern crate juniper;
 extern crate juniper_iron;
 extern crate logger;
 extern crate mount;
-extern crate serde;
 
 use std::env;
 
