@@ -12,3 +12,5 @@ mod infallible_as_field_error;
 mod issue_371;
 #[cfg(test)]
 mod issue_398;
+#[cfg(test)]
+mod issue_500;

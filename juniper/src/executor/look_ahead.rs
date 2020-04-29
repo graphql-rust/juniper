@@ -190,7 +190,7 @@ where
         Self::build_from_selection_with_parent(s, None, vars, fragments)
     }
 
-    fn build_from_selection_with_parent(
+    pub(super) fn build_from_selection_with_parent(
         s: &'a Selection<'a, S>,
         parent: Option<&mut Self>,
         vars: &'a Variables<S>,
