@@ -20,10 +20,6 @@ impl<T> SpanContainer<T> {
         Self { ident, expr, val }
     }
 
-    pub fn span_expr(&self) -> Option<Span> {
-        self.expr
-    }
-
     pub fn span_ident(&self) -> Span {
         self.ident
     }
