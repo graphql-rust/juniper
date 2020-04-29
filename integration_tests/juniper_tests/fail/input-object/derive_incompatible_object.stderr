@@ -1,0 +1,26 @@
+error[E0277]: the trait bound `ObjectA: juniper::ast::FromInputValue<__S>` is not satisfied
+ --> $DIR/derive_incompatible_object.rs:6:10
+  |
+6 | #[derive(juniper::GraphQLInputObject)]
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::ast::FromInputValue<__S>` is not implemented for `ObjectA`
+
+error[E0277]: the trait bound `ObjectA: juniper::ast::FromInputValue<__S>` is not satisfied
+ --> $DIR/derive_incompatible_object.rs:6:10
+  |
+6 | #[derive(juniper::GraphQLInputObject)]
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::ast::FromInputValue<__S>` is not implemented for `ObjectA`
+  |
+  = note: required by `juniper::ast::FromInputValue::from_input_value`
+
+error[E0599]: no method named `to_input_value` found for struct `ObjectA` in the current scope
+ --> $DIR/derive_incompatible_object.rs:6:10
+  |
+2 | struct ObjectA {
+  | -------------- method `to_input_value` not found for this
+...
+6 | #[derive(juniper::GraphQLInputObject)]
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `ObjectA`
+  |
+  = help: items from traits can only be used if the trait is implemented and in scope
+  = note: the following trait defines an item `to_input_value`, perhaps you need to implement it:
+          candidate #1: `juniper::ast::ToInputValue`

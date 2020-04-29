@@ -1,7 +1,7 @@
 //!
 
 use crate::util::duplicate::Duplicate;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::Span;
 use proc_macro_error::{Diagnostic, Level};
 use std::fmt;
 
@@ -51,8 +51,9 @@ pub enum UnsupportedAttribute {
     Skip,
     Interface,
     Scalar,
-    Context,
     Description,
+    Deprecation,
+    Default,
 }
 
 impl GraphQLScope {
@@ -66,12 +67,8 @@ impl GraphQLScope {
             .emit();
     }
 
-    pub fn unknown_attribute(&self, attribute: Span, value: String) -> TokenStream {
-        syn::Error::new(
-            attribute,
-            format!("attribute `{}` was not recognized by #[graphql]", value),
-        )
-        .to_compile_error()
+    pub fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {
+        syn::Error::new(span, format!("{} {}", self, msg.as_ref()))
     }
 
     pub fn unsupported_attribute(&self, attribute: Span, kind: UnsupportedAttribute) {
@@ -129,44 +126,12 @@ impl GraphQLScope {
             })
     }
 
-    pub fn only_input_objects(&self, field: Span) {
+    pub fn no_double_underscore(&self, field: Span) {
         Diagnostic::spanned(
             field,
             Level::Error,
-            format!(
-                "{} requires all fields to be input objects or scalars",
-                self
-            ),
+            format!("{} requires to not start with two underscores `__`", self),
         )
-        .help(format!(
-            "Create a new object with the same fields and use #[derive(GraphQLInputObject)]"
-        ))
-        .note(self.specification_link())
-        .emit();
-    }
-
-    pub fn no_input_objects(&self, field: Span) {
-        Diagnostic::spanned(
-            field,
-            Level::Error,
-            format!("{} does not allow input objects as fields", self),
-        )
-        .help(format!(
-            "Create a new object with the same fields and use #[derive(GraphQLObject)]"
-        ))
-        .note(self.specification_link())
-        .emit();
-    }
-
-    pub fn only_objects(&self, field: Span) {
-        Diagnostic::spanned(
-            field,
-            Level::Error,
-            format!("{} requires all fields to be objects", self),
-        )
-        .help(format!(
-            "Using enums, scalars and input objects is not allowed. Warp enums and scalars with objects. For input objects create a new object with the same fields and use #[derive(GraphQLObject)]"
-        ))
         .note(self.specification_link())
         .emit();
     }

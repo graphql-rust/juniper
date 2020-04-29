@@ -6,6 +6,7 @@ use crate::{
 };
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned;
 
 #[derive(Debug)]
 struct ScalarCodegenInput {
@@ -177,44 +178,43 @@ pub fn build_scalar(
     body: TokenStream,
     is_internal: bool,
     error: GraphQLScope,
-) -> TokenStream {
-    let attrs = match syn::parse2::<util::FieldAttributes>(attributes) {
-        Ok(attrs) => attrs,
-        Err(err) => return err.to_compile_error(),
-    };
+) -> syn::Result<TokenStream> {
+    let body_span = body.span();
 
-    let input = match syn::parse2::<ScalarCodegenInput>(body) {
-        Ok(input) => input,
-        Err(err) => return err.to_compile_error(),
-    };
+    let attrs = syn::parse2::<util::FieldAttributes>(attributes)?;
+    let input = syn::parse2::<ScalarCodegenInput>(body)?;
 
-    let impl_for_type = input
-        .impl_for_type
-        .expect("Unable to find target for implementation target for `GraphQLScalar`");
+    let impl_for_type = input.impl_for_type.ok_or(error.custom_error(
+        body_span,
+        "Unable to find target for implementation target for `GraphQLScalar`",
+    ))?;
     let custom_data_type = input
         .custom_data_type
-        .expect("Unable to find custom scalar data type");
+        .ok_or(error.custom_error(body_span, "unable to find custom scalar data type"))?;
     let resolve_body = input
         .resolve_body
-        .expect("Unable to find body of `resolve` method");
-    let from_input_value_arg = input
-        .from_input_value_arg
-        .expect("Unable to find argument for `from_input_value` method");
-    let from_input_value_body = input
-        .from_input_value_body
-        .expect("Unable to find body of `from_input_value` method");
-    let from_input_value_result = input
-        .from_input_value_result
-        .expect("Unable to find return type of `from_input_value` method");
+        .ok_or(error.custom_error(body_span, "unable to find body of `resolve` method"))?;
+    let from_input_value_arg = input.from_input_value_arg.ok_or(error.custom_error(
+        body_span,
+        "Unable to find argument for `from_input_value` method",
+    ))?;
+    let from_input_value_body = input.from_input_value_body.ok_or(error.custom_error(
+        body_span,
+        "Unable to find body of `from_input_value` method",
+    ))?;
+    let from_input_value_result = input.from_input_value_result.ok_or(error.custom_error(
+        body_span,
+        "Unable to find return type of `from_input_value` method",
+    ))?;
     let from_str_arg = input
         .from_str_arg
-        .expect("Unable to find argument for `from_str` method");
+        .ok_or(error.custom_error(body_span, "Unable to find argument for `from_str` method"))?;
     let from_str_body = input
         .from_str_body
-        .expect("Unable to find body of `from_str` method");
+        .ok_or(error.custom_error(body_span, "Unable to find body of `from_str` method"))?;
     let from_str_result = input
         .from_str_result
-        .expect("Unable to find return type of `from_str` method");
+        .ok_or(error.custom_error(body_span, "Unable to find return type of `from_str` method"))?;
 
     let name = attrs
         .name
@@ -271,7 +271,7 @@ pub fn build_scalar(
         }
     );
 
-    quote!(
+    let content = quote!(
         #_async
 
         impl#generic_type_decl #crate_name::GraphQLType<#generic_type> for #impl_for_type
@@ -332,5 +332,7 @@ pub fn build_scalar(
                 #from_str_body
             }
         }
-    ).into()
+    );
+
+    Ok(content)
 }

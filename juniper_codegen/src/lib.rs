@@ -30,7 +30,10 @@ use result::GraphQLScope;
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_enum::impl_enum(ast, false, GraphQLScope::DeriveEnum);
-    gen.into()
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 #[proc_macro_error]
@@ -39,15 +42,21 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 pub fn derive_enum_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_enum::impl_enum(ast, true, GraphQLScope::DeriveEnum);
-    gen.into()
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLInputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(&ast, false, GraphQLScope::DeriveInputObject);
-    gen.into()
+    let gen = derive_input_object::impl_input_object(ast, false, GraphQLScope::DeriveInputObject);
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 #[proc_macro_error]
@@ -55,8 +64,11 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 pub fn derive_input_object_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_input_object::impl_input_object(&ast, true, GraphQLScope::DeriveInputObject);
-    gen.into()
+    let gen = derive_input_object::impl_input_object(ast, true, GraphQLScope::DeriveInputObject);
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 #[proc_macro_error]
@@ -138,7 +150,10 @@ pub fn derive_union(input: TokenStream) -> TokenStream {
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, false, GraphQLScope::DeriveScalar);
-    gen.into()
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 #[proc_macro_error]
@@ -147,7 +162,10 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 pub fn derive_scalar_value_internal(input: TokenStream) -> TokenStream {
     let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
     let gen = derive_scalar_value::impl_scalar_value(&ast, true, GraphQLScope::DeriveScalar);
-    gen.into()
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 /**
@@ -380,7 +398,9 @@ struct Query;
     Scalar = MyCustomScalar,
 )]
 impl Query {
-    // ...
+    fn test(&self) -> i32 {
+        0
+    }
 }
 ```
 
@@ -485,12 +505,11 @@ pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenSt
 pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_scalar::build_scalar(
-        args,
-        input,
-        false,
-        GraphQLScope::ImplScalar,
-    ))
+    let gen = impl_scalar::build_scalar(args, input, false, GraphQLScope::ImplScalar);
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 /// A proc macro for defining a GraphQL scalar.
@@ -500,12 +519,11 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn graphql_scalar_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
-    TokenStream::from(impl_scalar::build_scalar(
-        args,
-        input,
-        true,
-        GraphQLScope::ImplScalar,
-    ))
+    let gen = impl_scalar::build_scalar(args, input, true, GraphQLScope::ImplScalar);
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 /// A proc macro for defining a GraphQL subscription.
@@ -541,12 +559,11 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
 pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
     let attrs = proc_macro2::TokenStream::from(attrs);
     let body = proc_macro2::TokenStream::from(body);
-    TokenStream::from(impl_union::impl_union(
-        false,
-        attrs,
-        body,
-        GraphQLScope::ImplUnion,
-    ))
+    let gen = impl_union::impl_union(false, attrs, body, GraphQLScope::ImplUnion);
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }
 
 #[doc(hidden)]
@@ -555,10 +572,9 @@ pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
 pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
     let attrs = proc_macro2::TokenStream::from(attrs);
     let body = proc_macro2::TokenStream::from(body);
-    TokenStream::from(impl_union::impl_union(
-        true,
-        attrs,
-        body,
-        GraphQLScope::ImplUnion,
-    ))
+    let gen = impl_union::impl_union(true, attrs, body, GraphQLScope::ImplUnion);
+    match gen {
+        Ok(gen) => gen.into(),
+        Err(err) => proc_macro_error::abort!(err),
+    }
 }

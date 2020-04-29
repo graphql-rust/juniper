@@ -1,12 +1,12 @@
 #![allow(clippy::collapsible_if)]
 
 use crate::{
-    result::GraphQLScope,
+    result::{GraphQLScope, UnsupportedAttribute},
     util::{self, span_container::SpanContainer},
 };
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::spanned::Spanned;
+use syn::{ext::IdentExt, spanned::Spanned};
 
 /// Generate code for the juniper::graphql_object macro.
 pub fn build_object(
@@ -54,19 +54,18 @@ fn create(
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| _impl.type_ident.to_string());
+        .unwrap_or_else(|| _impl.type_ident.unraw().to_string());
 
-    let context = _impl.attrs.context.map(SpanContainer::into_inner);
-
-    let fields = _impl.methods
-        .into_iter()
+    let fields = _impl
+        .methods
+        .iter()
         .filter_map(|method| {
             let span = method.span();
-            let _type = match &method.sig.output {
-                syn::ReturnType::Type(_, ref t) => (**t).clone(),
+            let _type = match method.sig.output {
+                syn::ReturnType::Type(_, ref t) => *t.clone(),
                 syn::ReturnType::Default => {
                     error.custom(method.sig.span(), "return value required");
-                    return None
+                    return None;
                 }
             };
 
@@ -79,93 +78,55 @@ fn create(
                 Ok(attrs) => attrs,
                 Err(err) => {
                     proc_macro_error::emit_error!(err);
-                    return None
+                    return None;
                 }
             };
 
-            let mut args = Vec::new();
-            let mut resolve_parts = Vec::new();
+            let parse_method =
+                _impl.parse_method(&method, true, |captured, arg_ident, is_mut: bool| {
+                    let arg_name = arg_ident.unraw().to_string();
+                    let ty = &captured.ty;
+                    // TODO: respect graphql attribute overwrite.
+                    let final_name = util::to_camel_case(&arg_name);
 
-            for arg in method.sig.inputs {
-                match arg {
-                    syn::FnArg::Receiver(rec) => {
-                        if rec.reference.is_none() || rec.mutability.is_some() {
-                            error.custom(rec.span(), "expect &self");
-                            // TODO: insert help: replace with &self?
-                            return None
-                        }
+                    let expect_text = format!(
+                        "Internal error: missing argument {} - validation must have failed",
+                        &final_name
+                    );
+                    let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
+
+                    if final_name.starts_with("__") {
+                        // TODO: if name is set by graphql attribute,
+                        // mark the attribute rather than the identifier
+                        error.no_double_underscore(arg_name.span());
                     }
-                    syn::FnArg::Typed(ref captured) => {
-                        let (arg_ident, is_mut) = match &*captured.pat {
-                            syn::Pat::Ident(ref pat_ident) => {
-                                (&pat_ident.ident, pat_ident.mutability.is_some())
-                            }
-                            _ => {
-                                error.custom(captured.pat.span(), "only single arguments are allowed (e.g., `test: String`)");
-                                return None
-                            }
-                        };
-                        let arg_name = arg_ident.to_string();
 
-                        let context_type = context.as_ref();
+                    let resolver = quote!(
+                        let #mut_modifier #arg_ident = args
+                            .get::<#ty>(#final_name)
+                            .expect(#expect_text);
+                    );
 
-                        // Check for executor arguments.
-                        if util::type_is_identifier_ref(&captured.ty, "Executor") {
-                            resolve_parts.push(quote!(let #arg_ident = executor;));
-                        }
-                        // Make sure executor is specified as a reference.
-                        else if util::type_is_identifier(&captured.ty, "Executor") {
-                            panic!("Invalid executor argument: to access the Executor, you need to specify the type as a reference.\nDid you mean &Executor?");
-                        }
-                        // Check for context arg.
-                        else if context_type
-                            .clone()
-                            .map(|ctx| util::type_is_ref_of(&captured.ty, ctx))
-                            .unwrap_or(false)
-                        {
+                    let field_type = util::GraphQLTypeDefinitionFieldArg {
+                        description: attrs
+                            .argument(&arg_name)
+                            .and_then(|arg| arg.description.as_ref().map(|d| d.value())),
+                        default: attrs
+                            .argument(&arg_name)
+                            .and_then(|arg| arg.default.clone()),
+                        _type: ty.clone(),
+                        name: final_name,
+                    };
+                    Ok((resolver, field_type))
+                });
 
-                            resolve_parts.push(quote!( let #arg_ident = executor.context(); ));
-                        }
-                        // Make sure the user does not specify the Context
-                        //  without a reference. (&Context)
-                        else if context_type
-                            .clone()
-                            .map(|ctx| ctx == &*captured.ty)
-                            .unwrap_or(false)
-                        {
-                            error.custom(captured.ty.span(), format!("expected reference to context, but got `{:?}`", captured.ty));
-                            // TODO: insert help: replace with &{}?
-                            return None
-                        } else {
-                            // Regular argument.
-
-                            let ty = &captured.ty;
-                            // TODO: respect graphql attribute overwrite.
-                            let final_name = util::to_camel_case(&arg_name);
-                            let expect_text = format!(
-                                "Internal error: missing argument {} - validation must have failed",
-                                &final_name
-                            );
-                            let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
-                            resolve_parts.push(quote!(
-                                let #mut_modifier #arg_ident = args
-                                    .get::<#ty>(#final_name)
-                                    .expect(#expect_text);
-                            ));
-                            args.push(util::GraphQLTypeDefinitionFieldArg {
-                                description: attrs
-                                    .argument(&arg_name)
-                                    .and_then(|arg| arg.description.as_ref().map(|d| d.value())),
-                                default: attrs
-                                    .argument(&arg_name)
-                                    .and_then(|arg| arg.default.clone()),
-                                _type: ty.clone(),
-                                name: final_name,
-                            })
-                        }
-                    }
+            let (resolve_parts, args) = match parse_method {
+                Ok((resolve_parts, args)) => (resolve_parts, args),
+                Err(err) => {
+                    proc_macro_error::emit_error!(err);
+                    return None;
                 }
-            }
+            };
 
             let body = &method.block;
             let resolver_code = quote!(
@@ -176,8 +137,24 @@ fn create(
             let ident = &method.sig.ident;
             let name = attrs
                 .name
+                .clone()
                 .map(SpanContainer::into_inner)
-                .unwrap_or_else(|| util::to_camel_case(&ident.to_string()));
+                .unwrap_or_else(|| util::to_camel_case(&ident.unraw().to_string()));
+
+            if name.starts_with("__") {
+                error.no_double_underscore(if let Some(name) = attrs.name {
+                    name.span()
+                } else {
+                    ident.span()
+                });
+            }
+
+            if let Some(default) = attrs.default {
+                error.unsupported_attribute_within(
+                    default.span_ident(),
+                    UnsupportedAttribute::Default,
+                );
+            }
 
             Some(util::GraphQLTypeDefinitionField {
                 name,
@@ -188,9 +165,11 @@ fn create(
                 resolver_code,
                 is_type_inferred: false,
                 is_async,
+                default: None,
                 span,
             })
-        }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
 
     // Early abort after checking all fields
     proc_macro_error::abort_if_dirty();
@@ -199,10 +178,7 @@ fn create(
         error.not_empty(body_span);
     }
 
-    match crate::util::duplicate::Duplicate::find_by_key(
-        &fields,
-        |field| &field.name,
-    ) {
+    match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
         Some(duplicates) => error.duplicate(duplicates.iter()),
         None => {}
     }
@@ -214,7 +190,7 @@ fn create(
         name,
         _type: *_impl.target_type.clone(),
         scalar: _impl.attrs.scalar.map(SpanContainer::into_inner),
-        context,
+        context: _impl.attrs.context.map(SpanContainer::into_inner),
         description: _impl.description,
         fields,
         generics: _impl.generics.clone(),

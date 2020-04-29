@@ -1,7 +1,7 @@
-error: proc-macro derive panicked
- --> $DIR/derive_no_fields.rs:1:10
+error: GraphQL enum expects at least one field
+ --> $DIR/derive_no_fields.rs:2:1
   |
-1 | #[derive(juniper::GraphQLEnum)]
-  |          ^^^^^^^^^^^^^^^^^^^^
+2 | pub enum Test {}
+  | ^^^^^^^^^^^^^^^^
   |
-  = help: message: #[derive(GraphQLEnum)] requires at least one variants
+  = note: https://spec.graphql.org/June2018/#sec-Enums

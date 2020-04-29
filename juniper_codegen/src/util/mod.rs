@@ -5,6 +5,7 @@ pub mod parse_impl;
 pub mod span_container;
 
 use proc_macro2::{Span, TokenStream};
+use proc_macro_error::abort;
 use quote::quote;
 use span_container::SpanContainer;
 use std::collections::HashMap;
@@ -73,17 +74,6 @@ pub fn type_is_identifier_ref(ty: &syn::Type, name: &str) -> bool {
     }
 }
 
-pub enum AttributeValidation {
-    Any,
-    // Bare,
-    String,
-}
-
-pub enum AttributeValue {
-    Bare,
-    String(String),
-}
-
 #[derive(Debug)]
 pub struct DeprecationAttr {
     pub reason: Option<String>,
@@ -99,9 +89,10 @@ pub fn get_deprecated(attrs: &[Attribute]) -> Option<SpanContainer<DeprecationAt
     attrs
         .iter()
         .filter_map(|attr| match attr.parse_meta() {
-            Ok(Meta::List(ref list)) if list.path.is_ident("deprecated") => Some(
-                SpanContainer::new(list.path.span(), None, get_deprecated_meta_list(list)),
-            ),
+            Ok(Meta::List(ref list)) if list.path.is_ident("deprecated") => {
+                let val = get_deprecated_meta_list(list);
+                Some(SpanContainer::new(list.path.span(), None, val))
+            }
             Ok(Meta::Path(ref path)) if path.is_ident("deprecated") => Some(SpanContainer::new(
                 path.span(),
                 None,
@@ -122,13 +113,16 @@ fn get_deprecated_meta_list(list: &MetaList) -> DeprecationAttr {
                             reason: Some(strlit.value()),
                         };
                     }
-                    _ => panic!("deprecated attribute note value only has string literal"),
+                    _ => abort!(syn::Error::new(
+                        nv.lit.span(),
+                        "only strings are allowed for deprecation",
+                    )),
                 }
             } else {
-                panic!(
-                    "Unrecognized setting on #[deprecated(..)] attribute: {:?}",
-                    nv.path,
-                );
+                abort!(syn::Error::new(
+                    nv.path.span(),
+                    "unrecognized setting on #[deprecated(..)] attribute",
+                ));
             }
         }
     }
@@ -186,7 +180,10 @@ fn get_doc_strings(items: &[MetaNameValue]) -> Option<SpanContainer<Vec<String>>
                         }
                         Some(strlit.value())
                     }
-                    _ => panic!("doc attributes only have string literal"),
+                    _ => abort!(syn::Error::new(
+                        item.lit.span(),
+                        "doc attributes only have string literal"
+                    )),
                 }
             } else {
                 None
@@ -209,47 +206,6 @@ fn get_doc_attr(attrs: &[Attribute]) -> Option<Vec<MetaNameValue>> {
         return Some(docs);
     }
     None
-}
-
-// Get the nested items of a a #[graphql(...)] attribute.
-pub fn get_graphql_attr(attrs: &[Attribute]) -> Option<Vec<NestedMeta>> {
-    for attr in attrs {
-        match attr.parse_meta() {
-            Ok(Meta::List(ref list)) if list.path.is_ident("graphql") => {
-                return Some(list.nested.iter().cloned().collect());
-            }
-            _ => {}
-        }
-    }
-    None
-}
-
-pub fn keyed_item_value(
-    item: &NestedMeta,
-    name: &str,
-    validation: AttributeValidation,
-) -> Option<AttributeValue> {
-    match *item {
-        // Attributes in the form of `#[graphql(name = "value")]`.
-        NestedMeta::Meta(Meta::NameValue(ref nameval)) if nameval.path.is_ident(name) => {
-            match nameval.lit {
-                // We have a string attribute value.
-                Lit::Str(ref strlit) => Some(AttributeValue::String(strlit.value())),
-                _ => None,
-            }
-        }
-        // Attributes in the form of `#[graphql(name)]`.
-        NestedMeta::Meta(Meta::Path(ref path)) if path.is_ident(name) => match validation {
-            AttributeValidation::String => {
-                panic!(format!(
-                    "Invalid format for attribute \"{:?}\": expected a string value",
-                    item
-                ));
-            }
-            _ => Some(AttributeValue::Bare),
-        },
-        _ => None,
-    }
 }
 
 // Note: duplicated from juniper crate!
@@ -478,6 +434,7 @@ enum FieldAttribute {
     Deprecation(SpanContainer<DeprecationAttr>),
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
+    Default(SpanContainer<Option<syn::Expr>>),
 }
 
 impl parse::Parse for FieldAttribute {
@@ -540,6 +497,18 @@ impl parse::Parse for FieldAttribute {
                     .collect();
                 Ok(FieldAttribute::Arguments(map))
             }
+            "default" => {
+                let default_expr = if input.peek(Token![=]) {
+                    input.parse::<Token![=]>()?;
+                    let lit = input.parse::<syn::LitStr>()?;
+                    let default_expr = lit.parse::<syn::Expr>()?;
+                    SpanContainer::new(ident.span(), Some(lit.span()), Some(default_expr))
+                } else {
+                    SpanContainer::new(ident.span(), None, None)
+                };
+
+                Ok(FieldAttribute::Default(default_expr))
+            }
             _ => Err(syn::Error::new(ident.span(), "unknown attribute")),
         }
     }
@@ -554,6 +523,8 @@ pub struct FieldAttributes {
     pub skip: Option<SpanContainer<syn::Ident>>,
     /// Only relevant for object macro.
     pub arguments: HashMap<String, FieldAttributeArgument>,
+    /// Only relevant for object input objects.
+    pub default: Option<SpanContainer<Option<syn::Expr>>>,
 }
 
 impl parse::Parse for FieldAttributes {
@@ -566,6 +537,7 @@ impl parse::Parse for FieldAttributes {
             deprecation: None,
             skip: None,
             arguments: Default::default(),
+            default: None,
         };
 
         for item in items {
@@ -584,6 +556,9 @@ impl parse::Parse for FieldAttributes {
                 }
                 FieldAttribute::Arguments(args) => {
                     output.arguments = args;
+                }
+                FieldAttribute::Default(expr) => {
+                    output.default = Some(expr);
                 }
             }
         }
@@ -645,6 +620,7 @@ pub struct GraphQLTypeDefinitionField {
     pub resolver_code: TokenStream,
     pub is_type_inferred: bool,
     pub is_async: bool,
+    pub default: Option<TokenStream>,
     pub span: Span,
 }
 
@@ -658,11 +634,6 @@ impl<'a> syn::spanned::Spanned for &'a GraphQLTypeDefinitionField {
     fn span(&self) -> Span {
         self.span
     }
-}
-
-pub fn unraw(s: &str) -> String {
-    use syn::ext::IdentExt;
-    quote::format_ident!("{}", s).unraw().to_string()
 }
 
 /// Definition of a graphql type based on information extracted
@@ -714,7 +685,7 @@ impl GraphQLTypeDefiniton {
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
                 let arg_type = &arg._type;
-                let arg_name = unraw(&arg.name);
+                let arg_name = &arg.name;
 
                 let description = match arg.description.as_ref() {
                     Some(value) => quote!( .description( #value ) ),
@@ -754,7 +725,7 @@ impl GraphQLTypeDefiniton {
                 None => quote!(),
             };
 
-            let field_name = unraw(&field.name);
+            let field_name = &field.name;
 
             let _type = &field._type;
             quote! {
@@ -1720,12 +1691,215 @@ impl GraphQLTypeDefiniton {
 
         body
     }
+
+    pub fn into_input_object_tokens(self, juniper_crate_name: &str) -> TokenStream {
+        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+
+        let name = &self.name;
+        let ty = &self._type;
+        let context = self
+            .context
+            .as_ref()
+            .map(|ctx| quote!( #ctx ))
+            .unwrap_or_else(|| quote!(()));
+
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
+        let meta_fields = self
+            .fields
+            .iter()
+            .map(|field| {
+                // HACK: use a different interface for the GraphQLField?
+                let field_ty = &field._type;
+                let field_name = &field.name;
+
+                let description = match field.description.as_ref() {
+                    Some(description) => quote!( .description(#description) ),
+                    None => quote!(),
+                };
+
+                let deprecation = match field.deprecation.as_ref() {
+                    Some(deprecation) => {
+                        if let Some(reason) = deprecation.reason.as_ref() {
+                            quote!( .deprecated(Some(#reason)) )
+                        } else {
+                            quote!( .deprecated(None) )
+                        }
+                    }
+                    None => quote!(),
+                };
+
+                let create_meta_field = match field.default {
+                    Some(ref def) => {
+                        quote! {
+                            registry.arg_with_default::<#field_ty>( #field_name, &#def, &())
+                        }
+                    }
+                    None => {
+                        quote! {
+                            registry.arg::<#field_ty>(#field_name, &())
+                        }
+                    }
+                };
+
+                quote!(
+                    {
+                        #create_meta_field
+                        #description
+                        #deprecation
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let from_inputs = self.fields.iter().map(|field| {
+            let field_ident = &field.resolver_code;
+            let field_name = &field.name;
+
+            // Build from_input clause.
+            let from_input_default = match field.default {
+                Some(ref def) => {
+                    quote! {
+                        Some(&&#juniper_crate_name::InputValue::Null) | None if true => #def,
+                    }
+                }
+                None => quote! {},
+            };
+
+            quote!(
+                #field_ident: {
+                    // TODO: investigate the unwraps here, they seem dangerous!
+                    match obj.get(#field_name) {
+                        #from_input_default
+                        Some(ref v) => #juniper_crate_name::FromInputValue::from_input_value(v).unwrap(),
+                        None => {
+                            #juniper_crate_name::FromInputValue::from_input_value(&#juniper_crate_name::InputValue::<#scalar>::null())
+                            .unwrap()
+                        },
+                    }
+                },
+            )
+        }).collect::<Vec<_>>();
+
+        let to_inputs = self
+            .fields
+            .iter()
+            .map(|field| {
+                let field_name = &field.name;
+                let field_ident = &field.resolver_code;
+                // Build to_input clause.
+                quote!(
+                    (#field_name, self.#field_ident.to_input_value()),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let description = self
+            .description
+            .as_ref()
+            .map(|description| quote!( .description(#description) ));
+
+        // Preserve the original type_generics before modification,
+        // since alteration makes them invalid if self.generic_scalar
+        // is specified.
+        let (_, type_generics, _) = self.generics.split_for_impl();
+
+        let mut generics = self.generics.clone();
+
+        if self.scalar.is_none() && self.generic_scalar {
+            // No custom scalar specified, but always generic specified.
+            // Therefore we inject the generic scalar.
+
+            generics.params.push(parse_quote!(__S));
+
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            // Insert ScalarValue constraint.
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
+        }
+
+        let type_generics_tokens = if self.include_type_generics {
+            Some(type_generics)
+        } else {
+            None
+        };
+
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let body = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                type Context = #context;
+                type TypeInfo = ();
+
+                fn name(_: &()) -> Option<&'static str> {
+                    Some(#name)
+                }
+
+                fn meta<'r>(
+                    _: &(),
+                    registry: &mut #juniper_crate_name::Registry<'r, #scalar>
+                ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
+                where #scalar: 'r
+                {
+                    let fields = &[
+                        #( #meta_fields )*
+                    ];
+                    registry.build_input_object_type::<#ty>(&(), fields)
+                    #description
+                    .into_meta()
+                }
+            }
+
+            impl#impl_generics #juniper_crate_name::FromInputValue<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                fn from_input_value(value: &#juniper_crate_name::InputValue<#scalar>) -> Option<Self>
+                {
+                    if let Some(obj) = value.to_object_value() {
+                        let item = #ty {
+                            #( #from_inputs )*
+                        };
+                        Some(item)
+                    }
+                    else {
+                        None
+                    }
+                }
+            }
+
+            impl#impl_generics #juniper_crate_name::ToInputValue<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                fn to_input_value(&self) -> #juniper_crate_name::InputValue<#scalar> {
+                    #juniper_crate_name::InputValue::object(vec![
+                        #( #to_inputs )*
+                    ].into_iter().collect())
+                }
+            }
+        );
+
+        body
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use quote::__private::*;
     use syn::{Ident, LitStr};
 
     fn strs_to_strings(source: Vec<&str>) -> Vec<String> {

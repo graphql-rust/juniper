@@ -1,43 +1,34 @@
 use crate::{
-    result::GraphQLScope,
+    result::{GraphQLScope, UnsupportedAttribute},
     util::{self, span_container::SpanContainer},
 };
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, spanned::Spanned, Data, Fields};
+use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool, error: GraphQLScope) -> TokenStream {
+pub fn impl_enum(
+    ast: syn::DeriveInput,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
+    let ast_span = ast.span();
+
     if !ast.generics.params.is_empty() {
-        panic!("#[derive(GraphQLEnum) does not support generics or lifetimes");
+        return Err(error.custom_error(ast_span, "does not support generics or lifetimes"));
     }
 
     let variants = match ast.data {
         Data::Enum(enum_data) => enum_data.variants,
-        _ => {
-            panic!("#[derive(GraphlQLEnum)] may only be applied to enums, not to structs");
-        }
+        _ => return Err(error.custom_error(ast_span, "may only be applied to enums")),
     };
 
     // Parse attributes.
-    let attrs = match util::ObjectAttributes::from_attrs(&ast.attrs) {
-        Ok(a) => a,
-        Err(e) => {
-            panic!("Invalid #[graphql(...)] attribute: {}", e);
-        }
-    };
-    if !attrs.interfaces.is_empty() {
-        panic!("Invalid #[graphql(...)] attribute 'interfaces': #[derive(GraphQLEnum) does not support 'interfaces'");
-    }
-    if attrs.scalar.is_some() {
-        panic!("Invalid #[graphql(...)] attribute 'scalar': #[derive(GraphQLEnum) does not support explicit scalars");
-    }
-
-    // Parse attributes.
+    let attrs = util::ObjectAttributes::from_attrs(&ast.attrs)?;
     let ident = &ast.ident;
     let name = attrs
         .name
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| ident.unraw().to_string());
 
     let fields = variants
         .into_iter()
@@ -48,25 +39,42 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool, error: GraphQLScope) 
                 util::FieldAttributeParseMode::Object,
             ) {
                 Ok(attrs) => attrs,
-                Err(e) => panic!("Invalid #[graphql] attribute for field: \n{}", e),
+                Err(err) => {
+                    proc_macro_error::emit_error!(err);
+                    return None;
+                }
             };
 
-            if field_attrs.skip.is_some() {
-                panic!("#[derive(GraphQLEnum)] does not support #[graphql(skip)] on fields");
+            if let Some(skip) = field_attrs.skip {
+                error.unsupported_attribute(skip.span(), UnsupportedAttribute::Skip);
+                return None;
             } else {
                 let field_name = field.ident;
                 let name = field_attrs
                     .name
                     .clone()
                     .map(SpanContainer::into_inner)
-                    .unwrap_or_else(|| util::to_upper_snake_case(&field_name.to_string()));
+                    .unwrap_or_else(|| util::to_upper_snake_case(&field_name.unraw().to_string()));
 
                 let resolver_code = quote!( #ident::#field_name );
 
                 let _type = match field.fields {
                     Fields::Unit => syn::parse_str(&field_name.to_string()).unwrap(),
-                    _ => panic!("#[derive(GraphQLEnum)] all fields of the enum must be unnamed"),
+                    _ => {
+                        error.custom(
+                            field.fields.span(),
+                            "all fields of the enum must be unnamed, e.g., None",
+                        );
+                        return None;
+                    }
                 };
+
+                if let Some(default) = field_attrs.default {
+                    error.unsupported_attribute_within(
+                        default.span_ident(),
+                        UnsupportedAttribute::Default,
+                    );
+                }
 
                 Some(util::GraphQLTypeDefinitionField {
                     name,
@@ -77,15 +85,35 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool, error: GraphQLScope) 
                     resolver_code,
                     is_type_inferred: true,
                     is_async: false,
+                    default: None,
                     span,
                 })
             }
         })
         .collect::<Vec<_>>();
 
-    if fields.len() == 0 {
-        panic!("#[derive(GraphQLEnum)] requires at least one variants");
+    proc_macro_error::abort_if_dirty();
+
+    if fields.is_empty() {
+        error.not_empty(ast_span);
     }
+
+    match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
+        Some(duplicates) => error.duplicate(duplicates.iter()),
+        None => {}
+    }
+
+    if !attrs.interfaces.is_empty() {
+        attrs.interfaces.iter().for_each(|elm| {
+            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
+        });
+    }
+
+    if let Some(scalar) = attrs.scalar {
+        error.unsupported_attribute(scalar.span_ident(), UnsupportedAttribute::Scalar);
+    }
+
+    proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
         name,
@@ -103,5 +131,5 @@ pub fn impl_enum(ast: syn::DeriveInput, is_internal: bool, error: GraphQLScope) 
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_enum_tokens(juniper_crate_name)
+    Ok(definition.into_enum_tokens(juniper_crate_name))
 }

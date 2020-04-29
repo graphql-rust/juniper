@@ -38,7 +38,7 @@ impl GraphQLScalar for TestComplexScalar {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = DefaultScalarValue)]
 struct TestInputObject {
     a: Option<String>,
     b: Option<Vec<Option<String>>>,
@@ -47,7 +47,7 @@ struct TestInputObject {
 }
 
 #[derive(GraphQLInputObject, Debug)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = DefaultScalarValue)]
 struct TestNestedInputObject {
     na: TestInputObject,
     nb: String,

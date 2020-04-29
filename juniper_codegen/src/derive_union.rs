@@ -4,7 +4,7 @@ use crate::{
 };
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, spanned::Spanned, Data, Fields};
+use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
 pub fn build_derive_union(
     ast: syn::DeriveInput,
@@ -14,7 +14,7 @@ pub fn build_derive_union(
     let span = ast.span();
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => return Err(syn::Error::new(ast.span(), "can only be applied to enums")),
+        _ => return Err(error.custom_error(ast.span(), "can only be applied to enums")),
     };
 
     // Parse attributes.
@@ -24,7 +24,7 @@ pub fn build_derive_union(
     let name = attrs
         .name
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| ident.unraw().to_string());
 
     let fields = enum_fields
         .into_iter()
@@ -50,7 +50,7 @@ pub fn build_derive_union(
                     .name
                     .clone()
                     .map(SpanContainer::into_inner)
-                    .unwrap_or_else(|| util::to_camel_case(&variant_name.to_string()));
+                    .unwrap_or_else(|| util::to_camel_case(&variant_name.unraw().to_string()));
 
                 let resolver_code = quote!(
                     #ident :: #variant_name
@@ -69,7 +69,6 @@ pub fn build_derive_union(
                                 inner.span(),
                                 "all members must be unnamed with a single element e.g. Some(T)",
                             );
-                            return None;
                         }
 
                         first.ty.clone()
@@ -89,7 +88,21 @@ pub fn build_derive_union(
                         description.span_ident(),
                         UnsupportedAttribute::Description,
                     );
-                    return None;
+                }
+
+                if let Some(default) = field_attrs.default {
+                    error.unsupported_attribute_within(
+                        default.span_ident(),
+                        UnsupportedAttribute::Default,
+                    );
+                }
+
+                if name.starts_with("__") {
+                    error.no_double_underscore(if let Some(name) = field_attrs.name {
+                        name.span()
+                    } else {
+                        variant_name.span()
+                    });
                 }
 
                 Some(util::GraphQLTypeDefinitionField {
@@ -101,6 +114,7 @@ pub fn build_derive_union(
                     resolver_code,
                     is_type_inferred: true,
                     is_async: false,
+                    default: None,
                     span,
                 })
             }

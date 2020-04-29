@@ -29,6 +29,9 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 - Derive macro `GraphQLEnum` supports custom context (see [#621](https://github.com/graphql-rust/juniper/pull/621))
 
+- Better error messages for all proc macros (see
+  [#631](https://github.com/graphql-rust/juniper/pull/631)
+
 ## Breaking Changes
 
 - `juniper::graphiql` has moved to `juniper::http::graphiql`
@@ -53,6 +56,11 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 - Subscription-related: 
   add subscription type to `RootNode`,
   add subscription endpoint to `playground_source()`
+
+- Putting a scalar type into a string is not allowed anymore, e..g,
+  `#[graphql(scalar = "DefaultScalarValue")]`. Only
+  `#[derive(GraphQLInputObject)]` supported this syntax. The
+  refactoring of GraphQLInputObject allowed to drop the support.
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 

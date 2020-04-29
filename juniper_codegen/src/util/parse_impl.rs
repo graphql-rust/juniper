@@ -2,36 +2,10 @@
 #![allow(clippy::or_fun_call)]
 
 use crate::util::{self, span_container::SpanContainer};
-use proc_macro2::TokenStream;
+use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use std::{convert::From, fmt};
-
-#[derive(Debug)]
-pub struct ResolveFnError(String);
-
-impl From<&str> for ResolveFnError {
-    fn from(item: &str) -> Self {
-        ResolveFnError(item.to_string())
-    }
-}
-
-impl From<String> for ResolveFnError {
-    fn from(item: String) -> Self {
-        ResolveFnError(item)
-    }
-}
-
-impl fmt::Display for ResolveFnError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.as_str())
-    }
-}
-
-impl std::error::Error for ResolveFnError {
-    fn description(&self) -> &str {
-        self.0.as_str()
-    }
-}
+use std::convert::From;
+use syn::{spanned::Spanned, PatType};
 
 pub struct ImplBlock {
     pub attrs: util::ObjectAttributes,
@@ -45,64 +19,96 @@ pub struct ImplBlock {
 }
 
 impl ImplBlock {
-    /// Check if the block has the special `resolve()` method.
-    pub fn has_resolve_method(&self) -> bool {
-        self.methods.iter().any(|m| m.sig.ident == "resolve")
-    }
-
-    /// Parse a 'fn resolve()' method declaration found in union or interface
-    /// `impl` blocks.
-    /// Returns the variable definitions needed for the resolve body.
+    /// Parse a `fn resolve()` method declaration found in most
+    /// generators which rely on `impl` blocks.
     pub fn parse_resolve_method(
         &self,
         method: &syn::ImplItemMethod,
-    ) -> Result<Vec<proc_macro2::TokenStream>, ResolveFnError> {
+    ) -> syn::Result<Vec<TokenStream>> {
         if method.sig.ident != "resolve" {
-            return Err("Expect a method named 'fn resolve(...)".into());
+            return Err(syn::Error::new(
+                method.sig.ident.span(),
+                "expect the method named `resolve`",
+            ));
         }
 
-        match &method.sig.output {
-            syn::ReturnType::Type(_, _) => {
-                return Err("resolve() method must not have a declared return type".into());
-            }
-            syn::ReturnType::Default => {}
-        };
+        if let syn::ReturnType::Type(_, _) = &method.sig.output {
+            return Err(syn::Error::new(
+                method.sig.output.span(),
+                "method must not have a declared return type",
+            ));
+        }
 
-        let mut arguments = method.sig.inputs.iter();
+        //NOTICE: `fn resolve()` is a subset of `fn <NAME>() -> <TYPE>`
+        self.parse_method(method, false, |captured, _, _| {
+            Err(syn::Error::new(
+                captured.span(),
+                "only executor or context types are allowed",
+            ))
+        })
+        .map(|(tokens, _empty)| tokens)
+    }
 
-        // Verify '&self' argument.
-        match arguments.next() {
+    /// Parse a `fn <NAME>() -> <TYPE>` method declaration found in
+    /// objects.
+    pub fn parse_method<
+        F: Fn(
+            &PatType,
+            &Ident,
+            bool,
+        ) -> syn::Result<(TokenStream, util::GraphQLTypeDefinitionFieldArg)>,
+    >(
+        &self,
+        method: &syn::ImplItemMethod,
+        is_self_optional: bool,
+        f: F,
+    ) -> syn::Result<(Vec<TokenStream>, Vec<util::GraphQLTypeDefinitionFieldArg>)> {
+        let mut arguments = method.sig.inputs.iter().peekable();
+
+        // Verify `&self` argument.
+        match arguments.peek() {
             Some(syn::FnArg::Receiver(rec)) => {
+                let _consume = arguments.next();
                 if rec.reference.is_none() || rec.mutability.is_some() {
-                    panic!(
-                        "Invalid method receiver {}(self, ...): did you mean '&self'?",
-                        method.sig.ident
-                    );
+                    return Err(syn::Error::new(
+                        rec.span(),
+                        "invalid argument: did you mean `&self`?",
+                    ));
                 }
             }
             _ => {
-                return Err("Expected a '&self' argument".into());
+                if !is_self_optional {
+                    return Err(syn::Error::new(
+                        method.sig.span(),
+                        "expected a `&self` argument",
+                    ));
+                }
             }
         }
 
         let mut resolve_parts = Vec::new();
+        let mut additional_arguments = Vec::new();
 
         for arg in arguments {
             match arg {
                 syn::FnArg::Receiver(_) => {
-                    return Err(format!(
-                        "Malformed method signature {}: self receiver must be the first argument",
-                        method.sig.ident
-                    )
-                    .into());
+                    if !is_self_optional {
+                        return Err(syn::Error::new(
+                            method.sig.ident.span(),
+                            "self receiver must be the first argument",
+                        ));
+                    }
                 }
                 syn::FnArg::Typed(captured) => {
-                    let (arg_ident, _is_mut) = match &*captured.pat {
+                    let (arg_ident, is_mut) = match &*captured.pat {
                         syn::Pat::Ident(ref pat_ident) => {
                             (&pat_ident.ident, pat_ident.mutability.is_some())
                         }
                         _ => {
-                            panic!("Invalid token for function argument");
+                            return Err(syn::Error::new(
+                                captured.pat.span(),
+                                "expected identifier for function argument",
+                            ));
                         }
                     };
                     let context_type = self.attrs.context.as_ref();
@@ -113,7 +119,10 @@ impl ImplBlock {
                     }
                     // Make sure executor is specified as a reference.
                     else if util::type_is_identifier(&captured.ty, "Executor") {
-                        panic!("Invalid executor argument: to access the Executor, you need to specify the type as a reference.\nDid you mean &Executor?");
+                        return Err(syn::Error::new(
+                            captured.ty.span(),
+                            "to access the Executor, you need to specify the type as a reference.\nDid you mean &Executor?"
+                        ));
                     }
                     // Check for context arg.
                     else if context_type
@@ -130,18 +139,20 @@ impl ImplBlock {
                         .map(|ctx| ctx.inner() == &*captured.ty)
                         .unwrap_or(false)
                     {
-                        return Err(format!(
-                            "Invalid context argument: to access the context, you need to specify the type as a reference.\nDid you mean &{}?",
-                            quote!(captured.ty),
-                        ).into());
+                        return Err(syn::Error::new(
+                            captured.ty.span(),
+                            format!("to access the context, you need to specify the type as a reference.\nDid you mean &{}?", quote!(captured.ty)),
+                        ));
                     } else {
-                        return Err("Invalid argument for 'resolve' method: only executor or context are allowed".into());
+                        let (tokens, ty) = f(captured, arg_ident, is_mut)?;
+                        resolve_parts.push(tokens);
+                        additional_arguments.push(ty);
                     }
                 }
             }
         }
 
-        Ok(resolve_parts)
+        Ok((resolve_parts, additional_arguments))
     }
 
     pub fn parse(attr_tokens: TokenStream, body: TokenStream) -> syn::Result<ImplBlock> {
@@ -164,7 +175,10 @@ impl ImplBlock {
         let type_ident = if let Some(ident) = util::name_of_type(&*_impl.self_ty) {
             ident
         } else {
-            panic!("Could not determine a name for the impl type");
+            return Err(syn::Error::new(
+                _impl.self_ty.span(),
+                "could not determine a name for the impl type",
+            ));
         };
 
         let target_type = _impl.self_ty.clone();
@@ -182,7 +196,10 @@ impl ImplBlock {
                     methods.push(method);
                 }
                 _ => {
-                    panic!("Invalid item: only type declarations and methods are allowed");
+                    return Err(syn::Error::new(
+                        item.span(),
+                        "only type declarations and methods are allowed",
+                    ));
                 }
             }
         }

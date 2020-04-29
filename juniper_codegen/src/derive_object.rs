@@ -4,7 +4,7 @@ use crate::{
 };
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, spanned::Spanned, Data, Fields};
+use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
 pub fn build_derive_object(
     ast: syn::DeriveInput,
@@ -15,14 +15,9 @@ pub fn build_derive_object(
     let struct_fields = match ast.data {
         Data::Struct(data) => match data.fields {
             Fields::Named(fields) => fields.named,
-            _ => return Err(syn::Error::new(ast_span, "only named fields are allowed")),
+            _ => return Err(error.custom_error(ast_span, "only named fields are allowed")),
         },
-        _ => {
-            return Err(syn::Error::new(
-                ast.span(),
-                "can only be applied to structs",
-            ))
-        }
+        _ => return Err(error.custom_error(ast.span(), "can only be applied to structs")),
     };
 
     // Parse attributes.
@@ -32,7 +27,7 @@ pub fn build_derive_object(
     let name = attrs
         .name
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| ident.unraw().to_string());
 
     let fields = struct_fields
         .into_iter()
@@ -52,12 +47,36 @@ pub fn build_derive_object(
             if field_attrs.skip.is_some() {
                 None
             } else {
-                let field_name = field.ident.unwrap();
+                let field_name = &field.ident.unwrap();
                 let name = field_attrs
                     .name
                     .clone()
                     .map(SpanContainer::into_inner)
-                    .unwrap_or_else(|| util::to_camel_case(&field_name.to_string()));
+                    .unwrap_or_else(|| util::to_camel_case(&field_name.unraw().to_string()));
+
+                if name.starts_with("r#") {
+                    panic!(
+                        "{} {} {}",
+                        field_name.to_string(),
+                        field_name.unraw().to_string(),
+                        util::to_camel_case(&field_name.unraw().to_string())
+                    );
+                }
+
+                if name.starts_with("__") {
+                    error.no_double_underscore(if let Some(name) = field_attrs.name {
+                        name.span()
+                    } else {
+                        field_name.span()
+                    });
+                }
+
+                if let Some(default) = field_attrs.default {
+                    error.unsupported_attribute_within(
+                        default.span_ident(),
+                        UnsupportedAttribute::Default,
+                    );
+                }
 
                 let resolver_code = quote!(
                     &self . #field_name
@@ -70,6 +89,7 @@ pub fn build_derive_object(
                     description: field_attrs.description.map(SpanContainer::into_inner),
                     deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
                     resolver_code,
+                    default: None,
                     is_type_inferred: true,
                     is_async: false,
                     span,
