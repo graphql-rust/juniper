@@ -4,6 +4,7 @@ pub mod graphiql;
 pub mod playground;
 
 use serde::{
+    de,
     ser::{self, SerializeMap},
     Deserialize, Serialize,
 };
@@ -227,7 +228,23 @@ where
     /// A single operation request.
     Single(GraphQLRequest<S>),
     /// A batch operation request.
+    #[serde(deserialize_with = "deserialize_non_empty_vec")]
     Batch(Vec<GraphQLRequest<S>>),
+}
+
+fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: de::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    use de::Error as _;
+
+    let v = Vec::<T>::deserialize(deserializer)?;
+    if v.is_empty() {
+        Err(D::Error::invalid_length(0, &"a positive integer"))
+    } else {
+        Ok(v)
+    }
 }
 
 impl<S> GraphQLBatchRequest<S>
