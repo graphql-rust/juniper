@@ -384,6 +384,7 @@ impl ObjectAttributes {
 #[derive(Debug)]
 pub struct FieldAttributeArgument {
     pub name: syn::Ident,
+    pub rename: Option<SpanContainer<syn::LitStr>>,
     pub default: Option<syn::Expr>,
     pub description: Option<syn::LitStr>,
 }
@@ -394,6 +395,7 @@ impl parse::Parse for FieldAttributeArgument {
 
         let mut arg = Self {
             name,
+            rename: None,
             default: None,
             description: None,
         };
@@ -405,6 +407,10 @@ impl parse::Parse for FieldAttributeArgument {
             content.parse::<Token![=]>()?;
 
             match name.to_string().as_str() {
+                "name" => {
+                    let val: syn::LitStr = content.parse()?;
+                    arg.rename = Some(SpanContainer::new(name.span(), Some(val.span()), val));
+                }
                 "description" => {
                     arg.description = Some(content.parse()?);
                 }

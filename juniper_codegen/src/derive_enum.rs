@@ -73,7 +73,7 @@ pub fn impl_enum(
 
             if name.starts_with("__") {
                 error.no_double_underscore(if let Some(name) = field_attrs.name {
-                    name.span()
+                    name.span_ident()
                 } else {
                     field_name.span()
                 });
@@ -124,7 +124,7 @@ pub fn impl_enum(
 
     if name.starts_with("__") && !is_internal {
         error.no_double_underscore(if let Some(name) = attrs.name {
-            name.span()
+            name.span_ident()
         } else {
             ident.span()
         });

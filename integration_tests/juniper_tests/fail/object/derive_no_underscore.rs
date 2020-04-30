@@ -1,6 +1,7 @@
 #[derive(juniper::GraphQLObject)]
 struct Object {
-    __field: String,
+    #[graphql(name = "__test")]
+    test: String,
 }
 
 fn main() {}

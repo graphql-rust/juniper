@@ -87,8 +87,11 @@ fn create(
                 _impl.parse_method(&method, true, |captured, arg_ident, is_mut: bool| {
                     let arg_name = arg_ident.unraw().to_string();
                     let ty = &captured.ty;
-                    // TODO: respect graphql attribute overwrite.
-                    let final_name = util::to_camel_case(&arg_name);
+
+                    let final_name = attrs
+                        .argument(&arg_name)
+                        .and_then(|attrs| attrs.rename.clone().map(|ident| ident.value()))
+                        .unwrap_or_else(|| util::to_camel_case(&arg_name));
 
                     let expect_text = format!(
                         "Internal error: missing argument {} - validation must have failed",
@@ -97,9 +100,16 @@ fn create(
                     let mut_modifier = if is_mut { quote!(mut) } else { quote!() };
 
                     if final_name.starts_with("__") {
-                        // TODO: if name is set by graphql attribute,
-                        // mark the attribute rather than the identifier
-                        error.no_double_underscore(arg_name.span());
+                        error.no_double_underscore(
+                            if let Some(name) = attrs
+                                .argument(&arg_name)
+                                .and_then(|attrs| attrs.rename.as_ref())
+                            {
+                                name.span_ident()
+                            } else {
+                                arg_ident.span()
+                            },
+                        );
                     }
 
                     let resolver = quote!(
@@ -144,7 +154,7 @@ fn create(
 
             if name.starts_with("__") {
                 error.no_double_underscore(if let Some(name) = attrs.name {
-                    name.span()
+                    name.span_ident()
                 } else {
                     ident.span()
                 });
@@ -186,7 +196,7 @@ fn create(
 
     if name.starts_with("__") && !is_internal {
         error.no_double_underscore(if let Some(name) = _impl.attrs.name {
-            name.span()
+            name.span_ident()
         } else {
             _impl.type_ident.span()
         });

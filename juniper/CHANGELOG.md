@@ -60,7 +60,12 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 - Putting a scalar type into a string is not allowed anymore, e..g,
   `#[graphql(scalar = "DefaultScalarValue")]`. Only
   `#[derive(GraphQLInputObject)]` supported this syntax. The
-  refactoring of GraphQLInputObject allowed to drop the support.
+  refactoring of GraphQLInputObject allowed to drop the support
+  (see [#631](https://github.com/graphql-rust/juniper/pull/631)).
+
+- Support for renaming arguments within an GraphQL object
+  `#[graphql(arguments(argA(name = "test")))]`
+  (see [#631](https://github.com/graphql-rust/juniper/pull/631))
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 

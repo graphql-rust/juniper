@@ -56,18 +56,9 @@ pub fn build_derive_object(
                 .map(SpanContainer::into_inner)
                 .unwrap_or_else(|| util::to_camel_case(&field_name.unraw().to_string()));
 
-            if name.starts_with("r#") {
-                panic!(
-                    "{} {} {}",
-                    field_name.to_string(),
-                    field_name.unraw().to_string(),
-                    util::to_camel_case(&field_name.unraw().to_string())
-                );
-            }
-
             if name.starts_with("__") {
                 error.no_double_underscore(if let Some(name) = field_attrs.name {
-                    name.span()
+                    name.span_ident()
                 } else {
                     field_name.span()
                 });
@@ -116,7 +107,7 @@ pub fn build_derive_object(
 
     if name.starts_with("__") && !is_internal {
         error.no_double_underscore(if let Some(name) = attrs.name {
-            name.span()
+            name.span_ident()
         } else {
             ident.span()
         });

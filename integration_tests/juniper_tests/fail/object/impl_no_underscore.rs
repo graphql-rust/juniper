@@ -2,7 +2,8 @@ struct Object {}
 
 #[juniper::graphql_object]
 impl Object {
-    fn __test(&self) -> String {
+    #[graphql(name = "__test")]
+    fn test(&self) -> String {
         String::new()
     }
 }
