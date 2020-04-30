@@ -1,5 +1,5 @@
 [package]
-name = "juniper_tests"
+name = "juniper_codegen_tests"
 version = "0.1.0"
 publish = false
 edition = "2018"
@@ -10,5 +10,5 @@ futures = "0.3.1"
 
 [dev-dependencies]
 serde_json = { version = "1" }
-fnv = "1.0.3"
 tokio = { version = "0.2", features = ["rt-core", "time", "macros"] }
+trybuild = "1.0.25"

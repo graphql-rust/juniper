@@ -1,0 +1,29 @@
+[tasks.release]
+disabled = true
+[tasks.release-some]
+disabled = true
+[tasks.release-local-test]
+disabled = true
+[tasks.release-some-local-test]
+disabled = true
+[tasks.release-dry-run]
+disabled = true
+[tasks.release-some-dry-run]
+disabled = true
+
+[tasks.test]
+condition = { channels = ["nightly"] }
+[tasks.test-custom]
+condition = { channels = ["nightly"] }
+[tasks.test-flow]
+condition = { channels = ["nightly"] }
+[tasks.test-multi-flow-phase]
+condition = { channels = ["nightly"] }
+[tasks.test-thread-safe]
+condition = { channels = ["nightly"] }
+[tasks.test-verbose]
+condition = { channels = ["nightly"] }
+[tasks.test-with-args]
+condition = { channels = ["nightly"] }
+[tasks.ci-coverage-flow]
+condition = { channels = ["nightly"] }
