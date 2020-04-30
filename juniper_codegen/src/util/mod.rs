@@ -1848,7 +1848,20 @@ impl GraphQLTypeDefiniton {
 
         let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-        let body = quote!(
+        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
+
+        where_async
+            .predicates
+            .push(parse_quote!( #scalar: Send + Sync ));
+        where_async.predicates.push(parse_quote!(Self: Send + Sync));
+
+        let async_type = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
+                #where_async
+            {}
+        );
+
+        let mut body = quote!(
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
             {
@@ -1901,6 +1914,10 @@ impl GraphQLTypeDefiniton {
                 }
             }
         );
+
+        if !self.no_async {
+            body.extend(async_type);
+        }
 
         body
     }
