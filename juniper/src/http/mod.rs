@@ -217,7 +217,7 @@ where
     }
 }
 
-/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests
+/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests.
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
@@ -227,7 +227,10 @@ where
 {
     /// A single operation request.
     Single(GraphQLRequest<S>),
+
     /// A batch operation request.
+    ///
+    /// Empty batch is considered as invalid value, so cannot be deserialized.
     #[serde(deserialize_with = "deserialize_non_empty_vec")]
     Batch(Vec<GraphQLRequest<S>>),
 }
@@ -390,6 +393,9 @@ pub mod tests {
         println!("  - test_batched_post");
         test_batched_post(integration);
 
+        println!("  - test_empty_batched_post");
+        test_empty_batched_post(integration);
+
         println!("  - test_invalid_json");
         test_invalid_json(integration);
 
@@ -514,6 +520,11 @@ pub mod tests {
             )
             .expect("Invalid JSON constant in test")
         );
+    }
+
+    fn test_empty_batched_post<T: HTTPIntegration>(integration: &T) {
+        let response = integration.post("/", "[]");
+        assert_eq!(response.status_code, 400);
     }
 
     fn test_invalid_json<T: HTTPIntegration>(integration: &T) {
