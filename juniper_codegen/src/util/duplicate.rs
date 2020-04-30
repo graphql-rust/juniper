@@ -37,7 +37,7 @@ impl<T> Duplicate<T> {
             })
             .collect::<Vec<_>>();
 
-        if duplicates.len() != 0 {
+        if !duplicates.is_empty() {
             Some(duplicates)
         } else {
             None

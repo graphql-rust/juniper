@@ -103,6 +103,7 @@ pub fn impl_union(
     let stmts = &method.block.stmts;
     let body_raw = quote!( #( #stmts )* );
     let body = syn::parse::<ResolveBody>(body_raw.into())?;
+
     let meta_types = body.variants.iter().map(|var| {
         let var_ty = &var.ty;
 
@@ -117,7 +118,7 @@ pub fn impl_union(
 
         quote! {
             if ({#resolve} as std::option::Option<&#var_ty>).is_some() {
-                return <#var_ty as #crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string();
+                return <#var_ty as #crate_name::marker::GraphQLObjectType<#scalar>>::name(&()).unwrap().to_string();
             }
         }
     });

@@ -15,7 +15,7 @@ pub fn build_object(
     is_internal: bool,
     error: GraphQLScope,
 ) -> TokenStream {
-    let definition = match create(args, body, error) {
+    let definition = match create(args, body, is_internal, error) {
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
@@ -31,7 +31,7 @@ pub fn build_subscription(
     is_internal: bool,
     error: GraphQLScope,
 ) -> TokenStream {
-    let definition = match create(args, body, error) {
+    let definition = match create(args, body, is_internal, error) {
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
@@ -45,6 +45,7 @@ pub fn build_subscription(
 fn create(
     args: TokenStream,
     body: TokenStream,
+    is_internal: bool,
     error: GraphQLScope,
 ) -> syn::Result<util::GraphQLTypeDefiniton> {
     let body_span = body.span();
@@ -181,6 +182,18 @@ fn create(
     match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
         Some(duplicates) => error.duplicate(duplicates.iter()),
         None => {}
+    }
+
+    if name.starts_with("__") && !is_internal {
+        error.no_double_underscore(if let Some(name) = _impl.attrs.name {
+            name.span()
+        } else {
+            _impl.type_ident.span()
+        });
+    }
+
+    if fields.is_empty() {
+        error.not_empty(body_span);
     }
 
     // Early abort after GraphQL properties

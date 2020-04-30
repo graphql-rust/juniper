@@ -945,6 +945,9 @@ impl GraphQLTypeDefiniton {
         };
 
         let output = quote!(
+            impl#impl_generics #juniper_crate_name::marker::GraphQLObjectType<#scalar> for #ty #type_generics_tokens #where_clause
+            { }
+
         impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
             #where_clause
         {
@@ -1343,7 +1346,7 @@ impl GraphQLTypeDefiniton {
             let var_ty = &field._type;
 
             quote! {
-                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
+                if type_name == (<#var_ty as #juniper_crate_name::marker::GraphQLObjectType<#scalar>>::name(&())).unwrap() {
                     return #juniper_crate_name::IntoResolvable::into(
                         { #expr },
                         executor.context()

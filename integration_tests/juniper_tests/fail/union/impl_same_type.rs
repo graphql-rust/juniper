@@ -1,17 +1,22 @@
+#[derive(juniper::GraphQLObject)]
+pub struct Test {
+    test: String,
+}
+
 enum Character {
-    A(std::string::String),
-    B(String),
+    A(Test),
+    B(Test),
 }
 
 #[juniper::graphql_union]
 impl Character {
     fn resolve(&self) {
         match self {
-            String => match *self {
+            Test => match *self {
                 Character::A(ref h) => Some(h),
                 _ => None,
             },
-            String => match *self {
+            Test => match *self {
                 Character::B(ref h) => Some(h),
                 _ => None,
             },

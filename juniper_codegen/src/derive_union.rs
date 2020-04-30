@@ -11,10 +11,10 @@ pub fn build_derive_union(
     is_internal: bool,
     error: GraphQLScope,
 ) -> syn::Result<TokenStream> {
-    let span = ast.span();
+    let ast_span = ast.span();
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => return Err(error.custom_error(ast.span(), "can only be applied to enums")),
+        _ => return Err(error.custom_error(ast_span, "can only be applied to enums")),
     };
 
     // Parse attributes.
@@ -23,6 +23,7 @@ pub fn build_derive_union(
     let ident = &ast.ident;
     let name = attrs
         .name
+        .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| ident.unraw().to_string());
 
@@ -43,81 +44,81 @@ pub fn build_derive_union(
 
             if let Some(ident) = field_attrs.skip {
                 error.unsupported_attribute_within(ident.span(), UnsupportedAttribute::Skip);
-                None
-            } else {
-                let variant_name = field.ident;
-                let name = field_attrs
-                    .name
-                    .clone()
-                    .map(SpanContainer::into_inner)
-                    .unwrap_or_else(|| util::to_camel_case(&variant_name.unraw().to_string()));
-
-                let resolver_code = quote!(
-                    #ident :: #variant_name
-                );
-
-                let _type = match field.fields {
-                    Fields::Unnamed(inner) => {
-                        let mut iter = inner.unnamed.iter();
-                        let first = match iter.next() {
-                            Some(val) => val,
-                            None => unreachable!(),
-                        };
-
-                        if iter.next().is_some() {
-                            error.custom(
-                                inner.span(),
-                                "all members must be unnamed with a single element e.g. Some(T)",
-                            );
-                        }
-
-                        first.ty.clone()
-                    }
-                    _ => {
-                        error.custom(
-                            variant_name.span(),
-                            "only unnamed fields are allowed, e.g., Some(T)",
-                        );
-
-                        return None;
-                    }
-                };
-
-                if let Some(description) = field_attrs.description {
-                    error.unsupported_attribute_within(
-                        description.span_ident(),
-                        UnsupportedAttribute::Description,
-                    );
-                }
-
-                if let Some(default) = field_attrs.default {
-                    error.unsupported_attribute_within(
-                        default.span_ident(),
-                        UnsupportedAttribute::Default,
-                    );
-                }
-
-                if name.starts_with("__") {
-                    error.no_double_underscore(if let Some(name) = field_attrs.name {
-                        name.span()
-                    } else {
-                        variant_name.span()
-                    });
-                }
-
-                Some(util::GraphQLTypeDefinitionField {
-                    name,
-                    _type,
-                    args: Vec::new(),
-                    description: None,
-                    deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
-                    resolver_code,
-                    is_type_inferred: true,
-                    is_async: false,
-                    default: None,
-                    span,
-                })
+                return None;
             }
+
+            let variant_name = field.ident;
+            let name = field_attrs
+                .name
+                .clone()
+                .map(SpanContainer::into_inner)
+                .unwrap_or_else(|| util::to_camel_case(&variant_name.unraw().to_string()));
+
+            let resolver_code = quote!(
+                #ident :: #variant_name
+            );
+
+            let _type = match field.fields {
+                Fields::Unnamed(inner) => {
+                    let mut iter = inner.unnamed.iter();
+                    let first = match iter.next() {
+                        Some(val) => val,
+                        None => unreachable!(),
+                    };
+
+                    if iter.next().is_some() {
+                        error.custom(
+                            inner.span(),
+                            "all members must be unnamed with a single element e.g. Some(T)",
+                        );
+                    }
+
+                    first.ty.clone()
+                }
+                _ => {
+                    error.custom(
+                        variant_name.span(),
+                        "only unnamed fields with a single element are allowed, e.g., Some(T)",
+                    );
+
+                    return None;
+                }
+            };
+
+            if let Some(description) = field_attrs.description {
+                error.unsupported_attribute_within(
+                    description.span_ident(),
+                    UnsupportedAttribute::Description,
+                );
+            }
+
+            if let Some(default) = field_attrs.default {
+                error.unsupported_attribute_within(
+                    default.span_ident(),
+                    UnsupportedAttribute::Default,
+                );
+            }
+
+            if name.starts_with("__") {
+                error.no_double_underscore(if let Some(name) = field_attrs.name {
+                    name.span()
+                } else {
+                    variant_name.span()
+                });
+            }
+
+            Some(util::GraphQLTypeDefinitionField {
+                name,
+                _type,
+                args: Vec::new(),
+                description: None,
+                deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
+                resolver_code,
+                is_type_inferred: true,
+                is_async: false,
+                default: None,
+                span,
+            })
         })
         .collect::<Vec<_>>();
 
@@ -131,7 +132,15 @@ pub fn build_derive_union(
     }
 
     if fields.is_empty() {
-        error.not_empty(span);
+        error.not_empty(ast_span);
+    }
+
+    if name.starts_with("__") && !is_internal {
+        error.no_double_underscore(if let Some(name) = attrs.name {
+            name.span()
+        } else {
+            ident.span()
+        });
     }
 
     // NOTICE: This is not an optimal implementation. It is possible

@@ -5,5 +5,5 @@ error: GraphQL object does not allow fields with the same name
 5 | |     test2: String,
   | |_________________^
   |
-  = help: There is at least one other field with the same name `test` propably renamed with a #[graphql] attribute
+  = help: There is at least one other field with the same name `test`, possibly renamed via the #[graphql] attribute
   = note: https://spec.graphql.org/June2018/#sec-Objects

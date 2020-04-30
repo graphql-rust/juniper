@@ -19,7 +19,7 @@ pub fn impl_enum(
 
     let variants = match ast.data {
         Data::Enum(enum_data) => enum_data.variants,
-        _ => return Err(error.custom_error(ast_span, "may only be applied to enums")),
+        _ => return Err(error.custom_error(ast_span, "can only be applied to enums")),
     };
 
     // Parse attributes.
@@ -27,6 +27,7 @@ pub fn impl_enum(
     let ident = &ast.ident;
     let name = attrs
         .name
+        .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| ident.unraw().to_string());
 
@@ -45,50 +46,58 @@ pub fn impl_enum(
                 }
             };
 
+            let field_name = field.ident;
+            let name = field_attrs
+                .name
+                .clone()
+                .map(SpanContainer::into_inner)
+                .unwrap_or_else(|| util::to_upper_snake_case(&field_name.unraw().to_string()));
+
+            let resolver_code = quote!( #ident::#field_name );
+
+            let _type = match field.fields {
+                Fields::Unit => syn::parse_str(&field_name.to_string()).unwrap(),
+                _ => {
+                    error.custom(
+                        field.fields.span(),
+                        "all fields of the enum must be unnamed, e.g., None",
+                    );
+                    return None;
+                }
+            };
+
             if let Some(skip) = field_attrs.skip {
                 error.unsupported_attribute(skip.span(), UnsupportedAttribute::Skip);
                 return None;
-            } else {
-                let field_name = field.ident;
-                let name = field_attrs
-                    .name
-                    .clone()
-                    .map(SpanContainer::into_inner)
-                    .unwrap_or_else(|| util::to_upper_snake_case(&field_name.unraw().to_string()));
-
-                let resolver_code = quote!( #ident::#field_name );
-
-                let _type = match field.fields {
-                    Fields::Unit => syn::parse_str(&field_name.to_string()).unwrap(),
-                    _ => {
-                        error.custom(
-                            field.fields.span(),
-                            "all fields of the enum must be unnamed, e.g., None",
-                        );
-                        return None;
-                    }
-                };
-
-                if let Some(default) = field_attrs.default {
-                    error.unsupported_attribute_within(
-                        default.span_ident(),
-                        UnsupportedAttribute::Default,
-                    );
-                }
-
-                Some(util::GraphQLTypeDefinitionField {
-                    name,
-                    _type,
-                    args: Vec::new(),
-                    description: field_attrs.description.map(SpanContainer::into_inner),
-                    deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
-                    resolver_code,
-                    is_type_inferred: true,
-                    is_async: false,
-                    default: None,
-                    span,
-                })
             }
+
+            if name.starts_with("__") {
+                error.no_double_underscore(if let Some(name) = field_attrs.name {
+                    name.span()
+                } else {
+                    field_name.span()
+                });
+            }
+
+            if let Some(default) = field_attrs.default {
+                error.unsupported_attribute_within(
+                    default.span_ident(),
+                    UnsupportedAttribute::Default,
+                );
+            }
+
+            Some(util::GraphQLTypeDefinitionField {
+                name,
+                _type,
+                args: Vec::new(),
+                description: field_attrs.description.map(SpanContainer::into_inner),
+                deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
+                resolver_code,
+                is_type_inferred: true,
+                is_async: false,
+                default: None,
+                span,
+            })
         })
         .collect::<Vec<_>>();
 
@@ -111,6 +120,14 @@ pub fn impl_enum(
 
     if let Some(scalar) = attrs.scalar {
         error.unsupported_attribute(scalar.span_ident(), UnsupportedAttribute::Scalar);
+    }
+
+    if name.starts_with("__") && !is_internal {
+        error.no_double_underscore(if let Some(name) = attrs.name {
+            name.span()
+        } else {
+            ident.span()
+        });
     }
 
     proc_macro_error::abort_if_dirty();

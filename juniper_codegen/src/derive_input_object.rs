@@ -17,10 +17,10 @@ pub fn impl_input_object(
         Data::Struct(data) => match data.fields {
             Fields::Named(named) => named.named,
             _ => {
-                return Err(error.custom_error(ast_span, "may only be used on structs with fields"))
+                return Err(error.custom_error(ast_span, "all fields must be named, e.g., `test: String`"))
             }
         },
-        _ => return Err(error.custom_error(ast.span(), "may only be used on structs with fields")),
+        _ => return Err(error.custom_error(ast_span, "can only be used on structs with fields")),
     };
 
     // Parse attributes.
@@ -112,6 +112,20 @@ pub fn impl_input_object(
     if !attrs.interfaces.is_empty() {
         attrs.interfaces.iter().for_each(|elm| {
             error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
+        });
+    }
+
+    if let Some(duplicates) =
+        crate::util::duplicate::Duplicate::find_by_key(&fields, |field| field.name.as_str())
+    {
+        error.duplicate(duplicates.iter());
+    }
+
+    if name.starts_with("__") && !is_internal {
+        error.no_double_underscore(if let Some(name) = attrs.name {
+            name.span()
+        } else {
+            ident.span()
         });
     }
 

@@ -437,9 +437,9 @@ pub fn graphql_object(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 /// A proc macro for defining a GraphQL object.
-#[doc(hidden)]
 #[proc_macro_error]
 #[proc_macro_attribute]
+#[doc(hidden)]
 pub fn graphql_object_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
@@ -513,9 +513,9 @@ pub fn graphql_scalar(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 /// A proc macro for defining a GraphQL scalar.
-#[doc(hidden)]
 #[proc_macro_error]
 #[proc_macro_attribute]
+#[doc(hidden)]
 pub fn graphql_scalar_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
@@ -540,9 +540,9 @@ pub fn graphql_subscription(args: TokenStream, input: TokenStream) -> TokenStrea
     ))
 }
 
-#[doc(hidden)]
 #[proc_macro_error]
 #[proc_macro_attribute]
+#[doc(hidden)]
 pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
@@ -566,9 +566,9 @@ pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
     }
 }
 
-#[doc(hidden)]
 #[proc_macro_error]
 #[proc_macro_attribute]
+#[doc(hidden)]
 pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
     let attrs = proc_macro2::TokenStream::from(attrs);
     let body = proc_macro2::TokenStream::from(body);

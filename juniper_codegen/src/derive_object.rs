@@ -17,7 +17,7 @@ pub fn build_derive_object(
             Fields::Named(fields) => fields.named,
             _ => return Err(error.custom_error(ast_span, "only named fields are allowed")),
         },
-        _ => return Err(error.custom_error(ast.span(), "can only be applied to structs")),
+        _ => return Err(error.custom_error(ast_span, "can only be applied to structs")),
     };
 
     // Parse attributes.
@@ -26,6 +26,7 @@ pub fn build_derive_object(
     let ident = &ast.ident;
     let name = attrs
         .name
+        .clone()
         .map(SpanContainer::into_inner)
         .unwrap_or_else(|| ident.unraw().to_string());
 
@@ -45,56 +46,56 @@ pub fn build_derive_object(
             };
 
             if field_attrs.skip.is_some() {
-                None
-            } else {
-                let field_name = &field.ident.unwrap();
-                let name = field_attrs
-                    .name
-                    .clone()
-                    .map(SpanContainer::into_inner)
-                    .unwrap_or_else(|| util::to_camel_case(&field_name.unraw().to_string()));
-
-                if name.starts_with("r#") {
-                    panic!(
-                        "{} {} {}",
-                        field_name.to_string(),
-                        field_name.unraw().to_string(),
-                        util::to_camel_case(&field_name.unraw().to_string())
-                    );
-                }
-
-                if name.starts_with("__") {
-                    error.no_double_underscore(if let Some(name) = field_attrs.name {
-                        name.span()
-                    } else {
-                        field_name.span()
-                    });
-                }
-
-                if let Some(default) = field_attrs.default {
-                    error.unsupported_attribute_within(
-                        default.span_ident(),
-                        UnsupportedAttribute::Default,
-                    );
-                }
-
-                let resolver_code = quote!(
-                    &self . #field_name
-                );
-
-                Some(util::GraphQLTypeDefinitionField {
-                    name,
-                    _type: field.ty,
-                    args: Vec::new(),
-                    description: field_attrs.description.map(SpanContainer::into_inner),
-                    deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
-                    resolver_code,
-                    default: None,
-                    is_type_inferred: true,
-                    is_async: false,
-                    span,
-                })
+                return None;
             }
+
+            let field_name = &field.ident.unwrap();
+            let name = field_attrs
+                .name
+                .clone()
+                .map(SpanContainer::into_inner)
+                .unwrap_or_else(|| util::to_camel_case(&field_name.unraw().to_string()));
+
+            if name.starts_with("r#") {
+                panic!(
+                    "{} {} {}",
+                    field_name.to_string(),
+                    field_name.unraw().to_string(),
+                    util::to_camel_case(&field_name.unraw().to_string())
+                );
+            }
+
+            if name.starts_with("__") {
+                error.no_double_underscore(if let Some(name) = field_attrs.name {
+                    name.span()
+                } else {
+                    field_name.span()
+                });
+            }
+
+            if let Some(default) = field_attrs.default {
+                error.unsupported_attribute_within(
+                    default.span_ident(),
+                    UnsupportedAttribute::Default,
+                );
+            }
+
+            let resolver_code = quote!(
+                &self . #field_name
+            );
+
+            Some(util::GraphQLTypeDefinitionField {
+                name,
+                _type: field.ty,
+                args: Vec::new(),
+                description: field_attrs.description.map(SpanContainer::into_inner),
+                deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
+                resolver_code,
+                default: None,
+                is_type_inferred: true,
+                is_async: false,
+                span,
+            })
         })
         .collect::<Vec<_>>();
 
@@ -111,6 +112,18 @@ pub fn build_derive_object(
         crate::util::duplicate::Duplicate::find_by_key(&fields, |field| field.name.as_str())
     {
         error.duplicate(duplicates.iter());
+    }
+
+    if name.starts_with("__") && !is_internal {
+        error.no_double_underscore(if let Some(name) = attrs.name {
+            name.span()
+        } else {
+            ident.span()
+        });
+    }
+
+    if fields.is_empty() {
+        error.not_empty(ast_span);
     }
 
     // Early abort after GraphQL properties

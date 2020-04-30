@@ -119,7 +119,7 @@ impl GraphQLScope {
                                 self
                             ),
                         )
-                            .help(format!("There is at least one other field with the same name `{}` propably renamed with a #[graphql] attribute", dup.name))
+                            .help(format!("There is at least one other field with the same name `{}`, possibly renamed via the #[graphql] attribute", dup.name))
                             .note(self.specification_link())
                             .emit();
                     });
@@ -130,9 +130,9 @@ impl GraphQLScope {
         Diagnostic::spanned(
             field,
             Level::Error,
-            format!("{} requires to not start with two underscores `__`", self),
+            "All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.".to_string(),
         )
-        .note(self.specification_link())
-        .emit();
+            .note(format!("{}#sec-Schema", GRAPHQL_SPECIFICATION))
+            .emit();
     }
 }
