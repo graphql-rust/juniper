@@ -98,11 +98,15 @@ pub fn impl_union(
 
     let resolve_args = _impl.parse_resolve_method(method)?;
 
-    proc_macro_error::abort_if_dirty();
-
     let stmts = &method.block.stmts;
     let body_raw = quote!( #( #stmts )* );
     let body = syn::parse::<ResolveBody>(body_raw.into())?;
+
+    if body.variants.is_empty() {
+        error.not_empty(method.span())
+    }
+
+    proc_macro_error::abort_if_dirty();
 
     let meta_types = body.variants.iter().map(|var| {
         let var_ty = &var.ty;

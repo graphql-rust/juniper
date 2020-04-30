@@ -17,7 +17,9 @@ pub fn impl_input_object(
         Data::Struct(data) => match data.fields {
             Fields::Named(named) => named.named,
             _ => {
-                return Err(error.custom_error(ast_span, "all fields must be named, e.g., `test: String`"))
+                return Err(
+                    error.custom_error(ast_span, "all fields must be named, e.g., `test: String`")
+                )
             }
         },
         _ => return Err(error.custom_error(ast_span, "can only be used on structs with fields")),

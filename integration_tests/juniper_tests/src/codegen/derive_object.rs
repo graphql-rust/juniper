@@ -387,4 +387,3 @@ where
 
     f((type_info, fields));
 }
-

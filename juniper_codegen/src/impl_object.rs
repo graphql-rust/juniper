@@ -185,10 +185,6 @@ fn create(
     // Early abort after checking all fields
     proc_macro_error::abort_if_dirty();
 
-    if fields.is_empty() {
-        error.not_empty(body_span);
-    }
-
     match crate::util::duplicate::Duplicate::find_by_key(&fields, |field| &field.name) {
         Some(duplicates) => error.duplicate(duplicates.iter()),
         None => {}

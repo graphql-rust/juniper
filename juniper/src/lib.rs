@@ -179,9 +179,9 @@ pub use crate::{
     types::{
         async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
+        marker,
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
-        marker,
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
