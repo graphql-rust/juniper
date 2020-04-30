@@ -19,6 +19,24 @@ use juniper::{
     BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
     ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream,
 };
+/// Utilities for the implementation of subscriptions over WebSocket
+///
+/// This module provides some utilities for the implementation of Subscriptions over
+/// WebSocket, such as the [`GraphQLOverWebSocketMessage`] that contains the messages that
+/// could be sent by the server or client and a [`SubscriptionStateHandler`] trait that allows
+/// the user of the integration to handle some Subscription Life Cycle Events, its based on:
+///
+/// - [Subscriptions Transport over WS][SubscriptionsWsProtocol]
+/// - [GraphQL Subscriptions LifeCycle Events][GraphQLSubscriptionsLifeCycle]
+///
+/// [SubscriptionsWsProtocol]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+/// [GraphQLSubscriptionsLifeCycle]: https://www.apollographql.com/docs/graphql-subscriptions/lifecycle-events/
+/// [`GraphQLOverWebSocketMessage`]: GraphQLOverWebSocketMessage
+/// [`SubscriptionStateHandler`]: SubscriptionStateHandler
+#[cfg(feature = "ws-subscriptions")]
+pub mod ws_util;
+#[cfg(feature = "ws-subscriptions")]
+pub use ws_util::*;
 
 /// Simple [`SubscriptionCoordinator`] implementation:
 /// - contains the schema

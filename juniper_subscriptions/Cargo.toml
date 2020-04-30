@@ -8,10 +8,14 @@ documentation = "https://docs.rs/juniper_subscriptions"
 repository = "https://github.com/graphql-rust/juniper"
 edition = "2018"
 
+[features]
+ws-subscriptions = ["serde", "serde_json"]
 
 [dependencies]
-futures = "0.3.1"
+futures = "0.3"
 juniper = { version = "0.14.2", path = "../juniper", default-features = false }
+serde = { version = "1.0", optional = true, features = ["derive"] }
+serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"

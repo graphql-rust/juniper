@@ -55,8 +55,17 @@ use juniper::{
 };
 use serde::Deserialize;
 
-#[derive(Deserialize, Clone, PartialEq, Debug)]
+/// this is the `juniper_actix` subscriptions handler implementation
+/// does not fully support the GraphQL over WS[1] specification.
+///
+/// *Note: this implementation is in an pre-alpha state.*
+///
+/// [1]: https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+#[cfg(feature = "subscriptions")]
+pub mod subscriptions;
+
 #[serde(deny_unknown_fields)]
+#[derive(Deserialize, Clone, PartialEq, Debug)]
 struct GetGraphQLRequest {
     query: String,
     #[serde(rename = "operationName")]
@@ -181,7 +190,8 @@ where
     Ok(response.content_type("application/json").body(gql_response))
 }
 
-/// Create a handler that replies with an HTML page containing GraphiQL. This does not handle routing, so you can mount it on any endpoint
+/// Create a handler that replies with an HTML page containing GraphiQL. This does not handle
+/// routing, so you can mount it on any endpoint
 ///
 /// For example:
 ///
@@ -193,7 +203,8 @@ where
 /// # use actix_web::{web, App};
 ///
 /// let app = App::new()
-///          .route("/", web::get().to(|| graphiql_handler("/graphql", Some("/graphql/subscriptions"))));
+///          .route("/", web::get().to(||
+/// graphiql_handler("/graphql", Some("/graphql/subscriptions"))));
 /// ```
 #[allow(dead_code)]
 pub async fn graphiql_handler(
@@ -206,7 +217,8 @@ pub async fn graphiql_handler(
         .body(html))
 }
 
-/// Create a handler that replies with an HTML page containing GraphQL Playground. This does not handle routing, so you cant mount it on any endpoint.
+/// Create a handler that replies with an HTML page containing GraphQL Playground. This does not
+/// handle routing, so you cant mount it on any endpoint.
 pub async fn playground_handler(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&'static str>,
