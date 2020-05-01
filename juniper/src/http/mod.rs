@@ -4,10 +4,10 @@ pub mod graphiql;
 pub mod playground;
 
 use serde::{
-    de::Deserialize,
-    ser::{self, Serialize, SerializeMap},
+    de,
+    ser::{self, SerializeMap},
+    Deserialize, Serialize,
 };
-use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     ast::InputValue,
@@ -217,8 +217,8 @@ where
     }
 }
 
-/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests
-#[derive(Debug, serde_derive::Deserialize, PartialEq)]
+/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests.
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 #[serde(bound = "InputValue<S>: Deserialize<'de>")]
 pub enum GraphQLBatchRequest<S = DefaultScalarValue>
@@ -227,8 +227,27 @@ where
 {
     /// A single operation request.
     Single(GraphQLRequest<S>),
+
     /// A batch operation request.
+    ///
+    /// Empty batch is considered as invalid value, so cannot be deserialized.
+    #[serde(deserialize_with = "deserialize_non_empty_vec")]
     Batch(Vec<GraphQLRequest<S>>),
+}
+
+fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: de::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    use de::Error as _;
+
+    let v = Vec::<T>::deserialize(deserializer)?;
+    if v.is_empty() {
+        Err(D::Error::invalid_length(0, &"a positive integer"))
+    } else {
+        Ok(v)
+    }
 }
 
 impl<S> GraphQLBatchRequest<S>
@@ -249,13 +268,12 @@ where
         SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
     {
         match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                GraphQLBatchResponse::Single(request.execute_sync(root_node, context))
+            Self::Single(ref req) => {
+                GraphQLBatchResponse::Single(req.execute_sync(root_node, context))
             }
-            GraphQLBatchRequest::Batch(ref requests) => GraphQLBatchResponse::Batch(
-                requests
-                    .iter()
-                    .map(|request| request.execute_sync(root_node, context))
+            Self::Batch(ref reqs) => GraphQLBatchResponse::Batch(
+                reqs.iter()
+                    .map(|req| req.execute_sync(root_node, context))
                     .collect(),
             ),
         }
@@ -281,18 +299,16 @@ where
         S: Send + Sync,
     {
         match *self {
-            GraphQLBatchRequest::Single(ref request) => {
-                let res = request.execute(root_node, context).await;
-                GraphQLBatchResponse::Single(res)
+            Self::Single(ref req) => {
+                let resp = req.execute(root_node, context).await;
+                GraphQLBatchResponse::Single(resp)
             }
-            GraphQLBatchRequest::Batch(ref requests) => {
-                let futures = requests
-                    .iter()
-                    .map(|request| request.execute(root_node, context))
-                    .collect::<Vec<_>>();
-                let responses = futures::future::join_all(futures).await;
-
-                GraphQLBatchResponse::Batch(responses)
+            Self::Batch(ref reqs) => {
+                let resps = futures::future::join_all(
+                    reqs.iter().map(|req| req.execute(root_node, context)),
+                )
+                .await;
+                GraphQLBatchResponse::Batch(resps)
             }
         }
     }
@@ -300,10 +316,8 @@ where
     /// The operation names of the request.
     pub fn operation_names(&self) -> Vec<Option<&str>> {
         match self {
-            GraphQLBatchRequest::Single(req) => vec![req.operation_name()],
-            GraphQLBatchRequest::Batch(reqs) => {
-                reqs.iter().map(|req| req.operation_name()).collect()
-            }
+            Self::Single(req) => vec![req.operation_name()],
+            Self::Batch(reqs) => reqs.iter().map(|req| req.operation_name()).collect(),
         }
     }
 }
@@ -313,7 +327,7 @@ where
 /// This struct implements Serialize, so you can simply serialize this
 /// to JSON and send it over the wire. use the `is_ok` to determine
 /// wheter to send a 200 or 400 HTTP status code.
-#[derive(serde_derive::Serialize)]
+#[derive(Serialize)]
 #[serde(untagged)]
 pub enum GraphQLBatchResponse<'a, S = DefaultScalarValue>
 where
@@ -333,8 +347,8 @@ where
     /// you can use it to determine wheter to send a 200 or 400 HTTP status code.
     pub fn is_ok(&self) -> bool {
         match self {
-            GraphQLBatchResponse::Single(res) => res.is_ok(),
-            GraphQLBatchResponse::Batch(reses) => reses.iter().all(|res| res.is_ok()),
+            Self::Single(resp) => resp.is_ok(),
+            Self::Batch(resps) => resps.iter().all(GraphQLResponse::is_ok),
         }
     }
 }
@@ -378,6 +392,9 @@ pub mod tests {
 
         println!("  - test_batched_post");
         test_batched_post(integration);
+
+        println!("  - test_empty_batched_post");
+        test_empty_batched_post(integration);
 
         println!("  - test_invalid_json");
         test_invalid_json(integration);
@@ -503,6 +520,11 @@ pub mod tests {
             )
             .expect("Invalid JSON constant in test")
         );
+    }
+
+    fn test_empty_batched_post<T: HTTPIntegration>(integration: &T) {
+        let response = integration.post("/", "[]");
+        assert_eq!(response.status_code, 400);
     }
 
     fn test_invalid_json<T: HTTPIntegration>(integration: &T) {

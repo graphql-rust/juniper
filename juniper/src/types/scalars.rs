@@ -1,4 +1,4 @@
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
