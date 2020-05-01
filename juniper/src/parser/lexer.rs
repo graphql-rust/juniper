@@ -296,7 +296,11 @@ impl<'a> Lexer<'a> {
             len += 1;
         }
 
-        let escape = &self.source[start_idx..=end_idx];
+        // Make sure we are on a valid char boundary.
+        let escape = &self
+            .source
+            .get(start_idx..=end_idx)
+            .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnterminatedString))?;
 
         if len != 4 {
             return Err(Spanning::zero_width(
