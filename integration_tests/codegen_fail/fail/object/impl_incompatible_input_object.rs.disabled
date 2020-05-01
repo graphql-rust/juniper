@@ -1,3 +1,4 @@
+// FIXME: enable this if interfaces are supported
 #[derive(juniper::GraphQLInputObject)]
 #[graphql(scalar = juniper::DefaultScalarValue)]
 struct Obj {

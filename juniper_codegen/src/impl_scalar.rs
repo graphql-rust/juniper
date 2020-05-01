@@ -186,7 +186,7 @@ pub fn build_scalar(
 
     let impl_for_type = input.impl_for_type.ok_or(error.custom_error(
         body_span,
-        "Unable to find target for implementation target for `GraphQLScalar`",
+        "unable to find target for implementation target for `GraphQLScalar`",
     ))?;
     let custom_data_type = input
         .custom_data_type
@@ -196,25 +196,25 @@ pub fn build_scalar(
         .ok_or(error.custom_error(body_span, "unable to find body of `resolve` method"))?;
     let from_input_value_arg = input.from_input_value_arg.ok_or(error.custom_error(
         body_span,
-        "Unable to find argument for `from_input_value` method",
+        "unable to find argument for `from_input_value` method",
     ))?;
     let from_input_value_body = input.from_input_value_body.ok_or(error.custom_error(
         body_span,
-        "Unable to find body of `from_input_value` method",
+        "unable to find body of `from_input_value` method",
     ))?;
     let from_input_value_result = input.from_input_value_result.ok_or(error.custom_error(
         body_span,
-        "Unable to find return type of `from_input_value` method",
+        "unable to find return type of `from_input_value` method",
     ))?;
     let from_str_arg = input
         .from_str_arg
-        .ok_or(error.custom_error(body_span, "Unable to find argument for `from_str` method"))?;
+        .ok_or(error.custom_error(body_span, "unable to find argument for `from_str` method"))?;
     let from_str_body = input
         .from_str_body
-        .ok_or(error.custom_error(body_span, "Unable to find body of `from_str` method"))?;
+        .ok_or(error.custom_error(body_span, "unable to find body of `from_str` method"))?;
     let from_str_result = input
         .from_str_result
-        .ok_or(error.custom_error(body_span, "Unable to find return type of `from_str` method"))?;
+        .ok_or(error.custom_error(body_span, "unable to find return type of `from_str` method"))?;
 
     let name = attrs
         .name
@@ -273,6 +273,12 @@ pub fn build_scalar(
 
     let content = quote!(
         #_async
+
+        impl#generic_type_decl #crate_name::marker::IsInputType<#generic_type> for #impl_for_type
+            #generic_type_bound { }
+
+        impl#generic_type_decl #crate_name::marker::IsOutputType<#generic_type> for #impl_for_type
+            #generic_type_bound { }
 
         impl#generic_type_decl #crate_name::GraphQLType<#generic_type> for #impl_for_type
         #generic_type_bound

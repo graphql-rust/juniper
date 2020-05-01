@@ -950,7 +950,29 @@ impl GraphQLTypeDefiniton {
             )
         };
 
+        // FIXME: enable this if interfaces are supported
+        // let marks = self.fields.iter().map(|field| {
+        //     let field_ty = &field._type;
+
+        //     let field_marks = field.args.iter().map(|arg| {
+        //         let arg_ty = &arg._type;
+        //         quote!(<#arg_ty as #juniper_crate_name::marker::IsInputType<#scalar>>::mark();)
+        //     });
+
+        //     quote!(
+        //         #( #field_marks)*
+        //         <#field_ty as #juniper_crate_name::marker::IsOutputType<#scalar>>::mark();
+        //     )
+        // });
+
         let output = quote!(
+            impl#impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty #type_generics_tokens #where_clause {
+                fn mark() {
+                    // FIXME: enable this if interfaces are supported
+                    // #( #marks )*
+                }
+            }
+
             impl#impl_generics #juniper_crate_name::marker::GraphQLObjectType<#scalar> for #ty #type_generics_tokens #where_clause
             { }
 
@@ -1352,7 +1374,7 @@ impl GraphQLTypeDefiniton {
             let var_ty = &field._type;
 
             quote! {
-                if type_name == (<#var_ty as #juniper_crate_name::marker::GraphQLObjectType<#scalar>>::name(&())).unwrap() {
+                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
                     return #juniper_crate_name::IntoResolvable::into(
                         { #expr },
                         executor.context()
@@ -1449,8 +1471,21 @@ impl GraphQLTypeDefiniton {
             )
         });
 
+        let object_marks = self.fields.iter().map(|field| {
+            let _ty = &field._type;
+            quote!(
+                <#_ty as #juniper_crate_name::marker::GraphQLObjectType<#scalar>>::mark();
+            )
+        });
+
         let mut type_impl = quote! {
             #( #convesion_impls )*
+
+            impl #impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty #where_clause {
+                fn mark() {
+                    #( #object_marks )*
+                }
+            }
 
             impl #impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #where_clause
             {
@@ -1633,6 +1668,12 @@ impl GraphQLTypeDefiniton {
         );
 
         let mut body = quote!(
+            impl#impl_generics #juniper_crate_name::marker::IsInputType<#scalar> for #ty
+                #where_clause { }
+
+            impl#impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty
+                #where_clause { }
+
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty
                 #where_clause
             {
@@ -1861,7 +1902,21 @@ impl GraphQLTypeDefiniton {
             {}
         );
 
+        // FIXME: enable this if interfaces are supported
+        // let marks = self.fields.iter().map(|field| {
+        //     let _ty = &field._type;
+        //     quote!(<#_ty as #juniper_crate_name::marker::IsInputType<#scalar>>::mark();)
+        // });
+
         let mut body = quote!(
+            impl#impl_generics #juniper_crate_name::marker::IsInputType<#scalar> for #ty #type_generics_tokens
+                #where_clause {
+                    fn mark() {
+                        // FIXME: enable this if interfaces are supported
+                        // #( #marks )*
+                    }
+                }
+
             impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
                 #where_clause
             {

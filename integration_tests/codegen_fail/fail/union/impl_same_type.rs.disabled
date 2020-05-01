@@ -1,3 +1,8 @@
+// NOTICE: This can not be tested. Implementing Into<T> for each
+// variant is not possible since we did not created the
+// enum. Therefore, it is possible that the enum already has existing
+// Into<T> implementations.
+
 #[derive(juniper::GraphQLObject)]
 pub struct Test {
     test: String,

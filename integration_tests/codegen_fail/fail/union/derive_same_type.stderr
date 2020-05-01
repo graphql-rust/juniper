@@ -6,3 +6,5 @@ error[E0119]: conflicting implementations of trait `std::convert::From<std::stri
   |          |
   |          first implementation here
   |          conflicting implementation for `Character`
+  |
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -4,4 +4,5 @@ error[E0277]: the trait bound `Test: juniper::types::marker::GraphQLObjectType<_
 7 | #[derive(juniper::GraphQLUnion)]
   |          ^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::types::marker::GraphQLObjectType<__S>` is not implemented for `Test`
   |
-  = note: required by `juniper::types::marker::GraphQLObjectType::name`
+  = note: required by `juniper::types::marker::GraphQLObjectType::mark`
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

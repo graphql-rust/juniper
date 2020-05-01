@@ -4,4 +4,5 @@ error[E0277]: the trait bound `Test: juniper::types::marker::GraphQLObjectType<j
 12 | #[juniper::graphql_union]
    | ^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `juniper::types::marker::GraphQLObjectType<juniper::value::scalar::DefaultScalarValue>` is not implemented for `Test`
    |
-   = note: required by `juniper::types::marker::GraphQLObjectType::name`
+   = note: required by `juniper::types::marker::GraphQLObjectType::mark`
+   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)

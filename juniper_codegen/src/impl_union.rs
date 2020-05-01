@@ -122,7 +122,7 @@ pub fn impl_union(
 
         quote! {
             if ({#resolve} as std::option::Option<&#var_ty>).is_some() {
-                return <#var_ty as #crate_name::marker::GraphQLObjectType<#scalar>>::name(&()).unwrap().to_string();
+                return <#var_ty as #crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string();
             }
         }
     });
@@ -153,7 +153,20 @@ pub fn impl_union(
 
     let ty = _impl.target_type;
 
+    let object_marks = body.variants.iter().map(|field| {
+        let _ty = &field.ty;
+        quote!(
+            <#_ty as #crate_name::marker::GraphQLObjectType<#scalar>>::mark();
+        )
+    });
+
     let output = quote! {
+        impl #impl_generics #crate_name::marker::IsOutputType<#scalar> for #ty #where_clause {
+            fn mark() {
+                #( #object_marks )*
+            }
+        }
+
         impl #impl_generics #crate_name::GraphQLType<#scalar> for #ty #where_clause
         {
             type Context = #context;
