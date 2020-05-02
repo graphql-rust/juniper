@@ -1,10 +1,10 @@
-use proc_macro::TokenStream;
-
-use proc_macro_error::MacroError;
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
+use proc_macro2::TokenStream;
 use quote::quote;
-use syn::spanned::Spanned;
-
-use crate::util;
+use syn::{ext::IdentExt, spanned::Spanned};
 
 struct ResolverVariant {
     pub ty: syn::Type,
@@ -36,7 +36,7 @@ impl syn::parse::Parse for ResolveBody {
         }
 
         if !input.is_empty() {
-            return Err(input.error("Unexpected input"));
+            return Err(input.error("unexpected input"));
         }
 
         Ok(Self { variants })
@@ -47,15 +47,18 @@ pub fn impl_union(
     is_internal: bool,
     attrs: TokenStream,
     body: TokenStream,
-) -> Result<TokenStream, MacroError> {
-    let _impl = util::parse_impl::ImplBlock::parse(attrs, body);
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
+    let body_span = body.span();
+    let _impl = util::parse_impl::ImplBlock::parse(attrs, body)?;
 
+    // FIXME: what is the purpose of this construct?
     // Validate trait target name, if present.
     if let Some((name, path)) = &_impl.target_trait {
         if !(name == "GraphQLUnion" || name == "juniper.GraphQLUnion") {
-            return Err(MacroError::new(
+            return Err(error.custom_error(
                 path.span(),
-                "Invalid impl target trait: expected 'GraphQLUnion'".to_string(),
+                "Invalid impl target trait: expected 'GraphQLUnion'",
             ));
         }
     }
@@ -65,7 +68,8 @@ pub fn impl_union(
         .attrs
         .name
         .clone()
-        .unwrap_or_else(|| type_ident.to_string());
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| type_ident.unraw().to_string());
     let crate_name = util::juniper_path(is_internal);
 
     let scalar = _impl
@@ -77,35 +81,32 @@ pub fn impl_union(
             quote! { #crate_name::DefaultScalarValue }
         });
 
-    if !_impl.has_resolve_method() {
-        return Err(MacroError::new(
-            _impl.target_type.span(),
-            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
-                .to_string(),
-        ));
-    }
-
     let method = _impl
         .methods
         .iter()
         .find(|&m| _impl.parse_resolve_method(&m).is_ok());
 
-    if _impl.methods.is_empty() || method.is_none() {
-        return Err(MacroError::new(
-            _impl.target_type.span(),
-            "Invalid impl body: expected one method with signature: fn resolve(&self) { ... }"
-                .to_string(),
-        ));
-    }
+    let method = match method {
+        Some(method) => method,
+        None => {
+            return Err(error.custom_error(
+                body_span,
+                "expected exactly one method with signature: fn resolve(&self) { ... }",
+            ))
+        }
+    };
 
-    let method = method.expect("checked above");
-    let resolve_args = _impl
-        .parse_resolve_method(method)
-        .expect("Invalid impl body: expected one method with signature: fn resolve(&self) { ... }");
+    let resolve_args = _impl.parse_resolve_method(method)?;
 
     let stmts = &method.block.stmts;
     let body_raw = quote!( #( #stmts )* );
     let body = syn::parse::<ResolveBody>(body_raw.into())?;
+
+    if body.variants.is_empty() {
+        error.not_empty(method.span())
+    }
+
+    proc_macro_error::abort_if_dirty();
 
     let meta_types = body.variants.iter().map(|var| {
         let var_ty = &var.ty;
@@ -152,7 +153,20 @@ pub fn impl_union(
 
     let ty = _impl.target_type;
 
+    let object_marks = body.variants.iter().map(|field| {
+        let _ty = &field.ty;
+        quote!(
+            <#_ty as #crate_name::marker::GraphQLObjectType<#scalar>>::mark();
+        )
+    });
+
     let output = quote! {
+        impl #impl_generics #crate_name::marker::IsOutputType<#scalar> for #ty #where_clause {
+            fn mark() {
+                #( #object_marks )*
+            }
+        }
+
         impl #impl_generics #crate_name::GraphQLType<#scalar> for #ty #where_clause
         {
             type Context = #context;
@@ -204,5 +218,6 @@ pub fn impl_union(
 
 
     };
+
     Ok(output.into())
 }

@@ -1,0 +1,10 @@
+error: GraphQL object does not allow fields with the same name
+  --> $DIR/impl_fields_unique.rs:9:5
+   |
+9  | /     fn test(&self) -> String {
+10 | |         String::new()
+11 | |     }
+   | |_____^
+   |
+   = help: There is at least one other field with the same name `test`, possibly renamed via the #[graphql] attribute
+   = note: https://spec.graphql.org/June2018/#sec-Objects

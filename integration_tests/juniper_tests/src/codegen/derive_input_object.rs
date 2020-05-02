@@ -9,7 +9,7 @@ use juniper::{
 #[graphql(
     name = "MyInput",
     description = "input descr",
-    scalar = "DefaultScalarValue"
+    scalar = DefaultScalarValue
 )]
 struct Input {
     regular_field: String,
@@ -86,7 +86,7 @@ impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
 }
 
 #[derive(GraphQLInputObject, Debug, PartialEq)]
-#[graphql(scalar = "DefaultScalarValue")]
+#[graphql(scalar = DefaultScalarValue)]
 struct WithLifetime<'a> {
     regular_field: &'a Fake,
 }

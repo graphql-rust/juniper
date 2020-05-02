@@ -1,0 +1,7 @@
+error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
+ --> $DIR/impl_no_argument_underscore.rs:5:29
+  |
+5 |     #[graphql(arguments(arg(name = "__arg")))]
+  |                             ^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Schema

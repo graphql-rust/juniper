@@ -1,50 +1,58 @@
+use crate::{
+    result::{GraphQLScope, UnsupportedAttribute},
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, Data, Fields};
+use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-use crate::util;
-
-pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStream {
+pub fn build_derive_union(
+    ast: syn::DeriveInput,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
+    let ast_span = ast.span();
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => {
-            panic!("#[derive(GraphQLUnion)] can only be applied to enums");
-        }
+        _ => return Err(error.custom_error(ast_span, "can only be applied to enums")),
     };
 
     // Parse attributes.
-    let attrs = match util::ObjectAttributes::from_attrs(&ast.attrs) {
-        Ok(a) => a,
-        Err(e) => {
-            panic!("Invalid #[graphql(...)] attribute for enum: {}", e);
-        }
-    };
-
-    if !attrs.interfaces.is_empty() {
-        panic!("#[derive(GraphQLUnion)] does not support interfaces");
-    }
+    let attrs = util::ObjectAttributes::from_attrs(&ast.attrs)?;
 
     let ident = &ast.ident;
-    let name = attrs.name.unwrap_or_else(|| ident.to_string());
+    let name = attrs
+        .name
+        .clone()
+        .map(SpanContainer::into_inner)
+        .unwrap_or_else(|| ident.unraw().to_string());
 
-    let fields = enum_fields.into_iter().filter_map(|field| {
-        let field_attrs = match util::FieldAttributes::from_attrs(
-            field.attrs,
-            util::FieldAttributeParseMode::Object,
-        ) {
-            Ok(attrs) => attrs,
-            Err(e) => panic!("Invalid #[graphql] attribute for field: \n{}", e),
-        };
+    let fields = enum_fields
+        .into_iter()
+        .filter_map(|field| {
+            let span = field.span();
+            let field_attrs = match util::FieldAttributes::from_attrs(
+                &field.attrs,
+                util::FieldAttributeParseMode::Object,
+            ) {
+                Ok(attrs) => attrs,
+                Err(e) => {
+                    proc_macro_error::emit_error!(e);
+                    return None;
+                }
+            };
 
+            if let Some(ident) = field_attrs.skip {
+                error.unsupported_attribute_within(ident.span(), UnsupportedAttribute::Skip);
+                return None;
+            }
 
-        if field_attrs.skip {
-            panic!("#[derive(GraphQLUnion)] does not support #[graphql(skip)] on fields");
-        } else {
             let variant_name = field.ident;
             let name = field_attrs
                 .name
                 .clone()
-                .unwrap_or_else(|| util::to_camel_case(&variant_name.to_string()));
+                .map(SpanContainer::into_inner)
+                .unwrap_or_else(|| util::to_camel_case(&variant_name.unraw().to_string()));
 
             let resolver_code = quote!(
                 #ident :: #variant_name
@@ -59,16 +67,44 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                     };
 
                     if iter.next().is_some() {
-                        panic!("#[derive(GraphQLUnion)] all members must be unnamed with a single element e.g. Some(T)");
+                        error.custom(
+                            inner.span(),
+                            "all members must be unnamed with a single element e.g. Some(T)",
+                        );
                     }
 
                     first.ty.clone()
                 }
-                _ => panic!("#[derive(GraphQLUnion)] all fields of the enum must be unnamed"),
+                _ => {
+                    error.custom(
+                        variant_name.span(),
+                        "only unnamed fields with a single element are allowed, e.g., Some(T)",
+                    );
+
+                    return None;
+                }
             };
 
-            if field_attrs.description.is_some() {
-                panic!("#[derive(GraphQLUnion)] does not allow documentation of fields");
+            if let Some(description) = field_attrs.description {
+                error.unsupported_attribute_within(
+                    description.span_ident(),
+                    UnsupportedAttribute::Description,
+                );
+            }
+
+            if let Some(default) = field_attrs.default {
+                error.unsupported_attribute_within(
+                    default.span_ident(),
+                    UnsupportedAttribute::Default,
+                );
+            }
+
+            if name.starts_with("__") {
+                error.no_double_underscore(if let Some(name) = field_attrs.name {
+                    name.span_ident()
+                } else {
+                    variant_name.span()
+                });
             }
 
             Some(util::GraphQLTypeDefinitionField {
@@ -76,15 +112,36 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
                 _type,
                 args: Vec::new(),
                 description: None,
-                deprecation: field_attrs.deprecation,
+                deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
                 resolver_code,
                 is_type_inferred: true,
                 is_async: false,
+                default: None,
+                span,
             })
-        }
-    });
+        })
+        .collect::<Vec<_>>();
 
-    let fields = fields.collect::<Vec<_>>();
+    // Early abort after checking all fields
+    proc_macro_error::abort_if_dirty();
+
+    if !attrs.interfaces.is_empty() {
+        attrs.interfaces.iter().for_each(|elm| {
+            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
+        });
+    }
+
+    if fields.is_empty() {
+        error.not_empty(ast_span);
+    }
+
+    if name.starts_with("__") && !is_internal {
+        error.no_double_underscore(if let Some(name) = attrs.name {
+            name.span_ident()
+        } else {
+            ident.span()
+        });
+    }
 
     // NOTICE: This is not an optimal implementation. It is possible
     // to bypass this check by using a full qualified path instead
@@ -100,23 +157,26 @@ pub fn build_derive_union(ast: syn::DeriveInput, is_internal: bool) -> TokenStre
     };
 
     if !all_variants_different {
-        panic!("#[derive(GraphQLUnion)] each variant must have a different type");
+        error.custom(ident.span(), "each variant must have a different type");
     }
+
+    // Early abort after GraphQL properties
+    proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
-        context: attrs.context,
-        scalar: attrs.scalar,
-        description: attrs.description,
+        context: attrs.context.map(SpanContainer::into_inner),
+        scalar: attrs.scalar.map(SpanContainer::into_inner),
+        description: attrs.description.map(SpanContainer::into_inner),
         fields,
         generics: ast.generics,
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
-        no_async: attrs.no_async,
+        no_async: attrs.no_async.is_some(),
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition.into_union_tokens(juniper_crate_name)
+    Ok(definition.into_union_tokens(juniper_crate_name))
 }

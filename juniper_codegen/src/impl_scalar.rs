@@ -1,8 +1,12 @@
 #![allow(clippy::collapsible_if)]
 
-use crate::util;
-use proc_macro::TokenStream;
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
+use proc_macro2::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned;
 
 #[derive(Debug)]
 struct ScalarCodegenInput {
@@ -169,46 +173,52 @@ impl syn::parse::Parse for ScalarCodegenInput {
 }
 
 /// Generate code for the juniper::graphql_scalar proc macro.
-pub fn build_scalar(attributes: TokenStream, body: TokenStream, is_internal: bool) -> TokenStream {
-    let attrs = match syn::parse::<util::FieldAttributes>(attributes) {
-        Ok(attrs) => attrs,
-        Err(e) => {
-            panic!("Invalid attributes:\n{}", e);
-        }
-    };
+pub fn build_scalar(
+    attributes: TokenStream,
+    body: TokenStream,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
+    let body_span = body.span();
 
-    let input = syn::parse_macro_input!(body as ScalarCodegenInput);
+    let attrs = syn::parse2::<util::FieldAttributes>(attributes)?;
+    let input = syn::parse2::<ScalarCodegenInput>(body)?;
 
-    let impl_for_type = input
-        .impl_for_type
-        .expect("Unable to find target for implementation target for `GraphQLScalar`");
+    let impl_for_type = input.impl_for_type.ok_or(error.custom_error(
+        body_span,
+        "unable to find target for implementation target for `GraphQLScalar`",
+    ))?;
     let custom_data_type = input
         .custom_data_type
-        .expect("Unable to find custom scalar data type");
+        .ok_or(error.custom_error(body_span, "unable to find custom scalar data type"))?;
     let resolve_body = input
         .resolve_body
-        .expect("Unable to find body of `resolve` method");
-    let from_input_value_arg = input
-        .from_input_value_arg
-        .expect("Unable to find argument for `from_input_value` method");
-    let from_input_value_body = input
-        .from_input_value_body
-        .expect("Unable to find body of `from_input_value` method");
-    let from_input_value_result = input
-        .from_input_value_result
-        .expect("Unable to find return type of `from_input_value` method");
+        .ok_or(error.custom_error(body_span, "unable to find body of `resolve` method"))?;
+    let from_input_value_arg = input.from_input_value_arg.ok_or(error.custom_error(
+        body_span,
+        "unable to find argument for `from_input_value` method",
+    ))?;
+    let from_input_value_body = input.from_input_value_body.ok_or(error.custom_error(
+        body_span,
+        "unable to find body of `from_input_value` method",
+    ))?;
+    let from_input_value_result = input.from_input_value_result.ok_or(error.custom_error(
+        body_span,
+        "unable to find return type of `from_input_value` method",
+    ))?;
     let from_str_arg = input
         .from_str_arg
-        .expect("Unable to find argument for `from_str` method");
+        .ok_or(error.custom_error(body_span, "unable to find argument for `from_str` method"))?;
     let from_str_body = input
         .from_str_body
-        .expect("Unable to find body of `from_str` method");
+        .ok_or(error.custom_error(body_span, "unable to find body of `from_str` method"))?;
     let from_str_result = input
         .from_str_result
-        .expect("Unable to find return type of `from_str` method");
+        .ok_or(error.custom_error(body_span, "unable to find return type of `from_str` method"))?;
 
     let name = attrs
         .name
+        .map(SpanContainer::into_inner)
         .unwrap_or_else(|| impl_for_type.ident.to_string());
     let crate_name = match is_internal {
         true => quote!(crate),
@@ -261,8 +271,14 @@ pub fn build_scalar(attributes: TokenStream, body: TokenStream, is_internal: boo
         }
     );
 
-    quote!(
+    let content = quote!(
         #_async
+
+        impl#generic_type_decl #crate_name::marker::IsInputType<#generic_type> for #impl_for_type
+            #generic_type_bound { }
+
+        impl#generic_type_decl #crate_name::marker::IsOutputType<#generic_type> for #impl_for_type
+            #generic_type_bound { }
 
         impl#generic_type_decl #crate_name::GraphQLType<#generic_type> for #impl_for_type
         #generic_type_bound
@@ -322,5 +338,7 @@ pub fn build_scalar(attributes: TokenStream, body: TokenStream, is_internal: boo
                 #from_str_body
             }
         }
-    ).into()
+    );
+
+    Ok(content)
 }
