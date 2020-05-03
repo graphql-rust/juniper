@@ -17,6 +17,7 @@ members = [
 ]
 exclude = [
   "docs/book/tests",
+  "examples/basic_subscriptions",
   "examples/warp_async",
   "examples/warp_subscriptions",
 ]
