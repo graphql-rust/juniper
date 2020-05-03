@@ -32,6 +32,10 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 - Better error messages for all proc macros (see
   [#631](https://github.com/graphql-rust/juniper/pull/631)
 
+- Procedural macro `graphql_object` supports deriving resolvers for fields in
+  struct (see [#553](https://github.com/graphql-rust/juniper/issues/553))
+  - requires derive macro `GraphQLObjectInfo`.
+
 ## Breaking Changes
 
 - `juniper::graphiql` has moved to `juniper::http::graphiql`
