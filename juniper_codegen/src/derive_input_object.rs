@@ -96,6 +96,7 @@ pub fn impl_input_object(
                 is_async: false,
                 default,
                 span,
+                guard: None,
             })
         })
         .collect::<Vec<_>>();

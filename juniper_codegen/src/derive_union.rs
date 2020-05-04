@@ -118,6 +118,7 @@ pub fn build_derive_union(
                 is_async: false,
                 default: None,
                 span,
+                guard: None,
             })
         })
         .collect::<Vec<_>>();

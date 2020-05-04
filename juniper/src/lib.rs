@@ -177,6 +177,7 @@ pub use crate::{
         model::{RootNode, SchemaType},
     },
     types::{
+        guards::GraphQLGuard,
         async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
         marker,

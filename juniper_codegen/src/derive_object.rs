@@ -86,6 +86,7 @@ pub fn build_derive_object(
                 is_type_inferred: true,
                 is_async: false,
                 span,
+                guard: None,
             })
         })
         .collect::<Vec<_>>();

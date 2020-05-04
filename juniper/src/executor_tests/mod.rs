@@ -1,6 +1,7 @@
 mod directives;
 mod enums;
 mod executor;
+mod guards;
 mod introspection;
 mod variables;
 

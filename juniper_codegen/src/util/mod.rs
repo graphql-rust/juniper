@@ -441,6 +441,7 @@ enum FieldAttribute {
     Skip(SpanContainer<syn::Ident>),
     Arguments(HashMap<String, FieldAttributeArgument>),
     Default(SpanContainer<Option<syn::Expr>>),
+    Guard(SpanContainer<syn::Expr>),
 }
 
 impl parse::Parse for FieldAttribute {
@@ -515,6 +516,13 @@ impl parse::Parse for FieldAttribute {
 
                 Ok(FieldAttribute::Default(default_expr))
             }
+            "guard" | "Guard" => {
+                input.parse::<syn::Token![=]>()?;
+                let lit = input.parse::<syn::LitStr>()?;
+                let expr = lit.parse::<syn::Expr>()?;
+                let expr = SpanContainer::new(ident.span(), Some(expr.span()), expr);
+                Ok(FieldAttribute::Guard(expr))
+            }
             _ => Err(syn::Error::new(ident.span(), "unknown attribute")),
         }
     }
@@ -531,6 +539,7 @@ pub struct FieldAttributes {
     pub arguments: HashMap<String, FieldAttributeArgument>,
     /// Only relevant for object input objects.
     pub default: Option<SpanContainer<Option<syn::Expr>>>,
+    pub guard: Option<SpanContainer<syn::Expr>>,
 }
 
 impl parse::Parse for FieldAttributes {
@@ -544,6 +553,7 @@ impl parse::Parse for FieldAttributes {
             skip: None,
             arguments: Default::default(),
             default: None,
+            guard: None,
         };
 
         for item in items {
@@ -565,6 +575,9 @@ impl parse::Parse for FieldAttributes {
                 }
                 FieldAttribute::Default(expr) => {
                     output.default = Some(expr);
+                }
+                FieldAttribute::Guard(expr) => {
+                    output.guard = Some(expr);
                 }
             }
         }
@@ -628,6 +641,7 @@ pub struct GraphQLTypeDefinitionField {
     pub is_async: bool,
     pub default: Option<TokenStream>,
     pub span: Span,
+    pub guard: Option<syn::Expr>,
 }
 
 impl syn::spanned::Spanned for GraphQLTypeDefinitionField {
@@ -846,15 +860,28 @@ impl GraphQLTypeDefiniton {
                     quote!(: #_type)
                 };
 
+                let guard_expr = match field.guard {
+                    Some(ref expr) => quote!({
+                        let x = &{ #expr };
+                        match #juniper_crate_name::GraphQLGuard::<#scalar, #context>::protected(x, executor.context()).await {
+                            Ok(ctx) => ctx,
+                            Err(err) => return Err(err),
+                        }
+                    }),
+                    None => quote!(executor.context()),
+                };
+
                 if field.is_async {
                     quote!(
                         #name => {
                             let f = async move {
+                                let ctx = #guard_expr;
+
                                 let res #_type = async move { #code }.await;
 
                                 let inner_res = #juniper_crate_name::IntoResolvable::into(
                                     res,
-                                    executor.context()
+                                    ctx,
                                 );
                                 match inner_res {
                                     Ok(Some((ctx, r))) => {
@@ -901,10 +928,12 @@ impl GraphQLTypeDefiniton {
 
                     quote!(
                         #name => {
+                            let ctx = #guard_expr;
+
                             let res #_type = (||{ #code })();
                             let res2 = #juniper_crate_name::IntoResolvable::into(
                                 res,
-                                executor.context()
+                                ctx,
                             );
                             #inner
                         },

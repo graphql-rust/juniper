@@ -97,6 +97,7 @@ pub fn impl_enum(
                 is_async: false,
                 default: None,
                 span,
+                guard: None,
             })
         })
         .collect::<Vec<_>>();

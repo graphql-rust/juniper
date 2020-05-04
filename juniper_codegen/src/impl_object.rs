@@ -178,6 +178,7 @@ fn create(
                 is_async,
                 default: None,
                 span,
+                guard: attrs.guard.map(SpanContainer::into_inner),
             })
         })
         .collect::<Vec<_>>();
