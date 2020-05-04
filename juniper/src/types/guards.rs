@@ -36,7 +36,10 @@ where
     ) -> crate::BoxFuture<Result<&'a Self::CtxOut, Self::Error>>;
 }
 
-pub trait GuardExt<S: crate::ScalarValue, CtxIn>: GraphQLGuard<S, CtxIn> + Sized {
+/// Additional functionality on-top of `GraphQLGuard`
+///
+/// Provides helper functions for guards.
+pub trait GraphQLGuardExt<S: crate::ScalarValue, CtxIn>: GraphQLGuard<S, CtxIn> + Sized {
     /// Chains the current guard with another compatible guard.
     ///
     /// First the current guard is executed. If the execution of the
@@ -55,7 +58,10 @@ pub trait GuardExt<S: crate::ScalarValue, CtxIn>: GraphQLGuard<S, CtxIn> + Sized
     }
 }
 
-impl<S: crate::ScalarValue, CtxIn, T: GraphQLGuard<S, CtxIn> + Sized> GuardExt<S, CtxIn> for T {}
+impl<S: crate::ScalarValue, CtxIn, T: GraphQLGuard<S, CtxIn> + Sized> GraphQLGuardExt<S, CtxIn>
+    for T
+{
+}
 
 pub struct AndThen<A, B> {
     first: A,

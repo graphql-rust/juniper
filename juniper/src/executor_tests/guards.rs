@@ -1,5 +1,4 @@
 //!
-use crate::types::guards::GuardExt;
 use crate::{EmptyMutation, EmptySubscription, FieldError, RootNode};
 use std::{collections::HashMap, sync::Arc};
 
