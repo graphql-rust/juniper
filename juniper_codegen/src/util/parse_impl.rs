@@ -18,6 +18,27 @@ pub struct ImplBlock {
     pub description: Option<String>,
 }
 
+struct ImplItemMethods(Vec<syn::ImplItemMethod>);
+
+impl syn::parse::Parse for ImplItemMethods {
+    fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
+        let mut vec= Vec::with_capacity(2);
+        while let Ok(method) = input.parse::<syn::ItemFn>() {
+            vec.push(syn::ImplItemMethod {
+                attrs: method.attrs,
+                vis: method.vis,
+                defaultness: None,
+                sig: method.sig,
+                block: *method.block,
+            });
+        }
+        while let Ok(method) = input.parse::<syn::ImplItemMethod>() {
+            vec.push(method);
+        }
+        Ok(ImplItemMethods(vec))
+    }
+}
+
 impl ImplBlock {
     /// Parse a `fn resolve()` method declaration found in most
     /// generators which rely on `impl` blocks.
@@ -190,17 +211,22 @@ impl ImplBlock {
 
         let mut methods = Vec::new();
 
+        let error = |item: syn::ImplItem| {
+            return Err(syn::Error::new(
+                item.span(),
+                "only type declarations and methods are allowed",
+            ));
+        };
+
         for item in _impl.items {
             match item {
-                syn::ImplItem::Method(method) => {
-                    methods.push(method);
+                syn::ImplItem::Macro(mac) => {
+                    for method in syn::parse2::<ImplItemMethods>(mac.mac.tokens)?.0 {
+                        methods.push(method);
+                    }
                 }
-                _ => {
-                    return Err(syn::Error::new(
-                        item.span(),
-                        "only type declarations and methods are allowed",
-                    ));
-                }
+                syn::ImplItem::Method(method) => methods.push(method),
+                _ => error(item)?
             }
         }
 

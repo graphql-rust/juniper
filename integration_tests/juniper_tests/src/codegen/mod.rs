@@ -6,4 +6,5 @@ mod derive_union;
 mod impl_object;
 mod impl_scalar;
 mod impl_union;
+mod macros;
 mod scalar_value_transparent;

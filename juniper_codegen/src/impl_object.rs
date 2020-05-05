@@ -197,7 +197,7 @@ fn create(
             _impl.type_ident.span()
         });
     }
-
+    
     if fields.is_empty() {
         error.not_empty(body_span);
     }
