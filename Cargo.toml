@@ -20,4 +20,5 @@ exclude = [
   "examples/basic_subscriptions",
   "examples/warp_async",
   "examples/warp_subscriptions",
+  "examples/warp_permission",
 ]
