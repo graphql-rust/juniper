@@ -367,15 +367,23 @@ pub mod tests {
         pub content_type: String,
     }
 
-    /// Normalized way to make requests to the http framework
-    /// integration we are testing.
-    pub trait HTTPIntegration {
+    /// Normalized way to make requests to the HTTP framework integration we are testing.
+    pub trait HttpIntegration {
+        /// Sends GET HTTP request to this integration with the provided `url` parameters string,
+        /// and returns response returned by this integration.
         fn get(&self, url: &str) -> TestResponse;
-        fn post(&self, url: &str, body: &str) -> TestResponse;
+
+        /// Sends POST HTTP request to this integration with the provided JSON-encoded `body`, and
+        /// returns response returned by this integration.
+        fn post_json(&self, url: &str, body: &str) -> TestResponse;
+
+        /// Sends POST HTTP request to this integration with the provided raw GraphQL query as
+        /// `body`, and returns response returned by this integration.
+        fn post_graphql(&self, url: &str, body: &str) -> TestResponse;
     }
 
     #[allow(missing_docs)]
-    pub fn run_http_test_suite<T: HTTPIntegration>(integration: &T) {
+    pub fn run_http_test_suite<T: HttpIntegration>(integration: &T) {
         println!("Running HTTP Test suite for integration");
 
         println!("  - test_simple_get");
@@ -404,6 +412,12 @@ pub mod tests {
 
         println!("  - test_duplicate_keys");
         test_duplicate_keys(integration);
+
+        println!("  - test_graphql_post");
+        test_graphql_post(integration);
+
+        println!("  - test_invalid_graphql_post");
+        test_invalid_graphql_post(integration);
     }
 
     fn unwrap_json_response(response: &TestResponse) -> Json {
@@ -416,7 +430,7 @@ pub mod tests {
         .expect("Could not parse JSON object")
     }
 
-    fn test_simple_get<T: HTTPIntegration>(integration: &T) {
+    fn test_simple_get<T: HttpIntegration>(integration: &T) {
         // {hero{name}}
         let response = integration.get("/?query=%7Bhero%7Bname%7D%7D");
 
@@ -430,7 +444,7 @@ pub mod tests {
         );
     }
 
-    fn test_encoded_get<T: HTTPIntegration>(integration: &T) {
+    fn test_encoded_get<T: HttpIntegration>(integration: &T) {
         // query { human(id: "1000") { id, name, appearsIn, homePlanet } }
         let response = integration.get(
             "/?query=query%20%7B%20human(id%3A%20%221000%22)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D");
@@ -460,7 +474,7 @@ pub mod tests {
         );
     }
 
-    fn test_get_with_variables<T: HTTPIntegration>(integration: &T) {
+    fn test_get_with_variables<T: HttpIntegration>(integration: &T) {
         // query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }
         // with variables = { "id": "1000" }
         let response = integration.get(
@@ -491,8 +505,8 @@ pub mod tests {
         );
     }
 
-    fn test_simple_post<T: HTTPIntegration>(integration: &T) {
-        let response = integration.post("/", r#"{"query": "{hero{name}}"}"#);
+    fn test_simple_post<T: HttpIntegration>(integration: &T) {
+        let response = integration.post_json("/", r#"{"query": "{hero{name}}"}"#);
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
@@ -500,12 +514,12 @@ pub mod tests {
         assert_eq!(
             unwrap_json_response(&response),
             serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
-                .expect("Invalid JSON constant in test")
+                .expect("Invalid JSON constant in test"),
         );
     }
 
-    fn test_batched_post<T: HTTPIntegration>(integration: &T) {
-        let response = integration.post(
+    fn test_batched_post<T: HttpIntegration>(integration: &T) {
+        let response = integration.post_json(
             "/",
             r#"[{"query": "{hero{name}}"}, {"query": "{hero{name}}"}]"#,
         );
@@ -516,42 +530,57 @@ pub mod tests {
         assert_eq!(
             unwrap_json_response(&response),
             serde_json::from_str::<Json>(
-                r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#
+                r#"[{"data": {"hero": {"name": "R2-D2"}}}, {"data": {"hero": {"name": "R2-D2"}}}]"#,
             )
-            .expect("Invalid JSON constant in test")
+            .expect("Invalid JSON constant in test"),
         );
     }
 
-    fn test_empty_batched_post<T: HTTPIntegration>(integration: &T) {
-        let response = integration.post("/", "[]");
+    fn test_empty_batched_post<T: HttpIntegration>(integration: &T) {
+        let response = integration.post_json("/", "[]");
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_invalid_json<T: HTTPIntegration>(integration: &T) {
+    fn test_invalid_json<T: HttpIntegration>(integration: &T) {
         let response = integration.get("/?query=blah");
         assert_eq!(response.status_code, 400);
-        let response = integration.post("/", r#"blah"#);
+        let response = integration.post_json("/", r#"blah"#);
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_invalid_field<T: HTTPIntegration>(integration: &T) {
+    fn test_invalid_field<T: HttpIntegration>(integration: &T) {
         // {hero{blah}}
         let response = integration.get("/?query=%7Bhero%7Bblah%7D%7D");
         assert_eq!(response.status_code, 400);
-        let response = integration.post("/", r#"{"query": "{hero{blah}}"}"#);
+        let response = integration.post_json("/", r#"{"query": "{hero{blah}}"}"#);
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_duplicate_keys<T: HTTPIntegration>(integration: &T) {
+    fn test_duplicate_keys<T: HttpIntegration>(integration: &T) {
         // {hero{name}}
         let response = integration.get("/?query=%7B%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%2C%20%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%7D");
         assert_eq!(response.status_code, 400);
-        let response = integration.post(
-            "/",
-            r#"
-            {"query": "{hero{name}}", "query": "{hero{name}}"}
-        "#,
-        );
+        let response =
+            integration.post_json("/", r#"{"query": "{hero{name}}", "query": "{hero{name}}"}"#);
         assert_eq!(response.status_code, 400);
+    }
+
+    fn test_graphql_post<T: HttpIntegration>(integration: &T) {
+        let resp = integration.post_graphql("/", r#"{hero{name}}"#);
+
+        assert_eq!(resp.status_code, 200);
+        assert_eq!(resp.content_type, "application/json");
+
+        assert_eq!(
+            unwrap_json_response(&resp),
+            serde_json::from_str::<Json>(r#"{"data": {"hero": {"name": "R2-D2"}}}"#)
+                .expect("Invalid JSON constant in test"),
+        );
+    }
+
+    fn test_invalid_graphql_post<T: HttpIntegration>(integration: &T) {
+        let resp = integration.post_graphql("/", r#"{hero{name}"#);
+
+        assert_eq!(resp.status_code, 400);
     }
 }

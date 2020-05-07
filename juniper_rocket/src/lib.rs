@@ -456,14 +456,23 @@ mod tests {
         client: Client,
     }
 
-    impl http_tests::HTTPIntegration for TestRocketIntegration {
+    impl http_tests::HttpIntegration for TestRocketIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             let req = &self.client.get(url);
             make_test_response(req)
         }
 
-        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
+        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
             let req = &self.client.post(url).header(ContentType::JSON).body(body);
+            make_test_response(req)
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let req = &self
+                .client
+                .post(url)
+                .header(ContentType::new("application", "graphql"))
+                .body(body);
             make_test_response(req)
         }
     }

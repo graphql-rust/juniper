@@ -223,7 +223,7 @@ mod tests {
     use actix_web::{dev::ServiceResponse, http, http::header::CONTENT_TYPE, test, App};
     use futures::StreamExt;
     use juniper::{
-        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
+        http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::{model::Database, schema::Query},
         EmptyMutation, EmptySubscription, RootNode,
     };
@@ -446,63 +446,54 @@ mod tests {
         assert!(result.is_err());
     }
 
-    pub struct TestActixWebIntegration {}
+    pub struct TestActixWebIntegration;
 
-    impl HTTPIntegration for TestActixWebIntegration {
-        fn get(&self, url: &str) -> TestResponse {
-            let url = url.to_string();
-            actix_rt::System::new("get_request").block_on(async move {
-                let schema: Schema = RootNode::new(
-                    Query,
-                    EmptyMutation::<Database>::new(),
-                    EmptySubscription::<Database>::new(),
-                );
-                let req = test::TestRequest::get()
-                    .header("content-type", "application/json")
-                    .uri(&url.clone())
-                    .to_request();
-
-                let mut app =
-                    test::init_service(App::new().data(schema).route("/", web::get().to(index)))
-                        .await;
-
-                let resp = test::call_service(&mut app, req).await;
-                let test_response = make_test_response(resp).await;
-                test_response
-            })
-        }
-
-        fn post(&self, url: &str, body: &str) -> TestResponse {
-            let url = url.to_string();
-            let body = body.to_string();
-            actix_rt::System::new("post_request").block_on(async move {
-                let schema: Schema = RootNode::new(
+    impl TestActixWebIntegration {
+        fn make_request(&self, req: test::TestRequest) -> TestResponse {
+            actix_rt::System::new("request").block_on(async move {
+                let schema = RootNode::new(
                     Query,
                     EmptyMutation::<Database>::new(),
                     EmptySubscription::<Database>::new(),
                 );
 
-                let req = test::TestRequest::post()
-                    .header("content-type", "application/json")
-                    .set_payload(body)
-                    .uri(&url.clone())
-                    .to_request();
-
                 let mut app =
-                    test::init_service(App::new().data(schema).route("/", web::post().to(index)))
-                        .await;
+                    test::init_service(App::new().data(schema).route("/", web::to(index))).await;
 
-                let resp = test::call_service(&mut app, req).await;
-                let test_response = make_test_response(resp).await;
-                test_response
+                let resp = test::call_service(&mut app, req.to_request()).await;
+                make_test_response(resp).await
             })
         }
     }
 
-    async fn make_test_response(mut response: ServiceResponse) -> TestResponse {
-        let body = take_response_body_string(&mut response).await;
-        let status_code = response.status().as_u16();
-        let content_type = response.headers().get(CONTENT_TYPE).unwrap();
+    impl HttpIntegration for TestActixWebIntegration {
+        fn get(&self, url: &str) -> TestResponse {
+            self.make_request(test::TestRequest::get().uri(url))
+        }
+
+        fn post_json(&self, url: &str, body: &str) -> TestResponse {
+            self.make_request(
+                test::TestRequest::post()
+                    .header("content-type", "application/json")
+                    .set_payload(body.to_string())
+                    .uri(url),
+            )
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
+            self.make_request(
+                test::TestRequest::post()
+                    .header("content-type", "application/graphql")
+                    .set_payload(body.to_string())
+                    .uri(url),
+            )
+        }
+    }
+
+    async fn make_test_response(mut resp: ServiceResponse) -> TestResponse {
+        let body = take_response_body_string(&mut resp).await;
+        let status_code = resp.status().as_u16();
+        let content_type = resp.headers().get(CONTENT_TYPE).unwrap();
         TestResponse {
             status_code: status_code as i32,
             body: Some(body),
@@ -512,6 +503,6 @@ mod tests {
 
     #[test]
     fn test_actix_web_integration() {
-        run_http_test_suite(&TestActixWebIntegration {});
+        run_http_test_suite(&TestActixWebIntegration);
     }
 }

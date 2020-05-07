@@ -388,7 +388,11 @@ impl From<GraphQLIronError> for IronError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use iron::{Handler, Headers, Url};
+    use iron::{
+        headers::ContentType,
+        mime::{Mime, SubLevel, TopLevel},
+        Handler, Headers, Url,
+    };
     use iron_test::{request, response};
     use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
@@ -411,7 +415,7 @@ mod tests {
             .path()
             .iter()
             .map(|x| (*x).to_string())
-            .collect::<Vec<String>>()
+            .collect::<Vec<_>>()
             .join("/");
         format!(
             "http://localhost:3000{}?{}",
@@ -422,21 +426,31 @@ mod tests {
 
     struct TestIronIntegration;
 
-    impl http_tests::HTTPIntegration for TestIronIntegration {
+    impl http_tests::HttpIntegration for TestIronIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            let result = request::get(&fixup_url(url), Headers::new(), &make_handler());
-            match result {
-                Ok(response) => make_test_response(response),
-                Err(e) => make_test_error_response(e),
-            }
+            request::get(&fixup_url(url), Headers::new(), &make_handler())
+                .map(make_test_response)
+                .unwrap_or_else(make_test_error_response)
         }
 
-        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let result = request::post(&fixup_url(url), Headers::new(), body, &make_handler());
-            match result {
-                Ok(response) => make_test_response(response),
-                Err(e) => make_test_error_response(e),
-            }
+        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let mut headers = Headers::new();
+            headers.set(ContentType::json());
+            request::post(&fixup_url(url), headers, body, &make_handler())
+                .map(make_test_response)
+                .unwrap_or_else(make_test_error_response)
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let mut headers = Headers::new();
+            headers.set(ContentType(Mime(
+                TopLevel::Application,
+                SubLevel::Ext("graphql".into()),
+                vec![],
+            )));
+            request::post(&fixup_url(url), headers, body, &make_handler())
+                .map(make_test_response)
+                .unwrap_or_else(make_test_error_response)
         }
     }
 

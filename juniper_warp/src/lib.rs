@@ -820,100 +820,113 @@ mod tests {
     }
 }
 
-//TODO: update warp tests
-//#[cfg(test)]
-//mod tests_http_harness {
-//    use super::*;
-//    use juniper::{
-//        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
-//        tests::{model::Database, schema::Query},
-//        EmptyMutation, EmptySubscription, RootNode,
-//    };
-//    use warp::{self, Filter};
-//
-//    type Schema =
-//        juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
-//
-//    fn warp_server() -> warp::filters::BoxedFilter<(http::Response<Vec<u8>>,)> {
-//        let schema: Schema = RootNode::new(
-//            Query,
-//            EmptyMutation::<Database>::new(),
-//            EmptySubscription::<Database>::new(),
-//        );
-//
-//        let state = warp::any().map(move || Database::new());
-//        let filter = warp::filters::path::end().and(make_graphql_filter(schema, state.boxed()));
-//
-//        filter.boxed()
-//    }
-//
-//    struct TestWarpIntegration {
-//        filter: warp::filters::BoxedFilter<(http::Response<Vec<u8>>,)>,
-//    }
-//
-//    // This can't be implemented with the From trait since TestResponse is not defined in this crate.
-//    fn test_response_from_http_response(response: http::Response<Vec<u8>>) -> TestResponse {
-//        TestResponse {
-//            status_code: response.status().as_u16() as i32,
-//            body: Some(String::from_utf8(response.body().to_owned()).unwrap()),
-//            content_type: response
-//                .headers()
-//                .get("content-type")
-//                .expect("missing content-type header in warp response")
-//                .to_str()
-//                .expect("invalid content-type string")
-//                .to_owned(),
-//        }
-//    }
-//
-//    impl HTTPIntegration for TestWarpIntegration {
-//        fn get(&self, url: &str) -> TestResponse {
-//            use percent_encoding::{percent_encode, DEFAULT_ENCODE_SET};
-//            let url: String = percent_encode(url.replace("/?", "").as_bytes(), DEFAULT_ENCODE_SET)
-//                .into_iter()
-//                .collect::<Vec<_>>()
-//                .join("");
-//
-//            let response = warp::test::request()
-//                .method("GET")
-//                .path(&format!("/?{}", url))
-//                .filter(&self.filter)
-//                .await
-//                .unwrap_or_else(|rejection| {
-//                    http::Response::builder()
-//                        .status(rejection.status())
-//                        .header("content-type", "application/json")
-//                        .body(Vec::new())
-//                        .unwrap()
-//                });
-//            test_response_from_http_response(response)
-//        }
-//
-//        fn post(&self, url: &str, body: &str) -> TestResponse {
-//            let response = warp::test::request()
-//                .method("POST")
-//                .header("content-type", "application/json")
-//                .path(url)
-//                .body(body)
-//                .filter(&self.filter)
-//                .await
-//                .unwrap_or_else(|rejection| {
-//                    http::Response::builder()
-//                        .status(rejection.status())
-//                        .header("content-type", "application/json")
-//                        .body(Vec::new())
-//                        .unwrap()
-//                });
-//            test_response_from_http_response(response)
-//        }
-//    }
-//
-//    #[test]
-//    fn test_warp_integration() {
-//        let integration = TestWarpIntegration {
-//            filter: warp_server(),
-//        };
-//
-//        run_http_test_suite(&integration);
-//    }
-//}
+#[cfg(test)]
+mod tests_http_harness {
+    use super::*;
+    use juniper::{
+        http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, EmptySubscription, RootNode,
+    };
+    use warp::{
+        self,
+        filters::{path, BoxedFilter},
+        Filter,
+    };
+
+    struct TestWarpIntegration {
+        filter: BoxedFilter<(http::Response<Vec<u8>>,)>,
+    }
+
+    impl TestWarpIntegration {
+        fn new() -> Self {
+            let schema = RootNode::new(
+                Query,
+                EmptyMutation::<Database>::new(),
+                EmptySubscription::<Database>::new(),
+            );
+
+            let state = warp::any().map(move || Database::new());
+            let filter = path::end().and(make_graphql_filter(schema, state.boxed()));
+
+            Self {
+                filter: filter.boxed(),
+            }
+        }
+
+        fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
+            make_test_response(futures::executor::block_on(async move {
+                req.filter(&self.filter).await.unwrap_or_else(|rejection| {
+                    let code = if rejection.is_not_found() {
+                        http::StatusCode::NOT_FOUND
+                    } else if let Some(body::BodyDeserializeError { .. }) = rejection.find() {
+                        http::StatusCode::BAD_REQUEST
+                    } else {
+                        http::StatusCode::INTERNAL_SERVER_ERROR
+                    };
+                    http::Response::builder()
+                        .status(code)
+                        .header("content-type", "application/json")
+                        .body(Vec::new())
+                        .unwrap()
+                })
+            }))
+        }
+    }
+
+    impl HttpIntegration for TestWarpIntegration {
+        fn get(&self, url: &str) -> TestResponse {
+            use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
+
+            let url: String = utf8_percent_encode(&url.replace("/?", ""), QUERY_ENCODE_SET)
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join("");
+
+            self.make_request(
+                warp::test::request()
+                    .method("GET")
+                    .path(&format!("/?{}", url)),
+            )
+        }
+
+        fn post_json(&self, url: &str, body: &str) -> TestResponse {
+            self.make_request(
+                warp::test::request()
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .path(url)
+                    .body(body),
+            )
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
+            self.make_request(
+                warp::test::request()
+                    .method("POST")
+                    .header("content-type", "application/graphql")
+                    .path(url)
+                    .body(body),
+            )
+        }
+    }
+
+    fn make_test_response(resp: http::Response<Vec<u8>>) -> TestResponse {
+        TestResponse {
+            status_code: resp.status().as_u16() as i32,
+            body: Some(String::from_utf8(resp.body().to_owned()).unwrap()),
+            content_type: resp
+                .headers()
+                .get("content-type")
+                .expect("missing content-type header in warp response")
+                .to_str()
+                .expect("invalid content-type string")
+                .to_owned(),
+        }
+    }
+
+    #[test]
+    fn test_warp_integration() {
+        run_http_test_suite(&TestWarpIntegration::new());
+    }
+}

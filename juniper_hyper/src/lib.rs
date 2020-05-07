@@ -321,17 +321,30 @@ mod tests {
 
     struct TestHyperIntegration;
 
-    impl http_tests::HTTPIntegration for TestHyperIntegration {
+    impl http_tests::HttpIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             let url = format!("http://127.0.0.1:3001/graphql{}", url);
             make_test_response(reqwest::get(&url).expect(&format!("failed GET {}", url)))
         }
 
-        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
+        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
             let url = format!("http://127.0.0.1:3001/graphql{}", url);
             let client = reqwest::Client::new();
             let res = client
                 .post(&url)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .body(body.to_string())
+                .send()
+                .expect(&format!("failed POST {}", url));
+            make_test_response(res)
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let url = format!("http://127.0.0.1:3001/graphql{}", url);
+            let client = reqwest::Client::new();
+            let res = client
+                .post(&url)
+                .header(reqwest::header::CONTENT_TYPE, "application/graphql")
                 .body(body.to_string())
                 .send()
                 .expect(&format!("failed POST {}", url));
