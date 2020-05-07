@@ -8,17 +8,17 @@ use hyper::{
     Body, Method, Request, Response, StatusCode,
 };
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest},
+    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
     GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
 
-pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
+pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    request: Request<Body>,
+    req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -30,31 +30,16 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
 {
-    match *request.method() {
-        Method::GET => {
-            let gql_req = parse_get_req(request);
-
-            match gql_req {
-                Ok(gql_req) => Ok(execute_request(root_node, context, gql_req).await),
-                Err(err) => Ok(render_error(err)),
-            }
-        }
-        Method::POST => {
-            let gql_req = parse_post_req(request.into_body()).await;
-
-            match gql_req {
-                Ok(gql_req) => Ok(execute_request(root_node, context, gql_req).await),
-                Err(err) => Ok(render_error(err)),
-            }
-        }
-        _ => Ok(new_response(StatusCode::METHOD_NOT_ALLOWED)),
-    }
+    Ok(match parse_req(req).await {
+        Ok(req) => execute_request_sync(root_node, context, req).await,
+        Err(resp) => resp,
+    })
 }
 
-pub async fn graphql_async<CtxT, QueryT, MutationT, SubscriptionT, S>(
+pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    request: Request<Body>,
+    req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
     S: ScalarValue + Send + Sync + 'static,
@@ -66,25 +51,31 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
 {
-    match *request.method() {
-        Method::GET => {
-            let gql_req = parse_get_req(request);
+    Ok(match parse_req(req).await {
+        Ok(req) => execute_request(root_node, context, req).await,
+        Err(resp) => resp,
+    })
+}
 
-            match gql_req {
-                Ok(gql_req) => Ok(execute_request_async(root_node, context, gql_req).await),
-                Err(err) => Ok(render_error(err)),
-            }
-        }
+async fn parse_req<S: ScalarValue>(
+    req: Request<Body>,
+) -> Result<GraphQLBatchRequest<S>, Response<Body>> {
+    match *req.method() {
+        Method::GET => parse_get_req(req),
         Method::POST => {
-            let gql_req = parse_post_req(request.into_body()).await;
-
-            match gql_req {
-                Ok(gql_req) => Ok(execute_request_async(root_node, context, gql_req).await),
-                Err(err) => Ok(render_error(err)),
+            let content_type = req
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .map(HeaderValue::to_str);
+            match content_type {
+                Some(Ok("application/json")) => parse_post_json_req(req.into_body()).await,
+                Some(Ok("application/graphql")) => parse_post_graphql_req(req.into_body()).await,
+                _ => return Err(new_response(StatusCode::BAD_REQUEST)),
             }
         }
-        _ => Ok(new_response(StatusCode::METHOD_NOT_ALLOWED)),
+        _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED)),
     }
+    .map_err(|e| render_error(e))
 }
 
 fn parse_get_req<S: ScalarValue>(
@@ -100,7 +91,7 @@ fn parse_get_req<S: ScalarValue>(
         })
 }
 
-async fn parse_post_req<S: ScalarValue>(
+async fn parse_post_json_req<S: ScalarValue>(
     body: Body,
 ) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
@@ -112,6 +103,21 @@ async fn parse_post_req<S: ScalarValue>(
 
     serde_json::from_str::<GraphQLBatchRequest<S>>(&input)
         .map_err(GraphQLRequestError::BodyJSONError)
+}
+
+async fn parse_post_graphql_req<S: ScalarValue>(
+    body: Body,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+    let chunk = hyper::body::to_bytes(body)
+        .await
+        .map_err(GraphQLRequestError::BodyHyper)?;
+
+    let query = String::from_utf8(chunk.iter().cloned().collect())
+        .map_err(GraphQLRequestError::BodyUtf8)?;
+
+    Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
+        query, None, None,
+    )))
 }
 
 pub async fn graphiql(
@@ -146,7 +152,7 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
+async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
@@ -177,7 +183,7 @@ where
     resp
 }
 
-async fn execute_request_async<CtxT, QueryT, MutationT, SubscriptionT, S>(
+async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
@@ -319,16 +325,18 @@ mod tests {
     use reqwest::{self, Response as ReqwestResponse};
     use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
 
-    struct TestHyperIntegration;
+    struct TestHyperIntegration {
+        port: u16,
+    }
 
     impl http_tests::HttpIntegration for TestHyperIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:3001/graphql{}", url);
+            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
             make_test_response(reqwest::get(&url).expect(&format!("failed GET {}", url)))
         }
 
         fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:3001/graphql{}", url);
+            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
             let client = reqwest::Client::new();
             let res = client
                 .post(&url)
@@ -340,7 +348,7 @@ mod tests {
         }
 
         fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:3001/graphql{}", url);
+            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
             let client = reqwest::Client::new();
             let res = client
                 .post(&url)
@@ -369,9 +377,9 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_hyper_integration() {
-        let addr: SocketAddr = ([127, 0, 0, 1], 3001).into();
+    async fn run_hyper_integration(is_sync: bool) {
+        let port = if is_sync { 3002 } else { 3001 };
+        let addr: SocketAddr = ([127, 0, 0, 1], port).into();
 
         let db = Arc::new(Database::new());
         let root_node = Arc::new(RootNode::new(
@@ -399,11 +407,15 @@ mod tests {
                     };
                     async move {
                         if matches {
-                            super::graphql(root_node, ctx, req).await
+                            if is_sync {
+                                super::graphql_sync(root_node, ctx, req).await
+                            } else {
+                                super::graphql(root_node, ctx, req).await
+                            }
                         } else {
-                            let mut response = Response::new(Body::empty());
-                            *response.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(response)
+                            let mut resp = Response::new(Body::empty());
+                            *resp.status_mut() = StatusCode::NOT_FOUND;
+                            Ok(resp)
                         }
                     }
                 }))
@@ -422,7 +434,7 @@ mod tests {
 
         tokio::task::spawn_blocking(move || {
             thread::sleep(Duration::from_millis(10)); // wait 10ms for server to bind
-            let integration = TestHyperIntegration;
+            let integration = TestHyperIntegration { port };
             http_tests::run_http_test_suite(&integration);
             shutdown.abort();
         });
@@ -430,5 +442,15 @@ mod tests {
         if let Err(e) = server.await {
             eprintln!("server error: {}", e);
         }
+    }
+
+    #[tokio::test]
+    async fn test_hyper_integration() {
+        run_hyper_integration(false).await
+    }
+
+    #[tokio::test]
+    async fn test_sync_hyper_integration() {
+        run_hyper_integration(true).await
     }
 }
