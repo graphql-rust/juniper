@@ -84,7 +84,7 @@ fn create(
             };
 
             let parse_method =
-                _impl.parse_method(&method, true, |captured, arg_ident, is_mut: bool| {
+                _impl.parse_method(&method, true, attrs.context.as_ref(), |captured, arg_ident, is_mut: bool| {
                     let arg_name = arg_ident.unraw().to_string();
                     let ty = &captured.ty;
 
@@ -179,6 +179,7 @@ fn create(
                 default: None,
                 span,
                 guard: attrs.guard.map(SpanContainer::into_inner),
+                context: attrs.context.map(SpanContainer::into_inner),
             })
         })
         .collect::<Vec<_>>();

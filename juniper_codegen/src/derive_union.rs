@@ -99,6 +99,20 @@ pub fn build_derive_union(
                 );
             }
 
+            if let Some(guard) = field_attrs.guard {
+                error.unsupported_attribute_within(
+                    guard.span_ident(),
+                    UnsupportedAttribute::Guard,
+                );
+            }
+
+            if let Some(context) = field_attrs.context {
+                error.unsupported_attribute_within(
+                    context.span_ident(),
+                    UnsupportedAttribute::Context,
+                );
+            }
+
             if name.starts_with("__") {
                 error.no_double_underscore(if let Some(name) = field_attrs.name {
                     name.span_ident()
@@ -119,6 +133,7 @@ pub fn build_derive_union(
                 default: None,
                 span,
                 guard: None,
+                context: None,
             })
         })
         .collect::<Vec<_>>();

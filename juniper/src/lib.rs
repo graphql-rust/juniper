@@ -179,7 +179,7 @@ pub use crate::{
     types::{
         async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
-        guards::{GraphQLGuard, GraphQLGuardExt},
+        guards::{self, GraphQLGuard, GraphQLGuardExt},
         marker,
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},

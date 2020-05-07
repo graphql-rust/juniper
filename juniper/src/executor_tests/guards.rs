@@ -1,5 +1,7 @@
 //!
-use crate::{EmptyMutation, EmptySubscription, FieldError, RootNode};
+use crate::{
+    guards::MaybeOwned, EmptyMutation, EmptySubscription, FieldError, GraphQLGuardExt, RootNode,
+};
 use std::{collections::HashMap, sync::Arc};
 
 pub struct IdentityGuard;
@@ -15,8 +17,8 @@ where
     /// Protects a GraphQL path resource.
     fn protected<'a>(
         &'a self,
-        ctx: &'a CtxIn,
-    ) -> crate::BoxFuture<Result<&'a Self::CtxOut, Self::Error>> {
+        ctx: MaybeOwned<'a, CtxIn>,
+    ) -> crate::BoxFuture<Result<MaybeOwned<'a, Self::CtxOut>, Self::Error>> {
         futures::future::FutureExt::boxed(futures::future::ready(Ok(ctx)))
     }
 }
@@ -31,11 +33,11 @@ impl crate::GraphQLGuard<crate::DefaultScalarValue, Ctx> for RoleGuard {
     /// Protects a GraphQL path resource.
     fn protected<'a>(
         &'a self,
-        ctx: &'a Ctx,
-    ) -> crate::BoxFuture<Result<&'a Self::CtxOut, Self::Error>> {
+        ctx: MaybeOwned<'a, Ctx>,
+    ) -> crate::BoxFuture<Result<MaybeOwned<'a, Self::CtxOut>, Self::Error>> {
         let f = async move {
-            match ctx.active {
-                Some(ref active_user) => match ctx.users.get(active_user) {
+            match ctx.as_ref().active {
+                Some(ref active_user) => match ctx.as_ref().users.get(active_user) {
                     Some(groups) if groups.iter().find(|val| val.as_str() == self.0).is_some() => {
                         Ok(ctx)
                     }
@@ -126,10 +128,10 @@ impl Query {
     }
 
     // FIXME: does not work
-    // #[graphql(Guard = "IdentityGuard.and_then(RoleGuard(\"ADMIN\"))")]
-    // async fn combined() -> i32 {
-    //     0
-    // }
+    #[graphql(Guard = "IdentityGuard.and_then(RoleGuard(\"ADMIN\"))")]
+    async fn combined() -> i32 {
+        0
+    }
 }
 
 #[tokio::test]

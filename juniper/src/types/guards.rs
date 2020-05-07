@@ -2,6 +2,44 @@
 
 use futures::future;
 
+/// A replaceable context.
+///
+/// The underlying item is either owned or referenced. Compared to the
+/// built-in Cow<'a, T>, this does not allow writes. Therefore, it is
+/// only possible to get a reference of T. In the terms of Juniper
+/// this allows to replace the context within a guard.
+pub enum MaybeOwned<'a, T> {
+    /// Owns the underlying data.
+    ///
+    // Indicates that the value has been replaced.
+    Owned(T),
+    /// References to the data.
+    ///
+    // Indicates that the value has been take by someone else.
+    Reference(&'a T),
+}
+
+impl<'a, T> AsRef<T> for MaybeOwned<'a, T> {
+    fn as_ref(&self) -> &T {
+        match self {
+            MaybeOwned::Owned(ref val) => val,
+            MaybeOwned::Reference(ref val) => val,
+        }
+    }
+}
+
+impl<'a, T> From<T> for MaybeOwned<'a, T> {
+    fn from(val: T) -> Self {
+        MaybeOwned::Owned(val)
+    }
+}
+
+impl<'a, T> From<&'a T> for MaybeOwned<'a, T> {
+    fn from(val: &'a T) -> Self {
+        MaybeOwned::Reference(val)
+    }
+}
+
 /// A guard for GraphQL paths/resources.
 ///
 /// This guard is evaluated before the actual resolver logic is
@@ -27,13 +65,13 @@ where
     /// context must be compatible with the old context. Functions
     /// which does not require the new context should always have the
     /// opportunity to fallback.
-    type CtxOut: Into<CtxIn> + Send + Sync + 'static;
+    type CtxOut: Send + Sync;
 
     /// Protects a GraphQL path resource.
     fn protected<'a>(
         &'a self,
-        ctx: &'a CtxIn,
-    ) -> crate::BoxFuture<Result<&'a Self::CtxOut, Self::Error>>;
+        ctx: MaybeOwned<'a, CtxIn>,
+    ) -> crate::BoxFuture<Result<MaybeOwned<'a, Self::CtxOut>, Self::Error>>;
 }
 
 /// Additional functionality on-top of `GraphQLGuard`
@@ -50,7 +88,7 @@ pub trait GraphQLGuardExt<S: crate::ScalarValue, CtxIn>: GraphQLGuard<S, CtxIn> 
     /// guard. Besides the errors, also the context must be
     /// compatible. The other guard must use the context of the
     /// current guard.
-    fn and_then<'a, G: GraphQLGuard<S, Self::CtxOut>>(self, other: G) -> AndThen<Self, G> {
+    fn and_then<G: GraphQLGuard<S, Self::CtxOut>>(self, other: G) -> AndThen<Self, G> {
         AndThen {
             first: self,
             second: other,
@@ -63,6 +101,9 @@ impl<S: crate::ScalarValue, CtxIn, T: GraphQLGuard<S, CtxIn> + Sized> GraphQLGua
 {
 }
 
+/// Chaining two guards.
+///
+/// This is a product of the `and_then` operation for guards.
 pub struct AndThen<A, B> {
     first: A,
     second: B,
@@ -73,9 +114,11 @@ where
     S: crate::ScalarValue,
     CtxIn: std::convert::From<<B as GraphQLGuard<S, <A as GraphQLGuard<S, CtxIn>>::CtxOut>>::CtxOut>
         + Send
-        + Sync,
+        + Sync
+        + 'static,
     A: GraphQLGuard<S, CtxIn> + Send + Sync,
-    B: GraphQLGuard<S, <A as GraphQLGuard<S, CtxIn>>::CtxOut> + Send + Sync,
+    B: GraphQLGuard<S, <A as GraphQLGuard<S, CtxIn>>::CtxOut> + Send + Sync + 'static,
+    <A as GraphQLGuard<S, CtxIn>>::CtxOut: 'static,
     <A as GraphQLGuard<S, CtxIn>>::Error:
         Into<<B as GraphQLGuard<S, <A as GraphQLGuard<S, CtxIn>>::CtxOut>>::Error>,
 {
@@ -85,11 +128,11 @@ where
 
     fn protected<'a>(
         &'a self,
-        ctx: &'a CtxIn,
-    ) -> crate::BoxFuture<Result<&'a Self::CtxOut, Self::Error>> {
+        ctx: MaybeOwned<'a, CtxIn>,
+    ) -> crate::BoxFuture<Result<MaybeOwned<'a, Self::CtxOut>, Self::Error>> {
         let f = async move {
-            match self.first.protected(&ctx).await {
-                Ok(ctx) => self.second.protected(&ctx).await,
+            match self.first.protected(ctx).await {
+                Ok(new_ctx) => self.second.protected(new_ctx).await,
                 Err(err) => Err(err.into()),
             }
         };

@@ -4,7 +4,6 @@
 use crate::util::{self, span_container::SpanContainer};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use std::convert::From;
 use syn::{spanned::Spanned, PatType};
 
 pub struct ImplBlock {
@@ -40,7 +39,7 @@ impl ImplBlock {
         }
 
         //NOTICE: `fn resolve()` is a subset of `fn <NAME>() -> <TYPE>`
-        self.parse_method(method, false, |captured, _, _| {
+        self.parse_method(method, false, None, |captured, _, _| {
             Err(syn::Error::new(
                 captured.span(),
                 "only executor or context types are allowed",
@@ -61,6 +60,7 @@ impl ImplBlock {
         &self,
         method: &syn::ImplItemMethod,
         is_self_optional: bool,
+        context: Option<&SpanContainer<syn::Type>>,
         f: F,
     ) -> syn::Result<(Vec<TokenStream>, Vec<util::GraphQLTypeDefinitionFieldArg>)> {
         let mut arguments = method.sig.inputs.iter().peekable();
@@ -111,7 +111,8 @@ impl ImplBlock {
                             ));
                         }
                     };
-                    let context_type = self.attrs.context.as_ref();
+
+                    let context_type = context.or_else(|| self.attrs.context.as_ref());
 
                     // Check for executor arguments.
                     if util::type_is_identifier_ref(&captured.ty, "Executor") {
@@ -130,7 +131,7 @@ impl ImplBlock {
                         .map(|ctx| util::type_is_ref_of(&captured.ty, ctx))
                         .unwrap_or(false)
                     {
-                        resolve_parts.push(quote!( let #arg_ident = executor.context(); ));
+                        resolve_parts.push(quote!( let #arg_ident = &ctx; ));
                     }
                     // Make sure the user does not specify the Context
                     //  without a reference. (&Context)

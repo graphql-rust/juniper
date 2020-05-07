@@ -1,7 +1,7 @@
 #![allow(clippy::collapsible_if)]
 
 use crate::{
-    result::GraphQLScope,
+    result::{GraphQLScope, UnsupportedAttribute},
     util::{self, span_container::SpanContainer},
 };
 use proc_macro2::TokenStream;
@@ -215,6 +215,10 @@ pub fn build_scalar(
     let from_str_result = input
         .from_str_result
         .ok_or(error.custom_error(body_span, "unable to find return type of `from_str` method"))?;
+
+    if let Some(guard) = attrs.guard {
+        error.unsupported_attribute_within(guard.span_ident(), UnsupportedAttribute::Guard);
+    }
 
     let name = attrs
         .name

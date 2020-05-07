@@ -54,6 +54,8 @@ pub enum UnsupportedAttribute {
     Description,
     Deprecation,
     Default,
+    Guard,
+    Context,
 }
 
 impl GraphQLScope {

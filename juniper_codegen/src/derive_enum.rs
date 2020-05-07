@@ -86,6 +86,20 @@ pub fn impl_enum(
                 );
             }
 
+            if let Some(guard) = field_attrs.guard {
+                error.unsupported_attribute_within(
+                    guard.span_ident(),
+                    UnsupportedAttribute::Guard,
+                );
+            }
+
+            if let Some(context) = field_attrs.context {
+                error.unsupported_attribute_within(
+                    context.span_ident(),
+                    UnsupportedAttribute::Context,
+                );
+            }
+
             Some(util::GraphQLTypeDefinitionField {
                 name,
                 _type,
@@ -98,6 +112,7 @@ pub fn impl_enum(
                 default: None,
                 span,
                 guard: None,
+                context: None,
             })
         })
         .collect::<Vec<_>>();

@@ -71,6 +71,13 @@ pub fn build_derive_object(
                 );
             }
 
+            if let Some(context) = field_attrs.context {
+                error.unsupported_attribute_within(
+                    context.span_ident(),
+                    UnsupportedAttribute::Context,
+                );
+            }
+
             let resolver_code = quote!(
                 &self . #field_name
             );
@@ -87,6 +94,7 @@ pub fn build_derive_object(
                 is_async: false,
                 span,
                 guard: None,
+                context: None,
             })
         })
         .collect::<Vec<_>>();
