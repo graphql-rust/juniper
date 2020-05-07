@@ -83,8 +83,11 @@ fn create(
                 }
             };
 
-            let parse_method =
-                _impl.parse_method(&method, true, attrs.context.as_ref(), |captured, arg_ident, is_mut: bool| {
+            let parse_method = _impl.parse_method(
+                &method,
+                true,
+                attrs.context.as_ref(),
+                |captured, arg_ident, is_mut: bool| {
                     let arg_name = arg_ident.unraw().to_string();
                     let ty = &captured.ty;
 
@@ -129,7 +132,8 @@ fn create(
                         name: final_name,
                     };
                     Ok((resolver, field_type))
-                });
+                },
+            );
 
             let (resolve_parts, args) = match parse_method {
                 Ok((resolve_parts, args)) => (resolve_parts, args),

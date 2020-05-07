@@ -69,10 +69,7 @@ pub fn impl_input_object(
             }
 
             if let Some(guard) = field_attrs.guard {
-                error.unsupported_attribute_within(
-                    guard.span_ident(),
-                    UnsupportedAttribute::Guard,
-                );
+                error.unsupported_attribute_within(guard.span_ident(), UnsupportedAttribute::Guard);
             }
 
             if let Some(context) = field_attrs.context {
