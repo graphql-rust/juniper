@@ -839,23 +839,27 @@ mod tests_http_harness {
     }
 
     impl TestWarpIntegration {
-        fn new() -> Self {
+        fn new(is_sync: bool) -> Self {
             let schema = RootNode::new(
                 Query,
                 EmptyMutation::<Database>::new(),
                 EmptySubscription::<Database>::new(),
             );
-
             let state = warp::any().map(move || Database::new());
-            let filter = path::end().and(make_graphql_filter(schema, state.boxed()));
 
+            let filter = path::end().and(if is_sync {
+                make_graphql_filter_sync(schema, state.boxed())
+            } else {
+                make_graphql_filter(schema, state.boxed())
+            });
             Self {
                 filter: filter.boxed(),
             }
         }
 
         fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
-            make_test_response(futures::executor::block_on(async move {
+            let mut rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
+            make_test_response(rt.block_on(async move {
                 req.filter(&self.filter).await.unwrap_or_else(|rejection| {
                     let code = if rejection.is_not_found() {
                         http::StatusCode::NOT_FOUND
@@ -927,6 +931,11 @@ mod tests_http_harness {
 
     #[test]
     fn test_warp_integration() {
-        run_http_test_suite(&TestWarpIntegration::new());
+        run_http_test_suite(&TestWarpIntegration::new(false));
+    }
+
+    #[test]
+    fn test_sync_warp_integration() {
+        run_http_test_suite(&TestWarpIntegration::new(true));
     }
 }
