@@ -67,6 +67,10 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
   `#[graphql(arguments(argA(name = "test")))]`
   (see [#631](https://github.com/graphql-rust/juniper/pull/631))
 
+- Integration tests:
+  Rename `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`
+  and add support for `application/graphql` POST request.
+
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 
 - Fix incorrect validation with non-executed operations [#455](https://github.com/graphql-rust/juniper/issues/455)
