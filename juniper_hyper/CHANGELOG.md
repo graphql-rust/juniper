@@ -6,7 +6,7 @@
 
 - `juniper_hyper::graphiql` now requires a second parameter for subscriptions.
 - `juniper_hyper::graphql` now executes the schema asynchronously. For blocking synchronous execution consider `juniper_hyper::graphql_sync` for use.
-- `400 Bad Request` is returned if POST HTTP request contains no or invalid `Content-Type` header.
+- `400 Bad Request` is now returned if POST HTTP request contains no or invalid `Content-Type` header.
 
 # [[0.5.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper_hyper-0.5.2)
 
