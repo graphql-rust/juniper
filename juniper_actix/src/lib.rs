@@ -127,15 +127,13 @@ where
     let req = GraphQLRequest::from(get_req.into_inner());
     let gql_response = req.execute(schema, context).await;
     let body_response = serde_json::to_string(&gql_response)?;
-    let response = match gql_response.is_ok() {
-        true => HttpResponse::Ok()
-            .content_type("application/json")
-            .body(body_response),
-        false => HttpResponse::BadRequest()
-            .content_type("application/json")
-            .body(body_response),
+    let mut response = match gql_response.is_ok() {
+        true => HttpResponse::Ok(),
+        false => HttpResponse::BadRequest(),
     };
-    Ok(response)
+    Ok(response
+        .content_type("application/json")
+        .body(body_response))
 }
 
 /// Actix GraphQL Handler for POST requests
@@ -160,13 +158,15 @@ where
         .get(CONTENT_TYPE)
         .and_then(|hv| hv.to_str().ok());
     let req = match content_type_header {
-        Some("application/json") | Some("application/graphql") => {
-            let body_string = String::from_request(&req, &mut payload.into_inner()).await;
-            let body_string = body_string?;
-            match serde_json::from_str::<GraphQLBatchRequest<S>>(&body_string) {
-                Ok(req) => Ok(req),
-                Err(err) => Err(ErrorBadRequest(err)),
-            }
+        Some("application/json") => {
+            let body = String::from_request(&req, &mut payload.into_inner()).await?;
+            serde_json::from_str::<GraphQLBatchRequest<S>>(&body).map_err(ErrorBadRequest)
+        }
+        Some("application/graphql") => {
+            let body = String::from_request(&req, &mut payload.into_inner()).await?;
+            Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
+                body, None, None,
+            )))
         }
         _ => Err(ErrorUnsupportedMediaType(
             "GraphQL requests should have content type `application/json` or `application/graphql`",
