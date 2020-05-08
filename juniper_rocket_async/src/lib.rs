@@ -294,12 +294,17 @@ where
 {
     type Error = String;
 
-    fn from_data(request: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
+    fn from_data(req: &Request, data: Data) -> FromDataFuture<'static, Self, Self::Error> {
         use tokio::io::AsyncReadExt as _;
 
-        if !request.content_type().map_or(false, |ct| ct.is_json()) {
-            return Box::pin(async move { Forward(data) });
-        }
+        let content_type = req
+            .content_type()
+            .map(|ct| (ct.top().as_str(), ct.sub().as_str()));
+        let is_json = match content_type {
+            Some(("application", "json")) => true,
+            Some(("application", "graphql")) => false,
+            _ => return Box::pin(async move { Forward(data) }),
+        };
 
         Box::pin(async move {
             let mut body = String::new();
@@ -308,10 +313,14 @@ where
                 return Failure((Status::InternalServerError, format!("{:?}", e)));
             }
 
-            match serde_json::from_str(&body) {
-                Ok(value) => Success(GraphQLRequest(value)),
-                Err(failure) => Failure((Status::BadRequest, format!("{}", failure))),
-            }
+            Success(GraphQLRequest(if is_json {
+                match serde_json::from_str(&body) {
+                    Ok(req) => req,
+                    Err(e) => return Failure((Status::BadRequest, format!("{}", e))),
+                }
+            } else {
+                GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
+            }))
         })
     }
 }
