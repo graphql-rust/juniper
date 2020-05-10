@@ -1,14 +1,11 @@
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
-    executor::ExecutionResult,
+    executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
+    types::base::GraphQLType,
     value::{ScalarValue, Value},
 };
-
-use crate::{
-    executor::{Executor, Registry},
-    types::base::GraphQLType,
-};
+use core::ops::{Range, RangeInclusive};
 
 impl<S, T, CtxT> GraphQLType<S> for Option<T>
 where
@@ -105,8 +102,7 @@ where
     T: FromInputValue<S>,
     S: ScalarValue,
 {
-    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Vec<T>>
-where {
+    fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<Vec<T>> {
         match *v {
             InputValue::List(ref ls) => {
                 let v: Vec<_> = ls.iter().filter_map(|i| i.item.convert()).collect();
@@ -304,4 +300,108 @@ where
         };
         Box::pin(f)
     }
+}
+
+macro_rules! impl_range {
+    ($range:ident, $range_new:path, $range_start:path, $range_end:path) => {
+        impl<S, T, CtxT> GraphQLType<S> for $range<T>
+        where
+            T: GraphQLType<S, Context = CtxT, TypeInfo = ()>,
+            S: ScalarValue,
+        {
+            type Context = CtxT;
+            type TypeInfo = T::TypeInfo;
+        
+            fn name(_: &T::TypeInfo) -> Option<&str> {
+                None
+            }
+        
+            fn meta<'r>(i: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+            where
+                S: 'r,
+            {
+                let fields = &[
+                    registry.field::<i32>("start", i),
+                    registry.field::<i32>("end", i),
+                ];
+                registry.build_object_type::<Self>(i, fields).into_meta()
+            }
+        
+            fn resolve(
+                &self,
+                i: &T::TypeInfo,
+                _: Option<&[Selection<S>]>,
+                executor: &Executor<CtxT, S>,
+            ) -> ExecutionResult<S> {
+                let start = executor.resolve(i, $range_start(self))?;
+                let end = executor.resolve(i, $range_end(self))?;
+                Ok(Value::object(
+                    vec![("start", start), ("end", end)].into_iter().collect(),
+                ))
+            }
+        }
+        
+        impl<T, S> FromInputValue<S> for $range<T>
+        where
+            T: FromInputValue<S>,
+            S: ScalarValue,
+        {
+        fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<$range<T>> {
+                match *v {
+                    InputValue::Object(ref o) => {
+                        let start = if let Some(Some(i)) = o.get(0).map(|tuple| tuple.1.item.convert()) {
+                            i
+                        } else {
+                            return None;
+                        };
+                        let end = if let Some(Some(i)) = o.get(1).map(|tuple| tuple.1.item.convert()) {
+                            i
+                        } else {
+                            return None;
+                        };
+                        Some($range_new(start, end))
+                    }
+                    ref other => {
+                        if let Some(r) = other.convert() {
+                            Some(r)
+                        } else {
+                            None
+                        }
+                    }
+                }
+            }
+        }
+        
+        impl<T, S> ToInputValue<S> for $range<T>
+        where
+            T: ToInputValue<S>,
+            S: ScalarValue,
+        {
+            fn to_input_value(&self) -> InputValue<S> {
+                InputValue::object(
+                    vec![
+                        ("start", $range_start(self).to_input_value()),
+                        ("end", $range_end(self).to_input_value()),
+                    ]
+                    .into_iter()
+                    .collect(),
+                )
+            }
+        }        
+    };
+}
+
+impl_range!(Range, range_new, range_start, range_end);
+impl_range!(RangeInclusive, RangeInclusive::new, RangeInclusive::start, RangeInclusive::end);
+
+fn range_new<T>(start: T, end: T) -> Range<T> {
+    Range { start, end }
+}
+
+fn range_start<T>(range: &Range<T>) -> &T {
+    &range.start
+}
+
+fn range_end<T>(range: &Range<T>) -> &T {
+    &range.end
 }
