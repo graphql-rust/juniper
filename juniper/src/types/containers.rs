@@ -311,11 +311,11 @@ macro_rules! impl_range {
         {
             type Context = CtxT;
             type TypeInfo = T::TypeInfo;
-        
+
             fn name(_: &T::TypeInfo) -> Option<&str> {
                 None
             }
-        
+
             fn meta<'r>(i: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
             where
                 S: 'r,
@@ -326,7 +326,7 @@ macro_rules! impl_range {
                 ];
                 registry.build_object_type::<Self>(i, fields).into_meta()
             }
-        
+
             fn resolve(
                 &self,
                 i: &T::TypeInfo,
@@ -340,25 +340,27 @@ macro_rules! impl_range {
                 ))
             }
         }
-        
+
         impl<T, S> FromInputValue<S> for $range<T>
         where
             T: FromInputValue<S>,
             S: ScalarValue,
         {
-        fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<$range<T>> {
+            fn from_input_value<'a>(v: &'a InputValue<S>) -> Option<$range<T>> {
                 match *v {
                     InputValue::Object(ref o) => {
-                        let start = if let Some(Some(i)) = o.get(0).map(|tuple| tuple.1.item.convert()) {
-                            i
-                        } else {
-                            return None;
-                        };
-                        let end = if let Some(Some(i)) = o.get(1).map(|tuple| tuple.1.item.convert()) {
-                            i
-                        } else {
-                            return None;
-                        };
+                        let start =
+                            if let Some(Some(i)) = o.get(0).map(|tuple| tuple.1.item.convert()) {
+                                i
+                            } else {
+                                return None;
+                            };
+                        let end =
+                            if let Some(Some(i)) = o.get(1).map(|tuple| tuple.1.item.convert()) {
+                                i
+                            } else {
+                                return None;
+                            };
                         Some($range_new(start, end))
                     }
                     ref other => {
@@ -371,7 +373,7 @@ macro_rules! impl_range {
                 }
             }
         }
-        
+
         impl<T, S> ToInputValue<S> for $range<T>
         where
             T: ToInputValue<S>,
@@ -387,12 +389,17 @@ macro_rules! impl_range {
                     .collect(),
                 )
             }
-        }        
+        }
     };
 }
 
 impl_range!(Range, range_new, range_start, range_end);
-impl_range!(RangeInclusive, RangeInclusive::new, RangeInclusive::start, RangeInclusive::end);
+impl_range!(
+    RangeInclusive,
+    RangeInclusive::new,
+    RangeInclusive::start,
+    RangeInclusive::end
+);
 
 fn range_new<T>(start: T, end: T) -> Range<T> {
     Range { start, end }
