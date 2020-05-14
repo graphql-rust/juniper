@@ -165,21 +165,25 @@ SELECT id, name FROM cults WHERE id = 2;
 <p>Once the list of users has been returned, a separate query is run to find the cult of each user.
 You can see how this could quickly become a problem.</p>
 <p>A common solution to this is to introduce a <strong>dataloader</strong>.
-This can be done with Juniper using the crate <a href="https://github.com/cksac/dataloader-rs">cksac/dataloader-rs</a>, which has two types of dataloaders; cached and non-cached. This example will explore the non-cached option.</p>
+This can be done with Juniper using the crate <a href="https://github.com/cksac/dataloader-rs">cksac/dataloader-rs</a>, which has two types of dataloaders; cached and non-cached.</p>
+<a class="header" href="#cached-loader" id="cached-loader"><h4>Cached Loader</h4></a>
+<p>DataLoader provides a memoization cache, after .load() is called once with a given key, the resulting value is cached to eliminate redundant loads.</p>
+<p>DataLoader caching does not replace Redis, Memcache, or any other shared application-level cache. DataLoader is first and foremost a data loading mechanism, and its cache only serves the purpose of not repeatedly loading the same data in the context of a single request to your Application. <a href="https://github.com/graphql/dataloader#caching">(read more)</a></p>
 <a class="header" href="#what-does-it-look-like" id="what-does-it-look-like"><h3>What does it look like?</h3></a>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
 actix-identity = &quot;0.2&quot;
 actix-rt = &quot;1.0&quot;
 actix-web = {version = &quot;2.0&quot;, features = []}
-juniper = { git = &quot;https://github.com/graphql-rust/juniper&quot;, branch = &quot;async-await&quot;, features = [&quot;async&quot;] }
+juniper = { git = &quot;https://github.com/graphql-rust/juniper&quot; }
 futures = &quot;0.3&quot;
 postgres = &quot;0.15.2&quot;
-dataloader = &quot;0.6.0&quot;
+dataloader = &quot;0.12.0&quot;
+async-trait = &quot;0.1.30&quot;
 </code></pre>
-<pre><code class="language-rust ignore">use dataloader::Loader;
-use dataloader::{BatchFn, BatchFuture};
-use futures::{future, FutureExt as _};
+<pre><code class="language-rust ignore">// use dataloader::cached::Loader;
+use dataloader::non_cached::Loader;
+use dataloader::BatchFn;
 use std::collections::HashMap;
 use postgres::{Connection, TlsMode};
 use std::env;
@@ -214,26 +218,31 @@ pub fn get_cult_by_ids(hashmap: &amp;mut HashMap&lt;i32, Cult&gt;, ids: Vec&lt;i
 
 pub struct CultBatcher;
 
+#[async_trait]
 impl BatchFn&lt;i32, Cult&gt; for CultBatcher {
-  type Error = ();
 
-  fn load(&amp;self, keys: &amp;[i32]) -&gt; BatchFuture&lt;Cult, Self::Error&gt; {
-    println!(&quot;load batch {:?}&quot;, keys);
     // A hashmap is used, as we need to return an array which maps each original key to a Cult.
-    let mut cult_hashmap = HashMap::new();
-    get_cult_by_ids(&amp;mut cult_hashmap, keys.to_vec());
-
-    future::ready(keys.iter().map(|key| cult_hashmap[key].clone()).collect())
-        .unit_error()
-        .boxed()
-  }
+    async fn load(&amp;self, keys: &amp;[i32]) -&gt; HashMap&lt;i32, Cult&gt; {
+        println!(&quot;load cult batch {:?}&quot;, keys);
+        let mut cult_hashmap = HashMap::new();
+        get_cult_by_ids(&amp;mut cult_hashmap, keys.to_vec());
+        cult_hashmap
+    }
 }
 
-pub type CultLoader = Loader&lt;i32, Cult, (), CultBatcher&gt;;
+pub type CultLoader = Loader&lt;i32, Cult, CultBatcher&gt;;
 
 // To create a new loader
 pub fn get_loader() -&gt; CultLoader {
     Loader::new(CultBatcher)
+      // Usually a DataLoader will coalesce all individual loads which occur 
+      // within a single frame of execution before calling your batch function with all requested keys.
+      // However sometimes this behavior is not desirable or optimal. 
+      // Perhaps you expect requests to be spread out over a few subsequent ticks
+      // See: https://github.com/cksac/dataloader-rs/issues/12 
+      // More info: https://github.com/graphql/dataloader#batch-scheduling 
+      // A larger yield count will allow more requests to append to batch but will wait longer before actual load.
+      .with_yield_count(100)
 }
 
 #[juniper::graphql_object(Context = Context)]
@@ -242,15 +251,14 @@ impl Cult {
 
   // To call the dataloader 
   pub async fn cult_by_id(ctx: &amp;Context, id: i32) -&gt; Cult {
-    ctx.cult_loader.load(id).await.unwrap()
+    ctx.cult_loader.load(id).await
   }
 }
 
 </code></pre>
 <a class="header" href="#how-do-i-call-them" id="how-do-i-call-them"><h3>How do I call them?</h3></a>
-<p>Once created, a dataloader has the functions <code>.load()</code> and <code>.load_many()</code>.
-When called these return a Future.
-In the above example <code>cult_loader.load(id: i32)</code> returns <code>Future&lt;Cult&gt;</code>. If  we had used <code>cult_loader.load_many(Vec&lt;i32&gt;)</code> it would have returned <code>Future&lt;Vec&lt;Cult&gt;&gt;</code>.</p>
+<p>Once created, a dataloader has the async functions <code>.load()</code> and <code>.load_many()</code>.
+In the above example <code>cult_loader.load(id: i32).await</code> returns <code>Cult</code>. If  we had used <code>cult_loader.load_many(Vec&lt;i32&gt;).await</code> it would have returned <code>Vec&lt;Cult&gt;</code>.</p>
 <a class="header" href="#where-do-i-create-my-dataloaders" id="where-do-i-create-my-dataloaders"><h3>Where do I create my dataloaders?</h3></a>
 <p><strong>Dataloaders</strong> should be created per-request to avoid risk of bugs where one user is able to load cached/batched data from another user/ outside of its authenticated scope.
 Creating dataloaders within individual resolvers will prevent batching from occurring and will nullify the benefits of the dataloader.</p>
@@ -278,15 +286,13 @@ impl Context {
     st: web::Data&lt;Arc&lt;Schema&gt;&gt;,
     data: web::Json&lt;GraphQLRequest&gt;,
 ) -&gt; Result&lt;HttpResponse, Error&gt; {
-    let mut rt = futures::executor::LocalPool::new();
 
     // Context setup
     let cult_loader = get_loader();
     let ctx = Context::new(cult_loader);
 
     // Execute
-    let future_execute = data.execute(&amp;st, &amp;ctx); 
-    let res = rt.run_until(future_execute);
+    let res = data.execute(&amp;st, &amp;ctx).await; 
     let json = serde_json::to_string(&amp;res).map_err(error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok()
