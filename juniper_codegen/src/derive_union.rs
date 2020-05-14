@@ -173,6 +173,7 @@ pub fn build_derive_union(
         generics: ast.generics,
         interfaces: None,
         include_type_generics: true,
+        include_struct_fields: false,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
     };

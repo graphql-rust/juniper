@@ -143,6 +143,7 @@ pub fn impl_enum(
         generics: syn::Generics::default(),
         interfaces: None,
         include_type_generics: true,
+        include_struct_fields: false,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
     };

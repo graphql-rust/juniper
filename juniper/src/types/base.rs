@@ -6,7 +6,7 @@ use crate::{
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
-    schema::meta::{Argument, MetaType},
+    schema::meta::{Argument, Field, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
 };
 
@@ -338,6 +338,54 @@ where
         } else {
             panic!("resolve() must be implemented by non-object output types");
         }
+    }
+}
+
+/// `GraphQLTypeInfo` holds the meta information for the given type.
+///
+/// The macros remove duplicated definitions of fields and arguments, and add
+/// type checks on all resolve functions automatically.
+pub trait GraphQLTypeInfo<S = DefaultScalarValue>: Sized
+where
+    S: ScalarValue,
+{
+    /// The expected context type for this GraphQL type
+    ///
+    /// The context is threaded through query execution to all affected nodes,
+    /// and can be used to hold common data, e.g. database connections or
+    /// request session information.
+    type Context;
+
+    /// Type that may carry additional schema information
+    ///
+    /// This can be used to implement a schema that is partly dynamic,
+    /// meaning that it can use information that is not known at compile time,
+    /// for instance by reading it from a configuration file at start-up.
+    type TypeInfo;
+
+    /// The field definitions of fields for fields derived from the struct of
+    /// this GraphQL type.
+    fn fields<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> Vec<Field<'r, S>>
+    where
+        S: 'r;
+
+    /// Resolve the value of a single field on this type.
+    ///
+    /// The arguments object contain all specified arguments, with default
+    /// values substituted for the ones not provided by the query.
+    ///
+    /// The executor can be used to drive selections into sub-objects.
+    ///
+    /// The default implementation panics.
+    #[allow(unused_variables)]
+    fn resolve_field(
+        &self,
+        info: &Self::TypeInfo,
+        field_name: &str,
+        arguments: &Arguments<S>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        panic!("resolve_field must be implemented by object types");
     }
 }
 

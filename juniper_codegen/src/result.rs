@@ -10,6 +10,7 @@ pub const GRAPHQL_SPECIFICATION: &'static str = "https://spec.graphql.org/June20
 #[allow(unused_variables)]
 pub enum GraphQLScope {
     DeriveObject,
+    DeriveObjectInfo,
     DeriveInputObject,
     DeriveUnion,
     DeriveEnum,
@@ -22,7 +23,9 @@ pub enum GraphQLScope {
 impl GraphQLScope {
     pub fn specification_section(&self) -> &str {
         match self {
-            GraphQLScope::DeriveObject | GraphQLScope::ImplObject => "#sec-Objects",
+            GraphQLScope::DeriveObject
+            | GraphQLScope::DeriveObjectInfo
+            | GraphQLScope::ImplObject => "#sec-Objects",
             GraphQLScope::DeriveInputObject => "#sec-Input-Objects",
             GraphQLScope::DeriveUnion | GraphQLScope::ImplUnion => "#sec-Unions",
             GraphQLScope::DeriveEnum => "#sec-Enums",
@@ -34,7 +37,9 @@ impl GraphQLScope {
 impl fmt::Display for GraphQLScope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
-            GraphQLScope::DeriveObject | GraphQLScope::ImplObject => "object",
+            GraphQLScope::DeriveObject
+            | GraphQLScope::DeriveObjectInfo
+            | GraphQLScope::ImplObject => "object",
             GraphQLScope::DeriveInputObject => "input object",
             GraphQLScope::DeriveUnion | GraphQLScope::ImplUnion => "union",
             GraphQLScope::DeriveEnum => "enum",

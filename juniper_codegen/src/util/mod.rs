@@ -279,6 +279,7 @@ pub struct ObjectAttributes {
     pub scalar: Option<SpanContainer<syn::Type>>,
     pub interfaces: Vec<SpanContainer<syn::Type>>,
     pub no_async: Option<SpanContainer<()>>,
+    pub derive_fields: Option<SpanContainer<()>>,
 }
 
 impl syn::parse::Parse for ObjectAttributes {
@@ -290,6 +291,7 @@ impl syn::parse::Parse for ObjectAttributes {
             scalar: None,
             interfaces: Vec::new(),
             no_async: None,
+            derive_fields: None,
         };
 
         while !input.is_empty() {
@@ -348,6 +350,9 @@ impl syn::parse::Parse for ObjectAttributes {
                 "noasync" => {
                     output.no_async = Some(SpanContainer::new(ident.span(), None, ()));
                 }
+                "derive_fields" => {
+                    output.derive_fields = Some(SpanContainer::new(ident.span(), None, ()));
+                }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
@@ -376,6 +381,68 @@ impl ObjectAttributes {
         } else {
             let mut a = Self::default();
             a.description = get_doc_comment(attrs);
+            Ok(a)
+        }
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct ObjectInfoAttributes {
+    pub context: Option<SpanContainer<syn::Type>>,
+    pub scalar: Option<SpanContainer<syn::Type>>,
+}
+
+impl syn::parse::Parse for ObjectInfoAttributes {
+    fn parse(input: syn::parse::ParseStream) -> syn::parse::Result<Self> {
+        let mut output = Self {
+            context: None,
+            scalar: None,
+        };
+
+        while !input.is_empty() {
+            let ident: syn::Ident = input.parse()?;
+            match ident.to_string().as_str() {
+                "context" | "Context" => {
+                    input.parse::<syn::Token![=]>()?;
+                    // TODO: remove legacy support for string based Context.
+                    let ctx = if let Ok(val) = input.parse::<syn::LitStr>() {
+                        eprintln!("DEPRECATION WARNING: using a string literal for the Context is deprecated");
+                        eprintln!("Use a normal type instead - example: 'Context = MyContextType'");
+                        syn::parse_str::<syn::Type>(&val.value())?
+                    } else {
+                        input.parse::<syn::Type>()?
+                    };
+                    output.context = Some(SpanContainer::new(ident.span(), Some(ctx.span()), ctx));
+                }
+                "scalar" | "Scalar" => {
+                    input.parse::<syn::Token![=]>()?;
+                    let val = input.parse::<syn::Type>()?;
+                    output.scalar = Some(SpanContainer::new(ident.span(), Some(val.span()), val));
+                }
+                _ => {
+                    return Err(syn::Error::new(ident.span(), "unknown attribute"));
+                }
+            }
+            if input.lookahead1().peek(syn::Token![,]) {
+                input.parse::<syn::Token![,]>()?;
+            }
+        }
+
+        Ok(output)
+    }
+}
+
+impl ObjectInfoAttributes {
+    pub fn from_attrs(attrs: &[syn::Attribute]) -> syn::parse::Result<Self> {
+        let attr_opt = find_graphql_attr(attrs);
+        if let Some(attr) = attr_opt {
+            // Need to unwrap  outer (), which are not present for proc macro attributes,
+            // but are present for regular ones.
+
+            let a: Self = attr.parse_args()?;
+            Ok(a)
+        } else {
+            let a = Self::default();
             Ok(a)
         }
     }
@@ -662,6 +729,9 @@ pub struct GraphQLTypeDefiniton {
     // This flag signifies if the type generics need to be
     // included manually.
     pub include_type_generics: bool,
+    // This flag indicates if the field resolvers derived from the type
+    // struct should be included.
+    pub include_struct_fields: bool,
     // This flag indicates if the generated code should always be
     // generic over the ScalarValue.
     // If false, the scalar is only generic if a generic parameter
@@ -677,87 +747,72 @@ impl GraphQLTypeDefiniton {
         self.fields.iter().any(|field| field.is_async)
     }
 
-    pub fn into_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+    fn field_definition_tokens(&self) -> Vec<TokenStream> {
+        self.fields
+            .iter()
+            .map(|field| {
+                let args = field.args.iter().map(|arg| {
+                    let arg_type = &arg._type;
+                    let arg_name = &arg.name;
 
-        let name = &self.name;
-        let ty = &self._type;
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
+                    let description = match arg.description.as_ref() {
+                        Some(value) => quote!( .description( #value ) ),
+                        None => quote!(),
+                    };
 
-        let field_definitions = self.fields.iter().map(|field| {
-            let args = field.args.iter().map(|arg| {
-                let arg_type = &arg._type;
-                let arg_name = &arg.name;
+                    // Code.
+                    match arg.default.as_ref() {
+                        Some(value) => quote!(
+                            .argument(
+                                registry.arg_with_default::<#arg_type>(#arg_name, &#value, info)
+                                    #description
+                            )
+                        ),
+                        None => quote!(
+                            .argument(
+                                registry.arg::<#arg_type>(#arg_name, info)
+                                    #description
+                            )
+                        ),
+                    }
+                });
 
-                let description = match arg.description.as_ref() {
-                    Some(value) => quote!( .description( #value ) ),
+                let description = match field.description.as_ref() {
+                    Some(description) => quote!( .description(#description) ),
                     None => quote!(),
                 };
 
-                // Code.
-                match arg.default.as_ref() {
-                    Some(value) => quote!(
-                        .argument(
-                            registry.arg_with_default::<#arg_type>(#arg_name, &#value, info)
-                                #description
-                        )
-                    ),
-                    None => quote!(
-                        .argument(
-                            registry.arg::<#arg_type>(#arg_name, info)
-                                #description
-                        )
-                    ),
-                }
-            });
-
-            let description = match field.description.as_ref() {
-                Some(description) => quote!( .description(#description) ),
-                None => quote!(),
-            };
-
-            let deprecation = match field.deprecation.as_ref() {
-                Some(deprecation) => {
-                    if let Some(reason) = deprecation.reason.as_ref() {
-                        quote!( .deprecated(Some(#reason)) )
-                    } else {
-                        quote!( .deprecated(None) )
+                let deprecation = match field.deprecation.as_ref() {
+                    Some(deprecation) => {
+                        if let Some(reason) = deprecation.reason.as_ref() {
+                            quote!( .deprecated(Some(#reason)) )
+                        } else {
+                            quote!( .deprecated(None) )
+                        }
                     }
+                    None => quote!(),
+                };
+
+                let field_name = &field.name;
+
+                let _type = &field._type;
+                quote! {
+                    registry
+                        .field_convert::<#_type, _, Self::Context>(#field_name, info)
+                        #(#args)*
+                        #description
+                        #deprecation
                 }
-                None => quote!(),
-            };
+            })
+            .collect()
+    }
 
-            let field_name = &field.name;
-
-            let _type = &field._type;
-            quote! {
-                registry
-                    .field_convert::<#_type, _, Self::Context>(#field_name, info)
-                    #(#args)*
-                    #description
-                    #deprecation
-            }
-        });
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
-
-        let resolve_matches = self.fields.iter().map(|field| {
+    fn resolve_matches_tokens(
+        &self,
+        scalar: &TokenStream,
+        juniper_crate_name: &syn::Path,
+    ) -> Vec<TokenStream> {
+        self.fields.iter().map(|field| {
             let name = &field.name;
             let code = &field.resolver_code;
 
@@ -793,7 +848,100 @@ impl GraphQLTypeDefiniton {
                     },
                 )
             }
-        });
+        }).collect()
+    }
+
+    pub fn into_tokens(self, juniper_crate_name: &str) -> TokenStream {
+        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+
+        let name = &self.name;
+        let ty = &self._type;
+        let context = self
+            .context
+            .as_ref()
+            .map(|ctx| quote!( #ctx ))
+            .unwrap_or_else(|| quote!(()));
+
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
+        let field_definitions = if self.include_struct_fields {
+            let impl_fields = self.field_definition_tokens();
+            let impl_fields = quote!(vec![ #( #impl_fields ),* ]);
+            let struct_fields = quote!(
+                <Self as #juniper_crate_name::GraphQLTypeInfo<#scalar>>::fields(info, registry)
+            );
+            quote!({
+                let fields = vec![ #impl_fields, #struct_fields ].concat();
+
+                let mut mapping: std::collections::HashMap<&str, Vec<&_>> =
+                    std::collections::HashMap::with_capacity(fields.len());
+
+                for item in &fields {
+                    let name = item.name.as_str();
+                    if let Some(vals) = mapping.get_mut(name) {
+                        vals.push(item);
+                    } else {
+                        mapping.insert(name, vec![item]);
+                    }
+                }
+
+                let duplicates = mapping
+                    .into_iter()
+                    .filter_map(|(name, spanned)| {
+                        if spanned.len() > 1 {
+                            Some(name.to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                if !duplicates.is_empty() {
+                    duplicates.iter().for_each(|field| {
+                        panic!("Field with the same name `{}` defined in both struct and impl on type {:?}",
+                            field,
+                            <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
+                        );
+                    })
+                }
+                fields
+            })
+        } else {
+            let impl_fields = self.field_definition_tokens();
+            quote!(vec![ #( #impl_fields ),* ])
+        };
+
+        let resolve_matches = if self.include_struct_fields {
+            let impl_matches = self.resolve_matches_tokens(&scalar, &juniper_crate_name);
+            quote!(match field {
+                #( #impl_matches )*
+                _ => <Self as #juniper_crate_name::GraphQLTypeInfo<#scalar>>
+                    ::resolve_field(self, _info, field, args, executor)
+            })
+        } else {
+            let impl_matches = self.resolve_matches_tokens(&scalar, &juniper_crate_name);
+            quote!(match field {
+                #( #impl_matches )*
+                _ => {
+                    panic!("Field {} not found on type {:?}",
+                        field,
+                        <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
+                    );
+                }
+            })
+        };
 
         let description = self
             .description
@@ -912,6 +1060,27 @@ impl GraphQLTypeDefiniton {
                 }
             });
 
+            let resolve_matches_async = if self.include_struct_fields {
+                quote!(match field {
+                    #( #resolve_matches_async )*
+                    _ => {
+                        let v = <Self as #juniper_crate_name::GraphQLTypeInfo<#scalar>>
+                            ::resolve_field(self, info, field, args, executor);
+                        future::FutureExt::boxed(future::ready(v))
+                    }
+                })
+            } else {
+                quote!(match field {
+                    #( #resolve_matches_async )*
+                    _ => {
+                        panic!("Field {} not found on type {:?}",
+                            field,
+                            <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
+                        );
+                    }
+                })
+            };
+
             let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
 
             where_async
@@ -936,15 +1105,7 @@ impl GraphQLTypeDefiniton {
                     {
                         use futures::future;
                         use #juniper_crate_name::GraphQLType;
-                        match field {
-                            #( #resolve_matches_async )*
-                            _ => {
-                                panic!("Field {} not found on type {:?}",
-                                    field,
-                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
-                                );
-                            }
-                        }
+                        #resolve_matches_async
                     }
                 }
             )
@@ -992,9 +1153,7 @@ impl GraphQLTypeDefiniton {
                 ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
                     where #scalar : 'r,
                 {
-                    let fields = vec![
-                        #( #field_definitions ),*
-                    ];
+                    let fields = #field_definitions;
                     let meta = registry.build_object_type::<#ty>( info, &fields )
                         #description
                         #interfaces;
@@ -1010,15 +1169,7 @@ impl GraphQLTypeDefiniton {
                     args: &#juniper_crate_name::Arguments<#scalar>,
                     executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
                 ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    match field {
-                        #( #resolve_matches )*
-                        _ => {
-                            panic!("Field {} not found on type {:?}",
-                                field,
-                                <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
-                            );
-                        }
-                    }
+                    #resolve_matches
                 }
 
 
@@ -1030,6 +1181,103 @@ impl GraphQLTypeDefiniton {
 
         #resolve_field_async
         );
+        output
+    }
+
+    pub fn into_info_tokens(self, juniper_crate_name: &str) -> TokenStream {
+        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+
+        let ty = &self._type;
+        let context = self
+            .context
+            .as_ref()
+            .map(|ctx| quote!( #ctx ))
+            .unwrap_or_else(|| quote!(()));
+
+        let scalar = self
+            .scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            });
+
+        let field_definitions = self.field_definition_tokens();
+        let resolve_matches = self.resolve_matches_tokens(&scalar, &juniper_crate_name);
+
+        // Preserve the original type_generics before modification,
+        // since alteration makes them invalid if self.generic_scalar
+        // is specified.
+        let (_, type_generics, _) = self.generics.split_for_impl();
+
+        let mut generics = self.generics.clone();
+
+        if self.scalar.is_none() && self.generic_scalar {
+            // No custom scalar specified, but always generic specified.
+            // Therefore we inject the generic scalar.
+
+            generics.params.push(parse_quote!(__S));
+
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            // Insert ScalarValue constraint.
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
+        }
+
+        let type_generics_tokens = if self.include_type_generics {
+            Some(type_generics)
+        } else {
+            None
+        };
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        let output = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLTypeInfo<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                    type Context = #context;
+                    type TypeInfo = ();
+
+                    fn fields<'r>(
+                        info: &Self::TypeInfo,
+                        registry: &mut #juniper_crate_name::Registry<'r, #scalar>
+                    ) -> Vec<#juniper_crate_name::meta::Field<'r, #scalar>>
+                        where #scalar : 'r,
+                    {
+                        vec![
+                            #( #field_definitions ),*
+                        ]
+                    }
+
+                    #[allow(unused_variables)]
+                    #[allow(unused_mut)]
+                    fn resolve_field(
+                        self: &Self,
+                        _info: &(),
+                        field: &str,
+                        args: &#juniper_crate_name::Arguments<#scalar>,
+                        executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
+                    ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                        match field {
+                            #( #resolve_matches )*
+                            _ => {
+                                panic!("Field {} not found on type {:?}",
+                                    field,
+                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
+                                );
+                            }
+                        }
+                    }
+            }
+        );
+
         output
     }
 
