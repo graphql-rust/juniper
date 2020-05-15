@@ -1,20 +1,25 @@
-use crate::{
-    result::{GraphQLScope, UnsupportedAttribute},
-    util::{self, span_container::SpanContainer},
-};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
-pub fn build_derive_union(
-    ast: syn::DeriveInput,
-    is_internal: bool,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
+use crate::{
+    result::{GraphQLScope, UnsupportedAttribute},
+    util::{self, span_container::SpanContainer, Mode},
+};
+
+const SCOPE: GraphQLScope = GraphQLScope::DeriveUnion;
+
+pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
+    let is_internal = matches!(mode, Mode::Internal);
+
+    let ast =
+        syn::parse2::<syn::DeriveInput>(input).unwrap_or_else(|e| proc_macro_error::abort!(e));
+
     let ast_span = ast.span();
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
-        _ => return Err(error.custom_error(ast_span, "can only be applied to enums")),
+        Data::Struct(_) => unimplemented!(),
+        _ => return Err(SCOPE.custom_error(ast_span, "can only be applied to enums and structs")),
     };
 
     // Parse attributes.
@@ -43,7 +48,7 @@ pub fn build_derive_union(
             };
 
             if let Some(ident) = field_attrs.skip {
-                error.unsupported_attribute_within(ident.span(), UnsupportedAttribute::Skip);
+                SCOPE.unsupported_attribute_within(ident.span(), UnsupportedAttribute::Skip);
                 return None;
             }
 
@@ -67,7 +72,7 @@ pub fn build_derive_union(
                     };
 
                     if iter.next().is_some() {
-                        error.custom(
+                        SCOPE.custom(
                             inner.span(),
                             "all members must be unnamed with a single element e.g. Some(T)",
                         );
@@ -76,7 +81,7 @@ pub fn build_derive_union(
                     first.ty.clone()
                 }
                 _ => {
-                    error.custom(
+                    SCOPE.custom(
                         variant_name.span(),
                         "only unnamed fields with a single element are allowed, e.g., Some(T)",
                     );
@@ -86,21 +91,21 @@ pub fn build_derive_union(
             };
 
             if let Some(description) = field_attrs.description {
-                error.unsupported_attribute_within(
+                SCOPE.unsupported_attribute_within(
                     description.span_ident(),
                     UnsupportedAttribute::Description,
                 );
             }
 
             if let Some(default) = field_attrs.default {
-                error.unsupported_attribute_within(
+                SCOPE.unsupported_attribute_within(
                     default.span_ident(),
                     UnsupportedAttribute::Default,
                 );
             }
 
             if name.starts_with("__") {
-                error.no_double_underscore(if let Some(name) = field_attrs.name {
+                SCOPE.no_double_underscore(if let Some(name) = field_attrs.name {
                     name.span_ident()
                 } else {
                     variant_name.span()
@@ -127,16 +132,16 @@ pub fn build_derive_union(
 
     if !attrs.interfaces.is_empty() {
         attrs.interfaces.iter().for_each(|elm| {
-            error.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
+            SCOPE.unsupported_attribute(elm.span(), UnsupportedAttribute::Interface)
         });
     }
 
     if fields.is_empty() {
-        error.not_empty(ast_span);
+        SCOPE.not_empty(ast_span);
     }
 
     if name.starts_with("__") && !is_internal {
-        error.no_double_underscore(if let Some(name) = attrs.name {
+        SCOPE.no_double_underscore(if let Some(name) = attrs.name {
             name.span_ident()
         } else {
             ident.span()
@@ -157,7 +162,7 @@ pub fn build_derive_union(
     };
 
     if !all_variants_different {
-        error.custom(ident.span(), "each variant must have a different type");
+        SCOPE.custom(ident.span(), "each variant must have a different type");
     }
 
     // Early abort after GraphQL properties

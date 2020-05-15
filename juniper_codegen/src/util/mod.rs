@@ -1,6 +1,7 @@
 #![allow(clippy::single_match)]
 
 pub mod duplicate;
+pub mod mode;
 pub mod parse_impl;
 pub mod span_container;
 
@@ -13,6 +14,8 @@ use syn::{
     parse, parse_quote, punctuated::Punctuated, spanned::Spanned, Attribute, Lit, Meta, MetaList,
     MetaNameValue, NestedMeta, Token,
 };
+
+pub use mode::Mode;
 
 pub fn juniper_path(is_internal: bool) -> syn::Path {
     let name = if is_internal { "crate" } else { "juniper" };

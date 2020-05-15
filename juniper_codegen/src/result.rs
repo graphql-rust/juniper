@@ -5,7 +5,8 @@ use proc_macro2::Span;
 use proc_macro_error::{Diagnostic, Level};
 use std::fmt;
 
-pub const GRAPHQL_SPECIFICATION: &'static str = "https://spec.graphql.org/June2018/";
+/// URL of the GraphQL specification (June 2018 Edition).
+pub const SPEC_URL: &'static str = "https://spec.graphql.org/June2018/";
 
 #[allow(unused_variables)]
 pub enum GraphQLScope {
@@ -20,7 +21,7 @@ pub enum GraphQLScope {
 }
 
 impl GraphQLScope {
-    pub fn specification_section(&self) -> &str {
+    pub fn spec_section(&self) -> &str {
         match self {
             GraphQLScope::DeriveObject | GraphQLScope::ImplObject => "#sec-Objects",
             GraphQLScope::DeriveInputObject => "#sec-Input-Objects",
@@ -57,13 +58,13 @@ pub enum UnsupportedAttribute {
 }
 
 impl GraphQLScope {
-    fn specification_link(&self) -> String {
-        format!("{}{}", GRAPHQL_SPECIFICATION, self.specification_section())
+    fn spec_link(&self) -> String {
+        format!("{}{}", SPEC_URL, self.spec_section())
     }
 
     pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) {
         Diagnostic::spanned(span, Level::Error, format!("{} {}", self, msg.as_ref()))
-            .note(self.specification_link())
+            .note(self.spec_link())
             .emit();
     }
 
@@ -97,7 +98,7 @@ impl GraphQLScope {
             Level::Error,
             format!("{} expects at least one field", self),
         )
-        .note(self.specification_link())
+        .note(self.spec_link())
         .emit();
     }
 
@@ -120,7 +121,7 @@ impl GraphQLScope {
                             ),
                         )
                             .help(format!("There is at least one other field with the same name `{}`, possibly renamed via the #[graphql] attribute", dup.name))
-                            .note(self.specification_link())
+                            .note(self.spec_link())
                             .emit();
                     });
             })
@@ -132,7 +133,7 @@ impl GraphQLScope {
             Level::Error,
             "All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.".to_string(),
         )
-            .note(format!("{}#sec-Schema", GRAPHQL_SPECIFICATION))
+            .note(format!("{}#sec-Schema", SPEC_URL))
             .emit();
     }
 }

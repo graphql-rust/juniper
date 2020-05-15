@@ -25,6 +25,8 @@ use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use result::GraphQLScope;
 
+use self::util::Mode;
+
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
@@ -93,16 +95,6 @@ pub fn derive_object_internal(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLUnion, attributes(graphql))]
-pub fn derive_union(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_union::build_derive_union(ast, false, GraphQLScope::DeriveUnion);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
 /// derive.
 ///
@@ -555,26 +547,35 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
 }
 
 #[proc_macro_error]
+#[proc_macro_derive(GraphQLUnion, attributes(graphql))]
+pub fn derive_union(input: TokenStream) -> TokenStream {
+    derive_union::expand(input.into(), Mode::Public)
+        .unwrap_or_else(|e| proc_macro_error::abort!(e))
+        .into()
+}
+
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLUnionInternal, attributes(graphql))]
+#[doc(hidden)]
+pub fn derive_union_internal(input: TokenStream) -> TokenStream {
+    derive_union::expand(input.into(), Mode::Internal)
+        .unwrap_or_else(|e| proc_macro_error::abort!(e))
+        .into()
+}
+
+#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    let attrs = proc_macro2::TokenStream::from(attrs);
-    let body = proc_macro2::TokenStream::from(body);
-    let gen = impl_union::impl_union(false, attrs, body, GraphQLScope::ImplUnion);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    impl_union::expand(attrs.into(), body.into(), Mode::Public)
+        .unwrap_or_else(|e| proc_macro_error::abort!(e))
+        .into()
 }
 
 #[proc_macro_error]
 #[proc_macro_attribute]
 #[doc(hidden)]
 pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    let attrs = proc_macro2::TokenStream::from(attrs);
-    let body = proc_macro2::TokenStream::from(body);
-    let gen = impl_union::impl_union(true, attrs, body, GraphQLScope::ImplUnion);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+    impl_union::expand(attrs.into(), body.into(), Mode::Internal)
+        .unwrap_or_else(|e| proc_macro_error::abort!(e))
+        .into()
 }

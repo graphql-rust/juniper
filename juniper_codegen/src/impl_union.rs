@@ -1,54 +1,17 @@
-use crate::{
-    result::GraphQLScope,
-    util::{self, span_container::SpanContainer},
-};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, spanned::Spanned};
 
-struct ResolverVariant {
-    pub ty: syn::Type,
-    pub resolver: syn::Expr,
-}
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer, Mode},
+};
 
-struct ResolveBody {
-    pub variants: Vec<ResolverVariant>,
-}
+const SCOPE: GraphQLScope = GraphQLScope::ImplUnion;
 
-impl syn::parse::Parse for ResolveBody {
-    fn parse(input: syn::parse::ParseStream) -> Result<Self, syn::parse::Error> {
-        input.parse::<syn::token::Match>()?;
-        input.parse::<syn::token::SelfValue>()?;
+pub fn expand(attrs: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
+    let is_internal = matches!(mode, Mode::Internal);
 
-        let match_body;
-        syn::braced!( match_body in input );
-
-        let mut variants = Vec::new();
-        while !match_body.is_empty() {
-            let ty = match_body.parse::<syn::Type>()?;
-            match_body.parse::<syn::token::FatArrow>()?;
-            let resolver = match_body.parse::<syn::Expr>()?;
-
-            variants.push(ResolverVariant { ty, resolver });
-
-            // Optinal trailing comma.
-            match_body.parse::<syn::token::Comma>().ok();
-        }
-
-        if !input.is_empty() {
-            return Err(input.error("unexpected input"));
-        }
-
-        Ok(Self { variants })
-    }
-}
-
-pub fn impl_union(
-    is_internal: bool,
-    attrs: TokenStream,
-    body: TokenStream,
-    error: GraphQLScope,
-) -> syn::Result<TokenStream> {
     let body_span = body.span();
     let _impl = util::parse_impl::ImplBlock::parse(attrs, body)?;
 
@@ -56,7 +19,7 @@ pub fn impl_union(
     // Validate trait target name, if present.
     if let Some((name, path)) = &_impl.target_trait {
         if !(name == "GraphQLUnion" || name == "juniper.GraphQLUnion") {
-            return Err(error.custom_error(
+            return Err(SCOPE.custom_error(
                 path.span(),
                 "Invalid impl target trait: expected 'GraphQLUnion'",
             ));
@@ -89,7 +52,7 @@ pub fn impl_union(
     let method = match method {
         Some(method) => method,
         None => {
-            return Err(error.custom_error(
+            return Err(SCOPE.custom_error(
                 body_span,
                 "expected exactly one method with signature: fn resolve(&self) { ... }",
             ))
@@ -103,7 +66,7 @@ pub fn impl_union(
     let body = syn::parse::<ResolveBody>(body_raw.into())?;
 
     if body.variants.is_empty() {
-        error.not_empty(method.span())
+        SCOPE.not_empty(method.span())
     }
 
     proc_macro_error::abort_if_dirty();
@@ -220,4 +183,41 @@ pub fn impl_union(
     };
 
     Ok(output.into())
+}
+
+struct ResolverVariant {
+    pub ty: syn::Type,
+    pub resolver: syn::Expr,
+}
+
+struct ResolveBody {
+    pub variants: Vec<ResolverVariant>,
+}
+
+impl syn::parse::Parse for ResolveBody {
+    fn parse(input: syn::parse::ParseStream) -> Result<Self, syn::parse::Error> {
+        input.parse::<syn::token::Match>()?;
+        input.parse::<syn::token::SelfValue>()?;
+
+        let match_body;
+        syn::braced!( match_body in input );
+
+        let mut variants = Vec::new();
+        while !match_body.is_empty() {
+            let ty = match_body.parse::<syn::Type>()?;
+            match_body.parse::<syn::token::FatArrow>()?;
+            let resolver = match_body.parse::<syn::Expr>()?;
+
+            variants.push(ResolverVariant { ty, resolver });
+
+            // Optinal trailing comma.
+            match_body.parse::<syn::token::Comma>().ok();
+        }
+
+        if !input.is_empty() {
+            return Err(input.error("unexpected input"));
+        }
+
+        Ok(Self { variants })
+    }
 }
