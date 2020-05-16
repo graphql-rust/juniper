@@ -413,124 +413,89 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use actix_web::HttpRequest;
     use actix_web::{test, App};
+    use actix_web_actors::ws::{Frame, Message};
     use futures::StreamExt;
+    use futures::{SinkExt, Stream};
+    use juniper::{
+        tests::model::Database, tests::schema::Query, DefaultScalarValue, EmptyMutation,
+        FieldError, RootNode,
+    };
+    use juniper_subscriptions::Coordinator;
+    use std::{pin::Pin, time::Duration};
+    type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+    type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
+    type MyCoordinator = Coordinator<
+        'static,
+        Query,
+        EmptyMutation<Database>,
+        Subscription,
+        Database,
+        DefaultScalarValue,
+    >;
+    struct Subscription;
 
-    #[actix_rt::test]
-    async fn expected_communication() {
-        use actix_web::HttpRequest;
-        use actix_web_actors::ws::{Frame, Message};
-        use futures::{SinkExt, Stream};
-        use juniper::{DefaultScalarValue, EmptyMutation, FieldError, RootNode};
-        use juniper_subscriptions::Coordinator;
-        use std::{pin::Pin, time::Duration};
-
-        pub struct Query;
-
-        #[juniper::graphql_object(Context = Database)]
-        impl Query {
-            fn hello_world() -> &str {
-                "Hello World!"
-            }
+    #[juniper::graphql_subscription(Context = Database)]
+    impl Subscription {
+        async fn hello_world() -> StringStream {
+            let mut counter = 0;
+            let stream = tokio::time::interval(Duration::from_secs(2)).map(move |_| {
+                counter += 1;
+                if counter % 2 == 0 {
+                    Ok(String::from("World!"))
+                } else {
+                    Ok(String::from("Hello"))
+                }
+            });
+            Box::pin(stream)
         }
-        type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
-        type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
-        type MyCoordinator = Coordinator<
-            'static,
-            Query,
-            EmptyMutation<Database>,
-            Subscription,
-            Database,
-            DefaultScalarValue,
-        >;
-        struct Subscription;
+    }
 
-        #[derive(Clone)]
-        pub struct Database;
+    async fn gql_subscriptions(
+        coordinator: web::Data<MyCoordinator>,
+        stream: web::Payload,
+        req: HttpRequest,
+    ) -> Result<HttpResponse, Error> {
+        let context = Database::new();
+        graphql_subscriptions(
+            coordinator,
+            context,
+            stream,
+            req,
+            Some(EmptySubscriptionHandler::default()),
+            None,
+        )
+        .await
+    }
 
-        impl juniper::Context for Database {}
-
-        impl Database {
-            fn new() -> Self {
-                Self {}
-            }
-        }
-
-        #[juniper::graphql_subscription(Context = Database)]
-        impl Subscription {
-            async fn hello_world() -> StringStream {
-                let mut counter = 0;
-                let stream = tokio::time::interval(Duration::from_secs(2)).map(move |_| {
-                    counter += 1;
-                    if counter % 2 == 0 {
-                        Ok(String::from("World!"))
-                    } else {
-                        Ok(String::from("Hello"))
-                    }
-                });
-                Box::pin(stream)
-            }
-        }
-
+    fn test_server() -> test::TestServer {
         let schema: Schema =
             RootNode::new(Query, EmptyMutation::<Database>::new(), Subscription {});
 
-        async fn gql_subscriptions(
-            coordinator: web::Data<MyCoordinator>,
-            stream: web::Payload,
-            req: HttpRequest,
-        ) -> Result<HttpResponse, Error> {
-            let context = Database::new();
-            graphql_subscriptions(
-                coordinator,
-                context,
-                stream,
-                req,
-                Some(EmptySubscriptionHandler::default()),
-                None,
-            )
-            .await
-        }
         let coord = web::Data::new(juniper_subscriptions::Coordinator::new(schema));
-        let mut app = test::start(move || {
+        test::start(move || {
             App::new()
                 .app_data(coord.clone())
                 .service(web::resource("/subscriptions").to(gql_subscriptions))
-        });
-        let mut ws = app.ws_at("/subscriptions").await.unwrap();
-        let messages_to_be_sent = vec![
-            String::from(r#"{"type":"connection_init","payload":{}}"#),
-            String::from(
-                r#"{"id":"1","type":"start","payload":{"variables":{},"extensions":{},"operationName":"hello","query":"subscription hello {  helloWorld}"}}"#,
-            ),
-            String::from(
-                r#"{"id":"2","type":"start","payload":{"variables":{},"extensions":{},"operationName":"hello","query":"subscription hello {  helloWorld}"}}"#,
-            ),
-            String::from(r#"{"id":"1","type":"stop"}"#),
-            String::from(r#"{"type":"connection_terminate"}"#),
-        ];
-        let messages_to_be_received = vec![
-            vec![
-                Some(bytes::Bytes::from(
-                    r#"{"type":"connection_ack", "payload": null }"#,
-                )),
-                Some(bytes::Bytes::from(r#"{"type":"ka", "payload": null }"#)),
-            ],
-            vec![Some(bytes::Bytes::from(
-                r#"{"type":"data","id":"1","payload":{"data":{"helloWorld":"Hello"}} }"#,
-            ))],
-            vec![Some(bytes::Bytes::from(
-                r#"{"type":"data","id":"2","payload":{"data":{"helloWorld":"Hello"}} }"#,
-            ))],
-            vec![Some(bytes::Bytes::from(
-                r#"{"type":"complete","id":"1","payload":null}"#,
-            ))],
-            vec![None],
-        ];
+        })
+    }
 
-        for (index, msg_to_be_sent) in messages_to_be_sent.into_iter().enumerate() {
-            let expected_msgs = messages_to_be_received.get(index).unwrap();
-            ws.send(Message::Text(msg_to_be_sent)).await.unwrap();
+    fn received_msg(msg: &'static str) -> Option<bytes::Bytes> {
+        Some(bytes::Bytes::from(msg))
+    }
+
+    async fn test_subscription(
+        msgs_to_send: Vec<&str>,
+        msgs_to_receive: Vec<Vec<Option<bytes::Bytes>>>,
+    ) {
+        let mut app = test_server();
+        let mut ws = app.ws_at("/subscriptions").await.unwrap();
+        for (index, msg_to_be_sent) in msgs_to_send.into_iter().enumerate() {
+            let expected_msgs = msgs_to_receive.get(index).unwrap();
+            ws.send(Message::Text(msg_to_be_sent.to_string()))
+                .await
+                .unwrap();
             for expected_msg in expected_msgs {
                 let (item, ws_stream) = ws.into_future().await;
                 ws = ws_stream;
@@ -546,5 +511,69 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[actix_rt::test]
+    async fn basic_connection() {
+        let msgs_to_send = vec![
+            r#"{"type":"connection_init","payload":{}}"#,
+            r#"{"type":"connection_terminate"}"#,
+        ];
+        let msgs_to_receive = vec![
+            vec![
+                received_msg(r#"{"type":"connection_ack", "payload": null }"#),
+                received_msg(r#"{"type":"ka", "payload": null }"#),
+            ],
+            vec![None],
+        ];
+        test_subscription(msgs_to_send, msgs_to_receive).await;
+    }
+
+    #[actix_rt::test]
+    async fn basic_subscription() {
+        let msgs_to_send = vec![
+            r#"{"type":"connection_init","payload":{}}"#,
+            r#"{"id":"1","type":"start","payload":{"variables":{},"extensions":{},"operationName":"hello","query":"subscription hello {  helloWorld}"}}"#,
+            r#"{"type":"connection_terminate"}"#,
+        ];
+        let msgs_to_receive = vec![
+            vec![
+                received_msg(r#"{"type":"connection_ack", "payload": null }"#),
+                received_msg(r#"{"type":"ka", "payload": null }"#),
+            ],
+            vec![received_msg(
+                r#"{"type":"data","id":"1","payload":{"data":{"helloWorld":"Hello"}} }"#,
+            )],
+            vec![None],
+        ];
+        test_subscription(msgs_to_send, msgs_to_receive).await;
+    }
+
+    #[actix_rt::test]
+    async fn conn_with_two_subscriptions() {
+        let msgs_to_send = vec![
+            r#"{"type":"connection_init","payload":{}}"#,
+            r#"{"id":"1","type":"start","payload":{"variables":{},"extensions":{},"operationName":"hello","query":"subscription hello {  helloWorld}"}}"#,
+            r#"{"id":"2","type":"start","payload":{"variables":{},"extensions":{},"operationName":"hello","query":"subscription hello {  helloWorld}"}}"#,
+            r#"{"id":"1","type":"stop"}"#,
+            r#"{"type":"connection_terminate"}"#,
+        ];
+        let msgs_to_receive = vec![
+            vec![
+                received_msg(r#"{"type":"connection_ack", "payload": null }"#),
+                received_msg(r#"{"type":"ka", "payload": null }"#),
+            ],
+            vec![received_msg(
+                r#"{"type":"data","id":"1","payload":{"data":{"helloWorld":"Hello"}} }"#,
+            )],
+            vec![received_msg(
+                r#"{"type":"data","id":"2","payload":{"data":{"helloWorld":"Hello"}} }"#,
+            )],
+            vec![received_msg(
+                r#"{"type":"complete","id":"1","payload":null}"#,
+            )],
+            vec![None],
+        ];
+        test_subscription(msgs_to_send, msgs_to_receive).await;
     }
 }
