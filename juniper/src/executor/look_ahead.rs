@@ -337,11 +337,14 @@ pub trait LookAheadMethods<S> {
 
     /// Get the the child selection for a given field
     /// If a child has an alias, it will only match if the alias matches `name`
+    #[deprecated(note = "please use `children` to access the child selections instead")]
     fn select_child(&self, name: &str) -> Option<&Self>;
 
     /// Check if a given child selection with a name exists
     /// If a child has an alias, it will only match if the alias matches `name`
+    #[deprecated(note = "please use `children` to access the child selections instead")]
     fn has_child(&self, name: &str) -> bool {
+        #[allow(deprecated)]
         self.select_child(name).is_some()
     }
 
@@ -360,6 +363,7 @@ pub trait LookAheadMethods<S> {
     }
 
     /// Get the (possibly aliased) names of the top level children for the current selection
+    #[deprecated(note = "please use `children` to access the child selections instead")]
     fn child_names(&self) -> Vec<&str>;
 
     /// Get an iterator over the children for the current selection
@@ -1300,6 +1304,7 @@ query Hero {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn check_select_child() {
         let lookahead: LookAheadSelection<DefaultScalarValue> = LookAheadSelection {
             name: "hero",
@@ -1451,6 +1456,7 @@ fragment heroFriendNames on Hero {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn check_visitability() {
         let docs = parse_document_source::<DefaultScalarValue>(
             "

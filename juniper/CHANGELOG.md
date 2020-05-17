@@ -73,7 +73,7 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
   Rename `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`
   and add support for `application/graphql` POST request.
 
-- When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/631))
+- When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/631)). These methods are also deprecated in favour of the new `children` method.
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 
