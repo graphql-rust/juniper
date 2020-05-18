@@ -43,10 +43,10 @@ mod interface {
         interfaces = [&dyn Pet]
     )]
     impl Dog {
-        fn name(&self) -> &str {
+        async fn name(&self) -> &str {
             &self.name
         }
-        fn woofs(&self) -> bool {
+        async fn woofs(&self) -> bool {
             self.woofs
         }
     }
@@ -69,10 +69,10 @@ mod interface {
         interfaces = [&dyn Pet]
     )]
     impl Cat {
-        fn name(&self) -> &str {
+        async fn name(&self) -> &str {
             &self.name
         }
-        fn meows(&self) -> bool {
+        async fn meows(&self) -> bool {
             self.meows
         }
     }
@@ -83,7 +83,7 @@ mod interface {
 
     #[crate::graphql_object_internal]
     impl Schema {
-        fn pets(&self) -> Vec<&dyn Pet> {
+        async fn pets(&self) -> Vec<&dyn Pet> {
             self.pets.iter().map(|p| p.as_ref()).collect()
         }
     }

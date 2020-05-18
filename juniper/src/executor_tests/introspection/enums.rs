@@ -68,22 +68,22 @@ struct Root;
 
 #[crate::graphql_object_internal]
 impl Root {
-    fn default_name() -> DefaultName {
+    async fn default_name() -> DefaultName {
         DefaultName::Foo
     }
-    fn named() -> Named {
+    async fn named() -> Named {
         Named::Foo
     }
-    fn no_trailing_comma() -> NoTrailingComma {
+    async fn no_trailing_comma() -> NoTrailingComma {
         NoTrailingComma::Foo
     }
-    fn enum_description() -> EnumDescription {
+    async fn enum_description() -> EnumDescription {
         EnumDescription::Foo
     }
-    fn enum_value_description() -> EnumValueDescription {
+    async fn enum_value_description() -> EnumValueDescription {
         EnumValueDescription::Foo
     }
-    fn enum_deprecation() -> EnumDeprecation {
+    async fn enum_deprecation() -> EnumDeprecation {
         EnumDeprecation::Foo
     }
 }

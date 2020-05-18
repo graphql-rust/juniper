@@ -228,14 +228,6 @@ pub fn build_scalar(
         Some(val) => quote!(.description(#val)),
         None => quote!(),
     };
-    let async_generic_type = match input.custom_data_type_is_struct {
-        true => quote!(__S),
-        _ => quote!(#custom_data_type),
-    };
-    let async_generic_type_decl = match input.custom_data_type_is_struct {
-        true => quote!(<#async_generic_type>),
-        _ => quote!(),
-    };
     let generic_type = match input.custom_data_type_is_struct {
         true => quote!(S),
         _ => quote!(#custom_data_type),
@@ -249,31 +241,7 @@ pub fn build_scalar(
         _ => quote!(),
     };
 
-    let _async = quote!(
-        impl#async_generic_type_decl #crate_name::GraphQLTypeAsync<#async_generic_type> for #impl_for_type
-        where
-            #async_generic_type: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<#async_generic_type> + Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
-        {
-            fn resolve_async<'a>(
-                &'a self,
-                info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [#crate_name::Selection<#async_generic_type>]>,
-                executor: &'a #crate_name::Executor<Self::Context, #async_generic_type>,
-            ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<#async_generic_type>> {
-                use #crate_name::GraphQLType;
-                use futures::future;
-                let v = self.resolve(info, selection_set, executor);
-                Box::pin(future::ready(v))
-            }
-        }
-    );
-
     let content = quote!(
-        #_async
-
         impl#generic_type_decl #crate_name::marker::IsInputType<#generic_type> for #impl_for_type
             #generic_type_bound { }
 
@@ -281,7 +249,7 @@ pub fn build_scalar(
             #generic_type_bound { }
 
         impl#generic_type_decl #crate_name::GraphQLType<#generic_type> for #impl_for_type
-        #generic_type_bound
+            #generic_type_bound
         {
             type Context = ();
             type TypeInfo = ();
@@ -302,13 +270,23 @@ pub fn build_scalar(
                     .into_meta()
             }
 
-            fn resolve(
-                &self,
-                info: &(),
-                selection: Option<&[#crate_name::Selection<#generic_type>]>,
-                executor: &#crate_name::Executor<Self::Context, #generic_type>,
-            ) -> #crate_name::ExecutionResult<#generic_type> {
-                Ok(#resolve_body)
+            fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+                &'me self,
+                info: &'ty Self::TypeInfo,
+                selection_set: Option<&'set [#crate_name::Selection<'set, #generic_type>]>,
+                executor: &'ref_err #crate_name::Executor<'ref_err, 'err, Self::Context, #generic_type>,
+            ) -> #crate_name::BoxFuture<'fut, #crate_name::ExecutionResult<#generic_type>>
+            where
+                'me: 'fut,
+                'ty: 'fut,
+                'name: 'fut,
+                'set: 'fut,
+                'ref_err: 'fut,
+                'err: 'fut,
+                #generic_type: 'fut,
+            {
+                let f = futures::future::ready(Ok(#resolve_body));
+                futures::future::FutureExt::boxed(f)
             }
         }
 

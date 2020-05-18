@@ -9,11 +9,11 @@ struct TestType;
 
 #[crate::graphql_object_internal]
 impl TestType {
-    fn a() -> &str {
+    async fn a() -> &str {
         "a"
     }
 
-    fn b() -> &str {
+    async fn b() -> &str {
         "b"
     }
 }

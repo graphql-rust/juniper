@@ -21,11 +21,11 @@ struct TestType;
 
 #[crate::graphql_object_internal]
 impl TestType {
-    fn to_string(color: Color) -> String {
+    async fn to_string(color: Color) -> String {
         format!("Color::{:?}", color)
     }
 
-    fn a_color() -> Color {
+    async fn a_color() -> Color {
         Color::Red
     }
 }

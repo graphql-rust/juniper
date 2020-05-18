@@ -5,7 +5,7 @@ struct Query;
 
 #[juniper::graphql_object]
 impl Query {
-    fn users(executor: &Executor) -> Vec<User> {
+    async fn users(executor: &Executor) -> Vec<User> {
         // This doesn't cause a panic
         executor.look_ahead();
 
@@ -21,7 +21,7 @@ struct User {
 
 #[juniper::graphql_object]
 impl User {
-    fn country(&self, executor: &Executor) -> &Country {
+    async fn country(&self, executor: &Executor) -> &Country {
         // This panics!
         executor.look_ahead();
 
@@ -35,7 +35,7 @@ struct Country {
 
 #[juniper::graphql_object]
 impl Country {
-    fn id(&self) -> i32 {
+    async fn id(&self) -> i32 {
         self.id
     }
 }

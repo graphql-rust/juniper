@@ -12,7 +12,7 @@ struct Droid {
     primary_function: String,
 }
 
-trait Character {
+trait Character: Send + Sync {
     fn as_human(&self) -> Option<&Human> {
         None
     }
@@ -35,7 +35,7 @@ impl Character for Droid {
 
 #[juniper::graphql_union]
 impl<'a> GraphQLUnion for &'a dyn Character {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Human => self.as_human(),
             Droid => self.as_droid(),

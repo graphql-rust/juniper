@@ -60,7 +60,7 @@ graphql_interface!(Interface: () as "SampleInterface" |&self| {
     Scalar = crate::DefaultScalarValue,
 )]
 impl Root {
-    fn sample_enum() -> Sample {
+    async fn sample_enum() -> Sample {
         Sample::One
     }
 
@@ -70,7 +70,7 @@ impl Root {
     ))]
 
     /// A sample scalar field on the object
-    fn sample_scalar(first: i32, second: i32) -> Scalar {
+    async fn sample_scalar(first: i32, second: i32) -> Scalar {
         Scalar(first + second)
     }
 }

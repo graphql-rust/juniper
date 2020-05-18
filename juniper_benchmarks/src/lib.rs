@@ -62,24 +62,11 @@ pub struct Query;
 
 #[graphql_object(Context = Context)]
 impl Query {
-    fn user_sync_instant(id: i32) -> Result<User, FieldError> {
+    async fn user_instant(id: i32) -> Result<User, FieldError> {
         Ok(User::new(id))
     }
 
-    fn users_sync_instant(ids: Option<Vec<i32>>) -> Result<Vec<User>, FieldError> {
-        if let Some(ids) = ids {
-            let users = ids.into_iter().map(User::new).collect();
-            Ok(users)
-        } else {
-            Ok(vec![])
-        }
-    }
-
-    async fn user_async_instant(id: i32) -> Result<User, FieldError> {
-        Ok(User::new(id))
-    }
-
-    async fn users_async_instant(ids: Option<Vec<i32>>) -> Result<Vec<User>, FieldError> {
+    async fn users_instant(ids: Option<Vec<i32>>) -> Result<Vec<User>, FieldError> {
         if let Some(ids) = ids {
             let users = ids.into_iter().map(User::new).collect();
             Ok(users)
@@ -92,12 +79,6 @@ impl Query {
 pub fn new_schema(
 ) -> juniper::RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>> {
     juniper::RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new())
-}
-
-pub fn execute_sync(query: &str, vars: Variables) -> QueryResult {
-    let root = new_schema();
-    let ctx = Context::new();
-    juniper::execute_sync(query, None, &root, &vars, &ctx).map_err(|e| format!("{:?}", e))
 }
 
 pub async fn execute(query: &str, vars: Variables) -> QueryResult {

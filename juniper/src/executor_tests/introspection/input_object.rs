@@ -85,7 +85,7 @@ struct FieldWithDefaults {
 
 #[crate::graphql_object_internal]
 impl Root {
-    fn test_field(
+    async fn test_field(
         a1: DefaultName,
         a2: NoTrailingComma,
         a3: Derive,

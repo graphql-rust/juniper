@@ -224,16 +224,16 @@ mod integration_test {
 
         #[crate::graphql_object_internal]
         impl Root {
-            fn exampleNaiveDate() -> NaiveDate {
+            async fn exampleNaiveDate() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
             }
-            fn exampleNaiveDateTime() -> NaiveDateTime {
+            async fn exampleNaiveDateTime() -> NaiveDateTime {
                 NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)
             }
-            fn exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
+            async fn exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
                 DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
             }
-            fn exampleDateTimeUtc() -> DateTime<Utc> {
+            async fn exampleDateTimeUtc() -> DateTime<Utc> {
                 Utc.timestamp(61, 0)
             }
         }

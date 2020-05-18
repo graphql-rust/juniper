@@ -115,7 +115,7 @@ pub fn build_derive_union(
                 deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
                 resolver_code,
                 is_type_inferred: true,
-                is_async: false,
+                is_async: true,
                 default: None,
                 span,
             })
@@ -164,6 +164,7 @@ pub fn build_derive_union(
     proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
+        is_internal,
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
@@ -174,9 +175,7 @@ pub fn build_derive_union(
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
-        no_async: attrs.no_async.is_some(),
     };
 
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    Ok(definition.into_union_tokens(juniper_crate_name))
+    Ok(definition.into_union_tokens())
 }

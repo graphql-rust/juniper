@@ -48,7 +48,7 @@ struct Query;
 
 #[crate::graphql_object_internal]
 impl Query {
-    fn field_sync(&self) -> &'static str {
+    async fn field_sync(&self) -> &'static str {
         "field_sync"
     }
 
@@ -56,7 +56,7 @@ impl Query {
         "field_async_plain".to_string()
     }
 
-    fn user(id: String) -> User {
+    async fn user(id: String) -> User {
         User {
             id: 1,
             name: id,

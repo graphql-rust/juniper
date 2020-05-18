@@ -134,6 +134,7 @@ pub fn impl_input_object(
     proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
+        is_internal,
         name,
         _type: syn::parse_str(&ast.ident.to_string()).unwrap(),
         context: attrs.context.map(SpanContainer::into_inner),
@@ -144,9 +145,7 @@ pub fn impl_input_object(
         interfaces: None,
         include_type_generics: true,
         generic_scalar: true,
-        no_async: attrs.no_async.is_some(),
     };
 
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    Ok(definition.into_input_object_tokens(juniper_crate_name))
+    Ok(definition.into_input_object_tokens())
 }

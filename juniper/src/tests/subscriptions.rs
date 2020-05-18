@@ -25,7 +25,7 @@ struct MyQuery;
 
 #[crate::graphql_object_internal(context = MyContext)]
 impl MyQuery {
-    fn test(&self) -> i32 {
+    async fn test(&self) -> i32 {
         0 // NOTICE: does not serve a purpose
     }
 }

@@ -30,7 +30,7 @@ struct Root;
 
 #[juniper::graphql_object]
 impl Root {
-    fn userWithUsername(username: String) -> FieldResult<Option<User>> {
+    async fn userWithUsername(username: String) -> FieldResult<Option<User>> {
         // Look up user in database...
 # unimplemented!()
     }
@@ -51,7 +51,7 @@ struct Mutations;
 
 #[juniper::graphql_object]
 impl Mutations {
-    fn signUpUser(name: String, email: String) -> FieldResult<User> {
+    async fn signUpUser(name: String, email: String) -> FieldResult<User> {
         // Validate inputs and save user in database...
 # unimplemented!()
     }

@@ -32,30 +32,30 @@ struct Point {
 
 #[crate::graphql_object_internal]
 impl Root {
-    fn simple() -> i32 {
+    async fn simple() -> i32 {
         0
     }
-    fn exec_arg(_executor: &Executor) -> i32 {
+    async fn exec_arg(_executor: &Executor) -> i32 {
         0
     }
-    fn exec_arg_and_more(_executor: &Executor, arg: i32) -> i32 {
+    async fn exec_arg_and_more(_executor: &Executor, arg: i32) -> i32 {
         arg
     }
 
-    fn single_arg(arg: i32) -> i32 {
+    async fn single_arg(arg: i32) -> i32 {
         arg
     }
 
-    fn multi_args(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
-    fn multi_args_trailing_comma(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_trailing_comma(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
     #[graphql(arguments(arg(description = "The arg")))]
-    fn single_arg_descr(arg: i32) -> i32 {
+    async fn single_arg_descr(arg: i32) -> i32 {
         arg
     }
 
@@ -63,7 +63,7 @@ impl Root {
         arg1(description = "The first arg",),
         arg2(description = "The second arg")
     ))]
-    fn multi_args_descr(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_descr(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
@@ -71,39 +71,39 @@ impl Root {
         arg1(description = "The first arg",),
         arg2(description = "The second arg")
     ))]
-    fn multi_args_descr_trailing_comma(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_descr_trailing_comma(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
     // TODO: enable once [parameter attributes are supported by proc macros]
     //       (https://github.com/graphql-rust/juniper/pull/441)
-    //fn attr_arg_descr(
+    //async fn attr_arg_descr(
     //   #[graphql(description = "The arg")]
     //   arg: i32) -> i32
     //{ 0 }
-    //fn attr_arg_descr_collapse(
+    //async fn attr_arg_descr_collapse(
     //   #[graphql(description = "The first arg")]
     //   #[graphql(description = "and more details")]
     //    arg: i32,
     //) -> i32 { 0 }
 
     #[graphql(arguments(arg(default = 123,),))]
-    fn arg_with_default(arg: i32) -> i32 {
+    async fn arg_with_default(arg: i32) -> i32 {
         arg
     }
 
     #[graphql(arguments(arg1(default = 123,), arg2(default = 456,)))]
-    fn multi_args_with_default(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_with_default(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
     #[graphql(arguments(arg1(default = 123,), arg2(default = 456,),))]
-    fn multi_args_with_default_trailing_comma(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_with_default_trailing_comma(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
     #[graphql(arguments(arg(default = 123, description = "The arg")))]
-    fn arg_with_default_descr(arg: i32) -> i32 {
+    async fn arg_with_default_descr(arg: i32) -> i32 {
         arg
     }
 
@@ -111,7 +111,7 @@ impl Root {
         arg1(default = 123, description = "The first arg"),
         arg2(default = 456, description = "The second arg")
     ))]
-    fn multi_args_with_default_descr(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_with_default_descr(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
@@ -119,7 +119,7 @@ impl Root {
         arg1(default = 123, description = "The first arg",),
         arg2(default = 456, description = "The second arg",)
     ))]
-    fn multi_args_with_default_trailing_comma_descr(arg1: i32, arg2: i32) -> i32 {
+    async fn multi_args_with_default_trailing_comma_descr(arg1: i32, arg2: i32) -> i32 {
         arg1 + arg2
     }
 
@@ -135,7 +135,7 @@ impl Root {
             )
         ),
     )]
-    fn args_with_complex_default(arg1: String, arg2: Point) -> i32 {
+    async fn args_with_complex_default(arg1: String, arg2: Point) -> i32 {
         let _ = arg1;
         let _ = arg2;
         0

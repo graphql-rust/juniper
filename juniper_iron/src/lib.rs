@@ -39,15 +39,15 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 #
 # #[juniper::graphql_object( Context = Database )]
 # impl User {
-#     fn id(&self) -> FieldResult<&String> {
+#     async fn id(&self) -> FieldResult<&String> {
 #         Ok(&self.id)
 #     }
 #
-#     fn name(&self) -> FieldResult<&String> {
+#     async fn name(&self) -> FieldResult<&String> {
 #         Ok(&self.name)
 #     }
 #
-#     fn friends(context: &Database) -> FieldResult<Vec<&User>> {
+#     async fn friends(context: &Database) -> FieldResult<Vec<&User>> {
 #         Ok(self.friend_ids.iter()
 #             .filter_map(|id| executor.context().users.get(id))
 #             .collect())
@@ -56,7 +56,7 @@ use juniper::{Context, EmptyMutation, EmptySubscription};
 #
 # #[juniper::graphql_object( Context = Database )]
 # impl QueryRoot {
-#     fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
+#     async fn user(context: &Database, id: String) -> FieldResult<Option<&User>> {
 #         Ok(executor.context().users.get(&id))
 #     }
 # }
@@ -129,8 +129,8 @@ use std::{error::Error, fmt, io::Read, ops::Deref as _};
 use serde_json::error::Error as SerdeError;
 
 use juniper::{
-    http, http::GraphQLBatchRequest, DefaultScalarValue, GraphQLType, InputValue, RootNode,
-    ScalarValue,
+    http, http::GraphQLBatchRequest, DefaultScalarValue, GraphQLSubscriptionType, GraphQLType,
+    InputValue, RootNode, ScalarValue,
 };
 
 /// Handler that executes `GraphQL` queries in the given schema
@@ -152,12 +152,12 @@ pub struct GraphQLHandler<
     CtxT,
     S = DefaultScalarValue,
 > where
-    S: ScalarValue,
+    S: ScalarValue + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
-    CtxT: 'static,
-    Query: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    Mutation: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    Subscription: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    CtxT: Send + Sync,
+    Query: GraphQLType<S, Context = CtxT> + 'static,
+    Mutation: GraphQLType<S, Context = CtxT> + 'static,
+    Subscription: GraphQLSubscriptionType<S, Context = CtxT> + 'static,
 {
     context_factory: CtxFactory,
     root_node: RootNode<'a, Query, Mutation, Subscription, S>,
@@ -193,7 +193,7 @@ fn parse_url_param(params: Option<Vec<String>>) -> IronResult<Option<String>> {
 
 fn parse_variable_param<S>(params: Option<Vec<String>>) -> IronResult<Option<InputValue<S>>>
 where
-    S: ScalarValue,
+    S: ScalarValue + 'static,
 {
     if let Some(values) = params {
         Ok(
@@ -209,12 +209,12 @@ where
 impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
     GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: Send + Sync + 'static,
-    Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Query: GraphQLType<S, Context = CtxT, TypeInfo = ()>,
+    Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()>,
+    Subscription: GraphQLSubscriptionType<S, Context = CtxT, TypeInfo = ()>,
 {
     /// Build a new GraphQL handler
     ///
@@ -275,7 +275,7 @@ where
         context: &CtxT,
         request: GraphQLBatchRequest<S>,
     ) -> IronResult<Response> {
-        let response = request.execute_sync(&self.root_node, context);
+        let response = futures::executor::block_on(request.execute(&self.root_node, context));
         let content_type = "application/json".parse::<Mime>().unwrap();
         let json = serde_json::to_string_pretty(&response).unwrap();
         let status = if response.is_ok() {
@@ -316,12 +316,12 @@ impl PlaygroundHandler {
 impl<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S> Handler
     for GraphQLHandler<'a, CtxFactory, Query, Mutation, Subscription, CtxT, S>
 where
-    S: ScalarValue + Sync + Send + 'static,
+    S: ScalarValue + 'static,
     CtxFactory: Fn(&mut Request) -> IronResult<CtxT> + Send + Sync + 'static,
     CtxT: Send + Sync + 'static,
-    Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: GraphQLType<S, Context = CtxT, TypeInfo = ()> + Send + Sync + 'static,
+    Query: GraphQLType<S, Context = CtxT, TypeInfo = ()> + 'static,
+    Mutation: GraphQLType<S, Context = CtxT, TypeInfo = ()> + 'static,
+    Subscription: GraphQLSubscriptionType<S, Context = CtxT, TypeInfo = ()> + 'static,
     'a: 'static,
 {
     fn handle(&self, mut req: &mut Request) -> IronResult<Response> {
@@ -417,13 +417,12 @@ mod tests {
         Handler, Headers, Url,
     };
     use iron_test::{request, response};
-    use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
-
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation, EmptySubscription,
+        BoxFuture, EmptyMutation, EmptySubscription,
     };
+    use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
     use super::GraphQLHandler;
 
@@ -450,38 +449,66 @@ mod tests {
     struct TestIronIntegration;
 
     impl http_tests::HttpIntegration for TestIronIntegration {
-        fn get(&self, url: &str) -> http_tests::TestResponse {
-            request::get(&fixup_url(url), Headers::new(), &make_handler())
+        fn get<'me, 'url, 'fut>(
+            &'me self,
+            url: &'url str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+        {
+            let res = request::get(&fixup_url(url), Headers::new(), &make_handler())
                 .map(make_test_response)
-                .unwrap_or_else(make_test_error_response)
+                .unwrap_or_else(make_test_error_response);
+            futures::future::FutureExt::boxed(futures::future::ready(res))
         }
 
-        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
+        fn post_json<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
             let mut headers = Headers::new();
             headers.set(ContentType::json());
-            request::post(&fixup_url(url), headers, body, &make_handler())
+            let res = request::post(&fixup_url(url), headers, body, &make_handler())
                 .map(make_test_response)
-                .unwrap_or_else(make_test_error_response)
+                .unwrap_or_else(make_test_error_response);
+            futures::future::FutureExt::boxed(futures::future::ready(res))
         }
 
-        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
+        fn post_graphql<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
             let mut headers = Headers::new();
             headers.set(ContentType(Mime(
                 TopLevel::Application,
                 SubLevel::Ext("graphql".into()),
                 vec![],
             )));
-            request::post(&fixup_url(url), headers, body, &make_handler())
+            let res = request::post(&fixup_url(url), headers, body, &make_handler())
                 .map(make_test_response)
-                .unwrap_or_else(make_test_error_response)
+                .unwrap_or_else(make_test_error_response);
+            futures::future::FutureExt::boxed(futures::future::ready(res))
         }
     }
 
-    #[test]
-    fn test_iron_integration() {
+    #[tokio::test]
+    async fn test_iron_integration() {
         let integration = TestIronIntegration;
 
-        http_tests::run_http_test_suite(&integration);
+        http_tests::run_http_test_suite(&integration).await;
     }
 
     fn context_factory(_: &mut Request) -> IronResult<Database> {

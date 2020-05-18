@@ -111,32 +111,7 @@ fn impl_scalar_struct(
         None => quote!(),
     };
 
-    let _async = quote!(
-
-        impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
-        where
-            __S: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<__S> + Send + Sync,
-            Self::Context: Send + Sync,
-            Self::TypeInfo: Send + Sync,
-        {
-            fn resolve_async<'a>(
-                &'a self,
-                info: &'a Self::TypeInfo,
-                selection_set: Option<&'a [#crate_name::Selection<__S>]>,
-                executor: &'a #crate_name::Executor<Self::Context, __S>,
-            ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
-                use #crate_name::GraphQLType;
-                use futures::future;
-                let v = self.resolve(info, selection_set, executor);
-                Box::pin(future::ready(v))
-            }
-        }
-    );
-
     let content = quote!(
-        #_async
-
         impl<S> #crate_name::GraphQLType<S> for #ident
         where
             S: #crate_name::ScalarValue,
@@ -160,13 +135,23 @@ fn impl_scalar_struct(
                     .into_meta()
             }
 
-            fn resolve(
-                &self,
-                info: &(),
-                selection: Option<&[#crate_name::Selection<S>]>,
-                executor: &#crate_name::Executor<Self::Context, S>,
-            ) -> #crate_name::ExecutionResult<S> {
-                #crate_name::GraphQLType::resolve(&self.0, info, selection, executor)
+            fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+                &'me self,
+                info: &'ty Self::TypeInfo,
+                selection_set: Option<&'set [#crate_name::Selection<'set, S>]>,
+                executor: &'ref_err #crate_name::Executor<'ref_err, 'err, Self::Context, S>,
+            ) -> #crate_name::BoxFuture<'fut, #crate_name::ExecutionResult<S>>
+            where
+                'me: 'fut,
+                'ty: 'fut,
+                'name: 'fut,
+                'set: 'fut,
+                'ref_err: 'fut,
+                'err: 'fut,
+                S: 'fut,
+            {
+                futures::future::FutureExt::boxed(
+                    #crate_name::GraphQLType::resolve(&self.0, info, selection_set, executor))
             }
         }
 

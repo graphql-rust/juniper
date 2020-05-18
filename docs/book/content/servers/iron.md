@@ -49,7 +49,7 @@ struct Root;
 
 #[juniper::graphql_object]
 impl Root {
-    fn foo() -> String {
+    async fn foo() -> String {
         "Bar".to_owned()
     }
 }
@@ -103,7 +103,7 @@ struct Root;
     Context = Context,
 )]
 impl Root {
-    field my_addr(context: &Context) -> String {
+    async fn my_addr(context: &Context) -> String {
         format!("Hello, you're coming from {}", context.remote_addr)
     }
 }

@@ -42,7 +42,7 @@ sequentially:
 # pub struct Query;
 # #[juniper::graphql_object(Context = Database)]
 # impl Query {
-#    fn hello_world() -> &str {
+#    async fn hello_world() -> &str {
 #        "Hello World!"
 #    }
 # }
@@ -106,7 +106,7 @@ resolution of this connection, which means that the subscription failed.
 # 
 # #[juniper::graphql_object(Context = Database)]
 # impl Query {
-#     fn hello_world() -> &str {
+#     async fn hello_world() -> &str {
 #         "Hello World!"
 #     }
 # }

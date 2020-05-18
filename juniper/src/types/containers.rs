@@ -1,19 +1,18 @@
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
-    executor::ExecutionResult,
+    executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
-    value::{ScalarValue, Value},
-};
-
-use crate::{
-    executor::{Executor, Registry},
     types::base::GraphQLType,
+    value::{ScalarValue, Value},
+    BoxFuture,
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Option<T>
 where
-    S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue,
+    CtxT: Send + Sync,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -29,16 +28,29 @@ where
         registry.build_nullable_type::<T>(info).into_meta()
     }
 
-    fn resolve(
-        &self,
-        info: &T::TypeInfo,
-        _: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        match *self {
-            Some(ref obj) => executor.resolve(info, obj),
-            None => Ok(Value::null()),
-        }
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        _selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        let f = async move {
+            let value = match *self {
+                Some(ref obj) => executor.resolve_into_value(info, obj).await,
+                None => Value::null(),
+            };
+            Ok(value)
+        };
+
+        futures::future::FutureExt::boxed(f)
     }
 }
 
@@ -73,8 +85,10 @@ where
 
 impl<S, T, CtxT> GraphQLType<S> for Vec<T>
 where
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT> + Send + Sync,
+    T::TypeInfo: Send + Sync,
     S: ScalarValue,
+    CtxT: Send + Sync,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -90,13 +104,21 @@ where
         registry.build_list_type::<T>(info).into_meta()
     }
 
-    fn resolve(
-        &self,
-        info: &T::TypeInfo,
-        _: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        resolve_into_list(executor, info, self.iter())
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        _selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed(resolve_into_list(executor, info, self.iter()))
     }
 }
 
@@ -140,8 +162,10 @@ where
 
 impl<'a, S, T, CtxT> GraphQLType<S> for &'a [T]
 where
-    S: ScalarValue,
     T: GraphQLType<S, Context = CtxT>,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue,
+    CtxT: Send + Sync,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -157,13 +181,21 @@ where
         registry.build_list_type::<T>(info).into_meta()
     }
 
-    fn resolve(
-        &self,
-        info: &T::TypeInfo,
-        _: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        resolve_into_list(executor, info, self.iter())
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        _selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed(resolve_into_list(executor, info, self.iter()))
     }
 }
 
@@ -177,48 +209,15 @@ where
     }
 }
 
-fn resolve_into_list<S, T, I>(
-    executor: &Executor<T::Context, S>,
-    info: &T::TypeInfo,
-    iter: I,
+async fn resolve_into_list<'ref_err, 'err, 'ty, S, T, I>(
+    executor: &'ref_err Executor<'ref_err, 'err, T::Context, S>,
+    info: &'ty T::TypeInfo,
+    items: I,
 ) -> ExecutionResult<S>
 where
     S: ScalarValue,
     I: Iterator<Item = T> + ExactSizeIterator,
-    T: GraphQLType<S>,
-{
-    let stop_on_null = executor
-        .current_type()
-        .list_contents()
-        .expect("Current type is not a list type")
-        .is_non_null();
-    let mut result = Vec::with_capacity(iter.len());
-
-    for o in iter {
-        match executor.resolve(info, &o) {
-            Ok(value) => {
-                if stop_on_null && value.is_null() {
-                    return Ok(value);
-                } else {
-                    result.push(value)
-                }
-            }
-            Err(e) => return Err(e),
-        }
-    }
-
-    Ok(Value::list(result))
-}
-
-async fn resolve_into_list_async<'a, S, T, I>(
-    executor: &'a Executor<'a, 'a, T::Context, S>,
-    info: &'a T::TypeInfo,
-    items: I,
-) -> ExecutionResult<S>
-where
-    S: ScalarValue + Send + Sync,
-    I: Iterator<Item = T> + ExactSizeIterator,
-    T: crate::GraphQLTypeAsync<S>,
+    T: GraphQLType<S> + Send + Sync,
     T::TypeInfo: Send + Sync,
     T::Context: Send + Sync,
 {
@@ -231,8 +230,7 @@ where
         .expect("Current type is not a list type")
         .is_non_null();
 
-    let iter =
-        items.map(|item| async move { executor.resolve_into_value_async(info, &item).await });
+    let iter = items.map(|item| async move { executor.resolve_into_value(info, &item).await });
     let mut futures = FuturesOrdered::from_iter(iter);
 
     let mut values = Vec::with_capacity(futures.len());
@@ -244,64 +242,4 @@ where
     }
 
     Ok(Value::list(values))
-}
-
-impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Vec<T>
-where
-    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        _selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
-        let f = resolve_into_list_async(executor, info, self.iter());
-        Box::pin(f)
-    }
-}
-
-impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for &[T]
-where
-    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        _selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
-        let f = resolve_into_list_async(executor, info, self.iter());
-        Box::pin(f)
-    }
-}
-
-impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Option<T>
-where
-    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        _selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
-        let f = async move {
-            let value = match *self {
-                Some(ref obj) => executor.resolve_into_value_async(info, obj).await,
-                None => Value::null(),
-            };
-            Ok(value)
-        };
-        Box::pin(f)
-    }
 }

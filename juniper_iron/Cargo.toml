@@ -26,6 +26,7 @@ mount = "0.4"
 logger = "0.4"
 url = "2"
 percent-encoding = "2"
+tokio = { version = "0.2", features = ["rt-core", "macros"] }
 
 [dev-dependencies.juniper]
 version = "0.14.2"

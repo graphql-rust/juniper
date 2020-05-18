@@ -11,7 +11,7 @@ pub enum Episode {
     Jedi,
 }
 
-pub trait Character {
+pub trait Character: Send + Sync {
     fn id(&self) -> &str;
     fn name(&self) -> &str;
     fn friend_ids(&self) -> &[String];

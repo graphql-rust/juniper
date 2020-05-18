@@ -53,68 +53,68 @@ pub trait IsInputType<S: ScalarValue>: GraphQLType<S> {
 
 impl<S, T> IsInputType<S> for Option<T>
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<S, T> IsOutputType<S> for Option<T>
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<S, T> IsOutputType<S> for Vec<T>
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<'a, S, T> IsOutputType<S> for &'a [T]
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<S, T> IsInputType<S> for Vec<T>
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<'a, S, T> IsInputType<S> for &'a [T]
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<'a, S, T> IsInputType<S> for &T
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 impl<'a, S, T> IsOutputType<S> for &T
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 
 impl<S, T> IsInputType<S> for Box<T>
 where
-    T: IsInputType<S>,
+    T: IsInputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }
 impl<S, T> IsOutputType<S> for Box<T>
 where
-    T: IsOutputType<S>,
+    T: IsOutputType<S> + Send + Sync,
     S: ScalarValue,
 {
 }

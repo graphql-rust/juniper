@@ -8,7 +8,7 @@ pub struct Query;
 
 #[juniper::graphql_object]
 impl Query {
-    fn r#type(r#fn: MyInputType) -> Vec<String> {
+    async fn r#type(r#fn: MyInputType) -> Vec<String> {
         let _ = r#fn;
         unimplemented!()
     }

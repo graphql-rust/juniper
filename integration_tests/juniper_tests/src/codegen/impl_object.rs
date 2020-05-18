@@ -10,7 +10,7 @@ pub struct MyObject;
 #[juniper::graphql_object]
 impl MyObject {
     #[graphql(arguments(arg(name = "test")))]
-    fn test(&self, arg: String) -> String {
+    async fn test(&self, arg: String) -> String {
         arg
     }
 }

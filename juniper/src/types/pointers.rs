@@ -1,17 +1,20 @@
-use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue};
-use std::{fmt::Debug, sync::Arc};
-
 use crate::{
+    ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
     types::base::{Arguments, GraphQLType},
     value::ScalarValue,
+    BoxFuture,
 };
+use std::{fmt::Debug, sync::Arc};
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT> + Send + Sync,
+    CtxT: Send + Sync,
+    T::TypeInfo: Send + Sync,
+    T::Context: Send + Sync,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -27,33 +30,65 @@ where
         T::meta(info, registry)
     }
 
-    fn resolve_into_type(
-        &self,
-        info: &T::TypeInfo,
-        name: &str,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_into_type(info, name, selection_set, executor)
+    fn resolve_into_type<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        type_name: &'name str,
+        selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed((**self).resolve_into_type(
+            info,
+            type_name,
+            selection_set,
+            executor,
+        ))
     }
 
-    fn resolve_field(
-        &self,
-        info: &T::TypeInfo,
-        field: &str,
-        args: &Arguments<S>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_field(info, field, args, executor)
+    fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        field_name: &'field str,
+        arguments: &'args Arguments<'args, S>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'args: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+        'field: 'fut,
+        S: 'fut,
+    {
+        futures::future::FutureExt::boxed(
+            (**self).resolve_field(info, field_name, arguments, executor),
+        )
     }
 
-    fn resolve(
-        &self,
-        info: &T::TypeInfo,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve(info, selection_set, executor)
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed((**self).resolve(info, selection_set, executor))
     }
 }
 
@@ -83,7 +118,9 @@ where
 impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
 where
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT> + Send + Sync,
+    T::TypeInfo: Send + Sync,
+    T::Context: Send + Sync,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -99,60 +136,66 @@ where
         T::meta(info, registry)
     }
 
-    fn resolve_into_type(
-        &self,
-        info: &T::TypeInfo,
-        name: &str,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_into_type(info, name, selection_set, executor)
+    #[allow(unused_variables)]
+    fn resolve_into_type<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        type_name: &'name str,
+        selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed((**self).resolve_into_type(
+            info,
+            type_name,
+            selection_set,
+            executor,
+        ))
     }
 
-    fn resolve_field(
-        &self,
-        info: &T::TypeInfo,
-        field: &str,
-        args: &Arguments<S>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_field(info, field, args, executor)
+    fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        field_name: &'field str,
+        arguments: &'args Arguments<'args, S>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'args: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+        'field: 'fut,
+        S: 'fut,
+    {
+        futures::future::FutureExt::boxed(
+            (**self).resolve_field(info, field_name, arguments, executor),
+        )
     }
 
-    fn resolve(
-        &self,
-        info: &T::TypeInfo,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<CtxT, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve(info, selection_set, executor)
-    }
-}
-
-impl<'e, S, T> crate::GraphQLTypeAsync<S> for &'e T
-where
-    S: ScalarValue + Send + Sync,
-    T: crate::GraphQLTypeAsync<S>,
-    T::TypeInfo: Send + Sync,
-    T::Context: Send + Sync,
-{
-    fn resolve_field_async<'b>(
-        &'b self,
-        info: &'b Self::TypeInfo,
-        field_name: &'b str,
-        arguments: &'b Arguments<S>,
-        executor: &'b Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
-        crate::GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
-    }
-
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
-        crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed((**self).resolve(info, selection_set, executor))
     }
 }
 
@@ -169,7 +212,9 @@ where
 impl<S, T> GraphQLType<S> for Arc<T>
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLType<S> + Send + Sync,
+    T::TypeInfo: Send + Sync,
+    T::Context: Send + Sync,
 {
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
@@ -185,67 +230,65 @@ where
         T::meta(info, registry)
     }
 
-    fn resolve_into_type(
-        &self,
-        info: &T::TypeInfo,
-        name: &str,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<T::Context, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_into_type(info, name, selection_set, executor)
+    fn resolve_into_type<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        type_name: &'name str,
+        selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed((**self).resolve_into_type(
+            info,
+            type_name,
+            selection_set,
+            executor,
+        ))
     }
 
-    fn resolve_field(
-        &self,
-        info: &T::TypeInfo,
-        field: &str,
-        args: &Arguments<S>,
-        executor: &Executor<T::Context, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve_field(info, field, args, executor)
+    fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        field_name: &'field str,
+        arguments: &'args Arguments<'args, S>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'args: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+        'field: 'fut,
+        S: 'fut,
+    {
+        futures::future::FutureExt::boxed(
+            (**self).resolve_field(info, field_name, arguments, executor),
+        )
     }
 
-    fn resolve(
-        &self,
-        info: &T::TypeInfo,
-        selection_set: Option<&[Selection<S>]>,
-        executor: &Executor<T::Context, S>,
-    ) -> ExecutionResult<S> {
-        (**self).resolve(info, selection_set, executor)
-    }
-}
-
-impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Box<T>
-where
-    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        (**self).resolve_async(info, selection_set, executor)
-    }
-}
-
-impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
-where
-    S: ScalarValue + Send + Sync,
-    T: crate::GraphQLTypeAsync<S>,
-    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Send + Sync,
-    <T as crate::types::base::GraphQLType<S>>::Context: Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        (**self).resolve_async(info, selection_set, executor)
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        info: &'ty Self::TypeInfo,
+        selection_set: Option<&'set [Selection<'set, S>]>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed((**self).resolve(info, selection_set, executor))
     }
 }
 

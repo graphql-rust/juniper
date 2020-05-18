@@ -128,7 +128,7 @@ impl Cult {
   //  your resolvers
 
   // To call the dataloader 
-  pub async fn cult_by_id(ctx: &Context, id: i32) -> Cult {
+  async fn cult_by_id(ctx: &Context, id: i32) -> Cult {
     ctx.cult_loader.load(id).await
   }
 }

@@ -157,7 +157,7 @@ fn issue_427_panic_is_not_expected() {
 
     #[crate::graphql_object_internal]
     impl QueryWithoutFloat {
-        fn echo(value: String) -> String {
+        async fn echo(value: String) -> String {
             value
         }
     }

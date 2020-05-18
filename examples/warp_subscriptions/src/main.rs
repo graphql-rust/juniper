@@ -29,15 +29,15 @@ struct User {
 // Field resolvers implementation
 #[juniper::graphql_object(Context = Context)]
 impl User {
-    fn id(&self) -> i32 {
+    async fn id(&self) -> i32 {
         self.id
     }
 
-    fn kind(&self) -> UserKind {
+    async fn kind(&self) -> UserKind {
         self.kind
     }
 
-    fn name(&self) -> &str {
+    async fn name(&self) -> &str {
         &self.name
     }
 

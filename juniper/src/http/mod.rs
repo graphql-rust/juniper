@@ -13,8 +13,7 @@ use crate::{
     ast::InputValue,
     executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
-    Value, Variables,
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, RootNode, Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -71,30 +70,6 @@ where
         }
     }
 
-    /// Execute a GraphQL request synchronously using the specified schema and context
-    ///
-    /// This is a simple wrapper around the `execute_sync` function exposed at the
-    /// top level of this crate.
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
-    ) -> GraphQLResponse<'a, S>
-    where
-        S: ScalarValue,
-        QueryT: GraphQLType<S, Context = CtxT>,
-        MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
-    {
-        GraphQLResponse(crate::execute_sync(
-            &self.query,
-            self.operation_name(),
-            root_node,
-            &self.variables(),
-            context,
-        ))
-    }
-
     /// Execute a GraphQL request using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute` function exposed at the
@@ -105,12 +80,12 @@ where
         context: &'a CtxT,
     ) -> GraphQLResponse<'a, S>
     where
-        S: ScalarValue + Send + Sync,
-        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        S: ScalarValue,
+        QueryT: crate::GraphQLType<S, Context = CtxT>,
         QueryT::TypeInfo: Send + Sync,
-        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT: crate::GraphQLType<S, Context = CtxT>,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: GraphQLType<S, Context = CtxT>,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
@@ -134,12 +109,12 @@ where
     'req: 'a,
     'rn: 'a,
     'ctx: 'a,
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    S: ScalarValue,
+    QueryT: GraphQLType<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLType<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
     SubscriptionT::TypeInfo: Send + Sync,
     CtxT: Send + Sync,
 {
@@ -254,31 +229,6 @@ impl<S> GraphQLBatchRequest<S>
 where
     S: ScalarValue,
 {
-    /// Execute a GraphQL batch request synchronously using the specified schema and context
-    ///
-    /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
-    pub fn execute_sync<'a, CtxT, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a crate::RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &CtxT,
-    ) -> GraphQLBatchResponse<'a, S>
-    where
-        QueryT: crate::GraphQLType<S, Context = CtxT>,
-        MutationT: crate::GraphQLType<S, Context = CtxT>,
-        SubscriptionT: crate::GraphQLType<S, Context = CtxT>,
-    {
-        match *self {
-            Self::Single(ref req) => {
-                GraphQLBatchResponse::Single(req.execute_sync(root_node, context))
-            }
-            Self::Batch(ref reqs) => GraphQLBatchResponse::Batch(
-                reqs.iter()
-                    .map(|req| req.execute_sync(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-
     /// Executes a GraphQL request using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute` function exposed in
@@ -289,14 +239,13 @@ where
         context: &'a CtxT,
     ) -> GraphQLBatchResponse<'a, S>
     where
-        QueryT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        QueryT: crate::GraphQLType<S, Context = CtxT>,
         QueryT::TypeInfo: Send + Sync,
-        MutationT: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        MutationT: crate::GraphQLType<S, Context = CtxT>,
         MutationT::TypeInfo: Send + Sync,
-        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+        SubscriptionT: crate::GraphQLSubscriptionType<S, Context = CtxT>,
         SubscriptionT::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
-        S: Send + Sync,
     {
         match *self {
             Self::Single(ref req) => {
@@ -356,6 +305,7 @@ where
 #[cfg(any(test, feature = "expose-test-schema"))]
 #[allow(missing_docs)]
 pub mod tests {
+    use crate::BoxFuture;
     use serde_json::{self, Value as Json};
 
     /// Normalized response content we expect to get back from
@@ -371,53 +321,71 @@ pub mod tests {
     pub trait HttpIntegration {
         /// Sends GET HTTP request to this integration with the provided `url` parameters string,
         /// and returns response returned by this integration.
-        fn get(&self, url: &str) -> TestResponse;
+        fn get<'me, 'url, 'fut>(&'me self, url: &'url str) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut;
 
         /// Sends POST HTTP request to this integration with the provided JSON-encoded `body`, and
         /// returns response returned by this integration.
-        fn post_json(&self, url: &str, body: &str) -> TestResponse;
-
+        fn post_json<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut;
         /// Sends POST HTTP request to this integration with the provided raw GraphQL query as
         /// `body`, and returns response returned by this integration.
-        fn post_graphql(&self, url: &str, body: &str) -> TestResponse;
+        fn post_graphql<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut;
     }
 
-    #[allow(missing_docs)]
-    pub fn run_http_test_suite<T: HttpIntegration>(integration: &T) {
+    /// Runs the fixed test suite for a HTTP implementation.
+    pub async fn run_http_test_suite<T: HttpIntegration>(integration: &T) {
         println!("Running HTTP Test suite for integration");
 
         println!("  - test_simple_get");
-        test_simple_get(integration);
+        test_simple_get(integration).await;
 
         println!("  - test_encoded_get");
-        test_encoded_get(integration);
+        test_encoded_get(integration).await;
 
         println!("  - test_get_with_variables");
-        test_get_with_variables(integration);
+        test_get_with_variables(integration).await;
 
         println!("  - test_simple_post");
-        test_simple_post(integration);
+        test_simple_post(integration).await;
 
         println!("  - test_batched_post");
-        test_batched_post(integration);
+        test_batched_post(integration).await;
 
         println!("  - test_empty_batched_post");
-        test_empty_batched_post(integration);
+        test_empty_batched_post(integration).await;
 
         println!("  - test_invalid_json");
-        test_invalid_json(integration);
+        test_invalid_json(integration).await;
 
         println!("  - test_invalid_field");
-        test_invalid_field(integration);
+        test_invalid_field(integration).await;
 
         println!("  - test_duplicate_keys");
-        test_duplicate_keys(integration);
+        test_duplicate_keys(integration).await;
 
         println!("  - test_graphql_post");
-        test_graphql_post(integration);
+        test_graphql_post(integration).await;
 
         println!("  - test_invalid_graphql_post");
-        test_invalid_graphql_post(integration);
+        test_invalid_graphql_post(integration).await;
     }
 
     fn unwrap_json_response(response: &TestResponse) -> Json {
@@ -430,9 +398,9 @@ pub mod tests {
         .expect("Could not parse JSON object")
     }
 
-    fn test_simple_get<T: HttpIntegration>(integration: &T) {
+    async fn test_simple_get<T: HttpIntegration>(integration: &T) {
         // {hero{name}}
-        let response = integration.get("/?query=%7Bhero%7Bname%7D%7D");
+        let response = integration.get("/?query=%7Bhero%7Bname%7D%7D").await;
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type.as_str(), "application/json");
@@ -444,10 +412,10 @@ pub mod tests {
         );
     }
 
-    fn test_encoded_get<T: HttpIntegration>(integration: &T) {
+    async fn test_encoded_get<T: HttpIntegration>(integration: &T) {
         // query { human(id: "1000") { id, name, appearsIn, homePlanet } }
         let response = integration.get(
-            "/?query=query%20%7B%20human(id%3A%20%221000%22)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D");
+            "/?query=query%20%7B%20human(id%3A%20%221000%22)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D").await;
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type.as_str(), "application/json");
@@ -474,11 +442,11 @@ pub mod tests {
         );
     }
 
-    fn test_get_with_variables<T: HttpIntegration>(integration: &T) {
+    async fn test_get_with_variables<T: HttpIntegration>(integration: &T) {
         // query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }
         // with variables = { "id": "1000" }
         let response = integration.get(
-            "/?query=query(%24id%3A%20String!)%20%7B%20human(id%3A%20%24id)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D&variables=%7B%20%22id%22%3A%20%221000%22%20%7D");
+            "/?query=query(%24id%3A%20String!)%20%7B%20human(id%3A%20%24id)%20%7B%20id%2C%20name%2C%20appearsIn%2C%20homePlanet%20%7D%20%7D&variables=%7B%20%22id%22%3A%20%221000%22%20%7D").await;
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
@@ -505,8 +473,10 @@ pub mod tests {
         );
     }
 
-    fn test_simple_post<T: HttpIntegration>(integration: &T) {
-        let response = integration.post_json("/", r#"{"query": "{hero{name}}"}"#);
+    async fn test_simple_post<T: HttpIntegration>(integration: &T) {
+        let response = integration
+            .post_json("/", r#"{"query": "{hero{name}}"}"#)
+            .await;
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
@@ -518,11 +488,13 @@ pub mod tests {
         );
     }
 
-    fn test_batched_post<T: HttpIntegration>(integration: &T) {
-        let response = integration.post_json(
-            "/",
-            r#"[{"query": "{hero{name}}"}, {"query": "{hero{name}}"}]"#,
-        );
+    async fn test_batched_post<T: HttpIntegration>(integration: &T) {
+        let response = integration
+            .post_json(
+                "/",
+                r#"[{"query": "{hero{name}}"}, {"query": "{hero{name}}"}]"#,
+            )
+            .await;
 
         assert_eq!(response.status_code, 200);
         assert_eq!(response.content_type, "application/json");
@@ -536,37 +508,40 @@ pub mod tests {
         );
     }
 
-    fn test_empty_batched_post<T: HttpIntegration>(integration: &T) {
-        let response = integration.post_json("/", "[]");
+    async fn test_empty_batched_post<T: HttpIntegration>(integration: &T) {
+        let response = integration.post_json("/", "[]").await;
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_invalid_json<T: HttpIntegration>(integration: &T) {
-        let response = integration.get("/?query=blah");
+    async fn test_invalid_json<T: HttpIntegration>(integration: &T) {
+        let response = integration.get("/?query=blah").await;
         assert_eq!(response.status_code, 400);
-        let response = integration.post_json("/", r#"blah"#);
+        let response = integration.post_json("/", r#"blah"#).await;
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_invalid_field<T: HttpIntegration>(integration: &T) {
+    async fn test_invalid_field<T: HttpIntegration>(integration: &T) {
         // {hero{blah}}
-        let response = integration.get("/?query=%7Bhero%7Bblah%7D%7D");
+        let response = integration.get("/?query=%7Bhero%7Bblah%7D%7D").await;
         assert_eq!(response.status_code, 400);
-        let response = integration.post_json("/", r#"{"query": "{hero{blah}}"}"#);
+        let response = integration
+            .post_json("/", r#"{"query": "{hero{blah}}"}"#)
+            .await;
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_duplicate_keys<T: HttpIntegration>(integration: &T) {
+    async fn test_duplicate_keys<T: HttpIntegration>(integration: &T) {
         // {hero{name}}
-        let response = integration.get("/?query=%7B%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%2C%20%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%7D");
+        let response = integration.get("/?query=%7B%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%2C%20%22query%22%3A%20%22%7Bhero%7Bname%7D%7D%22%7D").await;
         assert_eq!(response.status_code, 400);
-        let response =
-            integration.post_json("/", r#"{"query": "{hero{name}}", "query": "{hero{name}}"}"#);
+        let response = integration
+            .post_json("/", r#"{"query": "{hero{name}}", "query": "{hero{name}}"}"#)
+            .await;
         assert_eq!(response.status_code, 400);
     }
 
-    fn test_graphql_post<T: HttpIntegration>(integration: &T) {
-        let resp = integration.post_graphql("/", r#"{hero{name}}"#);
+    async fn test_graphql_post<T: HttpIntegration>(integration: &T) {
+        let resp = integration.post_graphql("/", r#"{hero{name}}"#).await;
 
         assert_eq!(resp.status_code, 200);
         assert_eq!(resp.content_type, "application/json");
@@ -578,8 +553,8 @@ pub mod tests {
         );
     }
 
-    fn test_invalid_graphql_post<T: HttpIntegration>(integration: &T) {
-        let resp = integration.post_graphql("/", r#"{hero{name}"#);
+    async fn test_invalid_graphql_post<T: HttpIntegration>(integration: &T) {
+        let resp = integration.post_graphql("/", r#"{hero{name}"#).await;
 
         assert_eq!(resp.status_code, 400);
     }

@@ -26,43 +26,43 @@ Syntax to validate:
     interfaces = [&Interface],
 )]
 impl Root {
-    fn simple() -> i32 {
+    async fn simple() -> i32 {
         0
     }
 
     /// Field description
-    fn description() -> i32 {
+    async fn description() -> i32 {
         0
     }
 
     #[deprecated]
-    fn deprecated_outer() -> bool {
+    async fn deprecated_outer() -> bool {
         true
     }
 
     #[deprecated(note = "Deprecation Reason")]
-    fn deprecated_outer_with_reason() -> bool {
+    async fn deprecated_outer_with_reason() -> bool {
         true
     }
 
     #[graphql(deprecated = "Deprecation reason")]
-    fn deprecated() -> i32 {
+    async fn deprecated() -> i32 {
         0
     }
 
     #[graphql(deprecated = "Deprecation reason", description = "Field description")]
-    fn deprecated_descr() -> i32 {
+    async fn deprecated_descr() -> i32 {
         0
     }
 
     /// Field description
-    fn attr_description() -> i32 {
+    async fn attr_description() -> i32 {
         0
     }
 
     /// Field description
     /// with `collapse_docs` behavior
-    fn attr_description_collapse() -> i32 {
+    async fn attr_description_collapse() -> i32 {
         0
     }
 
@@ -71,35 +71,35 @@ impl Root {
     /// - This comment is longer.
     /// - These two lines are rendered as bullets by GraphiQL.
     ///     - subsection
-    fn attr_description_long() -> i32 {
+    async fn attr_description_long() -> i32 {
         0
     }
 
     #[graphql(deprecated)]
-    fn attr_deprecated() -> i32 {
+    async fn attr_deprecated() -> i32 {
         0
     }
 
     #[graphql(deprecated = "Deprecation reason")]
-    fn attr_deprecated_reason() -> i32 {
+    async fn attr_deprecated_reason() -> i32 {
         0
     }
 
     /// Field description
     #[graphql(deprecated = "Deprecation reason")]
-    fn attr_deprecated_descr() -> i32 {
+    async fn attr_deprecated_descr() -> i32 {
         0
     }
 
-    fn with_field_result() -> FieldResult<i32> {
+    async fn with_field_result() -> FieldResult<i32> {
         Ok(0)
     }
 
-    fn with_return() -> i32 {
+    async fn with_return() -> i32 {
         0
     }
 
-    fn with_return_field_result() -> FieldResult<i32> {
+    async fn with_return_field_result() -> FieldResult<i32> {
         Ok(0)
     }
 }

@@ -14,7 +14,7 @@ struct WithLifetime<'a> {
 
 #[crate::graphql_object_internal(Context=Context)]
 impl<'a> WithLifetime<'a> {
-    fn value(&'a self) -> &'a str {
+    async fn value(&'a self) -> &'a str {
         self.value
     }
 }
@@ -23,7 +23,7 @@ struct WithContext;
 
 #[crate::graphql_object_internal(Context=Context)]
 impl WithContext {
-    fn ctx(ctx: &Context) -> bool {
+    async fn ctx(ctx: &Context) -> bool {
         ctx.flag1
     }
 }
@@ -37,74 +37,72 @@ struct Query {
     scalar = crate::DefaultScalarValue,
     name = "Query", 
     context = Context,
-    // FIXME: make async work
-    noasync
 )]
 /// Query Description.
 impl<'a> Query {
     #[graphql(description = "With Self Description")]
-    fn with_self(&self) -> bool {
+    async fn with_self(&self) -> bool {
         self.b
     }
 
-    fn independent() -> i32 {
+    async fn independent() -> i32 {
         100
     }
 
-    fn with_executor(_exec: &Executor<Context>) -> bool {
+    async fn with_executor(_exec: &Executor<Context>) -> bool {
         true
     }
 
-    fn with_executor_and_self(&self, _exec: &Executor<Context>) -> bool {
+    async fn with_executor_and_self(&self, _exec: &Executor<Context>) -> bool {
         true
     }
 
-    fn with_context(_context: &Context) -> bool {
+    async fn with_context(_context: &Context) -> bool {
         true
     }
 
-    fn with_context_and_self(&self, _context: &Context) -> bool {
+    async fn with_context_and_self(&self, _context: &Context) -> bool {
         true
     }
 
     #[graphql(name = "renamed")]
-    fn has_custom_name() -> bool {
+    async fn has_custom_name() -> bool {
         true
     }
 
     #[graphql(description = "attr")]
-    fn has_description_attr() -> bool {
+    async fn has_description_attr() -> bool {
         true
     }
 
     /// Doc description
-    fn has_description_doc_comment() -> bool {
+    async fn has_description_doc_comment() -> bool {
         true
     }
 
-    fn has_argument(arg1: bool) -> bool {
+    async fn has_argument(arg1: bool) -> bool {
         arg1
     }
 
     #[graphql(arguments(default_arg(default = true)))]
-    fn default_argument(default_arg: bool) -> bool {
+    async fn default_argument(default_arg: bool) -> bool {
         default_arg
     }
 
     #[graphql(arguments(arg(description = "my argument description")))]
-    fn arg_with_description(arg: bool) -> bool {
+    async fn arg_with_description(arg: bool) -> bool {
         arg
     }
 
-    fn with_context_child(&self) -> WithContext {
+    async fn with_context_child(&self) -> WithContext {
         WithContext
     }
 
-    fn with_lifetime_child(&self) -> WithLifetime<'a> {
+    async fn with_lifetime_child(&self) -> WithLifetime<'a> {
         WithLifetime { value: "blub" }
     }
 
-    fn with_mut_arg(mut arg: bool) -> bool {
+    async fn with_mut_arg(mut arg: bool) -> bool {
         if arg {
             arg = !arg;
         }
@@ -117,7 +115,7 @@ struct Mutation;
 
 #[crate::graphql_object_internal(context = Context)]
 impl Mutation {
-    fn empty() -> bool {
+    async fn empty() -> bool {
         true
     }
 }
@@ -127,7 +125,7 @@ struct Subscription;
 
 #[crate::graphql_object_internal(context = Context)]
 impl Subscription {
-    fn empty() -> bool {
+    async fn empty() -> bool {
         true
     }
 }

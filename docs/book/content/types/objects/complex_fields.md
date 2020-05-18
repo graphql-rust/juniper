@@ -18,11 +18,11 @@ struct Person {
 
 #[juniper::graphql_object]
 impl Person {
-    fn name(&self) -> &str {
+    async fn name(&self) -> &str {
         self.name.as_str()
     }
 
-    fn age(&self) -> i32 {
+    async fn age(&self) -> i32 {
         self.age
     }
 }
@@ -56,7 +56,7 @@ struct House {
 #[juniper::graphql_object]
 impl House {
     // Creates the field inhabitantWithName(name), returning a nullable person
-    fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
+    async fn inhabitant_with_name(&self, name: String) -> Option<&Person> {
         self.inhabitants.iter().find(|p| p.name == name)
     }
 }
@@ -94,7 +94,7 @@ impl Person {
         // Or provide a description here.
         description = "...",
     )]
-    fn doc_comment(&self) -> &str {
+    async fn doc_comment(&self) -> &str {
         ""
     }
 
@@ -102,19 +102,19 @@ impl Person {
     #[graphql(
         name = "myCustomFieldName",
     )]
-    fn renamed_field() -> bool {
+    async fn renamed_field() -> bool {
         true
     }
 
     // Deprecations also work as you'd expect.
     // Both the standard Rust syntax and a custom attribute is accepted.
     #[deprecated(note = "...")]
-    fn deprecated_standard() -> bool {
+    async fn deprecated_standard() -> bool {
         false
     }
 
     #[graphql(deprecated = "...")]
-    fn deprecated_graphql() -> bool {
+    async fn deprecated_graphql() -> bool {
         true
     }
 }
@@ -151,7 +151,7 @@ impl Person {
             )
         )
     )]
-    fn field1(&self, arg1: bool, arg2: i32) -> String {
+    async fn field1(&self, arg1: bool, arg2: i32) -> String {
         format!("{} {}", arg1, arg2)
     }
 }

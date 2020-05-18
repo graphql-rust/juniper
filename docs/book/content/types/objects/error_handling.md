@@ -154,7 +154,7 @@ struct Example {
 
 #[juniper::graphql_object]
 impl Example {
-    fn whatever() -> Result<bool, CustomError> {
+    async fn whatever() -> Result<bool, CustomError> {
       if let Some(value) = self.whatever {
         return Ok(value);
       }
@@ -231,7 +231,7 @@ pub struct Mutation;
 
 #[juniper::graphql_object]
 impl Mutation {
-    fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
+    async fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
         let mut errors = Vec::new();
 
         if !(10 <= name.len() && name.len() <= 100) {
@@ -322,7 +322,7 @@ pub struct Mutation;
 
 #[juniper::graphql_object]
 impl Mutation {
-    fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
+    async fn addItem(&self, name: String, quantity: i32) -> GraphQLResult {
         let mut error = ValidationError {
             name: None,
             quantity: None,
@@ -418,7 +418,7 @@ pub struct Mutation;
 
 #[juniper::graphql_object]
 impl Mutation {
-    fn addItem(&self, name: String, quantity: i32) -> Result<GraphQLResult, ApiError> {
+    async fn addItem(&self, name: String, quantity: i32) -> Result<GraphQLResult, ApiError> {
         let mut error = ValidationErrorItem {
             name: None,
             quantity: None,

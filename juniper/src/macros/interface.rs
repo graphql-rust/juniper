@@ -23,8 +23,8 @@ right an expression that resolve into `Option<T>` of the type indicated:
 
 ```rust,ignore
 instance_resolvers: |&context| {
-    &Human => context.get_human(self.id()), // returns Option<&Human>
-    &Droid => context.get_droid(self.id()), // returns Option<&Droid>
+&Human => context.get_human(self.id()), // returns Option<&Human>
+&Droid => context.get_droid(self.id()), // returns Option<&Droid>
 },
 ```
 
@@ -49,7 +49,7 @@ struct Database {
     droids: HashMap<String, Droid>,
 }
 
-trait Character {
+trait Character: Send + Sync {
     fn id(&self) -> &str;
 }
 
@@ -63,7 +63,7 @@ impl Character for Droid {
 
 #[juniper::graphql_object(Context = Database)]
 impl Human {
-    fn id(&self) -> &str { &self.id }
+    async fn id(&self) -> &str { &self.id }
 }
 
 #[juniper::graphql_object(
@@ -71,7 +71,7 @@ impl Human {
     Context = Database,
 )]
 impl Droid {
-    fn id(&self) -> &str { &self.id }
+    async fn id(&self) -> &str { &self.id }
 }
 
 // You can introduce lifetimes or generic parameters by < > before the name.
@@ -179,18 +179,26 @@ macro_rules! graphql_interface {
                         .into_meta()
                 }
 
-
                 #[allow(unused_variables)]
-                fn resolve_field(
-                    &$main_self,
-                    info: &Self::TypeInfo,
-                    field: &str,
-                    args: &$crate::Arguments<$crate::__juniper_insert_generic!($($scalar)+)>,
-                    executor: &$crate::Executor<Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>
-                ) -> $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)+)> {
+                fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+                    &'me $main_self,
+                    _info: &'ty Self::TypeInfo,
+                    field_name: &'field str,
+                    args: &'args $crate::Arguments<'args, $crate::__juniper_insert_generic!($($scalar)+)>,
+                    executor: &'ref_err $crate::Executor<'ref_err, 'err, Self::Context, $crate::__juniper_insert_generic!($($scalar)+)>,
+                ) -> $crate::BoxFuture<'fut, $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)+)>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'args: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+                    'field: 'fut,
+                    $crate::__juniper_insert_generic!($($scalar)+): 'fut,
+                {
                     $(
-                        if field == &$crate::to_camel_case(stringify!($fn_name)) {
-                            let f = (|| {
+                        if field_name == &$crate::to_camel_case(stringify!($fn_name)) {
+                            let f = async move {
                                 $(
                                     let $arg_name: $arg_ty = args.get(&$crate::to_camel_case(stringify!($arg_name)))
                                         .expect(concat!(
@@ -202,24 +210,26 @@ macro_rules! graphql_interface {
                                 $(
                                     let $executor = &executor;
                                 )*
-                                $body
-                            });
-                            let result: $return_ty = f();
+                                let result: $return_ty = (async move { $body }).await;
 
-                            return $crate::IntoResolvable::into(result, executor.context())
-                                .and_then(|res| {
-                                    match res {
-                                        Some((ctx, r)) => {
-                                            executor.replaced_context(ctx)
-                                                .resolve_with_ctx(&(), &r)
-                                        }
-                                        None => Ok($crate::Value::null())
+                                let inner_res = $crate::IntoResolvable::into(result, executor.context());
+
+                                match inner_res {
+                                    Ok(Some((ctx, r))) => {
+                                        executor.replaced_context(ctx)
+                                            .resolve_with_ctx(&(), &r)
+                                            .await
                                     }
-                                });
+                                    Ok(None) => Ok($crate::Value::null()),
+                                    Err(e) => Err(e),
+                                }
+                            };
+
+                            return futures::future::FutureExt::boxed(f)
                         }
                     )*
 
-                    panic!("Field {} not found on type {}", field, $($outname)*)
+                    panic!("Field {} not found on type {}", field_name, $($outname)*)
                 }
 
                 #[allow(unused_variables)]
@@ -236,22 +246,34 @@ macro_rules! graphql_interface {
                     panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                 }
 
-                fn resolve_into_type(
-                    &$main_self,
-                    _info: &Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&[$crate::Selection<$crate::__juniper_insert_generic!($($scalar)*)>]>,
-                    executor: &$crate::Executor<Self::Context, $crate::__juniper_insert_generic!($($scalar)*)>,
-                ) -> $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)*)> {
-                    $(let $resolver_ctx = &executor.context();)*
+                fn resolve_into_type<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+                    &'me $main_self,
+                    _info: &'ty Self::TypeInfo,
+                    type_name: &'name str,
+                    _selection_set: Option<&'set [$crate::Selection<'set, $crate::__juniper_insert_generic!($($scalar)*)>]>,
+                    executor: &'ref_err $crate::Executor<'ref_err, 'err, Self::Context, $crate::__juniper_insert_generic!($($scalar)*)>,
+                ) -> $crate::BoxFuture<'fut, $crate::ExecutionResult<$crate::__juniper_insert_generic!($($scalar)*)>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'name: 'fut,
+                    'set: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+                {
+                    let f = async move {
+                        $(let $resolver_ctx = &executor.context();)*
 
-                    $(
-                        if type_name == (<$resolver_src as $crate::GraphQLType<_>>::name(&())).unwrap() {
-                            return executor.resolve(&(), &$resolver_expr);
-                        }
-                    )*
+                        $(
+                            if type_name == (<$resolver_src as $crate::GraphQLType<_>>::name(&())).unwrap() {
+                                return executor.resolve(&(), &$resolver_expr).await;
+                            }
+                        )*
 
-                     panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                        panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
+                    };
+
+                    return futures::future::FutureExt::boxed(f)
                 }
             }
         );

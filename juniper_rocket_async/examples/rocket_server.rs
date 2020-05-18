@@ -20,7 +20,7 @@ fn get_graphql_handler(
     request: juniper_rocket_async::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket_async::GraphQLResponse {
-    request.execute_sync(&schema, &context)
+    futures::executor::block_on(request.execute(&schema, &context))
 }
 
 #[rocket::post("/graphql", data = "<request>")]
@@ -29,7 +29,7 @@ fn post_graphql_handler(
     request: juniper_rocket_async::GraphQLRequest,
     schema: State<Schema>,
 ) -> juniper_rocket_async::GraphQLResponse {
-    request.execute_sync(&schema, &context)
+    futures::executor::block_on(request.execute(&schema, &context))
 }
 
 fn main() {

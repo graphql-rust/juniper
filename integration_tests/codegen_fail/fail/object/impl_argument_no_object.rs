@@ -7,7 +7,7 @@ struct Object {}
 
 #[juniper::graphql_object]
 impl Object {
-    fn test(&self, test: Obj) -> String {
+    async fn test(&self, test: Obj) -> String {
         String::new()
     }
 }

@@ -11,13 +11,13 @@ pub struct Query;
     Context = Context
 )]
 impl Query {
-    fn users(exec: &Executor) -> Vec<User> {
+    async fn users(exec: &Executor) -> Vec<User> {
         let lh = exec.look_ahead();
         assert_eq!(lh.field_name(), "users");
         vec![User]
     }
 
-    fn countries(exec: &Executor) -> Vec<Country> {
+    async fn countries(exec: &Executor) -> Vec<Country> {
         let lh = exec.look_ahead();
         assert_eq!(lh.field_name(), "countries");
         vec![Country]
@@ -31,7 +31,7 @@ pub struct User;
     Context = Context
 )]
 impl User {
-    fn id() -> i32 {
+    async fn id() -> i32 {
         1
     }
 }
@@ -41,7 +41,7 @@ pub struct Country;
 
 #[graphql_object]
 impl Country {
-    fn id() -> i32 {
+    async fn id() -> i32 {
         2
     }
 }

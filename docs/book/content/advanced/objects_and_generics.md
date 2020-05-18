@@ -29,11 +29,11 @@ struct MutationResult<T>(Result<T, Vec<ValidationError>>);
     name = "UserResult",
 )]
 impl MutationResult<User> {
-    fn user(&self) -> Option<&User> {
+    async fn user(&self) -> Option<&User> {
         self.0.as_ref().ok()
     }
 
-    fn error(&self) -> Option<&Vec<ValidationError>> {
+    async fn error(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }
@@ -42,11 +42,11 @@ impl MutationResult<User> {
     name = "ForumPostResult",
 )]
 impl MutationResult<ForumPost> {
-    fn forum_post(&self) -> Option<&ForumPost> {
+    async fn forum_post(&self) -> Option<&ForumPost> {
         self.0.as_ref().ok()
     }
 
-    fn error(&self) -> Option<&Vec<ValidationError>> {
+    async fn error(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }

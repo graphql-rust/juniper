@@ -6,7 +6,7 @@ pub mod span_container;
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
-use quote::quote;
+use quote::{quote, ToTokens};
 use span_container::SpanContainer;
 use std::collections::HashMap;
 use syn::{
@@ -278,7 +278,6 @@ pub struct ObjectAttributes {
     pub context: Option<SpanContainer<syn::Type>>,
     pub scalar: Option<SpanContainer<syn::Type>>,
     pub interfaces: Vec<SpanContainer<syn::Type>>,
-    pub no_async: Option<SpanContainer<()>>,
 }
 
 impl syn::parse::Parse for ObjectAttributes {
@@ -289,7 +288,6 @@ impl syn::parse::Parse for ObjectAttributes {
             context: None,
             scalar: None,
             interfaces: Vec::new(),
-            no_async: None,
         };
 
         while !input.is_empty() {
@@ -343,10 +341,6 @@ impl syn::parse::Parse for ObjectAttributes {
                             SpanContainer::new(ident.span(), Some(interface.span()), interface)
                         })
                         .collect();
-                }
-                // FIXME: make this unneccessary.
-                "noasync" => {
-                    output.no_async = Some(SpanContainer::new(ident.span(), None, ()));
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
@@ -647,6 +641,7 @@ impl<'a> syn::spanned::Spanned for &'a GraphQLTypeDefinitionField {
 /// The definition can be rendered to Rust code.
 #[derive(Debug)]
 pub struct GraphQLTypeDefiniton {
+    pub is_internal: bool,
     pub name: String,
     pub _type: syn::Type,
     pub context: Option<syn::Type>,
@@ -667,8 +662,6 @@ pub struct GraphQLTypeDefiniton {
     // If false, the scalar is only generic if a generic parameter
     // is specified manually.
     pub generic_scalar: bool,
-    // FIXME: make this redundant.
-    pub no_async: bool,
 }
 
 impl GraphQLTypeDefiniton {
@@ -677,16 +670,80 @@ impl GraphQLTypeDefiniton {
         self.fields.iter().any(|field| field.is_async)
     }
 
-    pub fn into_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
+    fn crate_name(&self) -> syn::Path {
+        let name = if self.is_internal { "crate" } else { "juniper" };
+        syn::parse_str::<syn::Path>(name).unwrap()
+    }
 
-        let name = &self.name;
-        let ty = &self._type;
-        let context = self
-            .context
+    fn scalar_generic(&self) -> TokenStream {
+        let juniper_crate_name = self.crate_name();
+        self.scalar
+            .as_ref()
+            .map(|s| quote!( #s ))
+            .unwrap_or_else(|| {
+                if self.generic_scalar {
+                    // If generic_scalar is true, we always insert a generic scalar.
+                    // See more comments below.
+                    quote!(__S)
+                } else {
+                    quote!(#juniper_crate_name::DefaultScalarValue)
+                }
+            })
+    }
+
+    fn generics(&self) -> (TokenStream, TokenStream, TokenStream) {
+        let juniper_crate_name = self.crate_name();
+
+        // Preserve the original type_generics before modification,
+        // since alteration makes them invalid if self.generic_scalar
+        // is specified.
+        let (_, type_generics, _) = self.generics.split_for_impl();
+
+        let mut generics = self.generics.clone();
+
+        if self.scalar.is_none() && self.generic_scalar {
+            // No custom scalar specified, but always generic specified.
+            // Therefore we inject the generic scalar.
+
+            generics.params.push(parse_quote!(__S));
+
+            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+            // Insert ScalarValue constraint.
+            where_clause
+                .predicates
+                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
+        }
+
+        let type_generics = if self.include_type_generics {
+            type_generics.into_token_stream()
+        } else {
+            quote!()
+        };
+
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+
+        (
+            impl_generics.into_token_stream(),
+            type_generics,
+            where_clause
+                .map(ToTokens::into_token_stream)
+                .unwrap_or_else(|| quote!()),
+        )
+    }
+
+    fn context_generic(&self) -> TokenStream {
+        self.context
             .as_ref()
             .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
+            .unwrap_or_else(|| quote!(()))
+    }
+
+    pub fn into_object_tokens(self) -> TokenStream {
+        let name = &self.name;
+        let ty = &self._type;
+        let context = self.context_generic();
+        let scalar = self.scalar_generic();
+        let juniper_crate_name = self.crate_name();
 
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
@@ -738,60 +795,8 @@ impl GraphQLTypeDefiniton {
                 registry
                     .field_convert::<#_type, _, Self::Context>(#field_name, info)
                     #(#args)*
-                    #description
-                    #deprecation
-            }
-        });
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
-
-        let resolve_matches = self.fields.iter().map(|field| {
-            let name = &field.name;
-            let code = &field.resolver_code;
-
-            if field.is_async {
-                quote!(
-                    #name => {
-                        panic!("Tried to resolve async field {} on type {:?} with a sync resolver",
-                            #name,
-                            <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
-                        );
-                    },
-                )
-            } else {
-                let _type = if field.is_type_inferred {
-                    quote!()
-                } else {
-                    let _type = &field._type;
-                    quote!(: #_type)
-                };
-                quote!(
-                    #name => {
-                        let res #_type = (|| { #code })();
-                        #juniper_crate_name::IntoResolvable::into(
-                            res,
-                            executor.context()
-                        )
-                            .and_then(|res| {
-                                match res {
-                                    Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                                    None => Ok(#juniper_crate_name::Value::null()),
-                                }
-                            })
-                    },
-                )
+                #description
+                #deprecation
             }
         });
 
@@ -808,147 +813,44 @@ impl GraphQLTypeDefiniton {
             )
         });
 
-        // Preserve the original type_generics before modification,
-        // since alteration makes them invalid if self.generic_scalar
-        // is specified.
-        let (_, type_generics, _) = self.generics.split_for_impl();
+        let (impl_generics, type_generics, where_clause) = self.generics();
 
-        let mut generics = self.generics.clone();
+        // FIXME: add where clause for interfaces.
+        let resolve_matches = self.fields.iter().map(|field| {
+            let name = &field.name;
+            let code = &field.resolver_code;
+            let _type = if field.is_type_inferred {
+                quote!()
+            } else {
+                let _type = &field._type;
+                quote!(: #_type)
+            };
 
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
+            if field.is_async {
+                quote!(
+                    #name => {
+                        let res #_type = async move { #code }.await;
 
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-        }
-
-        let type_generics_tokens = if self.include_type_generics {
-            Some(type_generics)
-        } else {
-            None
-        };
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-
-        let resolve_field_async = {
-            let resolve_matches_async = self.fields.iter().map(|field| {
-                let name = &field.name;
-                let code = &field.resolver_code;
-                let _type = if field.is_type_inferred {
-                    quote!()
-                } else {
-                    let _type = &field._type;
-                    quote!(: #_type)
-                };
-
-                if field.is_async {
-                    quote!(
-                        #name => {
-                            let f = async move {
-                                let res #_type = async move { #code }.await;
-
-                                let inner_res = #juniper_crate_name::IntoResolvable::into(
-                                    res,
-                                    executor.context()
-                                );
-                                match inner_res {
-                                    Ok(Some((ctx, r))) => {
-                                        let subexec = executor
-                                            .replaced_context(ctx);
-                                        subexec.resolve_with_ctx_async(&(), &r)
-                                            .await
-                                    },
-                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                    Err(e) => Err(e),
-                                }
-                            };
-                            use futures::future;
-                            future::FutureExt::boxed(f)
-                        },
-                    )
-                } else {
-                    let inner = if !self.no_async {
-                        quote!(
-                            let f = async move {
-                                match res2 {
-                                    Ok(Some((ctx, r))) => {
-                                        let sub = executor.replaced_context(ctx);
-                                        sub.resolve_with_ctx_async(&(), &r).await
-                                    },
-                                    Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                    Err(e) => Err(e),
-                                }
-                            };
-                            use futures::future;
-                            future::FutureExt::boxed(f)
-                        )
-                    } else {
-                        quote!(
-                            let v = match res2 {
-                                Ok(Some((ctx, r))) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                                Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                                Err(e) => Err(e),
-                            };
-                            use futures::future;
-                            future::FutureExt::boxed(future::ready(v))
-                        )
-                    };
-
-                    quote!(
-                        #name => {
-                            let res #_type = (||{ #code })();
-                            let res2 = #juniper_crate_name::IntoResolvable::into(
-                                res,
-                                executor.context()
-                            );
-                            #inner
-                        },
-                    )
-                }
-            });
-
-            let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-
-            where_async
-                .predicates
-                .push(parse_quote!( #scalar: Send + Sync ));
-            where_async.predicates.push(parse_quote!(Self: Send + Sync));
-
-            // FIXME: add where clause for interfaces.
-
-            quote!(
-                impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
-                    #where_async
-                {
-                    fn resolve_field_async<'b>(
-                        &'b self,
-                        info: &'b Self::TypeInfo,
-                        field: &'b str,
-                        args: &'b #juniper_crate_name::Arguments<#scalar>,
-                        executor: &'b #juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
-                        where #scalar: Send + Sync,
-                    {
-                        use futures::future;
-                        use #juniper_crate_name::GraphQLType;
-                        match field {
-                            #( #resolve_matches_async )*
-                            _ => {
-                                panic!("Field {} not found on type {:?}",
-                                    field,
-                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
-                                );
-                            }
+                        let inner_res = #juniper_crate_name::IntoResolvable::into(
+                            res,
+                            executor.context()
+                        );
+                        match inner_res {
+                            Ok(Some((ctx, r))) => {
+                                let subexec = executor
+                                    .replaced_context(ctx);
+                                subexec.resolve_with_ctx(&(), &r)
+                                    .await
+                            },
+                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                            Err(e) => Err(e),
                         }
-                    }
-                }
-            )
-        };
+                    },
+                )
+            } else {
+                panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
+            }
+        });
 
         // FIXME: enable this if interfaces are supported
         // let marks = self.fields.iter().map(|field| {
@@ -966,19 +868,19 @@ impl GraphQLTypeDefiniton {
         // });
 
         let output = quote!(
-            impl#impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty #type_generics_tokens #where_clause {
+            impl#impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty #type_generics #where_clause {
                 fn mark() {
                     // FIXME: enable this if interfaces are supported
                     // #( #marks )*
                 }
             }
 
-            impl#impl_generics #juniper_crate_name::marker::GraphQLObjectType<#scalar> for #ty #type_generics_tokens #where_clause
+            impl#impl_generics #juniper_crate_name::marker::GraphQLObjectType<#scalar> for #ty #type_generics #where_clause
             { }
 
-        impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
-            #where_clause
-        {
+            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics
+                #where_clause
+            {
                 type Context = #context;
                 type TypeInfo = ();
 
@@ -990,73 +892,64 @@ impl GraphQLTypeDefiniton {
                     info: &Self::TypeInfo,
                     registry: &mut #juniper_crate_name::Registry<'r, #scalar>
                 ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
-                    where #scalar : 'r,
+                where #scalar : 'r,
                 {
                     let fields = vec![
                         #( #field_definitions ),*
                     ];
                     let meta = registry.build_object_type::<#ty>( info, &fields )
                         #description
-                        #interfaces;
+                    #interfaces;
                     meta.into_meta()
                 }
 
                 #[allow(unused_variables)]
                 #[allow(unused_mut)]
-                fn resolve_field(
-                    &self,
-                    _info: &(),
-                    field: &str,
-                    args: &#juniper_crate_name::Arguments<#scalar>,
-                    executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
-                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    match field {
-                        #( #resolve_matches )*
-                        _ => {
-                            panic!("Field {} not found on type {:?}",
-                                field,
-                                <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
-                            );
+                fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+                    &'me self,
+                    info: &'ty Self::TypeInfo,
+                    field_name: &'field str,
+                    args: &'args #juniper_crate_name::Arguments<'args, #scalar>,
+                    executor: &'ref_err #juniper_crate_name::Executor<'ref_err, 'err, Self::Context, #scalar>,
+                ) -> #juniper_crate_name::BoxFuture<'fut, #juniper_crate_name::ExecutionResult<#scalar>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'args: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+                    'field: 'fut,
+                    #scalar: 'fut,
+                {
+                    let f = async move {
+                        match field_name {
+                            #( #resolve_matches )*
+                            _ => {
+                                let name = <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info);
+                                panic!("Field {} not found on type {:?}",
+                                    field_name,
+                                    name,
+                                );
+                            }
                         }
-                    }
+                    };
+                    futures::future::FutureExt::boxed(f)
                 }
-
 
                 fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
                     #name.to_string()
                 }
-
-        }
-
-        #resolve_field_async
+            }
         );
         output
     }
 
-    pub fn into_subscription_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
-
+    pub fn into_subscription_tokens(self) -> TokenStream {
+        let juniper_crate_name = self.crate_name();
         let name = &self.name;
         let ty = &self._type;
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
+        let context = self.context_generic();
+        let scalar = self.scalar_generic();
 
         let field_definitions = self.fields.iter().map(|field| {
             let args = field.args.iter().map(|arg| {
@@ -1116,8 +1009,8 @@ impl GraphQLTypeDefiniton {
                 registry
                     .field_convert::<#_type, _, Self::Context>(#field_name, info)
                     #(#args)*
-                    #description
-                    #deprecation
+                #description
+                #deprecation
             }
         });
 
@@ -1134,32 +1027,7 @@ impl GraphQLTypeDefiniton {
             )
         });
 
-        // Preserve the original type_generics before modification,
-        // since alteration makes them invalid if self.generic_scalar
-        // is specified.
-        let (_, type_generics, _) = self.generics.split_for_impl();
-
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-        }
-
-        let type_generics_tokens = if self.include_type_generics {
-            Some(type_generics)
-        } else {
-            None
-        };
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (impl_generics, type_generics, where_clause) = self.generics();
 
         let resolve_matches_async = self.fields
             .iter()
@@ -1190,7 +1058,7 @@ impl GraphQLTypeDefiniton {
                                     match res2 {
                                         Ok(Some((ctx, r))) => {
                                             let sub = ex.replaced_context(ctx);
-                                            sub.resolve_with_ctx_async(&(), &r)
+                                            sub.resolve_with_ctx(&(), &r)
                                                 .await
                                                 .map_err(|e| ex.new_error(e))
                                         }
@@ -1201,7 +1069,7 @@ impl GraphQLTypeDefiniton {
                             });
                             Ok(
                                 #juniper_crate_name::Value::Scalar::<
-                                    #juniper_crate_name::ValuesStream
+                                #juniper_crate_name::ValuesStream
                                 >(Box::pin(f))
                             )
                         })
@@ -1211,51 +1079,60 @@ impl GraphQLTypeDefiniton {
             });
 
         let graphql_implementation = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics
                 #where_clause
             {
-                    type Context = #context;
-                    type TypeInfo = ();
+                type Context = #context;
+                type TypeInfo = ();
 
-                    fn name(_: &Self::TypeInfo) -> Option<&str> {
-                        Some(#name)
-                    }
+                fn name(_: &Self::TypeInfo) -> Option<&str> {
+                    Some(#name)
+                }
 
-                    fn meta<'r>(
-                        info: &Self::TypeInfo,
-                        registry: &mut #juniper_crate_name::Registry<'r, #scalar>
-                    ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
-                        where #scalar : 'r,
-                    {
-                        let fields = vec![
-                            #( #field_definitions ),*
-                        ];
-                        let meta = registry.build_object_type::<#ty>( info, &fields )
-                            #description
-                            #interfaces;
-                        meta.into_meta()
-                    }
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut #juniper_crate_name::Registry<'r, #scalar>
+                ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
+                where #scalar : 'r,
+                {
+                    let fields = vec![
+                        #( #field_definitions ),*
+                    ];
+                    let meta = registry.build_object_type::<#ty>( info, &fields )
+                        #description
+                    #interfaces;
+                    meta.into_meta()
+                }
 
-                    fn resolve_field(
-                        &self,
-                        _: &(),
-                        _: &str,
-                        _: &#juniper_crate_name::Arguments<#scalar>,
-                        _: &#juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                        panic!("Called `resolve_field` on subscription object");
-                    }
+                fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+                    &'me self,
+                    info: &'ty Self::TypeInfo,
+                    field_name: &'field str,
+                    args: &'args #juniper_crate_name::Arguments<'args, #scalar>,
+                    executor: &'ref_err #juniper_crate_name::Executor<'ref_err, 'err, Self::Context, #scalar>,
+                ) -> #juniper_crate_name::BoxFuture<'fut, #juniper_crate_name::ExecutionResult<#scalar>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'args: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+                    'field: 'fut,
+                    #scalar: 'fut,
+                {
+                    panic!("Called `resolve_field` on subscription object");
+                }
 
 
-                    fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
-                        #name.to_string()
-                    }
+                fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
+                    #name.to_string()
+                }
             }
         );
 
         let subscription_implementation = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics_tokens
-            #where_clause
+            impl#impl_generics #juniper_crate_name::GraphQLSubscriptionType<#scalar> for #ty #type_generics
+                #where_clause
             {
                 #[allow(unused_variables)]
                 fn resolve_field_into_stream<
@@ -1267,31 +1144,31 @@ impl GraphQLTypeDefiniton {
                     args: #juniper_crate_name::Arguments<'args, #scalar>,
                     executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
-                        dyn futures::future::Future<
-                            Output = Result<
-                                #juniper_crate_name::Value<#juniper_crate_name::ValuesStream<'res, #scalar>>,
-                                #juniper_crate_name::FieldError<#scalar>
-                            >
-                        > + Send + 'f
+                    dyn futures::future::Future<
+                    Output = Result<
+                    #juniper_crate_name::Value<#juniper_crate_name::ValuesStream<'res, #scalar>>,
+                #juniper_crate_name::FieldError<#scalar>
+                >
+                    > + Send + 'f
                     >>
-                    where
-                        's: 'f,
-                        'i: 'res,
-                        'fi: 'f,
-                        'e: 'res,
-                        'args: 'f,
-                        'ref_e: 'f,
-                        'res: 'f,
+                where
+                    's: 'f,
+                'i: 'res,
+                'fi: 'f,
+                'e: 'res,
+                'args: 'f,
+                'ref_e: 'f,
+                'res: 'f,
                 {
                     use #juniper_crate_name::Value;
                     use futures::stream::StreamExt as _;
 
                     match field_name {
-                            #( #resolve_matches_async )*
-                            _ => {
-                                panic!("Field {} not found on type {}", field_name, "GraphQLSubscriptionType");
-                            }
+                        #( #resolve_matches_async )*
+                        _ => {
+                            panic!("Field {} not found on type {}", field_name, "GraphQLSubscriptionType");
                         }
+                    }
                 }
             }
         );
@@ -1302,30 +1179,12 @@ impl GraphQLTypeDefiniton {
         )
     }
 
-    pub fn into_union_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
-
+    pub fn into_union_tokens(self) -> TokenStream {
+        let juniper_crate_name = self.crate_name();
         let name = &self.name;
         let ty = &self._type;
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
+        let context = self.context_generic();
+        let scalar = self.scalar_generic();
 
         let description = self
             .description
@@ -1374,89 +1233,25 @@ impl GraphQLTypeDefiniton {
             let var_ty = &field._type;
 
             quote! {
-                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
-                    return #juniper_crate_name::IntoResolvable::into(
-                        { #expr },
-                        executor.context()
-                    )
-                    .and_then(|res| {
-                        match res {
-                            Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                            None => Ok(#juniper_crate_name::Value::null()),
-                        }
-                    });
-                }
-            }
-        });
-
-        let resolve_into_type_async = self.fields.iter().zip(matcher_expr.iter()).map(|(field, expr)| {
-            let var_ty = &field._type;
-
-            quote! {
-                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
+               if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
                     let inner_res = #juniper_crate_name::IntoResolvable::into(
                         { #expr },
                         executor.context()
                     );
 
-                    let f = async move {
-                        match inner_res {
-                            Ok(Some((ctx, r))) => {
-                                let subexec = executor.replaced_context(ctx);
-                                subexec.resolve_with_ctx_async(&(), &r).await
-                            },
-                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                            Err(e) => Err(e),
-                        }
+                    return match inner_res {
+                        Ok(Some((ctx, r))) => {
+                            let subexec = executor.replaced_context(ctx);
+                            subexec.resolve_with_ctx(&(), &r).await
+                        },
+                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                        Err(e) => Err(e),
                     };
-                    use futures::future;
-                    return future::FutureExt::boxed(f);
                 }
             }
         });
 
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-        }
-
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-
-        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-        where_async
-            .predicates
-            .push(parse_quote!( #scalar: Send + Sync ));
-        where_async.predicates.push(parse_quote!(Self: Send + Sync));
-
-        let async_type_impl = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty
-                #where_async
-            {
-                fn resolve_into_type_async<'b>(
-                    &'b self,
-                    _info: &'b Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&'b [#juniper_crate_name::Selection<'b, #scalar>]>,
-                    executor: &'b #juniper_crate_name::Executor<'b, 'b, Self::Context, #scalar>
-                ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>> {
-                    let context = &executor.context();
-
-                    #( #resolve_into_type_async )*
-
-                    panic!("Concrete type not handled by instance resolvers on {}", #name);
-                }
-            }
-        );
+        let (impl_generics, _type_generics, where_clause) = self.generics();
 
         let convesion_impls = self.fields.iter().map(|field| {
             let variant_ty = &field._type;
@@ -1478,7 +1273,7 @@ impl GraphQLTypeDefiniton {
             )
         });
 
-        let mut type_impl = quote! {
+        let type_impl = quote! {
             #( #convesion_impls )*
 
             impl #impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty #where_clause {
@@ -1500,8 +1295,8 @@ impl GraphQLTypeDefiniton {
                     info: &Self::TypeInfo,
                     registry: &mut #juniper_crate_name::Registry<'r, #scalar>
                 ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
-                    where
-                        #scalar: 'r,
+                where
+                    #scalar: 'r,
                 {
                     let types = &[
                         #( #meta_types )*
@@ -1518,53 +1313,41 @@ impl GraphQLTypeDefiniton {
                     #concrete_type_resolver
                 }
 
-                fn resolve_into_type(
-                    &self,
-                    _info: &Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
-                    executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
-                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    let context = &executor.context();
+                fn resolve_into_type<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+                    &'me self,
+                    info: &'ty Self::TypeInfo,
+                    type_name: &'name str,
+                    selection_set: Option<&'set [#juniper_crate_name::Selection<'set, #scalar>]>,
+                    executor: &'ref_err #juniper_crate_name::Executor<'ref_err, 'err, Self::Context, #scalar>,
+                ) -> #juniper_crate_name::BoxFuture<'fut, #juniper_crate_name::ExecutionResult<#scalar>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'name: 'fut,
+                    'set: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+                {
+                    let f = async move {
+                        let context = &executor.context();
+                        #( #resolve_into_type )*
+                        panic!("Concrete type not handled by instance resolvers on {}", #name);
+                    };
 
-                    #( #resolve_into_type )*
-
-                    panic!("Concrete type not handled by instance resolvers on {}", #name);
+                    futures::future::FutureExt::boxed(f)
                 }
             }
         };
 
-        if !self.no_async {
-            type_impl.extend(async_type_impl)
-        }
-
         type_impl
     }
 
-    pub fn into_enum_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
-
+    pub fn into_enum_tokens(self) -> TokenStream {
+        let juniper_crate_name = self.crate_name();
         let name = &self.name;
         let ty = &self._type;
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
+        let context = self.context_generic();
+        let scalar = self.scalar_generic();
 
         let description = self
             .description
@@ -1626,48 +1409,9 @@ impl GraphQLTypeDefiniton {
             )
         });
 
-        let mut generics = self.generics.clone();
+        let (impl_generics, _type_generics, where_clause) = self.generics();
 
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-        }
-
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-
-        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-        where_async
-            .predicates
-            .push(parse_quote!( #scalar: Send + Sync ));
-        where_async.predicates.push(parse_quote!(Self: Send + Sync));
-
-        let _async = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty
-                #where_async
-            {
-                fn resolve_async<'a>(
-                    &'a self,
-                    info: &'a Self::TypeInfo,
-                    selection_set: Option<&'a [#juniper_crate_name::Selection<#scalar>]>,
-                    executor: &'a #juniper_crate_name::Executor<Self::Context, #scalar>,
-                ) -> #juniper_crate_name::BoxFuture<'a, #juniper_crate_name::ExecutionResult<#scalar>> {
-                    use #juniper_crate_name::GraphQLType;
-                    use futures::future;
-                    let v = self.resolve(info, selection_set, executor);
-                    future::FutureExt::boxed(future::ready(v))
-                }
-            }
-        );
-
-        let mut body = quote!(
+        let body = quote!(
             impl#impl_generics #juniper_crate_name::marker::IsInputType<#scalar> for #ty
                 #where_clause { }
 
@@ -1688,25 +1432,37 @@ impl GraphQLTypeDefiniton {
                     _: &(),
                     registry: &mut #juniper_crate_name::Registry<'r, #scalar>
                 ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
-                    where #scalar: 'r,
+                where #scalar: 'r,
                 {
                     registry.build_enum_type::<#ty>(&(), &[
                         #( #values )*
                     ])
-                    #description
+                        #description
                     .into_meta()
                 }
 
-                fn resolve(
-                    &self,
-                    _: &(),
-                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
-                    _: &#juniper_crate_name::Executor<Self::Context, #scalar>
-                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    let v = match self {
-                        #( #resolves )*
+                fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+                    &'me self,
+                    info: &'ty Self::TypeInfo,
+                    selection_set: Option<&'set [#juniper_crate_name::Selection<'set, #scalar>]>,
+                    executor: &'ref_err #juniper_crate_name::Executor<'ref_err, 'err, Self::Context, #scalar>,
+                ) -> #juniper_crate_name::BoxFuture<'fut, #juniper_crate_name::ExecutionResult<#scalar>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'name: 'fut,
+                    'set: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+                    #scalar: 'fut,
+                {
+                    let f = async move {
+                        let v = match self {
+                            #( #resolves )*
+                        };
+                        Ok(v)
                     };
-                    Ok(v)
+                    futures::future::FutureExt::boxed(f)
                 }
             }
 
@@ -1735,37 +1491,15 @@ impl GraphQLTypeDefiniton {
             }
         );
 
-        if !self.no_async {
-            body.extend(_async)
-        }
-
         body
     }
 
-    pub fn into_input_object_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
-
+    pub fn into_input_object_tokens(self) -> TokenStream {
+        let juniper_crate_name = self.crate_name();
         let name = &self.name;
         let ty = &self._type;
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
+        let context = self.context_generic();
+        let scalar = self.scalar_generic();
 
         let meta_fields = self
             .fields
@@ -1861,46 +1595,7 @@ impl GraphQLTypeDefiniton {
             .as_ref()
             .map(|description| quote!( .description(#description) ));
 
-        // Preserve the original type_generics before modification,
-        // since alteration makes them invalid if self.generic_scalar
-        // is specified.
-        let (_, type_generics, _) = self.generics.split_for_impl();
-
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-        }
-
-        let type_generics_tokens = if self.include_type_generics {
-            Some(type_generics)
-        } else {
-            None
-        };
-
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-
-        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-
-        where_async
-            .predicates
-            .push(parse_quote!( #scalar: Send + Sync ));
-        where_async.predicates.push(parse_quote!(Self: Send + Sync));
-
-        let async_type = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty #type_generics_tokens
-                #where_async
-            {}
-        );
+        let (impl_generics, type_generics, where_clause) = self.generics();
 
         // FIXME: enable this if interfaces are supported
         // let marks = self.fields.iter().map(|field| {
@@ -1908,8 +1603,8 @@ impl GraphQLTypeDefiniton {
         //     quote!(<#_ty as #juniper_crate_name::marker::IsInputType<#scalar>>::mark();)
         // });
 
-        let mut body = quote!(
-            impl#impl_generics #juniper_crate_name::marker::IsInputType<#scalar> for #ty #type_generics_tokens
+        let body = quote!(
+            impl#impl_generics #juniper_crate_name::marker::IsInputType<#scalar> for #ty #type_generics
                 #where_clause {
                     fn mark() {
                         // FIXME: enable this if interfaces are supported
@@ -1917,7 +1612,7 @@ impl GraphQLTypeDefiniton {
                     }
                 }
 
-            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #type_generics
                 #where_clause
             {
                 type Context = #context;
@@ -1937,12 +1632,12 @@ impl GraphQLTypeDefiniton {
                         #( #meta_fields )*
                     ];
                     registry.build_input_object_type::<#ty>(&(), fields)
-                    #description
+                        #description
                     .into_meta()
                 }
             }
 
-            impl#impl_generics #juniper_crate_name::FromInputValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics #juniper_crate_name::FromInputValue<#scalar> for #ty #type_generics
                 #where_clause
             {
                 fn from_input_value(value: &#juniper_crate_name::InputValue<#scalar>) -> Option<Self>
@@ -1959,7 +1654,7 @@ impl GraphQLTypeDefiniton {
                 }
             }
 
-            impl#impl_generics #juniper_crate_name::ToInputValue<#scalar> for #ty #type_generics_tokens
+            impl#impl_generics #juniper_crate_name::ToInputValue<#scalar> for #ty #type_generics
                 #where_clause
             {
                 fn to_input_value(&self) -> #juniper_crate_name::InputValue<#scalar> {
@@ -1969,10 +1664,6 @@ impl GraphQLTypeDefiniton {
                 }
             }
         );
-
-        if !self.no_async {
-            body.extend(async_type);
-        }
 
         body
     }

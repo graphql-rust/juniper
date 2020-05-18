@@ -163,11 +163,11 @@ struct TestType;
     Scalar = MyScalarValue
 )]
 impl TestType {
-    fn long_field() -> i64 {
+    async fn long_field() -> i64 {
         (::std::i32::MAX as i64) + 1
     }
 
-    fn long_with_arg(long_arg: i64) -> i64 {
+    async fn long_with_arg(long_arg: i64) -> i64 {
         long_arg
     }
 }

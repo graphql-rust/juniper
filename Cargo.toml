@@ -9,7 +9,7 @@ members = [
   "integration_tests/codegen_fail",
   "juniper_hyper",
   "juniper_iron",
-  "juniper_rocket",
+  # "juniper_rocket",
   "juniper_rocket_async",
   "juniper_subscriptions",
   "juniper_warp",

@@ -133,7 +133,7 @@ pub fn impl_union(
 
         quote! {
             if type_name == (<#var_ty as #crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
-                return executor.resolve(&(), &{ #resolve });
+                return executor.resolve(&(), &{ #resolve }).await;
             }
         }
     });
@@ -180,8 +180,8 @@ pub fn impl_union(
                 info: &Self::TypeInfo,
                 registry: &mut #crate_name::Registry<'r, #scalar>
             ) -> #crate_name::meta::MetaType<'r, #scalar>
-                where
-                    #scalar: 'r,
+            where
+                #scalar: 'r,
             {
                 let types = &[
                     #( #meta_types )*
@@ -190,7 +190,7 @@ pub fn impl_union(
                     info, types
                 )
                     #description
-                    .into_meta()
+                .into_meta()
             }
 
             #[allow(unused_variables)]
@@ -200,23 +200,33 @@ pub fn impl_union(
                 panic!("Concrete type not handled by instance resolvers on {}", #name);
             }
 
-            fn resolve_into_type(
-                &self,
-                _info: &Self::TypeInfo,
-                type_name: &str,
-                _: Option<&[#crate_name::Selection<#scalar>]>,
-                executor: &#crate_name::Executor<Self::Context, #scalar>,
-            ) -> #crate_name::ExecutionResult<#scalar> {
-                let context = &executor.context();
-                #( #resolve_args )*
+            fn resolve_into_type<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+                &'me self,
+                info: &'ty Self::TypeInfo,
+                type_name: &'name str,
+                selection_set: Option<&'set [#crate_name::Selection<'set, #scalar>]>,
+                executor: &'ref_err #crate_name::Executor<'ref_err, 'err, Self::Context, #scalar>,
+            ) -> #crate_name::BoxFuture<'fut, #crate_name::ExecutionResult<#scalar>>
+                where
+                    'me: 'fut,
+                    'ty: 'fut,
+                    'name: 'fut,
+                    'set: 'fut,
+                    'ref_err: 'fut,
+                    'err: 'fut,
+            {
+                let f = async move {
+                    let context = &executor.context();
+                    #( #resolve_args )*
 
-                #( #resolve_into_type )*
+                    #( #resolve_into_type )*
 
-                 panic!("Concrete type not handled by instance resolvers on {}", #name);
+                    panic!("Concrete type not handled by instance resolvers on {}", #name);
+                };
+
+                futures::future::FutureExt::boxed(f)
             }
         }
-
-
     };
 
     Ok(output.into())

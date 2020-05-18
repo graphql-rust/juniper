@@ -86,16 +86,16 @@ impl GraphQLScalar for ScalarDescription {
 
 #[juniper::graphql_object]
 impl Root {
-    fn default_name() -> DefaultName {
+    async fn default_name() -> DefaultName {
         DefaultName(0)
     }
-    fn other_order() -> OtherOrder {
+    async fn other_order() -> OtherOrder {
         OtherOrder(0)
     }
-    fn named() -> Named {
+    async fn named() -> Named {
         Named(0)
     }
-    fn scalar_description() -> ScalarDescription {
+    async fn scalar_description() -> ScalarDescription {
         ScalarDescription(0)
     }
 }

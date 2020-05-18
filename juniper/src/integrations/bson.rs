@@ -12,7 +12,7 @@ impl<S> GraphQLScalar for ObjectId
 where
     S: ScalarValue,
 {
-    fn resolve(&self) -> Value {
+    async fn resolve(&self) -> Value {
         Value::scalar(self.to_hex())
     }
 
@@ -35,7 +35,7 @@ impl<S> GraphQLScalar for UtcDateTime
 where
     S: ScalarValue,
 {
-    fn resolve(&self) -> Value {
+    async fn resolve(&self) -> Value {
         Value::scalar((*self).to_rfc3339())
     }
 

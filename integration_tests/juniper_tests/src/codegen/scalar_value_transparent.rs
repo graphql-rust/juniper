@@ -24,7 +24,7 @@ struct User2;
 
 #[juniper::graphql_object]
 impl User2 {
-    fn id(&self) -> UserId {
+    async fn id(&self) -> UserId {
         UserId("id".to_string())
     }
 }

@@ -72,7 +72,7 @@ pub trait GraphQLSubscriptionType<S>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue,
 {
     /// Resolve into `Value<ValuesStream>`
     ///
@@ -186,7 +186,7 @@ where
     'res: 'fut,
     T: GraphQLSubscriptionType<S, Context = CtxT>,
     T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue,
     CtxT: Send + Sync,
 {
     Box::pin(resolve_selection_set_into_stream_recursive(
@@ -205,7 +205,7 @@ async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res,
 where
     T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     T::TypeInfo: Send + Sync,
-    S: ScalarValue + Send + Sync,
+    S: ScalarValue,
     CtxT: Send + Sync,
     'inf: 'res,
     'e: 'res,

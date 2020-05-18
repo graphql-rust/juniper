@@ -25,14 +25,14 @@ enum SignUpResult {
 
 #[juniper::graphql_object]
 impl SignUpResult {
-    fn user(&self) -> Option<&User> {
+    async fn user(&self) -> Option<&User> {
         match *self {
             SignUpResult::Ok(ref user) => Some(user),
             SignUpResult::Error(_) => None,
         }
     }
 
-    fn error(&self) -> Option<&Vec<ValidationError>> {
+    async fn error(&self) -> Option<&Vec<ValidationError>> {
         match *self {
             SignUpResult::Ok(_) => None,
             SignUpResult::Error(ref errors) => Some(errors)

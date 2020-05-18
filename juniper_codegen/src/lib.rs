@@ -210,7 +210,7 @@ impl Query {
     // For your GraphQL queries, the field will be available as `apiVersion`.
     //
     // You can also manually customize the field name if required. (See below)
-    fn api_version() -> &'static str {
+    async fn api_version() -> &'static str {
         "0.1"
     }
 
@@ -218,7 +218,7 @@ impl Query {
     // GraphQL arguments are just regular function parameters.
     // **Note**: in Juniper, arguments are non-nullable by default.
     //           for optional arguments, you have to specify them with Option<T>.
-    fn add(a: f64, b: f64, c: Option<f64>) -> f64 {
+    async fn add(a: f64, b: f64, c: Option<f64>) -> f64 {
         a + b + c.unwrap_or(0.0)
     }
 }
@@ -242,15 +242,15 @@ impl Person {
 
 #[juniper::graphql_object]
 impl Person {
-    fn first_name(&self) -> &str {
+    async fn first_name(&self) -> &str {
         &self.first_name
     }
 
-    fn last_name(&self) -> &str {
+    async fn last_name(&self) -> &str {
         &self.last_name
     }
 
-    fn full_name(&self) -> String {
+    async fn full_name(&self) -> String {
         self.build_full_name()
     }
 }
@@ -287,13 +287,13 @@ struct Query;
 impl Query {
     // Context is injected by specifying a argument
     // as a reference to the Context.
-    fn user(context: &Context, id: i32) -> Option<User> {
+    async fn user(context: &Context, id: i32) -> Option<User> {
         context.db.user(id)
     }
 
     // You can also gain access to the executor, which
     // allows you to do look aheads.
-    fn with_executor(executor: &Executor) -> bool {
+    async fn with_executor(executor: &Executor) -> bool {
         let info = executor.look_ahead();
         // ...
         true
@@ -320,7 +320,7 @@ struct InternalQuery;
 impl InternalQuery {
     // Documentation doc comments also work on fields.
     /// GraphQL description...
-    fn field_with_description() -> bool { true }
+    async fn field_with_description() -> bool { true }
 
     // Fields can also be customized with the #[graphql] attribute.
     #[graphql(
@@ -329,14 +329,14 @@ impl InternalQuery {
         // Can be used instead of doc comments.
         description = "field description",
     )]
-    fn internal_name() -> bool { true }
+    async fn internal_name() -> bool { true }
 
     // Fields can be deprecated too.
     #[graphql(
         deprecated = "deprecatin info...",
         // Note: just "deprecated," without a description works too.
     )]
-    fn deprecated_field_simple() -> bool { true }
+    async fn deprecated_field_simple() -> bool { true }
 
 
     // Customizing field arguments is a little awkward right now.
@@ -357,7 +357,7 @@ impl InternalQuery {
             ),
         ),
     )]
-    fn args(arg1: bool, arg2: bool) -> bool {
+    async fn args(arg1: bool, arg2: bool) -> bool {
         arg1 && arg2
     }
 }
@@ -375,7 +375,7 @@ struct WithLifetime<'a> {
 
 #[juniper::graphql_object]
 impl<'a> WithLifetime<'a> {
-    fn value(&self) -> &str {
+    async fn value(&self) -> &str {
         self.value
     }
 }
@@ -398,7 +398,7 @@ struct Query;
     Scalar = MyCustomScalar,
 )]
 impl Query {
-    fn test(&self) -> i32 {
+    async fn test(&self) -> i32 {
         0
     }
 }
@@ -416,7 +416,7 @@ struct User {
 
 #[juniper::graphql_object]
 impl User {
-    fn r#type(&self) -> &str {
+    async fn r#type(&self) -> &str {
         &self.r#type
     }
 }

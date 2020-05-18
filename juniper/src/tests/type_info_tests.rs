@@ -8,6 +8,7 @@ use crate::{
         scalars::{EmptyMutation, EmptySubscription},
     },
     value::{ScalarValue, Value},
+    BoxFuture,
 };
 
 pub struct NodeTypeInfo {
@@ -45,19 +46,30 @@ where
             .into_meta()
     }
 
-    fn resolve_field(
-        &self,
-        _: &Self::TypeInfo,
-        field_name: &str,
-        _: &Arguments<S>,
-        executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
-        executor.resolve(&(), &self.attributes.get(field_name).unwrap())
+    fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
+        &'me self,
+        _info: &'ty Self::TypeInfo,
+        field_name: &'field str,
+        _arguments: &'args Arguments<'args, S>,
+        executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'args: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+        'field: 'fut,
+        S: 'fut,
+    {
+        futures::future::FutureExt::boxed(
+            executor.resolve(&(), self.attributes.get(field_name).unwrap()),
+        )
     }
 }
 
-#[test]
-fn test_node() {
+#[tokio::test]
+async fn test_node() {
     let doc = r#"
         {
             foo,
@@ -84,7 +96,7 @@ fn test_node() {
     );
 
     assert_eq!(
-        crate::execute_sync(doc, None, &schema, &Variables::new(), &()),
+        crate::execute(doc, None, &schema, &Variables::new(), &()).await,
         Ok((
             Value::object(
                 vec![

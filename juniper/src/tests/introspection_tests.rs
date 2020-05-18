@@ -272,7 +272,9 @@ async fn test_builtin_introspection_query() {
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );
-    let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
+    let mut result = crate::introspect(&schema, &database, IntrospectionFormat::default())
+        .await
+        .unwrap();
     sort_schema_value(&mut result.0);
     let expected = schema_introspection_result();
     assert_eq!(result, (expected, vec![]));
@@ -288,7 +290,9 @@ async fn test_builtin_introspection_query_without_descriptions() {
     );
 
     let mut result =
-        crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();
+        crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions)
+            .await
+            .unwrap();
     sort_schema_value(&mut result.0);
     let expected = schema_introspection_result_without_descriptions();
 

@@ -1,6 +1,3 @@
-use serde::{Deserialize, Serialize};
-use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
-
 use crate::{
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
@@ -8,7 +5,10 @@ use crate::{
     schema::meta::MetaType,
     types::base::GraphQLType,
     value::{ParseScalarResult, ScalarValue, Value},
+    BoxFuture,
 };
+use serde::{Deserialize, Serialize};
+use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 /// An ID as defined by the GraphQL specification
 ///
@@ -210,28 +210,23 @@ where
         registry.build_scalar_type::<String>(&()).into_meta()
     }
 
-    fn resolve(
-        &self,
-        _: &(),
-        _: Option<&[Selection<S>]>,
-        _: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
-        Ok(Value::scalar(String::from(*self)))
-    }
-}
-
-impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
-where
-    S: ScalarValue + Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        use futures::future;
-        future::FutureExt::boxed(future::ready(self.resolve(info, selection_set, executor)))
+    fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
+        &'me self,
+        _info: &'ty Self::TypeInfo,
+        _selection_set: Option<&'set [Selection<'set, S>]>,
+        _executor: &'ref_err Executor<'ref_err, 'err, Self::Context, S>,
+    ) -> BoxFuture<'fut, ExecutionResult<S>>
+    where
+        'me: 'fut,
+        'ty: 'fut,
+        'name: 'fut,
+        'set: 'fut,
+        'ref_err: 'fut,
+        'err: 'fut,
+    {
+        futures::future::FutureExt::boxed(futures::future::ready(Ok(Value::scalar(String::from(
+            *self,
+        )))))
     }
 }
 
@@ -344,6 +339,7 @@ unsafe impl<T> Send for EmptyMutation<T> {}
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
+    T: Send + Sync,
 {
     type Context = T;
     type TypeInfo = ();
@@ -358,16 +354,6 @@ where
     {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
-}
-
-impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
-where
-    S: ScalarValue + Send + Sync,
-    Self: GraphQLType<S> + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
-    T: Send + Sync,
-{
 }
 
 /// Utillity type to define read-only schemas
@@ -394,6 +380,7 @@ impl<T> EmptySubscription<T> {
 impl<S, T> GraphQLType<S> for EmptySubscription<T>
 where
     S: ScalarValue,
+    T: Send + Sync,
 {
     type Context = T;
     type TypeInfo = ();
@@ -412,10 +399,7 @@ where
 
 impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    Self: GraphQLType<S> + Send + Sync,
-    Self::TypeInfo: Send + Sync,
-    Self::Context: Send + Sync,
+    S: ScalarValue,
     T: Send + Sync,
 {
 }

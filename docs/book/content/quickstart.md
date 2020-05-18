@@ -82,7 +82,7 @@ struct Query;
 )]
 impl Query {
 
-    fn apiVersion() -> &str {
+    async fn apiVersion() -> &str {
         "1.0"
     }
 
@@ -90,7 +90,7 @@ impl Query {
     // To gain access to the context, we specify a argument
     // that is a reference to the Context type.
     // Juniper automatically injects the correct context here.
-    fn human(context: &Context, id: String) -> FieldResult<Human> {
+    async fn human(context: &Context, id: String) -> FieldResult<Human> {
         // Get a db connection.
         let connection = context.pool.get_connection()?;
         // Execute a db query.
@@ -110,7 +110,7 @@ struct Mutation;
 )]
 impl Mutation {
 
-    fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human> {
+    async fn createHuman(context: &Context, new_human: NewHuman) -> FieldResult<Human> {
         let db = executor.context().pool.get_connection()?;
         let human: Human = db.insert_human(&new_human)?;
         Ok(human)

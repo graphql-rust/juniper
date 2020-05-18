@@ -54,7 +54,8 @@ use rocket::{
 use juniper::{http, InputValue};
 
 use juniper::{
-    http::GraphQLBatchRequest, DefaultScalarValue, FieldError, GraphQLType, RootNode, ScalarValue,
+    http::GraphQLBatchRequest, DefaultScalarValue, FieldError, GraphQLSubscriptionType,
+    GraphQLType, RootNode, ScalarValue,
 };
 
 /// Simple wrapper around an incoming GraphQL request
@@ -105,9 +106,10 @@ where
     where
         QueryT: GraphQLType<S, Context = CtxT>,
         MutationT: GraphQLType<S, Context = CtxT>,
-        SubscriptionT: GraphQLType<S, Context = CtxT>,
+        SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
+        CtxT: Send + Sync,
     {
-        let response = self.0.execute_sync(root_node, context);
+        let response = futures::executor::block_on(self.0.execute(root_node, context));
         let status = if response.is_ok() {
             Status::Ok
         } else {

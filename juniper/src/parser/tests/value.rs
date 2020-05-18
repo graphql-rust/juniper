@@ -41,23 +41,23 @@ impl<'a, S> Query
 where
     S: crate::ScalarValue + 'a,
 {
-    fn int_field() -> i32 {
+    async fn int_field() -> i32 {
         42
     }
 
-    fn float_field() -> f64 {
+    async fn float_field() -> f64 {
         3.14
     }
 
-    fn string_field() -> String {
+    async fn string_field() -> String {
         "".into()
     }
 
-    fn bool_field() -> bool {
+    async fn bool_field() -> bool {
         true
     }
 
-    fn enum_field(_foo: Foo) -> Enum {
+    async fn enum_field(_foo: Foo) -> Enum {
         Enum::EnumValue
     }
 }

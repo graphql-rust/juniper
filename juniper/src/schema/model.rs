@@ -24,7 +24,7 @@ pub struct RootNode<
     SubscriptionT: GraphQLType<S>,
     S = DefaultScalarValue,
 > where
-    S: ScalarValue,
+    S: ScalarValue + 'a,
 {
     #[doc(hidden)]
     pub query_type: QueryT,
@@ -475,10 +475,7 @@ where
         }
     }
 
-    fn new_skip(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
-    where
-        S: ScalarValue,
-    {
+    fn new_skip(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S> {
         Self::new(
             "skip",
             &[
@@ -490,10 +487,7 @@ where
         )
     }
 
-    fn new_include(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
-    where
-        S: ScalarValue,
-    {
+    fn new_include(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S> {
         Self::new(
             "include",
             &[

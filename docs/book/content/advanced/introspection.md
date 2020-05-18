@@ -48,7 +48,7 @@ struct Query;
   Context = Context,
 )]
 impl Query {
-   fn example(id: String) -> FieldResult<Example> {
+   async fn example(id: String) -> FieldResult<Example> {
        unimplemented!()
    }
 }

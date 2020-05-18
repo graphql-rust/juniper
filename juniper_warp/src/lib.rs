@@ -43,7 +43,7 @@ Check the LICENSE file for details.
 use std::{collections::HashMap, str, sync::Arc};
 
 use bytes::Bytes;
-use futures::{FutureExt as _, TryFutureExt};
+use futures::FutureExt as _;
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
@@ -82,7 +82,7 @@ use warp::{body, filters::BoxedFilter, header, http, query, Filter};
 ///    Context = ExampleContext
 /// )]
 /// impl QueryRoot {
-///     fn say_hello(context: &ExampleContext) -> String {
+///     async fn say_hello(context: &ExampleContext) -> String {
 ///         format!(
 ///             "good morning {}, the app state is {:?}",
 ///             context.1,
@@ -116,13 +116,13 @@ pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
     context_extractor: BoxedFilter<(Context,)>,
 ) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<S, Context = Context> + 'static,
     Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<S, Context = Context> + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let schema = Arc::new(schema);
@@ -191,107 +191,6 @@ where
             Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
         }
         .then(|res| async move { Ok::<_, warp::Rejection>(build_response(res)) })
-    };
-    let get_filter = warp::get()
-        .and(context_extractor)
-        .and(query::query())
-        .and_then(handle_get_request);
-
-    get_filter
-        .or(post_json_filter)
-        .unify()
-        .or(post_graphql_filter)
-        .unify()
-        .boxed()
-}
-
-/// Make a synchronous filter for graphql endpoint.
-pub fn make_graphql_filter_sync<Query, Mutation, Subscription, Context, S>(
-    schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
-    context_extractor: BoxedFilter<(Context,)>,
-) -> BoxedFilter<(http::Response<Vec<u8>>,)>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    Context: Send + Sync + 'static,
-    Query: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Mutation: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-    Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
-{
-    let schema = Arc::new(schema);
-    let post_json_schema = schema.clone();
-    let post_graphql_schema = schema.clone();
-
-    let handle_post_json_request = move |context: Context, req: GraphQLBatchRequest<S>| {
-        let schema = post_json_schema.clone();
-        async move {
-            let res = task::spawn_blocking(move || {
-                let resp = req.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-            })
-            .await?;
-
-            Ok(build_response(res))
-        }
-        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
-    };
-    let post_json_filter = warp::post()
-        .and(header::exact_ignore_case(
-            "content-type",
-            "application/json",
-        ))
-        .and(context_extractor.clone())
-        .and(body::json())
-        .and_then(handle_post_json_request);
-
-    let handle_post_graphql_request = move |context: Context, body: Bytes| {
-        let schema = post_graphql_schema.clone();
-        async move {
-            let res = task::spawn_blocking(move || {
-                let query = str::from_utf8(body.as_ref()).map_err(|e| {
-                    failure::format_err!("Request body is not a valid UTF-8 string: {}", e)
-                })?;
-                let req = GraphQLRequest::new(query.into(), None, None);
-
-                let resp = req.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-            })
-            .await?;
-
-            Ok(build_response(res))
-        }
-        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
-    };
-    let post_graphql_filter = warp::post()
-        .and(header::exact_ignore_case(
-            "content-type",
-            "application/graphql",
-        ))
-        .and(context_extractor.clone())
-        .and(body::bytes())
-        .and_then(handle_post_graphql_request);
-
-    let handle_get_request = move |context: Context, mut qry: HashMap<String, String>| {
-        let schema = schema.clone();
-        async move {
-            let res = task::spawn_blocking(move || {
-                let req = GraphQLRequest::new(
-                    qry.remove("query").ok_or_else(|| {
-                        failure::format_err!("Missing GraphQL query string in query parameters")
-                    })?,
-                    qry.remove("operation_name"),
-                    qry.remove("variables")
-                        .map(|vs| serde_json::from_str(&vs))
-                        .transpose()?,
-                );
-
-                let resp = req.execute_sync(&schema, &context);
-                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
-            })
-            .await?;
-
-            Ok(build_response(res))
-        }
-        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
     };
     let get_filter = warp::get()
         .and(context_extractor)
@@ -436,11 +335,11 @@ pub mod subscriptions {
         context: Context,
     ) -> impl Future<Output = Result<(), failure::Error>> + Send
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue + 'static,
         Context: Clone + Send + Sync + 'static,
-        Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Query: juniper::GraphQLType<S, Context = Context> + Send + Sync + 'static,
         Query::TypeInfo: Send + Sync,
-        Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+        Mutation: juniper::GraphQLType<S, Context = Context> + Send + Sync + 'static,
         Mutation::TypeInfo: Send + Sync,
         Subscription:
             juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
@@ -594,7 +493,7 @@ pub mod subscriptions {
     #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
     struct WsPayload<S>
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue + 'static,
     {
         id: Option<String>,
         #[serde(rename(deserialize = "type"))]
@@ -606,7 +505,7 @@ pub mod subscriptions {
     #[serde(bound = "InputValue<S>: Deserialize<'de>")]
     struct GraphQLPayload<S>
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue + 'static,
     {
         variables: Option<InputValue<S>>,
         extensions: Option<HashMap<String, String>>,
@@ -826,7 +725,7 @@ mod tests_http_harness {
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::{model::Database, schema::Query},
-        EmptyMutation, EmptySubscription, RootNode,
+        BoxFuture, EmptyMutation, EmptySubscription, RootNode,
     };
     use warp::{
         self,
@@ -839,7 +738,7 @@ mod tests_http_harness {
     }
 
     impl TestWarpIntegration {
-        fn new(is_sync: bool) -> Self {
+        fn new() -> Self {
             let schema = RootNode::new(
                 Query,
                 EmptyMutation::<Database>::new(),
@@ -847,71 +746,92 @@ mod tests_http_harness {
             );
             let state = warp::any().map(move || Database::new());
 
-            let filter = path::end().and(if is_sync {
-                make_graphql_filter_sync(schema, state.boxed())
-            } else {
-                make_graphql_filter(schema, state.boxed())
-            });
+            let filter = path::end().and(make_graphql_filter(schema, state.boxed()));
             Self {
                 filter: filter.boxed(),
             }
         }
 
-        fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
-            let mut rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
-            make_test_response(rt.block_on(async move {
-                req.filter(&self.filter).await.unwrap_or_else(|rejection| {
-                    let code = if rejection.is_not_found() {
-                        http::StatusCode::NOT_FOUND
-                    } else if let Some(body::BodyDeserializeError { .. }) = rejection.find() {
-                        http::StatusCode::BAD_REQUEST
-                    } else {
-                        http::StatusCode::INTERNAL_SERVER_ERROR
-                    };
-                    http::Response::builder()
-                        .status(code)
-                        .header("content-type", "application/json")
-                        .body(Vec::new())
-                        .unwrap()
-                })
+        async fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
+            make_test_response(req.filter(&self.filter).await.unwrap_or_else(|rejection| {
+                let code = if rejection.is_not_found() {
+                    http::StatusCode::NOT_FOUND
+                } else if let Some(body::BodyDeserializeError { .. }) = rejection.find() {
+                    http::StatusCode::BAD_REQUEST
+                } else {
+                    http::StatusCode::INTERNAL_SERVER_ERROR
+                };
+                http::Response::builder()
+                    .status(code)
+                    .header("content-type", "application/json")
+                    .body(Vec::new())
+                    .unwrap()
             }))
         }
     }
 
     impl HttpIntegration for TestWarpIntegration {
-        fn get(&self, url: &str) -> TestResponse {
+        fn get<'me, 'url, 'fut>(&'me self, url: &'url str) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+        {
             use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
 
-            let url: String = utf8_percent_encode(&url.replace("/?", ""), QUERY_ENCODE_SET)
-                .into_iter()
-                .collect::<Vec<_>>()
-                .join("");
+            let f = async move {
+                let url: String = utf8_percent_encode(&url.replace("/?", ""), QUERY_ENCODE_SET)
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join("");
 
-            self.make_request(
-                warp::test::request()
-                    .method("GET")
-                    .path(&format!("/?{}", url)),
-            )
+                self.make_request(
+                    warp::test::request()
+                        .method("GET")
+                        .path(&format!("/?{}", url)),
+                )
+                .await
+            };
+            futures::future::FutureExt::boxed(f)
         }
 
-        fn post_json(&self, url: &str, body: &str) -> TestResponse {
-            self.make_request(
+        fn post_json<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let f = self.make_request(
                 warp::test::request()
                     .method("POST")
                     .header("content-type", "application/json")
                     .path(url)
                     .body(body),
-            )
+            );
+            futures::future::FutureExt::boxed(f)
         }
 
-        fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
-            self.make_request(
+        fn post_graphql<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let f = self.make_request(
                 warp::test::request()
                     .method("POST")
                     .header("content-type", "application/graphql")
                     .path(url)
                     .body(body),
-            )
+            );
+            futures::future::FutureExt::boxed(f)
         }
     }
 
@@ -929,13 +849,8 @@ mod tests_http_harness {
         }
     }
 
-    #[test]
-    fn test_warp_integration() {
-        run_http_test_suite(&TestWarpIntegration::new(false));
-    }
-
-    #[test]
-    fn test_sync_warp_integration() {
-        run_http_test_suite(&TestWarpIntegration::new(true));
+    #[tokio::test]
+    async fn test_warp_integration() {
+        run_http_test_suite(&TestWarpIntegration::new()).await;
     }
 }

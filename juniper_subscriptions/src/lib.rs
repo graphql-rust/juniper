@@ -16,7 +16,7 @@ use std::{iter::FromIterator, pin::Pin};
 use futures::{task::Poll, Stream};
 use juniper::{
     http::{GraphQLRequest, GraphQLResponse},
-    BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLTypeAsync, Object,
+    BoxFuture, ExecutionError, GraphQLError, GraphQLSubscriptionType, GraphQLType, Object,
     ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value, ValuesStream,
 };
 
@@ -25,10 +25,10 @@ use juniper::{
 /// - handles subscription start
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    S: ScalarValue + 'static,
+    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -40,10 +40,10 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
     Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    S: ScalarValue + 'static,
+    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -58,10 +58,10 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S> SubscriptionCoordinator<'a, CtxT, S>
     for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'a,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    S: ScalarValue + 'a,
+    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -103,7 +103,7 @@ pub struct Connection<'a, S> {
 
 impl<'a, S> Connection<'a, S>
 where
-    S: ScalarValue + Send + Sync + 'a,
+    S: ScalarValue + 'a,
 {
     /// Creates new [`Connection`] from values stream and errors
     pub fn from_stream(stream: Value<ValuesStream<'a, S>>, errors: Vec<ExecutionError<S>>) -> Self {
@@ -113,14 +113,11 @@ where
     }
 }
 
-impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S> where
-    S: ScalarValue + Send + Sync + 'a
-{
-}
+impl<'a, S> SubscriptionConnection<'a, S> for Connection<'a, S> where S: ScalarValue + 'a {}
 
 impl<'a, S> futures::Stream for Connection<'a, S>
 where
-    S: ScalarValue + Send + Sync + 'a,
+    S: ScalarValue + 'a,
 {
     type Item = GraphQLResponse<'a, S>;
 
@@ -148,7 +145,7 @@ fn whole_responses_stream<'a, S>(
     errors: Vec<ExecutionError<S>>,
 ) -> Pin<Box<dyn futures::Stream<Item = GraphQLResponse<'a, S>> + Send + 'a>>
 where
-    S: ScalarValue + Send + Sync + 'a,
+    S: ScalarValue + 'a,
 {
     use futures::stream::{self, StreamExt as _};
 

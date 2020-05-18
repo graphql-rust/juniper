@@ -9,32 +9,11 @@ use hyper::{
 };
 use juniper::{
     http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
-    GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
+    GraphQLSubscriptionType, GraphQLType, InputValue, RootNode, ScalarValue,
 };
 use serde_json::error::Error as SerdeError;
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 use url::form_urlencoded;
-
-pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
-    context: Arc<CtxT>,
-    req: Request<Body>,
-) -> Result<Response<Body>, hyper::Error>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-{
-    Ok(match parse_req(req).await {
-        Ok(req) => execute_request_sync(root_node, context, req).await,
-        Err(resp) => resp,
-    })
-}
 
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
@@ -42,11 +21,11 @@ pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
     req: Request<Body>,
 ) -> Result<Response<Body>, hyper::Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     CtxT: Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLType<S, Context = CtxT> + 'static,
+    MutationT: GraphQLType<S, Context = CtxT> + 'static,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -57,7 +36,7 @@ where
     })
 }
 
-async fn parse_req<S: ScalarValue>(
+async fn parse_req<S: ScalarValue + 'static>(
     req: Request<Body>,
 ) -> Result<GraphQLBatchRequest<S>, Response<Body>> {
     match *req.method() {
@@ -78,7 +57,7 @@ async fn parse_req<S: ScalarValue>(
     .map_err(|e| render_error(e))
 }
 
-fn parse_get_req<S: ScalarValue>(
+fn parse_get_req<S: ScalarValue + 'static>(
     req: Request<Body>,
 ) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
     req.uri()
@@ -91,7 +70,7 @@ fn parse_get_req<S: ScalarValue>(
         })
 }
 
-async fn parse_post_json_req<S: ScalarValue>(
+async fn parse_post_json_req<S: ScalarValue + 'static>(
     body: Body,
 ) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
@@ -105,7 +84,7 @@ async fn parse_post_json_req<S: ScalarValue>(
         .map_err(GraphQLRequestError::BodyJSONError)
 }
 
-async fn parse_post_graphql_req<S: ScalarValue>(
+async fn parse_post_graphql_req<S: ScalarValue + 'static>(
     body: Body,
 ) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
     let chunk = hyper::body::to_bytes(body)
@@ -152,48 +131,17 @@ fn render_error(err: GraphQLRequestError) -> Response<Body> {
     resp
 }
 
-async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
-    context: Arc<CtxT>,
-    request: GraphQLBatchRequest<S>,
-) -> Response<Body>
-where
-    S: ScalarValue + Send + Sync + 'static,
-    CtxT: Send + Sync + 'static,
-    QueryT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
-    QueryT::TypeInfo: Send + Sync,
-    MutationT::TypeInfo: Send + Sync,
-    SubscriptionT::TypeInfo: Send + Sync,
-{
-    let res = request.execute_sync(&*root_node, &context);
-    let body = Body::from(serde_json::to_string_pretty(&res).unwrap());
-    let code = if res.is_ok() {
-        StatusCode::OK
-    } else {
-        StatusCode::BAD_REQUEST
-    };
-    let mut resp = new_response(code);
-    resp.headers_mut().insert(
-        header::CONTENT_TYPE,
-        HeaderValue::from_static("application/json"),
-    );
-    *resp.body_mut() = body;
-    resp
-}
-
 async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<Body>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     CtxT: Send + Sync + 'static,
-    QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + 'static,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    QueryT: GraphQLType<S, Context = CtxT> + 'static,
+    MutationT: GraphQLType<S, Context = CtxT> + 'static,
+    SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
@@ -320,7 +268,7 @@ mod tests {
     use juniper::{
         http::tests as http_tests,
         tests::{model::Database, schema::Query},
-        EmptyMutation, EmptySubscription, RootNode,
+        BoxFuture, EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::{self, Response as ReqwestResponse};
     use std::{net::SocketAddr, sync::Arc, thread, time::Duration};
@@ -330,39 +278,79 @@ mod tests {
     }
 
     impl http_tests::HttpIntegration for TestHyperIntegration {
-        fn get(&self, url: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            make_test_response(reqwest::get(&url).expect(&format!("failed GET {}", url)))
+        fn get<'me, 'url, 'fut>(
+            &'me self,
+            url: &'url str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+        {
+            let f = async move {
+                let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
+                make_test_response(
+                    reqwest::get(&url)
+                        .await
+                        .expect(&format!("failed GET {}", url)),
+                )
+                .await
+            };
+            futures::future::FutureExt::boxed(f)
         }
 
-        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            let client = reqwest::Client::new();
-            let res = client
-                .post(&url)
-                .header(reqwest::header::CONTENT_TYPE, "application/json")
-                .body(body.to_string())
-                .send()
-                .expect(&format!("failed POST {}", url));
-            make_test_response(res)
+        fn post_json<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let f = async move {
+                let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
+                let client = reqwest::Client::new();
+                let res = client
+                    .post(&url)
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .body(body.to_string())
+                    .send()
+                    .await
+                    .expect(&format!("failed POST {}", url));
+                make_test_response(res).await
+            };
+            futures::future::FutureExt::boxed(f)
         }
 
-        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
-            let client = reqwest::Client::new();
-            let res = client
-                .post(&url)
-                .header(reqwest::header::CONTENT_TYPE, "application/graphql")
-                .body(body.to_string())
-                .send()
-                .expect(&format!("failed POST {}", url));
-            make_test_response(res)
+        fn post_graphql<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let f = async move {
+                let url = format!("http://127.0.0.1:{}/graphql{}", self.port, url);
+                let client = reqwest::Client::new();
+                let res = client
+                    .post(&url)
+                    .header(reqwest::header::CONTENT_TYPE, "application/graphql")
+                    .body(body.to_string())
+                    .send()
+                    .await
+                    .expect(&format!("failed POST {}", url));
+                make_test_response(res).await
+            };
+            futures::future::FutureExt::boxed(f)
         }
     }
 
-    fn make_test_response(mut response: ReqwestResponse) -> http_tests::TestResponse {
+    async fn make_test_response(response: ReqwestResponse) -> http_tests::TestResponse {
         let status_code = response.status().as_u16() as i32;
-        let body = response.text().unwrap();
         let content_type_header = response.headers().get(reqwest::header::CONTENT_TYPE);
         let content_type = if let Some(ct) = content_type_header {
             format!("{}", ct.to_str().unwrap())
@@ -370,6 +358,7 @@ mod tests {
             String::default()
         };
 
+        let body = response.text().await.unwrap();
         http_tests::TestResponse {
             status_code,
             body: Some(body),
@@ -377,8 +366,8 @@ mod tests {
         }
     }
 
-    async fn run_hyper_integration(is_sync: bool) {
-        let port = if is_sync { 3002 } else { 3001 };
+    async fn run_hyper_integration() {
+        let port = 3001;
         let addr: SocketAddr = ([127, 0, 0, 1], port).into();
 
         let db = Arc::new(Database::new());
@@ -407,11 +396,7 @@ mod tests {
                     };
                     async move {
                         if matches {
-                            if is_sync {
-                                super::graphql_sync(root_node, ctx, req).await
-                            } else {
-                                super::graphql(root_node, ctx, req).await
-                            }
+                            super::graphql(root_node, ctx, req).await
                         } else {
                             let mut resp = Response::new(Body::empty());
                             *resp.status_mut() = StatusCode::NOT_FOUND;
@@ -432,10 +417,10 @@ mod tests {
                 shutdown_fut.await.unwrap_err();
             });
 
-        tokio::task::spawn_blocking(move || {
+        tokio::task::spawn(async move {
             thread::sleep(Duration::from_millis(10)); // wait 10ms for server to bind
             let integration = TestHyperIntegration { port };
-            http_tests::run_http_test_suite(&integration);
+            http_tests::run_http_test_suite(&integration).await;
             shutdown.abort();
         });
 
@@ -446,11 +431,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_hyper_integration() {
-        run_hyper_integration(false).await
-    }
-
-    #[tokio::test]
-    async fn test_sync_hyper_integration() {
-        run_hyper_integration(true).await
+        run_hyper_integration().await
     }
 }

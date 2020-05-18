@@ -1,10 +1,10 @@
-use crate::{DefaultScalarValue, GraphQLTypeAsync, RootNode, Value, Variables};
+use crate::{DefaultScalarValue, GraphQLType, RootNode, Value, Variables};
 use std::default::Default;
 
 pub async fn run_query<Query, Mutation, Subscription, Context>(query: &str) -> Value
 where
-    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Query: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Mutation: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Subscription: crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context>
         + Default
         + Sync
@@ -27,8 +27,8 @@ where
 
 pub async fn run_info_query<Query, Mutation, Subscription, Context>(type_name: &str) -> Value
 where
-    Query: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
-    Mutation: GraphQLTypeAsync<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Query: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
+    Mutation: GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context> + Default,
     Subscription: crate::GraphQLType<DefaultScalarValue, TypeInfo = (), Context = Context>
         + Default
         + Sync

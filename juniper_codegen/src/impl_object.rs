@@ -19,9 +19,8 @@ pub fn build_object(
         Ok(definition) => definition,
         Err(err) => return err.to_compile_error(),
     };
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
 
-    definition.into_tokens(juniper_crate_name).into()
+    definition.into_object_tokens().into()
 }
 
 /// Generate code for the juniper::graphql_subscription macro.
@@ -36,10 +35,7 @@ pub fn build_subscription(
         Err(err) => return err.to_compile_error(),
     };
 
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    definition
-        .into_subscription_tokens(juniper_crate_name)
-        .into()
+    definition.into_subscription_tokens().into()
 }
 
 fn create(
@@ -206,6 +202,7 @@ fn create(
     proc_macro_error::abort_if_dirty();
 
     let definition = util::GraphQLTypeDefiniton {
+        is_internal,
         name,
         _type: *_impl.target_type.clone(),
         scalar: _impl.attrs.scalar.map(SpanContainer::into_inner),
@@ -227,7 +224,6 @@ fn create(
         },
         include_type_generics: false,
         generic_scalar: false,
-        no_async: _impl.attrs.no_async.is_some(),
     };
 
     Ok(definition)

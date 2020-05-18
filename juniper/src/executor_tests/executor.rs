@@ -11,47 +11,47 @@ mod field_execution {
 
     #[crate::graphql_object_internal]
     impl DataType {
-        fn a() -> &str {
+        async fn a() -> &str {
             "Apple"
         }
-        fn b() -> &str {
+        async fn b() -> &str {
             "Banana"
         }
-        fn c() -> &str {
+        async fn c() -> &str {
             "Cookie"
         }
-        fn d() -> &str {
+        async fn d() -> &str {
             "Donut"
         }
-        fn e() -> &str {
+        async fn e() -> &str {
             "Egg"
         }
-        fn f() -> &str {
+        async fn f() -> &str {
             "Fish"
         }
 
-        fn pic(size: Option<i32>) -> String {
+        async fn pic(size: Option<i32>) -> String {
             format!("Pic of size: {}", size.unwrap_or(50))
         }
 
-        fn deep() -> DeepDataType {
+        async fn deep() -> DeepDataType {
             DeepDataType
         }
     }
 
     #[crate::graphql_object_internal]
     impl DeepDataType {
-        fn a() -> &str {
+        async fn a() -> &str {
             "Already Been Done"
         }
-        fn b() -> &str {
+        async fn b() -> &str {
             "Boring"
         }
-        fn c() -> Vec<Option<&str>> {
+        async fn c() -> Vec<Option<&str>> {
             vec![Some("Contrived"), None, Some("Confusing")]
         }
 
-        fn deeper() -> Vec<Option<DataType>> {
+        async fn deeper() -> Vec<Option<DataType>> {
             vec![Some(DataType), None, Some(DataType)]
         }
     }
@@ -172,16 +172,16 @@ mod merge_parallel_fragments {
 
     #[crate::graphql_object_internal]
     impl Type {
-        fn a() -> &str {
+        async fn a() -> &str {
             "Apple"
         }
-        fn b() -> &str {
+        async fn b() -> &str {
             "Banana"
         }
-        fn c() -> &str {
+        async fn c() -> &str {
             "Cherry"
         }
-        fn deep() -> Type {
+        async fn deep() -> Type {
             Type
         }
     }
@@ -263,38 +263,38 @@ mod merge_parallel_inline_fragments {
 
     #[crate::graphql_object_internal]
     impl Type {
-        fn a() -> &str {
+        async fn a() -> &str {
             "Apple"
         }
-        fn b() -> &str {
+        async fn b() -> &str {
             "Banana"
         }
-        fn c() -> &str {
+        async fn c() -> &str {
             "Cherry"
         }
-        fn deep() -> Type {
+        async fn deep() -> Type {
             Type
         }
-        fn other() -> Vec<Other> {
+        async fn other() -> Vec<Other> {
             vec![Other, Other]
         }
     }
 
     #[crate::graphql_object_internal]
     impl Other {
-        fn a() -> &str {
+        async fn a() -> &str {
             "Apple"
         }
-        fn b() -> &str {
+        async fn b() -> &str {
             "Banana"
         }
-        fn c() -> &str {
+        async fn c() -> &str {
             "Cherry"
         }
-        fn deep() -> Type {
+        async fn deep() -> Type {
             Type
         }
-        fn other() -> Vec<Other> {
+        async fn other() -> Vec<Other> {
             vec![Other, Other]
         }
     }
@@ -422,7 +422,7 @@ mod threads_context_correctly {
         Context = TestContext,
     )]
     impl Schema {
-        fn a(context: &TestContext) -> String {
+        async fn a(context: &TestContext) -> String {
             context.value.clone()
         }
     }
@@ -493,11 +493,14 @@ mod dynamic_context_switching {
 
     #[crate::graphql_object_internal(Context = OuterContext)]
     impl Schema {
-        fn item_opt(_context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
+        async fn item_opt(_context: &OuterContext, key: i32) -> Option<(&InnerContext, ItemRef)> {
             executor.context().items.get(&key).map(|c| (c, ItemRef))
         }
 
-        fn item_res(context: &OuterContext, key: i32) -> FieldResult<(&InnerContext, ItemRef)> {
+        async fn item_res(
+            context: &OuterContext,
+            key: i32,
+        ) -> FieldResult<(&InnerContext, ItemRef)> {
             let res = context
                 .items
                 .get(&key)
@@ -506,7 +509,7 @@ mod dynamic_context_switching {
             Ok(res)
         }
 
-        fn item_res_opt(
+        async fn item_res_opt(
             context: &OuterContext,
             key: i32,
         ) -> FieldResult<Option<(&InnerContext, ItemRef)>> {
@@ -516,14 +519,14 @@ mod dynamic_context_switching {
             Ok(context.items.get(&key).map(|c| (c, ItemRef)))
         }
 
-        fn item_always(context: &OuterContext, key: i32) -> (&InnerContext, ItemRef) {
+        async fn item_always(context: &OuterContext, key: i32) -> (&InnerContext, ItemRef) {
             context.items.get(&key).map(|c| (c, ItemRef)).unwrap()
         }
     }
 
     #[crate::graphql_object_internal(Context = InnerContext)]
     impl ItemRef {
-        fn value(context: &InnerContext) -> String {
+        async fn value(context: &InnerContext) -> String {
             context.value.clone()
         }
     }
@@ -859,32 +862,32 @@ mod propagates_errors_to_nullable_fields {
 
     #[crate::graphql_object_internal]
     impl Schema {
-        fn inner() -> Inner {
+        async fn inner() -> Inner {
             Inner
         }
-        fn inners() -> Vec<Inner> {
+        async fn inners() -> Vec<Inner> {
             (0..5).map(|_| Inner).collect()
         }
-        fn nullable_inners() -> Vec<Option<Inner>> {
+        async fn nullable_inners() -> Vec<Option<Inner>> {
             (0..5).map(|_| Some(Inner)).collect()
         }
     }
 
     #[crate::graphql_object_internal]
     impl Inner {
-        fn nullable_field() -> Option<Inner> {
+        async fn nullable_field() -> Option<Inner> {
             Some(Inner)
         }
-        fn non_nullable_field() -> Inner {
+        async fn non_nullable_field() -> Inner {
             Inner
         }
-        fn nullable_error_field() -> FieldResult<Option<&str>> {
+        async fn nullable_error_field() -> FieldResult<Option<&str>> {
             Err("Error for nullableErrorField")?
         }
-        fn non_nullable_error_field() -> FieldResult<&str> {
+        async fn non_nullable_error_field() -> FieldResult<&str> {
             Err("Error for nonNullableErrorField")?
         }
-        fn custom_error_field() -> Result<&str, CustomError> {
+        async fn custom_error_field() -> Result<&str, CustomError> {
             Err(CustomError::NotFound)
         }
     }
@@ -1168,7 +1171,7 @@ mod named_operations {
 
     #[crate::graphql_object_internal]
     impl Schema {
-        fn a(p: Option<String>) -> &str {
+        async fn a(p: Option<String>) -> &str {
             let _ = p;
             "b"
         }

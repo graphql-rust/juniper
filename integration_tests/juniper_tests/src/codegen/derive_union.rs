@@ -66,11 +66,11 @@ pub struct HumanCompat {
 
 #[juniper::graphql_object]
 impl HumanCompat {
-    fn id(&self) -> &String {
+    async fn id(&self) -> &String {
         &self.id
     }
 
-    fn home_planet(&self) -> &String {
+    async fn home_planet(&self) -> &String {
         &self.home_planet
     }
 }
@@ -82,11 +82,11 @@ pub struct DroidCompat {
 
 #[juniper::graphql_object]
 impl DroidCompat {
-    fn id(&self) -> &String {
+    async fn id(&self) -> &String {
         &self.id
     }
 
-    fn primary_function(&self) -> &String {
+    async fn primary_function(&self) -> &String {
         &self.primary_function
     }
 }
@@ -119,7 +119,7 @@ pub struct Query;
     Context = CustomContext,
 )]
 impl Query {
-    fn context(&self, ctx: &CustomContext) -> CharacterContext {
+    async fn context(&self, ctx: &CustomContext) -> CharacterContext {
         if ctx.is_left {
             HumanContext {
                 id: "human-32".to_string(),

@@ -63,10 +63,10 @@ struct User {
 impl User {
     // 3. Inject the context by specifying an argument
     //    with the context type.
-    // Note: 
+    // Note:
     //   - the type must be a reference
     //   - the name of the argument SHOULD be context
-    fn friends(&self, context: &Database) -> Vec<&User> {
+    async fn friends(&self, context: &Database) -> Vec<&User> {
 
         // 5. Use the database to lookup users
         self.friend_ids.iter()
@@ -74,12 +74,12 @@ impl User {
             .collect()
     }
 
-    fn name(&self) -> &str { 
-        self.name.as_str() 
+    async fn name(&self) -> &str {
+        self.name.as_str()
     }
 
-    fn id(&self) -> i32 { 
-        self.id 
+    async fn id(&self) -> i32 {
+        self.id
     }
 }
 

@@ -83,14 +83,14 @@ struct WithCustomContext {
 
 #[juniper::graphql_object]
 impl Query {
-    fn obj() -> Obj {
+    async fn obj() -> Obj {
         Obj {
             regular_field: true,
             c: 22,
         }
     }
 
-    fn nested() -> Nested {
+    async fn nested() -> Nested {
         Nested {
             obj: Obj {
                 regular_field: false,
@@ -99,25 +99,25 @@ impl Query {
         }
     }
 
-    fn doc() -> DocComment {
+    async fn doc() -> DocComment {
         DocComment {
             regular_field: true,
         }
     }
 
-    fn multi_doc() -> MultiDocComment {
+    async fn multi_doc() -> MultiDocComment {
         MultiDocComment {
             regular_field: true,
         }
     }
 
-    fn override_doc() -> OverrideDocComment {
+    async fn override_doc() -> OverrideDocComment {
         OverrideDocComment {
             regular_field: true,
         }
     }
 
-    fn skipped_field_obj() -> SkippedFieldObj {
+    async fn skipped_field_obj() -> SkippedFieldObj {
         SkippedFieldObj {
             regular_field: false,
             skipped: 42,

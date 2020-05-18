@@ -164,7 +164,17 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # fn main() {}
 /// ```
 pub trait ScalarValue:
-    Debug + Display + PartialEq + Clone + Serialize + From<String> + From<bool> + From<i32> + From<f64>
+    Debug
+    + Display
+    + PartialEq
+    + Clone
+    + Serialize
+    + From<String>
+    + From<bool>
+    + From<i32>
+    + From<f64>
+    + Send
+    + Sync
 {
     /// Serde visitor used to deserialize this scalar value
     type Visitor: for<'de> de::Visitor<'de, Value = Self> + Default;

@@ -90,13 +90,13 @@ pub async fn graphql_handler<Query, Mutation, Subscription, Context, S>(
     payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<S, Context = Context> + 'static,
     Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<S, Context = Context> + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     match *req.method() {
@@ -114,13 +114,13 @@ pub async fn get_graphql_handler<Query, Mutation, Subscription, Context, S>(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<S, Context = Context> + 'static,
     Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<S, Context = Context> + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let get_req = web::Query::<GetGraphQLRequest>::from_query(req.query_string())?;
@@ -144,13 +144,13 @@ pub async fn post_graphql_handler<Query, Mutation, Subscription, Context, S>(
     payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + 'static,
     Context: Send + Sync + 'static,
-    Query: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Query: juniper::GraphQLType<S, Context = Context> + 'static,
     Query::TypeInfo: Send + Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = Context> + Send + Sync + 'static,
+    Mutation: juniper::GraphQLType<S, Context = Context> + 'static,
     Mutation::TypeInfo: Send + Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + Send + Sync + 'static,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = Context> + 'static,
     Subscription::TypeInfo: Send + Sync,
 {
     let content_type_header = req
@@ -225,13 +225,13 @@ mod tests {
     use juniper::{
         http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
         tests::{model::Database, schema::Query},
-        EmptyMutation, EmptySubscription, RootNode,
+        BoxFuture, EmptyMutation, EmptySubscription, RootNode,
     };
 
     type Schema =
         juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
-    async fn take_response_body_string(resp: &mut ServiceResponse) -> String {
+    async fn take_response_body_string(mut resp: ServiceResponse) -> String {
         let (response_body, ..) = resp
             .take_body()
             .map(|body_out| body_out.unwrap().to_vec())
@@ -286,13 +286,14 @@ mod tests {
             .header("accept", "text/html")
             .to_request();
 
-        let mut resp = test::call_service(&mut app, req).await;
-        let body = take_response_body_string(&mut resp).await;
+        let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
             "text/html; charset=utf-8"
         );
+
+        let body = take_response_body_string(resp).await;
         assert!(body.contains("<script>var GRAPHQL_URL = '/dogs-api/graphql';</script>"));
         assert!(body.contains(
             "<script>var GRAPHQL_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';</script>"
@@ -327,13 +328,14 @@ mod tests {
             .header("accept", "text/html")
             .to_request();
 
-        let mut resp = test::call_service(&mut app, req).await;
-        let body = take_response_body_string(&mut resp).await;
+        let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
             "text/html; charset=utf-8"
         );
+
+        let body = take_response_body_string(resp).await;
         assert!(body.contains("GraphQLPlayground.init(root, { endpoint: '/dogs-api/graphql', subscriptionEndpoint: '/dogs-api/subscriptions' })"));
     }
 
@@ -356,16 +358,15 @@ mod tests {
         let mut app =
             test::init_service(App::new().data(schema).route("/", web::post().to(index))).await;
 
-        let mut resp = test::call_service(&mut app, req).await;
-
+        let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
-        assert_eq!(
-            take_response_body_string(&mut resp).await,
-            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
-        );
         assert_eq!(
             resp.headers().get("content-type").unwrap(),
             "application/json",
+        );
+        assert_eq!(
+            take_response_body_string(resp).await,
+            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
         );
     }
 
@@ -385,16 +386,16 @@ mod tests {
         let mut app =
             test::init_service(App::new().data(schema).route("/", web::get().to(index))).await;
 
-        let mut resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&mut app, req).await;
 
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
-            take_response_body_string(&mut resp).await,
-            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
-        );
-        assert_eq!(
             resp.headers().get("content-type").unwrap(),
             "application/json",
+        );
+        assert_eq!(
+            take_response_body_string(resp).await,
+            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
         );
     }
 
@@ -425,16 +426,16 @@ mod tests {
         let mut app =
             test::init_service(App::new().data(schema).route("/", web::post().to(index))).await;
 
-        let mut resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&mut app, req).await;
 
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
-            take_response_body_string(&mut resp).await,
-            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
-        );
-        assert_eq!(
             resp.headers().get("content-type").unwrap(),
             "application/json",
+        );
+        assert_eq!(
+            take_response_body_string(resp).await,
+            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
         );
     }
 
@@ -449,8 +450,14 @@ mod tests {
     pub struct TestActixWebIntegration;
 
     impl TestActixWebIntegration {
-        fn make_request(&self, req: test::TestRequest) -> TestResponse {
-            actix_rt::System::new("request").block_on(async move {
+        fn make_request(
+            &self,
+            req: test::TestRequest,
+        ) -> futures::channel::oneshot::Receiver<TestResponse> {
+            use futures::channel::oneshot;
+            let (tx, rx) = oneshot::channel();
+
+            actix_rt::spawn(async move {
                 let schema = RootNode::new(
                     Query,
                     EmptyMutation::<Database>::new(),
@@ -459,50 +466,84 @@ mod tests {
 
                 let mut app =
                     test::init_service(App::new().data(schema).route("/", web::to(index))).await;
-
                 let resp = test::call_service(&mut app, req.to_request()).await;
-                make_test_response(resp).await
-            })
+
+                let status_code = resp.status().as_u16();
+                let content_type = resp
+                    .headers()
+                    .get(CONTENT_TYPE)
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+                let body = take_response_body_string(resp).await;
+                let res = TestResponse {
+                    status_code: status_code as i32,
+                    body: Some(body),
+                    content_type,
+                };
+
+                tx.send(res).unwrap();
+            });
+
+            rx
         }
     }
 
     impl HttpIntegration for TestActixWebIntegration {
-        fn get(&self, url: &str) -> TestResponse {
-            self.make_request(test::TestRequest::get().uri(url))
+        fn get<'me, 'url, 'fut>(&'me self, url: &'url str) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+        {
+            let f = self.make_request(test::TestRequest::get().uri(url));
+            let f = async move { f.await.unwrap() };
+            futures::future::FutureExt::boxed(f)
         }
 
-        fn post_json(&self, url: &str, body: &str) -> TestResponse {
-            self.make_request(
+        fn post_json<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let f = self.make_request(
                 test::TestRequest::post()
                     .header("content-type", "application/json")
                     .set_payload(body.to_string())
                     .uri(url),
-            )
+            );
+            let f = async move { f.await.unwrap() };
+            futures::future::FutureExt::boxed(f)
         }
 
-        fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
-            self.make_request(
+        fn post_graphql<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let f = self.make_request(
                 test::TestRequest::post()
                     .header("content-type", "application/graphql")
                     .set_payload(body.to_string())
                     .uri(url),
-            )
+            );
+            let f = async move { f.await.unwrap() };
+            futures::future::FutureExt::boxed(f)
         }
     }
 
-    async fn make_test_response(mut resp: ServiceResponse) -> TestResponse {
-        let body = take_response_body_string(&mut resp).await;
-        let status_code = resp.status().as_u16();
-        let content_type = resp.headers().get(CONTENT_TYPE).unwrap();
-        TestResponse {
-            status_code: status_code as i32,
-            body: Some(body),
-            content_type: content_type.to_str().unwrap().to_string(),
-        }
-    }
-
-    #[test]
-    fn test_actix_web_integration() {
-        run_http_test_suite(&TestActixWebIntegration);
+    #[actix_rt::test]
+    async fn test_actix_web_integration() {
+        run_http_test_suite(&TestActixWebIntegration).await;
     }
 }
