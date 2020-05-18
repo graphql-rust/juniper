@@ -23,6 +23,30 @@ pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
     fn mark() {}
 }
 
+/// Maker trait for [GraphQL unions][1].
+///
+/// This trait extends the [`GraphQLType`] and is only used to mark [union][1]. During compile this
+/// addition information is required to prevent unwanted structure compiling. If an object requires
+/// this trait instead of the [`GraphQLType`], then it explicitly requires [GraphQL unions][1].
+/// Other types ([scalars][2], [enums][3], [objects][4], [input objects][5] and [interfaces][6]) are
+/// not allowed.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [2]: https://spec.graphql.org/June2018/#sec-Scalars
+/// [3]: https://spec.graphql.org/June2018/#sec-Enums
+/// [4]: https://spec.graphql.org/June2018/#sec-Objects
+/// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
+/// [6]: https://spec.graphql.org/June2018/#sec-Interfaces
+pub trait GraphQLUnion: GraphQLType {
+    /// An arbitrary function without meaning.
+    ///
+    /// May contain compile timed check logic which ensures that types are used correctly according
+    /// to the [GraphQL specification][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/
+    fn mark() {}
+}
+
 /// Marker trait for types which can be used as output types.
 ///
 /// The GraphQL specification differentiates between input and output

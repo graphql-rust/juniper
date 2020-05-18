@@ -1,8 +1,9 @@
+use std::ops;
+
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
-use std::cmp::{Eq, PartialEq};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct SpanContainer<T> {
     expr: Option<Span>,
     ident: Span,
@@ -47,7 +48,7 @@ impl<T> AsRef<T> for SpanContainer<T> {
     }
 }
 
-impl<T> std::ops::Deref for SpanContainer<T> {
+impl<T> ops::Deref for SpanContainer<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {

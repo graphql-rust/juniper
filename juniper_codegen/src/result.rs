@@ -37,7 +37,7 @@ impl fmt::Display for GraphQLScope {
         let name = match self {
             GraphQLScope::DeriveObject | GraphQLScope::ImplObject => "object",
             GraphQLScope::DeriveInputObject => "input object",
-            GraphQLScope::DeriveUnion | GraphQLScope::ImplUnion => "union",
+            GraphQLScope::DeriveUnion | GraphQLScope::ImplUnion => "Union",
             GraphQLScope::DeriveEnum => "enum",
             GraphQLScope::DeriveScalar | GraphQLScope::ImplScalar => "scalar",
         };
@@ -63,7 +63,7 @@ impl GraphQLScope {
     }
 
     pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) {
-        Diagnostic::spanned(span, Level::Error, format!("{} {}", self, msg.as_ref()))
+        Diagnostic::spanned(span, Level::Error, format!("{}: {}", self, msg.as_ref()))
             .note(self.spec_link())
             .emit();
     }
@@ -131,9 +131,12 @@ impl GraphQLScope {
         Diagnostic::spanned(
             field,
             Level::Error,
-            "All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.".to_string(),
+            "All types and directives defined within a schema must not have a name which begins \
+             with `__` (two underscores), as this is used exclusively by GraphQL’s introspection \
+             system."
+                .into(),
         )
-            .note(format!("{}#sec-Schema", SPEC_URL))
-            .emit();
+        .note(format!("{}#sec-Schema", SPEC_URL))
+        .emit();
     }
 }

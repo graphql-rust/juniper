@@ -111,6 +111,10 @@ extern crate uuid;
 #[cfg(any(test, feature = "bson"))]
 extern crate bson;
 
+// This one is required for use by code generated with`juniper_codegen` macros.
+#[doc(hidden)]
+pub use futures;
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
@@ -179,7 +183,7 @@ pub use crate::{
     types::{
         async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
-        marker,
+        marker::{self, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },

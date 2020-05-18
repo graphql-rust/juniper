@@ -228,6 +228,7 @@ fn create(
         include_type_generics: false,
         generic_scalar: false,
         no_async: _impl.attrs.no_async.is_some(),
+        mode: is_internal.into(),
     };
 
     Ok(definition)

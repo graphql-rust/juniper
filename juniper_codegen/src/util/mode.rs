@@ -1,6 +1,7 @@
 //! Code generation mode.
 
 /// Code generation mode for macros.
+#[derive(Debug)]
 pub enum Mode {
     /// Generated code is intended to be used by library users.
     Public,
@@ -16,5 +17,16 @@ impl Mode {
             Self::Internal => "crate",
         })
         .unwrap_or_else(|e| proc_macro_error::abort!(e))
+    }
+}
+
+// TODO: Remove once all macros are refactored with `Mode`.
+impl From<bool> for Mode {
+    fn from(is_internal: bool) -> Self {
+        if is_internal {
+            Mode::Internal
+        } else {
+            Mode::Public
+        }
     }
 }

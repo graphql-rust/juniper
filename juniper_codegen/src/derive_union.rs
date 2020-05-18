@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+use proc_macro_error::ResultExt as _;
 use quote::quote;
 use syn::{self, ext::IdentExt, spanned::Spanned, Data, Fields};
 
@@ -10,12 +11,9 @@ use crate::{
 const SCOPE: GraphQLScope = GraphQLScope::DeriveUnion;
 
 pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
-    let is_internal = matches!(mode, Mode::Internal);
-
-    let ast =
-        syn::parse2::<syn::DeriveInput>(input).unwrap_or_else(|e| proc_macro_error::abort!(e));
-
+    let ast = syn::parse2::<syn::DeriveInput>(input).unwrap_or_abort();
     let ast_span = ast.span();
+
     let enum_fields = match ast.data {
         Data::Enum(data) => data.variants,
         Data::Struct(_) => unimplemented!(),
@@ -66,10 +64,7 @@ pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
             let _type = match field.fields {
                 Fields::Unnamed(inner) => {
                     let mut iter = inner.unnamed.iter();
-                    let first = match iter.next() {
-                        Some(val) => val,
-                        None => unreachable!(),
-                    };
+                    let first = iter.next().unwrap();
 
                     if iter.next().is_some() {
                         SCOPE.custom(
@@ -140,7 +135,7 @@ pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
         SCOPE.not_empty(ast_span);
     }
 
-    if name.starts_with("__") && !is_internal {
+    if name.starts_with("__") && matches!(mode, Mode::Public) {
         SCOPE.no_double_underscore(if let Some(name) = attrs.name {
             name.span_ident()
         } else {
@@ -180,8 +175,8 @@ pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
+        mode,
     };
 
-    let juniper_crate_name = if is_internal { "crate" } else { "juniper" };
-    Ok(definition.into_union_tokens(juniper_crate_name))
+    Ok(definition.into_union_tokens())
 }
