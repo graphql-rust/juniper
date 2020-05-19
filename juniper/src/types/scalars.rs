@@ -496,4 +496,11 @@ mod tests {
         fn check_if_send<T: Send>() {}
         check_if_send::<EmptySubscription<()>>();
     }
+
+    #[test]
+    fn default_is_invariant_over_type() {
+        struct Bar;
+        let _ = EmptySubscription::<Bar>::default();
+        let _ = EmptyMutation::<Bar>::default();
+    }
 }
