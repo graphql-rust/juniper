@@ -11,6 +11,8 @@
 |                         |                        | precise enough for nanoseconds.           |
 |                         |                        | Values will be truncated to microsecond   |
 |                         |                        | resolution.                               |
+| `NaiveTime`             | H:M:S                  | Optional. Use the `scalar-naivetime`      |
+|                         |                        | feature.                                  |
 
 */
 #![allow(clippy::needless_lifetimes)]
@@ -99,6 +101,7 @@ where
     }
 }
 
+#[cfg(feature = "scalar-naivetime")]
 #[crate::graphql_scalar_internal(description = "NaiveTime")]
 impl<S> GraphQLScalar for NaiveTime
 where
@@ -218,6 +221,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "scalar-naivetime")]
     fn naivetime_from_input_value() {
         let input: crate::InputValue<DefaultScalarValue>;
         input = InputValue::scalar("21:12:19".to_string());
@@ -259,6 +263,7 @@ mod integration_test {
         struct Root;
 
         #[crate::graphql_object_internal]
+        #[cfg(feature = "scalar-naivetime")]
         impl Root {
             fn exampleNaiveDate() -> NaiveDate {
                 NaiveDate::from_ymd(2015, 3, 14)
@@ -277,11 +282,39 @@ mod integration_test {
             }
         }
 
+        #[crate::graphql_object_internal]
+        #[cfg(not(feature = "scalar-naivetime"))]
+        impl Root {
+            fn exampleNaiveDate() -> NaiveDate {
+                NaiveDate::from_ymd(2015, 3, 14)
+            }
+            fn exampleNaiveDateTime() -> NaiveDateTime {
+                NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11)
+            }
+            fn exampleDateTimeFixedOffset() -> DateTime<FixedOffset> {
+                DateTime::parse_from_rfc3339("1996-12-19T16:39:57-08:00").unwrap()
+            }
+            fn exampleDateTimeUtc() -> DateTime<Utc> {
+                Utc.timestamp(61, 0)
+            }
+        }
+
+        #[cfg(feature = "scalar-naivetime")]
         let doc = r#"
         {
             exampleNaiveDate,
             exampleNaiveDateTime,
             exampleNaiveTime,
+            exampleDateTimeFixedOffset,
+            exampleDateTimeUtc,
+        }
+        "#;
+
+        #[cfg(not(feature = "scalar-naivetime"))]
+        let doc = r#"
+        {
+            exampleNaiveDate,
+            exampleNaiveDateTime,
             exampleDateTimeFixedOffset,
             exampleDateTimeUtc,
         }
@@ -305,6 +338,7 @@ mod integration_test {
                 vec![
                     ("exampleNaiveDate", Value::scalar("2015-03-14")),
                     ("exampleNaiveDateTime", Value::scalar(1_467_969_011.0)),
+                    #[cfg(feature = "scalar-naivetime")]
                     ("exampleNaiveTime", Value::scalar("16:07:08")),
                     (
                         "exampleDateTimeFixedOffset",
