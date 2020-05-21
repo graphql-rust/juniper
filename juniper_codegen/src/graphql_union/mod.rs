@@ -1,6 +1,8 @@
 pub mod attribute;
 pub mod derive;
 
+use std::collections::HashMap;
+
 use syn::{
     parse::{Parse, ParseStream},
     spanned::Spanned as _,
@@ -47,13 +49,21 @@ struct UnionMeta {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub scalar: Option<SpanContainer<syn::Type>>,
+
+    /// Explicitly specified custom resolver functions for [GraphQL union][1] variants.
+    ///
+    /// If absent, then macro will try to auto-infer all the possible variants from the type
+    /// declaration, if possible. That's why specifying a custom resolver function has sense, when
+    /// some custom [union][1] variant resolving logic is involved, or variants cannot be inferred.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub custom_resolvers: HashMap<syn::Type, SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for UnionMeta {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut output = Self::default();
 
-        // TODO: check for duplicates?
         while !input.is_empty() {
             let ident: syn::Ident = input.parse()?;
             match ident.to_string().as_str() {
@@ -96,6 +106,17 @@ impl Parse for UnionMeta {
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                }
+                "on" => {
+                    let ty = input.parse::<syn::Type>()?;
+                    input.parse::<syn::Token![=]>()?;
+                    let rslvr = input.parse::<syn::ExprPath>()?;
+                    let rslvr_spanned = SpanContainer::new(ident.span(), Some(ty.span()), rslvr);
+                    let rslvr_span = rslvr_spanned.span_joined();
+                    output
+                        .custom_resolvers
+                        .insert(ty, rslvr_spanned)
+                        .none_or_else(|_| syn::Error::new(rslvr_span, "duplicated attribute"))?
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
@@ -146,6 +167,19 @@ impl UnionMeta {
                 }
                 other.scalar
             },
+            custom_resolvers: {
+                if !self.custom_resolvers.is_empty() {
+                    for (ty, rslvr) in self.custom_resolvers {
+                        other
+                            .custom_resolvers
+                            .insert(ty, rslvr)
+                            .none_or_else(|dup| {
+                                syn::Error::new(dup.span_joined(), "duplicated attribute")
+                            })?;
+                    }
+                }
+                other.custom_resolvers
+            },
         })
     }
 
@@ -174,6 +208,15 @@ struct UnionVariantMeta {
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub ignore: Option<SpanContainer<syn::Ident>>,
+
+    /// Explicitly specified custom resolver function for this [GraphQL union][1] variant.
+    ///
+    /// If absent, then macro will generate the code which just returns the variant inner value.
+    /// Usually, specifying a custom resolver function has sense, when some custom resolving logic
+    /// is involved.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub custom_resolver: Option<SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for UnionVariantMeta {
@@ -187,6 +230,14 @@ impl Parse for UnionVariantMeta {
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
                     .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?,
+                "with" => {
+                    input.parse::<syn::Token![=]>()?;
+                    let rslvr = input.parse::<syn::ExprPath>()?;
+                    output
+                        .custom_resolver
+                        .replace(SpanContainer::new(ident.span(), Some(rslvr.span()), rslvr))
+                        .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
                 }
@@ -212,6 +263,14 @@ impl UnionVariantMeta {
                     })?;
                 }
                 other.ignore
+            },
+            custom_resolver: {
+                if let Some(v) = self.custom_resolver {
+                    other.custom_resolver.replace(v).none_or_else(|dup| {
+                        syn::Error::new(dup.span_ident(), "duplicated attribute")
+                    })?;
+                }
+                other.custom_resolver
             },
         })
     }

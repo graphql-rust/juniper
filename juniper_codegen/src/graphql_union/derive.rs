@@ -30,8 +30,6 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
     let enum_span = ast.span();
     let enum_ident = ast.ident;
 
-    // TODO: validate type has no generics
-
     let name = meta
         .name
         .clone()
@@ -45,13 +43,46 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         );
     }
 
-    let variants: Vec<_> = match ast.data {
+    let mut variants: Vec<_> = match ast.data {
         Data::Enum(data) => data.variants,
         _ => unreachable!(),
     }
     .into_iter()
     .filter_map(|var| graphql_union_variant_from_enum_variant(var, &enum_ident))
     .collect();
+    if !meta.custom_resolvers.is_empty() {
+        let crate_path = mode.crate_path();
+        // TODO: refactor into separate function
+        for (ty, rslvr) in meta.custom_resolvers {
+            let span = rslvr.span_joined();
+
+            let resolver_fn = rslvr.into_inner();
+            let resolver_code = parse_quote! {
+                #resolver_fn(self, #crate_path::FromContext::from(context))
+            };
+            // Doing this may be quite an expensive, because resolving may contain some heavy
+            // computation, so we're preforming it twice. Unfortunately, we have no other options
+            // here, until the `juniper::GraphQLType` itself will allow to do it in some cleverer
+            // way.
+            let resolver_check = parse_quote! {
+                ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
+            };
+
+            if let Some(var) = variants.iter_mut().find(|v| v.ty == ty) {
+                var.resolver_code = resolver_code;
+                var.resolver_check = resolver_check;
+                var.span = span;
+            } else {
+                variants.push(UnionVariantDefinition {
+                    ty,
+                    resolver_code,
+                    resolver_check,
+                    enum_path: None,
+                    span,
+                })
+            }
+        }
+    }
     if variants.is_empty() {
         SCOPE.not_empty(enum_span);
     }
@@ -97,7 +128,19 @@ fn graphql_union_variant_from_enum_variant(
 
     let var_span = var.span();
     let var_ident = var.ident;
-    let path = quote! { #enum_ident::#var_ident };
+    let enum_path = quote! { #enum_ident::#var_ident };
+
+    // TODO
+    if meta.custom_resolver.is_some() {
+        unimplemented!()
+    }
+
+    let resolver_code = parse_quote! {
+        match self { #enum_ident::#var_ident(ref v) => Some(v), _ => None, }
+    };
+    let resolver_check = parse_quote! {
+        matches!(self, #enum_path(_))
+    };
 
     let ty = match var.fields {
         Fields::Unnamed(fields) => {
@@ -121,14 +164,18 @@ fn graphql_union_variant_from_enum_variant(
 
     Some(UnionVariantDefinition {
         ty,
-        path,
+        resolver_code,
+        resolver_check,
+        enum_path: Some(enum_path),
         span: var_span,
     })
 }
 
 struct UnionVariantDefinition {
     pub ty: syn::Type,
-    pub path: TokenStream,
+    pub resolver_code: syn::Expr,
+    pub resolver_check: syn::Expr,
+    pub enum_path: Option<TokenStream>,
     pub span: Span,
 }
 
@@ -177,23 +224,16 @@ impl UnionDefinition {
 
         let match_names = self.variants.iter().map(|var| {
             let var_ty = &var.ty;
-            let var_path = &var.path;
+            let var_check = &var.resolver_check;
             quote! {
-                #var_path(_) => <#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())
-                    .unwrap().to_string(),
+                if #var_check {
+                    return <#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())
+                        .unwrap().to_string();
+                }
             }
         });
 
-        let match_resolves: Vec<_> = self
-            .variants
-            .iter()
-            .map(|var| {
-                let var_path = &var.path;
-                quote! {
-                    match self { #var_path(ref val) => Some(val), _ => None, }
-                }
-            })
-            .collect();
+        let match_resolves: Vec<_> = self.variants.iter().map(|var| &var.resolver_code).collect();
         let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
             let var_ty = &var.ty;
 
@@ -291,12 +331,15 @@ impl UnionDefinition {
 
                 fn concrete_type_name(
                     &self,
-                    _: &Self::Context,
+                    context: &Self::Context,
                     _: &Self::TypeInfo,
                 ) -> String {
-                    match self {
-                        #( #match_names )*
-                    }
+                    #( #match_names )*
+                    panic!(
+                        "GraphQL union {} cannot be resolved into any of its variants in its \
+                         current state",
+                        #name,
+                    );
                 }
 
                 fn resolve_into_type(
@@ -306,9 +349,10 @@ impl UnionDefinition {
                     _: Option<&[#crate_path::Selection<#scalar>]>,
                     executor: &#crate_path::Executor<Self::Context, #scalar>,
                 ) -> #crate_path::ExecutionResult<#scalar> {
+                    let context = executor.context();
                     #( #resolve_into_type )*
                     panic!(
-                        "Concrete type {} is not handled by instance resolvers on GraphQL Union {}",
+                        "Concrete type {} is not handled by instance resolvers on GraphQL union {}",
                         type_name, #name,
                     );
                 }
@@ -327,26 +371,27 @@ impl UnionDefinition {
                     _: Option<&'b [#crate_path::Selection<'b, #scalar>]>,
                     executor: &'b #crate_path::Executor<'b, 'b, Self::Context, #scalar>
                 ) -> #crate_path::BoxFuture<'b, #crate_path::ExecutionResult<#scalar>> {
+                    let context = executor.context();
                     #( #resolve_into_type_async )*
                     panic!(
-                        "Concrete type {} is not handled by instance resolvers on GraphQL Union {}",
+                        "Concrete type {} is not handled by instance resolvers on GraphQL union {}",
                         type_name, #name,
                     );
                 }
             }
         };
 
-        let conversion_impls = self.variants.iter().map(|var| {
+        let conversion_impls = self.variants.iter().filter_map(|var| {
             let var_ty = &var.ty;
-            let var_path = &var.path;
-            quote! {
+            let var_path = var.enum_path.as_ref()?;
+            Some(quote! {
                 #[automatically_derived]
                 impl#impl_generics ::std::convert::From<#var_ty> for #ty#ty_generics {
                     fn from(v: #var_ty) -> Self {
                         #var_path(v)
                     }
                 }
-            }
+            })
         });
 
         let output_type_impl = quote! {

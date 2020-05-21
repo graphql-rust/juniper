@@ -28,6 +28,35 @@ pub enum Character {
     Two(Droid),
 }
 
+#[derive(juniper::GraphQLUnion)]
+#[graphql(Scalar = juniper::DefaultScalarValue)]
+pub enum CharacterGeneric<T> {
+    One(Human),
+    Two(Droid),
+    #[allow(dead_code)]
+    #[graphql(ignore)]
+    Hidden(T),
+}
+
+#[derive(juniper::GraphQLUnion)]
+#[graphql(on Droid = CharacterDyn::as_droid)]
+pub enum CharacterDyn {
+    One(Human),
+    //#[graphql(ignore)]
+    #[graphql(with = CharacterDyn::as_droid)]
+    Two(Droid),
+}
+
+impl CharacterDyn {
+    fn as_droid(&self, _: &()) -> Option<&Droid> {
+        match self {
+            Self::Two(droid) => Some(droid),
+            _ => None,
+        }
+    }
+}
+
+
 // Context Test
 pub struct CustomContext {
     is_left: bool,
