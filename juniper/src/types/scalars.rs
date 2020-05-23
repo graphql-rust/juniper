@@ -319,7 +319,7 @@ where
 ///
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct EmptyMutation<T> {
     phantom: PhantomData<T>,
 }
@@ -356,11 +356,18 @@ where
     }
 }
 
+impl<T> Default for EmptyMutation<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+}
+
 /// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-#[derive(Default)]
 pub struct EmptySubscription<T> {
     phantom: PhantomData<T>,
 }
@@ -402,6 +409,14 @@ where
     S: ScalarValue,
     T: Send + Sync,
 {
+}
+
+impl<T> Default for EmptySubscription<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -464,5 +479,12 @@ mod tests {
     fn empty_subscription_is_send() {
         fn check_if_send<T: Send>() {}
         check_if_send::<EmptySubscription<()>>();
+    }
+
+    #[test]
+    fn default_is_invariant_over_type() {
+        struct Bar;
+        let _ = EmptySubscription::<Bar>::default();
+        let _ = EmptyMutation::<Bar>::default();
     }
 }
