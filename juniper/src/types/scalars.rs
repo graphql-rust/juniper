@@ -261,7 +261,7 @@ where
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        // Bools are parsed on it's own. This should not hit this code path
+        // Bools are parsed separately - they shouldn't reach this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 }
@@ -338,7 +338,7 @@ impl<T> EmptyMutation<T> {
     }
 }
 
-// This is safe due to never using `T`.
+// This is safe because `T` is never used.
 unsafe impl<T> Send for EmptyMutation<T> {}
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
