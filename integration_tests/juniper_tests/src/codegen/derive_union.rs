@@ -1,7 +1,9 @@
 // Test for union's derive macro
 
+use derive_more::From;
 #[cfg(test)]
 use fnv::FnvHashMap;
+use juniper::GraphQLUnion;
 
 #[cfg(test)]
 use juniper::{
@@ -21,14 +23,14 @@ pub struct Droid {
     primary_function: String,
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 #[graphql(description = "A Collection of things")]
 pub enum Character {
     One(Human),
     Two(Droid),
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 #[graphql(Scalar = juniper::DefaultScalarValue)]
 pub enum CharacterWithGeneric<T> {
     One(Human),
@@ -38,7 +40,7 @@ pub enum CharacterWithGeneric<T> {
     Hidden(T),
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 #[graphql(on Droid = CharacterCustomFn::as_droid)]
 pub enum CharacterCustomFn {
     One(Human),
@@ -55,7 +57,7 @@ impl CharacterCustomFn {
     }
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 pub enum CharacterCustomVariantFn {
     One(Human),
     #[graphql(with = CharacterCustomVariantFn::as_droid)]
@@ -94,7 +96,7 @@ pub struct DroidContext {
 }
 
 /// A Collection of things
-#[derive(juniper::GraphQLUnion)]
+#[derive(From, GraphQLUnion)]
 #[graphql(Context = CustomContext)]
 pub enum CharacterContext {
     One(HumanContext),
@@ -135,7 +137,7 @@ impl DroidCompat {
     }
 }
 
-#[derive(juniper::GraphQLUnion)]
+#[derive(GraphQLUnion)]
 #[graphql(Context = CustomContext)]
 pub enum DifferentContext {
     A(DroidContext),
@@ -143,15 +145,15 @@ pub enum DifferentContext {
 }
 
 // NOTICE: this can not compile due to generic implementation of GraphQLType<__S>
-// #[derive(juniper::GraphQLUnion)]
+// #[derive(GraphQLUnion)]
 // pub enum CharacterCompatFail {
 //     One(HumanCompat),
 //     Two(DroidCompat),
 // }
 
 /// A Collection of things
-#[derive(juniper::GraphQLUnion)]
-#[graphql(Scalar = juniper::DefaultScalarValue)]
+#[derive(GraphQLUnion)]
+#[graphql(scalar = juniper::DefaultScalarValue)]
 pub enum CharacterCompat {
     One(HumanCompat),
     Two(DroidCompat),

@@ -401,19 +401,6 @@ impl UnionDefinition {
             }
         };
 
-        let conversion_impls = self.variants.iter().filter_map(|var| {
-            let var_ty = &var.ty;
-            let var_path = var.enum_path.as_ref()?;
-            Some(quote! {
-                #[automatically_derived]
-                impl#impl_generics ::std::convert::From<#var_ty> for #ty#ty_generics {
-                    fn from(v: #var_ty) -> Self {
-                        #var_path(v)
-                    }
-                }
-            })
-        });
-
         let output_type_impl = quote! {
             #[automatically_derived]
             impl#ext_impl_generics #crate_path::marker::IsOutputType<#scalar> for #ty#ty_generics
@@ -437,7 +424,6 @@ impl UnionDefinition {
         };
 
         quote! {
-            #( #conversion_impls )*
             #union_impl
             #output_type_impl
             #type_impl
