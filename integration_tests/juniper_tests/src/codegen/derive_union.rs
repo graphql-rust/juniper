@@ -73,6 +73,34 @@ impl CharacterCustomVariantFn {
     }
 }
 
+#[derive(GraphQLUnion)]
+#[graphql(on Human = CharacterGenericStruct::as_human)]
+#[graphql(on Droid = CharacterGenericStruct::as_droid)]
+pub struct CharacterGenericStruct<T> {
+    human: Human,
+    droid: Droid,
+    is_droid: bool,
+    _gen: T,
+}
+
+impl<T> CharacterGenericStruct<T> {
+    fn as_human(&self, _: &()) -> Option<&Human> {
+        if self.is_droid {
+            None
+        } else {
+            Some(&self.human)
+        }
+    }
+
+    fn as_droid(&self, _: &()) -> Option<&Droid> {
+        if self.is_droid {
+            Some(&self.droid)
+        } else {
+            None
+        }
+    }
+}
+
 
 // Context Test
 pub struct CustomContext {
