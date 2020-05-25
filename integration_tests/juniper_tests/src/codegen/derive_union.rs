@@ -30,7 +30,7 @@ pub enum Character {
 
 #[derive(juniper::GraphQLUnion)]
 #[graphql(Scalar = juniper::DefaultScalarValue)]
-pub enum CharacterGeneric<T> {
+pub enum CharacterWithGeneric<T> {
     One(Human),
     Two(Droid),
     #[allow(dead_code)]
@@ -39,15 +39,30 @@ pub enum CharacterGeneric<T> {
 }
 
 #[derive(juniper::GraphQLUnion)]
-#[graphql(on Droid = CharacterDyn::as_droid)]
-pub enum CharacterDyn {
+#[graphql(on Droid = CharacterCustomFn::as_droid)]
+pub enum CharacterCustomFn {
     One(Human),
-    //#[graphql(ignore)]
-    #[graphql(with = CharacterDyn::as_droid)]
+    #[graphql(ignore)]
+    Two(Droid, usize, u8),
+}
+
+impl CharacterCustomFn {
+    fn as_droid(&self, _: &()) -> Option<&Droid> {
+        match self {
+            Self::Two(droid, _, _) => Some(droid),
+            _ => None,
+        }
+    }
+}
+
+#[derive(juniper::GraphQLUnion)]
+pub enum CharacterCustomVariantFn {
+    One(Human),
+    #[graphql(with = CharacterCustomVariantFn::as_droid)]
     Two(Droid),
 }
 
-impl CharacterDyn {
+impl CharacterCustomVariantFn {
     fn as_droid(&self, _: &()) -> Option<&Droid> {
         match self {
             Self::Two(droid) => Some(droid),

@@ -1,6 +1,6 @@
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::ResultExt as _;
-use quote::quote;
+use quote::{quote, ToTokens as _};
 use syn::{self, ext::IdentExt, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
@@ -38,7 +38,8 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
     if matches!(mode, Mode::Public) && name.starts_with("__") {
         SCOPE.no_double_underscore(
             meta.name
-                .map(|n| n.span_ident())
+                .as_ref()
+                .map(SpanContainer::span_ident)
                 .unwrap_or_else(|| enum_ident.span()),
         );
     }
@@ -48,7 +49,7 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         _ => unreachable!(),
     }
     .into_iter()
-    .filter_map(|var| graphql_union_variant_from_enum_variant(var, &enum_ident))
+    .filter_map(|var| graphql_union_variant_from_enum_variant(var, &enum_ident, &meta, mode))
     .collect();
     if !meta.custom_resolvers.is_empty() {
         let crate_path = mode.crate_path();
@@ -118,6 +119,8 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
 fn graphql_union_variant_from_enum_variant(
     var: syn::Variant,
     enum_ident: &syn::Ident,
+    enum_meta: &UnionMeta,
+    mode: Mode,
 ) -> Option<UnionVariantDefinition> {
     let meta = UnionVariantMeta::from_attrs(&var.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
@@ -128,19 +131,6 @@ fn graphql_union_variant_from_enum_variant(
 
     let var_span = var.span();
     let var_ident = var.ident;
-    let enum_path = quote! { #enum_ident::#var_ident };
-
-    // TODO
-    if meta.custom_resolver.is_some() {
-        unimplemented!()
-    }
-
-    let resolver_code = parse_quote! {
-        match self { #enum_ident::#var_ident(ref v) => Some(v), _ => None, }
-    };
-    let resolver_check = parse_quote! {
-        matches!(self, #enum_path(_))
-    };
 
     let ty = match var.fields {
         Fields::Unnamed(fields) => {
@@ -161,6 +151,36 @@ fn graphql_union_variant_from_enum_variant(
         )
     })
     .ok()?;
+
+    let enum_path = quote! { #enum_ident::#var_ident };
+
+    let resolver_code = if let Some(rslvr) = meta.custom_resolver {
+        if let Some(other) = enum_meta.custom_resolvers.get(&ty) {
+            SCOPE.custom(
+                rslvr.span_ident(),
+                format!(
+                    "variant `{}` already has custom resolver `{}` declared on the enum",
+                    ty.to_token_stream(),
+                    other.to_token_stream(),
+                ),
+            );
+        }
+
+        let crate_path = mode.crate_path();
+        let resolver_fn = rslvr.into_inner();
+
+        parse_quote! {
+            #resolver_fn(self, #crate_path::FromContext::from(context))
+        }
+    } else {
+        parse_quote! {
+            match self { #enum_ident::#var_ident(ref v) => Some(v), _ => None, }
+        }
+    };
+
+    let resolver_check = parse_quote! {
+        matches!(self, #enum_path(_))
+    };
 
     Some(UnionVariantDefinition {
         ty,

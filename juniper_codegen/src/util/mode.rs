@@ -1,7 +1,7 @@
 //! Code generation mode.
 
 /// Code generation mode for macros.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Mode {
     /// Generated code is intended to be used by library users.
     Public,
