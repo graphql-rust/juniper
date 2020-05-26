@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use proc_macro_error::ResultExt as _;
 use quote::{quote, ToTokens as _};
-use syn::{self, ext::IdentExt, parse_quote, spanned::Spanned as _, Data, Fields};
+use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
     result::GraphQLScope,
@@ -49,8 +49,11 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         _ => unreachable!(),
     }
     .into_iter()
-    .filter_map(|var| graphql_union_variant_from_enum_variant(var, &enum_ident, &meta, mode))
+    .filter_map(|var| parse_variant_from_enum_variant(var, &enum_ident, &meta, mode))
     .collect();
+
+    proc_macro_error::abort_if_dirty();
+
     if !meta.custom_resolvers.is_empty() {
         let crate_path = mode.crate_path();
         // TODO: refactor into separate function
@@ -98,10 +101,7 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         types.len() == variants.len()
     };
     if !all_variants_different {
-        SCOPE.custom(
-            enum_ident.span(),
-            "each union variant must have a different type",
-        );
+        SCOPE.custom(enum_span, "each union variant must have a different type");
     }
 
     proc_macro_error::abort_if_dirty();
@@ -119,7 +119,7 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
     })
 }
 
-fn graphql_union_variant_from_enum_variant(
+fn parse_variant_from_enum_variant(
     var: syn::Variant,
     enum_ident: &syn::Ident,
     enum_meta: &UnionMeta,
@@ -242,6 +242,9 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
             }
         })
         .collect();
+
+    proc_macro_error::abort_if_dirty();
+
     if variants.is_empty() {
         SCOPE.custom(struct_span, "expects at least one union variant");
     }
@@ -256,10 +259,7 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
         types.len() == variants.len()
     };
     if !all_variants_different {
-        SCOPE.custom(
-            struct_ident.span(),
-            "each union variant must have a different type",
-        );
+        SCOPE.custom(struct_span, "each union variant must have a different type");
     }
 
     proc_macro_error::abort_if_dirty();

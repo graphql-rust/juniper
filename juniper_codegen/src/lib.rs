@@ -569,8 +569,9 @@ pub fn derive_union_internal(input: TokenStream) -> TokenStream {
 
 #[proc_macro_error]
 #[proc_macro_attribute]
-pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    impl_union::expand(attrs.into(), body.into(), Mode::Public)
+pub fn graphql_union(attr: TokenStream, body: TokenStream) -> TokenStream {
+    //impl_union::expand(attr.into(), body.into(), Mode::Public)
+    graphql_union::attr::expand(attr.into(), body.into(), Mode::Public)
         .unwrap_or_abort()
         .into()
 }
@@ -578,8 +579,9 @@ pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
 #[proc_macro_error]
 #[proc_macro_attribute]
 #[doc(hidden)]
-pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    impl_union::expand(attrs.into(), body.into(), Mode::Internal)
+pub fn graphql_union_internal(attr: TokenStream, body: TokenStream) -> TokenStream {
+    //impl_union::expand(attr.into(), body.into(), Mode::Internal)
+    graphql_union::attr::expand(attr.into(), body.into(), Mode::Internal)
         .unwrap_or_abort()
         .into()
 }

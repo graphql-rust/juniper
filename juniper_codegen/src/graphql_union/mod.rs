@@ -1,4 +1,4 @@
-pub mod attribute;
+pub mod attr;
 pub mod derive;
 
 use std::collections::HashMap;
