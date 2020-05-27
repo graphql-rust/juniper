@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use proc_macro_error::ResultExt as _;
-use quote::{quote, ToTokens as _};
+use quote::{quote, ToTokens};
 use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
@@ -12,7 +12,7 @@ use super::{UnionDefinition, UnionMeta, UnionVariantDefinition, UnionVariantMeta
 
 const SCOPE: GraphQLScope = GraphQLScope::DeriveUnion;
 
-/// Expands `#[derive(GraphQLUnion)]` macro into generated code.
+/// Expands `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macros into generated code.
 pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input).unwrap_or_abort();
 
@@ -21,11 +21,11 @@ pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
         Data::Struct(_) => expand_struct(ast, mode),
         _ => Err(SCOPE.custom_error(ast.span(), "can only be applied to enums and structs")),
     }
-    .map(UnionDefinition::into_tokens)
+    .map(ToTokens::into_token_stream)
 }
 
 fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition> {
-    let meta = UnionMeta::from_attrs(&ast.attrs)?;
+    let meta = UnionMeta::from_attrs("graphql", &ast.attrs)?;
 
     let enum_span = ast.span();
     let enum_ident = ast.ident;
@@ -108,7 +108,8 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
 
     Ok(UnionDefinition {
         name,
-        ty: syn::parse_str(&enum_ident.to_string()).unwrap_or_abort(),
+        ty: parse_quote! { #enum_ident },
+        is_trait_object: false,
         description: meta.description.map(SpanContainer::into_inner),
         context: meta.context.map(SpanContainer::into_inner),
         scalar: meta.scalar.map(SpanContainer::into_inner),
@@ -125,7 +126,7 @@ fn parse_variant_from_enum_variant(
     enum_meta: &UnionMeta,
     mode: Mode,
 ) -> Option<UnionVariantDefinition> {
-    let meta = UnionVariantMeta::from_attrs(&var.attrs)
+    let meta = UnionVariantMeta::from_attrs("graphql", &var.attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
     if meta.ignore.is_some() {
@@ -195,7 +196,7 @@ fn parse_variant_from_enum_variant(
 }
 
 fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition> {
-    let meta = UnionMeta::from_attrs(&ast.attrs)?;
+    let meta = UnionMeta::from_attrs("graphql", &ast.attrs)?;
 
     let struct_span = ast.span();
     let struct_ident = ast.ident;
@@ -266,7 +267,8 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
 
     Ok(UnionDefinition {
         name,
-        ty: syn::parse_str(&struct_ident.to_string()).unwrap_or_abort(),
+        ty: parse_quote! { #struct_ident },
+        is_trait_object: false,
         description: meta.description.map(SpanContainer::into_inner),
         context: meta.context.map(SpanContainer::into_inner),
         scalar: meta.scalar.map(SpanContainer::into_inner),

@@ -98,7 +98,7 @@ fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     executor: &'e Executor<'e, 'e, CtxT, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
-    T: GraphQLTypeAsync<S, Context = CtxT>,
+    T: GraphQLTypeAsync<S, Context = CtxT> + ?Sized,
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
@@ -129,7 +129,7 @@ pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     executor: &'a Executor<'a, 'a, CtxT, S>,
 ) -> Value<S>
 where
-    T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+    T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,

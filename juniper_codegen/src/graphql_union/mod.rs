@@ -4,7 +4,7 @@ pub mod derive;
 use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{quote, ToTokens, TokenStreamExt as _};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -12,7 +12,7 @@ use syn::{
 };
 
 use crate::util::{
-    filter_graphql_attrs, get_doc_comment, span_container::SpanContainer, Mode, OptionExt as _,
+    filter_attrs, get_doc_comment, span_container::SpanContainer, Mode, OptionExt as _,
 };
 
 /// Available metadata behind `#[graphql]` (or `#[graphql_union]`) attribute when generating code
@@ -187,8 +187,8 @@ impl UnionMeta {
     }
 
     /// Parses [`UnionMeta`] from the given attributes placed on type definition.
-    pub fn from_attrs(attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        let mut meta = filter_graphql_attrs(attrs)
+    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
@@ -200,8 +200,8 @@ impl UnionMeta {
     }
 }
 
-/// Available metadata behind `#[graphql]` attribute when generating code for [GraphQL union][1]'s
-/// variant.
+/// Available metadata behind `#[graphql]` (or `#[graphql_union]`) attribute when generating code
+/// for [GraphQL union][1]'s variant.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 #[derive(Debug, Default)]
@@ -279,8 +279,8 @@ impl UnionVariantMeta {
     }
 
     /// Parses [`UnionVariantMeta`] from the given attributes placed on variant/field definition.
-    pub fn from_attrs(attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        filter_graphql_attrs(attrs)
+    pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
+        filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))
     }
@@ -297,6 +297,7 @@ struct UnionVariantDefinition {
 struct UnionDefinition {
     pub name: String,
     pub ty: syn::Type,
+    pub is_trait_object: bool,
     pub description: Option<String>,
     pub context: Option<syn::Type>,
     pub scalar: Option<syn::Type>,
@@ -306,8 +307,8 @@ struct UnionDefinition {
     pub mode: Mode,
 }
 
-impl UnionDefinition {
-    pub fn into_tokens(self) -> TokenStream {
+impl ToTokens for UnionDefinition {
+    fn to_tokens(&self, into: &mut TokenStream) {
         let crate_path = self.mode.crate_path();
 
         let name = &self.name;
@@ -394,8 +395,15 @@ impl UnionDefinition {
                     }
                 });
 
-        let (impl_generics, ty_generics, _) = self.generics.split_for_impl();
-        let mut ext_generics = self.generics.clone();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
+
+        let mut base_generics = self.generics.clone();
+        if self.is_trait_object {
+            base_generics.params.push(parse_quote! { '__obj });
+        }
+        let (impl_generics, _, _) = base_generics.split_for_impl();
+
+        let mut ext_generics = base_generics.clone();
         if self.scalar.is_none() {
             ext_generics.params.push(parse_quote! { #scalar });
             ext_generics
@@ -418,9 +426,14 @@ impl UnionDefinition {
                 .push(parse_quote! { #scalar: Send + Sync });
         }
 
+        let mut ty_full = quote! { #ty#ty_generics };
+        if self.is_trait_object {
+            ty_full = quote! { dyn #ty_full + '__obj };
+        }
+
         let type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::GraphQLType<#scalar> for #ty#ty_generics
+            impl#ext_impl_generics #crate_path::GraphQLType<#scalar> for #ty_full
                 #where_clause
             {
                 type Context = #context;
@@ -439,7 +452,7 @@ impl UnionDefinition {
                     let types = &[
                         #( registry.get_type::<&#var_types>(&(())), )*
                     ];
-                    registry.build_union_type::<#ty#ty_generics>(info, types)
+                    registry.build_union_type::<#ty_full>(info, types)
                     #description
                     .into_meta()
                 }
@@ -476,7 +489,7 @@ impl UnionDefinition {
 
         let async_type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::GraphQLTypeAsync<#scalar> for #ty#ty_generics
+            impl#ext_impl_generics #crate_path::GraphQLTypeAsync<#scalar> for #ty_full
                 #where_async
             {
                 fn resolve_into_type_async<'b>(
@@ -498,7 +511,7 @@ impl UnionDefinition {
 
         let output_type_impl = quote! {
             #[automatically_derived]
-            impl#ext_impl_generics #crate_path::marker::IsOutputType<#scalar> for #ty#ty_generics
+            impl#ext_impl_generics #crate_path::marker::IsOutputType<#scalar> for #ty_full
                 #where_clause
             {
                 fn mark() {
@@ -509,7 +522,7 @@ impl UnionDefinition {
 
         let union_impl = quote! {
             #[automatically_derived]
-            impl#impl_generics #crate_path::marker::GraphQLUnion for #ty#ty_generics {
+            impl#impl_generics #crate_path::marker::GraphQLUnion for #ty_full {
                 fn mark() {
                     #( <#var_types as #crate_path::marker::GraphQLObjectType<
                         #default_scalar,
@@ -518,11 +531,6 @@ impl UnionDefinition {
             }
         };
 
-        quote! {
-            #union_impl
-            #output_type_impl
-            #type_impl
-            #async_type_impl
-        }
+        into.append_all(&[union_impl, output_type_impl, type_impl, async_type_impl]);
     }
 }

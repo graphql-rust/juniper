@@ -1262,7 +1262,7 @@ where
     /// Create a union meta type
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
-        T: GraphQLType<S>,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 

@@ -1,4 +1,4 @@
-use juniper::{GraphQLObject, graphql_union};
+use juniper::{graphql_union, GraphQLObject};
 
 #[derive(GraphQLObject)]
 struct Human {
@@ -12,8 +12,8 @@ struct Droid {
     primary_function: String,
 }
 
-#[graphql_union]
-#[graphql(description = "A Collection of things")]
+#[graphql_union(name = "Character")]
+#[graphql_union(description = "A Collection of things")]
 trait Character {
     fn as_human(&self, _: &()) -> Option<&Human> {
         None
@@ -21,8 +21,9 @@ trait Character {
     fn as_droid(&self) -> Option<&Droid> {
         None
     }
+    #[graphql_union(ignore)]
+    fn some(&self);
 }
-
 
 /*
 impl Character for Human {

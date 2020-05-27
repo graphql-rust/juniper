@@ -6,6 +6,8 @@ pub mod option_ext;
 pub mod parse_impl;
 pub mod span_container;
 
+use std::ops::Deref as _;
+
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
 use quote::quote;
@@ -78,6 +80,14 @@ pub fn type_is_identifier_ref(ty: &syn::Type, name: &str) -> bool {
     }
 }
 
+/// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one.
+pub fn unparenthesize(ty: &syn::Type) -> &syn::Type {
+    match ty {
+        syn::Type::Paren(ty) => unparenthesize(ty.elem.deref()),
+        _ => ty,
+    }
+}
+
 #[derive(Debug)]
 pub struct DeprecationAttr {
     pub reason: Option<String>,
@@ -89,11 +99,14 @@ pub fn find_graphql_attr(attrs: &[Attribute]) -> Option<&Attribute> {
         .find(|attr| path_eq_single(&attr.path, "graphql"))
 }
 
-/// Filters given `attrs` to contain `#[graphql]` attributes only.
-pub fn filter_graphql_attrs(attrs: &[Attribute]) -> impl Iterator<Item = &'_ Attribute> {
+/// Filters given `attrs` to contain attributes only with the given `name`.
+pub fn filter_attrs<'a>(
+    name: &'a str,
+    attrs: &'a [Attribute],
+) -> impl Iterator<Item = &'a Attribute> + 'a {
     attrs
         .iter()
-        .filter(|attr| path_eq_single(&attr.path, "graphql"))
+        .filter(move |attr| path_eq_single(&attr.path, name))
 }
 
 pub fn get_deprecated(attrs: &[Attribute]) -> Option<SpanContainer<DeprecationAttr>> {

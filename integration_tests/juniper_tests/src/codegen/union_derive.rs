@@ -3,7 +3,7 @@
 use derive_more::From;
 #[cfg(test)]
 use fnv::FnvHashMap;
-use juniper::GraphQLUnion;
+use juniper::{GraphQLObject, GraphQLUnion};
 
 #[cfg(test)]
 use juniper::{
@@ -11,13 +11,13 @@ use juniper::{
     Value, Variables,
 };
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct Human {
     id: String,
     home_planet: String,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 pub struct Droid {
     id: String,
     primary_function: String,
@@ -101,7 +101,6 @@ impl<T> CharacterGenericStruct<T> {
     }
 }
 
-
 // Context Test
 pub struct CustomContext {
     is_left: bool,
@@ -109,14 +108,14 @@ pub struct CustomContext {
 
 impl juniper::Context for CustomContext {}
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 #[graphql(Context = CustomContext)]
 pub struct HumanContext {
     id: String,
     home_planet: String,
 }
 
-#[derive(juniper::GraphQLObject)]
+#[derive(GraphQLObject)]
 #[graphql(Context = CustomContext)]
 pub struct DroidContext {
     id: String,

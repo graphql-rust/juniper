@@ -1,4 +1,4 @@
-use std::ops::Deref as _;
+use std::{mem, ops::Deref as _};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::ResultExt as _;
@@ -7,34 +7,62 @@ use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
-    util::{span_container::SpanContainer, Mode},
+    util::{path_eq_single, span_container::SpanContainer, unparenthesize, Mode},
 };
 
 use super::{UnionDefinition, UnionMeta, UnionVariantDefinition, UnionVariantMeta};
 
 const SCOPE: GraphQLScope = GraphQLScope::AttrUnion;
 
-/// Expands `#[graphql_union]` macro into generated code.
-pub fn expand(attr: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
-    if !attr.is_empty() {
-        return Err(syn::Error::new(
-            Span::call_site(),
-            "#[graphql_union] attribute itself does not support any parameters, \
-             use helper #[graphql] attributes instead to specify any parameters",
-        ));
+/// Returns name of the `proc_macro_attribute` for deriving `GraphQLUnion` implementation depending
+/// on the provided `mode`.
+fn attr_path(mode: Mode) -> &'static str {
+    match mode {
+        Mode::Public => "graphql_union",
+        Mode::Internal => "graphql_union_internal",
     }
+}
 
-    let ast = syn::parse2::<syn::ItemTrait>(body.clone()).map_err(|_| {
+/// Expands `#[graphql_union]`/`#[graphql_union_internal]` macros into generated code.
+pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
+    let attr_path = attr_path(mode);
+
+    let mut ast = syn::parse2::<syn::ItemTrait>(body).map_err(|_| {
         syn::Error::new(
             Span::call_site(),
-            "#[graphql_union] attribute is applicable to trait definitions only",
+            format!(
+                "#[{}] attribute is applicable to trait definitions only",
+                attr_path,
+            ),
         )
     })?;
 
-    let meta = UnionMeta::from_attrs(&ast.attrs)?;
+    let mut trait_attrs = Vec::with_capacity(ast.attrs.len() + 1);
+    trait_attrs.push({
+        let attr_path = syn::Ident::new(attr_path, Span::call_site());
+        parse_quote! { #[#attr_path(#attr_args)] }
+    });
+    trait_attrs.extend_from_slice(&ast.attrs);
+
+    // Remove repeated attributes from the definition, to omit duplicate expansion.
+    ast.attrs = ast
+        .attrs
+        .into_iter()
+        .filter_map(|attr| {
+            if path_eq_single(&attr.path, attr_path) {
+                None
+            } else {
+                Some(attr)
+            }
+        })
+        .collect();
+
+    let meta = UnionMeta::from_attrs(attr_path, &trait_attrs)?;
+
+    //panic!("{:?}", meta);
 
     let trait_span = ast.span();
-    let trait_ident = ast.ident;
+    let trait_ident = &ast.ident;
 
     let name = meta
         .name
@@ -52,10 +80,10 @@ pub fn expand(attr: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<T
 
     let mut variants: Vec<_> = ast
         .items
-        .into_iter()
+        .iter_mut()
         .filter_map(|i| match i {
             syn::TraitItem::Method(m) => {
-                parse_variant_from_trait_method(m, &trait_ident, &meta, mode)
+                parse_variant_from_trait_method(m, trait_ident, &meta, mode)
             }
             _ => None,
         })
@@ -88,38 +116,57 @@ pub fn expand(attr: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<T
 
     let generated_code = UnionDefinition {
         name,
-        ty: syn::parse_str(&trait_ident.to_string()).unwrap_or_abort(), // TODO: trait object
+        ty: parse_quote! { #trait_ident },
+        is_trait_object: true,
         description: meta.description.map(SpanContainer::into_inner),
         context: meta.context.map(SpanContainer::into_inner),
         scalar: meta.scalar.map(SpanContainer::into_inner),
-        generics: ast.generics,
+        generics: ast.generics.clone(),
         variants,
         span: trait_span,
         mode,
-    }
-    .into_tokens();
+    };
 
     Ok(quote! {
-        #body
+        #ast
 
         #generated_code
     })
 }
 
 fn parse_variant_from_trait_method(
-    method: syn::TraitItemMethod,
+    method: &mut syn::TraitItemMethod,
     trait_ident: &syn::Ident,
     trait_meta: &UnionMeta,
     mode: Mode,
 ) -> Option<UnionVariantDefinition> {
-    let meta = UnionVariantMeta::from_attrs(&method.attrs)
+    let attr_path = attr_path(mode);
+    let method_attrs = method.attrs.clone();
+
+    // Remove repeated attributes from the method, to omit incorrect expansion.
+    method.attrs = mem::take(&mut method.attrs)
+        .into_iter()
+        .filter_map(|attr| {
+            if path_eq_single(&attr.path, attr_path) {
+                None
+            } else {
+                Some(attr)
+            }
+        })
+        .collect();
+
+    let meta = UnionVariantMeta::from_attrs(attr_path, &method_attrs)
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
+
     if let Some(rslvr) = meta.custom_resolver {
         SCOPE.custom(
             rslvr.span_ident(),
-            "cannot use #[graphql(with = ...)] attribute on a trait method, instead use \
-             #[graphql(ignore)] on the method with #[graphql(on ... = ...)] on the trait itself",
+            format!(
+                "cannot use #[{0}(with = ...)] attribute on a trait method, instead use \
+                 #[{0}(ignore)] on the method with #[{0}(on ... = ...)] on the trait itself",
+                attr_path,
+            ),
         )
     }
     if meta.ignore.is_some() {
@@ -153,11 +200,12 @@ fn parse_variant_from_trait_method(
                 method_span,
                 format!(
                     "trait method `{}` conflicts with the custom resolver `{}` declared on the \
-                     trait to resolve the variant type `{}`, use `#[graphql(ignore)]` attribute to \
+                     trait to resolve the variant type `{}`, use `#[{}(ignore)]` attribute to \
                      ignore this trait method for union variants resolution",
                     method_ident,
                     other.to_token_stream(),
                     ty.to_token_stream(),
+                    attr_path,
                 ),
             );
         }
@@ -273,12 +321,4 @@ fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<bool, Span> {
     }
 
     Ok(true)
-}
-
-/// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one.
-fn unparenthesize(ty: &syn::Type) -> &syn::Type {
-    match ty {
-        syn::Type::Paren(ty) => unparenthesize(ty.elem.deref()),
-        _ => ty,
-    }
 }
