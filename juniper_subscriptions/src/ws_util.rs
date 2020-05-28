@@ -81,27 +81,13 @@ where
 /// Trait based on the SubscriptionServer [LifeCycleEvents][LifeCycleEvents]
 ///
 /// [LifeCycleEvents]: https://www.apollographql.com/docs/graphql-subscriptions/lifecycle-events/
-pub trait SubscriptionStateHandler<Context, E>
+pub trait SubscriptionStateHandler<Context>
 where
     Context: Send + Sync,
-    E: std::error::Error,
 {
     /// This function is called when the state of the Subscription changes
     /// with the actual state.
-    fn handle(&self, _state: SubscriptionState<Context>) -> Result<(), E>;
-}
-
-/// A Empty Subscription Handler
-#[derive(Default)]
-pub struct EmptySubscriptionHandler;
-
-impl<Context> SubscriptionStateHandler<Context, std::io::Error> for EmptySubscriptionHandler
-where
-    Context: Send + Sync,
-{
-    fn handle(&self, _state: SubscriptionState<Context>) -> Result<(), std::io::Error> {
-        Ok(())
-    }
+    fn handle(&self, _state: SubscriptionState<Context>) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 /// Struct defining the message content sent or received by the server
@@ -126,8 +112,8 @@ impl WsPayload {
     }
     /// Constructor
     pub fn new(
-        id: Option<String>,
         type_name: GraphQLOverWebSocketMessage,
+        id: Option<String>,
         payload: Option<Value>,
     ) -> Self {
         Self {
@@ -179,8 +165,11 @@ pub mod tests {
 
     struct SubStateHandler;
 
-    impl SubscriptionStateHandler<Context, std::io::Error> for SubStateHandler {
-        fn handle(&self, state: SubscriptionState<Context>) -> Result<(), std::io::Error> {
+    impl SubscriptionStateHandler<Context> for SubStateHandler {
+        fn handle(
+            &self,
+            state: SubscriptionState<Context>,
+        ) -> Result<(), Box<dyn std::error::Error>> {
             match state {
                 SubscriptionState::OnConnection(payload, ctx) => {
                     if let Some(payload) = payload {

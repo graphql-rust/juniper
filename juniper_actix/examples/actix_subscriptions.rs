@@ -6,7 +6,10 @@ use futures::Stream;
 use juniper::{DefaultScalarValue, FieldError, RootNode};
 use juniper_actix::{
     graphiql_handler as gqli_handler, graphql_handler, playground_handler as play_handler,
-    subscriptions::{graphql_subscriptions as sub_handler, EmptySubscriptionHandler},
+    subscriptions::{
+        graphql_subscriptions as sub_handler, GraphQLWSSession, SubscriptionState,
+        SubscriptionStateHandler,
+    },
 };
 use juniper_subscriptions::Coordinator;
 use std::collections::hash_map::Entry;
@@ -23,6 +26,7 @@ type MyCoordinator =
 struct ChatRoom {
     pub name: String,
     pub channel: (Sender<Msg>, Receiver<Msg>),
+    pub msgs: Vec<Msg>,
 }
 
 impl ChatRoom {
@@ -30,6 +34,7 @@ impl ChatRoom {
         Self {
             name,
             channel: channel(16),
+            msgs: Vec::new(),
         }
     }
 }
@@ -58,6 +63,14 @@ impl Query {
             .map(|(_, chat_room)| chat_room.name.clone())
             .collect()
     }
+
+    pub fn msgs_from_room(room_name: String, ctx: &Context) -> Option<Vec<Msg>> {
+        ctx.chat_rooms
+            .lock()
+            .unwrap()
+            .get(&room_name)
+            .map(|chat_room| chat_room.msgs.clone())
+    }
 }
 
 struct Mutation;
@@ -68,20 +81,18 @@ impl Mutation {
         ctx.chat_rooms
             .lock()
             .unwrap()
-            .get(&room_name)
+            .get_mut(&room_name)
             .map(|chat_room| {
                 let now = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or(Duration::new(0, 0));
-                chat_room
-                    .channel
-                    .0
-                    .send(Msg {
-                        sender,
-                        value: msg,
-                        date: format!("{}", now.as_secs()),
-                    })
-                    .is_ok()
+                let msg = Msg {
+                    sender,
+                    value: msg,
+                    date: format!("{}", now.as_secs()),
+                };
+                chat_room.msgs.push(msg.clone());
+                chat_room.channel.0.send(msg).is_ok()
             })
             .is_some()
     }
@@ -96,7 +107,7 @@ struct Msg {
 
 type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 
-type VecStringStream = Pin<Box<dyn Stream<Item = Result<Vec<Msg>, FieldError>> + Send>>;
+type MsgStream = Pin<Box<dyn Stream<Item = Result<Msg, FieldError>> + Send>>;
 
 struct Subscription;
 
@@ -116,19 +127,14 @@ impl Subscription {
         Box::pin(stream)
     }
 
-    async fn chat_room(room_name: String, ctx: &Context) -> VecStringStream {
-        let mut messages: Vec<Msg> = Vec::new();
+    async fn new_messages(room_name: String, ctx: &Context) -> MsgStream {
         let channel_rx = {
             match ctx.chat_rooms.lock().unwrap().entry(room_name.clone()) {
                 Entry::Occupied(o) => o.get().channel.0.subscribe(),
                 Entry::Vacant(v) => v.insert(ChatRoom::new(room_name)).channel.0.subscribe(),
             }
         };
-        let stream = channel_rx.map(move |msg| {
-            let msg = msg?;
-            messages.push(msg);
-            Ok(messages.clone())
-        });
+        let stream = channel_rx.map(|msg| Ok(msg?));
         Box::pin(stream)
     }
 }
@@ -138,7 +144,7 @@ fn schema() -> Schema {
 }
 
 async fn graphiql_handler() -> Result<HttpResponse, Error> {
-    gqli_handler("/", Some("/subscriptions")).await
+    gqli_handler("/", Some("ws://localhost:8080/subscriptions")).await
 }
 async fn playground_handler() -> Result<HttpResponse, Error> {
     play_handler("/", Some("/subscriptions")).await
@@ -154,6 +160,24 @@ async fn graphql(
     graphql_handler(&schema, &context, req, payload).await
 }
 
+#[derive(Default)]
+struct HandlerExample {}
+
+impl<Context> SubscriptionStateHandler<Context> for HandlerExample
+where
+    Context: Send + Sync,
+{
+    fn handle(&self, state: SubscriptionState<Context>) -> Result<(), Box<dyn std::error::Error>> {
+        match state {
+            SubscriptionState::OnConnection(_, _) => println!("OnConnection"),
+            SubscriptionState::OnOperation(_) => println!("OnOperation"),
+            SubscriptionState::OnOperationComplete(_) => println!("OnOperationComplete"),
+            SubscriptionState::OnDisconnect(_) => println!("OnDisconnect"),
+        };
+        Ok(())
+    }
+}
+
 async fn graphql_subscriptions(
     coordinator: web::Data<MyCoordinator>,
     stream: web::Payload,
@@ -161,16 +185,9 @@ async fn graphql_subscriptions(
     chat_rooms: web::Data<Mutex<HashMap<String, ChatRoom>>>,
 ) -> Result<HttpResponse, Error> {
     let context = Context::new(chat_rooms.into_inner());
-    let handler: Option<EmptySubscriptionHandler> = None;
-    sub_handler(
-        coordinator,
-        context,
-        stream,
-        req,
-        handler,
-        Some(Duration::from_secs(5)),
-    )
-    .await
+    let actor = GraphQLWSSession::new(coordinator.into_inner(), context);
+    let actor = actor.with_handler(HandlerExample::default());
+    sub_handler(actor, stream, req).await
 }
 
 #[actix_rt::main]
