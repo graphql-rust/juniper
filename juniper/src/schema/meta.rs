@@ -572,8 +572,10 @@ where
     S: ScalarValue,
 {
     /// Build a new input type with the specified name and input fields
-    pub fn new<T: FromInputValue<S>>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self
-where {
+    pub fn new<T>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self
+    where
+        T: FromInputValue<S> + ?Sized,
+    {
         InputObjectMeta {
             name,
             description: None,

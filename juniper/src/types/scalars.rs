@@ -192,7 +192,7 @@ where
     })
 }
 
-impl<'a, S> GraphQLType<S> for &'a str
+impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
@@ -216,11 +216,11 @@ where
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
-        Ok(Value::scalar(String::from(*self)))
+        Ok(Value::scalar(String::from(self)))
     }
 }
 
-impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
+impl<S> crate::GraphQLTypeAsync<S> for str
 where
     S: ScalarValue + Send + Sync,
 {
@@ -325,11 +325,11 @@ where
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
 #[derive(Debug, Default)]
-pub struct EmptyMutation<T> {
+pub struct EmptyMutation<T: ?Sized> {
     phantom: PhantomData<T>,
 }
 
-impl<T> EmptyMutation<T> {
+impl<T: ?Sized> EmptyMutation<T> {
     /// Construct a new empty mutation
     pub fn new() -> EmptyMutation<T> {
         EmptyMutation {
@@ -339,7 +339,7 @@ impl<T> EmptyMutation<T> {
 }
 
 // This is safe due to never using `T`.
-unsafe impl<T> Send for EmptyMutation<T> {}
+unsafe impl<T: ?Sized> Send for EmptyMutation<T> {}
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
@@ -375,14 +375,14 @@ where
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
 #[derive(Default)]
-pub struct EmptySubscription<T> {
+pub struct EmptySubscription<T: ?Sized> {
     phantom: PhantomData<T>,
 }
 
 // This is safe due to never using `T`.
-unsafe impl<T> Send for EmptySubscription<T> {}
+unsafe impl<T: ?Sized> Send for EmptySubscription<T> {}
 
-impl<T> EmptySubscription<T> {
+impl<T: ?Sized> EmptySubscription<T> {
     /// Construct a new empty subscription
     pub fn new() -> Self {
         EmptySubscription {

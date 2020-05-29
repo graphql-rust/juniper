@@ -1,17 +1,21 @@
-use crate::ast::{FromInputValue, InputValue, Selection, ToInputValue};
 use std::{fmt::Debug, sync::Arc};
 
 use crate::{
+    ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
-    types::base::{Arguments, GraphQLType},
+    types::{
+        async_await::GraphQLTypeAsync,
+        base::{Arguments, GraphQLType},
+    },
     value::ScalarValue,
+    BoxFuture,
 };
 
 impl<S, T, CtxT> GraphQLType<S> for Box<T>
 where
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT> + ?Sized,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -54,6 +58,23 @@ where
         executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
+    }
+}
+
+impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Box<T>
+where
+    T: GraphQLTypeAsync<S, Context = CtxT> + ?Sized,
+    T::TypeInfo: Send + Sync,
+    S: ScalarValue + Send + Sync,
+    CtxT: Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        (**self).resolve_async(info, selection_set, executor)
     }
 }
 
@@ -83,7 +104,7 @@ where
 impl<'e, S, T, CtxT> GraphQLType<S> for &'e T
 where
     S: ScalarValue,
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT> + ?Sized,
 {
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
@@ -129,10 +150,10 @@ where
     }
 }
 
-impl<'e, S, T> crate::GraphQLTypeAsync<S> for &'e T
+impl<'e, S, T> GraphQLTypeAsync<S> for &'e T
 where
     S: ScalarValue + Send + Sync,
-    T: crate::GraphQLTypeAsync<S>,
+    T: GraphQLTypeAsync<S> + ?Sized,
     T::TypeInfo: Send + Sync,
     T::Context: Send + Sync,
 {
@@ -142,8 +163,8 @@ where
         field_name: &'b str,
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
-        crate::GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
+    ) -> BoxFuture<'b, ExecutionResult<S>> {
+        GraphQLTypeAsync::resolve_field_async(&**self, info, field_name, arguments, executor)
     }
 
     fn resolve_async<'a>(
@@ -151,8 +172,8 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
-        crate::GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        GraphQLTypeAsync::resolve_async(&**self, info, selection_set, executor)
     }
 }
 
@@ -169,7 +190,7 @@ where
 impl<S, T> GraphQLType<S> for Arc<T>
 where
     S: ScalarValue,
-    T: GraphQLType<S>,
+    T: GraphQLType<S> + ?Sized,
 {
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
@@ -215,36 +236,19 @@ where
     }
 }
 
-impl<S, T, CtxT> crate::GraphQLTypeAsync<S> for Box<T>
+impl<'e, S, T> GraphQLTypeAsync<S> for Arc<T>
 where
-    T: crate::GraphQLTypeAsync<S, Context = CtxT>,
-    T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
-    CtxT: Send + Sync,
+    T: GraphQLTypeAsync<S> + ?Sized,
+    <T as GraphQLType<S>>::TypeInfo: Send + Sync,
+    <T as GraphQLType<S>>::Context: Send + Sync,
 {
     fn resolve_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        (**self).resolve_async(info, selection_set, executor)
-    }
-}
-
-impl<'e, S, T> crate::GraphQLTypeAsync<S> for std::sync::Arc<T>
-where
-    S: ScalarValue + Send + Sync,
-    T: crate::GraphQLTypeAsync<S>,
-    <T as crate::types::base::GraphQLType<S>>::TypeInfo: Send + Sync,
-    <T as crate::types::base::GraphQLType<S>>::Context: Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
         (**self).resolve_async(info, selection_set, executor)
     }
 }
