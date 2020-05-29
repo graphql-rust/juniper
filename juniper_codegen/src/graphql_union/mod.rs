@@ -428,7 +428,7 @@ impl ToTokens for UnionDefinition {
 
         let mut ty_full = quote! { #ty#ty_generics };
         if self.is_trait_object {
-            ty_full = quote! { dyn #ty_full + '__obj };
+            ty_full = quote! { dyn #ty_full + '__obj + Send + Sync };
         }
 
         let type_impl = quote! {

@@ -3,7 +3,7 @@
 use derive_more::From;
 #[cfg(test)]
 use fnv::FnvHashMap;
-use juniper::{GraphQLObject, GraphQLUnion};
+use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
 
 #[cfg(test)]
 use juniper::{
@@ -188,7 +188,7 @@ pub enum CharacterCompat {
 
 pub struct Query;
 
-#[juniper::graphql_object(
+#[graphql_object(
     Context = CustomContext,
 )]
 impl Query {
