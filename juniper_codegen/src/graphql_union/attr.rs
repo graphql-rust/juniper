@@ -59,8 +59,6 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
 
     let meta = UnionMeta::from_attrs(attr_path, &trait_attrs)?;
 
-    //panic!("{:?}", meta);
-
     let trait_span = ast.span();
     let trait_ident = &ast.ident;
 
@@ -93,7 +91,38 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
 
     if !meta.custom_resolvers.is_empty() {
         let crate_path = mode.crate_path();
-        // TODO: modify variants
+        // TODO: refactor into separate function
+        for (ty, rslvr) in meta.custom_resolvers {
+            let span = rslvr.span_joined();
+
+            let resolver_fn = rslvr.into_inner();
+            let resolver_code = parse_quote! {
+                #resolver_fn(self, #crate_path::FromContext::from(context))
+            };
+            // Doing this may be quite an expensive, because resolving may contain some heavy
+            // computation, so we're preforming it twice. Unfortunately, we have no other options
+            // here, until the `juniper::GraphQLType` itself will allow to do it in some cleverer
+            // way.
+            let resolver_check = parse_quote! {
+                ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
+            };
+
+            // TODO: We may not check here for existence, as we do the duplication check when
+            //       parsing methods.
+            if let Some(var) = variants.iter_mut().find(|v| v.ty == ty) {
+                var.resolver_code = resolver_code;
+                var.resolver_check = resolver_check;
+                var.span = span;
+            } else {
+                variants.push(UnionVariantDefinition {
+                    ty,
+                    resolver_code,
+                    resolver_check,
+                    enum_path: None,
+                    span,
+                })
+            }
+        }
     }
     if variants.is_empty() {
         SCOPE.custom(trait_span, "expects at least one union variant");
