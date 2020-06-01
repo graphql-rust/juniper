@@ -1,7 +1,6 @@
 use std::{mem, ops::Deref as _};
 
 use proc_macro2::{Span, TokenStream};
-use proc_macro_error::ResultExt as _;
 use quote::{quote, ToTokens as _};
 use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 

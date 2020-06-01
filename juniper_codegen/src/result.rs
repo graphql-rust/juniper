@@ -53,7 +53,6 @@ pub enum UnsupportedAttribute {
     Skip,
     Interface,
     Scalar,
-    Description,
     Deprecation,
     Default,
 }
