@@ -1,20 +1,26 @@
+//! Code generation for `#[graphql_union]`/`#[graphql_union_internal]` macros.
+
 use std::{mem, ops::Deref as _};
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
-use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _};
+use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
     util::{path_eq_single, span_container::SpanContainer, to_pascal_case, unparenthesize, Mode},
 };
 
-use super::{UnionDefinition, UnionMeta, UnionVariantDefinition, UnionVariantMeta};
+use super::{
+    all_variants_different, emerge_union_variants_from_meta, UnionDefinition, UnionMeta,
+    UnionVariantDefinition, UnionVariantMeta,
+};
 
-const SCOPE: GraphQLScope = GraphQLScope::AttrUnion;
+/// [`GraphQLScope`] of `#[graphql_union]`/`#[graphql_union_internal]` macros.
+const SCOPE: GraphQLScope = GraphQLScope::UnionAttr;
 
-/// Returns name of the `proc_macro_attribute` for deriving `GraphQLUnion` implementation depending
-/// on the provided `mode`.
+/// Returns the concrete name of the `proc_macro_attribute` for deriving `GraphQLUnion`
+/// implementation depending on the provided `mode`.
 fn attr_path(mode: Mode) -> &'static str {
     match mode {
         Mode::Public => "graphql_union",
@@ -22,7 +28,7 @@ fn attr_path(mode: Mode) -> &'static str {
     }
 }
 
-/// Expands `#[graphql_union]`/`#[graphql_union_internal]` macros into generated code.
+/// Expands `#[graphql_union]`/`#[graphql_union_internal]` macro into generated code.
 pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
     let attr_path = attr_path(mode);
 
@@ -88,55 +94,13 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
 
     proc_macro_error::abort_if_dirty();
 
-    if !meta.custom_resolvers.is_empty() {
-        let crate_path = mode.crate_path();
-        // TODO: refactor into separate function
-        for (ty, rslvr) in meta.custom_resolvers {
-            let span = rslvr.span_joined();
+    emerge_union_variants_from_meta(&mut variants, meta.custom_resolvers, mode);
 
-            let resolver_fn = rslvr.into_inner();
-            let resolver_code = parse_quote! {
-                #resolver_fn(self, #crate_path::FromContext::from(context))
-            };
-            // Doing this may be quite an expensive, because resolving may contain some heavy
-            // computation, so we're preforming it twice. Unfortunately, we have no other options
-            // here, until the `juniper::GraphQLType` itself will allow to do it in some cleverer
-            // way.
-            let resolver_check = parse_quote! {
-                ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
-            };
-
-            // TODO: We may not check here for existence, as we do the duplication check when
-            //       parsing methods.
-            if let Some(var) = variants.iter_mut().find(|v| v.ty == ty) {
-                var.resolver_code = resolver_code;
-                var.resolver_check = resolver_check;
-                var.span = span;
-            } else {
-                variants.push(UnionVariantDefinition {
-                    ty,
-                    resolver_code,
-                    resolver_check,
-                    enum_path: None,
-                    span,
-                })
-            }
-        }
-    }
     if variants.is_empty() {
         SCOPE.custom(trait_span, "expects at least one union variant");
     }
 
-    // NOTICE: This is not an optimal implementation, as it's possible to bypass this check by using
-    // a full qualified path instead (`crate::Test` vs `Test`). Since this requirement is mandatory,
-    // the `std::convert::Into<T>` implementation is used to enforce this requirement. However, due
-    // to the bad error message this implementation should stay and provide guidance.
-    let all_variants_different = {
-        let mut types: Vec<_> = variants.iter().map(|var| &var.ty).collect();
-        types.dedup();
-        types.len() == variants.len()
-    };
-    if !all_variants_different {
+    if !all_variants_different(&variants) {
         SCOPE.custom(trait_span, "each union variant must have a different type");
     }
 
@@ -162,6 +126,12 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
     })
 }
 
+/// Parses given Rust trait `method` as [GraphQL union][1] variant.
+///
+/// On failure returns [`None`] and internally fills up [`proc_macro_error`] with the corresponding
+/// errors.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
 fn parse_variant_from_trait_method(
     method: &mut syn::TraitItemMethod,
     trait_ident: &syn::Ident,
@@ -257,10 +227,9 @@ fn parse_variant_from_trait_method(
         }
     };
 
-    // Doing this may be quite an expensive, because resolving may contain some heavy
-    // computation, so we're preforming it twice. Unfortunately, we have no other options
-    // here, until the `juniper::GraphQLType` itself will allow to do it in some cleverer
-    // way.
+    // Doing this may be quite an expensive, because resolving may contain some heavy computation,
+    // so we're preforming it twice. Unfortunately, we have no other options here, until the
+    // `juniper::GraphQLType` itself will allow to do it in some cleverer way.
     let resolver_check = parse_quote! {
         ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
     };

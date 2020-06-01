@@ -1,4 +1,4 @@
-//! Code generation for [GraphQL union][1] type.
+//! Code generation for [GraphQL union][1].
 //!
 //! [1]: https://spec.graphql.org/June2018/#sec-Unions
 
@@ -70,6 +70,9 @@ fn dup_attr_err(span: Span) -> syn::Error {
     syn::Error::new(span, "duplicated attribute")
 }
 
+/// Helper alias for the type of [`UnionMeta::custom_resolvers`] field.
+type UnionMetaResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
+
 /// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_union]`) attribute when
 /// generating code for [GraphQL union][1] type.
 ///
@@ -117,7 +120,7 @@ struct UnionMeta {
     /// some custom [union][1] variant resolving logic is involved, or variants cannot be inferred.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub custom_resolvers: HashMap<syn::Type, SpanContainer<syn::ExprPath>>,
+    pub custom_resolvers: UnionMetaResolvers,
 }
 
 impl Parse for UnionMeta {
@@ -601,6 +604,8 @@ impl ToTokens for UnionDefinition {
             #[automatically_derived]
             impl#impl_generics #crate_path::marker::GraphQLUnion for #ty_full {
                 fn mark() {
+                    #crate_path::sa::assert_type_ne_all!(#(#var_types),*);
+
                     #( <#var_types as #crate_path::marker::GraphQLObjectType<
                         #default_scalar,
                     >>::mark(); )*
@@ -610,4 +615,68 @@ impl ToTokens for UnionDefinition {
 
         into.append_all(&[union_impl, output_type_impl, type_impl, async_type_impl]);
     }
+}
+
+/// Emerges [`UnionMeta::custom_resolvers`] into the given [GraphQL union][1] `variants`.
+///
+/// If duplication happens, then resolving code is overwritten with the one from `custom_resolvers`.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+fn emerge_union_variants_from_meta(
+    variants: &mut Vec<UnionVariantDefinition>,
+    custom_resolvers: UnionMetaResolvers,
+    mode: Mode,
+) {
+    if custom_resolvers.is_empty() {
+        return;
+    }
+
+    let crate_path = mode.crate_path();
+
+    for (ty, rslvr) in custom_resolvers {
+        let span = rslvr.span_joined();
+
+        let resolver_fn = rslvr.into_inner();
+        let resolver_code = parse_quote! {
+            #resolver_fn(self, #crate_path::FromContext::from(context))
+        };
+        // Doing this may be quite an expensive, because resolving may contain some heavy
+        // computation, so we're preforming it twice. Unfortunately, we have no other options here,
+        // until the `juniper::GraphQLType` itself will allow to do it in some cleverer way.
+        let resolver_check = parse_quote! {
+            ({ #resolver_code } as ::std::option::Option<&#ty>).is_some()
+        };
+
+        if let Some(var) = variants.iter_mut().find(|v| v.ty == ty) {
+            var.resolver_code = resolver_code;
+            var.resolver_check = resolver_check;
+            var.span = span;
+        } else {
+            variants.push(UnionVariantDefinition {
+                ty,
+                resolver_code,
+                resolver_check,
+                enum_path: None,
+                span,
+            })
+        }
+    }
+}
+
+/// Checks whether all [GraphQL union][1] `variants` represent a different Rust type.
+///
+/// # Notice
+///
+/// This is not an optimal implementation, as it's possible to bypass this check by using a full
+/// qualified path instead (`crate::Test` vs `Test`). Since this requirement is mandatory, the
+/// static assertion [`assert_type_ne_all!`][2] is used to enforce this requirement in the generated
+/// code. However, due to the bad error message this implementation should stay and provide
+/// guidance.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [2]: https://docs.rs/static_assertions/latest/static_assertions/macro.assert_type_ne_all.html
+fn all_variants_different(variants: &Vec<UnionVariantDefinition>) -> bool {
+    let mut types: Vec<_> = variants.iter().map(|var| &var.ty).collect();
+    types.dedup();
+    types.len() == variants.len()
 }

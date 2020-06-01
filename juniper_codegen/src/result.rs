@@ -10,13 +10,12 @@ pub const SPEC_URL: &'static str = "https://spec.graphql.org/June2018/";
 
 #[allow(unused_variables)]
 pub enum GraphQLScope {
-    AttrUnion,
+    UnionAttr,
     DeriveObject,
     DeriveInputObject,
-    DeriveUnion,
+    UnionDerive,
     DeriveEnum,
     DeriveScalar,
-    ImplUnion,
     ImplScalar,
     ImplObject,
 }
@@ -26,7 +25,7 @@ impl GraphQLScope {
         match self {
             Self::DeriveObject | Self::ImplObject => "#sec-Objects",
             Self::DeriveInputObject => "#sec-Input-Objects",
-            Self::AttrUnion | Self::DeriveUnion | Self::ImplUnion => "#sec-Unions",
+            Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
             Self::DeriveEnum => "#sec-Enums",
             Self::DeriveScalar | Self::ImplScalar => "#sec-Scalars",
         }
@@ -38,7 +37,7 @@ impl fmt::Display for GraphQLScope {
         let name = match self {
             Self::DeriveObject | Self::ImplObject => "object",
             Self::DeriveInputObject => "input object",
-            Self::AttrUnion | Self::DeriveUnion | Self::ImplUnion => "union",
+            Self::UnionAttr | Self::UnionDerive => "union",
             Self::DeriveEnum => "enum",
             Self::DeriveScalar | Self::ImplScalar => "scalar",
         };
