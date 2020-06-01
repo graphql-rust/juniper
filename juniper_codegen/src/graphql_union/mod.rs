@@ -1,3 +1,7 @@
+//! Code generation for [GraphQL union][1] type.
+//!
+//! [1]: https://spec.graphql.org/June2018/#sec-Unions
+
 pub mod attr;
 pub mod derive;
 
@@ -15,8 +19,59 @@ use crate::util::{
     filter_attrs, get_doc_comment, span_container::SpanContainer, Mode, OptionExt as _,
 };
 
-/// Available metadata behind `#[graphql]` (or `#[graphql_union]`) attribute when generating code
-/// for [GraphQL union][1] type.
+/// Attempts to merge an [`Option`]ed `$field` of a `$self` struct with the same `$field` of
+/// `$another` struct. If both are [`Some`], then throws a duplication error with a [`Span`] related
+/// to the `$another` struct (a later one).
+///
+/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
+/// By default, [`SpanContainer::span_ident`] is used.
+macro_rules! try_merge_opt {
+    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
+        if let Some(v) = $self.$field {
+            $another
+                .$field
+                .replace(v)
+                .none_or_else(|dup| dup_attr_err(dup.$span()))?;
+        }
+        $another.$field
+    }};
+
+    ($field:ident: $self:ident, $another:ident) => {
+        try_merge_opt!($field: $self, $another => span_ident)
+    };
+}
+
+/// Attempts to merge a [`HashMap`]ed `$field` of a `$self` struct with the same `$field` of
+/// `$another` struct. If some [`HashMap`] entries are duplicated, then throws a duplication error
+/// with a [`Span`] related to the `$another` struct (a later one).
+///
+/// The type of [`Span`] may be explicitly specified as one of the [`SpanContainer`] methods.
+/// By default, [`SpanContainer::span_ident`] is used.
+macro_rules! try_merge_hashmap {
+    ($field:ident: $self:ident, $another:ident => $span:ident) => {{
+        if !$self.$field.is_empty() {
+            for (ty, rslvr) in $self.$field {
+                $another
+                    .$field
+                    .insert(ty, rslvr)
+                    .none_or_else(|dup| dup_attr_err(dup.$span()))?;
+            }
+        }
+        $another.$field
+    }};
+
+    ($field:ident: $self:ident, $another:ident) => {
+        try_merge_hashmap!($field: $self, $another => span_ident)
+    };
+}
+
+/// Creates and returns duplication error pointing to the given `span`.
+fn dup_attr_err(span: Span) -> syn::Error {
+    syn::Error::new(span, "duplicated attribute")
+}
+
+/// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_union]`) attribute when
+/// generating code for [GraphQL union][1] type.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 #[derive(Debug, Default)]
@@ -39,6 +94,8 @@ struct UnionMeta {
     /// Explicitly specified type of `juniper::Context` to use for resolving this [GraphQL union][1]
     /// type with.
     ///
+    /// If absent, then unit type `()` is assumed as type of `juniper::Context`.
+    ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub context: Option<SpanContainer<syn::Type>>,
 
@@ -48,7 +105,7 @@ struct UnionMeta {
     /// If absent, then generated code will be generic over any `juniper::ScalarValue` type, which,
     /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
     /// too. That's why this type should be specified only if one of the variants implements
-    /// `juniper::GraphQLType` in non-generic over `juniper::ScalarValue` type way.
+    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub scalar: Option<SpanContainer<syn::Type>>,
@@ -80,7 +137,7 @@ impl Parse for UnionMeta {
                             Some(name.span()),
                             name.value(),
                         ))
-                        .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                        .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "desc" | "description" => {
                     input.parse::<syn::Token![=]>()?;
@@ -92,7 +149,7 @@ impl Parse for UnionMeta {
                             Some(desc.span()),
                             desc.value(),
                         ))
-                        .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                        .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "ctx" | "context" | "Context" => {
                     input.parse::<syn::Token![=]>()?;
@@ -100,7 +157,7 @@ impl Parse for UnionMeta {
                     output
                         .context
                         .replace(SpanContainer::new(ident.span(), Some(ctx.span()), ctx))
-                        .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                        .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "scalar" | "Scalar" | "ScalarValue" => {
                     input.parse::<syn::Token![=]>()?;
@@ -108,7 +165,7 @@ impl Parse for UnionMeta {
                     output
                         .scalar
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
-                        .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                        .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 "on" => {
                     let ty = input.parse::<syn::Type>()?;
@@ -119,7 +176,7 @@ impl Parse for UnionMeta {
                     output
                         .custom_resolvers
                         .insert(ty, rslvr_spanned)
-                        .none_or_else(|_| syn::Error::new(rslvr_span, "duplicated attribute"))?
+                        .none_or_else(|_| dup_attr_err(rslvr_span))?
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
@@ -136,57 +193,17 @@ impl Parse for UnionMeta {
 
 impl UnionMeta {
     /// Tries to merge two [`UnionMeta`]s into single one, reporting about duplicates, if any.
-    fn try_merge(self, mut other: Self) -> syn::Result<Self> {
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
-            name: {
-                if let Some(v) = self.name {
-                    other.name.replace(v).none_or_else(|dup| {
-                        syn::Error::new(dup.span_ident(), "duplicated attribute")
-                    })?;
-                }
-                other.name
-            },
-            description: {
-                if let Some(v) = self.description {
-                    other.description.replace(v).none_or_else(|dup| {
-                        syn::Error::new(dup.span_ident(), "duplicated attribute")
-                    })?;
-                }
-                other.description
-            },
-            context: {
-                if let Some(v) = self.context {
-                    other.context.replace(v).none_or_else(|dup| {
-                        syn::Error::new(dup.span_ident(), "duplicated attribute")
-                    })?;
-                }
-                other.context
-            },
-            scalar: {
-                if let Some(v) = self.scalar {
-                    other.scalar.replace(v).none_or_else(|dup| {
-                        syn::Error::new(dup.span_ident(), "duplicated attribute")
-                    })?;
-                }
-                other.scalar
-            },
-            custom_resolvers: {
-                if !self.custom_resolvers.is_empty() {
-                    for (ty, rslvr) in self.custom_resolvers {
-                        other
-                            .custom_resolvers
-                            .insert(ty, rslvr)
-                            .none_or_else(|dup| {
-                                syn::Error::new(dup.span_joined(), "duplicated attribute")
-                            })?;
-                    }
-                }
-                other.custom_resolvers
-            },
+            name: try_merge_opt!(name: self, another),
+            description: try_merge_opt!(description: self, another),
+            context: try_merge_opt!(context: self, another),
+            scalar: try_merge_opt!(scalar: self, another),
+            custom_resolvers: try_merge_hashmap!(custom_resolvers: self, another => span_joined),
         })
     }
 
-    /// Parses [`UnionMeta`] from the given attributes placed on type definition.
+    /// Parses [`UnionMeta`] from the given multiple `name`d attributes placed on type definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut meta = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -200,8 +217,8 @@ impl UnionMeta {
     }
 }
 
-/// Available metadata behind `#[graphql]` (or `#[graphql_union]`) attribute when generating code
-/// for [GraphQL union][1]'s variant.
+/// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_union]`) attribute when
+/// generating code for [GraphQL union][1]'s variant.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 #[derive(Debug, Default)]
@@ -232,14 +249,14 @@ impl Parse for UnionVariantMeta {
                 "ignore" | "skip" => output
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
-                    .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?,
+                    .none_or_else(|_| dup_attr_err(ident.span()))?,
                 "with" => {
                     input.parse::<syn::Token![=]>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     output
                         .custom_resolver
                         .replace(SpanContainer::new(ident.span(), Some(rslvr.span()), rslvr))
-                        .none_or_else(|_| syn::Error::new(ident.span(), "duplicated attribute"))?
+                        .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
                 _ => {
                     return Err(syn::Error::new(ident.span(), "unknown attribute"));
@@ -257,28 +274,15 @@ impl Parse for UnionVariantMeta {
 impl UnionVariantMeta {
     /// Tries to merge two [`UnionVariantMeta`]s into single one, reporting about duplicates, if
     /// any.
-    fn try_merge(self, mut other: Self) -> syn::Result<Self> {
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
-            ignore: {
-                if let Some(v) = self.ignore {
-                    other.ignore.replace(v).none_or_else(|dup| {
-                        syn::Error::new(dup.span_ident(), "duplicated attribute")
-                    })?;
-                }
-                other.ignore
-            },
-            custom_resolver: {
-                if let Some(v) = self.custom_resolver {
-                    other.custom_resolver.replace(v).none_or_else(|dup| {
-                        syn::Error::new(dup.span_ident(), "duplicated attribute")
-                    })?;
-                }
-                other.custom_resolver
-            },
+            ignore: try_merge_opt!(ignore: self, another),
+            custom_resolver: try_merge_opt!(custom_resolver: self, another),
         })
     }
 
-    /// Parses [`UnionVariantMeta`] from the given attributes placed on variant/field definition.
+    /// Parses [`UnionVariantMeta`] from the given multiple `name`d attributes placed on
+    /// variant/field/method definition.
     pub fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -286,24 +290,96 @@ impl UnionVariantMeta {
     }
 }
 
+/// Definition of [GraphQL union][1] variant for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
 struct UnionVariantDefinition {
+    /// Rust type that this [GraphQL union][1] variant resolves into.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub ty: syn::Type,
+
+    /// Rust code for value resolution of this [GraphQL union][1] variant.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub resolver_code: syn::Expr,
+
+    /// Rust code for checking whether [GraphQL union][1] should be resolved into this variant.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub resolver_check: syn::Expr,
+
+    /// Rust enum variant path that this [GraphQL union][1] variant is associated with.
+    ///
+    /// It's available only when code generation happens for Rust enums.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub enum_path: Option<TokenStream>,
+
+    /// [`Span`] that points to the Rust source code which defines this [GraphQL union][1] variant.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub span: Span,
 }
 
+/// Definition of [GraphQL union][1] for code generation.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
 struct UnionDefinition {
+    /// Name of this [GraphQL union][1] in GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub name: String,
+
+    /// Rust type that this [GraphQL union][1] is represented with.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub ty: syn::Type,
-    pub is_trait_object: bool,
-    pub description: Option<String>,
-    pub context: Option<syn::Type>,
-    pub scalar: Option<syn::Type>,
+
+    /// Generics of the Rust type that this [GraphQL union][1] is implemented for.
     pub generics: syn::Generics,
+
+    /// Indicator whether code should be generated for a trait object, rather than for a regular
+    /// Rust type.
+    pub is_trait_object: bool,
+
+    /// Description of this [GraphQL union][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub description: Option<String>,
+
+    /// Rust type of `juniper::Context` to generate `juniper::GraphQLType` implementation with
+    /// for this [GraphQL union][1].
+    ///
+    /// If [`None`] then generated code will use unit type `()` as `juniper::Context`.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub context: Option<syn::Type>,
+
+    /// Rust type of `juniper::ScalarValue` to generate `juniper::GraphQLType` implementation with
+    /// for this [GraphQL union][1].
+    ///
+    /// If [`None`] then generated code will be generic over any `juniper::ScalarValue` type, which,
+    /// in turn, requires all [union][1] variants to be generic over any `juniper::ScalarValue` type
+    /// too. That's why this type should be specified only if one of the variants implements
+    /// `juniper::GraphQLType` in a non-generic way over `juniper::ScalarValue` type.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub scalar: Option<syn::Type>,
+
+    /// Variants definitions of this [GraphQL union][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub variants: Vec<UnionVariantDefinition>,
+
+    /// [`Span`] that points to the Rust source code which defines this [GraphQL union][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub span: Span,
+
+    /// [`Mode`] to generate code in for this [GraphQL union][1].
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub mode: Mode,
 }
 
@@ -374,8 +450,9 @@ impl ToTokens for UnionDefinition {
                 .map(|(var, expr)| {
                     let var_ty = &var.ty;
 
-                    let get_name =
-                        quote! { (<#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())) };
+                    let get_name = quote! {
+                        (<#var_ty as #crate_path::GraphQLType<#scalar>>::name(&()))
+                    };
                     quote! {
                         if type_name == #get_name.unwrap() {
                             let res = #crate_path::IntoResolvable::into(
