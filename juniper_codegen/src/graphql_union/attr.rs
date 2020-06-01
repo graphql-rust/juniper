@@ -220,7 +220,13 @@ fn parse_variant_from_trait_method(
             )
         })
         .ok()?;
-    // TODO: validate signature to not be async
+    if let Some(is_async) = &method.sig.asyncness {
+        SCOPE.custom(
+            is_async.span(),
+            "async union variants resolvers are not supported yet",
+        );
+        return None;
+    }
 
     let resolver_code = {
         if let Some(other) = trait_meta.custom_resolvers.get(&ty) {
