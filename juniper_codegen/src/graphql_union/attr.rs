@@ -6,7 +6,7 @@ use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, unparenthesize, Mode},
+    util::{path_eq_single, span_container::SpanContainer, to_pascal_case, unparenthesize, Mode},
 };
 
 use super::{UnionDefinition, UnionMeta, UnionVariantDefinition, UnionVariantMeta};
@@ -65,7 +65,7 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| trait_ident.unraw().to_string()); // TODO: PascalCase
+        .unwrap_or_else(|| to_pascal_case(&trait_ident.unraw().to_string()));
     if matches!(mode, Mode::Public) && name.starts_with("__") {
         SCOPE.no_double_underscore(
             meta.name

@@ -5,7 +5,7 @@ use syn::{self, ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fi
 
 use crate::{
     result::GraphQLScope,
-    util::{span_container::SpanContainer, Mode},
+    util::{span_container::SpanContainer, to_pascal_case, Mode},
 };
 
 use super::{UnionDefinition, UnionMeta, UnionVariantDefinition, UnionVariantMeta};
@@ -34,7 +34,7 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| enum_ident.unraw().to_string()); // TODO: PascalCase
+        .unwrap_or_else(|| to_pascal_case(&enum_ident.unraw().to_string()));
     if matches!(mode, Mode::Public) && name.starts_with("__") {
         SCOPE.no_double_underscore(
             meta.name
@@ -205,7 +205,7 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| struct_ident.unraw().to_string()); // TODO: PascalCase
+        .unwrap_or_else(|| to_pascal_case(&struct_ident.unraw().to_string()));
     if matches!(mode, Mode::Public) && name.starts_with("__") {
         SCOPE.no_double_underscore(
             meta.name

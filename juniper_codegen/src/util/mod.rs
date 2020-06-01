@@ -255,6 +255,30 @@ pub fn to_camel_case(s: &str) -> String {
     dest
 }
 
+/// Returns a copy of the given string, transformed into `PascalCase`.
+pub fn to_pascal_case(s: &str) -> String {
+    let mut dest = String::new();
+
+    for part in s.split('_') {
+        if part.len() == 1 {
+            dest.push_str(&part.to_uppercase());
+        } else if part.len() > 1 {
+            let first = part
+                .chars()
+                .next()
+                .unwrap()
+                .to_uppercase()
+                .collect::<String>();
+            let second = &part[1..];
+
+            dest.push_str(&first);
+            dest.push_str(second);
+        }
+    }
+
+    dest
+}
+
 pub(crate) fn to_upper_snake_case(s: &str) -> String {
     let mut last_lower = false;
     let mut upper = String::new();
@@ -1882,6 +1906,23 @@ mod test {
         assert_eq!(&to_camel_case("a_b")[..], "aB");
         assert_eq!(&to_camel_case("a")[..], "a");
         assert_eq!(&to_camel_case("")[..], "");
+    }
+
+    #[test]
+    fn test_to_pascal_case() {
+        for (input, expected) in &[
+            ("test", "Test"),
+            ("_test", "Test"),
+            ("first_second", "FirstSecond"),
+            ("first_", "First"),
+            ("a_b_c", "ABC"),
+            ("a_bc", "ABc"),
+            ("a_b", "AB"),
+            ("a", "A"),
+            ("", ""),
+        ] {
+            assert_eq!(&to_pascal_case(input), expected);
+        }
     }
 
     #[test]
