@@ -9,6 +9,8 @@ build = "build.rs"
 juniper = { path = "../../../juniper" }
 juniper_iron = { path = "../../../juniper_iron" }
 juniper_subscriptions = { path = "../../../juniper_subscriptions" }
+
+derive_more = "0.99.7"
 futures = "0.3"
 tokio = { version = "0.2", features = ["rt-core", "blocking", "stream", "rt-util"] }
 iron = "0.5.0"
