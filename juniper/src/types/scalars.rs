@@ -261,7 +261,7 @@ where
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        // Bools are parsed on it's own. This should not hit this code path
+        // Bools are parsed separately - they shouldn't reach this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 }
@@ -324,7 +324,7 @@ where
 ///
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct EmptyMutation<T: ?Sized> {
     phantom: PhantomData<T>,
 }
@@ -338,7 +338,7 @@ impl<T: ?Sized> EmptyMutation<T> {
     }
 }
 
-// This is safe due to never using `T`.
+// This is safe because `T` is never used.
 unsafe impl<T: ?Sized> Send for EmptyMutation<T> {}
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
@@ -370,11 +370,18 @@ where
 {
 }
 
+impl<T> Default for EmptyMutation<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+}
+
 /// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-#[derive(Default)]
 pub struct EmptySubscription<T: ?Sized> {
     phantom: PhantomData<T>,
 }
@@ -418,6 +425,14 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
 {
+}
+
+impl<T> Default for EmptySubscription<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -480,5 +495,12 @@ mod tests {
     fn empty_subscription_is_send() {
         fn check_if_send<T: Send>() {}
         check_if_send::<EmptySubscription<()>>();
+    }
+
+    #[test]
+    fn default_is_invariant_over_type() {
+        struct Bar;
+        let _ = EmptySubscription::<Bar>::default();
+        let _ = EmptyMutation::<Bar>::default();
     }
 }

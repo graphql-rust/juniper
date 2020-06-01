@@ -133,7 +133,7 @@ pub use juniper_codegen::{
 use juniper_codegen::{
     graphql_object_internal, graphql_scalar_internal, graphql_subscription_internal,
     graphql_union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
-    GraphQLScalarValueInternal,
+    GraphQLScalarValueInternal, GraphQLUnionInternal,
 };
 
 #[macro_use]
