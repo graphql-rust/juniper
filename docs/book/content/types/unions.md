@@ -15,6 +15,7 @@ For implementing [GraphQL union][1] Juniper provides:
 Most of the time, we need just a trivial and straightforward Rust enum to represent a [GraphQL union][1].
 
 ```rust
+# #![allow(dead_code)]
 use derive_more::From;
 use juniper::{GraphQLObject, GraphQLUnion};
 
@@ -72,7 +73,7 @@ enum Character<S> {
     Droid(Droid),
     #[from(ignore)]
     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
-    _State(PhatomData<S>),
+    _State(PhantomData<S>),
 }
 #
 # fn main() {}
@@ -128,6 +129,7 @@ impl Character {
 With a custom resolver we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
 
 ```rust
+# #![allow(dead_code)]
 use juniper::{GraphQLObject, GraphQLUnion};
 
 #[derive(GraphQLObject)]
@@ -162,11 +164,17 @@ impl juniper::Context for CustomContext {}
 enum Character {
     Human(Human),
     Droid(Droid),
+    #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
+    Ewok,
 }
 
 impl Character {
     fn ewok_from_context<'c>(&self, ctx: &'c CustomContext) -> Option<&'c Ewok> {
-        Some(&ctx.ewok)
+        if matches!(self, Self::Ewok) {
+            Some(&ctx.ewok)
+        } else {
+            None
+        }       
     }
 }
 #
@@ -206,6 +214,7 @@ impl juniper::Context for Database {}
 
 #[derive(GraphQLUnion)]
 #[graphql(
+    Context = Database,
     on Human = Character::get_human,
     on Droid = Character::get_droid,
 )]
@@ -214,12 +223,12 @@ struct Character {
 }
 
 impl Character {
-    fn get_human<'db>(&self, ctx: &'db Database) -> Option<'db Human>{
+    fn get_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human>{
         ctx.humans.get(&self.id)
     }
 
-    fn get_droid<'db>(&self, ctx: &'db Database) -> Option<'db Human>{
-        ctx.humans.get(&self.id)
+    fn get_droid<'db>(&self, ctx: &'db Database) -> Option<&'db Droid>{
+        ctx.droids.get(&self.id)
     }
 }
 #
@@ -276,6 +285,7 @@ impl Character for Droid {
 If a context is required in a trait method to resolve a [GraphQL union][1] variant, specify it as an argument.
 
 ```rust
+# #![allow(unused_variables)]
 # use std::collections::HashMap;
 use juniper::{graphql_union, GraphQLObject};
 
@@ -365,7 +375,7 @@ impl Character for Droid {
 
 ### Custom resolvers
 
-Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers. and instead custom functions may be specified:
+Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers, and instead custom functions may be specified:
 
 ```rust
 # use std::collections::HashMap;
@@ -410,9 +420,9 @@ impl Character for Droid {
 }
 
 // Used trait object is always `Send` and `Sync`.
-type DynCharacter = dyn Character + Send + Sync;
+type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
 
-impl DynCharacter {
+impl<'a> DynCharacter<'a> {
     fn get_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human> {
         ctx.humans.get(self.id())
     }
@@ -420,8 +430,8 @@ impl DynCharacter {
 
 // Custom resolver function doesn't have to be a method.
 // It's only a matter of the function signature to match the requirements.
-fn get_droid<'db>(ch: &DynCharacter, ctx: &'db Database) -> Option<&'db Human> {
-    ctx.humans.get(ch.id())
+fn get_droid<'db>(ch: &DynCharacter<'_>, ctx: &'db Database) -> Option<&'db Droid> {
+    ctx.droids.get(ch.id())
 }
 #
 # fn main() {}
