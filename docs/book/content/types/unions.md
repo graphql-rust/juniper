@@ -170,7 +170,7 @@ enum Character {
 
 impl Character {
     fn ewok_from_context<'c>(&self, ctx: &'c CustomContext) -> Option<&'c Ewok> {
-        if matches!(self, Self::Ewok) {
+        if let Self::Ewok = self {
             Some(&ctx.ewok)
         } else {
             None
@@ -440,5 +440,40 @@ fn get_droid<'db>(ch: &DynCharacter<'_>, ctx: &'db Database) -> Option<&'db Droi
 
 
 
+## `ScalarValue` considerations
+
+By default, `#[derive(GraphQLUnion)]` and `#[graphql_union]` macros generate code, which is generic over a [`ScalarValue`][2] type. This may introduce a problem when at least one of [GraphQL union][1] variants is restricted to a concrete [`ScalarValue`][2] type in its implementation. To resolve such problem, a concrete [`ScalarValue`][2] type should be specified:
+
+```rust
+# #![allow(dead_code)]
+use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
+
+#[derive(GraphQLObject)]
+#[graphql(Scalar = DefaultScalarValue)]
+struct Human {
+    id: String,
+    home_planet: String,
+}
+
+#[derive(GraphQLObject)]
+struct Droid {
+    id: String,
+    primary_function: String,
+}
+
+#[derive(GraphQLUnion)]
+#[graphql(Scalar = DefaultScalarValue)]  // removing this line will fail compilation
+enum Character {
+    Human(Human),
+    Droid(Droid),
+}
+#
+# fn main() {}
+```
+
+
+
+
 
 [1]: https://spec.graphql.org/June2018/#sec-Unions
+[2]: https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html
