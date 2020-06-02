@@ -1,0 +1,10 @@
+error: GraphQL union must have a different type for each union variant
+ --> $DIR/enum_same_type_pretty.rs:4:1
+  |
+4 | / enum Character {
+5 | |     A(u8),
+6 | |     B(u8),
+7 | | }
+  | |_^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Unions

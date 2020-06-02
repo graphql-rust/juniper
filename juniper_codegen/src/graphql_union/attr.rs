@@ -111,7 +111,10 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
     }
 
     if !all_variants_different(&variants) {
-        SCOPE.custom(trait_span, "each union variant must have a different type");
+        SCOPE.custom(
+            trait_span,
+            "must have a different type for each union variant",
+        );
     }
 
     proc_macro_error::abort_if_dirty();
@@ -193,7 +196,7 @@ fn parse_variant_from_trait_method(
         .map_err(|span| {
             SCOPE.custom(
                 span,
-                "trait method return type can be `Option<&VariantType>` only",
+                "expects trait method return type to be `Option<&VariantType>` only",
             )
         })
         .ok()?;
@@ -201,14 +204,14 @@ fn parse_variant_from_trait_method(
         .map_err(|span| {
             SCOPE.custom(
                 span,
-                "trait method can accept `&self` and optionally `&Context` only",
+                "expects trait method to accept `&self` only and, optionally, `&Context`",
             )
         })
         .ok()?;
     if let Some(is_async) = &method.sig.asyncness {
         SCOPE.custom(
             is_async.span(),
-            "async union variants resolvers are not supported yet",
+            "doesn't support async union variants resolvers yet",
         );
         return None;
     }

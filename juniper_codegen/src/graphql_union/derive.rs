@@ -69,7 +69,10 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
     }
 
     if !all_variants_different(&variants) {
-        SCOPE.custom(enum_span, "each union variant must have a different type");
+        SCOPE.custom(
+            enum_span,
+            "must have a different type for each union variant",
+        );
     }
 
     proc_macro_error::abort_if_dirty();
@@ -125,7 +128,7 @@ fn parse_variant_from_enum_variant(
     .map_err(|span| {
         SCOPE.custom(
             span,
-            "only unnamed variants with a single field are allowed, e.g. Some(T)",
+            "enum allows only unnamed variants with a single field, e.g. `Some(T)`",
         )
     })
     .ok()?;
@@ -199,7 +202,10 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
     }
 
     if !all_variants_different(&variants) {
-        SCOPE.custom(struct_span, "each union variant must have a different type");
+        SCOPE.custom(
+            struct_span,
+            "must have a different type for each union variant",
+        );
     }
 
     proc_macro_error::abort_if_dirty();

@@ -1,7 +1,0 @@
-error: GraphQL union expects at least one field
- --> $DIR/derive_no_fields.rs:2:1
-  |
-2 | enum Character {}
-  | ^^^^^^^^^^^^^^^^^
-  |
-  = note: https://spec.graphql.org/June2018/#sec-Unions
