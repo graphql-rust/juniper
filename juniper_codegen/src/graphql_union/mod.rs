@@ -426,6 +426,12 @@ impl ToTokens for UnionDefinition {
 
         let var_types: Vec<_> = self.variants.iter().map(|var| &var.ty).collect();
 
+        let all_variants_unique = if var_types.len() > 1 {
+            Some(quote! { #crate_path::sa::assert_type_ne_all!(#(#var_types),*); })
+        } else {
+            None
+        };
+
         let match_names = self.variants.iter().map(|var| {
             let var_ty = &var.ty;
             let var_check = &var.resolver_check;
@@ -613,7 +619,7 @@ impl ToTokens for UnionDefinition {
             #[automatically_derived]
             impl#impl_generics #crate_path::marker::GraphQLUnion for #ty_full {
                 fn mark() {
-                    #crate_path::sa::assert_type_ne_all!(#(#var_types),*);
+                    #all_variants_unique
 
                     #( <#var_types as #crate_path::marker::GraphQLObjectType<
                         #default_scalar,

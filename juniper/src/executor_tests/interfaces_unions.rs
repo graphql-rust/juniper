@@ -167,22 +167,13 @@ mod union {
         value::Value,
     };
 
+    #[crate::graphql_union_internal]
     trait Pet {
         fn as_dog(&self) -> Option<&Dog> {
             None
         }
         fn as_cat(&self) -> Option<&Cat> {
             None
-        }
-    }
-
-    #[crate::graphql_union_internal]
-    impl<'a> GraphQLUnion for &'a dyn Pet {
-        fn resolve(&self) {
-            match self {
-                Dog => self.as_dog(),
-                Cat => self.as_cat(),
-            }
         }
     }
 
