@@ -955,9 +955,11 @@ pub fn derive_union_internal(input: TokenStream) -> TokenStream {
 ///
 /// # Custom context
 ///
-/// By default, the generated implementation uses [unit type `()`][4] as context. To use a custom
-/// context type in trait methods or external resolver functions, specify it with
-/// `context`/`Context` attribute's argument.
+/// By default, the generated implementation tries to infer `juniper::Context` type from signatures
+/// of trait methods, and uses [unit type `()`][4] if signatures contains no context arguments.
+///
+/// If `juniper::Context` type cannot be inferred or is inferred incorrectly, then specify it
+/// explicitly with `context`/`Context` attribute's argument.
 ///
 /// ```
 /// # use std::collections::HashMap;

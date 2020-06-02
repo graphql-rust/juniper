@@ -1,6 +1,6 @@
 //! Code generation for `#[graphql_union]`/`#[graphql_union_internal]` macros.
 
-use std::{mem, ops::Deref as _};
+use std::{collections::HashSet, mem, ops::Deref as _};
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
@@ -92,6 +92,16 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         })
         .collect();
 
+    if meta.context.is_none() && !all_contexts_different(&variants) {
+        SCOPE.custom(
+            trait_span,
+            "cannot infer the appropriate context type, either specify the #[{}(context = MyType)] \
+             attribute, so the trait methods can use any type which impls \
+             `juniper::FromContext<MyType>`, or use the same type for all context arguments in \
+             trait methods signatures",
+        );
+    }
+
     proc_macro_error::abort_if_dirty();
 
     emerge_union_variants_from_meta(&mut variants, meta.custom_resolvers, mode);
@@ -106,12 +116,17 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
 
     proc_macro_error::abort_if_dirty();
 
+    let context = meta
+        .context
+        .map(SpanContainer::into_inner)
+        .or_else(|| variants.iter().find_map(|v| v.context_ty.as_ref()).cloned());
+
     let generated_code = UnionDefinition {
         name,
         ty: parse_quote! { #trait_ident },
         is_trait_object: true,
         description: meta.description.map(SpanContainer::into_inner),
-        context: meta.context.map(SpanContainer::into_inner),
+        context,
         scalar: meta.scalar.map(SpanContainer::into_inner),
         generics: ast.generics.clone(),
         variants,
@@ -182,7 +197,7 @@ fn parse_variant_from_trait_method(
             )
         })
         .ok()?;
-    let accepts_context = parse_trait_method_input_args(&method.sig)
+    let method_context_ty = parse_trait_method_input_args(&method.sig)
         .map_err(|span| {
             SCOPE.custom(
                 span,
@@ -214,7 +229,7 @@ fn parse_variant_from_trait_method(
             );
         }
 
-        if accepts_context {
+        if method_context_ty.is_some() {
             let crate_path = mode.crate_path();
 
             parse_quote! {
@@ -239,6 +254,7 @@ fn parse_variant_from_trait_method(
         resolver_code,
         resolver_check,
         enum_path: None,
+        context_ty: method_context_ty,
         span: method_span,
     })
 }
@@ -290,12 +306,12 @@ fn parse_trait_method_output_type(sig: &syn::Signature) -> Result<syn::Type, Spa
 }
 
 /// Parses trait method input arguments and validates them to be acceptable for resolving into
-/// [GraphQL union][1] variant type. Indicates whether method accepts context or not.
+/// [GraphQL union][1] variant type. Returns type of the context used in input arguments, if any.
 ///
 /// If input arguments are invalid, then returns the [`Span`] to display the corresponding error at.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<bool, Span> {
+fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<Option<syn::Type>, Span> {
     match sig.receiver() {
         Some(syn::FnArg::Receiver(rcv)) => {
             if rcv.reference.is_none() || rcv.mutability.is_some() {
@@ -311,7 +327,7 @@ fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<bool, Span> {
 
     let second_arg_ty = match sig.inputs.iter().skip(1).next() {
         Some(syn::FnArg::Typed(arg)) => arg.ty.deref(),
-        None => return Ok(false),
+        None => return Ok(None),
         _ => return Err(sig.inputs.span()),
     };
     match unparenthesize(second_arg_ty) {
@@ -319,9 +335,24 @@ fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<bool, Span> {
             if ref_ty.mutability.is_some() {
                 return Err(ref_ty.span());
             }
+            Ok(Some(ref_ty.elem.deref().clone()))
         }
-        ty => return Err(ty.span()),
+        ty => Err(ty.span()),
     }
+}
 
-    Ok(true)
+/// Checks whether all [GraphQL union][1] `variants` contains a different type of
+/// `juniper::Context`.
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+fn all_contexts_different(variants: &Vec<UnionVariantDefinition>) -> bool {
+    let all: Vec<_> = variants
+        .iter()
+        .filter_map(|v| v.context_ty.as_ref())
+        .collect();
+    let deduped: HashSet<_> = variants
+        .iter()
+        .filter_map(|v| v.context_ty.as_ref())
+        .collect();
+    deduped.len() == all.len()
 }

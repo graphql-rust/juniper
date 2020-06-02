@@ -319,6 +319,15 @@ struct UnionVariantDefinition {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub enum_path: Option<TokenStream>,
 
+    /// Rust type of `juniper::Context` that this [GraphQL union][1] variant requires for
+    /// resolution.
+    ///
+    /// It's available only when code generation happens for Rust traits and a trait method contains
+    /// context argument.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Unions
+    pub context_ty: Option<syn::Type>,
+
     /// [`Span`] that points to the Rust source code which defines this [GraphQL union][1] variant.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
@@ -657,6 +666,7 @@ fn emerge_union_variants_from_meta(
                 resolver_code,
                 resolver_check,
                 enum_path: None,
+                context_ty: None,
                 span,
             })
         }

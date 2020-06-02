@@ -165,6 +165,7 @@ fn parse_variant_from_enum_variant(
         resolver_code,
         resolver_check,
         enum_path: Some(enum_path),
+        context_ty: None,
         span: var_span,
     })
 }
