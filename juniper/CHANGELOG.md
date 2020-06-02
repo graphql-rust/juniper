@@ -30,15 +30,15 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 - Derive macro `GraphQLEnum` supports custom context (see [#621](https://github.com/graphql-rust/juniper/pull/621))
 
 - Reworked `#[derive(GraphQLUnion)]` macro ([#666]):
-    - applicable to enums and structs;
-    - supports custom resolvers;
-    - supports generics;
-    - supports multiple `#[graphql]` attributes.
+    - Applicable to enums and structs.
+    - Supports custom resolvers.
+    - Supports generics.
+    - Supports multiple `#[graphql]` attributes.
 - New `#[graphql_union]` macro ([#666]):
-    - applicable to traits;
-    - supports custom resolvers;
-    - supports generics;
-    - supports multiple `#[graphql_union]` attributes.
+    - Applicable to traits.
+    - Supports custom resolvers.
+    - Supports generics.
+    - Supports multiple `#[graphql_union]` attributes.
 
 - Better error messages for all proc macros (see
   [#631](https://github.com/graphql-rust/juniper/pull/631)
@@ -56,8 +56,8 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 - Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
 
-- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro and custom resolvers of `#[derive(GraphQLUnion)]` macro.
-- `#[derive(GraphQLUnion)]` macro doesn't generate `From` impls for enum variants anymore, consider [`derive_more`](https//docs.rs/derive_more)) crate to do that ([#666]).
+- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro and custom resolvers for the `#[derive(GraphQLUnion)]` macro.
+- The `#[derive(GraphQLUnion)]` macro doesn't generate `From` impls for enum variants anymore. Consider using the [`derive_more`](https//docs.rs/derive_more) crate directly ([#666]).
 
 - `ScalarRefValue` trait removed. Trait was not required.
 

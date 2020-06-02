@@ -113,7 +113,7 @@ extern crate uuid;
 #[cfg(any(test, feature = "bson"))]
 extern crate bson;
 
-// These ones are required for use by the code generated with `juniper_codegen` macros.
+// These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]
 pub use {futures, static_assertions as sa};
 

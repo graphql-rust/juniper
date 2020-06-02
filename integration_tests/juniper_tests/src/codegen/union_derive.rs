@@ -171,7 +171,7 @@ pub enum DifferentContext {
     B(Droid),
 }
 
-// NOTICE: this can not compile due to generic implementation of GraphQLType<__S>
+// NOTICE: This doesn't compile due to generic implementation of `GraphQLType<__S>`.
 // #[derive(GraphQLUnion)]
 // pub enum CharacterCompatFail {
 //     One(HumanCompat),

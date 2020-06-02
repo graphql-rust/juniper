@@ -42,12 +42,12 @@ enum Character {
 
 ### Ignoring enum variants
 
-In some rare situations we may want to omit exposing enum variant in GraphQL schema.
+In some rare situations we may want to omit exposing an enum variant in the GraphQL schema.
 
-As an example, let's consider the situation when we need to bind some type parameter for doing interesting type-level stuff in our resolvers. To achieve that, we need to carry the one with `PhantomData`, but we don't want the latest being exposed in GraphQL schema.
+As an example, let's consider the situation where we need to bind some type parameter `T` for doing interesting type-level stuff in our resolvers. To achieve this we need to have `PhantomData<T>`, but we don't want it exposed in the GraphQL schema.
 
 > __WARNING__:  
-> It's _library user responsibility_ to ensure that ignored enum variant is _never_ returned from resolvers, otherwise resolving GraphQL query will __panic in runtime__.
+> It's the _library user's responsibility_ to ensure that ignored enum variant is _never_ returned from resolvers, otherwise resolving the GraphQL query will __panic at runtime__.
 
 ```rust
 # use std::marker::PhantomData;
@@ -71,7 +71,7 @@ enum Character<S> {
     Human(Human),
     Droid(Droid),
     #[from(ignore)]
-    #[graphql(ignore)]  // or `#[graphql(skip)]`, on your choice
+    #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
     _State(PhatomData<S>),
 }
 #
@@ -81,7 +81,7 @@ enum Character<S> {
 
 ### Custom resolvers
 
-If some custom logic should be involved to resolve a [GraphQL union][1] variant, we may specify the function responsible for that.
+If some custom logic is needed to resolve a [GraphQL union][1] variant, you may specify a function to do so:
 
 ```rust
 # #![allow(dead_code)]
@@ -115,7 +115,7 @@ enum Character {
 }
 
 impl Character {
-    // NOTICE: The function signature is mandatory to accept `&self`, `&Context` 
+    // NOTICE: The function signature must contain `&self` and `&Context`,
     //         and return `Option<&VariantType>`.
     fn droid_from_context<'c>(&self, ctx: &'c CustomContext) -> Option<&'c Droid> {
         Some(&ctx.droid)
@@ -125,7 +125,7 @@ impl Character {
 # fn main() {}
 ```
 
-With a custom resolver we can even declare a new [GraphQL union][1] variant, which Rust type is absent in the initial enum definition (the attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variant](https://spec.graphql.org/June2018/#example-f8163)).
+With a custom resolver we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
 
 ```rust
 use juniper::{GraphQLObject, GraphQLUnion};
@@ -178,7 +178,7 @@ impl Character {
 
 ## Structs
 
-Using Rust structs as [GraphQL unions][1] is very similar to using enums, with the nuance that specifying custom resolver is the only way to declare a [GraphQL union][1] variant.
+Using Rust structs as [GraphQL unions][1] is very similar to using enums, with the nuance that specifying a custom resolver is the only way to declare a [GraphQL union][1] variant.
 
 ```rust
 # use std::collections::HashMap;
@@ -231,7 +231,7 @@ impl Character {
 
 ## Traits
 
-Sometimes it may seem very reasonable to use Rust trait for representing a [GraphQL union][1]. However, to do that, we should introduce a separate `#[graphql_union]` macro, because [Rust doesn't allow to use derive macros on traits](https://doc.rust-lang.org/stable/reference/procedural-macros.html#derive-macros) at the moment.
+To use a Rust trait definition as a [GraphQL union][1] you need to use the `#[graphql_union]` macro. [Rust doesn't allow derive macros on traits](https://doc.rust-lang.org/stable/reference/procedural-macros.html#derive-macros), so using `#[derive(GraphQLUnion)]` on traits doesn't work.
 
 > __NOTICE__:  
 > A __trait has to be [object safe](https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety)__, because schema resolvers will need to return a [trait object](https://doc.rust-lang.org/stable/reference/types/trait-object.html) to specify a [GraphQL union][1] behind it.
@@ -253,7 +253,7 @@ struct Droid {
 
 #[graphql_union]
 trait Character {
-    // NOTICE: The function signature is mandatory to accept `&self` 
+    // NOTICE: The method signature must contain `&self`  
     //         and return `Option<&VariantType>`.
     fn as_human(&self) -> Option<&Human> { None }
     fn as_droid(&self) -> Option<&Droid> { None }
@@ -273,7 +273,7 @@ impl Character for Droid {
 
 ### Custom context
 
-If a context is required in trait method to resolve a [GraphQL union][1] variant, we may just specify it in arguments. 
+If a context is required in a trait method to resolve a [GraphQL union][1] variant, specify it as an argument.
 
 ```rust
 # use std::collections::HashMap;
@@ -301,7 +301,7 @@ impl juniper::Context for Database {}
 
 #[graphql_union(Context = Database)]
 trait Character {
-    // NOTICE: The function signature, however, may optionally accept `&Context`.
+    // NOTICE: The method signature may optionally contain `&Context`.
     fn as_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human> { None }
     fn as_droid<'db>(&self, ctx: &'db Database) -> Option<&'db Droid> { None }
 }
@@ -345,7 +345,7 @@ struct Droid {
 trait Character {
     fn as_human(&self) -> Option<&Human> { None }
     fn as_droid(&self) -> Option<&Droid> { None }
-    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, on your choice
+    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
     fn id(&self) -> &str;
 }
 
@@ -365,7 +365,7 @@ impl Character for Droid {
 
 ### Custom resolvers
 
-And, of course, similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variants resolvers, the custom functions may be specified as well.
+Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers. and instead custom functions may be specified:
 
 ```rust
 # use std::collections::HashMap;
@@ -397,7 +397,7 @@ impl juniper::Context for Database {}
     on Droid = get_droid,
 )]
 trait Character {
-    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, on your choice
+    #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
     fn id(&self) -> &str;
 }
 
