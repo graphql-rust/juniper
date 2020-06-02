@@ -80,9 +80,9 @@ enum Character<S> {
 ```
 
 
-### Custom resolvers
+### External resolver functions
 
-If some custom logic is needed to resolve a [GraphQL union][1] variant, you may specify a function to do so:
+If some custom logic is needed to resolve a [GraphQL union][1] variant, you may specify an external function to do so:
 
 ```rust
 # #![allow(dead_code)]
@@ -126,7 +126,7 @@ impl Character {
 # fn main() {}
 ```
 
-With a custom resolver we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
+With an external resolver function we can even declare a new [GraphQL union][1] variant where the Rust type is absent in the initial enum definition. The attribute syntax `#[graphql(on VariantType = resolver_fn)]` follows the [GraphQL syntax for dispatching union variants](https://spec.graphql.org/June2018/#example-f8163).
 
 ```rust
 # #![allow(dead_code)]
@@ -186,7 +186,7 @@ impl Character {
 
 ## Structs
 
-Using Rust structs as [GraphQL unions][1] is very similar to using enums, with the nuance that specifying a custom resolver is the only way to declare a [GraphQL union][1] variant.
+Using Rust structs as [GraphQL unions][1] is very similar to using enums, with the nuance that specifying an external resolver function is the only way to declare a [GraphQL union][1] variant.
 
 ```rust
 # use std::collections::HashMap;
@@ -262,8 +262,7 @@ struct Droid {
 
 #[graphql_union]
 trait Character {
-    // NOTICE: The method signature must contain `&self`  
-    //         and return `Option<&VariantType>`.
+    // NOTICE: The method signature must contain `&self` and return `Option<&VariantType>`.
     fn as_human(&self) -> Option<&Human> { None }
     fn as_droid(&self) -> Option<&Droid> { None }
 }
@@ -373,7 +372,7 @@ impl Character for Droid {
 ```
 
 
-### Custom resolvers
+### External resolver functions
 
 Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers, and instead custom functions may be specified:
 
@@ -428,7 +427,7 @@ impl<'a> DynCharacter<'a> {
     }
 }
 
-// Custom resolver function doesn't have to be a method.
+// External resolver function doesn't have to be a method of a type.
 // It's only a matter of the function signature to match the requirements.
 fn get_droid<'db>(ch: &DynCharacter<'_>, ctx: &'db Database) -> Option<&'db Droid> {
     ctx.droids.get(ch.id())
