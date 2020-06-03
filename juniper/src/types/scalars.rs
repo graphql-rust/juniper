@@ -325,7 +325,7 @@ where
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
 #[derive(Debug)]
-pub struct EmptyMutation<T: ?Sized> {
+pub struct EmptyMutation<T: ?Sized = ()> {
     phantom: PhantomData<T>,
 }
 
@@ -382,7 +382,7 @@ impl<T> Default for EmptyMutation<T> {
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-pub struct EmptySubscription<T: ?Sized> {
+pub struct EmptySubscription<T: ?Sized = ()> {
     phantom: PhantomData<T>,
 }
 
