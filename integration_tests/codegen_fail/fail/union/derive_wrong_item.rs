@@ -1,6 +1,6 @@
 use juniper::GraphQLUnion;
 
 #[derive(GraphQLUnion)]
-enum Character {}
+union Character { id: i32 }
 
 fn main() {}

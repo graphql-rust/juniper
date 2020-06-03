@@ -1,0 +1,7 @@
+error: GraphQL union expects trait method return type to be `Option<&VariantType>` only
+ --> $DIR/trait_wrong_method_return_type.rs:5:20
+  |
+5 |     fn a(&self) -> &Human;
+  |                    ^^^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Unions

@@ -65,7 +65,7 @@ fn create(
             let _type = match method.sig.output {
                 syn::ReturnType::Type(_, ref t) => *t.clone(),
                 syn::ReturnType::Default => {
-                    error.custom(method.sig.span(), "return value required");
+                    error.emit_custom(method.sig.span(), "return value required");
                     return None;
                 }
             };

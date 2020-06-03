@@ -7,7 +7,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
 
 use crate::{
     result::GraphQLScope,
-    util::{span_container::SpanContainer, to_pascal_case, Mode},
+    util::{span_container::SpanContainer, unparenthesize, Mode},
 };
 
 use super::{
@@ -15,8 +15,9 @@ use super::{
     UnionVariantDefinition, UnionVariantMeta,
 };
 
-/// [`GraphQLScope`] of `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macros.
-const SCOPE: GraphQLScope = GraphQLScope::UnionDerive;
+/// [`GraphQLScope`] of errors for `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]`
+/// macros.
+const ERR: GraphQLScope = GraphQLScope::UnionDerive;
 
 /// Expands `#[derive(GraphQLUnion)]`/`#[derive(GraphQLUnionInternal)]` macro into generated code.
 pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
@@ -25,7 +26,7 @@ pub fn expand(input: TokenStream, mode: Mode) -> syn::Result<TokenStream> {
     match &ast.data {
         Data::Enum(_) => expand_enum(ast, mode),
         Data::Struct(_) => expand_struct(ast, mode),
-        _ => Err(SCOPE.custom_error(ast.span(), "can only be applied to enums and structs")),
+        _ => Err(ERR.custom_error(ast.span(), "can only be derived for enums and structs")),
     }
     .map(ToTokens::into_token_stream)
 }
@@ -42,9 +43,9 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| to_pascal_case(&enum_ident.unraw().to_string()));
+        .unwrap_or_else(|| enum_ident.unraw().to_string());
     if matches!(mode, Mode::Public) && name.starts_with("__") {
-        SCOPE.no_double_underscore(
+        ERR.no_double_underscore(
             meta.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
@@ -62,14 +63,14 @@ fn expand_enum(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefinition
 
     proc_macro_error::abort_if_dirty();
 
-    emerge_union_variants_from_meta(&mut variants, meta.custom_resolvers, mode);
+    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers, mode);
 
     if variants.is_empty() {
-        SCOPE.custom(enum_span, "expects at least one union variant");
+        ERR.emit_custom(enum_span, "expects at least one union variant");
     }
 
     if !all_variants_different(&variants) {
-        SCOPE.custom(
+        ERR.emit_custom(
             enum_span,
             "must have a different type for each union variant",
         );
@@ -118,7 +119,7 @@ fn parse_variant_from_enum_variant(
             let mut iter = fields.unnamed.iter();
             let first = iter.next().unwrap();
             if iter.next().is_none() {
-                Ok(first.ty.clone())
+                Ok(unparenthesize(&first.ty).clone())
             } else {
                 Err(fields.span())
             }
@@ -126,7 +127,7 @@ fn parse_variant_from_enum_variant(
         _ => Err(var_ident.span()),
     }
     .map_err(|span| {
-        SCOPE.custom(
+        ERR.emit_custom(
             span,
             "enum allows only unnamed variants with a single field, e.g. `Some(T)`",
         )
@@ -135,12 +136,12 @@ fn parse_variant_from_enum_variant(
 
     let enum_path = quote! { #enum_ident::#var_ident };
 
-    let resolver_code = if let Some(rslvr) = meta.custom_resolver {
-        if let Some(other) = enum_meta.custom_resolvers.get(&ty) {
-            SCOPE.custom(
+    let resolver_code = if let Some(rslvr) = meta.external_resolver {
+        if let Some(other) = enum_meta.external_resolvers.get(&ty) {
+            ERR.emit_custom(
                 rslvr.span_ident(),
                 format!(
-                    "variant `{}` already has custom resolver `{}` declared on the enum",
+                    "variant `{}` already has external resolver function `{}` declared on the enum",
                     ty.to_token_stream(),
                     other.to_token_stream(),
                 ),
@@ -185,9 +186,9 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| to_pascal_case(&struct_ident.unraw().to_string()));
+        .unwrap_or_else(|| struct_ident.unraw().to_string());
     if matches!(mode, Mode::Public) && name.starts_with("__") {
-        SCOPE.no_double_underscore(
+        ERR.no_double_underscore(
             meta.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
@@ -196,13 +197,13 @@ fn expand_struct(ast: syn::DeriveInput, mode: Mode) -> syn::Result<UnionDefiniti
     }
 
     let mut variants = vec![];
-    emerge_union_variants_from_meta(&mut variants, meta.custom_resolvers, mode);
+    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers, mode);
     if variants.is_empty() {
-        SCOPE.custom(struct_span, "expects at least one union variant");
+        ERR.emit_custom(struct_span, "expects at least one union variant");
     }
 
     if !all_variants_different(&variants) {
-        SCOPE.custom(
+        ERR.emit_custom(
             struct_span,
             "must have a different type for each union variant",
         );

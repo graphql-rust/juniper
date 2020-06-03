@@ -58,7 +58,7 @@ pub fn impl_enum(
             let _type = match field.fields {
                 Fields::Unit => syn::parse_str(&field_name.to_string()).unwrap(),
                 _ => {
-                    error.custom(
+                    error.emit_custom(
                         field.fields.span(),
                         "all fields of the enum must be unnamed, e.g., None",
                     );

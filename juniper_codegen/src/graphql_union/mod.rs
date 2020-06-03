@@ -70,7 +70,7 @@ fn dup_attr_err(span: Span) -> syn::Error {
     syn::Error::new(span, "duplicated attribute")
 }
 
-/// Helper alias for the type of [`UnionMeta::custom_resolvers`] field.
+/// Helper alias for the type of [`UnionMeta::external_resolvers`] field.
 type UnionMetaResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
 
 /// Available metadata (arguments) behind `#[graphql]` (or `#[graphql_union]`) attribute when
@@ -81,7 +81,7 @@ type UnionMetaResolvers = HashMap<syn::Type, SpanContainer<syn::ExprPath>>;
 struct UnionMeta {
     /// Explicitly specified name of [GraphQL union][1] type.
     ///
-    /// If absent, then `PascalCase`d Rust type name is used by default.
+    /// If absent, then Rust type name is used by default.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub name: Option<SpanContainer<String>>,
@@ -113,14 +113,15 @@ struct UnionMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub scalar: Option<SpanContainer<syn::Type>>,
 
-    /// Explicitly specified custom resolver functions for [GraphQL union][1] variants.
+    /// Explicitly specified external resolver functions for [GraphQL union][1] variants.
     ///
     /// If absent, then macro will try to auto-infer all the possible variants from the type
-    /// declaration, if possible. That's why specifying a custom resolver function has sense, when
-    /// some custom [union][1] variant resolving logic is involved, or variants cannot be inferred.
+    /// declaration, if possible. That's why specifying an external resolver function has sense,
+    /// when some custom [union][1] variant resolving logic is involved, or variants cannot be
+    /// inferred.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub custom_resolvers: UnionMetaResolvers,
+    pub external_resolvers: UnionMetaResolvers,
 }
 
 impl Parse for UnionMeta {
@@ -177,7 +178,7 @@ impl Parse for UnionMeta {
                     let rslvr_spanned = SpanContainer::new(ident.span(), Some(ty.span()), rslvr);
                     let rslvr_span = rslvr_spanned.span_joined();
                     output
-                        .custom_resolvers
+                        .external_resolvers
                         .insert(ty, rslvr_spanned)
                         .none_or_else(|_| dup_attr_err(rslvr_span))?
                 }
@@ -202,7 +203,7 @@ impl UnionMeta {
             description: try_merge_opt!(description: self, another),
             context: try_merge_opt!(context: self, another),
             scalar: try_merge_opt!(scalar: self, another),
-            custom_resolvers: try_merge_hashmap!(custom_resolvers: self, another => span_joined),
+            external_resolvers: try_merge_hashmap!(external_resolvers: self, another => span_joined),
         })
     }
 
@@ -232,14 +233,14 @@ struct UnionVariantMeta {
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
     pub ignore: Option<SpanContainer<syn::Ident>>,
 
-    /// Explicitly specified custom resolver function for this [GraphQL union][1] variant.
+    /// Explicitly specified external resolver function for this [GraphQL union][1] variant.
     ///
     /// If absent, then macro will generate the code which just returns the variant inner value.
-    /// Usually, specifying a custom resolver function has sense, when some custom resolving logic
-    /// is involved.
+    /// Usually, specifying an external resolver function has sense, when some custom resolving
+    /// logic is involved.
     ///
     /// [1]: https://spec.graphql.org/June2018/#sec-Unions
-    pub custom_resolver: Option<SpanContainer<syn::ExprPath>>,
+    pub external_resolver: Option<SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for UnionVariantMeta {
@@ -257,7 +258,7 @@ impl Parse for UnionVariantMeta {
                     input.parse::<syn::Token![=]>()?;
                     let rslvr = input.parse::<syn::ExprPath>()?;
                     output
-                        .custom_resolver
+                        .external_resolver
                         .replace(SpanContainer::new(ident.span(), Some(rslvr.span()), rslvr))
                         .none_or_else(|_| dup_attr_err(ident.span()))?
                 }
@@ -280,7 +281,7 @@ impl UnionVariantMeta {
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             ignore: try_merge_opt!(ignore: self, another),
-            custom_resolver: try_merge_opt!(custom_resolver: self, another),
+            external_resolver: try_merge_opt!(external_resolver: self, another),
         })
     }
 
@@ -632,23 +633,24 @@ impl ToTokens for UnionDefinition {
     }
 }
 
-/// Emerges [`UnionMeta::custom_resolvers`] into the given [GraphQL union][1] `variants`.
+/// Emerges [`UnionMeta::external_resolvers`] into the given [GraphQL union][1] `variants`.
 ///
-/// If duplication happens, then resolving code is overwritten with the one from `custom_resolvers`.
+/// If duplication happens, then resolving code is overwritten with the one from
+/// `external_resolvers`.
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Unions
 fn emerge_union_variants_from_meta(
     variants: &mut Vec<UnionVariantDefinition>,
-    custom_resolvers: UnionMetaResolvers,
+    external_resolvers: UnionMetaResolvers,
     mode: Mode,
 ) {
-    if custom_resolvers.is_empty() {
+    if external_resolvers.is_empty() {
         return;
     }
 
     let crate_path = mode.crate_path();
 
-    for (ty, rslvr) in custom_resolvers {
+    for (ty, rslvr) in external_resolvers {
         let span = rslvr.span_joined();
 
         let resolver_fn = rslvr.into_inner();

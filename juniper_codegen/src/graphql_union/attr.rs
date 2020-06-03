@@ -1,6 +1,6 @@
 //! Code generation for `#[graphql_union]`/`#[graphql_union_internal]` macros.
 
-use std::{collections::HashSet, mem, ops::Deref as _};
+use std::{mem, ops::Deref as _};
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens as _};
@@ -8,7 +8,7 @@ use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::{
     result::GraphQLScope,
-    util::{path_eq_single, span_container::SpanContainer, to_pascal_case, unparenthesize, Mode},
+    util::{path_eq_single, span_container::SpanContainer, unparenthesize, Mode},
 };
 
 use super::{
@@ -16,8 +16,8 @@ use super::{
     UnionVariantDefinition, UnionVariantMeta,
 };
 
-/// [`GraphQLScope`] of `#[graphql_union]`/`#[graphql_union_internal]` macros.
-const SCOPE: GraphQLScope = GraphQLScope::UnionAttr;
+/// [`GraphQLScope`] of errors for `#[graphql_union]`/`#[graphql_union_internal]` macros.
+const ERR: GraphQLScope = GraphQLScope::UnionAttr;
 
 /// Returns the concrete name of the `proc_macro_attribute` for deriving `GraphQLUnion`
 /// implementation depending on the provided `mode`.
@@ -71,9 +71,9 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         .name
         .clone()
         .map(SpanContainer::into_inner)
-        .unwrap_or_else(|| to_pascal_case(&trait_ident.unraw().to_string()));
+        .unwrap_or_else(|| trait_ident.unraw().to_string());
     if matches!(mode, Mode::Public) && name.starts_with("__") {
-        SCOPE.no_double_underscore(
+        ERR.no_double_underscore(
             meta.name
                 .as_ref()
                 .map(SpanContainer::span_ident)
@@ -92,26 +92,16 @@ pub fn expand(attr_args: TokenStream, body: TokenStream, mode: Mode) -> syn::Res
         })
         .collect();
 
-    if meta.context.is_none() && !all_contexts_different(&variants) {
-        SCOPE.custom(
-            trait_span,
-            "cannot infer the appropriate context type, either specify the #[{}(context = MyType)] \
-             attribute, so the trait methods can use any type which impls \
-             `juniper::FromContext<MyType>`, or use the same type for all context arguments in \
-             trait methods signatures",
-        );
-    }
-
     proc_macro_error::abort_if_dirty();
 
-    emerge_union_variants_from_meta(&mut variants, meta.custom_resolvers, mode);
+    emerge_union_variants_from_meta(&mut variants, meta.external_resolvers, mode);
 
     if variants.is_empty() {
-        SCOPE.custom(trait_span, "expects at least one union variant");
+        ERR.emit_custom(trait_span, "expects at least one union variant");
     }
 
     if !all_variants_different(&variants) {
-        SCOPE.custom(
+        ERR.emit_custom(
             trait_span,
             "must have a different type for each union variant",
         );
@@ -175,15 +165,20 @@ fn parse_variant_from_trait_method(
         .map_err(|e| proc_macro_error::emit_error!(e))
         .ok()?;
 
-    if let Some(rslvr) = meta.custom_resolver {
-        SCOPE.custom(
+    if let Some(rslvr) = meta.external_resolver {
+        ERR.custom(
             rslvr.span_ident(),
             format!(
-                "cannot use #[{0}(with = ...)] attribute on a trait method, instead use \
-                 #[{0}(ignore)] on the method with #[{0}(on ... = ...)] on the trait itself",
+                "cannot use #[{}(with = ...)] attribute on a trait method",
                 attr_path,
             ),
         )
+        .note(format!(
+            "instead use #[{0}(ignore)] on the method with #[{0}(on ... = ...)] on the trait \
+             itself",
+            attr_path,
+        ))
+        .emit()
     }
     if meta.ignore.is_some() {
         return None;
@@ -194,7 +189,7 @@ fn parse_variant_from_trait_method(
 
     let ty = parse_trait_method_output_type(&method.sig)
         .map_err(|span| {
-            SCOPE.custom(
+            ERR.emit_custom(
                 span,
                 "expects trait method return type to be `Option<&VariantType>` only",
             )
@@ -202,14 +197,14 @@ fn parse_variant_from_trait_method(
         .ok()?;
     let method_context_ty = parse_trait_method_input_args(&method.sig)
         .map_err(|span| {
-            SCOPE.custom(
+            ERR.emit_custom(
                 span,
                 "expects trait method to accept `&self` only and, optionally, `&Context`",
             )
         })
         .ok()?;
     if let Some(is_async) = &method.sig.asyncness {
-        SCOPE.custom(
+        ERR.emit_custom(
             is_async.span(),
             "doesn't support async union variants resolvers yet",
         );
@@ -217,19 +212,24 @@ fn parse_variant_from_trait_method(
     }
 
     let resolver_code = {
-        if let Some(other) = trait_meta.custom_resolvers.get(&ty) {
-            SCOPE.custom(
+        if let Some(other) = trait_meta.external_resolvers.get(&ty) {
+            ERR.custom(
                 method_span,
                 format!(
-                    "trait method `{}` conflicts with the custom resolver `{}` declared on the \
-                     trait to resolve the variant type `{}`, use `#[{}(ignore)]` attribute to \
-                     ignore this trait method for union variants resolution",
+                    "trait method `{}` conflicts with the external resolver function `{}` declared \
+                     on the trait to resolve the variant type `{}`",
                     method_ident,
                     other.to_token_stream(),
                     ty.to_token_stream(),
-                    attr_path,
+
                 ),
-            );
+            )
+            .note(format!(
+                "use `#[{}(ignore)]` attribute to ignore this trait method for union variants \
+                 resolution",
+                attr_path,
+            ))
+            .emit();
         }
 
         if method_context_ty.is_some() {
@@ -342,20 +342,4 @@ fn parse_trait_method_input_args(sig: &syn::Signature) -> Result<Option<syn::Typ
         }
         ty => Err(ty.span()),
     }
-}
-
-/// Checks whether all [GraphQL union][1] `variants` contains a different type of
-/// `juniper::Context`.
-///
-/// [1]: https://spec.graphql.org/June2018/#sec-Unions
-fn all_contexts_different(variants: &Vec<UnionVariantDefinition>) -> bool {
-    let all: Vec<_> = variants
-        .iter()
-        .filter_map(|v| v.context_ty.as_ref())
-        .collect();
-    let deduped: HashSet<_> = variants
-        .iter()
-        .filter_map(|v| v.context_ty.as_ref())
-        .collect();
-    deduped.len() == all.len()
 }

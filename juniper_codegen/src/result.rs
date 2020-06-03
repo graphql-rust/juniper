@@ -61,10 +61,13 @@ impl GraphQLScope {
         format!("{}{}", SPEC_URL, self.spec_section())
     }
 
-    pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) {
+    pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) -> Diagnostic {
         Diagnostic::spanned(span, Level::Error, format!("{} {}", self, msg.as_ref()))
             .note(self.spec_link())
-            .emit();
+    }
+
+    pub fn emit_custom<S: AsRef<str>>(&self, span: Span, msg: S) {
+        self.custom(span, msg).emit()
     }
 
     pub fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {

@@ -579,7 +579,7 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
 /// # Custom name and description
 ///
 /// The name of [GraphQL union][1] may be overriden with a `name` attribute's argument. By default,
-/// a type name in `PascalCase` is used.
+/// a type name is used.
 ///
 /// The description of [GraphQL union][1] may be specified either with a `description`/`desc`
 /// attribute's argument, or with a regular Rust doc comment.
@@ -904,7 +904,7 @@ pub fn derive_union_internal(input: TokenStream) -> TokenStream {
 /// # Custom name and description
 ///
 /// The name of [GraphQL union][1] may be overriden with a `name` attribute's argument. By default,
-/// a type name in `PascalCase` is used.
+/// a type name is used.
 ///
 /// The description of [GraphQL union][1] may be specified either with a `description`/`desc`
 /// attribute's argument, or with a regular Rust doc comment.

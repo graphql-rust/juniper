@@ -1,6 +1,6 @@
 use juniper::graphql_union;
 
 #[graphql_union]
-trait Character {}
+enum Character {}
 
 fn main() {}
