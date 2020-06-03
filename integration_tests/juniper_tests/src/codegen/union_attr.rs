@@ -1,3 +1,5 @@
+//! Tests for `#[graphql_union]` macro.
+
 use juniper::{
     execute, graphql_object, graphql_union, graphql_value, DefaultScalarValue, EmptyMutation,
     EmptySubscription, GraphQLObject, GraphQLType, RootNode, ScalarValue, Variables,
@@ -802,6 +804,107 @@ mod ignored_methods {
             execute(DOC, None, &schema, &Variables::new(), &()).await,
             Ok((
                 graphql_value!({"__type": {"possibleTypes": [{"name": "Human"}]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod external_resolver {
+    use super::*;
+
+    #[graphql_union(context = Database)]
+    #[graphql_union(on Droid = DynCharacter::as_droid)]
+    trait Character {
+        fn as_human(&self) -> Option<&Human> {
+            None
+        }
+    }
+
+    impl Character for Human {
+        fn as_human(&self) -> Option<&Human> {
+            Some(&self)
+        }
+    }
+
+    impl Character for Droid {}
+
+    type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+
+    impl<'a> DynCharacter<'a> {
+        fn as_droid<'db>(&self, db: &'db Database) -> Option<&'db Droid> {
+            db.droid.as_ref()
+        }
+    }
+
+    struct Database {
+        droid: Option<Droid>,
+    }
+    impl juniper::Context for Database {}
+
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object(context = Database)]
+    impl QueryRoot {
+        fn character(&self) -> Box<DynCharacter<'_>> {
+            let ch: Box<DynCharacter<'_>> = match self {
+                Self::Human => Box::new(Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }),
+                Self::Droid => Box::new(Droid {
+                    id: "?????".to_string(),
+                    primary_function: "???".to_string(),
+                }),
+            };
+            ch
+        }
+    }
+
+    const DOC: &str = r#"{
+        character {
+            ... on Human {
+                humanId: id
+                homePlanet
+            }
+            ... on Droid {
+                droidId: id
+                primaryFunction
+            }
+        }
+    }"#;
+
+    #[tokio::test]
+    async fn resolves_human() {
+        let schema = schema(QueryRoot::Human);
+        let db = Database { droid: None };
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        let schema = schema(QueryRoot::Droid);
+        let db = Database {
+            droid: Some(Droid {
+                id: "droid-99".to_string(),
+                primary_function: "run".to_string(),
+            }),
+        };
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &db).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
                 vec![],
             )),
         );
