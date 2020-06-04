@@ -1123,7 +1123,7 @@ pub fn derive_union_internal(input: TokenStream) -> TokenStream {
 ///     fn id(&self) -> &str { self.id.as_str() }
 /// }
 ///
-/// // NOTICE: Used trait object is always `Send` and `Sync`.
+/// // NOTICE: The trait object is always `Send` and `Sync`.
 /// type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
 ///
 /// impl<'a> DynCharacter<'a> {

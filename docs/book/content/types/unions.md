@@ -1,10 +1,10 @@
 Unions
 ======
 
-From a server's point of view, [GraphQL unions][1] are similar to interfaces: the only exception is that they don't contain fields on their own.
+From the server's point of view, [GraphQL unions][1] are similar to interfaces - the only exception is that they don't contain fields on their own.
 
-For implementing [GraphQL union][1] Juniper provides:
-- `#[derive(GraphQLUnion)]` macro for enums and structs;
+For implementing [GraphQL unions][1] Juniper provides:
+- `#[derive(GraphQLUnion)]` macro for enums and structs.
 - `#[graphql_union]` for traits.
 
 
@@ -12,7 +12,7 @@ For implementing [GraphQL union][1] Juniper provides:
 
 ## Enums
 
-Most of the time, we need just a trivial and straightforward Rust enum to represent a [GraphQL union][1].
+Most of the time, we just need a trivial and straightforward Rust enum to represent a [GraphQL union][1].
 
 ```rust
 # #![allow(dead_code)]
@@ -374,7 +374,7 @@ impl Character for Droid {
 
 ### External resolver functions
 
-Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers, and instead custom functions may be specified:
+Similarly to enums and structs, it's not mandatory to use trait methods as [GraphQL union][1] variant resolvers. Instead, custom functions may be specified:
 
 ```rust
 # use std::collections::HashMap;
@@ -418,7 +418,7 @@ impl Character for Droid {
     fn id(&self) -> &str { self.id.as_str() }
 }
 
-// Used trait object is always `Send` and `Sync`.
+// The trait object is always `Send` and `Sync`.
 type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
 
 impl<'a> DynCharacter<'a> {
