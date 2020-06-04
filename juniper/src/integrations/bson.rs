@@ -1,4 +1,4 @@
-use bson::{oid::ObjectId, UtcDateTime};
+use bson::{oid::ObjectId, DateTime};
 use chrono::prelude::*;
 
 use crate::{
@@ -30,8 +30,8 @@ where
     }
 }
 
-#[crate::graphql_scalar_internal(description = "UtcDateTime")]
-impl<S> GraphQLScalar for UtcDateTime
+#[crate::graphql_scalar_internal(description = "DateTime")]
+impl<S> GraphQLScalar for DateTime
 where
     S: ScalarValue,
 {
@@ -39,10 +39,10 @@ where
         Value::scalar((*self).to_rfc3339())
     }
 
-    fn from_input_value(v: &InputValue) -> Option<UtcDateTime> {
+    fn from_input_value(v: &InputValue) -> Option<DateTime> {
         v.as_string_value()
-            .and_then(|s| (s.parse::<DateTime<Utc>>().ok()))
-            .map(|d| UtcDateTime(d))
+            .and_then(|s| (s.parse::<chrono::DateTime<Utc>>().ok()))
+            .map(|d| DateTime(d))
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -57,7 +57,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{value::DefaultScalarValue, InputValue};
-    use bson::{oid::ObjectId, UtcDateTime};
+    use bson::{oid::ObjectId, DateTime};
     use chrono::prelude::*;
 
     #[test]
@@ -76,8 +76,8 @@ mod test {
         let raw = "2020-03-23T17:38:32.446+00:00";
         let input: InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
 
-        let parsed: UtcDateTime = crate::FromInputValue::from_input_value(&input).unwrap();
-        let date_time = UtcDateTime(
+        let parsed: DateTime = crate::FromInputValue::from_input_value(&input).unwrap();
+        let date_time = DateTime(
             DateTime::parse_from_rfc3339(raw)
                 .unwrap()
                 .with_timezone(&Utc),
