@@ -31,7 +31,23 @@ pub fn graphiql_source(
     let fetcher_source = r#"
     <script>
         if (usingSubscriptions) {
-            var subscriptionsClient = new window.SubscriptionsTransportWs.SubscriptionClient(GRAPHQL_SUBSCRIPTIONS_URL, { reconnect: true });
+            var subscriptionEndpoint = normalizeSubscriptionEndpoint(GRAPHQL_URL, GRAPHQL_SUBSCRIPTIONS_URL);
+            var subscriptionsClient = new window.SubscriptionsTransportWs.SubscriptionClient(subscriptionEndpoint, { reconnect: true });
+        }
+
+        function normalizeSubscriptionEndpoint(endpoint, subscriptionEndpoint) {
+            if (subscriptionEndpoint) {
+                if (subscriptionEndpoint.startsWith('/')) {
+                    const secure =
+                        endpoint.includes('https') || location.href.includes('https')
+                        ? 's'
+                        : ''
+                    return `ws${secure}://${location.host}${subscriptionEndpoint}`
+                } else {
+                    return subscriptionEndpoint.replace(/^http/, 'ws')
+                }
+            }
+            return null
         }
 
         function graphQLFetcher(params) {

@@ -2,6 +2,9 @@
 
 ## Features
 
+- Normalization for the subscriptions_endpoint_url in the `graphiql_source`.
+(See [#628](https://github.com/graphql-rust/juniper/pull/628) for more details)
+  
 - Support raw identifiers in field and argument names. (`#[object]` macro)
 
 - Most error types now implement `std::error::Error`:
