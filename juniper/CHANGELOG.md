@@ -43,7 +43,7 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 - Better error messages for all proc macros (see
   [#631](https://github.com/graphql-rust/juniper/pull/631)
 
-- Improved lookahead visibility for aliased fields (see [#662](https://github.com/graphql-rust/juniper/pull/631))
+- Improved lookahead visibility for aliased fields (see [#662](https://github.com/graphql-rust/juniper/pull/662))
 
 ## Breaking Changes
 
@@ -84,7 +84,7 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
   Rename `http::tests::HTTPIntegration` as `http::tests::HttpIntegration`
   and add support for `application/graphql` POST request.
 
-- When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/631)). These methods are also deprecated in favour of the new `children` method.
+- When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/662)). These methods are also deprecated in favour of the new `children` method.
 
 [#666]: https://github.com/graphql-rust/juniper/pull/666
 
