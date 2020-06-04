@@ -1,0 +1,17 @@
+error[E0277]: the trait bound `Test: juniper::types::marker::GraphQLObjectType<juniper::value::scalar::DefaultScalarValue>` is not satisfied
+ --> $DIR/trait_non_object_variant.rs:9:1
+  |
+9 | #[graphql_union]
+  | ^^^^^^^^^^^^^^^^ the trait `juniper::types::marker::GraphQLObjectType<juniper::value::scalar::DefaultScalarValue>` is not implemented for `Test`
+  |
+  = note: required by `juniper::types::marker::GraphQLObjectType::mark`
+  = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `Test: juniper::types::marker::GraphQLObjectType<__S>` is not satisfied
+ --> $DIR/trait_non_object_variant.rs:9:1
+  |
+9 | #[graphql_union]
+  | ^^^^^^^^^^^^^^^^ the trait `juniper::types::marker::GraphQLObjectType<__S>` is not implemented for `Test`
+  |
+  = note: required by `juniper::types::marker::GraphQLObjectType::mark`
+  = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)

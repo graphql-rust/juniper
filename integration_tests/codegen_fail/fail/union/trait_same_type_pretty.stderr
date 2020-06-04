@@ -1,0 +1,10 @@
+error: GraphQL union must have a different type for each union variant
+ --> $DIR/trait_same_type_pretty.rs:4:1
+  |
+4 | / trait Character {
+5 | |     fn a(&self) -> Option<&u8>;
+6 | |     fn b(&self) -> Option<&u8>;
+7 | | }
+  | |_^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Unions

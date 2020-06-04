@@ -1,0 +1,5 @@
+error: GraphQL union can only be derived for enums and structs
+ --> $DIR/derive_wrong_item.rs:4:1
+  |
+4 | union Character { id: i32 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^

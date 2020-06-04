@@ -1,0 +1,10 @@
+error[E0119]: conflicting implementations of trait `<Character as juniper::types::marker::GraphQLUnion>::mark::_::{{closure}}#0::MutuallyExclusive` for type `std::string::String`:
+ --> $DIR/struct_same_type_ugly.rs:3:10
+  |
+3 | #[derive(GraphQLUnion)]
+  |          ^^^^^^^^^^^^
+  |          |
+  |          first implementation here
+  |          conflicting implementation for `std::string::String`
+  |
+  = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)

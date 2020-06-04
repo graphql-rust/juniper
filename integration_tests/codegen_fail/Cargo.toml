@@ -1,0 +1,14 @@
+[package]
+name = "juniper_codegen_tests"
+version = "0.1.0"
+publish = false
+edition = "2018"
+
+[dependencies]
+juniper = { path = "../../juniper" }
+futures = "0.3.1"
+
+[dev-dependencies]
+serde_json = { version = "1" }
+tokio = { version = "0.2", features = ["rt-core", "time", "macros"] }
+trybuild = "1.0.25"

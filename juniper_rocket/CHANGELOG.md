@@ -2,6 +2,7 @@
 
 - Compatibility with the latest `juniper`.
 - Rocket integration does not require default features.
+- Support `application/graphql` POST requests.
 
 ## Breaking Changes
 

@@ -1,9 +1,10 @@
+use crate::{
+    result::GraphQLScope,
+    util::{self, span_container::SpanContainer},
+};
 use proc_macro2::TokenStream;
-
 use quote::quote;
-use syn::{self, Data, Fields, Ident, Variant};
-
-use crate::util;
+use syn::{self, spanned::Spanned, Data, Fields, Ident, Variant};
 
 #[derive(Debug, Default)]
 struct TransparentAttributes {
@@ -36,9 +37,7 @@ impl syn::parse::Parse for TransparentAttributes {
                 "transparent" => {
                     output.transparent = Some(true);
                 }
-                other => {
-                    return Err(input.error(format!("Unknown attribute: {}", other)));
-                }
+                _ => return Err(syn::Error::new(ident.span(), "unknown attribute")),
             }
             if input.lookahead1().peek(syn::Token![,]) {
                 input.parse::<syn::Token![,]>()?;
@@ -55,7 +54,8 @@ impl TransparentAttributes {
             Some(attr) => {
                 let mut parsed: TransparentAttributes = attr.parse_args()?;
                 if parsed.description.is_none() {
-                    parsed.description = util::get_doc_comment(attrs);
+                    parsed.description =
+                        util::get_doc_comment(attrs).map(SpanContainer::into_inner);
                 }
                 Ok(parsed)
             }
@@ -64,15 +64,17 @@ impl TransparentAttributes {
     }
 }
 
-pub fn impl_scalar_value(ast: &syn::DeriveInput, is_internal: bool) -> TokenStream {
+pub fn impl_scalar_value(
+    ast: &syn::DeriveInput,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
     let ident = &ast.ident;
 
     match ast.data {
-        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal),
-        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal),
-        Data::Union(_) => {
-            panic!("#[derive(GraphQLScalarValue)] may not be applied to unions");
-        }
+        Data::Enum(ref enum_data) => impl_scalar_enum(ident, enum_data, is_internal, error),
+        Data::Struct(ref struct_data) => impl_scalar_struct(ast, struct_data, is_internal, error),
+        Data::Union(_) => Err(error.custom_error(ast.span(), "may not be applied to unions")),
     }
 }
 
@@ -80,22 +82,21 @@ fn impl_scalar_struct(
     ast: &syn::DeriveInput,
     data: &syn::DataStruct,
     is_internal: bool,
-) -> TokenStream {
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
     let field = match data.fields {
         syn::Fields::Unnamed(ref fields) if fields.unnamed.len() == 1 => {
             fields.unnamed.first().unwrap()
         }
         _ => {
-            panic!("#[derive(GraphQLScalarValue)] may only be applied to enums or tuple structs with a single field");
+            return Err(error.custom_error(
+                data.fields.span(),
+                "requires exact one field, e.g., Test(i32)",
+            ))
         }
     };
     let ident = &ast.ident;
-    let attrs = match TransparentAttributes::from_attrs(&ast.attrs) {
-        Ok(attrs) => attrs,
-        Err(e) => {
-            panic!("Invalid #[graphql] attribute: {}", e);
-        }
-    };
+    let attrs = TransparentAttributes::from_attrs(&ast.attrs)?;
     let inner_ty = &field.ty;
     let name = attrs.name.unwrap_or_else(|| ident.to_string());
 
@@ -126,14 +127,14 @@ fn impl_scalar_struct(
                 executor: &'a #crate_name::Executor<Self::Context, __S>,
             ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
                 use #crate_name::GraphQLType;
-                use futures::future;
+                use #crate_name::futures::future;
                 let v = self.resolve(info, selection_set, executor);
                 Box::pin(future::ready(v))
             }
         }
     );
 
-    quote!(
+    let content = quote!(
         #_async
 
         impl<S> #crate_name::GraphQLType<S> for #ident
@@ -198,27 +199,33 @@ fn impl_scalar_struct(
                 <#inner_ty as #crate_name::ParseScalarValue<S>>::from_str(value)
             }
         }
-    )
+    );
+
+    Ok(content)
 }
 
-fn impl_scalar_enum(ident: &syn::Ident, data: &syn::DataEnum, is_internal: bool) -> TokenStream {
+fn impl_scalar_enum(
+    ident: &syn::Ident,
+    data: &syn::DataEnum,
+    is_internal: bool,
+    error: GraphQLScope,
+) -> syn::Result<TokenStream> {
     let froms = data
         .variants
         .iter()
-        .map(|v| derive_from_variant(v, ident))
-        .collect::<Result<Vec<_>, String>>()
-        .unwrap_or_else(|s| panic!("{}", s));
+        .map(|v| derive_from_variant(v, ident, &error))
+        .collect::<Result<Vec<_>, _>>()?;
 
     let serialize = derive_serialize(data.variants.iter(), ident, is_internal);
 
     let display = derive_display(data.variants.iter(), ident);
 
-    quote! {
+    Ok(quote! {
         #(#froms)*
 
         #serialize
         #display
-    }
+    })
 }
 
 fn derive_display<'a, I>(variants: I, ident: &Ident) -> TokenStream
@@ -269,14 +276,19 @@ where
     }
 }
 
-fn derive_from_variant(variant: &Variant, ident: &Ident) -> Result<TokenStream, String> {
+fn derive_from_variant(
+    variant: &Variant,
+    ident: &Ident,
+    error: &GraphQLScope,
+) -> syn::Result<TokenStream> {
     let ty = match variant.fields {
         Fields::Unnamed(ref u) if u.unnamed.len() == 1 => &u.unnamed.first().unwrap().ty,
 
         _ => {
-            return Err(String::from(
-                "Only enums with exactly one unnamed field per variant are supported",
-            ));
+            return Err(error.custom_error(
+                variant.fields.span(),
+                "requires exact one field, e.g., Test(i32)",
+            ))
         }
     };
 

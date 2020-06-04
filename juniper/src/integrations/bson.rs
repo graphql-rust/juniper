@@ -1,4 +1,4 @@
-use bson::{oid::ObjectId, UtcDateTime};
+use bson::{oid::ObjectId, DateTime as UtcDateTime};
 use chrono::prelude::*;
 
 use crate::{
@@ -57,7 +57,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{value::DefaultScalarValue, InputValue};
-    use bson::{oid::ObjectId, UtcDateTime};
+    use bson::{oid::ObjectId, DateTime as UtcDateTime};
     use chrono::prelude::*;
 
     #[test]

@@ -6,6 +6,7 @@ members = [
   "juniper",
   "integration_tests/juniper_tests",
   "integration_tests/async_await",
+  "integration_tests/codegen_fail",
   "juniper_hyper",
   "juniper_iron",
   "juniper_rocket",
@@ -16,6 +17,7 @@ members = [
 ]
 exclude = [
   "docs/book/tests",
+  "examples/basic_subscriptions",
   "examples/warp_async",
   "examples/warp_subscriptions",
 ]

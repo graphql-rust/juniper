@@ -1,4 +1,4 @@
-use crate::{RootNode, Value};
+use crate::{EmptyMutation, RootNode, Value};
 
 #[derive(crate::GraphQLEnumInternal)]
 enum UserKind {
@@ -70,14 +70,9 @@ impl Query {
     }
 }
 
-struct Mutation;
-
-#[crate::graphql_object_internal]
-impl Mutation {}
-
 #[tokio::test]
 async fn async_simple() {
-    let schema = RootNode::new(Query, Mutation, crate::EmptySubscription::new());
+    let schema = RootNode::new(Query, EmptyMutation::new(), crate::EmptySubscription::new());
     let doc = r#"
         query { 
             fieldSync

@@ -230,7 +230,7 @@ impl GraphQLType<DefaultScalarValue> for User
 ```
 
 */
-pub trait GraphQLType<S = DefaultScalarValue>: Sized
+pub trait GraphQLType<S = DefaultScalarValue>
 where
     S: ScalarValue,
 {
@@ -355,7 +355,7 @@ pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     result: &mut Object<S>,
 ) -> bool
 where
-    T: GraphQLType<S, Context = CtxT>,
+    T: GraphQLType<S, Context = CtxT> + ?Sized,
     S: ScalarValue,
 {
     let meta_type = executor

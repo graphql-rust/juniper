@@ -1,4 +1,4 @@
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{char, convert::From, marker::PhantomData, ops::Deref, u32};
 
 use crate::{
@@ -192,7 +192,7 @@ where
     })
 }
 
-impl<'a, S> GraphQLType<S> for &'a str
+impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
@@ -216,11 +216,11 @@ where
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
-        Ok(Value::scalar(String::from(*self)))
+        Ok(Value::scalar(String::from(self)))
     }
 }
 
-impl<'e, S> crate::GraphQLTypeAsync<S> for &'e str
+impl<S> crate::GraphQLTypeAsync<S> for str
 where
     S: ScalarValue + Send + Sync,
 {
@@ -261,7 +261,7 @@ where
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        // Bools are parsed on it's own. This should not hit this code path
+        // Bools are parsed separately - they shouldn't reach this code path
         Err(ParseError::UnexpectedToken(Token::Scalar(value)))
     }
 }
@@ -324,12 +324,12 @@ where
 ///
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
-#[derive(Debug, Default)]
-pub struct EmptyMutation<T> {
+#[derive(Debug)]
+pub struct EmptyMutation<T: ?Sized = ()> {
     phantom: PhantomData<T>,
 }
 
-impl<T> EmptyMutation<T> {
+impl<T: ?Sized> EmptyMutation<T> {
     /// Construct a new empty mutation
     pub fn new() -> EmptyMutation<T> {
         EmptyMutation {
@@ -338,8 +338,8 @@ impl<T> EmptyMutation<T> {
     }
 }
 
-// This is safe due to never using `T`.
-unsafe impl<T> Send for EmptyMutation<T> {}
+// This is safe because `T` is never used.
+unsafe impl<T: ?Sized> Send for EmptyMutation<T> {}
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
@@ -370,19 +370,26 @@ where
 {
 }
 
+impl<T> Default for EmptyMutation<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+}
+
 /// Utillity type to define read-only schemas
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-#[derive(Default)]
-pub struct EmptySubscription<T> {
+pub struct EmptySubscription<T: ?Sized = ()> {
     phantom: PhantomData<T>,
 }
 
 // This is safe due to never using `T`.
-unsafe impl<T> Send for EmptySubscription<T> {}
+unsafe impl<T: ?Sized> Send for EmptySubscription<T> {}
 
-impl<T> EmptySubscription<T> {
+impl<T: ?Sized> EmptySubscription<T> {
     /// Construct a new empty subscription
     pub fn new() -> Self {
         EmptySubscription {
@@ -418,6 +425,14 @@ where
     Self::Context: Send + Sync,
     T: Send + Sync,
 {
+}
+
+impl<T> Default for EmptySubscription<T> {
+    fn default() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -480,5 +495,12 @@ mod tests {
     fn empty_subscription_is_send() {
         fn check_if_send<T: Send>() {}
         check_if_send::<EmptySubscription<()>>();
+    }
+
+    #[test]
+    fn default_is_invariant_over_type() {
+        struct Bar;
+        let _ = EmptySubscription::<Bar>::default();
+        let _ = EmptyMutation::<Bar>::default();
     }
 }
