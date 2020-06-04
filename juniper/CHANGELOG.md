@@ -45,6 +45,8 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 - Improved lookahead visibility for aliased fields (see [#662](https://github.com/graphql-rust/juniper/pull/631))
 
+- Bumped bson crate's version to 0.15.0 (see [#674](https://github.com/graphql-rust/juniper/pull/674))
+
 ## Breaking Changes
 
 - `juniper::graphiql` has moved to `juniper::http::graphiql`
