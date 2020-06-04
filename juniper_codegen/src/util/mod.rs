@@ -1,8 +1,12 @@
 #![allow(clippy::single_match)]
 
 pub mod duplicate;
+pub mod mode;
+pub mod option_ext;
 pub mod parse_impl;
 pub mod span_container;
+
+use std::ops::Deref as _;
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
@@ -14,10 +18,7 @@ use syn::{
     MetaNameValue, NestedMeta, Token,
 };
 
-pub fn juniper_path(is_internal: bool) -> syn::Path {
-    let name = if is_internal { "crate" } else { "juniper" };
-    syn::parse_str::<syn::Path>(name).unwrap()
-}
+pub use self::{mode::Mode, option_ext::OptionExt};
 
 /// Returns the name of a type.
 /// If the type does not end in a simple ident, `None` is returned.
@@ -74,6 +75,15 @@ pub fn type_is_identifier_ref(ty: &syn::Type, name: &str) -> bool {
     }
 }
 
+/// Retrieves the innermost non-parenthesized [`syn::Type`] from the given one (unwraps nested
+/// [`syn::TypeParen`]s asap).
+pub fn unparenthesize(ty: &syn::Type) -> &syn::Type {
+    match ty {
+        syn::Type::Paren(ty) => unparenthesize(ty.elem.deref()),
+        _ => ty,
+    }
+}
+
 #[derive(Debug)]
 pub struct DeprecationAttr {
     pub reason: Option<String>,
@@ -83,6 +93,16 @@ pub fn find_graphql_attr(attrs: &[Attribute]) -> Option<&Attribute> {
     attrs
         .iter()
         .find(|attr| path_eq_single(&attr.path, "graphql"))
+}
+
+/// Filters given `attrs` to contain attributes only with the given `name`.
+pub fn filter_attrs<'a>(
+    name: &'a str,
+    attrs: &'a [Attribute],
+) -> impl Iterator<Item = &'a Attribute> + 'a {
+    attrs
+        .iter()
+        .filter(move |attr| path_eq_single(&attr.path, name))
 }
 
 pub fn get_deprecated(attrs: &[Attribute]) -> Option<SpanContainer<DeprecationAttr>> {
@@ -669,6 +689,7 @@ pub struct GraphQLTypeDefiniton {
     pub generic_scalar: bool,
     // FIXME: make this redundant.
     pub no_async: bool,
+    pub mode: Mode,
 }
 
 impl GraphQLTypeDefiniton {
@@ -867,7 +888,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
-                            use futures::future;
+                            use #juniper_crate_name::futures::future;
                             future::FutureExt::boxed(f)
                         },
                     )
@@ -884,7 +905,7 @@ impl GraphQLTypeDefiniton {
                                     Err(e) => Err(e),
                                 }
                             };
-                            use futures::future;
+                            use #juniper_crate_name::futures::future;
                             future::FutureExt::boxed(f)
                         )
                     } else {
@@ -894,7 +915,7 @@ impl GraphQLTypeDefiniton {
                                 Ok(None) => Ok(#juniper_crate_name::Value::null()),
                                 Err(e) => Err(e),
                             };
-                            use futures::future;
+                            use #juniper_crate_name::futures::future;
                             future::FutureExt::boxed(future::ready(v))
                         )
                     };
@@ -934,7 +955,7 @@ impl GraphQLTypeDefiniton {
                     ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>>
                         where #scalar: Send + Sync,
                     {
-                        use futures::future;
+                        use #juniper_crate_name::futures::future;
                         use #juniper_crate_name::GraphQLType;
                         match field {
                             #( #resolve_matches_async )*
@@ -1177,7 +1198,7 @@ impl GraphQLTypeDefiniton {
                 };
                 quote!(
                     #name => {
-                        futures::FutureExt::boxed(async move {
+                        #juniper_crate_name::futures::FutureExt::boxed(async move {
                             let res #_type = { #code };
                             let res = #juniper_crate_name::IntoFieldResult::<_, #scalar>::into_result(res)?;
                             let executor= executor.as_owned_executor();
@@ -1267,7 +1288,7 @@ impl GraphQLTypeDefiniton {
                     args: #juniper_crate_name::Arguments<'args, #scalar>,
                     executor: &'ref_e #juniper_crate_name::Executor<'ref_e, 'e, Self::Context, #scalar>,
                 ) -> std::pin::Pin<Box<
-                        dyn futures::future::Future<
+                        dyn #juniper_crate_name::futures::future::Future<
                             Output = Result<
                                 #juniper_crate_name::Value<#juniper_crate_name::ValuesStream<'res, #scalar>>,
                                 #juniper_crate_name::FieldError<#scalar>
@@ -1284,7 +1305,7 @@ impl GraphQLTypeDefiniton {
                         'res: 'f,
                 {
                     use #juniper_crate_name::Value;
-                    use futures::stream::StreamExt as _;
+                    use #juniper_crate_name::futures::stream::StreamExt as _;
 
                     match field_name {
                             #( #resolve_matches_async )*
@@ -1300,245 +1321,6 @@ impl GraphQLTypeDefiniton {
             #graphql_implementation
             #subscription_implementation
         )
-    }
-
-    pub fn into_union_tokens(self, juniper_crate_name: &str) -> TokenStream {
-        let juniper_crate_name = syn::parse_str::<syn::Path>(juniper_crate_name).unwrap();
-
-        let name = &self.name;
-        let ty = &self._type;
-        let context = self
-            .context
-            .as_ref()
-            .map(|ctx| quote!( #ctx ))
-            .unwrap_or_else(|| quote!(()));
-
-        let scalar = self
-            .scalar
-            .as_ref()
-            .map(|s| quote!( #s ))
-            .unwrap_or_else(|| {
-                if self.generic_scalar {
-                    // If generic_scalar is true, we always insert a generic scalar.
-                    // See more comments below.
-                    quote!(__S)
-                } else {
-                    quote!(#juniper_crate_name::DefaultScalarValue)
-                }
-            });
-
-        let description = self
-            .description
-            .as_ref()
-            .map(|description| quote!( .description(#description) ));
-
-        let meta_types = self.fields.iter().map(|field| {
-            let var_ty = &field._type;
-
-            quote! {
-                registry.get_type::<&#var_ty>(&(())),
-            }
-        });
-
-        let matcher_variants = self
-            .fields
-            .iter()
-            .map(|field| {
-                let var_ty = &field._type;
-                let resolver_code = &field.resolver_code;
-
-                quote!(
-                    #resolver_code(ref x) => <#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&()).unwrap().to_string(),
-                )
-            });
-
-        let concrete_type_resolver = quote!(
-            match self {
-                #( #matcher_variants )*
-            }
-        );
-
-        let matcher_expr: Vec<_> = self
-            .fields
-            .iter()
-            .map(|field| {
-                let resolver_code = &field.resolver_code;
-
-                quote!(
-                    match self { #resolver_code(ref val) => Some(val), _ => None, }
-                )
-            })
-            .collect();
-
-        let resolve_into_type = self.fields.iter().zip(matcher_expr.iter()).map(|(field, expr)| {
-            let var_ty = &field._type;
-
-            quote! {
-                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
-                    return #juniper_crate_name::IntoResolvable::into(
-                        { #expr },
-                        executor.context()
-                    )
-                    .and_then(|res| {
-                        match res {
-                            Some((ctx, r)) => executor.replaced_context(ctx).resolve_with_ctx(&(), &r),
-                            None => Ok(#juniper_crate_name::Value::null()),
-                        }
-                    });
-                }
-            }
-        });
-
-        let resolve_into_type_async = self.fields.iter().zip(matcher_expr.iter()).map(|(field, expr)| {
-            let var_ty = &field._type;
-
-            quote! {
-                if type_name == (<#var_ty as #juniper_crate_name::GraphQLType<#scalar>>::name(&())).unwrap() {
-                    let inner_res = #juniper_crate_name::IntoResolvable::into(
-                        { #expr },
-                        executor.context()
-                    );
-
-                    let f = async move {
-                        match inner_res {
-                            Ok(Some((ctx, r))) => {
-                                let subexec = executor.replaced_context(ctx);
-                                subexec.resolve_with_ctx_async(&(), &r).await
-                            },
-                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                            Err(e) => Err(e),
-                        }
-                    };
-                    use futures::future;
-                    return future::FutureExt::boxed(f);
-                }
-            }
-        });
-
-        let mut generics = self.generics.clone();
-
-        if self.scalar.is_none() && self.generic_scalar {
-            // No custom scalar specified, but always generic specified.
-            // Therefore we inject the generic scalar.
-
-            generics.params.push(parse_quote!(__S));
-
-            let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
-            // Insert ScalarValue constraint.
-            where_clause
-                .predicates
-                .push(parse_quote!(__S: #juniper_crate_name::ScalarValue));
-        }
-
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-
-        let mut where_async = where_clause.cloned().unwrap_or_else(|| parse_quote!(where));
-        where_async
-            .predicates
-            .push(parse_quote!( #scalar: Send + Sync ));
-        where_async.predicates.push(parse_quote!(Self: Send + Sync));
-
-        let async_type_impl = quote!(
-            impl#impl_generics #juniper_crate_name::GraphQLTypeAsync<#scalar> for #ty
-                #where_async
-            {
-                fn resolve_into_type_async<'b>(
-                    &'b self,
-                    _info: &'b Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&'b [#juniper_crate_name::Selection<'b, #scalar>]>,
-                    executor: &'b #juniper_crate_name::Executor<'b, 'b, Self::Context, #scalar>
-                ) -> #juniper_crate_name::BoxFuture<'b, #juniper_crate_name::ExecutionResult<#scalar>> {
-                    let context = &executor.context();
-
-                    #( #resolve_into_type_async )*
-
-                    panic!("Concrete type not handled by instance resolvers on {}", #name);
-                }
-            }
-        );
-
-        let convesion_impls = self.fields.iter().map(|field| {
-            let variant_ty = &field._type;
-            let resolver_code = &field.resolver_code;
-
-            quote!(
-                impl std::convert::From<#variant_ty> for #ty {
-                    fn from(val: #variant_ty) -> Self {
-                        #resolver_code(val)
-                    }
-                }
-            )
-        });
-
-        let object_marks = self.fields.iter().map(|field| {
-            let _ty = &field._type;
-            quote!(
-                <#_ty as #juniper_crate_name::marker::GraphQLObjectType<#scalar>>::mark();
-            )
-        });
-
-        let mut type_impl = quote! {
-            #( #convesion_impls )*
-
-            impl #impl_generics #juniper_crate_name::marker::IsOutputType<#scalar> for #ty #where_clause {
-                fn mark() {
-                    #( #object_marks )*
-                }
-            }
-
-            impl #impl_generics #juniper_crate_name::GraphQLType<#scalar> for #ty #where_clause
-            {
-                type Context = #context;
-                type TypeInfo = ();
-
-                fn name(_ : &Self::TypeInfo) -> Option<&str> {
-                    Some(#name)
-                }
-
-                fn meta<'r>(
-                    info: &Self::TypeInfo,
-                    registry: &mut #juniper_crate_name::Registry<'r, #scalar>
-                ) -> #juniper_crate_name::meta::MetaType<'r, #scalar>
-                    where
-                        #scalar: 'r,
-                {
-                    let types = &[
-                        #( #meta_types )*
-                    ];
-                    registry.build_union_type::<#ty>(
-                        info, types
-                    )
-                    #description
-                    .into_meta()
-                }
-
-                #[allow(unused_variables)]
-                fn concrete_type_name(&self, context: &Self::Context, _info: &Self::TypeInfo) -> String {
-                    #concrete_type_resolver
-                }
-
-                fn resolve_into_type(
-                    &self,
-                    _info: &Self::TypeInfo,
-                    type_name: &str,
-                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
-                    executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
-                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    let context = &executor.context();
-
-                    #( #resolve_into_type )*
-
-                    panic!("Concrete type not handled by instance resolvers on {}", #name);
-                }
-            }
-        };
-
-        if !self.no_async {
-            type_impl.extend(async_type_impl)
-        }
-
-        type_impl
     }
 
     pub fn into_enum_tokens(self, juniper_crate_name: &str) -> TokenStream {
@@ -1660,7 +1442,7 @@ impl GraphQLTypeDefiniton {
                     executor: &'a #juniper_crate_name::Executor<Self::Context, #scalar>,
                 ) -> #juniper_crate_name::BoxFuture<'a, #juniper_crate_name::ExecutionResult<#scalar>> {
                     use #juniper_crate_name::GraphQLType;
-                    use futures::future;
+                    use #juniper_crate_name::futures::future;
                     let v = self.resolve(info, selection_set, executor);
                     future::FutureExt::boxed(future::ready(v))
                 }

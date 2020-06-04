@@ -184,7 +184,7 @@ where
     'e: 'fut,
     'ref_e: 'fut,
     'res: 'fut,
-    T: GraphQLSubscriptionType<S, Context = CtxT>,
+    T: GraphQLSubscriptionType<S, Context = CtxT> + ?Sized,
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
@@ -203,7 +203,7 @@ async fn resolve_selection_set_into_stream_recursive<'i, 'inf, 'ref_e, 'e, 'res,
     executor: &'ref_e Executor<'ref_e, 'e, CtxT, S>,
 ) -> Value<ValuesStream<'res, S>>
 where
-    T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync,
+    T: GraphQLSubscriptionType<S, Context = CtxT> + Send + Sync + ?Sized,
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,

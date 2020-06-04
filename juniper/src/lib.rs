@@ -93,6 +93,8 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 #![doc(html_root_url = "https://docs.rs/juniper/0.14.2")]
 #![warn(missing_docs)]
 
+use std::fmt;
+
 #[doc(hidden)]
 pub extern crate serde;
 
@@ -111,6 +113,13 @@ extern crate uuid;
 #[cfg(any(test, feature = "bson"))]
 extern crate bson;
 
+// These are required by the code generated via the `juniper_codegen` macros.
+#[doc(hidden)]
+pub use {futures, static_assertions as sa};
+
+#[doc(inline)]
+pub use futures::future::BoxFuture;
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
@@ -124,7 +133,7 @@ pub use juniper_codegen::{
 use juniper_codegen::{
     graphql_object_internal, graphql_scalar_internal, graphql_subscription_internal,
     graphql_union_internal, GraphQLEnumInternal, GraphQLInputObjectInternal,
-    GraphQLScalarValueInternal,
+    GraphQLScalarValueInternal, GraphQLUnionInternal,
 };
 
 #[macro_use]
@@ -161,7 +170,6 @@ use crate::{
     parser::{parse_document_source, ParseError, Spanning},
     validation::{validate_input_values, visit_all_rules, ValidatorContext},
 };
-use std::fmt;
 
 pub use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue, Type},
@@ -179,16 +187,13 @@ pub use crate::{
     types::{
         async_await::GraphQLTypeAsync,
         base::{Arguments, GraphQLType, TypeKind},
-        marker,
+        marker::{self, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },
     validation::RuleError,
     value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
 };
-
-/// A pinned, boxed future that can be polled.
-pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + 'a + Send>>;
 
 /// An error that prevented query execution
 #[derive(Debug, PartialEq)]

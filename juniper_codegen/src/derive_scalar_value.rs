@@ -127,7 +127,7 @@ fn impl_scalar_struct(
                 executor: &'a #crate_name::Executor<Self::Context, __S>,
             ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<__S>> {
                 use #crate_name::GraphQLType;
-                use futures::future;
+                use #crate_name::futures::future;
                 let v = self.resolve(info, selection_set, executor);
                 Box::pin(future::ready(v))
             }

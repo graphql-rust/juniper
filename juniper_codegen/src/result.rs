@@ -5,28 +5,29 @@ use proc_macro2::Span;
 use proc_macro_error::{Diagnostic, Level};
 use std::fmt;
 
-pub const GRAPHQL_SPECIFICATION: &'static str = "https://spec.graphql.org/June2018/";
+/// URL of the GraphQL specification (June 2018 Edition).
+pub const SPEC_URL: &'static str = "https://spec.graphql.org/June2018/";
 
 #[allow(unused_variables)]
 pub enum GraphQLScope {
+    UnionAttr,
     DeriveObject,
     DeriveInputObject,
-    DeriveUnion,
+    UnionDerive,
     DeriveEnum,
     DeriveScalar,
-    ImplUnion,
     ImplScalar,
     ImplObject,
 }
 
 impl GraphQLScope {
-    pub fn specification_section(&self) -> &str {
+    pub fn spec_section(&self) -> &str {
         match self {
-            GraphQLScope::DeriveObject | GraphQLScope::ImplObject => "#sec-Objects",
-            GraphQLScope::DeriveInputObject => "#sec-Input-Objects",
-            GraphQLScope::DeriveUnion | GraphQLScope::ImplUnion => "#sec-Unions",
-            GraphQLScope::DeriveEnum => "#sec-Enums",
-            GraphQLScope::DeriveScalar | GraphQLScope::ImplScalar => "#sec-Scalars",
+            Self::DeriveObject | Self::ImplObject => "#sec-Objects",
+            Self::DeriveInputObject => "#sec-Input-Objects",
+            Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
+            Self::DeriveEnum => "#sec-Enums",
+            Self::DeriveScalar | Self::ImplScalar => "#sec-Scalars",
         }
     }
 }
@@ -34,11 +35,11 @@ impl GraphQLScope {
 impl fmt::Display for GraphQLScope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
-            GraphQLScope::DeriveObject | GraphQLScope::ImplObject => "object",
-            GraphQLScope::DeriveInputObject => "input object",
-            GraphQLScope::DeriveUnion | GraphQLScope::ImplUnion => "union",
-            GraphQLScope::DeriveEnum => "enum",
-            GraphQLScope::DeriveScalar | GraphQLScope::ImplScalar => "scalar",
+            Self::DeriveObject | Self::ImplObject => "object",
+            Self::DeriveInputObject => "input object",
+            Self::UnionAttr | Self::UnionDerive => "union",
+            Self::DeriveEnum => "enum",
+            Self::DeriveScalar | Self::ImplScalar => "scalar",
         };
 
         write!(f, "GraphQL {}", name)
@@ -51,20 +52,22 @@ pub enum UnsupportedAttribute {
     Skip,
     Interface,
     Scalar,
-    Description,
     Deprecation,
     Default,
 }
 
 impl GraphQLScope {
-    fn specification_link(&self) -> String {
-        format!("{}{}", GRAPHQL_SPECIFICATION, self.specification_section())
+    fn spec_link(&self) -> String {
+        format!("{}{}", SPEC_URL, self.spec_section())
     }
 
-    pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) {
+    pub fn custom<S: AsRef<str>>(&self, span: Span, msg: S) -> Diagnostic {
         Diagnostic::spanned(span, Level::Error, format!("{} {}", self, msg.as_ref()))
-            .note(self.specification_link())
-            .emit();
+            .note(self.spec_link())
+    }
+
+    pub fn emit_custom<S: AsRef<str>>(&self, span: Span, msg: S) {
+        self.custom(span, msg).emit()
     }
 
     pub fn custom_error<S: AsRef<str>>(&self, span: Span, msg: S) -> syn::Error {
@@ -97,7 +100,7 @@ impl GraphQLScope {
             Level::Error,
             format!("{} expects at least one field", self),
         )
-        .note(self.specification_link())
+        .note(self.spec_link())
         .emit();
     }
 
@@ -120,7 +123,7 @@ impl GraphQLScope {
                             ),
                         )
                             .help(format!("There is at least one other field with the same name `{}`, possibly renamed via the #[graphql] attribute", dup.name))
-                            .note(self.specification_link())
+                            .note(self.spec_link())
                             .emit();
                     });
             })
@@ -130,9 +133,12 @@ impl GraphQLScope {
         Diagnostic::spanned(
             field,
             Level::Error,
-            "All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.".to_string(),
+            "All types and directives defined within a schema must not have a name which begins \
+             with `__` (two underscores), as this is used exclusively by GraphQL’s introspection \
+             system."
+                .into(),
         )
-            .note(format!("{}#sec-Schema", GRAPHQL_SPECIFICATION))
-            .emit();
+        .note(format!("{}#sec-Schema", SPEC_URL))
+        .emit();
     }
 }

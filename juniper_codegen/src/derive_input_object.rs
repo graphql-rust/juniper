@@ -145,6 +145,7 @@ pub fn impl_input_object(
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
+        mode: is_internal.into(),
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };

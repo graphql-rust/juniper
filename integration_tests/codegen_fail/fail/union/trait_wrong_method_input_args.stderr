@@ -1,0 +1,7 @@
+error: GraphQL union expects trait method to accept `&self` only and, optionally, `&Context`
+ --> $DIR/trait_wrong_method_input_args.rs:5:10
+  |
+5 |     fn a(&self, ctx: &(), rand: u8) -> Option<&Human>;
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Unions

@@ -65,7 +65,7 @@ fn create(
             let _type = match method.sig.output {
                 syn::ReturnType::Type(_, ref t) => *t.clone(),
                 syn::ReturnType::Default => {
-                    error.custom(method.sig.span(), "return value required");
+                    error.emit_custom(method.sig.span(), "return value required");
                     return None;
                 }
             };
@@ -228,6 +228,7 @@ fn create(
         include_type_generics: false,
         generic_scalar: false,
         no_async: _impl.attrs.no_async.is_some(),
+        mode: is_internal.into(),
     };
 
     Ok(definition)

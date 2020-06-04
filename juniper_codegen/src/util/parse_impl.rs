@@ -19,36 +19,6 @@ pub struct ImplBlock {
 }
 
 impl ImplBlock {
-    /// Parse a `fn resolve()` method declaration found in most
-    /// generators which rely on `impl` blocks.
-    pub fn parse_resolve_method(
-        &self,
-        method: &syn::ImplItemMethod,
-    ) -> syn::Result<Vec<TokenStream>> {
-        if method.sig.ident != "resolve" {
-            return Err(syn::Error::new(
-                method.sig.ident.span(),
-                "expect the method named `resolve`",
-            ));
-        }
-
-        if let syn::ReturnType::Type(_, _) = &method.sig.output {
-            return Err(syn::Error::new(
-                method.sig.output.span(),
-                "method must not have a declared return type",
-            ));
-        }
-
-        //NOTICE: `fn resolve()` is a subset of `fn <NAME>() -> <TYPE>`
-        self.parse_method(method, false, |captured, _, _| {
-            Err(syn::Error::new(
-                captured.span(),
-                "only executor or context types are allowed",
-            ))
-        })
-        .map(|(tokens, _empty)| tokens)
-    }
-
     /// Parse a `fn <NAME>() -> <TYPE>` method declaration found in
     /// objects.
     pub fn parse_method<

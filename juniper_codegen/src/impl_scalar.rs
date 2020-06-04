@@ -264,7 +264,7 @@ pub fn build_scalar(
                 executor: &'a #crate_name::Executor<Self::Context, #async_generic_type>,
             ) -> #crate_name::BoxFuture<'a, #crate_name::ExecutionResult<#async_generic_type>> {
                 use #crate_name::GraphQLType;
-                use futures::future;
+                use #crate_name::futures::future;
                 let v = self.resolve(info, selection_set, executor);
                 Box::pin(future::ready(v))
             }

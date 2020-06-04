@@ -16,14 +16,16 @@ mod derive_enum;
 mod derive_input_object;
 mod derive_object;
 mod derive_scalar_value;
-mod derive_union;
 mod impl_object;
 mod impl_scalar;
-mod impl_union;
+
+mod graphql_union;
 
 use proc_macro::TokenStream;
-use proc_macro_error::proc_macro_error;
+use proc_macro_error::{proc_macro_error, ResultExt as _};
 use result::GraphQLScope;
+
+use self::util::Mode;
 
 #[proc_macro_error]
 #[proc_macro_derive(GraphQLEnum, attributes(graphql))]
@@ -93,16 +95,6 @@ pub fn derive_object_internal(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_error]
-#[proc_macro_derive(GraphQLUnion, attributes(graphql))]
-pub fn derive_union(input: TokenStream) -> TokenStream {
-    let ast = syn::parse::<syn::DeriveInput>(input).unwrap();
-    let gen = derive_union::build_derive_union(ast, false, GraphQLScope::DeriveUnion);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
-}
 /// This custom derive macro implements the #[derive(GraphQLScalarValue)]
 /// derive.
 ///
@@ -554,27 +546,616 @@ pub fn graphql_subscription_internal(args: TokenStream, input: TokenStream) -> T
     ))
 }
 
+/// `#[derive(GraphQLUnion)]` macro for deriving a [GraphQL union][1] implementation for enums and
+/// structs.
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived implementation. Specifying
+/// multiple `#[graphql]` attributes on the same definition is totally okay. They all will be
+/// treated as a single attribute.
+///
+/// ```
+/// use derive_more::From;
+/// use juniper::{GraphQLObject, GraphQLUnion};
+///
+/// #[derive(GraphQLObject)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// #[derive(From, GraphQLUnion)]
+/// enum CharacterEnum {
+///     Human(Human),
+///     Droid(Droid),
+/// }
+/// ```
+///
+/// # Custom name and description
+///
+/// The name of [GraphQL union][1] may be overriden with a `name` attribute's argument. By default,
+/// a type name is used.
+///
+/// The description of [GraphQL union][1] may be specified either with a `description`/`desc`
+/// attribute's argument, or with a regular Rust doc comment.
+///
+/// ```
+/// # use juniper::{GraphQLObject, GraphQLUnion};
+/// #
+/// # #[derive(GraphQLObject)]
+/// # struct Human {
+/// #    id: String,
+/// #    home_planet: String,
+/// # }
+/// #
+/// # #[derive(GraphQLObject)]
+/// # struct Droid {
+/// #     id: String,
+/// #     primary_function: String,
+/// # }
+/// #
+/// #[derive(GraphQLUnion)]
+/// #[graphql(name = "Character", desc = "Possible episode characters.")]
+/// enum Chrctr {
+///     Human(Human),
+///     Droid(Droid),
+/// }
+///
+/// // NOTICE: Rust docs are used as GraphQL description.
+/// /// Possible episode characters.
+/// #[derive(GraphQLUnion)]
+/// enum CharacterWithDocs {
+///     Human(Human),
+///     Droid(Droid),
+/// }
+///
+/// // NOTICE: `description` argument takes precedence over Rust docs.
+/// /// Not a GraphQL description anymore.
+/// #[derive(GraphQLUnion)]
+/// #[graphql(description = "Possible episode characters.")]
+/// enum CharacterWithDescription {
+///     Human(Human),
+///     Droid(Droid),
+/// }
+/// ```
+///
+/// # Custom context
+///
+/// By default, the generated implementation uses [unit type `()`][4] as context. To use a custom
+/// context type for [GraphQL union][1] variants types or external resolver functions, specify it
+/// with `context`/`Context` attribute's argument.
+///
+/// ```
+/// # use juniper::{GraphQLObject, GraphQLUnion};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = CustomContext)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = CustomContext)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// pub struct CustomContext;
+/// impl juniper::Context for CustomContext {}
+///
+/// #[derive(GraphQLUnion)]
+/// #[graphql(Context = CustomContext)]
+/// enum Character {
+///     Human(Human),
+///     Droid(Droid),
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, this macro generates code, which is generic over a `ScalarValue` type.
+/// This may introduce a problem when at least one of [GraphQL union][1] variants is restricted to a
+/// concrete `ScalarValue` type in its implementation. To resolve such problem, a concrete
+/// `ScalarValue` type should be specified with a `scalar`/`Scalar`/`ScalarValue` attribute's
+/// argument.
+///
+/// ```
+/// # use juniper::{DefaultScalarValue, GraphQLObject, GraphQLUnion};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Scalar = DefaultScalarValue)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// // NOTICE: Removing `Scalar` argument will fail compilation.
+/// #[derive(GraphQLUnion)]
+/// #[graphql(Scalar = DefaultScalarValue)]
+/// enum Character {
+///     Human(Human),
+///     Droid(Droid),
+/// }
+/// ```
+///
+/// # Ignoring enum variants
+///
+/// To omit exposing an enum variant in the GraphQL schema, use an `ignore`/`skip` attribute's
+/// argument directly on that variant.
+///
+/// > __WARNING__:
+/// > It's the _library user's responsibility_ to ensure that ignored enum variant is _never_
+/// > returned from resolvers, otherwise resolving the GraphQL query will __panic at runtime__.
+///
+/// ```
+/// # use std::marker::PhantomData;
+/// use derive_more::From;
+/// use juniper::{GraphQLObject, GraphQLUnion};
+///
+/// #[derive(GraphQLObject)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// #[derive(From, GraphQLUnion)]
+/// enum Character<S> {
+///     Human(Human),
+///     Droid(Droid),
+///     #[from(ignore)]
+///     #[graphql(ignore)]  // or `#[graphql(skip)]`, your choice
+///     _State(PhantomData<S>),
+/// }
+/// ```
+///
+/// # External resolver functions
+///
+/// To use a custom logic for resolving a [GraphQL union][1] variant, an external resolver function
+/// may be specified with:
+/// - either a `with` attribute's argument on an enum variant;
+/// - or an `on` attribute's argument on an enum/struct itself.
+///
+/// ```
+/// # use juniper::{GraphQLObject, GraphQLUnion};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = CustomContext)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = CustomContext)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// pub struct CustomContext {
+///     droid: Droid,
+/// }
+/// impl juniper::Context for CustomContext {}
+///
+/// #[derive(GraphQLUnion)]
+/// #[graphql(Context = CustomContext)]
+/// enum Character {
+///     Human(Human),
+///     #[graphql(with = Character::droid_from_context)]
+///     Droid(Droid),
+/// }
+///
+/// impl Character {
+///     // NOTICE: The function signature must contain `&self` and `&Context`,
+///     //         and return `Option<&VariantType>`.
+///     fn droid_from_context<'c>(&self, ctx: &'c CustomContext) -> Option<&'c Droid> {
+///         Some(&ctx.droid)
+///     }
+/// }
+///
+/// #[derive(GraphQLUnion)]
+/// #[graphql(Context = CustomContext)]
+/// #[graphql(on Droid = CharacterWithoutDroid::droid_from_context)]
+/// enum CharacterWithoutDroid {
+///     Human(Human),
+///     #[graphql(ignore)]
+///     Droid,
+/// }
+///
+/// impl CharacterWithoutDroid {
+///     fn droid_from_context<'c>(&self, ctx: &'c CustomContext) -> Option<&'c Droid> {
+///         if let Self::Droid = self {
+///             Some(&ctx.droid)
+///         } else {
+///             None
+///         }
+///     }
+/// }
+/// ```
+///
+/// # Deriving structs
+///
+/// Specifying external resolver functions is mandatory for using a struct as a [GraphQL union][1],
+/// because this is the only way to declare [GraphQL union][1] variants in this case.
+///
+/// ```
+/// # use std::collections::HashMap;
+/// # use juniper::{GraphQLObject, GraphQLUnion};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = Database)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = Database)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// struct Database {
+///     humans: HashMap<String, Human>,
+///     droids: HashMap<String, Droid>,
+/// }
+/// impl juniper::Context for Database {}
+///
+/// #[derive(GraphQLUnion)]
+/// #[graphql(
+///     Context = Database,
+///     on Human = Character::get_human,
+///     on Droid = Character::get_droid,
+/// )]
+/// struct Character {
+///     id: String,
+/// }
+///
+/// impl Character {
+///     fn get_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human>{
+///         ctx.humans.get(&self.id)
+///     }
+///
+///     fn get_droid<'db>(&self, ctx: &'db Database) -> Option<&'db Droid>{
+///         ctx.droids.get(&self.id)
+///     }
+/// }
+/// ```
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLUnion, attributes(graphql))]
+pub fn derive_union(input: TokenStream) -> TokenStream {
+    self::graphql_union::derive::expand(input.into(), Mode::Public)
+        .unwrap_or_abort()
+        .into()
+}
+
+#[proc_macro_error]
+#[proc_macro_derive(GraphQLUnionInternal, attributes(graphql))]
+#[doc(hidden)]
+pub fn derive_union_internal(input: TokenStream) -> TokenStream {
+    self::graphql_union::derive::expand(input.into(), Mode::Internal)
+        .unwrap_or_abort()
+        .into()
+}
+
+/// `#[graphql_union]` macro for deriving a [GraphQL union][1] implementation for traits.
+///
+/// Specifying multiple `#[graphql_union]` attributes on the same definition is totally okay. They
+/// all will be treated as a single attribute.
+///
+/// A __trait has to be [object safe][2]__, because schema resolvers will need to return a
+/// [trait object][3] to specify a [GraphQL union][1] behind it. The [trait object][3] has to be
+/// [`Send`] and [`Sync`].
+///
+/// ```
+/// use juniper::{graphql_union, GraphQLObject};
+///
+/// #[derive(GraphQLObject)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// #[graphql_union]
+/// trait Character {
+///     // NOTICE: The method signature must contain `&self` and return `Option<&VariantType>`.
+///     fn as_human(&self) -> Option<&Human> { None }
+///     fn as_droid(&self) -> Option<&Droid> { None }
+/// }
+///
+/// impl Character for Human {
+///     fn as_human(&self) -> Option<&Human> { Some(&self) }
+/// }
+///
+/// impl Character for Droid {
+///     fn as_droid(&self) -> Option<&Droid> { Some(&self) }
+/// }
+/// ```
+///
+/// # Custom name and description
+///
+/// The name of [GraphQL union][1] may be overriden with a `name` attribute's argument. By default,
+/// a type name is used.
+///
+/// The description of [GraphQL union][1] may be specified either with a `description`/`desc`
+/// attribute's argument, or with a regular Rust doc comment.
+///
+/// ```
+/// # use juniper::{graphql_union, GraphQLObject};
+/// #
+/// # #[derive(GraphQLObject)]
+/// # struct Human {
+/// #    id: String,
+/// #    home_planet: String,
+/// # }
+/// #
+/// # #[derive(GraphQLObject)]
+/// # struct Droid {
+/// #     id: String,
+/// #     primary_function: String,
+/// # }
+/// #
+/// #[graphql_union(name = "Character", desc = "Possible episode characters.")]
+/// trait Chrctr {
+///     fn as_human(&self) -> Option<&Human> { None }
+///     fn as_droid(&self) -> Option<&Droid> { None }
+/// }
+///
+/// // NOTICE: Rust docs are used as GraphQL description.
+/// /// Possible episode characters.
+/// trait CharacterWithDocs {
+///     fn as_human(&self) -> Option<&Human> { None }
+///     fn as_droid(&self) -> Option<&Droid> { None }
+/// }
+///
+/// // NOTICE: `description` argument takes precedence over Rust docs.
+/// /// Not a GraphQL description anymore.
+/// #[graphql_union(description = "Possible episode characters.")]
+/// trait CharacterWithDescription {
+///     fn as_human(&self) -> Option<&Human> { None }
+///     fn as_droid(&self) -> Option<&Droid> { None }
+/// }
+/// #
+/// # impl Chrctr for Human {}
+/// # impl Chrctr for Droid {}
+/// # impl CharacterWithDocs for Human {}
+/// # impl CharacterWithDocs for Droid {}
+/// # impl CharacterWithDescription for Human {}
+/// # impl CharacterWithDescription for Droid {}
+/// ```
+///
+/// # Custom context
+///
+/// By default, the generated implementation tries to infer `juniper::Context` type from signatures
+/// of trait methods, and uses [unit type `()`][4] if signatures contains no context arguments.
+///
+/// If `juniper::Context` type cannot be inferred or is inferred incorrectly, then specify it
+/// explicitly with `context`/`Context` attribute's argument.
+///
+/// ```
+/// # use std::collections::HashMap;
+/// # use juniper::{graphql_union, GraphQLObject};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = Database)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = Database)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// struct Database {
+///     humans: HashMap<String, Human>,
+///     droids: HashMap<String, Droid>,
+/// }
+/// impl juniper::Context for Database {}
+///
+/// #[graphql_union(Context = Database)]
+/// trait Character {
+///     fn as_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human> { None }
+///     fn as_droid<'db>(&self, ctx: &'db Database) -> Option<&'db Droid> { None }
+/// }
+///
+/// impl Character for Human {
+///     fn as_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human> {
+///         ctx.humans.get(&self.id)
+///     }
+/// }
+///
+/// impl Character for Droid {
+///     fn as_droid<'db>(&self, ctx: &'db Database) -> Option<&'db Droid> {
+///         ctx.droids.get(&self.id)
+///     }
+/// }
+/// ```
+///
+/// # Custom `ScalarValue`
+///
+/// By default, `#[graphql_union]` macro generates code, which is generic over a `ScalarValue` type.
+/// This may introduce a problem when at least one of [GraphQL union][1] variants is restricted to a
+/// concrete `ScalarValue` type in its implementation. To resolve such problem, a concrete
+/// `ScalarValue` type should be specified with a `scalar`/`Scalar`/`ScalarValue` attribute's
+/// argument.
+///
+/// ```
+/// # use juniper::{graphql_union, DefaultScalarValue, GraphQLObject};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Scalar = DefaultScalarValue)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// // NOTICE: Removing `Scalar` argument will fail compilation.
+/// #[graphql_union(Scalar = DefaultScalarValue)]
+/// trait Character {
+///     fn as_human(&self) -> Option<&Human> { None }
+///     fn as_droid(&self) -> Option<&Droid> { None }
+/// }
+/// #
+/// # impl Character for Human {}
+/// # impl Character for Droid {}
+/// ```
+///
+/// # Ignoring trait methods
+///
+/// To omit some trait method to be assumed as a [GraphQL union][1] variant and ignore it, use an
+/// `ignore`/`skip` attribute's argument directly on that method.
+///
+/// ```
+/// # use juniper::{graphql_union, GraphQLObject};
+/// #
+/// # #[derive(GraphQLObject)]
+/// # struct Human {
+/// #     id: String,
+/// #     home_planet: String,
+/// # }
+/// #
+/// # #[derive(GraphQLObject)]
+/// # struct Droid {
+/// #     id: String,
+/// #     primary_function: String,
+/// # }
+/// #
+/// #[graphql_union]
+/// trait Character {
+///     fn as_human(&self) -> Option<&Human> { None }
+///     fn as_droid(&self) -> Option<&Droid> { None }
+///     #[graphql_union(ignore)]  // or `#[graphql_union(skip)]`, your choice
+///     fn id(&self) -> &str;
+/// }
+/// #
+/// # impl Character for Human {
+/// #     fn id(&self) -> &str { self.id.as_str() }
+/// # }
+/// #
+/// # impl Character for Droid {
+/// #     fn id(&self) -> &str { self.id.as_str() }
+/// # }
+/// ```
+///
+/// # External resolver functions
+///
+/// It's not mandatory to use trait methods as [GraphQL union][1] variant resolvers, and instead
+/// custom functions may be specified with an `on` attribute's argument.
+///
+/// ```
+/// # use std::collections::HashMap;
+/// # use juniper::{graphql_union, GraphQLObject};
+/// #
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = Database)]
+/// struct Human {
+///     id: String,
+///     home_planet: String,
+/// }
+///
+/// #[derive(GraphQLObject)]
+/// #[graphql(Context = Database)]
+/// struct Droid {
+///     id: String,
+///     primary_function: String,
+/// }
+///
+/// struct Database {
+///     humans: HashMap<String, Human>,
+///     droids: HashMap<String, Droid>,
+/// }
+/// impl juniper::Context for Database {}
+///
+/// #[graphql_union(Context = Database)]
+/// #[graphql_union(
+///     on Human = DynCharacter::get_human,
+///     on Droid = get_droid,
+/// )]
+/// trait Character {
+///     #[graphql_union(ignore)]
+///     fn id(&self) -> &str;
+/// }
+///
+/// impl Character for Human {
+///     fn id(&self) -> &str { self.id.as_str() }
+/// }
+///
+/// impl Character for Droid {
+///     fn id(&self) -> &str { self.id.as_str() }
+/// }
+///
+/// // NOTICE: The trait object is always `Send` and `Sync`.
+/// type DynCharacter<'a> = dyn Character + Send + Sync + 'a;
+///
+/// impl<'a> DynCharacter<'a> {
+///     fn get_human<'db>(&self, ctx: &'db Database) -> Option<&'db Human> {
+///         ctx.humans.get(self.id())
+///     }
+/// }
+///
+/// // NOTICE: Custom resolver function doesn't have to be a method of a type.
+/// //         It's only a matter of the function signature to match the requirements.
+/// fn get_droid<'db>(ch: &DynCharacter<'_>, ctx: &'db Database) -> Option<&'db Droid> {
+///     ctx.droids.get(ch.id())
+/// }
+/// ```
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Unions
+/// [2]: https://doc.rust-lang.org/stable/reference/items/traits.html#object-safety
+/// [3]: https://doc.rust-lang.org/stable/reference/types/trait-object.html
+/// [4]: https://doc.rust-lang.org/stable/std/primitive.unit.html
 #[proc_macro_error]
 #[proc_macro_attribute]
-pub fn graphql_union(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    let attrs = proc_macro2::TokenStream::from(attrs);
-    let body = proc_macro2::TokenStream::from(body);
-    let gen = impl_union::impl_union(false, attrs, body, GraphQLScope::ImplUnion);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+pub fn graphql_union(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_union::attr::expand(attr.into(), body.into(), Mode::Public)
+        .unwrap_or_abort()
+        .into()
 }
 
 #[proc_macro_error]
 #[proc_macro_attribute]
 #[doc(hidden)]
-pub fn graphql_union_internal(attrs: TokenStream, body: TokenStream) -> TokenStream {
-    let attrs = proc_macro2::TokenStream::from(attrs);
-    let body = proc_macro2::TokenStream::from(body);
-    let gen = impl_union::impl_union(true, attrs, body, GraphQLScope::ImplUnion);
-    match gen {
-        Ok(gen) => gen.into(),
-        Err(err) => proc_macro_error::abort!(err),
-    }
+pub fn graphql_union_internal(attr: TokenStream, body: TokenStream) -> TokenStream {
+    self::graphql_union::attr::expand(attr.into(), body.into(), Mode::Internal)
+        .unwrap_or_abort()
+        .into()
 }

@@ -2,7 +2,7 @@
 
 ## Features
 
-- Support raw identifiers in field and argument names. (#[object] macro)
+- Support raw identifiers in field and argument names. (`#[object]` macro)
 
 - Most error types now implement `std::error::Error`:
   - `GraphQLError`
@@ -29,10 +29,21 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 - Derive macro `GraphQLEnum` supports custom context (see [#621](https://github.com/graphql-rust/juniper/pull/621))
 
+- Reworked `#[derive(GraphQLUnion)]` macro ([#666]):
+    - Applicable to enums and structs.
+    - Supports custom resolvers.
+    - Supports generics.
+    - Supports multiple `#[graphql]` attributes.
+- New `#[graphql_union]` macro ([#666]):
+    - Applicable to traits.
+    - Supports custom resolvers.
+    - Supports generics.
+    - Supports multiple `#[graphql_union]` attributes.
+
 - Better error messages for all proc macros (see
   [#631](https://github.com/graphql-rust/juniper/pull/631)
 
--  Improved lookahead visibility for aliased fields (see [#662](https://github.com/graphql-rust/juniper/pull/631))
+- Improved lookahead visibility for aliased fields (see [#662](https://github.com/graphql-rust/juniper/pull/631))
 
 ## Breaking Changes
 
@@ -45,10 +56,10 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
 
 - Remove deprecated `ScalarValue` custom derive (renamed to GraphQLScalarValue)
 
-- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro
+- `graphql_union!` macro removed, replaced by `#[graphql_union]` proc macro and custom resolvers for the `#[derive(GraphQLUnion)]` macro.
+- The `#[derive(GraphQLUnion)]` macro doesn't generate `From` impls for enum variants anymore. Consider using the [`derive_more`](https//docs.rs/derive_more) crate directly ([#666]).
 
-- ScalarRefValue trait removed
-  Trait was not required.
+- `ScalarRefValue` trait removed. Trait was not required.
 
 - Changed return type of GraphQLType::resolve to `ExecutionResult`
   This was done to unify the return type of all resolver methods
@@ -59,7 +70,7 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
   add subscription type to `RootNode`,
   add subscription endpoint to `playground_source()`
 
-- Putting a scalar type into a string is not allowed anymore, e..g,
+- Putting a scalar type into a string is not allowed anymore, e.g.
   `#[graphql(scalar = "DefaultScalarValue")]`. Only
   `#[derive(GraphQLInputObject)]` supported this syntax. The
   refactoring of GraphQLInputObject allowed to drop the support
@@ -74,6 +85,8 @@ See [#618](https://github.com/graphql-rust/juniper/pull/618).
   and add support for `application/graphql` POST request.
 
 - When using LookAheadMethods to access child selections, children are always found using their alias if it exists rather than their name (see [#662](https://github.com/graphql-rust/juniper/pull/631)). These methods are also deprecated in favour of the new `children` method.
+
+[#666]: https://github.com/graphql-rust/juniper/pull/666
 
 # [[0.14.2] 2019-12-16](https://github.com/graphql-rust/juniper/releases/tag/juniper-0.14.2)
 

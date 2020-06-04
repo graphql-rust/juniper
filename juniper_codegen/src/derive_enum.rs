@@ -58,7 +58,7 @@ pub fn impl_enum(
             let _type = match field.fields {
                 Fields::Unit => syn::parse_str(&field_name.to_string()).unwrap(),
                 _ => {
-                    error.custom(
+                    error.emit_custom(
                         field.fields.span(),
                         "all fields of the enum must be unnamed, e.g., None",
                     );
@@ -145,6 +145,7 @@ pub fn impl_enum(
         include_type_generics: true,
         generic_scalar: true,
         no_async: attrs.no_async.is_some(),
+        mode: is_internal.into(),
     };
 
     let juniper_crate_name = if is_internal { "crate" } else { "juniper" };

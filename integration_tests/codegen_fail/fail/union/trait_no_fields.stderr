@@ -1,0 +1,7 @@
+error: GraphQL union expects at least one union variant
+ --> $DIR/trait_no_fields.rs:4:1
+  |
+4 | trait Character {}
+  | ^^^^^^^^^^^^^^^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Unions
