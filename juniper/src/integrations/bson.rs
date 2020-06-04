@@ -78,7 +78,7 @@ mod test {
 
         let parsed: DateTime = crate::FromInputValue::from_input_value(&input).unwrap();
         let date_time = DateTime(
-            DateTime::parse_from_rfc3339(raw)
+            chrono::DateTime::parse_from_rfc3339(raw)
                 .unwrap()
                 .with_timezone(&Utc),
         );
