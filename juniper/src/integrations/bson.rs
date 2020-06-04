@@ -57,7 +57,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{value::DefaultScalarValue, InputValue};
-    use bson::{oid::ObjectId, DateTime};
+    use bson::{oid::ObjectId, DateTime as UtcDateTime};
     use chrono::prelude::*;
 
     #[test]
@@ -76,7 +76,7 @@ mod test {
         let raw = "2020-03-23T17:38:32.446+00:00";
         let input: InputValue<DefaultScalarValue> = InputValue::scalar(raw.to_string());
 
-        let parsed: DateTime = crate::FromInputValue::from_input_value(&input).unwrap();
+        let parsed: UtcDateTime = crate::FromInputValue::from_input_value(&input).unwrap();
         let date_time = UtcDateTime(
             DateTime::parse_from_rfc3339(raw)
                 .unwrap()
