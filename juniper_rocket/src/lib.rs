@@ -424,7 +424,11 @@ mod fromform_tests {
 
 #[cfg(test)]
 mod tests {
-
+    use juniper::{
+        http::tests as http_tests,
+        tests::{model::Database, schema::Query},
+        BoxFuture, EmptyMutation, EmptySubscription, RootNode,
+    };
     use rocket::{
         self, get,
         http::ContentType,
@@ -433,14 +437,75 @@ mod tests {
         request::Form,
         routes, Rocket, State,
     };
-
-    use juniper::{
-        http::tests as http_tests,
-        tests::{model::Database, schema::Query},
-        EmptyMutation, EmptySubscription, RootNode,
-    };
+    use std::sync::Arc;
 
     type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+
+    struct TestRocketIntegration {
+        client: Arc<Client>,
+    }
+
+    impl http_tests::HttpIntegration for TestRocketIntegration {
+        fn get<'me, 'url, 'fut>(
+            &'me self,
+            url: &'url str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+        {
+            let url: String = url.to_string();
+            let client = self.client.clone();
+            let f = tokio::task::spawn_blocking(move || {
+                let req = client.get(url);
+                make_test_response(req)
+            });
+            futures::future::FutureExt::boxed(async move { f.await.expect("failed to wait") })
+        }
+
+        fn post_json<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let url: String = url.to_string();
+            let body: String = body.to_string();
+            let client = self.client.clone();
+            let f = tokio::task::spawn_blocking(move || {
+                let req = client.post(url).header(ContentType::JSON).body(body);
+                make_test_response(req)
+            });
+            futures::future::FutureExt::boxed(async move { f.await.expect("failed to wait") })
+        }
+
+        fn post_graphql<'me, 'url, 'body, 'fut>(
+            &'me self,
+            url: &'url str,
+            body: &'body str,
+        ) -> BoxFuture<'fut, http_tests::TestResponse>
+        where
+            'me: 'fut,
+            'url: 'fut,
+            'body: 'fut,
+        {
+            let url: String = url.to_string();
+            let body: String = body.to_string();
+            let client = self.client.clone();
+            let f = tokio::task::spawn_blocking(move || {
+                let req = client
+                    .post(url)
+                    .header(ContentType::new("application", "graphql"))
+                    .body(body);
+                make_test_response(req)
+            });
+            futures::future::FutureExt::boxed(async move { f.await.expect("failed to wait") })
+        }
+    }
 
     #[get("/?<request..>")]
     fn get_graphql_handler(
@@ -460,38 +525,46 @@ mod tests {
         request.execute_sync(&schema, &context)
     }
 
-    struct TestRocketIntegration {
-        client: Client,
+    fn make_rocket() -> Rocket {
+        make_rocket_without_routes().mount("/", routes![post_graphql_handler, get_graphql_handler])
     }
 
-    impl http_tests::HttpIntegration for TestRocketIntegration {
-        fn get(&self, url: &str) -> http_tests::TestResponse {
-            let req = &self.client.get(url);
-            make_test_response(req)
-        }
+    fn make_rocket_without_routes() -> Rocket {
+        rocket::ignite().manage(Database::new()).manage(Schema::new(
+            Query,
+            EmptyMutation::<Database>::new(),
+            EmptySubscription::<Database>::new(),
+        ))
+    }
 
-        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let req = &self.client.post(url).header(ContentType::JSON).body(body);
-            make_test_response(req)
-        }
+    fn make_test_response(request: LocalRequest) -> http_tests::TestResponse {
+        let mut response = request.clone().dispatch();
+        let status_code = response.status().code as i32;
+        let content_type = response
+            .content_type()
+            .expect("No content type header from handler")
+            .to_string();
+        let body = response
+            .body()
+            .expect("No body returned from GraphQL handler")
+            .into_string();
 
-        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let req = &self
-                .client
-                .post(url)
-                .header(ContentType::new("application", "graphql"))
-                .body(body);
-            make_test_response(req)
+        http_tests::TestResponse {
+            status_code,
+            body,
+            content_type,
         }
     }
 
-    #[test]
-    fn test_rocket_integration() {
+    #[tokio::test]
+    async fn test_rocket_integration() {
         let rocket = make_rocket();
         let client = Client::new(rocket).expect("valid rocket");
-        let integration = TestRocketIntegration { client };
+        let integration = TestRocketIntegration {
+            client: Arc::new(client),
+        };
 
-        http_tests::run_http_test_suite(&integration);
+        http_tests::run_http_test_suite(&integration).await;
     }
 
     #[test]
@@ -514,39 +587,8 @@ mod tests {
             .post("/")
             .header(ContentType::JSON)
             .body(r#"{"query": "query TestQuery {hero{name}}", "operationName": "TestQuery"}"#);
-        let resp = make_test_response(&req);
+        let resp = make_test_response(req);
 
         assert_eq!(resp.status_code, 200);
-    }
-
-    fn make_rocket() -> Rocket {
-        make_rocket_without_routes().mount("/", routes![post_graphql_handler, get_graphql_handler])
-    }
-
-    fn make_rocket_without_routes() -> Rocket {
-        rocket::ignite().manage(Database::new()).manage(Schema::new(
-            Query,
-            EmptyMutation::<Database>::new(),
-            EmptySubscription::<Database>::new(),
-        ))
-    }
-
-    fn make_test_response(request: &LocalRequest) -> http_tests::TestResponse {
-        let mut response = request.clone().dispatch();
-        let status_code = response.status().code as i32;
-        let content_type = response
-            .content_type()
-            .expect("No content type header from handler")
-            .to_string();
-        let body = response
-            .body()
-            .expect("No body returned from GraphQL handler")
-            .into_string();
-
-        http_tests::TestResponse {
-            status_code,
-            body,
-            content_type,
-        }
     }
 }

@@ -16,6 +16,7 @@ serde_json = { version = "1.0.2" }
 juniper = { version = "0.14.2", default-features = false, path = "../juniper"}
 rocket = { version = "0.4.2", default-features = false }
 futures = "0.3"
+tokio = { version = "0.2", features = ["blocking", "macros"] }
 
 [dev-dependencies.juniper]
 version = "0.14.2"
