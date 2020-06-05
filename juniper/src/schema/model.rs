@@ -599,7 +599,7 @@ mod test {
         use crate as juniper;
         use crate::{
             EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
-            GraphQLUnion,
+            GraphQLUnionInternal as GraphQLUnion,
         };
 
         #[test]
@@ -612,17 +612,6 @@ mod test {
             struct IceCream {
                 cold: bool,
             };
-            enum Sweet {
-                Cake(Cake),
-                IceCream(IceCream),
-            }
-            juniper::graphql_interface!(Sweet: () where Scalar = <S> |&self| {
-                field is_brownie() -> bool { false }
-                instance_resolvers: |_| {
-                        &Cake => match *self { Sweet::Cake(ref x) => Some(x), _ => None },
-                        &IceCream => match *self { Sweet::IceCream(ref x) => Some(x), _ => None },
-                    }
-            });
             #[derive(GraphQLUnion)]
             enum GlutenFree {
                 Cake(Cake),
@@ -648,15 +637,12 @@ mod test {
                 fn whatever() -> String {
                     "foo".to_string()
                 }
-                fn fizz(buzz: String) -> Option<Sweet> {
-                    if buzz == "whatever" {
-                        Some(Sweet::Cake(Cake::default()))
-                    } else {
-                        Some(Sweet::IceCream(IceCream::default()))
-                    }
-                }
                 fn arr(stuff: Vec<Coordinate>) -> Option<&str> {
-                    None
+                    if stuff.is_empty() {
+                        None
+                    } else {
+                        Some("stuff")
+                    }
                 }
                 fn fruit() -> Fruit {
                     Fruit::Apple
@@ -690,9 +676,6 @@ mod test {
                     APPLE
                     ORANGE
                 }
-                interface Sweet {
-                    isBrownie: Boolean!
-                }
                 type Cake {
                     fresh: Boolean!
                 }
@@ -703,7 +686,6 @@ mod test {
                   blah: Boolean!
                   "This is whatever's description."
                   whatever: String!
-                  fizz(buzz: String!): Sweet
                   arr(stuff: [Coordinate!]!): String
                   fruit: Fruit!
                   glutenFree(flavor: String!): GlutenFree!
