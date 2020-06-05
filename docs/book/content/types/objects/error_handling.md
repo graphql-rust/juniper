@@ -36,14 +36,14 @@ struct Example {
 
 #[juniper::graphql_object]
 impl Example {
-    fn contents() -> FieldResult<String> {
+    async fn contents() -> FieldResult<String> {
         let mut file = File::open(&self.filename)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
         Ok(contents)
     }
 
-    fn foo() -> FieldResult<Option<String>> {
+    async fn foo() -> FieldResult<Option<String>> {
       // Some invalid bytes.
       let invalid = vec![128, 223];
 

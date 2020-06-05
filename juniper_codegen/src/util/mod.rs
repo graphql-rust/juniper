@@ -619,7 +619,6 @@ pub struct GraphQLTypeDefinitionField {
     pub args: Vec<GraphQLTypeDefinitionFieldArg>,
     pub resolver_code: TokenStream,
     pub is_type_inferred: bool,
-    pub is_async: bool,
     pub default: Option<TokenStream>,
     pub span: Span,
 }
@@ -665,11 +664,6 @@ pub struct GraphQLTypeDefiniton {
 }
 
 impl GraphQLTypeDefiniton {
-    #[allow(unused)]
-    fn has_async_field(&self) -> bool {
-        self.fields.iter().any(|field| field.is_async)
-    }
-
     fn crate_name(&self) -> syn::Path {
         let name = if self.is_internal { "crate" } else { "juniper" };
         syn::parse_str::<syn::Path>(name).unwrap()
@@ -826,30 +820,26 @@ impl GraphQLTypeDefiniton {
                 quote!(: #_type)
             };
 
-            if field.is_async {
-                quote!(
-                    #name => {
-                        let res #_type = async move { #code }.await;
+            quote!(
+                #name => {
+                    let res #_type = { #code };
 
-                        let inner_res = #juniper_crate_name::IntoResolvable::into(
-                            res,
-                            executor.context()
-                        );
-                        match inner_res {
-                            Ok(Some((ctx, r))) => {
-                                let subexec = executor
-                                    .replaced_context(ctx);
-                                subexec.resolve_with_ctx(&(), &r)
-                                    .await
-                            },
-                            Ok(None) => Ok(#juniper_crate_name::Value::null()),
-                            Err(e) => Err(e),
-                        }
-                    },
-                )
-            } else {
-                panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
-            }
+                    let inner_res = #juniper_crate_name::IntoResolvable::into(
+                        res,
+                        executor.context()
+                    );
+                    match inner_res {
+                        Ok(Some((ctx, r))) => {
+                            let subexec = executor
+                                .replaced_context(ctx);
+                            subexec.resolve_with_ctx(&(), &r)
+                                .await
+                        },
+                        Ok(None) => Ok(#juniper_crate_name::Value::null()),
+                        Err(e) => Err(e),
+                    }
+                },
+            )
         });
 
         // FIXME: enable this if interfaces are supported
@@ -927,8 +917,8 @@ impl GraphQLTypeDefiniton {
                             _ => {
                                 let name = <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info);
                                 panic!("Field {} not found on type {:?}",
-                                    field_name,
-                                    name,
+                                       field_name,
+                                       name,
                                 );
                             }
                         }
@@ -994,16 +984,9 @@ impl GraphQLTypeDefiniton {
             };
 
             let field_name = &field.name;
-
             let type_name = &field._type;
 
-            let _type;
-
-            if field.is_async {
-                _type = quote!(<#type_name as #juniper_crate_name::ExtractTypeFromStream<_, #scalar>>::Item);
-            } else {
-                panic!("Synchronous resolvers are not supported. Specify that this function is async: 'async fn foo()'")
-            }
+            let _type = quote!(<#type_name as #juniper_crate_name::ExtractTypeFromStream<_, #scalar>>::Item);
 
             quote! {
                 registry
@@ -1031,7 +1014,6 @@ impl GraphQLTypeDefiniton {
 
         let resolve_matches_async = self.fields
             .iter()
-            .filter(|field| field.is_async)
             .map(|field| {
                 let name = &field.name;
                 let code = &field.resolver_code;

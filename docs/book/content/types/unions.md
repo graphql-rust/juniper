@@ -45,7 +45,7 @@ impl Character for Droid {
 
 #[juniper::graphql_union]
 impl<'a> GraphQLUnion for &'a dyn Character {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Human => self.as_human(),
             Droid => self.as_droid(),
@@ -100,7 +100,7 @@ impl Character for Droid {
     Context = Database
 )]
 impl<'a> GraphQLUnion for &'a dyn Character {
-    fn resolve(&self, context: &Database) {
+    async fn resolve(&self, context: &Database) {
         match self {
             Human => context.humans.get(self.id()),
             Droid => context.droids.get(self.id()),
@@ -144,7 +144,7 @@ struct Character {
     Context = Database,
 )]
 impl GraphQLUnion for Character {
-    fn resolve(&self, context: &Database) {
+    async fn resolve(&self, context: &Database) {
         match self {
             Human => { context.humans.get(&self.id) },
             Droid => { context.droids.get(&self.id) },
@@ -178,7 +178,7 @@ enum Character {
 
 #[juniper::graphql_union]
 impl Character {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Human => { match *self { Character::Human(ref h) => Some(h), _ => None } },
             Droid => { match *self { Character::Droid(ref d) => Some(d), _ => None } },

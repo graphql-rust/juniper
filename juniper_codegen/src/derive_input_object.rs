@@ -93,7 +93,6 @@ pub fn impl_input_object(
                 deprecation: None,
                 resolver_code,
                 is_type_inferred: true,
-                is_async: false,
                 default,
                 span,
             })

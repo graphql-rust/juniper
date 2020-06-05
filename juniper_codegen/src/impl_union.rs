@@ -91,10 +91,14 @@ pub fn impl_union(
         None => {
             return Err(error.custom_error(
                 body_span,
-                "expected exactly one method with signature: fn resolve(&self) { ... }",
+                "expected exactly one method with signature: async fn resolve(&self) { ... }",
             ))
         }
     };
+
+    if method.sig.asyncness.is_none() {
+        error.missing_async(method.sig.span());
+    }
 
     let resolve_args = _impl.parse_resolve_method(method)?;
 

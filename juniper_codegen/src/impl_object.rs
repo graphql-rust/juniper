@@ -66,8 +66,6 @@ fn create(
                 }
             };
 
-            let is_async = method.sig.asyncness.is_some();
-
             let attrs = match util::FieldAttributes::from_attrs(
                 &method.attrs,
                 util::FieldAttributeParseMode::Impl,
@@ -78,6 +76,11 @@ fn create(
                     return None;
                 }
             };
+
+            if method.sig.asyncness.is_none() {
+                error.missing_async(method.sig.span());
+                return None;
+            }
 
             let parse_method =
                 _impl.parse_method(&method, true, |captured, arg_ident, is_mut: bool| {
@@ -171,7 +174,6 @@ fn create(
                 deprecation: attrs.deprecation.map(SpanContainer::into_inner),
                 resolver_code,
                 is_type_inferred: false,
-                is_async,
                 default: None,
                 span,
             })

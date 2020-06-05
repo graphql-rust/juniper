@@ -15,7 +15,7 @@ enum Character {
 
 #[juniper::graphql_union]
 impl Character {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Test => match *self {
                 Character::A(ref h) => Some(h),

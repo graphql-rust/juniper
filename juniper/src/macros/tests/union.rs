@@ -47,7 +47,7 @@ impl Concrete {
 
 #[crate::graphql_union_internal(name = "ACustomNamedUnion")]
 impl CustomName {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Concrete => match *self {
                 CustomName::Concrete(ref c) => Some(c),
@@ -58,7 +58,7 @@ impl CustomName {
 
 #[crate::graphql_union_internal]
 impl<'a> WithLifetime<'a> {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Concrete => match *self {
                 WithLifetime::Int(_) => Some(&Concrete),
@@ -69,7 +69,7 @@ impl<'a> WithLifetime<'a> {
 
 #[crate::graphql_union_internal]
 impl<T: Send + Sync> WithGenerics<T> {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Concrete => match *self {
                 WithGenerics::Generic(_) => Some(&Concrete),
@@ -80,7 +80,7 @@ impl<T: Send + Sync> WithGenerics<T> {
 
 #[crate::graphql_union_internal(description = "A description")]
 impl DescriptionFirst {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {
             Concrete => match *self {
                 DescriptionFirst::Concrete(ref c) => Some(c),

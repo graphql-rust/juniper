@@ -2,7 +2,7 @@ enum Character {}
 
 #[juniper::graphql_union]
 impl Character {
-    fn resolve(&self) {
+    async fn resolve(&self) {
         match self {}
     }
 }

@@ -135,4 +135,16 @@ impl GraphQLScope {
             .note(format!("{}#sec-Schema", GRAPHQL_SPECIFICATION))
             .emit();
     }
+
+    pub fn missing_async(&self, signature: Span) {
+        Diagnostic::spanned(
+            signature,
+            Level::Error,
+            "expected function with signature `async fn name(..) -> ..`".to_string(),
+        )
+        .note(format!(
+            "All functions are executed asynchronous, use thread pools for long running blocking operations."
+        ))
+        .emit();
+    }
 }

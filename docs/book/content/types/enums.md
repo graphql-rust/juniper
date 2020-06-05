@@ -64,7 +64,6 @@ enum StarWarsEpisode {
 | description       | ✔                 | ✔                |
 | interfaces        | ?                 | ✘                |
 | name              | ✔                 | ✔                |
-| noasync           | ✔                 | ?                |
 | scalar            | ✘                 | ?                |
 | skip              | ?                 | ✘                |
 | ✔: supported      | ✘: not supported  | ?: not available |

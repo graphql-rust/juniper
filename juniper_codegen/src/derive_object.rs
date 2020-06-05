@@ -84,7 +84,6 @@ pub fn build_derive_object(
                 resolver_code,
                 default: None,
                 is_type_inferred: true,
-                is_async: true,
                 span,
             })
         })

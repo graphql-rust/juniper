@@ -115,7 +115,6 @@ pub fn build_derive_union(
                 deprecation: field_attrs.deprecation.map(SpanContainer::into_inner),
                 resolver_code,
                 is_type_inferred: true,
-                is_async: true,
                 default: None,
                 span,
             })
