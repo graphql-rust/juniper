@@ -11,7 +11,7 @@ use crate::{
     executor::Variables,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    value::{ParseScalarResult, ParseScalarValue, Value},
+    value::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, Value},
 };
 
 #[derive(GraphQLEnum)]
@@ -27,19 +27,20 @@ struct Interface;
 
 struct Root;
 
-graphql_scalar!(Scalar as "SampleScalar" {
-    resolve(&self) -> Value {
+#[crate::graphql_scalar_internal(name = "SampleScalar")]
+impl GraphQLScalar for Scalar {
+    fn resolve(&self) -> Value {
         Value::scalar(self.0)
     }
 
-    from_input_value(v: &InputValue) -> Option<Scalar> {
+    fn from_input_value(v: &InputValue) -> Option<Scalar> {
         v.as_scalar_value().map(|i: &i32| Scalar(*i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, DefaultScalarValue> {
         <i32 as ParseScalarValue>::from_str(value)
     }
-});
+}
 
 graphql_interface!(Interface: () as "SampleInterface" |&self| {
     description: "A sample interface"

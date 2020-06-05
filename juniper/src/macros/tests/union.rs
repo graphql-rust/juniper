@@ -14,80 +14,69 @@ use std::marker::PhantomData;
 
 use crate::{
     ast::InputValue,
+    graphql_object_internal,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
+    GraphQLUnionInternal,
 };
 
 struct Concrete;
 
-enum CustomName {
-    Concrete(Concrete),
-}
-
-enum WithLifetime<'a> {
-    Int(PhantomData<&'a i32>),
-}
-enum WithGenerics<T> {
-    Generic(T),
-}
-
-enum DescriptionFirst {
-    Concrete(Concrete),
-}
-
-struct Root;
-
-#[crate::graphql_object_internal]
+#[graphql_object_internal]
 impl Concrete {
     fn simple() -> i32 {
         123
     }
 }
 
-#[crate::graphql_union_internal(name = "ACustomNamedUnion")]
-impl CustomName {
-    fn resolve(&self) {
-        match self {
-            Concrete => match *self {
-                CustomName::Concrete(ref c) => Some(c),
-            },
-        }
-    }
+#[derive(GraphQLUnionInternal)]
+#[graphql(name = "ACustomNamedUnion", scalar = DefaultScalarValue)]
+enum CustomName {
+    Concrete(Concrete),
 }
 
-#[crate::graphql_union_internal]
+#[derive(GraphQLUnionInternal)]
+#[graphql(on Concrete = WithLifetime::resolve, scalar = DefaultScalarValue)]
+enum WithLifetime<'a> {
+    #[graphql(ignore)]
+    Int(PhantomData<&'a i32>),
+}
+
 impl<'a> WithLifetime<'a> {
-    fn resolve(&self) {
-        match self {
-            Concrete => match *self {
-                WithLifetime::Int(_) => Some(&Concrete),
-            },
+    fn resolve(&self, _: &()) -> Option<&Concrete> {
+        if matches!(self, Self::Int(_)) {
+            Some(&Concrete)
+        } else {
+            None
         }
     }
 }
 
-#[crate::graphql_union_internal]
+#[derive(GraphQLUnionInternal)]
+#[graphql(on Concrete = WithGenerics::resolve, scalar = DefaultScalarValue)]
+enum WithGenerics<T> {
+    #[graphql(ignore)]
+    Generic(T),
+}
+
 impl<T> WithGenerics<T> {
-    fn resolve(&self) {
-        match self {
-            Concrete => match *self {
-                WithGenerics::Generic(_) => Some(&Concrete),
-            },
+    fn resolve(&self, _: &()) -> Option<&Concrete> {
+        if matches!(self, Self::Generic(_)) {
+            Some(&Concrete)
+        } else {
+            None
         }
     }
 }
 
-#[crate::graphql_union_internal(description = "A description")]
-impl DescriptionFirst {
-    fn resolve(&self) {
-        match self {
-            Concrete => match *self {
-                DescriptionFirst::Concrete(ref c) => Some(c),
-            },
-        }
-    }
+#[derive(GraphQLUnionInternal)]
+#[graphql(description = "A description", scalar = DefaultScalarValue)]
+enum DescriptionFirst {
+    Concrete(Concrete),
 }
+
+struct Root;
 
 // FIXME: make async work
 #[crate::graphql_object_internal(noasync)]

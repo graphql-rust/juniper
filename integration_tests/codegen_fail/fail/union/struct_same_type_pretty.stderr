@@ -1,0 +1,5 @@
+error: duplicated attribute
+ --> $DIR/struct_same_type_pretty.rs:5:14
+  |
+5 | #[graphql(on i32 = Character::b)]
+  |              ^^^

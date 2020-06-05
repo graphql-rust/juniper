@@ -16,7 +16,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// scalar values in juniper
 ///
 /// The main objective of this abstraction is to allow other libraries to
-/// replace the default representation with something that better fits thei
+/// replace the default representation with something that better fits their
 /// needs.
 /// There is a custom derive (`#[derive(juniper::GraphQLScalarValue)]`) available that implements
 /// most of the required traits automatically for a enum representing a scalar value.

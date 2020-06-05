@@ -5,8 +5,6 @@
 mod common;
 #[macro_use]
 mod interface;
-#[macro_use]
-mod scalar;
 
 #[cfg(test)]
 mod tests;

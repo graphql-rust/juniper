@@ -4,6 +4,10 @@ use fnv::FnvHashMap;
 #[cfg(test)]
 use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
 
+pub struct CustomContext {}
+
+impl juniper::Context for CustomContext {}
+
 #[derive(juniper::GraphQLEnum, Debug, PartialEq)]
 #[graphql(name = "Some", description = "enum descr")]
 enum SomeEnum {
@@ -37,6 +41,12 @@ enum OverrideDocEnum {
     /// This is not used as the description.
     #[graphql(description = "variant override")]
     Foo,
+}
+
+#[derive(juniper::GraphQLEnum)]
+#[graphql(context = CustomContext, noasync)]
+enum ContextEnum {
+    A,
 }
 
 #[test]
@@ -97,4 +107,17 @@ fn test_doc_comment_override() {
     let mut registry: juniper::Registry = juniper::Registry::new(FnvHashMap::default());
     let meta = OverrideDocEnum::meta(&(), &mut registry);
     assert_eq!(meta.description(), Some(&"enum override".to_string()));
+}
+
+fn test_context<T>(_t: T)
+where
+    T: GraphQLType<DefaultScalarValue, Context = CustomContext>,
+{
+    // empty
+}
+
+#[test]
+fn test_doc_custom_context() {
+    test_context(ContextEnum::A);
+    // test_context(OverrideDocEnum::Foo); does not work
 }

@@ -1,0 +1,7 @@
+error: GraphQL object expects at least one field
+ --> $DIR/impl_no_fields.rs:4:1
+  |
+4 | impl Object {}
+  | ^^^^^^^^^^^^^^
+  |
+  = note: https://spec.graphql.org/June2018/#sec-Objects

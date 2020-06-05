@@ -322,6 +322,15 @@ fn string_errors() {
             LexerError::UnterminatedString
         )
     );
+
+    // Found by fuzzing.
+    assert_eq!(
+        tokenize_error(r#""\uɠ^A"#),
+        Spanning::zero_width(
+            &SourcePosition::new(5, 0, 5),
+            LexerError::UnterminatedString
+        )
+    );
 }
 
 #[test]

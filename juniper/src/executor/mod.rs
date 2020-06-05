@@ -242,8 +242,9 @@ impl<S> IntoFieldError<S> for FieldError<S> {
 }
 
 #[doc(hidden)]
-pub trait IntoResolvable<'a, S, T: GraphQLType<S>, C>: Sized
+pub trait IntoResolvable<'a, S, T, C>
 where
+    T: GraphQLType<S>,
     S: ScalarValue,
 {
     #[doc(hidden)]
@@ -404,7 +405,7 @@ where
     pub fn resolve_with_ctx<NewCtxT, T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
         NewCtxT: FromContext<CtxT>,
-        T: GraphQLType<S, Context = NewCtxT>,
+        T: GraphQLType<S, Context = NewCtxT> + ?Sized,
     {
         self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context))
             .resolve(info, value)
@@ -413,7 +414,7 @@ where
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub fn resolve<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        T: GraphQLType<S, Context = CtxT>,
+        T: GraphQLType<S, Context = CtxT> + ?Sized,
     {
         value.resolve(info, self.current_selection_set, self)
     }
@@ -421,7 +422,7 @@ where
     /// Resolve a single arbitrary value into an `ExecutionResult`
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
@@ -468,18 +469,15 @@ where
     /// If the field fails to resolve, `null` will be returned.
     pub async fn resolve_into_value_async<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
     where
-        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
+        T: crate::GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
         S: Send + Sync,
     {
-        match self.resolve_async(info, value).await {
-            Ok(v) => v,
-            Err(e) => {
-                self.push_error(e);
-                Value::null()
-            }
-        }
+        self.resolve_async(info, value).await.unwrap_or_else(|e| {
+            self.push_error(e);
+            Value::null()
+        })
     }
 
     /// Derive a new executor by replacing the context
@@ -1103,7 +1101,7 @@ where
     /// construct its metadata and store it.
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
     where
-        T: GraphQLType<S>,
+        T: GraphQLType<S> + ?Sized,
     {
         if let Some(name) = T::name(info) {
             let validated_name = name.parse::<Name>().unwrap();
@@ -1124,7 +1122,7 @@ where
     /// Create a field with the provided name
     pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
     where
-        T: GraphQLType<S>,
+        T: GraphQLType<S> + ?Sized,
     {
         Field {
             name: name.to_owned(),
@@ -1156,7 +1154,7 @@ where
     /// Create an argument with the provided name
     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
     where
-        T: GraphQLType<S> + FromInputValue<S>,
+        T: GraphQLType<S> + FromInputValue<S> + ?Sized,
     {
         Argument::new(name, self.get_type::<T>(info))
     }
@@ -1172,7 +1170,7 @@ where
         info: &T::TypeInfo,
     ) -> Argument<'r, S>
     where
-        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
+        T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S> + ?Sized,
     {
         Argument::new(name, self.get_type::<Option<T>>(info)).default_value(value.to_input_value())
     }
@@ -1188,20 +1186,23 @@ where
     /// This expects the type to implement `FromInputValue`.
     pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + 'r,
+        T: FromInputValue<S> + GraphQLType<S> + ParseScalarValue<S> + ?Sized + 'r,
     {
         let name = T::name(info).expect("Scalar types must be named. Implement name()");
         ScalarMeta::new::<T>(Cow::Owned(name.to_string()))
     }
 
     /// Create a list meta type
-    pub fn build_list_type<T: GraphQLType<S>>(&mut self, info: &T::TypeInfo) -> ListMeta<'r> {
+    pub fn build_list_type<T: GraphQLType<S> + ?Sized>(
+        &mut self,
+        info: &T::TypeInfo,
+    ) -> ListMeta<'r> {
         let of_type = self.get_type::<T>(info);
         ListMeta::new(of_type)
     }
 
     /// Create a nullable meta type
-    pub fn build_nullable_type<T: GraphQLType<S>>(
+    pub fn build_nullable_type<T: GraphQLType<S> + ?Sized>(
         &mut self,
         info: &T::TypeInfo,
     ) -> NullableMeta<'r> {
@@ -1209,7 +1210,7 @@ where
         NullableMeta::new(of_type)
     }
 
-    /// Create an object meta type builder
+    /// Create an object meta type
     ///
     /// To prevent infinite recursion by enforcing ordering, this returns a
     /// function that needs to be called with the list of fields on the object.
@@ -1219,7 +1220,7 @@ where
         fields: &[Field<'r, S>],
     ) -> ObjectMeta<'r, S>
     where
-        T: GraphQLType<S>,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
@@ -1235,14 +1236,14 @@ where
         values: &[EnumValue],
     ) -> EnumMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S>,
+        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Enum types must be named. Implement name()");
 
         EnumMeta::new::<T>(Cow::Owned(name.to_string()), values)
     }
 
-    /// Create an interface meta type builder,
+    /// Create an interface meta type,
     /// by providing a type info object.
     pub fn build_interface_type<T>(
         &mut self,
@@ -1250,7 +1251,7 @@ where
         fields: &[Field<'r, S>],
     ) -> InterfaceMeta<'r, S>
     where
-        T: GraphQLType<S>,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
@@ -1259,24 +1260,24 @@ where
         InterfaceMeta::new(Cow::Owned(name.to_string()), &v)
     }
 
-    /// Create a union meta type builder
+    /// Create a union meta type
     pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
     where
-        T: GraphQLType<S>,
+        T: GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
         UnionMeta::new(Cow::Owned(name.to_string()), types)
     }
 
-    /// Create an input object meta type builder
+    /// Create an input object meta type
     pub fn build_input_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
         args: &[Argument<'r, S>],
     ) -> InputObjectMeta<'r, S>
     where
-        T: FromInputValue<S> + GraphQLType<S>,
+        T: FromInputValue<S> + GraphQLType<S> + ?Sized,
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 

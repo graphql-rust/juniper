@@ -54,3 +54,17 @@ enum StarWarsEpisode {
 
 # fn main() {}
 ```
+
+## Supported Macro Attributes (Derive)
+
+| Name of Attribute | Container Support | Field Support    |
+|-------------------|:-----------------:|:----------------:|
+| context           | ✔                 | ?                |
+| deprecated        | ✔                 | ✔                |
+| description       | ✔                 | ✔                |
+| interfaces        | ?                 | ✘                |
+| name              | ✔                 | ✔                |
+| noasync           | ✔                 | ?                |
+| scalar            | ✘                 | ?                |
+| skip              | ?                 | ✘                |
+| ✔: supported      | ✘: not supported  | ?: not available |

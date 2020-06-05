@@ -114,10 +114,17 @@ extern crate iron_test;
 #[cfg(test)]
 extern crate url;
 
-use iron::{itry, method, middleware::Handler, mime::Mime, prelude::*, status};
+use iron::{
+    headers::ContentType,
+    itry, method,
+    middleware::Handler,
+    mime::{Mime, TopLevel},
+    prelude::*,
+    status,
+};
 use urlencoded::{UrlDecodingError, UrlEncodedQuery};
 
-use std::{error::Error, fmt, io::Read};
+use std::{error::Error, fmt, io::Read, ops::Deref as _};
 
 use serde_json::error::Error as SerdeError;
 
@@ -228,30 +235,39 @@ where
     }
 
     fn handle_get(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
-        let url_query_string = req
+        let url_query = req
             .get_mut::<UrlEncodedQuery>()
             .map_err(GraphQLIronError::Url)?;
 
-        let input_query = parse_url_param(url_query_string.remove("query"))?
+        let query = parse_url_param(url_query.remove("query"))?
             .ok_or_else(|| GraphQLIronError::InvalidData("No query provided"))?;
-        let operation_name = parse_url_param(url_query_string.remove("operationName"))?;
-        let variables = parse_variable_param(url_query_string.remove("variables"))?;
+        let operation_name = parse_url_param(url_query.remove("operationName"))?;
+        let variables = parse_variable_param(url_query.remove("variables"))?;
 
         Ok(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
-            input_query,
+            query,
             operation_name,
             variables,
         )))
     }
 
-    fn handle_post(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
-        let mut request_payload = String::new();
-        itry!(req.body.read_to_string(&mut request_payload));
+    fn handle_post_json(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
+        let mut payload = String::new();
+        itry!(req.body.read_to_string(&mut payload));
 
         Ok(
-            serde_json::from_str::<GraphQLBatchRequest<S>>(request_payload.as_str())
+            serde_json::from_str::<GraphQLBatchRequest<S>>(payload.as_str())
                 .map_err(GraphQLIronError::Serde)?,
         )
+    }
+
+    fn handle_post_graphql(&self, req: &mut Request) -> IronResult<GraphQLBatchRequest<S>> {
+        let mut payload = String::new();
+        itry!(req.body.read_to_string(&mut payload));
+
+        Ok(GraphQLBatchRequest::Single(http::GraphQLRequest::new(
+            payload, None, None,
+        )))
     }
 
     fn execute_sync(
@@ -313,7 +329,14 @@ where
 
         let graphql_request = match req.method {
             method::Get => self.handle_get(&mut req)?,
-            method::Post => self.handle_post(&mut req)?,
+            method::Post => match req.headers.get::<ContentType>().map(ContentType::deref) {
+                Some(Mime(TopLevel::Application, sub_lvl, _)) => match sub_lvl.as_str() {
+                    "json" => self.handle_post_json(&mut req)?,
+                    "graphql" => self.handle_post_graphql(&mut req)?,
+                    _ => return Ok(Response::with(status::BadRequest)),
+                },
+                _ => return Ok(Response::with(status::BadRequest)),
+            },
             _ => return Ok(Response::with(status::MethodNotAllowed)),
         };
 
@@ -388,7 +411,11 @@ impl From<GraphQLIronError> for IronError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use iron::{Handler, Headers, Url};
+    use iron::{
+        headers::ContentType,
+        mime::{Mime, SubLevel, TopLevel},
+        Handler, Headers, Url,
+    };
     use iron_test::{request, response};
     use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
@@ -411,7 +438,7 @@ mod tests {
             .path()
             .iter()
             .map(|x| (*x).to_string())
-            .collect::<Vec<String>>()
+            .collect::<Vec<_>>()
             .join("/");
         format!(
             "http://localhost:3000{}?{}",
@@ -422,21 +449,31 @@ mod tests {
 
     struct TestIronIntegration;
 
-    impl http_tests::HTTPIntegration for TestIronIntegration {
+    impl http_tests::HttpIntegration for TestIronIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
-            let result = request::get(&fixup_url(url), Headers::new(), &make_handler());
-            match result {
-                Ok(response) => make_test_response(response),
-                Err(e) => make_test_error_response(e),
-            }
+            request::get(&fixup_url(url), Headers::new(), &make_handler())
+                .map(make_test_response)
+                .unwrap_or_else(make_test_error_response)
         }
 
-        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
-            let result = request::post(&fixup_url(url), Headers::new(), body, &make_handler());
-            match result {
-                Ok(response) => make_test_response(response),
-                Err(e) => make_test_error_response(e),
-            }
+        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let mut headers = Headers::new();
+            headers.set(ContentType::json());
+            request::post(&fixup_url(url), headers, body, &make_handler())
+                .map(make_test_response)
+                .unwrap_or_else(make_test_error_response)
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let mut headers = Headers::new();
+            headers.set(ContentType(Mime(
+                TopLevel::Application,
+                SubLevel::Ext("graphql".into()),
+                vec![],
+            )));
+            request::post(&fixup_url(url), headers, body, &make_handler())
+                .map(make_test_response)
+                .unwrap_or_else(make_test_error_response)
         }
     }
 

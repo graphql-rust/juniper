@@ -1,7 +1,7 @@
 # Avoiding the N+1 Problem With Dataloaders
 
 A common issue with graphql servers is how the resolvers query their datasource.
-his issue results in a large number of unneccessary database queries or http requests.
+This issue results in a large number of unneccessary database queries or http requests.
 Say you were wanting to list a bunch of cults people were in
 
 ```graphql
@@ -35,8 +35,12 @@ Once the list of users has been returned, a separate query is run to find the cu
 You can see how this could quickly become a problem.
 
 A common solution to this is to introduce a **dataloader**.
-This can be done with Juniper using the crate [cksac/dataloader-rs](https://github.com/cksac/dataloader-rs), which has two types of dataloaders; cached and non-cached. This example will explore the non-cached option.
+This can be done with Juniper using the crate [cksac/dataloader-rs](https://github.com/cksac/dataloader-rs), which has two types of dataloaders; cached and non-cached.
 
+#### Cached Loader
+DataLoader provides a memoization cache, after .load() is called once with a given key, the resulting value is cached to eliminate redundant loads.
+
+DataLoader caching does not replace Redis, Memcache, or any other shared application-level cache. DataLoader is first and foremost a data loading mechanism, and its cache only serves the purpose of not repeatedly loading the same data in the context of a single request to your Application. [(read more)](https://github.com/graphql/dataloader#caching)
 
 ### What does it look like?
 
@@ -47,16 +51,17 @@ This can be done with Juniper using the crate [cksac/dataloader-rs](https://gith
 actix-identity = "0.2"
 actix-rt = "1.0"
 actix-web = {version = "2.0", features = []}
-juniper = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
+juniper = { git = "https://github.com/graphql-rust/juniper" }
 futures = "0.3"
 postgres = "0.15.2"
-dataloader = "0.6.0"
+dataloader = "0.12.0"
+async-trait = "0.1.30"
 ```
 
 ```rust, ignore
-use dataloader::Loader;
-use dataloader::{BatchFn, BatchFuture};
-use futures::{future, FutureExt as _};
+// use dataloader::cached::Loader;
+use dataloader::non_cached::Loader;
+use dataloader::BatchFn;
 use std::collections::HashMap;
 use postgres::{Connection, TlsMode};
 use std::env;
@@ -91,26 +96,31 @@ pub fn get_cult_by_ids(hashmap: &mut HashMap<i32, Cult>, ids: Vec<i32>) {
 
 pub struct CultBatcher;
 
+#[async_trait]
 impl BatchFn<i32, Cult> for CultBatcher {
-  type Error = ();
 
-  fn load(&self, keys: &[i32]) -> BatchFuture<Cult, Self::Error> {
-    println!("load batch {:?}", keys);
     // A hashmap is used, as we need to return an array which maps each original key to a Cult.
-    let mut cult_hashmap = HashMap::new();
-    get_cult_by_ids(&mut cult_hashmap, keys.to_vec());
-
-    future::ready(keys.iter().map(|key| cult_hashmap[key].clone()).collect())
-        .unit_error()
-        .boxed()
-  }
+    async fn load(&self, keys: &[i32]) -> HashMap<i32, Cult> {
+        println!("load cult batch {:?}", keys);
+        let mut cult_hashmap = HashMap::new();
+        get_cult_by_ids(&mut cult_hashmap, keys.to_vec());
+        cult_hashmap
+    }
 }
 
-pub type CultLoader = Loader<i32, Cult, (), CultBatcher>;
+pub type CultLoader = Loader<i32, Cult, CultBatcher>;
 
 // To create a new loader
 pub fn get_loader() -> CultLoader {
     Loader::new(CultBatcher)
+      // Usually a DataLoader will coalesce all individual loads which occur 
+      // within a single frame of execution before calling your batch function with all requested keys.
+      // However sometimes this behavior is not desirable or optimal. 
+      // Perhaps you expect requests to be spread out over a few subsequent ticks
+      // See: https://github.com/cksac/dataloader-rs/issues/12 
+      // More info: https://github.com/graphql/dataloader#batch-scheduling 
+      // A larger yield count will allow more requests to append to batch but will wait longer before actual load.
+      .with_yield_count(100)
 }
 
 #[juniper::graphql_object(Context = Context)]
@@ -119,7 +129,7 @@ impl Cult {
 
   // To call the dataloader 
   pub async fn cult_by_id(ctx: &Context, id: i32) -> Cult {
-    ctx.cult_loader.load(id).await.unwrap()
+    ctx.cult_loader.load(id).await
   }
 }
 
@@ -127,9 +137,8 @@ impl Cult {
 
 ### How do I call them?
 
-Once created, a dataloader has the functions `.load()` and `.load_many()`.
-When called these return a Future.
-In the above example `cult_loader.load(id: i32)` returns `Future<Cult>`. If  we had used `cult_loader.load_may(Vec<i32>)` it would have returned `Future<Vec<Cult>>`.
+Once created, a dataloader has the async functions `.load()` and `.load_many()`.
+In the above example `cult_loader.load(id: i32).await` returns `Cult`. If  we had used `cult_loader.load_many(Vec<i32>).await` it would have returned `Vec<Cult>`.
 
 
 ### Where do I create my dataloaders?
@@ -165,15 +174,13 @@ pub async fn graphql(
     st: web::Data<Arc<Schema>>,
     data: web::Json<GraphQLRequest>,
 ) -> Result<HttpResponse, Error> {
-    let mut rt = futures::executor::LocalPool::new();
 
     // Context setup
     let cult_loader = get_loader();
     let ctx = Context::new(cult_loader);
 
     // Execute
-    let future_execute = data.execute(&st, &ctx); 
-    let res = rt.run_until(future_execute);
+    let res = data.execute(&st, &ctx).await; 
     let json = serde_json::to_string(&res).map_err(error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok()

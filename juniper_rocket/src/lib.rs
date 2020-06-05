@@ -47,7 +47,7 @@ use rocket::{
     request::{FormItems, FromForm, FromFormValue},
     response::{content, Responder, Response},
     Data,
-    Outcome::{Failure, Forward, Success},
+    Outcome::{Forward, Success},
     Request,
 };
 
@@ -271,20 +271,26 @@ where
 {
     type Error = String;
 
-    fn from_data(request: &Request, data: Data) -> FromDataOutcome<Self, Self::Error> {
-        if !request.content_type().map_or(false, |ct| ct.is_json()) {
-            return Forward(data);
-        }
+    fn from_data(req: &Request, data: Data) -> FromDataOutcome<Self, Self::Error> {
+        let content_type = req
+            .content_type()
+            .map(|ct| (ct.top().as_str(), ct.sub().as_str()));
+        let is_json = match content_type {
+            Some(("application", "json")) => true,
+            Some(("application", "graphql")) => false,
+            _ => return Forward(data),
+        };
 
         let mut body = String::new();
-        if let Err(e) = data.open().read_to_string(&mut body) {
-            return Failure((Status::InternalServerError, format!("{:?}", e)));
-        }
+        data.open()
+            .read_to_string(&mut body)
+            .map_err(|e| Err((Status::InternalServerError, format!("{:?}", e))))?;
 
-        match serde_json::from_str(&body) {
-            Ok(value) => Success(GraphQLRequest(value)),
-            Err(failure) => Failure((Status::BadRequest, format!("{}", failure))),
-        }
+        Success(GraphQLRequest(if is_json {
+            serde_json::from_str(&body).map_err(|e| Err((Status::BadRequest, format!("{}", e))))?
+        } else {
+            GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
+        }))
     }
 }
 
@@ -456,14 +462,23 @@ mod tests {
         client: Client,
     }
 
-    impl http_tests::HTTPIntegration for TestRocketIntegration {
+    impl http_tests::HttpIntegration for TestRocketIntegration {
         fn get(&self, url: &str) -> http_tests::TestResponse {
             let req = &self.client.get(url);
             make_test_response(req)
         }
 
-        fn post(&self, url: &str, body: &str) -> http_tests::TestResponse {
+        fn post_json(&self, url: &str, body: &str) -> http_tests::TestResponse {
             let req = &self.client.post(url).header(ContentType::JSON).body(body);
+            make_test_response(req)
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> http_tests::TestResponse {
+            let req = &self
+                .client
+                .post(url)
+                .header(ContentType::new("application", "graphql"))
+                .body(body);
             make_test_response(req)
         }
     }

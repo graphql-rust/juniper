@@ -40,12 +40,16 @@ Check the LICENSE file for details.
 #![deny(warnings)]
 #![doc(html_root_url = "https://docs.rs/juniper_warp/0.2.0")]
 
-use std::{pin::Pin, sync::Arc};
+use std::{collections::HashMap, str, sync::Arc};
 
-use futures::{Future, FutureExt as _, TryFutureExt};
-use juniper::{http::GraphQLBatchRequest, ScalarValue};
+use bytes::Bytes;
+use futures::{FutureExt as _, TryFutureExt};
+use juniper::{
+    http::{GraphQLBatchRequest, GraphQLRequest},
+    ScalarValue,
+};
 use tokio::task;
-use warp::{filters::BoxedFilter, Filter};
+use warp::{body, filters::BoxedFilter, header, http, query, Filter};
 
 /// Make a filter for graphql queries/mutations.
 ///
@@ -110,7 +114,7 @@ use warp::{filters::BoxedFilter, Filter};
 pub fn make_graphql_filter<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
     context_extractor: BoxedFilter<(Context,)>,
-) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
+) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
     Context: Send + Sync + 'static,
@@ -122,65 +126,90 @@ where
     Subscription::TypeInfo: Send + Sync,
 {
     let schema = Arc::new(schema);
-    let post_schema = schema.clone();
+    let post_json_schema = schema.clone();
+    let post_graphql_schema = schema.clone();
 
-    let handle_post_request = move |context: Context, request: GraphQLBatchRequest<S>| {
-        let schema = post_schema.clone();
-
-        Box::pin(async move {
-            let res = request.execute(&schema, &context).await;
+    let handle_post_json_request = move |context: Context, req: GraphQLBatchRequest<S>| {
+        let schema = post_json_schema.clone();
+        async move {
+            let resp = req.execute(&schema, &context).await;
 
             Ok::<_, warp::Rejection>(build_response(
-                serde_json::to_vec(&res)
-                    .map(|json| (json, res.is_ok()))
+                serde_json::to_vec(&resp)
+                    .map(|json| (json, resp.is_ok()))
                     .map_err(Into::into),
             ))
-        })
+        }
     };
-
-    let post_filter = warp::post()
+    let post_json_filter = warp::post()
+        .and(header::exact_ignore_case(
+            "content-type",
+            "application/json",
+        ))
         .and(context_extractor.clone())
-        .and(warp::body::json())
-        .and_then(handle_post_request);
+        .and(body::json())
+        .and_then(handle_post_json_request);
 
-    let handle_get_request =
-        move |context: Context, mut request: std::collections::HashMap<String, String>| {
-            let schema = schema.clone();
+    let handle_post_graphql_request = move |context: Context, body: Bytes| {
+        let schema = post_graphql_schema.clone();
+        async move {
+            let query = str::from_utf8(body.as_ref()).map_err(|e| {
+                failure::format_err!("Request body query is not a valid UTF-8 string: {}", e)
+            })?;
+            let req = GraphQLRequest::new(query.into(), None, None);
 
-            async move {
-                let variables = match request.remove("variables") {
-                    None => None,
-                    Some(vs) => serde_json::from_str(&vs)?,
-                };
+            let resp = req.execute(&schema, &context).await;
 
-                let graphql_request = juniper::http::GraphQLRequest::new(
-                    request.remove("query").ok_or_else(|| {
-                        failure::format_err!("Missing GraphQL query string in query parameters")
-                    })?,
-                    request.get("operation_name").map(|s| s.to_owned()),
-                    variables,
-                );
+            Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
+        }
+        .then(|res| async { Ok::<_, warp::Rejection>(build_response(res)) })
+    };
+    let post_graphql_filter = warp::post()
+        .and(header::exact_ignore_case(
+            "content-type",
+            "application/graphql",
+        ))
+        .and(context_extractor.clone())
+        .and(body::bytes())
+        .and_then(handle_post_graphql_request);
 
-                let response = graphql_request.execute(&schema, &context).await;
+    let handle_get_request = move |context: Context, mut qry: HashMap<String, String>| {
+        let schema = schema.clone();
+        async move {
+            let req = GraphQLRequest::new(
+                qry.remove("query").ok_or_else(|| {
+                    failure::format_err!("Missing GraphQL query string in query parameters")
+                })?,
+                qry.remove("operation_name"),
+                qry.remove("variables")
+                    .map(|vs| serde_json::from_str(&vs))
+                    .transpose()?,
+            );
 
-                Ok((serde_json::to_vec(&response)?, response.is_ok()))
-            }
-            .then(|result| async move { Ok::<_, warp::Rejection>(build_response(result)) })
-        };
+            let resp = req.execute(&schema, &context).await;
 
+            Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
+        }
+        .then(|res| async move { Ok::<_, warp::Rejection>(build_response(res)) })
+    };
     let get_filter = warp::get()
         .and(context_extractor)
-        .and(warp::filters::query::query())
+        .and(query::query())
         .and_then(handle_get_request);
 
-    get_filter.or(post_filter).unify().boxed()
+    get_filter
+        .or(post_json_filter)
+        .unify()
+        .or(post_graphql_filter)
+        .unify()
+        .boxed()
 }
 
 /// Make a synchronous filter for graphql endpoint.
 pub fn make_graphql_filter_sync<Query, Mutation, Subscription, Context, S>(
     schema: juniper::RootNode<'static, Query, Mutation, Subscription, S>,
     context_extractor: BoxedFilter<(Context,)>,
-) -> BoxedFilter<(warp::http::Response<Vec<u8>>,)>
+) -> BoxedFilter<(http::Response<Vec<u8>>,)>
 where
     S: ScalarValue + Send + Sync + 'static,
     Context: Send + Sync + 'static,
@@ -189,104 +218,115 @@ where
     Subscription: juniper::GraphQLType<S, Context = Context, TypeInfo = ()> + Send + Sync + 'static,
 {
     let schema = Arc::new(schema);
-    let post_schema = schema.clone();
+    let post_json_schema = schema.clone();
+    let post_graphql_schema = schema.clone();
 
-    let handle_post_request =
-        move |context: Context, request: GraphQLBatchRequest<S>| -> Response {
-            let schema = post_schema.clone();
+    let handle_post_json_request = move |context: Context, req: GraphQLBatchRequest<S>| {
+        let schema = post_json_schema.clone();
+        async move {
+            let res = task::spawn_blocking(move || {
+                let resp = req.execute_sync(&schema, &context);
+                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
+            })
+            .await?;
 
-            Box::pin(
-                async move {
-                    let result = task::spawn_blocking(move || {
-                        let response = request.execute_sync(&schema, &context);
-                        Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                    })
-                    .await?;
-
-                    Ok(build_response(result))
-                }
-                .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e))),
-            )
-        };
-
-    let post_filter = warp::post()
-        .and(context_extractor.clone())
-        .and(warp::body::json())
-        .and_then(handle_post_request);
-
-    let handle_get_request = move |context: Context,
-                                   mut request: std::collections::HashMap<String, String>|
-          -> Response {
-        let schema = schema.clone();
-
-        Box::pin(
-            async move {
-                let result = task::spawn_blocking(move || {
-                    let variables = match request.remove("variables") {
-                        None => None,
-                        Some(vs) => serde_json::from_str(&vs)?,
-                    };
-
-                    let graphql_request = juniper::http::GraphQLRequest::new(
-                        request.remove("query").ok_or_else(|| {
-                            failure::format_err!("Missing GraphQL query string in query parameters")
-                        })?,
-                        request.get("operation_name").map(|s| s.to_owned()),
-                        variables,
-                    );
-
-                    let response = graphql_request.execute_sync(&schema, &context);
-                    Ok((serde_json::to_vec(&response)?, response.is_ok()))
-                })
-                .await?;
-
-                Ok(build_response(result))
-            }
-            .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e))),
-        )
+            Ok(build_response(res))
+        }
+        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
     };
+    let post_json_filter = warp::post()
+        .and(header::exact_ignore_case(
+            "content-type",
+            "application/json",
+        ))
+        .and(context_extractor.clone())
+        .and(body::json())
+        .and_then(handle_post_json_request);
 
+    let handle_post_graphql_request = move |context: Context, body: Bytes| {
+        let schema = post_graphql_schema.clone();
+        async move {
+            let res = task::spawn_blocking(move || {
+                let query = str::from_utf8(body.as_ref()).map_err(|e| {
+                    failure::format_err!("Request body is not a valid UTF-8 string: {}", e)
+                })?;
+                let req = GraphQLRequest::new(query.into(), None, None);
+
+                let resp = req.execute_sync(&schema, &context);
+                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
+            })
+            .await?;
+
+            Ok(build_response(res))
+        }
+        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
+    };
+    let post_graphql_filter = warp::post()
+        .and(header::exact_ignore_case(
+            "content-type",
+            "application/graphql",
+        ))
+        .and(context_extractor.clone())
+        .and(body::bytes())
+        .and_then(handle_post_graphql_request);
+
+    let handle_get_request = move |context: Context, mut qry: HashMap<String, String>| {
+        let schema = schema.clone();
+        async move {
+            let res = task::spawn_blocking(move || {
+                let req = GraphQLRequest::new(
+                    qry.remove("query").ok_or_else(|| {
+                        failure::format_err!("Missing GraphQL query string in query parameters")
+                    })?,
+                    qry.remove("operation_name"),
+                    qry.remove("variables")
+                        .map(|vs| serde_json::from_str(&vs))
+                        .transpose()?,
+                );
+
+                let resp = req.execute_sync(&schema, &context);
+                Ok((serde_json::to_vec(&resp)?, resp.is_ok()))
+            })
+            .await?;
+
+            Ok(build_response(res))
+        }
+        .map_err(|e: task::JoinError| warp::reject::custom(JoinError(e)))
+    };
     let get_filter = warp::get()
         .and(context_extractor)
-        .and(warp::filters::query::query())
+        .and(query::query())
         .and_then(handle_get_request);
 
-    get_filter.or(post_filter).unify().boxed()
+    get_filter
+        .or(post_json_filter)
+        .unify()
+        .or(post_graphql_filter)
+        .unify()
+        .boxed()
 }
 
-/// Error raised by `tokio_threadpool` if the thread pool
-/// has been shutdown
+/// Error raised by `tokio_threadpool` if the thread pool has been shutdown.
 ///
-/// Wrapper type is needed as inner type does not implement `warp::reject::Reject`
+/// Wrapper type is needed as inner type does not implement `warp::reject::Reject`.
+#[derive(Debug)]
 pub struct JoinError(task::JoinError);
 
 impl warp::reject::Reject for JoinError {}
 
-impl std::fmt::Debug for JoinError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "JoinError({:?})", self.0)
-    }
-}
-
-fn build_response(
-    response: Result<(Vec<u8>, bool), failure::Error>,
-) -> warp::http::Response<Vec<u8>> {
+fn build_response(response: Result<(Vec<u8>, bool), failure::Error>) -> http::Response<Vec<u8>> {
     match response {
-        Ok((body, is_ok)) => warp::http::Response::builder()
+        Ok((body, is_ok)) => http::Response::builder()
             .status(if is_ok { 200 } else { 400 })
             .header("content-type", "application/json")
             .body(body)
             .expect("response is valid"),
-        Err(_) => warp::http::Response::builder()
-            .status(warp::http::StatusCode::INTERNAL_SERVER_ERROR)
+        Err(_) => http::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
             .body(Vec::new())
             .expect("status code is valid"),
     }
 }
-
-type Response = Pin<
-    Box<dyn Future<Output = Result<warp::http::Response<Vec<u8>>, warp::reject::Rejection>> + Send>,
->;
 
 /// Create a filter that replies with an HTML page containing GraphiQL. This does not handle routing, so you can mount it on any endpoint.
 ///
@@ -318,7 +358,7 @@ type Response = Pin<
 pub fn graphiql_filter(
     graphql_endpoint_url: &'static str,
     subscriptions_endpoint: Option<&'static str>,
-) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
+) -> warp::filters::BoxedFilter<(http::Response<Vec<u8>>,)> {
     warp::any()
         .map(move || graphiql_response(graphql_endpoint_url, subscriptions_endpoint))
         .boxed()
@@ -327,8 +367,8 @@ pub fn graphiql_filter(
 fn graphiql_response(
     graphql_endpoint_url: &'static str,
     subscriptions_endpoint: Option<&'static str>,
-) -> warp::http::Response<Vec<u8>> {
-    warp::http::Response::builder()
+) -> http::Response<Vec<u8>> {
+    http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
         .body(
             juniper::http::graphiql::graphiql_source(graphql_endpoint_url, subscriptions_endpoint)
@@ -341,7 +381,7 @@ fn graphiql_response(
 pub fn playground_filter(
     graphql_endpoint_url: &'static str,
     subscriptions_endpoint_url: Option<&'static str>,
-) -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
+) -> warp::filters::BoxedFilter<(http::Response<Vec<u8>>,)> {
     warp::any()
         .map(move || playground_response(graphql_endpoint_url, subscriptions_endpoint_url))
         .boxed()
@@ -350,8 +390,8 @@ pub fn playground_filter(
 fn playground_response(
     graphql_endpoint_url: &'static str,
     subscriptions_endpoint_url: Option<&'static str>,
-) -> warp::http::Response<Vec<u8>> {
-    warp::http::Response::builder()
+) -> http::Response<Vec<u8>> {
+    http::Response::builder()
         .header("content-type", "text/html;charset=utf-8")
         .body(
             juniper::http::playground::playground_source(
@@ -780,100 +820,122 @@ mod tests {
     }
 }
 
-//TODO: update warp tests
-//#[cfg(test)]
-//mod tests_http_harness {
-//    use super::*;
-//    use juniper::{
-//        http::tests::{run_http_test_suite, HTTPIntegration, TestResponse},
-//        tests::{model::Database, schema::Query},
-//        EmptyMutation, EmptySubscription, RootNode,
-//    };
-//    use warp::{self, Filter};
-//
-//    type Schema =
-//        juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
-//
-//    fn warp_server() -> warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)> {
-//        let schema: Schema = RootNode::new(
-//            Query,
-//            EmptyMutation::<Database>::new(),
-//            EmptySubscription::<Database>::new(),
-//        );
-//
-//        let state = warp::any().map(move || Database::new());
-//        let filter = warp::filters::path::end().and(make_graphql_filter(schema, state.boxed()));
-//
-//        filter.boxed()
-//    }
-//
-//    struct TestWarpIntegration {
-//        filter: warp::filters::BoxedFilter<(warp::http::Response<Vec<u8>>,)>,
-//    }
-//
-//    // This can't be implemented with the From trait since TestResponse is not defined in this crate.
-//    fn test_response_from_http_response(response: warp::http::Response<Vec<u8>>) -> TestResponse {
-//        TestResponse {
-//            status_code: response.status().as_u16() as i32,
-//            body: Some(String::from_utf8(response.body().to_owned()).unwrap()),
-//            content_type: response
-//                .headers()
-//                .get("content-type")
-//                .expect("missing content-type header in warp response")
-//                .to_str()
-//                .expect("invalid content-type string")
-//                .to_owned(),
-//        }
-//    }
-//
-//    impl HTTPIntegration for TestWarpIntegration {
-//        fn get(&self, url: &str) -> TestResponse {
-//            use percent_encoding::{percent_encode, DEFAULT_ENCODE_SET};
-//            let url: String = percent_encode(url.replace("/?", "").as_bytes(), DEFAULT_ENCODE_SET)
-//                .into_iter()
-//                .collect::<Vec<_>>()
-//                .join("");
-//
-//            let response = warp::test::request()
-//                .method("GET")
-//                .path(&format!("/?{}", url))
-//                .filter(&self.filter)
-//                .await
-//                .unwrap_or_else(|rejection| {
-//                    warp::http::Response::builder()
-//                        .status(rejection.status())
-//                        .header("content-type", "application/json")
-//                        .body(Vec::new())
-//                        .unwrap()
-//                });
-//            test_response_from_http_response(response)
-//        }
-//
-//        fn post(&self, url: &str, body: &str) -> TestResponse {
-//            let response = warp::test::request()
-//                .method("POST")
-//                .header("content-type", "application/json")
-//                .path(url)
-//                .body(body)
-//                .filter(&self.filter)
-//                .await
-//                .unwrap_or_else(|rejection| {
-//                    warp::http::Response::builder()
-//                        .status(rejection.status())
-//                        .header("content-type", "application/json")
-//                        .body(Vec::new())
-//                        .unwrap()
-//                });
-//            test_response_from_http_response(response)
-//        }
-//    }
-//
-//    #[test]
-//    fn test_warp_integration() {
-//        let integration = TestWarpIntegration {
-//            filter: warp_server(),
-//        };
-//
-//        run_http_test_suite(&integration);
-//    }
-//}
+#[cfg(test)]
+mod tests_http_harness {
+    use super::*;
+    use juniper::{
+        http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
+        tests::{model::Database, schema::Query},
+        EmptyMutation, EmptySubscription, RootNode,
+    };
+    use warp::{
+        self,
+        filters::{path, BoxedFilter},
+        Filter,
+    };
+
+    struct TestWarpIntegration {
+        filter: BoxedFilter<(http::Response<Vec<u8>>,)>,
+    }
+
+    impl TestWarpIntegration {
+        fn new(is_sync: bool) -> Self {
+            let schema = RootNode::new(
+                Query,
+                EmptyMutation::<Database>::new(),
+                EmptySubscription::<Database>::new(),
+            );
+            let state = warp::any().map(move || Database::new());
+
+            let filter = path::end().and(if is_sync {
+                make_graphql_filter_sync(schema, state.boxed())
+            } else {
+                make_graphql_filter(schema, state.boxed())
+            });
+            Self {
+                filter: filter.boxed(),
+            }
+        }
+
+        fn make_request(&self, req: warp::test::RequestBuilder) -> TestResponse {
+            let mut rt = tokio::runtime::Runtime::new().expect("Failed to create tokio::Runtime");
+            make_test_response(rt.block_on(async move {
+                req.filter(&self.filter).await.unwrap_or_else(|rejection| {
+                    let code = if rejection.is_not_found() {
+                        http::StatusCode::NOT_FOUND
+                    } else if let Some(body::BodyDeserializeError { .. }) = rejection.find() {
+                        http::StatusCode::BAD_REQUEST
+                    } else {
+                        http::StatusCode::INTERNAL_SERVER_ERROR
+                    };
+                    http::Response::builder()
+                        .status(code)
+                        .header("content-type", "application/json")
+                        .body(Vec::new())
+                        .unwrap()
+                })
+            }))
+        }
+    }
+
+    impl HttpIntegration for TestWarpIntegration {
+        fn get(&self, url: &str) -> TestResponse {
+            use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
+
+            let url: String = utf8_percent_encode(&url.replace("/?", ""), QUERY_ENCODE_SET)
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join("");
+
+            self.make_request(
+                warp::test::request()
+                    .method("GET")
+                    .path(&format!("/?{}", url)),
+            )
+        }
+
+        fn post_json(&self, url: &str, body: &str) -> TestResponse {
+            self.make_request(
+                warp::test::request()
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .path(url)
+                    .body(body),
+            )
+        }
+
+        fn post_graphql(&self, url: &str, body: &str) -> TestResponse {
+            self.make_request(
+                warp::test::request()
+                    .method("POST")
+                    .header("content-type", "application/graphql")
+                    .path(url)
+                    .body(body),
+            )
+        }
+    }
+
+    fn make_test_response(resp: http::Response<Vec<u8>>) -> TestResponse {
+        TestResponse {
+            status_code: resp.status().as_u16() as i32,
+            body: Some(String::from_utf8(resp.body().to_owned()).unwrap()),
+            content_type: resp
+                .headers()
+                .get("content-type")
+                .expect("missing content-type header in warp response")
+                .to_str()
+                .expect("invalid content-type string")
+                .to_owned(),
+        }
+    }
+
+    #[test]
+    fn test_warp_integration() {
+        run_http_test_suite(&TestWarpIntegration::new(false));
+    }
+
+    #[test]
+    fn test_sync_warp_integration() {
+        run_http_test_suite(&TestWarpIntegration::new(true));
+    }
+}
