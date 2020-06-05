@@ -55,6 +55,8 @@ non-null types by default. A field of type `Vec<Episode>` will be converted into
 `[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
 `Option<Vec<Option<Episode>>>`.
 
+Juniper follows a [code-first approach][schema_approach] to defining GraphQL Schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider  [juniper-from-schema][] for generating code from a schema file.
+
 ## Integrations
 
 ### Data types
@@ -91,6 +93,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [iron]: http://ironframework.io
 [graphql_spec]: http://facebook.github.io/graphql
 [schema_language]: https://graphql.org/learn/schema/#type-language
+[schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
 [test_schema_rs]: https://github.com/graphql-rust/juniper/blob/master/juniper/src/tests/schema.rs
 [tokio]: https://github.com/tokio-rs/tokio
 [actix_examples]: https://github.com/graphql-rust/juniper/tree/master/juniper_actix/examples
