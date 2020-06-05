@@ -1,6 +1,6 @@
 # Schemas
 
-Juniper follows a [code-first approach][schema_approach] to defining GraphQL Schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider  [juniper-from-schema][] for generating code from a schema file.
+Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
 
 A schema consists of three types: a query object, a mutation object, and a subscription object.
 These three define the root query fields, mutations and subscriptions of the schema, respectively.
