@@ -91,15 +91,15 @@ fn main() {
     // Convert the Rust schema into the GraphQL Schema Language.
     let result = schema.as_schema_language();
 
-    let expected =
-        r#"
-        type Query {
-            hello: String!
-        }
-        schema {
-            query: Query
-        }
-    "#;
+    let expected = r#"
+type Query {
+  hello: String!
+}
+
+schema {
+  query: Query
+}
+"#;
     assert_eq!(result, expected);
 }
 ```
