@@ -55,7 +55,7 @@ non-null types by default. A field of type `Vec<Episode>` will be converted into
 `[Episode!]!`. The corresponding Rust type for e.g. `[Episode]` would be
 `Option<Vec<Option<Episode>>>`.
 
-Juniper follows a [code-first approach][schema_approach] to defining GraphQL Schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider  [juniper-from-schema][] for generating code from a schema file.
+Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
 
 ## Integrations
 
