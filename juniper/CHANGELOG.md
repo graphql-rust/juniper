@@ -2,8 +2,8 @@
 
 ## Features
 
-- Added support for outputting the Rust schema in the [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language) ([#676])
- - Controlled by the `schema-language` feature and is on by default. It may be turned off if you do not need this functionality to reduce dependencies and speed up compile times.
+- Added support for outputting the Rust schema in the [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language). ([#676](https://github.com/graphql-rust/juniper/pull/676))
+  - This is controlled by the `schema-language` feature and is on by default. It may be turned off if you do not need this functionality to reduce dependencies and speed up compile times.
 
 - Normalization for the subscriptions_endpoint_url in the `graphiql_source`.
 (See [#628](https://github.com/graphql-rust/juniper/pull/628) for more details)
