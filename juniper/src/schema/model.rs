@@ -647,7 +647,7 @@ mod test {
                         Some("stuff")
                     }
                 }
-                fndm fruit() -> Fruit {
+                fn fruit() -> Fruit {
                     Fruit::Apple
                 }
                 fn gluten_free(flavor: String) -> GlutenFree {
