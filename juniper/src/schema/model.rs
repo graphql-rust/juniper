@@ -1,18 +1,21 @@
 use std::fmt;
 
 use fnv::FnvHashMap;
-
+#[cfg(feature = "graphql-parser-integration")]
 use graphql_parser::schema::Document;
+
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
 use crate::{
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
-    schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTranslator},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
 };
+
+#[cfg(feature = "graphql-parser-integration")]
+use crate::schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTranslator};
 
 /// Root query node of a schema
 ///
@@ -644,7 +647,7 @@ mod test {
                         Some("stuff")
                     }
                 }
-                fn fruit() -> Fruit {
+                fndm fruit() -> Fruit {
                     Fruit::Apple
                 }
                 fn gluten_free(flavor: String) -> GlutenFree {
