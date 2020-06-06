@@ -1,13 +1,14 @@
 //! Benchmarks for Juniper.
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use juniper::{InputValue, Variables};
+use juniper::{InputValue, IntrospectionFormat, Variables};
+use juniper_benchmarks::userkind as juniper_benchmarks;
 use std::collections::HashMap;
 
 fn bench_users_flat_instant(c: &mut Criterion) {
     const QUERY: &'static str = r#"
-        query Query($id: Int) {
-            users_async_instant(ids: [$id]!) {
+        query benchmarkQuery($id: [Int!]) {
+            usersInstant(ids: $id) {
                 id
                 kind
                 username
@@ -100,100 +101,6 @@ fn bench_users_flat_introspection_query_type_name(c: &mut Criterion) {
 }
 
 fn bench_users_flat_introspection_query_full(c: &mut Criterion) {
-    const QUERY: &'static str = r#"
-  query IntrospectionQuery {
-    __schema {
-      queryType { name }
-      mutationType { name }
-      subscriptionType { name }
-      types {
-        ...FullType
-      }
-      directives {
-        name
-        description
-        locations
-        args {
-          ...InputValue
-        }
-      }
-    }
-  }
-
-  fragment FullType on __Type {
-    kind
-    name
-    description
-    fields(includeDeprecated: true) {
-      name
-      description
-      args {
-        ...InputValue
-      }
-      type {
-        ...TypeRef
-      }
-      isDeprecated
-      deprecationReason
-    }
-    inputFields {
-      ...InputValue
-    }
-    interfaces {
-      ...TypeRef
-    }
-    enumValues(includeDeprecated: true) {
-      name
-      description
-      isDeprecated
-      deprecationReason
-    }
-    possibleTypes {
-      ...TypeRef
-    }
-  }
-
-  fragment InputValue on __InputValue {
-    name
-    description
-    type { ...TypeRef }
-    defaultValue
-  }
-
-  fragment TypeRef on __Type {
-    kind
-    name
-    ofType {
-      kind
-      name
-      ofType {
-        kind
-        name
-        ofType {
-          kind
-          name
-          ofType {
-            kind
-            name
-            ofType {
-              kind
-              name
-              ofType {
-                kind
-                name
-                ofType {
-                  kind
-                  name
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-"#;
-
     let mut group = c.benchmark_group("Users Flat - Introspection Query Full");
     group.bench_function("Single Thread", |b| {
         let mut rt = tokio::runtime::Builder::new()
@@ -201,7 +108,7 @@ fn bench_users_flat_introspection_query_full(c: &mut Criterion) {
             .build()
             .unwrap();
         b.iter(|| {
-            let f = juniper_benchmarks::execute(QUERY, Variables::new());
+            let f = juniper_benchmarks::introspect(IntrospectionFormat::All);
             rt.block_on(f)
         })
     });
@@ -213,7 +120,7 @@ fn bench_users_flat_introspection_query_full(c: &mut Criterion) {
             .unwrap();
 
         b.iter(|| {
-            let f = juniper_benchmarks::execute(QUERY, Variables::new());
+            let f = juniper_benchmarks::introspect(IntrospectionFormat::All);
             rt.block_on(f)
         })
     });
@@ -222,100 +129,6 @@ fn bench_users_flat_introspection_query_full(c: &mut Criterion) {
 }
 
 fn bench_users_flat_introspection_query_without_description(c: &mut Criterion) {
-    const QUERY: &'static str = r#"
-query IntrospectionQuery {
-  __schema {
-    queryType {
-      name
-    }
-    mutationType {
-      name
-    }
-    subscriptionType {
-      name
-    }
-    types {
-      ...FullType
-    }
-    directives {
-      name
-      locations
-      args {
-        ...InputValue
-      }
-    }
-  }
-}
-fragment FullType on __Type {
-  kind
-  name
-  fields(includeDeprecated: true) {
-    name
-    args {
-      ...InputValue
-    }
-    type {
-      ...TypeRef
-    }
-    isDeprecated
-    deprecationReason
-  }
-  inputFields {
-    ...InputValue
-  }
-  interfaces {
-    ...TypeRef
-  }
-  enumValues(includeDeprecated: true) {
-    name
-    isDeprecated
-    deprecationReason
-  }
-  possibleTypes {
-    ...TypeRef
-  }
-}
-fragment InputValue on __InputValue {
-  name
-  type {
-    ...TypeRef
-  }
-  defaultValue
-}
-fragment TypeRef on __Type {
-  kind
-  name
-  ofType {
-    kind
-    name
-    ofType {
-      kind
-      name
-      ofType {
-        kind
-        name
-        ofType {
-          kind
-          name
-          ofType {
-            kind
-            name
-            ofType {
-              kind
-              name
-              ofType {
-                kind
-                name
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-"#;
-
     let mut group = c.benchmark_group("Users Flat - Introspection Query Without Descprtion");
     group.bench_function("Single Thread", |b| {
         let mut rt = tokio::runtime::Builder::new()
@@ -323,7 +136,7 @@ fragment TypeRef on __Type {
             .build()
             .unwrap();
         b.iter(|| {
-            let f = juniper_benchmarks::execute(QUERY, Variables::new());
+            let f = juniper_benchmarks::introspect(IntrospectionFormat::WithoutDescriptions);
             rt.block_on(f)
         })
     });
@@ -335,7 +148,7 @@ fragment TypeRef on __Type {
             .unwrap();
 
         b.iter(|| {
-            let f = juniper_benchmarks::execute(QUERY, Variables::new());
+            let f = juniper_benchmarks::introspect(IntrospectionFormat::WithoutDescriptions);
             rt.block_on(f)
         })
     });
