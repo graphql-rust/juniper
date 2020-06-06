@@ -2,6 +2,8 @@
 
 This page will give you a short introduction to the concepts in Juniper.
 
+Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
+
 ## Installation
 
 !FILENAME Cargo.toml
@@ -193,6 +195,8 @@ fn main() {
 }
 ```
 
+[juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
+[schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
 [hyper]: servers/hyper.md
 [warp]: servers/warp.md
 [rocket]: servers/rocket.md

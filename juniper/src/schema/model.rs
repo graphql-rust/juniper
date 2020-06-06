@@ -1,6 +1,8 @@
 use std::fmt;
 
 use fnv::FnvHashMap;
+#[cfg(feature = "graphql-parser-integration")]
+use graphql_parser::schema::Document;
 
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
@@ -11,6 +13,9 @@ use crate::{
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
 };
+
+#[cfg(feature = "graphql-parser-integration")]
+use crate::schema::translate::{graphql_parser::GraphQLParserTranslator, SchemaTranslator};
 
 /// Root query node of a schema
 ///
@@ -46,9 +51,9 @@ pub struct RootNode<
 #[derive(Debug)]
 pub struct SchemaType<'a, S> {
     pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
-    query_type_name: String,
-    mutation_type_name: Option<String>,
-    subscription_type_name: Option<String>,
+    pub(crate) query_type_name: String,
+    pub(crate) mutation_type_name: Option<String>,
+    pub(crate) subscription_type_name: Option<String>,
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
@@ -101,6 +106,22 @@ where
         subscription_obj: SubscriptionT,
     ) -> Self {
         RootNode::new_with_info(query_obj, mutation_obj, subscription_obj, (), (), ())
+    }
+
+    #[cfg(feature = "schema-language")]
+    /// The schema definition as a `String` in the
+    /// [GraphQL Schema Language](https://graphql.org/learn/schema/#type-language)
+    /// format.
+    pub fn as_schema_language(&self) -> String {
+        let doc = self.as_parser_document();
+        format!("{}", doc)
+    }
+
+    #[cfg(feature = "graphql-parser-integration")]
+    /// The schema definition as a [`graphql_parser`](https://crates.io/crates/graphql-parser)
+    /// [`Document`](https://docs.rs/graphql-parser/latest/graphql_parser/schema/struct.Document.html).
+    pub fn as_parser_document(&'a self) -> Document<'a, &'a str> {
+        GraphQLParserTranslator::translate_schema(&self.schema)
     }
 }
 
@@ -531,6 +552,160 @@ impl<'a, S> fmt::Display for TypeType<'a, S> {
             TypeType::Concrete(t) => f.write_str(t.name().unwrap()),
             TypeType::List(ref i) => write!(f, "[{}]", i),
             TypeType::NonNull(ref i) => write!(f, "{}!", i),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    #[cfg(feature = "graphql-parser-integration")]
+    mod graphql_parser_integration {
+        use crate as juniper;
+        use crate::{EmptyMutation, EmptySubscription};
+
+        #[test]
+        fn graphql_parser_doc() {
+            struct Query;
+            #[juniper::graphql_object]
+            impl Query {
+                fn blah() -> bool {
+                    true
+                }
+            };
+            let schema = crate::RootNode::new(
+                Query,
+                EmptyMutation::<()>::new(),
+                EmptySubscription::<()>::new(),
+            );
+            let ast = graphql_parser::parse_schema::<&str>(
+                r#"
+                type Query {
+                  blah: Boolean!
+                }
+
+                schema {
+                  query: Query
+                }
+            "#,
+            )
+            .unwrap();
+            assert_eq!(
+                format!("{}", ast),
+                format!("{}", schema.as_parser_document()),
+            );
+        }
+    }
+
+    #[cfg(feature = "schema-language")]
+    mod schema_language {
+        use crate as juniper;
+        use crate::{
+            EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+            GraphQLUnionInternal as GraphQLUnion,
+        };
+
+        #[test]
+        fn schema_language() {
+            #[derive(GraphQLObject, Default)]
+            struct Cake {
+                fresh: bool,
+            };
+            #[derive(GraphQLObject, Default)]
+            struct IceCream {
+                cold: bool,
+            };
+            #[derive(GraphQLUnion)]
+            enum GlutenFree {
+                Cake(Cake),
+                IceCream(IceCream),
+            }
+            #[derive(GraphQLEnum)]
+            enum Fruit {
+                Apple,
+                Orange,
+            }
+            #[derive(GraphQLInputObject)]
+            struct Coordinate {
+                latitude: f64,
+                longitude: f64,
+            }
+            struct Query;
+            #[juniper::graphql_object]
+            impl Query {
+                fn blah() -> bool {
+                    true
+                }
+                /// This is whatever's description.
+                fn whatever() -> String {
+                    "foo".to_string()
+                }
+                fn arr(stuff: Vec<Coordinate>) -> Option<&str> {
+                    if stuff.is_empty() {
+                        None
+                    } else {
+                        Some("stuff")
+                    }
+                }
+                fn fruit() -> Fruit {
+                    Fruit::Apple
+                }
+                fn gluten_free(flavor: String) -> GlutenFree {
+                    if flavor == "savory" {
+                        GlutenFree::Cake(Cake::default())
+                    } else {
+                        GlutenFree::IceCream(IceCream::default())
+                    }
+                }
+                #[deprecated]
+                fn old() -> i32 {
+                    42
+                }
+                #[deprecated(note = "This field is deprecated, use another.")]
+                fn really_old() -> f64 {
+                    42.0
+                }
+            };
+
+            let schema = crate::RootNode::new(
+                Query,
+                EmptyMutation::<()>::new(),
+                EmptySubscription::<()>::new(),
+            );
+            let ast = graphql_parser::parse_schema::<&str>(
+                r#"
+                union GlutenFree = Cake | IceCream
+                enum Fruit {
+                    APPLE
+                    ORANGE
+                }
+                type Cake {
+                    fresh: Boolean!
+                }
+                type IceCream {
+                    cold: Boolean!
+                }
+                type Query {
+                  blah: Boolean!
+                  "This is whatever's description."
+                  whatever: String!
+                  arr(stuff: [Coordinate!]!): String
+                  fruit: Fruit!
+                  glutenFree(flavor: String!): GlutenFree!
+                  old: Int! @deprecated
+                  reallyOld: Float! @deprecated(reason: "This field is deprecated, use another.")
+                }
+                input Coordinate {
+                    latitude: Float!
+                    longitude: Float!
+                }
+                schema {
+                  query: Query
+                }
+            "#,
+            )
+            .unwrap();
+            assert_eq!(format!("{}", ast), schema.as_schema_language());
         }
     }
 }
