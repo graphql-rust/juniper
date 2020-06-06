@@ -286,7 +286,7 @@ pub fn build_scalar(
                 #generic_type: 'fut,
             {
                 let f = futures::future::ready(Ok(#resolve_body));
-                futures::future::FutureExt::boxed(f)
+                Box::pin(f)
             }
         }
 

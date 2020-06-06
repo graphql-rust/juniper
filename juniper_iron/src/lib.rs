@@ -460,7 +460,7 @@ mod tests {
             let res = request::get(&fixup_url(url), Headers::new(), &make_handler())
                 .map(make_test_response)
                 .unwrap_or_else(make_test_error_response);
-            futures::future::FutureExt::boxed(futures::future::ready(res))
+            Box::pin(futures::future::ready(res))
         }
 
         fn post_json<'me, 'url, 'body, 'fut>(
@@ -478,7 +478,7 @@ mod tests {
             let res = request::post(&fixup_url(url), headers, body, &make_handler())
                 .map(make_test_response)
                 .unwrap_or_else(make_test_error_response);
-            futures::future::FutureExt::boxed(futures::future::ready(res))
+            Box::pin(futures::future::ready(res))
         }
 
         fn post_graphql<'me, 'url, 'body, 'fut>(
@@ -500,7 +500,7 @@ mod tests {
             let res = request::post(&fixup_url(url), headers, body, &make_handler())
                 .map(make_test_response)
                 .unwrap_or_else(make_test_error_response);
-            futures::future::FutureExt::boxed(futures::future::ready(res))
+            Box::pin(futures::future::ready(res))
         }
     }
 

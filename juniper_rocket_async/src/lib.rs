@@ -494,7 +494,7 @@ mod tests {
                 let req = req.dispatch().await;
                 make_test_response(req).await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
 
         fn post_json<'me, 'url, 'body, 'fut>(
@@ -512,7 +512,7 @@ mod tests {
                 let req = req.dispatch().await;
                 make_test_response(req).await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
 
         fn post_graphql<'me, 'url, 'body, 'fut>(
@@ -534,7 +534,7 @@ mod tests {
                 let req = req.dispatch().await;
                 make_test_response(req).await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
     }
 

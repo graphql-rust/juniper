@@ -224,7 +224,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed(futures::future::ready(Ok(Value::scalar(String::from(
+        Box::pin(futures::future::ready(Ok(Value::scalar(String::from(
             *self,
         )))))
     }

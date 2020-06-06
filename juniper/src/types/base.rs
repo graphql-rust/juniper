@@ -233,7 +233,7 @@ impl GraphQLType<DefaultScalarValue> for User
                 _ => panic!("Field {} not found on type User", field_name),
             }
         };
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }
 ```
@@ -336,7 +336,7 @@ where
             }
         };
 
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 
     /// Resolve the provided selection set against the current object.
@@ -375,7 +375,7 @@ where
             }
         };
 
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }
 

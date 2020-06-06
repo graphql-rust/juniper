@@ -460,7 +460,7 @@ mod tests {
                 let req = client.get(url);
                 make_test_response(req)
             });
-            futures::future::FutureExt::boxed(async move { f.await.expect("failed to wait") })
+            Box::pin(async move { f.await.expect("failed to wait") })
         }
 
         fn post_json<'me, 'url, 'body, 'fut>(
@@ -480,7 +480,7 @@ mod tests {
                 let req = client.post(url).header(ContentType::JSON).body(body);
                 make_test_response(req)
             });
-            futures::future::FutureExt::boxed(async move { f.await.expect("failed to wait") })
+            Box::pin(async move { f.await.expect("failed to wait") })
         }
 
         fn post_graphql<'me, 'url, 'body, 'fut>(
@@ -503,7 +503,7 @@ mod tests {
                     .body(body);
                 make_test_response(req)
             });
-            futures::future::FutureExt::boxed(async move { f.await.expect("failed to wait") })
+            Box::pin(async move { f.await.expect("failed to wait") })
         }
     }
 

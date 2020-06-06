@@ -923,7 +923,7 @@ impl GraphQLTypeDefiniton {
                             }
                         }
                     };
-                    futures::future::FutureExt::boxed(f)
+                    Box::pin(f)
                 }
 
                 fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
@@ -1027,7 +1027,7 @@ impl GraphQLTypeDefiniton {
                 };
                 quote!(
                     #name => {
-                        futures::FutureExt::boxed(async move {
+                        Box::pin(async move {
                             let res #_type = { #code };
                             let res = #juniper_crate_name::IntoFieldResult::<_, #scalar>::into_result(res)?;
                             let executor= executor.as_owned_executor();
@@ -1316,7 +1316,7 @@ impl GraphQLTypeDefiniton {
                         panic!("Concrete type not handled by instance resolvers on {}", #name);
                     };
 
-                    futures::future::FutureExt::boxed(f)
+                    Box::pin(f)
                 }
             }
         };
@@ -1444,7 +1444,7 @@ impl GraphQLTypeDefiniton {
                         };
                         Ok(v)
                     };
-                    futures::future::FutureExt::boxed(f)
+                    Box::pin(f)
                 }
             }
 

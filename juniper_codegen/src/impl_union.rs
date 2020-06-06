@@ -228,7 +228,7 @@ pub fn impl_union(
                     panic!("Concrete type not handled by instance resolvers on {}", #name);
                 };
 
-                futures::future::FutureExt::boxed(f)
+                Box::pin(f)
             }
         }
     };

@@ -225,7 +225,7 @@ macro_rules! graphql_interface {
                                 }
                             };
 
-                            return futures::future::FutureExt::boxed(f)
+                            return Box::pin(f)
                         }
                     )*
 
@@ -273,7 +273,7 @@ macro_rules! graphql_interface {
                         panic!("Concrete type not handled by instance resolvers on {}", $($outname)*);
                     };
 
-                    return futures::future::FutureExt::boxed(f)
+                    Box::pin(f)
                 }
             }
         );

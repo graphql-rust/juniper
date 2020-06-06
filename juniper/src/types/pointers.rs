@@ -45,12 +45,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed((**self).resolve_into_type(
-            info,
-            type_name,
-            selection_set,
-            executor,
-        ))
+        Box::pin((**self).resolve_into_type(info, type_name, selection_set, executor))
     }
 
     fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
@@ -69,9 +64,7 @@ where
         'field: 'fut,
         S: 'fut,
     {
-        futures::future::FutureExt::boxed(
-            (**self).resolve_field(info, field_name, arguments, executor),
-        )
+        Box::pin((**self).resolve_field(info, field_name, arguments, executor))
     }
 
     fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
@@ -88,7 +81,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed((**self).resolve(info, selection_set, executor))
+        Box::pin((**self).resolve(info, selection_set, executor))
     }
 }
 
@@ -152,12 +145,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed((**self).resolve_into_type(
-            info,
-            type_name,
-            selection_set,
-            executor,
-        ))
+        Box::pin((**self).resolve_into_type(info, type_name, selection_set, executor))
     }
 
     fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
@@ -176,9 +164,7 @@ where
         'field: 'fut,
         S: 'fut,
     {
-        futures::future::FutureExt::boxed(
-            (**self).resolve_field(info, field_name, arguments, executor),
-        )
+        Box::pin((**self).resolve_field(info, field_name, arguments, executor))
     }
 
     fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
@@ -195,7 +181,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed((**self).resolve(info, selection_set, executor))
+        Box::pin((**self).resolve(info, selection_set, executor))
     }
 }
 
@@ -245,12 +231,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed((**self).resolve_into_type(
-            info,
-            type_name,
-            selection_set,
-            executor,
-        ))
+        Box::pin((**self).resolve_into_type(info, type_name, selection_set, executor))
     }
 
     fn resolve_field<'me, 'ty, 'field, 'args, 'ref_err, 'err, 'fut>(
@@ -269,9 +250,7 @@ where
         'field: 'fut,
         S: 'fut,
     {
-        futures::future::FutureExt::boxed(
-            (**self).resolve_field(info, field_name, arguments, executor),
-        )
+        Box::pin((**self).resolve_field(info, field_name, arguments, executor))
     }
 
     fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
@@ -288,7 +267,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed((**self).resolve(info, selection_set, executor))
+        Box::pin((**self).resolve(info, selection_set, executor))
     }
 }
 

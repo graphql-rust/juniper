@@ -150,8 +150,7 @@ fn impl_scalar_struct(
                 'err: 'fut,
                 S: 'fut,
             {
-                futures::future::FutureExt::boxed(
-                    #crate_name::GraphQLType::resolve(&self.0, info, selection_set, executor))
+                Box::pin(#crate_name::GraphQLType::resolve(&self.0, info, selection_set, executor))
             }
         }
 

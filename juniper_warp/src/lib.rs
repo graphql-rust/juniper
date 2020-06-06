@@ -791,7 +791,7 @@ mod tests_http_harness {
                 )
                 .await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
 
         fn post_json<'me, 'url, 'body, 'fut>(
@@ -811,7 +811,7 @@ mod tests_http_harness {
                     .path(url)
                     .body(body),
             );
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
 
         fn post_graphql<'me, 'url, 'body, 'fut>(
@@ -831,7 +831,7 @@ mod tests_http_harness {
                     .path(url)
                     .body(body),
             );
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
     }
 

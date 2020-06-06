@@ -497,8 +497,7 @@ mod tests {
             'url: 'fut,
         {
             let f = self.make_request(test::TestRequest::get().uri(url));
-            let f = async move { f.await.unwrap() };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(async move { f.await.unwrap() })
         }
 
         fn post_json<'me, 'url, 'body, 'fut>(
@@ -517,8 +516,7 @@ mod tests {
                     .set_payload(body.to_string())
                     .uri(url),
             );
-            let f = async move { f.await.unwrap() };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(async move { f.await.unwrap() })
         }
 
         fn post_graphql<'me, 'url, 'body, 'fut>(
@@ -537,8 +535,7 @@ mod tests {
                     .set_payload(body.to_string())
                     .uri(url),
             );
-            let f = async move { f.await.unwrap() };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(async move { f.await.unwrap() })
         }
     }
 

@@ -295,7 +295,7 @@ mod tests {
                 )
                 .await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
 
         fn post_json<'me, 'url, 'body, 'fut>(
@@ -320,7 +320,7 @@ mod tests {
                     .expect(&format!("failed POST {}", url));
                 make_test_response(res).await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
 
         fn post_graphql<'me, 'url, 'body, 'fut>(
@@ -345,7 +345,7 @@ mod tests {
                     .expect(&format!("failed POST {}", url));
                 make_test_response(res).await
             };
-            futures::future::FutureExt::boxed(f)
+            Box::pin(f)
         }
     }
 

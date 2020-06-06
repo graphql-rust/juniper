@@ -62,9 +62,7 @@ where
         'field: 'fut,
         S: 'fut,
     {
-        futures::future::FutureExt::boxed(
-            executor.resolve(&(), self.attributes.get(field_name).unwrap()),
-        )
+        Box::pin(executor.resolve(&(), self.attributes.get(field_name).unwrap()))
     }
 }
 

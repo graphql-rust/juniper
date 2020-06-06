@@ -413,7 +413,7 @@ where
         'ty: 'fut,
         'val: 'fut,
     {
-        futures::future::FutureExt::boxed(value.resolve(info, self.current_selection_set, self))
+        Box::pin(value.resolve(info, self.current_selection_set, self))
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
@@ -434,7 +434,7 @@ where
             let e = self.replaced_context(<NewCtxT as FromContext<CtxT>>::from(self.context));
             e.resolve(info, value).await
         };
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 
     /// Resolve a single arbitrary value into a return value

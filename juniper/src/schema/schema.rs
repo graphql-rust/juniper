@@ -77,7 +77,7 @@ where
                 }
             }
         };
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 
     fn resolve<'me, 'ty, 'name, 'set, 'ref_err, 'err, 'fut>(
@@ -103,7 +103,7 @@ where
                 panic!("resolve() must be implemented by non-object output types");
             }
         };
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }
 

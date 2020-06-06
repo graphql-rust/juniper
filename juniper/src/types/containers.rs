@@ -50,7 +50,7 @@ where
             Ok(value)
         };
 
-        futures::future::FutureExt::boxed(f)
+        Box::pin(f)
     }
 }
 
@@ -118,7 +118,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed(resolve_into_list(executor, info, self.iter()))
+        Box::pin(resolve_into_list(executor, info, self.iter()))
     }
 }
 
@@ -195,7 +195,7 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        futures::future::FutureExt::boxed(resolve_into_list(executor, info, self.iter()))
+        Box::pin(resolve_into_list(executor, info, self.iter()))
     }
 }
 
