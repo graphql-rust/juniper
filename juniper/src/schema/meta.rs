@@ -392,7 +392,7 @@ impl<'a, S> MetaType<'a, S> {
                 name.starts_with("__") ||
             // <https://facebook.github.io/graphql/draft/#sec-Scalars>
             name == "Boolean" || name == "String" || name == "Int" || name == "Float" || name == "ID" ||
-            // Our custom empty mutation marker
+            // Our custom empty markers
             name == "_EmptyMutation" || name == "_EmptySubscription"
             }
         } else {
