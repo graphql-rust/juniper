@@ -6,6 +6,10 @@ use crate::{
     value::{DefaultScalarValue, Object, ScalarValue, Value},
     BoxFuture,
 };
+use futures::{
+    future::FutureExt,
+    stream::{FuturesOrdered, StreamExt},
+};
 use indexmap::IndexMap;
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
@@ -328,15 +332,11 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        let f = async move {
-            if Self::name(info).unwrap() == type_name {
-                self.resolve(info, selection_set, executor).await
-            } else {
-                panic!("resolve_into_type must be implemented by unions and interfaces");
-            }
-        };
-
-        Box::pin(f)
+        if Self::name(info).unwrap() == type_name {
+            Box::pin(self.resolve(info, selection_set, executor))
+        } else {
+            panic!("resolve_into_type must be implemented by unions and interfaces");
+        }
     }
 
     /// Resolve the provided selection set against the current object.
@@ -366,16 +366,11 @@ where
         'err: 'fut,
         S: 'fut,
     {
-        let f = async move {
-            if let Some(selection_set) = selection_set {
-                let value = resolve_selection_set_into(self, info, selection_set, executor).await;
-                Ok(value)
-            } else {
-                panic!("resolve() must be implemented by non-object output types");
-            }
-        };
-
-        Box::pin(f)
+        if let Some(selection_set) = selection_set {
+            Box::pin(resolve_selection_set_into(self, info, selection_set, executor).map(Ok))
+        } else {
+            panic!("resolve() must be implemented by non-object output types");
+        }
     }
 }
 
@@ -428,20 +423,8 @@ where
     S: ScalarValue,
     CtxT: Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt as _};
-
     let mut object = Object::with_capacity(selection_set.len());
-
-    let mut async_values = FuturesOrdered::<crate::BoxFuture<'a, AsyncValue<S>>>::new();
-
-    let meta_type = executor
-        .schema()
-        .concrete_type_by_name(
-            T::name(info)
-                .expect("Resolving named type's selection set")
-                .as_ref(),
-        )
-        .expect("Type not found in schema");
+    let mut async_values = Vec::<AsyncValue<S>>::new();
 
     for selection in selection_set {
         match *selection {
@@ -464,6 +447,15 @@ where
                     continue;
                 }
 
+                let meta_type = executor
+                    .schema()
+                    .concrete_type_by_name(
+                        T::name(info)
+                            .expect("Resolving named type's selection set")
+                            .as_ref(),
+                    )
+                    .expect("Type not found in schema");
+
                 let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
                     panic!(format!(
                         "Field {} not found on type {:?}",
@@ -475,11 +467,12 @@ where
                 let exec_vars = executor.variables();
 
                 let sub_exec = executor.field_sub_executor(
-                    &response_name,
+                    response_name,
                     f.name.item,
-                    start_pos.clone(),
+                    *start_pos,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
+
                 let args = Arguments::new(
                     f.arguments.as_ref().map(|m| {
                         m.item
@@ -490,13 +483,9 @@ where
                     &meta_field.arguments,
                 );
 
-                let pos = *start_pos;
                 let is_non_null = meta_field.field_type.is_non_null();
 
-                let response_name = response_name.to_string();
-                let field_future = async move {
-                    // TODO: implement custom future type instead of
-                    //       two-level boxing.
+                let fut = {
                     let res = instance
                         .resolve_field(info, f.name.item, &args, &sub_exec)
                         .await;
@@ -505,7 +494,7 @@ where
                         Ok(Value::Null) if is_non_null => None,
                         Ok(v) => Some(v),
                         Err(e) => {
-                            sub_exec.push_error_at(e, pos);
+                            sub_exec.push_error_at(e, *start_pos);
 
                             if is_non_null {
                                 None
@@ -515,11 +504,11 @@ where
                         }
                     };
                     AsyncValue::Field(AsyncField {
-                        name: response_name,
+                        name: response_name.to_string(),
                         value,
                     })
                 };
-                async_values.push(Box::pin(field_future));
+                async_values.push(fut)
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread, ..
@@ -528,21 +517,18 @@ where
                     continue;
                 }
 
-                // TODO: prevent duplicate boxing.
-                let f = async move {
-                    let fragment = &executor
-                        .fragment_by_name(spread.name.item)
-                        .expect("Fragment could not be found");
-                    let value = resolve_selection_set_into(
-                        instance,
-                        info,
-                        &fragment.selection_set[..],
-                        executor,
-                    )
-                    .await;
-                    AsyncValue::Nested(value)
-                };
-                async_values.push(Box::pin(f));
+                let fragment = &executor
+                    .fragment_by_name(spread.name.item)
+                    .expect("Fragment could not be found");
+
+                let f = resolve_selection_set_into(
+                    instance,
+                    info,
+                    &fragment.selection_set[..],
+                    executor,
+                )
+                .map(|res| AsyncValue::Nested(res)).await;
+                async_values.push(f)
             }
             Selection::InlineFragment(Spanning {
                 item: ref fragment,
@@ -559,47 +545,53 @@ where
                 );
 
                 if let Some(ref type_condition) = fragment.type_condition {
-                    let sub_result = instance
-                        .resolve_into_type(
-                            info,
-                            type_condition.item,
-                            Some(&fragment.selection_set[..]),
-                            &sub_exec,
-                        )
-                        .await;
+                    let fut = {
+                        let res = instance
+                            .resolve_into_type(
+                                info,
+                                type_condition.item,
+                                Some(&fragment.selection_set[..]),
+                                &sub_exec,
+                            )
+                            .await;
 
-                    if let Ok(Value::Object(obj)) = sub_result {
-                        for (k, v) in obj {
-                            // TODO: prevent duplicate boxing.
-                            let f = async move {
-                                AsyncValue::Field(AsyncField {
-                                    name: k,
-                                    value: Some(v),
+                        match res {
+                            Ok(Value::Object(obj)) => obj
+                                .into_iter()
+                                .map(|(k, v)| {
+                                    AsyncValue::Field(AsyncField {
+                                        name: k,
+                                        value: Some(v),
+                                    })
                                 })
-                            };
-                            async_values.push(Box::pin(f));
+                                .collect(),
+                            Err(e) => {
+                                sub_exec.push_error_at(e, *start_pos);
+                                vec![]
+                            }
+                            _ => vec![],
                         }
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
-                    }
+                    };
+                    async_values.extend(fut);
                 } else {
-                    let f = async move {
-                        let value = resolve_selection_set_into(
+                    let fut = {
+                        let res = resolve_selection_set_into(
                             instance,
                             info,
                             &fragment.selection_set[..],
                             &sub_exec,
                         )
                         .await;
-                        AsyncValue::Nested(value)
+
+                        AsyncValue::Nested(res)
                     };
-                    async_values.push(Box::pin(f));
+                    async_values.push(fut)
                 }
             }
         }
     }
 
-    while let Some(item) = async_values.next().await {
+    for item in async_values {
         match item {
             AsyncValue::Field(AsyncField { name, value }) => {
                 if let Some(value) = value {

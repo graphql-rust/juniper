@@ -1,5 +1,5 @@
 use std::{
-    borrow::Cow,
+    borrow::{Borrow, Cow},
     cmp::Ordering,
     collections::HashMap,
     fmt::{Debug, Display},
@@ -440,13 +440,13 @@ where
     /// Resolve a single arbitrary value into a return value
     ///
     /// If the field fails to resolve, `null` will be returned.
-    pub async fn resolve_into_value<T>(&self, info: &T::TypeInfo, value: &T) -> Value<S>
+    pub async fn resolve_into_value<T: Borrow<T>>(&self, info: &T::TypeInfo, value: T) -> Value<S>
     where
         T: GraphQLType<S, Context = CtxT>,
         T::TypeInfo: Send + Sync,
         CtxT: Send + Sync,
     {
-        match self.resolve(info, value).await {
+        match self.resolve(info, value.borrow()).await {
             Ok(v) => v,
             Err(e) => {
                 self.push_error(e);
@@ -747,12 +747,16 @@ where
         return Err(GraphQLError::IsSubscription);
     }
 
-    let mut fragments = vec![];
-    for def in document.iter() {
-        if let Definition::Fragment(f) = def {
-            fragments.push(f)
-        };
-    }
+    let fragments = document
+        .iter()
+        .filter_map(|def| {
+            if let Definition::Fragment(inner) = def {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
 
     let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
         defs.item
@@ -767,21 +771,19 @@ where
     });
 
     let errors = RwLock::new(Vec::new());
-    let value;
 
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
+    let value = {
+        let final_vars = default_variable_values
+            .map(|defaults| {
+                let mut all_vars = variables.clone();
 
-        if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
+                for (name, value) in defaults {
+                    all_vars.entry(name).or_insert(value);
+                }
 
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = &all_vars;
-        }
+                Cow::Owned(all_vars)
+            })
+            .unwrap_or(Cow::Borrowed(variables));
 
         let root_type = match operation.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
@@ -797,7 +799,7 @@ where
                 .iter()
                 .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
-            variables: final_vars,
+            variables: final_vars.as_ref(),
             current_selection_set: Some(&operation.item.selection_set[..]),
             parent_selection_set: None,
             current_type: root_type,
@@ -807,7 +809,7 @@ where
             field_path: Arc::new(FieldPath::Root(operation.start)),
         };
 
-        value = match operation.item.operation_type {
+        match operation.item.operation_type {
             OperationType::Query => {
                 executor
                     .resolve_into_value(&root_node.query_info, &root_node)
@@ -819,8 +821,8 @@ where
                     .await
             }
             OperationType::Subscription => unreachable!(),
-        };
-    }
+        }
+    };
 
     let mut errors = errors.into_inner().unwrap();
     errors.sort();
@@ -894,13 +896,16 @@ where
         return Err(GraphQLError::NotSubscription);
     }
 
-    let mut fragments = vec![];
-    for def in document.iter() {
-        match def {
-            Definition::Fragment(f) => fragments.push(f),
-            _ => (),
-        };
-    }
+    let fragments = document
+        .iter()
+        .filter_map(|def| {
+            if let Definition::Fragment(inner) = def {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
 
     let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
         defs.item
@@ -915,21 +920,19 @@ where
     });
 
     let errors = RwLock::new(Vec::new());
-    let value;
 
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
+    let value = {
+        let final_vars = default_variable_values
+            .map(|defaults| {
+                let mut all_vars = variables.clone();
 
-        if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
+                for (name, value) in defaults {
+                    all_vars.entry(name).or_insert(value);
+                }
 
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = &all_vars;
-        }
+                Cow::Owned(all_vars)
+            })
+            .unwrap_or(Cow::Borrowed(variables));
 
         let root_type = match operation.item.operation_type {
             OperationType::Subscription => root_node
@@ -944,7 +947,7 @@ where
                 .iter()
                 .map(|f| (f.item.name.item, f.item.clone()))
                 .collect(),
-            variables: final_vars,
+            variables: final_vars.as_ref(),
             current_selection_set: Some(&operation.item.selection_set[..]),
             parent_selection_set: None,
             current_type: root_type,
@@ -954,15 +957,15 @@ where
             field_path: Arc::new(FieldPath::Root(operation.start)),
         };
 
-        value = match operation.item.operation_type {
+        match operation.item.operation_type {
             OperationType::Subscription => {
                 executor
                     .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
                     .await
             }
             _ => unreachable!(),
-        };
-    }
+        }
+    };
 
     let mut errors = errors.into_inner().unwrap();
     errors.sort();

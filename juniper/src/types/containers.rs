@@ -6,6 +6,8 @@ use crate::{
     value::{ScalarValue, Value},
     BoxFuture,
 };
+use futures::stream::{FuturesOrdered, StreamExt};
+use std::iter::FromIterator;
 
 impl<S, T, CtxT> GraphQLType<S> for Option<T>
 where
@@ -221,16 +223,13 @@ where
     T::TypeInfo: Send + Sync,
     T::Context: Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt as _};
-    use std::iter::FromIterator;
-
     let stop_on_null = executor
         .current_type()
         .list_contents()
         .expect("Current type is not a list type")
         .is_non_null();
 
-    let iter = items.map(|item| async move { executor.resolve_into_value(info, &item).await });
+    let iter = items.map(|item| executor.resolve_into_value(info, item));
     let mut futures = FuturesOrdered::from_iter(iter);
 
     let mut values = Vec::with_capacity(futures.len());

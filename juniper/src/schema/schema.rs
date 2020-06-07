@@ -12,6 +12,7 @@ use crate::{
     value::ScalarValue,
     BoxFuture,
 };
+use futures::future::FutureExt;
 
 impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
@@ -94,16 +95,13 @@ where
         'ref_err: 'fut,
         'err: 'fut,
     {
-        let f = async move {
-            use crate::types::base::resolve_selection_set_into;
-            if let Some(selection_set) = selection_set {
-                Ok(resolve_selection_set_into(self, info, selection_set, executor).await)
-            } else {
-                // TODO: this panic seems useless, investigate why it is here.
-                panic!("resolve() must be implemented by non-object output types");
-            }
-        };
-        Box::pin(f)
+        use crate::types::base::resolve_selection_set_into;
+        if let Some(selection_set) = selection_set {
+            Box::pin(resolve_selection_set_into(self, info, selection_set, executor).map(Ok))
+        } else {
+            // TODO: this panic seems useless, investigate why it is here.
+            panic!("resolve() must be implemented by non-object output types");
+        }
     }
 }
 
