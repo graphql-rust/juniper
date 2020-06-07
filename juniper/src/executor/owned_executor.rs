@@ -1,7 +1,5 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::Arc};
+use futures::lock::Mutex;
 
 use crate::{
     ast::Fragment,
@@ -21,7 +19,7 @@ pub struct OwnedExecutor<'a, CtxT, S> {
     pub(super) current_type: TypeType<'a, S>,
     pub(super) schema: &'a SchemaType<'a, S>,
     pub(super) context: &'a CtxT,
-    pub(super) errors: RwLock<Vec<ExecutionError<S>>>,
+    pub(super) errors: Mutex<Vec<ExecutionError<S>>>,
     pub(super) field_path: Arc<FieldPath<'a>>,
 }
 
@@ -38,7 +36,7 @@ where
             current_type: self.current_type.clone(),
             schema: self.schema,
             context: self.context,
-            errors: RwLock::new(vec![]),
+            errors: Mutex::new(vec![]),
             field_path: self.field_path.clone(),
         }
     }
@@ -65,7 +63,7 @@ where
             },
             schema: self.schema,
             context: self.context,
-            errors: RwLock::new(vec![]),
+            errors: Mutex::new(vec![]),
             field_path: self.field_path.clone(),
         }
     }
@@ -98,7 +96,7 @@ where
             ),
             schema: self.schema,
             context: self.context,
-            errors: RwLock::new(vec![]),
+            errors: Mutex::new(vec![]),
             field_path: Arc::new(FieldPath::Field(
                 field_alias,
                 location,

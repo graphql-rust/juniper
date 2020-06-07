@@ -5,6 +5,7 @@ use crate::{
     Arguments, BoxFuture, Executor, FieldError, GraphQLType, Object, ScalarValue, Selection, Value,
     ValuesStream,
 };
+use futures::future::FutureExt;
 
 /// Global subscription coordinator trait.
 ///
@@ -98,9 +99,7 @@ where
         'res: 'f,
     {
         if executor.current_selection_set().is_some() {
-            Box::pin(
-                async move { Ok(resolve_selection_set_into_stream(self, info, executor).await) },
-            )
+            Box::pin(resolve_selection_set_into_stream(self, info, executor).map(Ok))
         } else {
             panic!("resolve_into_stream() must be implemented");
         }
@@ -159,13 +158,11 @@ where
         'ref_e: 'f,
         'res: 'f,
     {
-        Box::pin(async move {
-            if Self::name(info) == Some(type_name) {
-                self.resolve_into_stream(info, executor).await
-            } else {
-                panic!("resolve_into_type_stream must be implemented");
-            }
-        })
+        if Self::name(info) == Some(type_name) {
+            Box::pin(self.resolve_into_stream(info, executor))
+        } else {
+            panic!("resolve_into_type_stream must be implemented");
+        }
     }
 }
 
@@ -289,7 +286,7 @@ where
                     }
                     Ok(v) => merge_key_into(&mut object, response_name, v),
                     Err(e) => {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, start_pos.clone()).await;
 
                         if meta_field.field_type.is_non_null() {
                             return Value::Null;
@@ -335,7 +332,7 @@ where
                             _ => unreachable!(),
                         }
                     }
-                    Err(e) => sub_exec.push_error_at(e, start_pos.clone()),
+                    Err(e) => sub_exec.push_error_at(e, start_pos.clone()).await,
                 }
             }
             Selection::InlineFragment(Spanning {
@@ -362,7 +359,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, start_pos.clone()).await;
                     }
                 } else if let Some(type_name) = meta_type.name() {
                     let sub_result = instance
@@ -374,7 +371,7 @@ where
                             merge_key_into(&mut object, &k, v);
                         }
                     } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, start_pos.clone());
+                        sub_exec.push_error_at(e, start_pos.clone()).await;
                     }
                 } else {
                     return Value::Null;

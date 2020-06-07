@@ -3,7 +3,7 @@ use std::{
     cmp::Ordering,
     collections::HashMap,
     fmt::{Debug, Display},
-    sync::{Arc, RwLock},
+    sync::Arc,
 };
 
 use fnv::FnvHashMap;
@@ -70,7 +70,7 @@ where
     current_type: TypeType<'a, S>,
     schema: &'a SchemaType<'a, S>,
     context: &'a CtxT,
-    errors: &'r RwLock<Vec<ExecutionError<S>>>,
+    errors: &'r futures::lock::Mutex<Vec<ExecutionError<S>>>,
     field_path: Arc<FieldPath<'a>>,
 }
 
@@ -376,7 +376,7 @@ where
         match self.subscribe(info, value).await {
             Ok(v) => v,
             Err(e) => {
-                self.push_error(e);
+                self.push_error(e).await;
                 Value::Null
             }
         }
@@ -449,7 +449,7 @@ where
         match self.resolve(info, value.borrow()).await {
             Ok(v) => v,
             Err(e) => {
-                self.push_error(e);
+                self.push_error(e).await;
                 Value::null()
             }
         }
@@ -572,16 +572,16 @@ where
     }
 
     /// Add an error to the execution engine at the current executor location
-    pub fn push_error(&self, error: FieldError<S>) {
-        self.push_error_at(error, self.location().clone());
+    pub async fn push_error(&self, error: FieldError<S>) {
+        self.push_error_at(error, self.location().clone()).await;
     }
 
     /// Add an error to the execution engine at a specific location
-    pub fn push_error_at(&self, error: FieldError<S>, location: SourcePosition) {
+    pub async fn push_error_at(&self, error: FieldError<S>, location: SourcePosition) {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
 
-        let mut errors = self.errors.write().unwrap();
+        let mut errors = self.errors.lock().await;
 
         errors.push(ExecutionError {
             location,
@@ -674,7 +674,7 @@ where
             current_type: self.current_type.clone(),
             schema: self.schema,
             context: self.context,
-            errors: RwLock::new(vec![]),
+            errors: futures::lock::Mutex::new(vec![]),
             field_path: Arc::clone(&self.field_path),
         }
     }
@@ -770,7 +770,7 @@ where
             .collect::<HashMap<String, InputValue<S>>>()
     });
 
-    let errors = RwLock::new(Vec::new());
+    let errors = futures::lock::Mutex::new(Vec::new());
 
     let value = {
         let final_vars = default_variable_values
@@ -824,7 +824,7 @@ where
         }
     };
 
-    let mut errors = errors.into_inner().unwrap();
+    let mut errors = errors.into_inner();
     errors.sort();
 
     Ok((value, errors))
@@ -919,7 +919,7 @@ where
             .collect::<HashMap<String, InputValue<S>>>()
     });
 
-    let errors = RwLock::new(Vec::new());
+    let errors = futures::lock::Mutex::new(Vec::new());
 
     let value = {
         let final_vars = default_variable_values
@@ -967,7 +967,7 @@ where
         }
     };
 
-    let mut errors = errors.into_inner().unwrap();
+    let mut errors = errors.into_inner();
     errors.sort();
 
     Ok((value, errors))

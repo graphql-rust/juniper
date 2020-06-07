@@ -6,10 +6,7 @@ use crate::{
     value::{DefaultScalarValue, Object, ScalarValue, Value},
     BoxFuture,
 };
-use futures::{
-    future::FutureExt,
-    stream::{FuturesOrdered, StreamExt},
-};
+use futures::future::FutureExt;
 use indexmap::IndexMap;
 use juniper_codegen::GraphQLEnumInternal as GraphQLEnum;
 
@@ -494,7 +491,7 @@ where
                         Ok(Value::Null) if is_non_null => None,
                         Ok(v) => Some(v),
                         Err(e) => {
-                            sub_exec.push_error_at(e, *start_pos);
+                            sub_exec.push_error_at(e, *start_pos).await;
 
                             if is_non_null {
                                 None
@@ -527,7 +524,8 @@ where
                     &fragment.selection_set[..],
                     executor,
                 )
-                .map(|res| AsyncValue::Nested(res)).await;
+                .map(|res| AsyncValue::Nested(res))
+                .await;
                 async_values.push(f)
             }
             Selection::InlineFragment(Spanning {
@@ -566,7 +564,7 @@ where
                                 })
                                 .collect(),
                             Err(e) => {
-                                sub_exec.push_error_at(e, *start_pos);
+                                sub_exec.push_error_at(e, *start_pos).await;
                                 vec![]
                             }
                             _ => vec![],
