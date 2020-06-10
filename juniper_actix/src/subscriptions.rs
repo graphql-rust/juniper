@@ -370,7 +370,12 @@ where
                     _ => {}
                 }
             }
-            ws::Message::Binary(_) | ws::Message::Close(_) | ws::Message::Continuation(_) => {
+            ws::Message::Binary(msg) => {
+                if let Ok(msg) = std::str::from_utf8(msg.as_ref()) {
+                    StreamHandler::handle(self, Ok(ws::Message::Text(String::from(msg))), ctx);
+                }
+            },
+            ws::Message::Close(_) | ws::Message::Continuation(_) => {
                 if let Some(handler) = &self.handler {
                     let context = self.graphql_context.deref();
                     let state = SubscriptionState::OnDisconnect(context);
