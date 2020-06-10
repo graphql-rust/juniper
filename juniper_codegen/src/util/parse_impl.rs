@@ -4,7 +4,6 @@
 use crate::util::{self, span_container::SpanContainer};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use std::convert::From;
 use syn::{spanned::Spanned, PatType};
 
 pub struct ImplBlock {
