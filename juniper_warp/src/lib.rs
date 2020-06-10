@@ -594,7 +594,7 @@ pub mod subscriptions {
     #[serde(bound = "GraphQLPayload<S>: Deserialize<'de>")]
     struct WsPayload<S>
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync,
     {
         id: Option<String>,
         #[serde(rename(deserialize = "type"))]
@@ -606,7 +606,7 @@ pub mod subscriptions {
     #[serde(bound = "InputValue<S>: Deserialize<'de>")]
     struct GraphQLPayload<S>
     where
-        S: ScalarValue + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync,
     {
         variables: Option<InputValue<S>>,
         extensions: Option<HashMap<String, String>>,
