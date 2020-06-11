@@ -1,13 +1,12 @@
 [package]
 name = "juniper_subscriptions"
 version = "0.14.2"
+edition = "2018"
 authors = ["nWacky <gosha.evtushenko@gmail.com>"]
 description = "Juniper SubscriptionCoordinator and SubscriptionConnection implementations"
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/juniper_subscriptions"
 repository = "https://github.com/graphql-rust/juniper"
-edition = "2018"
-
 
 [dependencies]
 futures = "0.3.1"

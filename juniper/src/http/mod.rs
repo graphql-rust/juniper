@@ -134,7 +134,7 @@ where
     'req: 'a,
     'rn: 'a,
     'ctx: 'a,
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,

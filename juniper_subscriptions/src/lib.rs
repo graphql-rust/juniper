@@ -25,7 +25,7 @@ use juniper::{
 /// - handles subscription start
 pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
@@ -40,7 +40,7 @@ where
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
     Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
 where
-    S: ScalarValue + Send + Sync + 'static,
+    S: ScalarValue + Send + Sync,
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
     QueryT::TypeInfo: Send + Sync,
     MutationT: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync,
