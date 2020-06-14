@@ -1,20 +1,16 @@
 [package]
 name = "warp_async"
 version = "0.1.0"
-authors = ["Christoph Herzog <chris@theduke.at>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Christoph Herzog <chris@theduke.at>"]
 
 [dependencies]
-log = "0.4.8"
+juniper = { git = "https://github.com/graphql-rust/juniper" }
+juniper_warp = { git = "https://github.com/graphql-rust/juniper" }
+
 env_logger = "0.6.2"
-warp = "0.1.19"
 futures = { version = "0.3.1", features = ["compat"] }
-reqwest = "0.9.19"
+log = "0.4.8"
+reqwest = { version = "0.10", features = ["rustls-tls"] }
 tokio = { version = "0.2", features = ["rt-core", "macros"] }
-
-juniper_codegen = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
-juniper = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
-juniper_warp = { git = "https://github.com/graphql-rust/juniper", branch = "async-await", features = ["async"] }
-
+warp = "0.2"

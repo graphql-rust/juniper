@@ -14,11 +14,11 @@ url = "2"
 juniper = { version = "0.14.2", default-features = false, path = "../juniper"}
 tokio = "0.2"
 hyper = "0.13"
-futures = { version = "0.3.1" }
+futures = "0.3.1"
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
-reqwest = "0.9"
+reqwest = { version = "0.10", features = ["blocking", "rustls-tls"] }
 
 [dev-dependencies.juniper]
 version = "0.14.2"
