@@ -485,6 +485,169 @@ mod explicit_scalar {
     }
 }
 
+mod custom_scalar {
+    use super::*;
+    use juniper::serde::de;
+
+    #[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
+    enum MyScalarValue {
+        Int(i32),
+        Float(f64),
+        String(String),
+        Boolean(bool),
+    }
+
+    impl ScalarValue for MyScalarValue {
+        type Visitor = MyScalarValueVisitor;
+
+        fn as_int(&self) -> Option<i32> {
+            match *self {
+                MyScalarValue::Int(ref i) => Some(*i),
+                _ => None,
+            }
+        }
+
+        fn as_string(&self) -> Option<String> {
+            match *self {
+                MyScalarValue::String(ref s) => Some(s.clone()),
+                _ => None,
+            }
+        }
+
+        fn as_str(&self) -> Option<&str> {
+            match *self {
+                MyScalarValue::String(ref s) => Some(s.as_str()),
+                _ => None,
+            }
+        }
+
+        fn as_float(&self) -> Option<f64> {
+            match *self {
+                MyScalarValue::Int(ref i) => Some(*i as f64),
+                MyScalarValue::Float(ref f) => Some(*f),
+                _ => None,
+            }
+        }
+
+        fn as_boolean(&self) -> Option<bool> {
+            match *self {
+                MyScalarValue::Boolean(ref b) => Some(*b),
+                _ => None,
+            }
+        }
+    }
+
+    #[derive(Default, Debug)]
+    struct MyScalarValueVisitor;
+
+    impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
+        type Value = MyScalarValue;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a valid input value")
+        }
+
+        fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E> {
+            Ok(Self::Value::Boolean(value))
+        }
+
+        fn visit_i64<E: de::Error>(self, value: i64) -> Result<Self::Value, E> {
+            if value >= i64::from(i32::min_value()) && value <= i64::from(i32::max_value()) {
+                Ok(Self::Value::Int(value as i32))
+            } else {
+                Ok(Self::Value::Float(value as f64))
+            }
+        }
+
+        fn visit_u64<E: de::Error>(self, value: u64) -> Result<Self::Value, E> {
+            if value <= i32::max_value() as u64 {
+                self.visit_i64(value as i64)
+            } else {
+                Ok(Self::Value::Float(value as f64))
+            }
+        }
+
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E> {
+            Ok(Self::Value::Float(value))
+        }
+
+        fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            self.visit_string(value.into())
+        }
+
+        fn visit_string<E>(self, value: String) -> Result<Self::Value, E> {
+            Ok(Self::Value::String(value))
+        }
+    }
+
+    #[derive(GraphQLUnion)]
+    #[graphql(scalar = MyScalarValue)]
+    enum Character {
+        A(Human),
+        B(Droid),
+    }
+
+    enum QueryRoot {
+        Human,
+        Droid,
+    }
+
+    #[graphql_object(scalar = MyScalarValue)]
+    impl QueryRoot {
+        fn character(&self) -> Character {
+            match self {
+                Self::Human => Character::A(Human {
+                    id: "human-32".to_string(),
+                    home_planet: "earth".to_string(),
+                }),
+                Self::Droid => Character::B(Droid {
+                    id: "droid-99".to_string(),
+                    primary_function: "run".to_string(),
+                }),
+            }
+        }
+    }
+
+    const DOC: &str = r#"{
+        character {
+            ... on Human {
+                humanId: id
+                homePlanet
+            }
+            ... on Droid {
+                droidId: id
+                primaryFunction
+            }
+        }
+    }"#;
+
+    #[tokio::test]
+    async fn resolves_human() {
+        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Human);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"humanId": "human-32", "homePlanet": "earth"}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_droid() {
+        let schema = schema::<_, MyScalarValue, _>(QueryRoot::Droid);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &Variables::new(), &()).await,
+            Ok((
+                graphql_value!({"character": {"droidId": "droid-99", "primaryFunction": "run"}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod custom_context {
     use super::*;
 

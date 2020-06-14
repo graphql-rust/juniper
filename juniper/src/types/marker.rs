@@ -37,7 +37,7 @@ pub trait GraphQLObjectType<S: ScalarValue>: GraphQLType<S> {
 /// [4]: https://spec.graphql.org/June2018/#sec-Objects
 /// [5]: https://spec.graphql.org/June2018/#sec-Input-Objects
 /// [6]: https://spec.graphql.org/June2018/#sec-Interfaces
-pub trait GraphQLUnion: GraphQLType {
+pub trait GraphQLUnion<S: ScalarValue>: GraphQLType<S> {
     /// An arbitrary function without meaning.
     ///
     /// May contain compile timed check logic which ensures that types are used correctly according

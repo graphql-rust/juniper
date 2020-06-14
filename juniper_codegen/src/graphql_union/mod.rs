@@ -618,7 +618,7 @@ impl ToTokens for UnionDefinition {
 
         let union_impl = quote! {
             #[automatically_derived]
-            impl#impl_generics #crate_path::marker::GraphQLUnion for #ty_full {
+            impl#impl_generics #crate_path::marker::GraphQLUnion<#default_scalar> for #ty_full {
                 fn mark() {
                     #all_variants_unique
 
