@@ -10,7 +10,7 @@ use juniper::{
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, juniper::GraphQLScalarValue)]
-enum MyScalarValue {
+pub(crate) enum MyScalarValue {
     Int(i32),
     Long(i64),
     Float(f64),
@@ -59,7 +59,7 @@ impl ScalarValue for MyScalarValue {
 }
 
 #[derive(Default, Debug)]
-struct MyScalarValueVisitor;
+pub(crate) struct MyScalarValueVisitor;
 
 impl<'de> de::Visitor<'de> for MyScalarValueVisitor {
     type Value = MyScalarValue;
