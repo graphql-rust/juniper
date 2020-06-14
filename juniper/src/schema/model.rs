@@ -10,7 +10,7 @@ use crate::{
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
-    types::{base::GraphQLType, name::Name},
+    types::{base::{GraphQLType, GraphQLTypeMeta}, name::Name},
     value::{DefaultScalarValue, ScalarValue},
 };
 
@@ -92,9 +92,9 @@ pub enum DirectiveLocation {
 impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + 'a,
-    QueryT: GraphQLType<S, TypeInfo = ()>,
-    MutationT: GraphQLType<S, TypeInfo = ()>,
-    SubscriptionT: GraphQLType<S, TypeInfo = ()>,
+    QueryT: GraphQLTypeMeta<S, TypeInfo = ()>,
+    MutationT: GraphQLTypeMeta<S, TypeInfo = ()>,
+    SubscriptionT: GraphQLTypeMeta<S, TypeInfo = ()>,
 {
     /// Construct a new root node from query, mutation, and subscription nodes
     ///
@@ -127,9 +127,9 @@ where
 
 impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S>,
-    SubscriptionT: GraphQLType<S>,
+    QueryT: GraphQLTypeMeta<S>,
+    MutationT: GraphQLTypeMeta<S>,
+    SubscriptionT: GraphQLTypeMeta<S>,
     S: ScalarValue + 'a,
 {
     /// Construct a new root node from query and mutation nodes,
@@ -168,9 +168,9 @@ impl<'a, S> SchemaType<'a, S> {
     ) -> Self
     where
         S: ScalarValue + 'a,
-        QueryT: GraphQLType<S>,
-        MutationT: GraphQLType<S>,
-        SubscriptionT: GraphQLType<S>,
+        QueryT: GraphQLTypeMeta<S>,
+        MutationT: GraphQLTypeMeta<S>,
+        SubscriptionT: GraphQLTypeMeta<S>,
     {
         let mut directives = FnvHashMap::default();
         let query_type_name: String;

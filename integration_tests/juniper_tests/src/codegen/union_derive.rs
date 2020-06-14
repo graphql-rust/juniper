@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use juniper::{
     execute, graphql_object, graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription,
-    GraphQLObject, GraphQLType, GraphQLUnion, RootNode, ScalarValue, Variables,
+    GraphQLObject, GraphQLTypeMeta, GraphQLUnion, RootNode, ScalarValue, Variables,
 };
 
 #[derive(GraphQLObject)]
@@ -55,7 +55,7 @@ struct EwokCustomContext {
 
 fn schema<'q, C, S, Q>(query_root: Q) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
 where
-    Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
+    Q: GraphQLTypeMeta<S, Context = C, TypeInfo = ()> + 'q,
     S: ScalarValue + 'q,
 {
     RootNode::new(

@@ -438,7 +438,7 @@ impl ToTokens for UnionDefinition {
             let var_check = &var.resolver_check;
             quote! {
                 if #var_check {
-                    return <#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())
+                    return <#var_ty as #crate_path::GraphQLTypeMeta<#scalar>>::name(&())
                         .unwrap().to_string();
                 }
             }
@@ -448,7 +448,9 @@ impl ToTokens for UnionDefinition {
         let resolve_into_type = self.variants.iter().zip(match_resolves.iter()).map(|(var, expr)| {
             let var_ty = &var.ty;
 
-            let get_name = quote! { (<#var_ty as #crate_path::GraphQLType<#scalar>>::name(&())) };
+            let get_name = quote! {
+                (<#var_ty as #crate_path::GraphQLTypeMeta<#scalar>>::name(&()))
+            };
             quote! {
                 if type_name == #get_name.unwrap() {
                     return #crate_path::IntoResolvable::into(
@@ -470,7 +472,7 @@ impl ToTokens for UnionDefinition {
                     let var_ty = &var.ty;
 
                     let get_name = quote! {
-                        (<#var_ty as #crate_path::GraphQLType<#scalar>>::name(&()))
+                        (<#var_ty as #crate_path::GraphQLTypeMeta<#scalar>>::name(&()))
                     };
                     quote! {
                         if type_name == #get_name.unwrap() {
@@ -535,22 +537,8 @@ impl ToTokens for UnionDefinition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                fn type_name(&self, _ : &Self::TypeInfo) -> Option<&'static str> {
                     Some(#name)
-                }
-
-                fn meta<'r>(
-                    info: &Self::TypeInfo,
-                    registry: &mut #crate_path::Registry<'r, #scalar>
-                ) -> #crate_path::meta::MetaType<'r, #scalar>
-                where #scalar: 'r,
-                {
-                    let types = &[
-                        #( registry.get_type::<&#var_types>(&(())), )*
-                    ];
-                    registry.build_union_type::<#ty_full>(info, types)
-                    #description
-                    .into_meta()
                 }
 
                 fn concrete_type_name(
@@ -579,6 +567,31 @@ impl ToTokens for UnionDefinition {
                         "Concrete type {} is not handled by instance resolvers on GraphQL union {}",
                         type_name, #name,
                     );
+                }
+            }
+        };
+
+        let meta_type_impl = quote! {
+            #[automatically_derived]
+            impl#ext_impl_generics #crate_path::GraphQLTypeMeta<#scalar> for #ty_full
+                #where_clause
+            {
+                fn name(_ : &Self::TypeInfo) -> Option<&str> {
+                    Some(#name)
+                }
+
+                fn meta<'r>(
+                    info: &Self::TypeInfo,
+                    registry: &mut #crate_path::Registry<'r, #scalar>
+                ) -> #crate_path::meta::MetaType<'r, #scalar>
+                where #scalar: 'r,
+                {
+                    let types = &[
+                        #( registry.get_type::<&#var_types>(&(())), )*
+                    ];
+                    registry.build_union_type::<#ty_full>(info, types)
+                    #description
+                    .into_meta()
                 }
             }
         };
@@ -629,7 +642,7 @@ impl ToTokens for UnionDefinition {
             }
         };
 
-        into.append_all(&[union_impl, output_type_impl, type_impl, async_type_impl]);
+        into.append_all(&[union_impl, output_type_impl, type_impl, async_type_impl, meta_type_impl]);
     }
 }
 

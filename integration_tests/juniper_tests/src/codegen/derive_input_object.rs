@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 
 use juniper::{
-    self, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, InputValue,
+    self, DefaultScalarValue, FromInputValue, GraphQLInputObject, GraphQLType, GraphQLTypeMeta, InputValue,
     ToInputValue,
 };
 
@@ -66,6 +66,12 @@ impl<'a> GraphQLType<DefaultScalarValue> for &'a Fake {
     type Context = ();
     type TypeInfo = ();
 
+    fn type_name(&self, _: &()) -> Option<&'static str> {
+        None
+    }
+}
+
+impl<'a> GraphQLTypeMeta<DefaultScalarValue> for &'a Fake {
     fn name(_: &()) -> Option<&'static str> {
         None
     }
@@ -94,7 +100,7 @@ struct WithLifetime<'a> {
 #[test]
 fn test_derived_input_object() {
     assert_eq!(
-        <Input as GraphQLType<DefaultScalarValue>>::name(&()),
+        <Input as GraphQLTypeMeta<DefaultScalarValue>>::name(&()),
         Some("MyInput")
     );
 

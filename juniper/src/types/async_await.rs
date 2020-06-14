@@ -2,7 +2,7 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
     parser::Spanning,
-    value::{Object, ScalarValue, Value},
+    value::{Object, ScalarValue, Value, DefaultScalarValue},
 };
 
 use crate::BoxFuture;
@@ -15,7 +15,7 @@ This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
 Convenience macros related to asynchronous queries/mutations expand into an
 implementation of this trait and `GraphQLType` for the given type.
 */
-pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
+pub trait GraphQLTypeAsync<S = DefaultScalarValue>: GraphQLType<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
@@ -36,7 +36,7 @@ where
         _arguments: &'a Arguments<S>,
         _executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
-        panic!("resolve_field must be implemented by object types");
+        panic!("resolve_field_async must be implemented by object types");
     }
 
     /// Resolve the provided selection set against the current object.
@@ -81,13 +81,15 @@ where
         selection_set: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
-        if Self::name(info).unwrap() == type_name {
+        if self.type_name(info).unwrap() == type_name {
             self.resolve_async(info, selection_set, executor)
         } else {
             panic!("resolve_into_type_async must be implemented by unions and interfaces");
         }
     }
 }
+
+crate::sa::assert_obj_safe!(GraphQLTypeAsync<Context = (), TypeInfo = ()>);
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
@@ -143,7 +145,7 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            T::name(info)
+            instance.type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

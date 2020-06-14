@@ -115,7 +115,7 @@ extern crate bson;
 
 // These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]
-pub use {futures, static_assertions as sa};
+pub use {futures, inventory, static_assertions as sa};
 
 #[doc(inline)]
 pub use futures::future::BoxFuture;
@@ -186,8 +186,11 @@ pub use crate::{
     },
     types::{
         async_await::GraphQLTypeAsync,
-        base::{Arguments, GraphQLType, TypeKind},
-        marker::{self, GraphQLUnion},
+        base::{
+            Arguments, GraphQLInterfaceTypeImplementor, GraphQLObjectTypeInfo, GraphQLType,
+            TypeKind, GRAPHQL_IFACE_TYPES, GraphQLTypeMeta, AsDynGraphQLType,
+        },
+        marker::{self, GraphQLInterface, GraphQLUnion},
         scalars::{EmptyMutation, EmptySubscription, ID},
         subscriptions::{GraphQLSubscriptionType, SubscriptionConnection, SubscriptionCoordinator},
     },

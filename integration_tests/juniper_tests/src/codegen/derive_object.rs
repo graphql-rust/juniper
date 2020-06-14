@@ -6,7 +6,7 @@ use juniper::{DefaultScalarValue, GraphQLObject};
 
 #[cfg(test)]
 use juniper::{
-    self, execute, EmptyMutation, EmptySubscription, GraphQLType, RootNode, Value, Variables,
+    self, execute, EmptyMutation, EmptySubscription, GraphQLTypeMeta, RootNode, Value, Variables,
 };
 
 #[derive(GraphQLObject, Debug, PartialEq)]
@@ -176,7 +176,7 @@ async fn test_doc_comment_override() {
 #[tokio::test]
 async fn test_derived_object() {
     assert_eq!(
-        <Obj as GraphQLType<DefaultScalarValue>>::name(&()),
+        <Obj as GraphQLTypeMeta<DefaultScalarValue>>::name(&()),
         Some("MyObj")
     );
 

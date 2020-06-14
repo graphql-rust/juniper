@@ -787,7 +787,7 @@ impl GraphQLTypeDefiniton {
                     #name => {
                         panic!("Tried to resolve async field {} on type {:?} with a sync resolver",
                             #name,
-                            <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
+                            <Self as #juniper_crate_name::GraphQLTypeMeta<#scalar>>::name(_info)
                         );
                     },
                 )
@@ -962,7 +962,7 @@ impl GraphQLTypeDefiniton {
                             _ => {
                                 panic!("Field {} not found on type {:?}",
                                     field,
-                                    <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(info)
+                                    <Self as #juniper_crate_name::GraphQLTypeMeta<#scalar>>::name(info)
                                 );
                             }
                         }
@@ -1003,6 +1003,40 @@ impl GraphQLTypeDefiniton {
                 type Context = #context;
                 type TypeInfo = ();
 
+                fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+                    Some(#name)
+                }
+
+                #[allow(unused_variables)]
+                #[allow(unused_mut)]
+                fn resolve_field(
+                    &self,
+                    _info: &(),
+                    field: &str,
+                    args: &#juniper_crate_name::Arguments<#scalar>,
+                    executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
+                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                    match field {
+                        #( #resolve_matches )*
+                        _ => {
+                            panic!("Field {} not found on type {:?}",
+                                field,
+                                <Self as #juniper_crate_name::GraphQLTypeMeta<#scalar>>::name(_info)
+                            );
+                        }
+                    }
+                }
+
+
+                fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
+                    #name.to_string()
+                }
+
+        }
+
+        impl#impl_generics #juniper_crate_name::GraphQLTypeMeta<#scalar> for #ty #type_generics_tokens
+            #where_clause
+        {
                 fn name(_: &Self::TypeInfo) -> Option<&str> {
                     Some(#name)
                 }
@@ -1021,32 +1055,6 @@ impl GraphQLTypeDefiniton {
                         #interfaces;
                     meta.into_meta()
                 }
-
-                #[allow(unused_variables)]
-                #[allow(unused_mut)]
-                fn resolve_field(
-                    &self,
-                    _info: &(),
-                    field: &str,
-                    args: &#juniper_crate_name::Arguments<#scalar>,
-                    executor: &#juniper_crate_name::Executor<Self::Context, #scalar>,
-                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    match field {
-                        #( #resolve_matches )*
-                        _ => {
-                            panic!("Field {} not found on type {:?}",
-                                field,
-                                <Self as #juniper_crate_name::GraphQLType<#scalar>>::name(_info)
-                            );
-                        }
-                    }
-                }
-
-
-                fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
-                    #name.to_string()
-                }
-
         }
 
         #resolve_field_async
@@ -1238,7 +1246,32 @@ impl GraphQLTypeDefiniton {
                     type Context = #context;
                     type TypeInfo = ();
 
-                    fn name(_: &Self::TypeInfo) -> Option<&str> {
+                    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+                        Some(#name)
+                    }
+
+                    fn resolve_field(
+                        &self,
+                        _: &(),
+                        _: &str,
+                        _: &#juniper_crate_name::Arguments<#scalar>,
+                        _: &#juniper_crate_name::Executor<Self::Context, #scalar>,
+                    ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                        panic!("Called `resolve_field` on subscription object");
+                    }
+
+
+                    fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
+                        #name.to_string()
+                    }
+            }
+        );
+
+        let graphql_meta_implementation = quote!(
+            impl#impl_generics #juniper_crate_name::GraphQLTypeMeta<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
+                    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                         Some(#name)
                     }
 
@@ -1255,21 +1288,6 @@ impl GraphQLTypeDefiniton {
                             #description
                             #interfaces;
                         meta.into_meta()
-                    }
-
-                    fn resolve_field(
-                        &self,
-                        _: &(),
-                        _: &str,
-                        _: &#juniper_crate_name::Arguments<#scalar>,
-                        _: &#juniper_crate_name::Executor<Self::Context, #scalar>,
-                    ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                        panic!("Called `resolve_field` on subscription object");
-                    }
-
-
-                    fn concrete_type_name(&self, _: &Self::Context, _: &Self::TypeInfo) -> String {
-                        #name.to_string()
                     }
             }
         );
@@ -1319,6 +1337,7 @@ impl GraphQLTypeDefiniton {
 
         quote!(
             #graphql_implementation
+            #graphql_meta_implementation
             #subscription_implementation
         )
     }
@@ -1462,6 +1481,26 @@ impl GraphQLTypeDefiniton {
                 type Context = #context;
                 type TypeInfo = ();
 
+                fn type_name(&self, _: &()) -> Option<&'static str> {
+                    Some(#name)
+                }
+
+                fn resolve(
+                    &self,
+                    _: &(),
+                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
+                    _: &#juniper_crate_name::Executor<Self::Context, #scalar>
+                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
+                    let v = match self {
+                        #( #resolves )*
+                    };
+                    Ok(v)
+                }
+            }
+
+            impl#impl_generics #juniper_crate_name::GraphQLTypeMeta<#scalar> for #ty
+                #where_clause
+            {
                 fn name(_: &()) -> Option<&'static str> {
                     Some(#name)
                 }
@@ -1477,18 +1516,6 @@ impl GraphQLTypeDefiniton {
                     ])
                     #description
                     .into_meta()
-                }
-
-                fn resolve(
-                    &self,
-                    _: &(),
-                    _: Option<&[#juniper_crate_name::Selection<#scalar>]>,
-                    _: &#juniper_crate_name::Executor<Self::Context, #scalar>
-                ) -> #juniper_crate_name::ExecutionResult<#scalar> {
-                    let v = match self {
-                        #( #resolves )*
-                    };
-                    Ok(v)
                 }
             }
 
@@ -1705,6 +1732,14 @@ impl GraphQLTypeDefiniton {
                 type Context = #context;
                 type TypeInfo = ();
 
+                fn type_name(&self, _: &()) -> Option<&'static str> {
+                    Some(#name)
+                }
+            }
+
+            impl#impl_generics #juniper_crate_name::GraphQLTypeMeta<#scalar> for #ty #type_generics_tokens
+                #where_clause
+            {
                 fn name(_: &()) -> Option<&'static str> {
                     Some(#name)
                 }

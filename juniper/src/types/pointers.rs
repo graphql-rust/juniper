@@ -6,7 +6,7 @@ use crate::{
     schema::meta::MetaType,
     types::{
         async_await::GraphQLTypeAsync,
-        base::{Arguments, GraphQLType},
+        base::{Arguments, GraphQLType, GraphQLTypeMeta},
     },
     value::ScalarValue,
     BoxFuture,
@@ -20,15 +20,8 @@ where
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
 
-    fn name(info: &T::TypeInfo) -> Option<&str> {
-        T::name(info)
-    }
-
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        T::meta(info, registry)
+    fn type_name<'i>(&self, info: &'i T::TypeInfo) -> Option<&'i str> {
+        T::type_name(&**self, info)
     }
 
     fn resolve_into_type(
@@ -58,6 +51,23 @@ where
         executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
+    }
+}
+
+impl<S, T, CtxT> GraphQLTypeMeta<S> for Box<T>
+    where
+        S: ScalarValue,
+        T: GraphQLTypeMeta<S, Context = CtxT> + ?Sized,
+{
+    fn name(info: &T::TypeInfo) -> Option<&str> {
+        T::name(info)
+    }
+
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+    {
+        T::meta(info, registry)
     }
 }
 
@@ -109,15 +119,8 @@ where
     type Context = CtxT;
     type TypeInfo = T::TypeInfo;
 
-    fn name(info: &T::TypeInfo) -> Option<&str> {
-        T::name(info)
-    }
-
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        T::meta(info, registry)
+    fn type_name<'i>(&self, info: &'i T::TypeInfo) -> Option<&'i str> {
+        T::type_name(&**self, info)
     }
 
     fn resolve_into_type(
@@ -147,6 +150,23 @@ where
         executor: &Executor<CtxT, S>,
     ) -> ExecutionResult<S> {
         (**self).resolve(info, selection_set, executor)
+    }
+}
+
+impl<'e, S, T, CtxT> GraphQLTypeMeta<S> for &'e T
+    where
+        S: ScalarValue,
+        T: GraphQLTypeMeta<S, Context = CtxT> + ?Sized,
+{
+    fn name(info: &T::TypeInfo) -> Option<&str> {
+        T::name(info)
+    }
+
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+    {
+        T::meta(info, registry)
     }
 }
 
@@ -195,15 +215,8 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn name(info: &T::TypeInfo) -> Option<&str> {
-        T::name(info)
-    }
-
-    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        T::meta(info, registry)
+    fn type_name<'i>(&self, info: &'i T::TypeInfo) -> Option<&'i str> {
+        T::type_name(&**self, info)
     }
 
     fn resolve_into_type(
@@ -235,6 +248,24 @@ where
         (**self).resolve(info, selection_set, executor)
     }
 }
+
+impl<S, T> GraphQLTypeMeta<S> for Arc<T>
+    where
+        S: ScalarValue,
+        T: GraphQLTypeMeta<S> + ?Sized,
+{
+    fn name(info: &T::TypeInfo) -> Option<&str> {
+        T::name(info)
+    }
+
+    fn meta<'r>(info: &T::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+        where
+            S: 'r,
+    {
+        T::meta(info, registry)
+    }
+}
+
 
 impl<'e, S, T> GraphQLTypeAsync<S> for Arc<T>
 where

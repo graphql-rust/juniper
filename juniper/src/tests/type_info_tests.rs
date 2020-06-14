@@ -4,7 +4,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry, Variables},
     schema::{meta::MetaType, model::RootNode},
     types::{
-        base::{Arguments, GraphQLType},
+        base::{Arguments, GraphQLType, GraphQLTypeMeta},
         scalars::{EmptyMutation, EmptySubscription},
     },
     value::{ScalarValue, Value},
@@ -26,6 +26,25 @@ where
     type Context = ();
     type TypeInfo = NodeTypeInfo;
 
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        Some(&info.name)
+    }
+
+    fn resolve_field(
+        &self,
+        _: &Self::TypeInfo,
+        field_name: &str,
+        _: &Arguments<S>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        executor.resolve(&(), &self.attributes.get(field_name).unwrap())
+    }
+}
+
+impl<S> GraphQLTypeMeta<S> for Node
+where
+    S: ScalarValue,
+{
     fn name(info: &Self::TypeInfo) -> Option<&str> {
         Some(&info.name)
     }
@@ -43,16 +62,6 @@ where
         registry
             .build_object_type::<Node>(info, &fields)
             .into_meta()
-    }
-
-    fn resolve_field(
-        &self,
-        _: &Self::TypeInfo,
-        field_name: &str,
-        _: &Arguments<S>,
-        executor: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
-        executor.resolve(&(), &self.attributes.get(field_name).unwrap())
     }
 }
 

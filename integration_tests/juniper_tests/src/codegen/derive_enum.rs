@@ -2,7 +2,7 @@
 use fnv::FnvHashMap;
 
 #[cfg(test)]
-use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, InputValue, ToInputValue};
+use juniper::{self, DefaultScalarValue, FromInputValue, GraphQLType, GraphQLTypeMeta, InputValue, ToInputValue};
 
 pub struct CustomContext {}
 
@@ -53,7 +53,7 @@ enum ContextEnum {
 fn test_derived_enum() {
     // Ensure that rename works.
     assert_eq!(
-        <SomeEnum as GraphQLType<DefaultScalarValue>>::name(&()),
+        <SomeEnum as GraphQLTypeMeta<DefaultScalarValue>>::name(&()),
         Some("Some")
     );
 
