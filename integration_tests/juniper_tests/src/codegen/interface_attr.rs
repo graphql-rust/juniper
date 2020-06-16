@@ -71,7 +71,6 @@ struct Droid {
         object: ::juniper::GraphQLObjectTypeInfo {
             name: "Droid",
             mark_fn: <Droid as ::juniper::marker::GraphQLObjectType<::juniper::DefaultScalarValue>>::mark,
-            reg_fn:
         }
     }
 }
@@ -240,13 +239,15 @@ where
     where
         __S: 'r,
     {
+        //panic!("🔬 {:#?}", registry.types);
         // Ensure custom downcaster type is registered
-        let _ = registry.get_type::<&Droid>(info);
+        //let _ = registry.get_type::<&Droid>(info);
 
         // Ensure all child types are registered
         // TODO: how?
         // TODO: get_type_by_name and iter
         //let _ = registry.get_type::<&Human>(info);
+
 
         let fields = vec![
             // TODO: try array
@@ -381,6 +382,7 @@ mod poc {
         }"#;
 
         let schema = schema(QueryRoot::Human);
+        panic!("🔬 {:#?}", schema.schema);
 
         assert_eq!(
             execute(DOC, None, &schema, &Variables::new(), &()).await,
@@ -413,3 +415,13 @@ mod poc {
         );
     }
 }
+
+/*
+struct Woop;
+
+impl Woop {
+    fn get<TI, S>(&self) -> for<'r> fn(info: &TI, registry: &mut Registry<'r, S>) -> MetaType<'r, S> {
+        unimplemented!()
+    }
+}
+*/

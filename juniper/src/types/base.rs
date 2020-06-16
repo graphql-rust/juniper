@@ -601,7 +601,6 @@ pub struct GraphQLInterfaceTypeImplementor {
 pub struct GraphQLObjectTypeInfo {
     pub name: &'static str,
     pub mark_fn: fn(),
-    pub reg_fn: fn(),
 }
 
 inventory::collect!(GraphQLInterfaceTypeImplementor);

@@ -729,7 +729,7 @@ impl<'a, S> Argument<'a, S> {
 
     /// Set the default value of the argument
     ///
-    /// This overwrites the description if any was previously set.
+    /// This overwrites the default value if any was previously set.
     pub fn default_value(mut self, default_value: InputValue<S>) -> Self {
         self.default_value = Some(default_value);
         self
