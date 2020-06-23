@@ -32,7 +32,8 @@ fn post_graphql_handler(
     request.execute_sync(&schema, &context)
 }
 
-fn main() {
+#[rocket::main]
+async fn main() {
     rocket::ignite()
         .manage(Database::new())
         .manage(Schema::new(
@@ -45,5 +46,6 @@ fn main() {
             rocket::routes![graphiql, get_graphql_handler, post_graphql_handler],
         )
         .launch()
+        .await
         .expect("server to launch");
 }
