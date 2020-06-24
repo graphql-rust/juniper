@@ -187,8 +187,8 @@ where
                 ready_vec.push(None);
             }
 
-            let stream = futures::stream::poll_fn(
-                move |mut ctx| -> Poll<Option<GraphQLResponse<'static, S>>> {
+            let stream =
+                futures::stream::poll_fn(move |mut ctx| -> Poll<Option<GraphQLResponse<'a, S>>> {
                     let mut obj_iterator = object.iter_mut();
 
                     // Due to having to modify `ready_vec` contents (by-move pattern)
@@ -246,8 +246,7 @@ where
                     } else {
                         Poll::Pending
                     }
-                },
-            );
+                });
 
             Box::pin(stream)
         }

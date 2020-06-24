@@ -27,6 +27,8 @@ Juniper has built-in support for:
   spec](http://facebook.github.io/graphql/#sec-ID) as a type that is serialized
   as a string but can be parsed from both a string and an integer.
 
+Note that there is no built-in support for `i64`/`u64`, as the GraphQL spec [doesn't define any built-in scalars for `i64`/`u64` by default](https://spec.graphql.org/June2018/#sec-Int). You may wish to leverage a [custom GraphQL scalar](#custom-scalars) in your schema to support them.
+
 **Third party types**:
 
 Juniper has built-in support for a few additional types from common third party
