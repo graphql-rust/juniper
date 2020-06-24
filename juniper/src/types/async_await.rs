@@ -2,33 +2,35 @@ use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor},
     parser::Spanning,
-    value::{Object, ScalarValue, Value},
+    value::{Object, ScalarValue, Value, DefaultScalarValue},
 };
 
 use crate::BoxFuture;
 
-use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType};
+use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType, GraphQLValue};
 
-/**
-This trait extends `GraphQLType` with asynchronous queries/mutations resolvers.
-
-Convenience macros related to asynchronous queries/mutations expand into an
-implementation of this trait and `GraphQLType` for the given type.
-*/
-pub trait GraphQLTypeAsync<S>: GraphQLType<S> + Send + Sync
+/// Extension of [`GraphQLValue`] trait with asynchronous queries/mutations resolvers.
+///
+/// Convenience macros related to asynchronous queries/mutations expand into an implementation of
+/// this trait and [`GraphQLValue`] for the given type.
+pub trait GraphQLValueAsync<S = DefaultScalarValue>: GraphQLValue<S> + Send + Sync
 where
     Self::Context: Send + Sync,
     Self::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
 {
-    /// Resolve the value of a single field on this type.
+    /// Resolves the value of a single field on this [`GraphQLValueAsync`].
     ///
-    /// The arguments object contain all specified arguments, with default
-    /// values substituted for the ones not provided by the query.
+    /// The `arguments` object contains all the specified arguments, with default values being
+    /// substituted for the ones not provided by the query.
     ///
-    /// The executor can be used to drive selections into sub-objects.
+    /// The `executor` can be used to drive selections into sub-[objects][3].
+    ///
+    /// # Panics
     ///
     /// The default implementation panics.
+    ///
+    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
     fn resolve_field_async<'a>(
         &'a self,
         _info: &'a Self::TypeInfo,
@@ -36,44 +38,25 @@ where
         _arguments: &'a Arguments<S>,
         _executor: &'a Executor<Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
-        panic!("resolve_field must be implemented by object types");
+        panic!(
+            "GraphQLValueAsync::resolve_field_async() must be implemented by objects and \
+             interfaces",
+        );
     }
 
-    /// Resolve the provided selection set against the current object.
+    /// Resolves this [`GraphQLValueAsync`] (being an [interface][1] or an [union][2]) into a
+    /// concrete downstream [object][3] type.
     ///
-    /// For non-object types, the selection set will be `None` and the value
-    /// of the object should simply be returned.
+    /// Tries to resolve this [`GraphQLValueAsync`] into the provided `type_name`. If the type
+    /// matches, then passes the instance along to [`Executor::resolve`].
     ///
-    /// For objects, all fields in the selection set should be resolved.
-    /// The default implementation uses `resolve_field` to resolve all fields,
-    /// including those through fragment expansion.
-    ///
-    /// Since the GraphQL spec specificies that errors during field processing
-    /// should result in a null-value, this might return Ok(Null) in case of
-    /// failure. Errors are recorded internally.
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> BoxFuture<'a, ExecutionResult<S>> {
-        if let Some(selection_set) = selection_set {
-            Box::pin(async move {
-                let value =
-                    resolve_selection_set_into_async(self, info, selection_set, executor).await;
-                Ok(value)
-            })
-        } else {
-            panic!("resolve() must be implemented by non-object output types");
-        }
-    }
-
-    /// Resolve this interface or union into a concrete type
-    ///
-    /// Try to resolve the current type into the type name provided. If the
-    /// type matches, pass the instance along to `executor.resolve`.
+    /// # Panics
     ///
     /// The default implementation panics.
+    ///
+    /// [1]: https://spec.graphql.org/June2018/#sec-Interfaces
+    /// [2]: https://spec.graphql.org/June2018/#sec-Unions
+    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
     fn resolve_into_type_async<'a>(
         &'a self,
         info: &'a Self::TypeInfo,
@@ -81,13 +64,62 @@ where
         selection_set: Option<&'a [Selection<'a, S>]>,
         executor: &'a Executor<'a, 'a, Self::Context, S>,
     ) -> BoxFuture<'a, ExecutionResult<S>> {
-        if Self::name(info).unwrap() == type_name {
+        if self.type_name(info).unwrap() == type_name {
             self.resolve_async(info, selection_set, executor)
         } else {
-            panic!("resolve_into_type_async must be implemented by unions and interfaces");
+            panic!(
+                "GraphQLValueAsync::resolve_into_type_async() must be implemented by unions and \
+                 interfaces",
+            );
+        }
+    }
+
+    /// Resolves the provided `selection_set` against this [`GraphQLValueAsync`].
+    ///
+    /// For non-[object][3] types, the `selection_set` will be [`None`] and the value should simply
+    /// be returned.
+    ///
+    /// For [objects][3], all fields in the `selection_set` should be resolved. The default
+    /// implementation uses [`GraphQLValueAsync::resolve_field_async`] to resolve all fields,
+    /// including those through a fragment expansion.
+    ///
+    /// Since the [GraphQL spec specifies][0] that errors during field processing should result in
+    /// a null-value, this might return `Ok(Null)` in case of a failure. Errors are recorded
+    /// internally.
+    ///
+    /// # Panics
+    ///
+    /// The default implementation panics, if `selection_set` is [`None`].
+    ///
+    /// [0]: https://spec.graphql.org/June2018/#sec-Errors-and-Non-Nullability
+    /// [3]: https://spec.graphql.org/June2018/#sec-Objects
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> BoxFuture<'a, ExecutionResult<S>> {
+        if let Some(sel) = selection_set {
+            Box::pin(async move {
+                Ok(resolve_selection_set_into_async(self, info, sel, executor).await)
+            })
+        } else {
+            panic!(
+                "GraphQLValueAsync::resolve_async() must be implemented by non-object output types",
+            );
         }
     }
 }
+
+crate::sa::assert_obj_safe!(GraphQLValueAsync<Context = (), TypeInfo = ()>);
+
+/// Extension of [`GraphQLType`] trait with asynchronous queries/mutations resolvers.
+///
+/// It's automatically implemented for [`GraphQLValueAsync`] and [`GraphQLType`] implementors, so
+/// doesn't require manual or code-generated implementation.
+pub trait GraphQLTypeAsync<S = DefaultScalarValue>: GraphQLValueAsync<S> + GraphQLType<S> {}
+
+impl<S, T> GraphQLTypeAsync<S> for T where T: GraphQLValueAsync<S> + GraphQLType<S> {}
 
 // Wrapper function around resolve_selection_set_into_async_recursive.
 // This wrapper is necessary because async fns can not be recursive.
@@ -98,7 +130,7 @@ fn resolve_selection_set_into_async<'a, 'e, T, CtxT, S>(
     executor: &'e Executor<'e, 'e, CtxT, S>,
 ) -> BoxFuture<'a, Value<S>>
 where
-    T: GraphQLTypeAsync<S, Context = CtxT> + ?Sized,
+    T: GraphQLValueAsync<S, Context = CtxT> + ?Sized,
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
@@ -129,7 +161,7 @@ pub(crate) async fn resolve_selection_set_into_async_recursive<'a, T, CtxT, S>(
     executor: &'a Executor<'a, 'a, CtxT, S>,
 ) -> Value<S>
 where
-    T: GraphQLTypeAsync<S, Context = CtxT> + Send + Sync + ?Sized,
+    T: GraphQLValueAsync<S, Context = CtxT> + Send + Sync + ?Sized,
     T::TypeInfo: Send + Sync,
     S: ScalarValue + Send + Sync,
     CtxT: Send + Sync,
@@ -143,7 +175,7 @@ where
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            T::name(info)
+            instance.type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

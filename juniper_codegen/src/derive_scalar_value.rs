@@ -112,11 +112,10 @@ fn impl_scalar_struct(
     };
 
     let _async = quote!(
-
-        impl <__S> #crate_name::GraphQLTypeAsync<__S> for #ident
+        impl <__S> #crate_name::GraphQLValueAsync<__S> for #ident
         where
             __S: #crate_name::ScalarValue + Send + Sync,
-            Self: #crate_name::GraphQLType<__S> + Send + Sync,
+            Self: Send + Sync,
             Self::Context: Send + Sync,
             Self::TypeInfo: Send + Sync,
         {
@@ -141,10 +140,7 @@ fn impl_scalar_struct(
         where
             S: #crate_name::ScalarValue,
         {
-            type Context = ();
-            type TypeInfo = ();
-
-            fn name(_: &Self::TypeInfo) -> Option<&str> {
+            fn name(_: &Self::TypeInfo) -> Option<&'static str> {
                 Some(#name)
             }
 
@@ -158,6 +154,18 @@ fn impl_scalar_struct(
                 registry.build_scalar_type::<Self>(info)
                     #description
                     .into_meta()
+            }
+        }
+
+        impl<S> #crate_name::GraphQLValue<S> for #ident
+        where
+            S: #crate_name::ScalarValue,
+        {
+            type Context = ();
+            type TypeInfo = ();
+
+            fn type_name(&self, info: &Self::TypeInfo) -> Option<&'static str> {
+                <Self as #crate_name::GraphQLType<S>>::name(info)
             }
 
             fn resolve(

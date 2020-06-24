@@ -6,7 +6,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     parser::{LexerError, ParseError, ScalarToken, Token},
     schema::meta::MetaType,
-    types::base::GraphQLType,
+    types::{base::{GraphQLType, GraphQLValue}, async_await::GraphQLValueAsync},
     value::{ParseScalarResult, ScalarValue, Value},
 };
 
@@ -196,10 +196,7 @@ impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
-    type Context = ();
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("String")
     }
 
@@ -208,6 +205,18 @@ where
         S: 'r,
     {
         registry.build_scalar_type::<String>(&()).into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for str
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name(&self, info: &()) -> Option<&'static str> {
+        <Self as GraphQLType<S>>::name(info)
     }
 
     fn resolve(
@@ -220,7 +229,7 @@ where
     }
 }
 
-impl<S> crate::GraphQLTypeAsync<S> for str
+impl<S> GraphQLValueAsync<S> for str
 where
     S: ScalarValue + Send + Sync,
 {
@@ -325,30 +334,24 @@ where
 /// If you instantiate `RootNode` with this as the mutation, no mutation will be
 /// generated for the schema.
 #[derive(Debug)]
-pub struct EmptyMutation<T: ?Sized = ()> {
-    phantom: PhantomData<T>,
-}
+pub struct EmptyMutation<T: ?Sized = ()>(PhantomData<std::thread::JoinHandle<T>>);
+
+// `EmptyMutation` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
+crate::sa::assert_impl_all!(EmptyMutation<Rc<String>>: Send, Sync);
 
 impl<T: ?Sized> EmptyMutation<T> {
     /// Construct a new empty mutation
-    pub fn new() -> EmptyMutation<T> {
-        EmptyMutation {
-            phantom: PhantomData,
-        }
+    #[inline]
+    pub fn new() -> Self {
+        Self(PhantomData)
     }
 }
-
-// This is safe because `T` is never used.
-unsafe impl<T: ?Sized> Send for EmptyMutation<T> {}
 
 impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
 {
-    type Context = T;
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("_EmptyMutation")
     }
 
@@ -360,21 +363,30 @@ where
     }
 }
 
-impl<S, T> crate::GraphQLTypeAsync<S> for EmptyMutation<T>
+impl<S, T> GraphQLValue<S> for EmptyMutation<T>
+where
+    S: ScalarValue,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn type_name(&self, info: &()) -> Option<&'static str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+}
+
+impl<S, T> GraphQLValueAsync<S> for EmptyMutation<T>
 where
     S: ScalarValue + Send + Sync,
-    Self: GraphQLType<S> + Send + Sync,
     Self::TypeInfo: Send + Sync,
     Self::Context: Send + Sync,
-    T: Send + Sync,
 {
 }
 
 impl<T> Default for EmptyMutation<T> {
+    #[inline]
     fn default() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
+        Self::new()
     }
 }
 
@@ -382,19 +394,16 @@ impl<T> Default for EmptyMutation<T> {
 ///
 /// If you instantiate `RootNode` with this as the subscription,
 /// no subscriptions will be generated for the schema.
-pub struct EmptySubscription<T: ?Sized = ()> {
-    phantom: PhantomData<T>,
-}
+pub struct EmptySubscription<T: ?Sized = ()>(PhantomData<std::thread::JoinHandle<T>>);
 
-// This is safe due to never using `T`.
-unsafe impl<T: ?Sized> Send for EmptySubscription<T> {}
+// `EmptySubscription` doesn't use `T`, so should be `Send` and `Sync` even when `T` is not.
+crate::sa::assert_impl_all!(EmptySubscription<Rc<String>>: Send, Sync);
 
 impl<T: ?Sized> EmptySubscription<T> {
     /// Construct a new empty subscription
+    #[inline]
     pub fn new() -> Self {
-        EmptySubscription {
-            phantom: PhantomData,
-        }
+        Self(PhantomData)
     }
 }
 
@@ -402,10 +411,7 @@ impl<S, T> GraphQLType<S> for EmptySubscription<T>
 where
     S: ScalarValue,
 {
-    type Context = T;
-    type TypeInfo = ();
-
-    fn name(_: &()) -> Option<&str> {
+    fn name(_: &()) -> Option<&'static str> {
         Some("_EmptySubscription")
     }
 
@@ -417,10 +423,21 @@ where
     }
 }
 
+impl<S, T> GraphQLValue<S> for EmptySubscription<T>
+where
+    S: ScalarValue,
+{
+    type Context = T;
+    type TypeInfo = ();
+
+    fn type_name(&self, info: &()) -> Option<&'static str> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+}
+
 impl<T, S> crate::GraphQLSubscriptionType<S> for EmptySubscription<T>
 where
     S: ScalarValue + Send + Sync + 'static,
-    Self: GraphQLType<S> + Send + Sync,
     Self::TypeInfo: Send + Sync,
     Self::Context: Send + Sync,
     T: Send + Sync,
@@ -428,10 +445,9 @@ where
 }
 
 impl<T> Default for EmptySubscription<T> {
+    #[inline]
     fn default() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
+        Self::new()
     }
 }
 

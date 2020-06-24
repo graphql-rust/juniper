@@ -192,13 +192,12 @@ where
     /// The default implementation panics.
     ///
     /// [3]: https://spec.graphql.org/June2018/#sec-Objects
-    #[allow(unused_variables)]
     fn resolve_field(
         &self,
-        info: &Self::TypeInfo,
-        field_name: &str,
-        arguments: &Arguments<S>,
-        executor: &Executor<Self::Context, S>,
+        _info: &Self::TypeInfo,
+        _field_name: &str,
+        _arguments: &Arguments<S>,
+        _executor: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
         panic!("GraphQLValue::resolve_field() must be implemented by objects and interfaces");
     }
@@ -260,8 +259,8 @@ where
     /// through a fragment expansion.
     ///
     /// Since the [GraphQL spec specifies][0] that errors during field processing should result in
-    /// a null-value, this might return `Ok(Null)` in case of a failure.
-    /// Errors are recorded internally.
+    /// a null-value, this might return `Ok(Null)` in case of a failure. Errors are recorded
+    /// internally.
     ///
     /// # Panics
     ///
@@ -412,13 +411,13 @@ pub(crate) fn resolve_selection_set_into<T, CtxT, S>(
     result: &mut Object<S>,
 ) -> bool
 where
-    T: GraphQLType<S, Context = CtxT> + ?Sized,
+    T: GraphQLValue<S, Context = CtxT> + ?Sized,
     S: ScalarValue,
 {
     let meta_type = executor
         .schema()
         .concrete_type_by_name(
-            T::name(info)
+            instance.type_name(info)
                 .expect("Resolving named type's selection set")
                 .as_ref(),
         )

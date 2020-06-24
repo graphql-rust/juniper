@@ -1,7 +1,7 @@
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
-    types::base::{Arguments, GraphQLType, TypeKind},
+    types::{base::{Arguments, GraphQLType, GraphQLValue, TypeKind}, async_await::{GraphQLValueAsync, GraphQLTypeAsync}},
     value::{ScalarValue, Value},
 };
 
@@ -21,9 +21,6 @@ where
     MutationT: GraphQLType<S, Context = CtxT>,
     SubscriptionT: GraphQLType<S, Context = CtxT>,
 {
-    type Context = CtxT;
-    type TypeInfo = QueryT::TypeInfo;
-
     fn name(info: &QueryT::TypeInfo) -> Option<&str> {
         QueryT::name(info)
     }
@@ -33,6 +30,22 @@ where
         S: 'r,
     {
         QueryT::meta(info, registry)
+    }
+}
+
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
+    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S, Context = CtxT>,
+    MutationT: GraphQLType<S, Context = CtxT>,
+    SubscriptionT: GraphQLType<S, Context = CtxT>,
+{
+    type Context = CtxT;
+    type TypeInfo = QueryT::TypeInfo;
+
+    fn type_name<'i>(&self, info: &'i QueryT::TypeInfo) -> Option<&'i str> {
+        QueryT::name(info)
     }
 
     fn resolve_field(
@@ -77,13 +90,13 @@ where
     }
 }
 
-impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> crate::GraphQLTypeAsync<S>
+impl<'a, CtxT, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
     for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue + Send + Sync,
-    QueryT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    QueryT: GraphQLTypeAsync<S, Context = CtxT>,
     QueryT::TypeInfo: Send + Sync,
-    MutationT: crate::GraphQLTypeAsync<S, Context = CtxT>,
+    MutationT: GraphQLTypeAsync<S, Context = CtxT>,
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLType<S, Context = CtxT> + Send + Sync,
     SubscriptionT::TypeInfo: Send + Sync,
