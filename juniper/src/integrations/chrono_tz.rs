@@ -56,11 +56,6 @@ mod test {
     }
 
     #[test]
-    fn tz_from_input_value_invalid() {
-        tz_input_test("Abc/Xyz", None);
-    }
-
-    #[test]
     fn tz_from_input_value_invalid_with_forward_slash() {
         tz_input_test("Abc/Xyz", None);
     }
